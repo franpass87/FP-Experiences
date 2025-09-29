@@ -44,5 +44,9 @@
       "ok": true,
       "notes": "Documentation & checklist updated"
     }
+  },
+  "rebuild": {
+    "feature": "experience-page",
+    "step": "complete"
   }
 }

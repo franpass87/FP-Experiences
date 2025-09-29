@@ -35,6 +35,7 @@ final class WidgetsRegistrar
         $widgets_manager->register(new WidgetWidget());
         $widgets_manager->register(new WidgetCalendar());
         $widgets_manager->register(new WidgetCheckout());
+        $widgets_manager->register(new WidgetExperiencePage());
 
         if (Helpers::meeting_points_enabled()) {
             $widgets_manager->register(new WidgetMeetingPoints());

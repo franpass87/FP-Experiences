@@ -16,6 +16,7 @@ use WP_Error;
 use WP_Post;
 
 use function absint;
+use function apply_filters;
 use function array_filter;
 use function esc_html__;
 use function get_locale;
@@ -46,6 +47,7 @@ final class WidgetShortcode extends BaseShortcode
         'id' => '',
         'sticky' => '0',
         'show_calendar' => '1',
+        'display_context' => '',
         'preset' => '',
         'mode' => '',
         'primary' => '',
@@ -98,6 +100,8 @@ final class WidgetShortcode extends BaseShortcode
 
         $slots = $this->get_upcoming_slots($experience_id, $tickets, 60);
         $calendar = $this->group_slots_by_day($slots);
+
+        $display_context = apply_filters('fp_exp_widget_display_context', (string) $attributes['display_context'], $experience_id, $attributes);
 
         $theme = Theme::resolve_palette([
             'preset' => (string) $attributes['preset'],
@@ -186,6 +190,7 @@ final class WidgetShortcode extends BaseShortcode
             'schema_json' => $schema,
             'locale' => get_locale(),
             'rtb_settings' => $rtb_settings,
+            'display_context' => $display_context,
         ];
     }
 

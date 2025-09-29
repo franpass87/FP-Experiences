@@ -34,10 +34,13 @@ FP Experiences brings GetYourGuide-style booking flows to WooCommerce without to
 * `[fp_exp_calendar id="123" months="2"]` – Inline availability calendar for a single experience.
 * `[fp_exp_checkout]` – Isolated checkout that finalises the FP Experiences cart only.
 * `[fp_exp_meeting_points id="123"]` – Outputs the primary meeting point and optional alternatives for an experience, with map links built client-side.
+* `[fp_exp_page id="123" sections="hero,highlights,inclusions,meeting,extras,faq,reviews" sticky_widget="1"]` – Full experience detail page with hero gallery, highlights, inclusions/exclusions, meeting point block, FAQ accordion, reviews, and sticky availability widget. Supports the usual theming overrides (`preset`, `mode`, color variables, `radius`, `shadow`, `font`).
+
+The `sections` attribute accepts a comma-separated list of sections to render (hero, highlights, inclusions, meeting, extras, faq, reviews). Meeting point data automatically reuses the Meeting Points module when enabled; otherwise the section is hidden. Set `sticky_widget="0"` to disable the mobile CTA bar.
 
 == Elementor Widgets ==
 
-Five Elementor widgets mirror the shortcodes: List, Widget, Calendar, Checkout, and Meeting Points. Each exposes theming controls (colors, radius, fonts) plus behavioural toggles (sticky mode, inline calendar, consent defaults).
+Six Elementor widgets mirror the shortcodes: List, Widget, Calendar, Checkout, Meeting Points, and the new Experience Page layout. Each exposes theming controls (colors, radius, fonts) plus behavioural toggles (sticky mode, inline calendar, consent defaults). The Experience Page widget lets editors pick sections to display and toggle the sticky availability bar while reusing the `[fp_exp_page]` shortcode under the hood.
 
 == Settings & Tools ==
 
