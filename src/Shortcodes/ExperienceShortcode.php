@@ -1,0 +1,650 @@
+<?php
+
+declare(strict_types=1);
+
+namespace FP_Exp\Shortcodes;
+
+use FP_Exp\MeetingPoints\Repository;
+use FP_Exp\Utils\Helpers;
+use FP_Exp\Utils\Theme;
+use WP_Comment;
+use WP_Error;
+use WP_Post;
+
+use function absint;
+use function array_fill_keys;
+use function array_filter;
+use function array_map;
+use function array_values;
+use function apply_filters;
+use function do_shortcode;
+use function esc_attr;
+use function esc_html__;
+use function explode;
+use function get_bloginfo;
+use function get_comment_meta;
+use function get_comments;
+use function get_option;
+use function get_permalink;
+use function get_post;
+use function get_post_meta;
+use function get_post_thumbnail_id;
+use function get_the_terms;
+use function home_url;
+use function implode;
+use function in_array;
+use function is_array;
+use function is_numeric;
+use function sanitize_text_field;
+use function trim;
+use function wp_get_attachment_image_src;
+use function wp_get_attachment_image_srcset;
+use function wp_get_attachment_image_url;
+use function wp_json_encode;
+use function wp_kses_post;
+use function wp_trim_words;
+
+final class ExperienceShortcode extends BaseShortcode
+{
+    private const ALLOWED_SECTIONS = [
+        'hero',
+        'highlights',
+        'inclusions',
+        'meeting',
+        'extras',
+        'faq',
+        'reviews',
+    ];
+
+    protected string $tag = 'fp_exp_page';
+
+    protected string $template = 'front/experience.php';
+
+    protected array $defaults = [
+        'id' => '',
+        'sections' => '',
+        'sticky_widget' => '1',
+        'preset' => '',
+        'mode' => '',
+        'primary' => '',
+        'secondary' => '',
+        'accent' => '',
+        'background' => '',
+        'surface' => '',
+        'text' => '',
+        'muted' => '',
+        'success' => '',
+        'warning' => '',
+        'danger' => '',
+        'radius' => '',
+        'shadow' => '',
+        'font' => '',
+    ];
+
+    /**
+     * @param array<string, mixed> $attributes
+     *
+     * @return array<string, mixed>|WP_Error
+     */
+    protected function get_context(array $attributes, ?string $content = null)
+    {
+        $experience_id = absint($attributes['id']);
+
+        if ($experience_id <= 0) {
+            return new WP_Error('fp_exp_page_invalid', esc_html__('Missing experience ID.', 'fp-experiences'));
+        }
+
+        $post = get_post($experience_id);
+
+        if (! $post instanceof WP_Post || 'fp_experience' !== $post->post_type) {
+            return new WP_Error('fp_exp_page_not_found', esc_html__('Experience not found.', 'fp-experiences'));
+        }
+
+        $enabled_sections = $this->resolve_sections((string) $attributes['sections']);
+
+        $theme = Theme::resolve_palette([
+            'preset' => (string) $attributes['preset'],
+            'mode' => (string) $attributes['mode'],
+            'primary' => (string) $attributes['primary'],
+            'secondary' => (string) $attributes['secondary'],
+            'accent' => (string) $attributes['accent'],
+            'background' => (string) $attributes['background'],
+            'surface' => (string) $attributes['surface'],
+            'text' => (string) $attributes['text'],
+            'muted' => (string) $attributes['muted'],
+            'success' => (string) $attributes['success'],
+            'warning' => (string) $attributes['warning'],
+            'danger' => (string) $attributes['danger'],
+            'radius' => (string) $attributes['radius'],
+            'shadow' => (string) $attributes['shadow'],
+            'font' => (string) $attributes['font'],
+        ]);
+
+        $duration_minutes = absint((string) get_post_meta($experience_id, '_fp_duration_minutes', true));
+        $languages_meta = get_post_meta($experience_id, '_fp_languages', true);
+        $languages = is_array($languages_meta) ? array_filter(array_map('sanitize_text_field', $languages_meta)) : [];
+        $short_desc = sanitize_text_field((string) get_post_meta($experience_id, '_fp_short_desc', true));
+        $content_summary = $short_desc ?: wp_trim_words((string) $post->post_excerpt, 36);
+
+        $gallery_ids = get_post_meta($experience_id, '_fp_gallery_ids', true);
+        $gallery = $this->prepare_gallery($experience_id, $gallery_ids);
+
+        $highlights_meta = get_post_meta($experience_id, '_fp_highlights', true);
+        $highlights = is_array($highlights_meta)
+            ? array_filter(array_map('sanitize_text_field', $highlights_meta))
+            : [];
+
+        $inclusions_meta = get_post_meta($experience_id, '_fp_inclusions', true);
+        $exclusions_meta = get_post_meta($experience_id, '_fp_exclusions', true);
+
+        $inclusions = is_array($inclusions_meta)
+            ? array_filter(array_map('sanitize_text_field', $inclusions_meta))
+            : [];
+        $exclusions = is_array($exclusions_meta)
+            ? array_filter(array_map('sanitize_text_field', $exclusions_meta))
+            : [];
+
+        $what_to_bring_meta = get_post_meta($experience_id, '_fp_what_to_bring', true);
+        $what_to_bring = is_array($what_to_bring_meta)
+            ? array_filter(array_map('sanitize_text_field', $what_to_bring_meta))
+            : [];
+
+        $notes_raw = get_post_meta($experience_id, '_fp_notes', true);
+        $notes = is_array($notes_raw)
+            ? array_filter(array_map('sanitize_text_field', $notes_raw))
+            : ((string) $notes_raw);
+
+        $policy = wp_kses_post((string) get_post_meta($experience_id, '_fp_policy_cancel', true));
+
+        $faq_meta = get_post_meta($experience_id, '_fp_faq', true);
+        $faq_items = $this->prepare_faq($faq_meta);
+
+        $reviews = $this->load_reviews($experience_id);
+
+        $meeting_data = $this->prepare_meeting_points($experience_id, $enabled_sections['meeting']);
+
+        $tickets = $this->prepare_tickets(get_post_meta($experience_id, '_fp_ticket_types', true));
+        $base_price = $this->resolve_price($experience_id, $tickets);
+        $currency = $this->resolve_currency();
+
+        $theme_terms = get_the_terms($post, 'fp_exp_theme');
+        $primary_category = '';
+        if (is_array($theme_terms) && ! empty($theme_terms)) {
+            $primary_category = sanitize_text_field((string) $theme_terms[0]->name);
+        }
+
+        $schema = $this->build_schema([
+            'post' => $post,
+            'gallery' => $gallery,
+            'description' => $content_summary,
+            'price' => $base_price,
+            'currency' => $currency,
+            'duration' => $duration_minutes,
+            'languages' => $languages,
+            'meeting' => $meeting_data,
+        ]);
+
+        $data_layer = [
+            'event' => 'view_item',
+            'ecommerce' => [
+                'currency' => $currency,
+                'value' => $base_price,
+                'items' => [
+                    [
+                        'item_id' => (string) $experience_id,
+                        'item_name' => $post->post_title,
+                        'item_category' => $primary_category,
+                    ],
+                ],
+            ],
+        ];
+
+        $widget_atts = [
+            'id' => (string) $experience_id,
+            'sticky' => '0',
+            'display_context' => 'page',
+        ];
+
+        $theme_keys = ['preset', 'mode', 'primary', 'secondary', 'accent', 'background', 'surface', 'text', 'muted', 'success', 'warning', 'danger', 'radius', 'shadow', 'font'];
+        foreach ($theme_keys as $key) {
+            if (! empty($attributes[$key])) {
+                $widget_atts[$key] = (string) $attributes[$key];
+            }
+        }
+
+        $widget_html = do_shortcode('[fp_exp_widget ' . $this->build_shortcode_atts($widget_atts) . ']');
+
+        $sections_map = [
+            'hero' => [
+                'id' => 'hero',
+                'label' => esc_html__('Overview', 'fp-experiences'),
+            ],
+            'highlights' => [
+                'id' => 'highlights',
+                'label' => esc_html__('Highlights', 'fp-experiences'),
+            ],
+            'inclusions' => [
+                'id' => 'inclusions',
+                'label' => esc_html__('What\'s included', 'fp-experiences'),
+            ],
+            'meeting' => [
+                'id' => 'meeting',
+                'label' => esc_html__('Meeting point', 'fp-experiences'),
+            ],
+            'extras' => [
+                'id' => 'extras',
+                'label' => esc_html__('Good to know', 'fp-experiences'),
+            ],
+            'faq' => [
+                'id' => 'faq',
+                'label' => esc_html__('FAQ', 'fp-experiences'),
+            ],
+            'reviews' => [
+                'id' => 'reviews',
+                'label' => esc_html__('Reviews', 'fp-experiences'),
+            ],
+        ];
+
+        $navigation = [];
+        foreach (self::ALLOWED_SECTIONS as $section_key) {
+            if (! $enabled_sections[$section_key] || empty($sections_map[$section_key])) {
+                continue;
+            }
+
+            if ('highlights' === $section_key && empty($highlights)) {
+                continue;
+            }
+
+            if ('inclusions' === $section_key && empty($inclusions) && empty($exclusions)) {
+                continue;
+            }
+
+            if ('meeting' === $section_key && empty($meeting_data['primary'])) {
+                continue;
+            }
+
+            if ('extras' === $section_key && empty($what_to_bring) && empty($notes) && empty($policy)) {
+                continue;
+            }
+
+            if ('faq' === $section_key && empty($faq_items)) {
+                continue;
+            }
+
+            if ('reviews' === $section_key && empty($reviews)) {
+                continue;
+            }
+
+            $navigation[] = $sections_map[$section_key];
+        }
+
+        $family_terms = get_the_terms($post, 'fp_exp_family_friendly');
+        $family_friendly = is_array($family_terms) && ! empty($family_terms);
+
+        $badges = $this->build_badges($duration_minutes, $languages, $family_friendly);
+
+        return [
+            'theme' => $theme,
+            'experience' => [
+                'id' => $experience_id,
+                'title' => $post->post_title,
+                'permalink' => get_permalink($post),
+                'summary' => $content_summary,
+                'duration_minutes' => $duration_minutes,
+                'languages' => $languages,
+            ],
+            'gallery' => $gallery,
+            'badges' => $badges,
+            'highlights' => $highlights,
+            'inclusions' => $inclusions,
+            'exclusions' => $exclusions,
+            'what_to_bring' => $what_to_bring,
+            'notes' => $notes,
+            'policy' => $policy,
+            'faq' => $faq_items,
+            'reviews' => $reviews,
+            'sections' => $enabled_sections,
+            'navigation' => $navigation,
+            'meeting_points' => $meeting_data,
+            'sticky_widget' => in_array((string) $attributes['sticky_widget'], ['1', 'true', 'yes'], true),
+            'widget_html' => $widget_html,
+            'schema_json' => $schema,
+            'data_layer' => wp_json_encode($data_layer),
+        ];
+    }
+
+    private function resolve_sections(string $raw): array
+    {
+        $defaults = array_fill_keys(self::ALLOWED_SECTIONS, true);
+        $raw = trim($raw);
+
+        if ('' === $raw) {
+            return $defaults;
+        }
+
+        $selected = array_map('trim', explode(',', $raw));
+        $selected = array_filter($selected);
+
+        if (empty($selected)) {
+            return $defaults;
+        }
+
+        $normalized = [];
+        foreach (self::ALLOWED_SECTIONS as $section) {
+            $normalized[$section] = in_array($section, $selected, true);
+        }
+
+        return $normalized;
+    }
+
+    /**
+     * @param mixed $raw
+     *
+     * @return array<int, array<string, string>>
+     */
+    private function prepare_gallery(int $experience_id, $raw): array
+    {
+        $images = [];
+
+        if (is_array($raw)) {
+            $ids = array_filter(array_map('absint', $raw));
+        } else {
+            $ids = [];
+        }
+
+        if (empty($ids)) {
+            $thumbnail_id = get_post_thumbnail_id($experience_id);
+            if ($thumbnail_id) {
+                $ids[] = (int) $thumbnail_id;
+            }
+        }
+
+        foreach ($ids as $id) {
+            if ($id <= 0) {
+                continue;
+            }
+
+            $url = wp_get_attachment_image_url($id, 'large');
+            if (! $url) {
+                continue;
+            }
+
+            $src = wp_get_attachment_image_src($id, 'large');
+            $srcset = wp_get_attachment_image_srcset($id, 'large');
+            $images[] = [
+                'id' => $id,
+                'url' => $url,
+                'width' => is_array($src) ? ($src[1] ?? '') : '',
+                'height' => is_array($src) ? ($src[2] ?? '') : '',
+                'srcset' => $srcset ?: '',
+            ];
+        }
+
+        return $images;
+    }
+
+    /**
+     * @param mixed $raw
+     *
+     * @return array<int, array<string, string>>
+     */
+    private function prepare_faq($raw): array
+    {
+        if (! is_array($raw)) {
+            return [];
+        }
+
+        $items = [];
+        foreach ($raw as $entry) {
+            if (! is_array($entry)) {
+                continue;
+            }
+
+            $question = isset($entry['question']) ? sanitize_text_field((string) $entry['question']) : '';
+            $answer = isset($entry['answer']) ? wp_kses_post((string) $entry['answer']) : '';
+
+            if (! $question || ! $answer) {
+                continue;
+            }
+
+            $items[] = [
+                'question' => $question,
+                'answer' => $answer,
+            ];
+        }
+
+        return $items;
+    }
+
+    /**
+     * @return array{primary: ?array<string, mixed>, alternatives: array<int, array<string, mixed>>}
+     */
+    private function prepare_meeting_points(int $experience_id, bool $section_enabled): array
+    {
+        if (! $section_enabled || ! Helpers::meeting_points_enabled()) {
+            return ['primary' => null, 'alternatives' => []];
+        }
+
+        return Repository::get_meeting_points_for_experience($experience_id);
+    }
+
+    /**
+     * @param mixed $raw
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function prepare_tickets($raw): array
+    {
+        if (! is_array($raw)) {
+            return [];
+        }
+
+        $tickets = [];
+        foreach ($raw as $ticket) {
+            if (! is_array($ticket)) {
+                continue;
+            }
+
+            $price = isset($ticket['price']) ? (float) $ticket['price'] : 0.0;
+            $tickets[] = [
+                'label' => sanitize_text_field((string) ($ticket['label'] ?? '')),
+                'price' => $price,
+            ];
+        }
+
+        return $tickets;
+    }
+
+    /**
+     * @param array<int, array<string, mixed>> $tickets
+     */
+    private function resolve_price(int $experience_id, array $tickets): float
+    {
+        $prices = array_filter(array_map(static function (array $ticket) {
+            if (! isset($ticket['price'])) {
+                return null;
+            }
+
+            $price = $ticket['price'];
+
+            return is_numeric($price) ? (float) $price : null;
+        }, $tickets));
+
+        if (! empty($prices)) {
+            return (float) min($prices);
+        }
+
+        $base_price = get_post_meta($experience_id, '_fp_base_price', true);
+
+        return is_numeric($base_price) ? (float) $base_price : 0.0;
+    }
+
+    private function resolve_currency(): string
+    {
+        $currency = get_option('woocommerce_currency');
+
+        if (is_string($currency) && $currency) {
+            return $currency;
+        }
+
+        return 'EUR';
+    }
+
+    /**
+     * @param array<string, mixed> $context
+     */
+    private function build_schema(array $context): string
+    {
+        /** @var WP_Post $post */
+        $post = $context['post'];
+        $images = array_map(static fn (array $image) => $image['url'], $context['gallery']);
+        $duration_minutes = (int) ($context['duration'] ?? 0);
+        $duration_iso = $duration_minutes > 0 ? 'PT' . $duration_minutes . 'M' : null;
+        $meeting = $context['meeting'];
+        $primary_meeting = is_array($meeting) ? ($meeting['primary'] ?? null) : null;
+
+        $schema = [
+            '@context' => 'https://schema.org',
+            '@type' => 'TouristTrip',
+            'name' => $post->post_title,
+            'description' => $context['description'],
+            'url' => get_permalink($post),
+            'image' => $images,
+            'provider' => [
+                '@type' => 'Organization',
+                'name' => get_bloginfo('name'),
+                'url' => home_url('/'),
+            ],
+            'offers' => [
+                '@type' => 'Offer',
+                'price' => (float) $context['price'],
+                'priceCurrency' => $context['currency'],
+                'url' => get_permalink($post),
+                'availability' => 'https://schema.org/InStock',
+            ],
+        ];
+
+        if (! empty($context['languages'])) {
+            $schema['inLanguage'] = array_values($context['languages']);
+        }
+
+        if ($duration_iso) {
+            $schema['eventSchedule'] = [
+                '@type' => 'Schedule',
+                'duration' => $duration_iso,
+            ];
+        }
+
+        if ($primary_meeting && is_array($primary_meeting)) {
+            $schema['event'] = [
+                '@type' => 'Event',
+                'name' => $post->post_title,
+                'eventAttendanceMode' => 'https://schema.org/OfflineEventAttendanceMode',
+                'eventStatus' => 'https://schema.org/EventScheduled',
+                'location' => [
+                    '@type' => 'Place',
+                    'name' => sanitize_text_field((string) ($primary_meeting['title'] ?? '')),
+                    'address' => sanitize_text_field((string) ($primary_meeting['address'] ?? '')),
+                ],
+            ];
+        }
+
+        return wp_json_encode($schema);
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private function load_reviews(int $experience_id): array
+    {
+        $comments = get_comments([
+            'post_id' => $experience_id,
+            'status' => 'approve',
+            'type' => '',
+            'number' => 12,
+        ]);
+
+        $reviews = [];
+
+        foreach ($comments as $comment) {
+            if (! $comment instanceof WP_Comment) {
+                continue;
+            }
+
+            $rating = get_comment_meta($comment->comment_ID, 'rating', true);
+            $reviews[] = [
+                'author' => sanitize_text_field($comment->comment_author),
+                'date' => sanitize_text_field($comment->comment_date),
+                'content' => wp_kses_post($comment->comment_content),
+                'rating' => is_numeric($rating) ? (float) $rating : null,
+            ];
+        }
+
+        /**
+         * Allow integrations to override the experience page reviews payload.
+         *
+         * @param array<int, array<string, mixed>> $reviews
+         * @param int                               $experience_id
+         */
+        $reviews = apply_filters('fp_exp_experience_reviews', $reviews, $experience_id);
+
+        return is_array($reviews) ? $reviews : [];
+    }
+
+    /**
+     * @param array<int, string> $languages
+     *
+     * @return array<int, array<string, string>>
+     */
+    private function build_badges(int $duration_minutes, array $languages, bool $family_friendly): array
+    {
+        $badges = [];
+
+        if ($duration_minutes > 0) {
+            $hours = (int) floor($duration_minutes / 60);
+            $minutes = $duration_minutes % 60;
+            $label = $hours > 0
+                ? sprintf(esc_html__('%dh %02dm', 'fp-experiences'), $hours, $minutes)
+                : sprintf(esc_html__('%d minutes', 'fp-experiences'), $minutes);
+
+            $badges[] = [
+                'icon' => 'clock',
+                'label' => $label,
+            ];
+        }
+
+        if (! empty($languages)) {
+            $badges[] = [
+                'icon' => 'language',
+                'label' => implode(', ', $languages),
+            ];
+        }
+
+        if ($family_friendly) {
+            $badges[] = [
+                'icon' => 'family',
+                'label' => esc_html__('Family friendly', 'fp-experiences'),
+            ];
+        }
+
+        return $badges;
+    }
+
+    /**
+     * @param array<string, string> $atts
+     */
+    private function build_shortcode_atts(array $atts): string
+    {
+        $parts = [];
+
+        foreach ($atts as $key => $value) {
+            if ('' === $value) {
+                continue;
+            }
+
+            $parts[] = $key . '="' . esc_attr($value) . '"';
+        }
+
+        return implode(' ', $parts);
+    }
+}

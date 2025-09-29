@@ -336,6 +336,155 @@
         });
     }
 
+    function setupExperiencePages() {
+        document.querySelectorAll('[data-fp-shortcode="experience"]').forEach((page) => {
+            setupExperienceScroll(page);
+            setupExperienceAccordion(page);
+            setupExperienceSticky(page);
+        });
+    }
+
+    function setupExperienceScroll(page) {
+        const triggers = page.querySelectorAll('[data-fp-scroll]');
+
+        if (!triggers.length) {
+            return;
+        }
+
+        triggers.forEach((trigger) => {
+            trigger.addEventListener('click', (event) => {
+                const targetKey = trigger.getAttribute('data-fp-scroll');
+                if (!targetKey) {
+                    return;
+                }
+
+                let target = null;
+                if (targetKey === 'widget') {
+                    target = page.querySelector('#fp-exp-widget');
+                } else {
+                    target = page.querySelector(`[data-fp-section="${targetKey}"]`);
+                }
+
+                if (!target) {
+                    return;
+                }
+
+                event.preventDefault();
+
+                const offset = target.getBoundingClientRect().top + window.scrollY - 80;
+                window.scrollTo({ top: Math.max(0, offset), behavior: 'smooth' });
+            });
+        });
+    }
+
+    function setupExperienceAccordion(page) {
+        const accordions = page.querySelectorAll('[data-fp-accordion]');
+
+        accordions.forEach((accordion) => {
+            const triggers = Array.from(accordion.querySelectorAll('[data-fp-accordion-trigger]'));
+
+            triggers.forEach((trigger, index) => {
+                const panelId = trigger.getAttribute('aria-controls') || '';
+                const panel = panelId ? document.getElementById(panelId) : null;
+
+                trigger.addEventListener('click', () => {
+                    toggleAccordionItem(trigger, panel, triggers);
+                });
+
+                trigger.addEventListener('keydown', (event) => {
+                    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+                        event.preventDefault();
+                        const direction = event.key === 'ArrowDown' ? 1 : -1;
+                        const nextIndex = (index + direction + triggers.length) % triggers.length;
+                        triggers[nextIndex].focus();
+                    } else if (event.key === 'Home') {
+                        event.preventDefault();
+                        triggers[0].focus();
+                    } else if (event.key === 'End') {
+                        event.preventDefault();
+                        triggers[triggers.length - 1].focus();
+                    }
+                });
+            });
+        });
+    }
+
+    function toggleAccordionItem(trigger, panel, triggers) {
+        const expanded = trigger.getAttribute('aria-expanded') === 'true';
+        const willExpand = !expanded;
+
+        triggers.forEach((otherTrigger) => {
+            if (otherTrigger === trigger) {
+                return;
+            }
+
+            const otherPanelId = otherTrigger.getAttribute('aria-controls') || '';
+            const otherPanel = otherPanelId ? document.getElementById(otherPanelId) : null;
+            otherTrigger.setAttribute('aria-expanded', 'false');
+            if (otherPanel) {
+                otherPanel.hidden = true;
+            }
+        });
+
+        trigger.setAttribute('aria-expanded', willExpand ? 'true' : 'false');
+        if (panel) {
+            panel.hidden = !willExpand;
+        }
+    }
+
+    function setupExperienceSticky(page) {
+        const stickyBar = page.querySelector('[data-fp-sticky-bar]');
+        const widget = page.querySelector('#fp-exp-widget');
+
+        if (!stickyBar || !widget) {
+            return;
+        }
+
+        if (typeof window.IntersectionObserver !== 'function') {
+            stickyBar.classList.remove('is-hidden');
+            return;
+        }
+
+        const mediaQuery = window.matchMedia('(min-width: 1024px)');
+        stickyBar.classList.add('is-hidden');
+
+        const observer = new IntersectionObserver((entries) => {
+            const entry = entries[0];
+            if (!entry) {
+                return;
+            }
+
+            if (mediaQuery.matches) {
+                stickyBar.classList.add('is-hidden');
+                return;
+            }
+
+            if (entry.isIntersecting) {
+                stickyBar.classList.add('is-hidden');
+            } else {
+                stickyBar.classList.remove('is-hidden');
+            }
+        }, { threshold: 0.4 });
+
+        observer.observe(widget);
+
+        const handleMediaChange = () => {
+            if (mediaQuery.matches) {
+                stickyBar.classList.add('is-hidden');
+            }
+        };
+
+        if (typeof mediaQuery.addEventListener === 'function') {
+            mediaQuery.addEventListener('change', handleMediaChange);
+        } else if (typeof mediaQuery.addListener === 'function') {
+            mediaQuery.addListener(handleMediaChange);
+        }
+
+        page.addEventListener('fpExpWidgetCheckout', () => {
+            stickyBar.classList.add('is-hidden');
+        });
+    }
+
     function pushTrackingEvent(eventName, data) {
         const channels = trackingConfig.enabled || {};
 
@@ -444,6 +593,7 @@
         document.querySelectorAll('[data-fp-shortcode="widget"]').forEach(setupWidget);
         document.querySelectorAll('[data-fp-shortcode="list"]').forEach(setupListFilters);
         setupMeetingPoints();
+        setupExperiencePages();
     }
 
     function setupListFilters(section) {
@@ -534,6 +684,9 @@
             return;
         }
 
+        const displayContext = config.displayContext || container.getAttribute('data-display-context') || 'widget';
+        const trackingMeta = displayContext ? { context: displayContext } : {};
+
         const state = {
             selectedDate: null,
             selectedSlot: null,
@@ -567,13 +720,17 @@
             });
         }
 
-        pushTrackingEvent('view_item', {
-            ecommerce: buildEcommercePayload(config, { quantity: 1, total: getBasePrice(config) }),
-        });
+        pushTrackingEvent('view_item', Object.assign(
+            {
+                ecommerce: buildEcommercePayload(config, { quantity: 1, total: getBasePrice(config) }),
+            },
+            trackingMeta
+        ));
 
         container.addEventListener('fpExpWidgetSummaryUpdate', (event) => {
             const detail = event.detail || {};
-            const payload = { ecommerce: buildEcommercePayload(config, detail) };
+            detail.context = displayContext;
+            const payload = Object.assign({ ecommerce: buildEcommercePayload(config, detail) }, trackingMeta);
 
             if (detail.slotId && detail.slotId !== lastSlot) {
                 pushTrackingEvent('select_item', payload);
@@ -681,16 +838,18 @@
                 }, state.lastSummary || {});
 
                 const ecommerce = buildEcommercePayload(config, detail);
+                const payload = Object.assign({ ecommerce }, trackingMeta);
                 detail.total = ecommerce.value;
                 detail.quantity = detail.quantity || calculateQuantity(detail.tickets);
                 detail.currency = ecommerce.currency;
+                detail.displayContext = displayContext;
 
                 container.dispatchEvent(new CustomEvent('fpExpWidgetCheckout', {
                     bubbles: true,
-                    detail,
+                    detail: Object.assign({ displayContext }, detail),
                 }));
 
-                pushTrackingEvent('begin_checkout', { ecommerce });
+                pushTrackingEvent('begin_checkout', payload);
             });
         }
 
@@ -730,7 +889,7 @@
                 }
 
                 const ecommerce = buildEcommercePayload(config, state.lastSummary);
-                pushTrackingEvent('fpExp.request_submit', { ecommerce });
+                pushTrackingEvent('fpExp.request_submit', Object.assign({ ecommerce }, trackingMeta));
 
                 if (rtbStatus) {
                     rtbStatus.textContent = rtbStatus.getAttribute('data-loading') || '...';
@@ -783,7 +942,7 @@
                         }
 
                         if (success) {
-                            pushTrackingEvent('fpExp.request_success', { ecommerce });
+                            pushTrackingEvent('fpExp.request_success', Object.assign({ ecommerce }, trackingMeta));
                             rtbForm.reset();
                             if (submitButton) {
                                 submitButton.disabled = true;
@@ -793,7 +952,7 @@
                             if (submitButton) {
                                 submitButton.disabled = false;
                             }
-                            pushTrackingEvent('fpExp.request_error', { ecommerce });
+                            pushTrackingEvent('fpExp.request_error', Object.assign({ ecommerce }, trackingMeta));
                         }
                     })
                     .catch(() => {
@@ -803,7 +962,7 @@
                         if (submitButton) {
                             submitButton.disabled = false;
                         }
-                        pushTrackingEvent('fpExp.request_error', { ecommerce });
+                        pushTrackingEvent('fpExp.request_error', Object.assign({ ecommerce }, trackingMeta));
                     });
             });
         }

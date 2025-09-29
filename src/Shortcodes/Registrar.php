@@ -20,6 +20,7 @@ final class Registrar
             new WidgetShortcode(),
             new CalendarShortcode(),
             new CheckoutShortcode(),
+            new ExperienceShortcode(),
         ];
 
         if (Helpers::meeting_points_enabled()) {
