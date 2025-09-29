@@ -6,6 +6,7 @@ namespace FP_Exp\Elementor;
 
 use Elementor\Elements_Manager;
 use Elementor\Widgets_Manager;
+use FP_Exp\Utils\Helpers;
 
 use function __;
 use function add_action;
@@ -34,6 +35,10 @@ final class WidgetsRegistrar
         $widgets_manager->register(new WidgetWidget());
         $widgets_manager->register(new WidgetCalendar());
         $widgets_manager->register(new WidgetCheckout());
+
+        if (Helpers::meeting_points_enabled()) {
+            $widgets_manager->register(new WidgetMeetingPoints());
+        }
     }
 
     public function register_category(Elements_Manager $elements_manager): void

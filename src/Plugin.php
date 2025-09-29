@@ -20,6 +20,7 @@ use FP_Exp\Booking\RequestToBook;
 use FP_Exp\Booking\Resources;
 use FP_Exp\Booking\Slots;
 use FP_Exp\Elementor\WidgetsRegistrar as ElementorWidgetsRegistrar;
+use FP_Exp\MeetingPoints\Manager as MeetingPointsManager;
 use FP_Exp\Integrations\Brevo;
 use FP_Exp\Integrations\Clarity;
 use FP_Exp\Integrations\GA4;
@@ -82,6 +83,8 @@ final class Plugin
 
     private ?Webhooks $webhooks = null;
 
+    private ?MeetingPointsManager $meeting_points = null;
+
     public static function instance(): Plugin
     {
         if (null === self::$instance) {
@@ -111,6 +114,7 @@ final class Plugin
         $this->elementor_widgets = new ElementorWidgetsRegistrar();
         $this->rest_routes = new RestRoutes();
         $this->webhooks = new Webhooks();
+        $this->meeting_points = new MeetingPointsManager();
 
         if (is_admin()) {
             $this->settings_page = new SettingsPage();
@@ -148,6 +152,10 @@ final class Plugin
 
         if ($this->rest_routes instanceof RestRoutes) {
             $this->rest_routes->register_hooks();
+        }
+
+        if ($this->meeting_points instanceof MeetingPointsManager) {
+            $this->meeting_points->register_hooks();
         }
 
         if ($this->webhooks instanceof Webhooks) {

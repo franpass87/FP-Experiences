@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace FP_Exp\Booking;
 
 use FP_Exp\Integrations\Brevo;
+use FP_Exp\MeetingPoints\Repository;
 use WC_Order;
 
 use function __;
@@ -207,7 +208,7 @@ final class Emails
         $billing_meta = $order->get_meta('_fp_exp_billing');
         $billing = $this->normalize_billing($billing_meta, $order);
 
-        $meeting_point = get_post_meta($experience->ID, '_fp_meeting_point', true);
+        $meeting_point = Repository::get_primary_summary_for_experience((int) $experience->ID);
         $short_desc = get_post_meta($experience->ID, '_fp_short_desc', true);
         $tickets = $this->normalize_tickets($experience->ID, $reservation['pax'] ?? []);
         $addons = $this->normalize_addons($experience->ID, $reservation['addons'] ?? []);

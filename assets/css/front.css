@@ -542,6 +542,75 @@
     background: var(--fp-exp-color-secondary, #405F3B);
 }
 
+.fp-exp-meeting-points {
+    background: var(--fp-exp-color-surface, #f7f4f0);
+    border-radius: var(--fp-exp-radius-base, 12px);
+    padding: 1.5rem;
+    box-shadow: var(--fp-exp-shadow-base, 0 10px 30px rgba(0,0,0,0.08));
+}
+
+.fp-exp-meeting-points__primary,
+.fp-exp-meeting-points__list {
+    display: grid;
+    gap: 1rem;
+}
+
+.fp-exp-meeting-point {
+    background: #fff;
+    border-radius: calc(var(--fp-exp-radius-base, 12px) / 1.25);
+    padding: 1rem 1.25rem;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.fp-exp-meeting-point__title {
+    margin: 0 0 0.5rem;
+    font-size: 1.1rem;
+}
+
+.fp-exp-meeting-point__address {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: baseline;
+    margin: 0 0 0.5rem;
+}
+
+.fp-exp-meeting-point__map-link {
+    font-weight: 600;
+    text-decoration: underline;
+    color: var(--fp-exp-color-primary, #8B1E3F);
+}
+
+.fp-exp-meeting-point__map-link.is-disabled {
+    color: var(--fp-exp-color-muted, #6f6f6f);
+    text-decoration: none;
+    pointer-events: none;
+}
+
+.fp-exp-meeting-point__contacts {
+    margin: 0.5rem 0;
+    padding-left: 1rem;
+}
+
+.fp-exp-meeting-point__notes {
+    margin-top: 0.75rem;
+    font-size: 0.95rem;
+}
+
+.fp-exp-meeting-points__alternatives {
+    margin-top: 1.5rem;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: calc(var(--fp-exp-radius-base, 12px) / 1.25);
+    background: #fff;
+    padding: 1rem 1.25rem;
+}
+
+.fp-exp-meeting-points__alternatives > summary {
+    cursor: pointer;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+}
+
 @media (max-width: 768px) {
     .fp-exp-card__media {
         padding-top: 50%;

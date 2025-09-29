@@ -31,6 +31,8 @@ use function get_transient;
 use function in_array;
 use function is_admin;
 use function is_array;
+use function is_bool;
+use function is_numeric;
 use function rest_url;
 use function sanitize_email;
 use function sanitize_hex_color;
@@ -41,6 +43,8 @@ use function settings_errors;
 use function settings_fields;
 use function set_transient;
 use function submit_button;
+use function trim;
+use function strtolower;
 use function time;
 use function update_option;
 use function wp_generate_password;
@@ -205,6 +209,24 @@ final class SettingsPage
             'default' => '',
         ]);
 
+        register_setting('fp_exp_settings_general', 'fp_exp_enable_meeting_points', [
+            'type' => 'string',
+            'sanitize_callback' => static function ($value): string {
+                if (is_bool($value)) {
+                    return $value ? 'yes' : 'no';
+                }
+
+                if (is_numeric($value)) {
+                    return (int) $value > 0 ? 'yes' : 'no';
+                }
+
+                $normalized = strtolower(trim((string) $value));
+
+                return in_array($normalized, ['1', 'yes', 'true', 'on'], true) ? 'yes' : 'no';
+            },
+            'default' => 'yes',
+        ]);
+
         add_settings_section(
             'fp_exp_section_general',
             esc_html__('General', 'fp-experiences'),
@@ -235,6 +257,18 @@ final class SettingsPage
                 'description' => esc_html__('Secondary address to receive staff notifications.', 'fp-experiences'),
             ]
         );
+
+        add_settings_field(
+            'fp_exp_enable_meeting_points',
+            esc_html__('Meeting points module', 'fp-experiences'),
+            [$this, 'render_toggle_field'],
+            'fp_exp_settings_general',
+            'fp_exp_section_general',
+            [
+                'option' => 'fp_exp_enable_meeting_points',
+                'label' => esc_html__('Enable meeting points management and widgets.', 'fp-experiences'),
+            ]
+        );
     }
 
     private function register_branding_settings(): void
@@ -262,6 +296,27 @@ final class SettingsPage
                 $field
             );
         }
+    }
+
+    /**
+     * @param array<string, mixed> $args
+     */
+    public function render_toggle_field(array $args): void
+    {
+        $option = $args['option'] ?? '';
+        $label = $args['label'] ?? '';
+
+        if (! $option) {
+            return;
+        }
+
+        $value = get_option($option, 'yes');
+        $checked = in_array($value, ['yes', '1', 'true', 1, true], true);
+
+        echo '<label class="fp-exp-settings__toggle">';
+        echo '<input type="checkbox" name="' . esc_attr($option) . '" value="yes" ' . checked(true, $checked, false) . ' />';
+        echo ' <span>' . esc_html($label) . '</span>';
+        echo '</label>';
     }
 
     private function register_tracking_settings(): void

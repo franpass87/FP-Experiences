@@ -13,6 +13,9 @@ use function get_post_meta;
 use function get_transient;
 use function in_array;
 use function is_array;
+use function is_bool;
+use function is_numeric;
+use function is_string;
 use function json_decode;
 use function sanitize_text_field;
 use function set_transient;
@@ -160,6 +163,27 @@ final class Helpers
         }
 
         return ! empty($settings['block_capacity']);
+    }
+
+    public static function meeting_points_enabled(): bool
+    {
+        $value = get_option('fp_exp_enable_meeting_points', 'yes');
+
+        if (is_bool($value)) {
+            return $value;
+        }
+
+        if (is_numeric($value)) {
+            return (int) $value > 0;
+        }
+
+        if (is_string($value)) {
+            $normalized = strtolower(trim($value));
+
+            return ! in_array($normalized, ['0', 'no', 'off', 'false', ''], true);
+        }
+
+        return (bool) $value;
     }
 
     /**

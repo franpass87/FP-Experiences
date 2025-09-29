@@ -9,6 +9,7 @@ use DateTimeInterface;
 use DateTimeZone;
 use Exception;
 use FP_Exp\Booking\Slots;
+use FP_Exp\MeetingPoints\Repository;
 use FP_Exp\Utils\Helpers;
 use FP_Exp\Utils\Theme;
 use WP_Error;
@@ -91,7 +92,7 @@ final class WidgetShortcode extends BaseShortcode
         $tickets = $this->prepare_tickets(get_post_meta($experience_id, '_fp_ticket_types', true));
         $addons = $this->prepare_addons(get_post_meta($experience_id, '_fp_addons', true));
         $highlights = get_post_meta($experience_id, '_fp_highlights', true);
-        $meeting_point = sanitize_text_field((string) get_post_meta($experience_id, '_fp_meeting_point', true));
+        $meeting_point = Repository::get_primary_summary_for_experience($experience_id);
         $duration = absint((string) get_post_meta($experience_id, '_fp_duration_minutes', true));
         $languages = get_post_meta($experience_id, '_fp_languages', true);
 
