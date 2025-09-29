@@ -25,6 +25,7 @@ $marketing_id = $scope_class . '-consent-marketing';
 $privacy_id = $scope_class . '-consent-privacy';
 
 $display_context = isset($display_context) ? (string) $display_context : '';
+$config_version = isset($config_version) ? (string) $config_version : '';
 
 $dataset = [
     'experienceId' => $experience['id'],
@@ -38,6 +39,7 @@ $dataset = [
     'rtb' => $rtb,
     'nonce' => $rtb_nonce,
     'displayContext' => $display_context,
+    'version' => $config_version,
 ];
 
 $container_class = 'fp-exp fp-exp-widget ' . esc_attr($scope_class);
@@ -54,6 +56,7 @@ $rtb_submit_label = 'pay_later' === $rtb_mode
     data-config="<?php echo esc_attr(wp_json_encode($dataset)); ?>"
     data-sticky="<?php echo esc_attr($behavior['sticky'] ? '1' : '0'); ?>"
     data-display-context="<?php echo esc_attr($display_context); ?>"
+    data-config-version="<?php echo esc_attr($config_version); ?>"
 >
     <div class="fp-exp-widget__header">
         <h2 class="fp-exp-widget__title"><?php echo esc_html($experience['title']); ?></h2>

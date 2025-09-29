@@ -8,9 +8,11 @@ use FP_Exp\Utils\Helpers;
 use FP_Exp\Utils\Theme;
 
 use function admin_url;
+use function filemtime;
 use function function_exists;
 use function get_woocommerce_currency;
 use function get_option;
+use function is_readable;
 use function is_string;
 use function trailingslashit;
 use function wp_add_inline_style;
@@ -78,13 +80,13 @@ final class Assets
         $front_js = trailingslashit(FP_EXP_PLUGIN_URL) . 'assets/js/front.js';
         $checkout_js = trailingslashit(FP_EXP_PLUGIN_URL) . 'assets/js/checkout.js';
 
-        wp_register_style('fp-exp-front', $style_url, [], FP_EXP_VERSION);
+        wp_register_style('fp-exp-front', $style_url, [], $this->asset_version('assets/css/front.css'));
 
         wp_register_script(
             'fp-exp-front',
             $front_js,
             ['wp-i18n'],
-            FP_EXP_VERSION,
+            $this->asset_version('assets/js/front.js'),
             true
         );
 
@@ -92,7 +94,7 @@ final class Assets
             'fp-exp-checkout',
             $checkout_js,
             ['fp-exp-front'],
-            FP_EXP_VERSION,
+            $this->asset_version('assets/js/checkout.js'),
             true
         );
 
@@ -121,5 +123,19 @@ final class Assets
                 'tracking' => Helpers::tracking_config(),
             ]
         );
+    }
+
+    private function asset_version(string $relative): string
+    {
+        $path = trailingslashit(FP_EXP_PLUGIN_DIR) . ltrim($relative, '/');
+
+        if (is_readable($path)) {
+            $mtime = filemtime($path);
+            if (false !== $mtime) {
+                return (string) $mtime;
+            }
+        }
+
+        return FP_EXP_VERSION;
     }
 }

@@ -11,15 +11,26 @@ $email = $meeting_point['email'] ?? '';
 $opening_hours = $meeting_point['opening_hours'] ?? '';
 $lat = isset($meeting_point['lat']) && '' !== $meeting_point['lat'] ? $meeting_point['lat'] : null;
 $lng = isset($meeting_point['lng']) && '' !== $meeting_point['lng'] ? $meeting_point['lng'] : null;
+$map_url = '';
+
+if (null !== $lat && null !== $lng) {
+    $map_url = 'https://www.google.com/maps/search/?api=1&query=' . rawurlencode((string) $lat . ',' . (string) $lng);
+} elseif ($address) {
+    $map_url = 'https://www.google.com/maps/search/?api=1&query=' . rawurlencode((string) $address);
+}
 ?>
 <div class="fp-exp-meeting-point" data-fp-meeting-point data-address="<?php echo esc_attr((string) $address); ?>" data-lat="<?php echo esc_attr(null === $lat ? '' : (string) $lat); ?>" data-lng="<?php echo esc_attr(null === $lng ? '' : (string) $lng); ?>">
     <h3 class="fp-exp-meeting-point__title"><?php echo esc_html((string) ($meeting_point['title'] ?? '')); ?></h3>
-    <?php if ($address) : ?>
+    <?php if ($address || $map_url) : ?>
         <p class="fp-exp-meeting-point__address">
-            <span><?php echo esc_html((string) $address); ?></span>
-            <a href="#" class="fp-exp-meeting-point__map-link" data-fp-map-link target="_blank" rel="noopener">
-                <?php esc_html_e('Apri in Maps', 'fp-experiences'); ?>
-            </a>
+            <?php if ($address) : ?>
+                <span><?php echo esc_html((string) $address); ?></span>
+            <?php endif; ?>
+            <?php if ($map_url) : ?>
+                <a href="<?php echo esc_url($map_url); ?>" class="fp-exp-meeting-point__map-link" data-fp-map-link target="_blank" rel="noopener">
+                    <?php esc_html_e('Apri in Maps', 'fp-experiences'); ?>
+                </a>
+            <?php endif; ?>
         </p>
     <?php endif; ?>
 
