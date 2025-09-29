@@ -274,6 +274,14 @@ final class ExperienceCPT
                 'items' => 'object',
                 'default' => [],
             ],
+            '_fp_exp_pricing' => [
+                'type' => 'object',
+                'default' => [],
+            ],
+            '_fp_exp_availability' => [
+                'type' => 'object',
+                'default' => [],
+            ],
             '_fp_base_price' => [
                 'type' => 'number',
                 'default' => 0.0,
