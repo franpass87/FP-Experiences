@@ -51,6 +51,10 @@ Six Elementor widgets mirror the shortcodes: List, Widget, Calendar, Checkout, M
 * **Calendar** – Google OAuth client credentials, redirect URI, connect/disconnect, target calendar.
 * **Tools** – Brevo resync, event replay, REST API ping, meeting point CSV import, and cache/log clearance with rate-limited REST endpoints.
 
+== Admin UX ==
+
+The Experience edit screen now groups meta fields into accessible tabs (“Dettagli”, “Biglietti & Prezzi”, “Calendario & Slot”, “Meeting Point”, “Extra”, “Policy/FAQ”, “SEO/Schema”) with a sticky navigation bar. Ticket types and add-ons use drag-and-drop repeaters with inline validation, tooltips, and non-blocking warnings when no ticket is configured. The tabs support deep linking, focus management, and keyboard navigation while keeping the original `_fp_*` meta keys untouched.
+
 == Hooks ==
 
 Filters:

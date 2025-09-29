@@ -14,8 +14,6 @@ final class Manager
 
     private ?MeetingPointMetaBoxes $meta_boxes = null;
 
-    private ?ExperienceMetaBox $experience_meta_box = null;
-
     private ?MeetingPointImporter $importer = null;
 
     public function __construct()
@@ -25,7 +23,6 @@ final class Manager
 
         if (is_admin()) {
             $this->meta_boxes = new MeetingPointMetaBoxes();
-            $this->experience_meta_box = new ExperienceMetaBox();
             $this->importer = new MeetingPointImporter();
         }
     }
@@ -37,10 +34,6 @@ final class Manager
 
         if ($this->meta_boxes instanceof MeetingPointMetaBoxes) {
             $this->meta_boxes->register_hooks();
-        }
-
-        if ($this->experience_meta_box instanceof ExperienceMetaBox) {
-            $this->experience_meta_box->register_hooks();
         }
 
         if ($this->importer instanceof MeetingPointImporter) {

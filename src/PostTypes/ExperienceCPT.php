@@ -225,6 +225,12 @@ final class ExperienceCPT
                 'items' => 'string',
                 'default' => [],
             ],
+            '_fp_what_to_bring' => [
+                'type' => 'string',
+            ],
+            '_fp_notes' => [
+                'type' => 'string',
+            ],
             '_fp_faq' => [
                 'type' => 'array',
                 'items' => 'object',
@@ -308,6 +314,15 @@ final class ExperienceCPT
                 'default' => [],
             ],
             '_fp_policy_cancel' => [
+                'type' => 'string',
+            ],
+            '_fp_meta_title' => [
+                'type' => 'string',
+            ],
+            '_fp_meta_description' => [
+                'type' => 'string',
+            ],
+            '_fp_schema_manual' => [
                 'type' => 'string',
             ],
             '_fp_gallery_ids' => [
