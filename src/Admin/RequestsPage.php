@@ -12,7 +12,6 @@ use function absint;
 use function add_action;
 use function add_query_arg;
 use function add_settings_error;
-use function add_submenu_page;
 use function admin_url;
 use function check_admin_referer;
 use function current_time;
@@ -50,25 +49,12 @@ final class RequestsPage
 
     public function register_hooks(): void
     {
-        add_action('admin_menu', [$this, 'register_menu']);
         add_action('admin_init', [$this, 'maybe_handle_action']);
-    }
-
-    public function register_menu(): void
-    {
-        add_submenu_page(
-            'fp-exp-settings',
-            esc_html__('Requests', 'fp-experiences'),
-            esc_html__('Requests', 'fp-experiences'),
-            'fp_exp_manage_requests',
-            'fp-exp-requests',
-            [$this, 'render_page']
-        );
     }
 
     public function maybe_handle_action(): void
     {
-        if (! current_user_can('fp_exp_manage_requests')) {
+        if (! current_user_can('fp_exp_operate')) {
             return;
         }
 
@@ -120,12 +106,9 @@ final class RequestsPage
         $stored = get_settings_errors('fp_exp_rtb_requests');
         set_transient('fp_exp_rtb_requests_notices', $stored, 30);
 
-        $redirect = add_query_arg(
-            [
-                'page' => 'fp-exp-requests',
-            ],
-            admin_url('admin.php')
-        );
+        $redirect = add_query_arg([
+            'page' => 'fp_exp_requests',
+        ], admin_url('admin.php'));
 
         wp_safe_redirect($redirect);
         exit;
@@ -133,7 +116,7 @@ final class RequestsPage
 
     public function render_page(): void
     {
-        if (! current_user_can('fp_exp_manage_requests')) {
+        if (! current_user_can('fp_exp_operate')) {
             return;
         }
 
@@ -176,7 +159,7 @@ final class RequestsPage
         echo '<h1>' . esc_html__('Request-to-Book', 'fp-experiences') . '</h1>';
 
         echo '<form method="get" class="fp-exp-requests__filters">';
-        echo '<input type="hidden" name="page" value="fp-exp-requests" />';
+        echo '<input type="hidden" name="page" value="fp_exp_requests" />';
         echo '<label for="fp-exp-requests-status">' . esc_html__('Filter by status', 'fp-experiences') . '</label> ';
         echo '<select id="fp-exp-requests-status" name="status">';
         $options = ['all' => esc_html__('All statuses', 'fp-experiences')] + $statuses;

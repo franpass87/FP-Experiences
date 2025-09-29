@@ -11,6 +11,6 @@
 - ICS attachments continue to ship regardless of calendar connectivity.
 
 ## Diagnostics
-- `fp-exp/v1/ping` GET endpoint is available to capability holders (`fp_exp_manage_tools`) for quick REST health checks.
+- `fp-exp/v1/ping` GET endpoint is available to capability holders (`fp_exp_manage`) for quick REST health checks.
 
 Next phase: A8 — Functional flows (smoke tests).

@@ -44,6 +44,19 @@ The `sections` attribute accepts a comma-separated list of sections to render (h
 
 Six Elementor widgets mirror the shortcodes: List, Widget, Calendar, Checkout, Meeting Points, and the new Experience Page layout. The List widget now bundles the full showcase controls (filters, search, ordering, map toggle, CTA behaviour) plus responsive style controls for columns, card spacing, and badge/price visibility. Each widget exposes theming overrides (colors, radius, fonts) alongside behavioural toggles (sticky mode, inline calendar, consent defaults). The Experience Page widget lets editors pick sections to display and toggle the sticky availability bar while reusing the `[fp_exp_page]` shortcode under the hood.
 
+== Admin menu ==
+
+* **Dashboard** — visione rapida di KPI e ordini (solo ruoli con `fp_exp_manage`).
+* **Esperienze** / **Nuova esperienza** — gestiscono il CPT `fp_experience` (`edit_fp_experiences`).
+* **Meeting point** — appare quando l'opzione è attiva; richiede `fp_exp_manage`.
+* **Calendario**, **Richieste**, **Check-in** — strumenti operativi per chi possiede `fp_exp_operate`.
+* **Ordini** — scorciatoia agli ordini WooCommerce filtrati (necessita sia `fp_exp_manage` che `manage_woocommerce`).
+* **Impostazioni**, **Tools**, **Logs** — pannelli amministrativi riservati ai manager (`fp_exp_manage`).
+* **Guida & Shortcode** — documentazione interna accessibile a tutti i ruoli FP (`fp_exp_guide`).
+* **Crea pagina esperienza** — azione rapida per generare una pagina con shortcode (`fp_exp_manage`).
+
+La voce di menu viene replicata anche nella toolbar con collegamenti rapidi (Nuova esperienza, Calendario, Richieste, Impostazioni).
+
 == Settings & Tools ==
 
 * **General** – Structure and webmaster emails, locale preferences, VAT class filters, meeting points toggle.

@@ -55,10 +55,10 @@ final class MeetingPointImporter
         }
 
         add_submenu_page(
-            'fp-exp-settings',
+            'fp_exp_dashboard',
             esc_html__('Import Meeting Points', 'fp-experiences'),
             esc_html__('Import Meeting Points', 'fp-experiences'),
-            'manage_options',
+            'fp_exp_manage',
             'fp-exp-meeting-points-import',
             [$this, 'render_page']
         );
@@ -66,7 +66,7 @@ final class MeetingPointImporter
 
     public function render_page(): void
     {
-        if (! current_user_can('manage_options')) {
+        if (! current_user_can('fp_exp_manage')) {
             wp_die(esc_html__('You do not have permission to access this page.', 'fp-experiences'));
         }
 
@@ -103,7 +103,7 @@ final class MeetingPointImporter
             wp_die(esc_html__('Meeting points are disabled.', 'fp-experiences'));
         }
 
-        if (! current_user_can('manage_options')) {
+        if (! current_user_can('fp_exp_manage')) {
             wp_die(esc_html__('You do not have permission to import meeting points.', 'fp-experiences'));
         }
 

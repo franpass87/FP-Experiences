@@ -41,17 +41,33 @@ final class Activation
 
     private static function register_roles(): void
     {
-        $manager_caps = [
-            'read' => true,
-            'fp_exp_manage_settings' => true,
-            'fp_exp_manage_bookings' => true,
-            'fp_exp_manage_calendar' => true,
-            'fp_exp_manual_bookings' => true,
-            'fp_exp_manage_tools' => true,
-            'fp_exp_manage_requests' => true,
-            'fp_exp_view_assignments' => true,
-            'fp_exp_handle_checkins' => true,
+        $experience_caps = [
+            'edit_fp_experience' => true,
+            'read_fp_experience' => true,
+            'delete_fp_experience' => true,
+            'edit_fp_experiences' => true,
+            'edit_others_fp_experiences' => true,
+            'publish_fp_experiences' => true,
+            'read_private_fp_experiences' => true,
+            'delete_fp_experiences' => true,
+            'delete_others_fp_experiences' => true,
+            'delete_private_fp_experiences' => true,
+            'delete_published_fp_experiences' => true,
+            'edit_private_fp_experiences' => true,
+            'edit_published_fp_experiences' => true,
         ];
+
+        $manager_caps = array_merge(
+            [
+                'read' => true,
+                'edit_posts' => true,
+                'upload_files' => true,
+                'fp_exp_manage' => true,
+                'fp_exp_operate' => true,
+                'fp_exp_guide' => true,
+            ],
+            $experience_caps
+        );
 
         add_role(
             'fp_exp_manager',
@@ -59,14 +75,15 @@ final class Activation
             $manager_caps
         );
 
-        $operator_caps = [
-            'read' => true,
-            'fp_exp_manage_bookings' => true,
-            'fp_exp_manage_calendar' => true,
-            'fp_exp_manual_bookings' => true,
-            'fp_exp_manage_requests' => true,
-            'fp_exp_handle_checkins' => true,
-        ];
+        $operator_caps = array_merge(
+            [
+                'read' => true,
+                'edit_posts' => true,
+                'fp_exp_operate' => true,
+                'fp_exp_guide' => true,
+            ],
+            $experience_caps
+        );
 
         add_role(
             'fp_exp_operator',
@@ -76,7 +93,7 @@ final class Activation
 
         $guide_caps = [
             'read' => true,
-            'fp_exp_view_assignments' => true,
+            'fp_exp_guide' => true,
         ];
 
         add_role(

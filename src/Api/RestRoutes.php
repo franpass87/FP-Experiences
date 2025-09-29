@@ -45,7 +45,7 @@ final class RestRoutes
             [
                 'methods' => 'GET',
                 'permission_callback' => static function (): bool {
-                    return current_user_can('fp_exp_manage_calendar');
+                    return current_user_can('fp_exp_operate');
                 },
                 'callback' => [$this, 'get_calendar_slots'],
                 'args' => [
@@ -75,7 +75,7 @@ final class RestRoutes
             [
                 'methods' => 'POST',
                 'permission_callback' => static function (): bool {
-                    return current_user_can('fp_exp_manage_calendar');
+                    return current_user_can('fp_exp_operate');
                 },
                 'callback' => [$this, 'move_calendar_slot'],
                 'args' => [
@@ -97,7 +97,7 @@ final class RestRoutes
             [
                 'methods' => 'POST',
                 'permission_callback' => static function (): bool {
-                    return current_user_can('fp_exp_manage_calendar');
+                    return current_user_can('fp_exp_operate');
                 },
                 'callback' => [$this, 'update_slot_capacity'],
             ]
@@ -109,7 +109,7 @@ final class RestRoutes
             [
                 'methods' => 'POST',
                 'permission_callback' => static function (): bool {
-                    return current_user_can('fp_exp_manage_tools');
+                    return current_user_can('fp_exp_manage');
                 },
                 'callback' => [$this, 'tool_resync_brevo'],
             ]
@@ -121,7 +121,7 @@ final class RestRoutes
             [
                 'methods' => 'POST',
                 'permission_callback' => static function (): bool {
-                    return current_user_can('fp_exp_manage_tools');
+                    return current_user_can('fp_exp_manage');
                 },
                 'callback' => [$this, 'tool_replay_events'],
             ]
@@ -133,7 +133,7 @@ final class RestRoutes
             [
                 'methods' => 'POST',
                 'permission_callback' => static function (): bool {
-                    return current_user_can('fp_exp_manage_tools');
+                    return current_user_can('fp_exp_manage');
                 },
                 'callback' => [$this, 'tool_ping'],
             ]
@@ -145,7 +145,7 @@ final class RestRoutes
             [
                 'methods' => 'POST',
                 'permission_callback' => static function (): bool {
-                    return current_user_can('fp_exp_manage_tools');
+                    return current_user_can('fp_exp_manage');
                 },
                 'callback' => [$this, 'tool_clear_cache'],
             ]

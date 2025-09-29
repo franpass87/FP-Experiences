@@ -46,8 +46,8 @@
     }
   },
   "rebuild": {
-    "feature": "listing",
-    "step": "DOCS"
+    "feature": "admin-menu",
+    "step": "POLISH"
   },
   "verify_current": "FRONT-BINDING"
 }
