@@ -1,0 +1,48 @@
+{
+  "current": "14",
+  "ok": true,
+  "notes": "api-webhooks ok",
+  "audit_current": "A2",
+  "audit": {
+    "A0": {
+      "ok": true,
+      "notes": "Inventory recorded"
+    },
+    "A1": {
+      "ok": true,
+      "notes": "PHPCS config + lint cleanup"
+    },
+    "A2": {
+      "ok": true,
+      "notes": "Security audit refreshed with public submission rate limiting"
+    },
+    "A3": {
+      "ok": true,
+      "notes": "Privacy documented"
+    },
+    "A4": {
+      "ok": true,
+      "notes": "Performance audit recorded"
+    },
+    "A5": {
+      "ok": true,
+      "notes": "Accessibility tweaks recorded"
+    },
+    "A6": {
+      "ok": true,
+      "notes": "Tracking audit complete"
+    },
+    "A7": {
+      "ok": true,
+      "notes": "Integrations audit recorded"
+    },
+    "A8": {
+      "ok": true,
+      "notes": "Functional review complete"
+    },
+    "A9": {
+      "ok": true,
+      "notes": "Documentation & checklist updated"
+    }
+  }
+}

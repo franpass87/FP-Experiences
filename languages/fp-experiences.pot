@@ -1,0 +1,310 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: FP Experiences 0.1.0\\n"
+"Report-Msgid-Bugs-To: https://francescopasseri.com\\n"
+"POT-Creation-Date: 2024-01-01 00:00:00+00:00\\n"
+"MIME-Version: 1.0\\n"
+"Content-Type: text/plain; charset=UTF-8\\n"
+"Content-Transfer-Encoding: 8bit\\n"
+"X-Generator: Codex\\n"
+"X-Domain: fp-experiences\\n"
+
+#: fp-experiences.php:0
+msgid "FP Experiences"
+msgstr ""
+
+#: src/Admin/SettingsPage.php
+msgid "FP Experiences Settings"
+msgstr ""
+
+#: src/Admin/SettingsPage.php
+msgid "General"
+msgstr ""
+
+#: src/Admin/SettingsPage.php
+msgid "Branding"
+msgstr ""
+
+#: src/Admin/SettingsPage.php
+msgid "Tracking"
+msgstr ""
+
+#: src/Admin/SettingsPage.php
+msgid "Structure email"
+msgstr ""
+
+#: src/Admin/SettingsPage.php
+msgid "Webmaster email"
+msgstr ""
+
+#: src/Admin/SettingsPage.php
+msgid "Primary color"
+msgstr ""
+
+#: src/Admin/SettingsPage.php
+msgid "Secondary color"
+msgstr ""
+
+#: src/Admin/SettingsPage.php
+msgid "Accent color"
+msgstr ""
+
+#: src/Admin/SettingsPage.php
+msgid "Preferred font family"
+msgstr ""
+
+#: src/Admin/CalendarAdmin.php
+msgid "Calendar & Manual Booking"
+msgstr ""
+
+#: src/Admin/CalendarAdmin.php
+msgid "Calendar"
+msgstr ""
+
+#: src/Admin/CalendarAdmin.php
+msgid "Manual Booking"
+msgstr ""
+
+#: src/Admin/CalendarAdmin.php
+msgid "Manual booking created. Share the payment link: %s"
+msgstr ""
+
+#: src/Admin/CalendarAdmin.php
+msgid "Reservation"
+msgstr ""
+
+#: src/Admin/CalendarAdmin.php
+msgid "Experience"
+msgstr ""
+
+#: src/Admin/CalendarAdmin.php
+msgid "Date"
+msgstr ""
+
+#: src/Admin/CalendarAdmin.php
+msgid "Guests"
+msgstr ""
+
+#: src/Admin/LogsPage.php
+msgid "Logs & Diagnostics"
+msgstr ""
+
+#: src/Admin/LogsPage.php
+msgid "Logs"
+msgstr ""
+
+#: src/Admin/LogsPage.php
+msgid "FP Experiences Logs"
+msgstr ""
+
+#: src/Admin/LogsPage.php
+msgid "Clear logs"
+msgstr ""
+
+#: src/Admin/LogsPage.php
+msgid "Diagnostics"
+msgstr ""
+
+#: src/Admin/SettingsPage.php
+msgid "Tools"
+msgstr ""
+
+#: src/Admin/SettingsPage.php
+msgid "Run diagnostic and recovery actions. These operations execute immediately and their results are logged for auditing."
+msgstr ""
+
+#: src/Admin/SettingsPage.php
+msgid "Running action…"
+msgstr ""
+
+#: src/Admin/SettingsPage.php
+msgid "Action completed successfully."
+msgstr ""
+
+#: src/Admin/SettingsPage.php
+msgid "Action failed. Check the logs for details."
+msgstr ""
+
+#: src/Admin/SettingsPage.php
+msgid "Resynchronise Brevo"
+msgstr ""
+
+#: src/Admin/SettingsPage.php
+msgid "Push pending reservations, marketing attributes, and tags to Brevo."
+msgstr ""
+
+#: src/Admin/SettingsPage.php
+msgid "Run Brevo sync"
+msgstr ""
+
+#: src/Admin/SettingsPage.php
+msgid "Replay lifecycle events"
+msgstr ""
+
+#: src/Admin/SettingsPage.php
+msgid "Requeue reservation events for integrations that may have missed them."
+msgstr ""
+
+#: src/Admin/SettingsPage.php
+msgid "Replay events"
+msgstr ""
+
+#: src/Admin/SettingsPage.php
+msgid "Ping site REST API"
+msgstr ""
+
+#: src/Admin/SettingsPage.php
+msgid "Verify public availability of the WordPress REST API endpoint."
+msgstr ""
+
+#: src/Admin/SettingsPage.php
+msgid "Run ping test"
+msgstr ""
+
+#: src/Admin/SettingsPage.php
+msgid "Clear caches & logs"
+msgstr ""
+
+#: src/Admin/SettingsPage.php
+msgid "Purge plugin transients and truncate the internal log buffer."
+msgstr ""
+
+#: src/Admin/SettingsPage.php
+msgid "Clear caches"
+msgstr ""
+
+#: src/Admin/LogsPage.php
+msgid "Filter by channel"
+msgstr ""
+
+#: src/Admin/LogsPage.php
+msgid "All channels"
+msgstr ""
+
+#: src/Admin/LogsPage.php
+msgid "Search logs"
+msgstr ""
+
+#: src/Admin/LogsPage.php
+msgid "Filter"
+msgstr ""
+
+#: src/Admin/LogsPage.php
+msgid "Export CSV"
+msgstr ""
+
+#: src/Admin/CalendarAdmin.php
+msgid "Loading…"
+msgstr ""
+
+#: src/Admin/CalendarAdmin.php
+msgid "Loading calendar…"
+msgstr ""
+
+#: src/Admin/CalendarAdmin.php
+msgid "Month"
+msgstr ""
+
+#: src/Admin/CalendarAdmin.php
+msgid "Week"
+msgstr ""
+
+#: src/Admin/CalendarAdmin.php
+msgid "Day"
+msgstr ""
+
+#: src/Admin/CalendarAdmin.php
+msgid "Previous"
+msgstr ""
+
+#: src/Admin/CalendarAdmin.php
+msgid "Next"
+msgstr ""
+
+#: src/Admin/CalendarAdmin.php
+msgid "No slots scheduled for this period."
+msgstr ""
+
+#: src/Admin/CalendarAdmin.php
+msgid "New total capacity for this slot"
+msgstr ""
+
+#: src/Admin/CalendarAdmin.php
+msgid "Optional capacity override for %s (leave blank to keep current)"
+msgstr ""
+
+#: src/Admin/CalendarAdmin.php
+msgid "Move slot to %s at %s?"
+msgstr ""
+
+#: src/Admin/CalendarAdmin.php
+msgid "Slot updated successfully."
+msgstr ""
+
+#: src/Admin/CalendarAdmin.php
+msgid "Unable to update the slot. Please try again."
+msgstr ""
+
+#: src/Admin/CalendarAdmin.php
+msgid "Upcoming reservations:"
+msgstr ""
+
+#: src/Admin/CalendarAdmin.php
+msgid "guests"
+msgstr ""
+
+#: src/Admin/CalendarAdmin.php
+msgid "Pricing summary"
+msgstr ""
+
+#: src/Admin/CalendarAdmin.php
+msgid "Subtotal"
+msgstr ""
+
+#: src/Admin/CalendarAdmin.php
+msgid "Total"
+msgstr ""
+
+#: src/Admin/CalendarAdmin.php
+msgid "You do not have permission to create manual bookings."
+msgstr ""
+
+#: src/Api/RestRoutes.php
+msgid "Provide a valid date range."
+msgstr ""
+
+#: src/Api/RestRoutes.php
+msgid "Missing slot data."
+msgstr ""
+
+#: src/Api/RestRoutes.php
+msgid "Too many calendar changes in a short period. Please retry in a moment."
+msgstr ""
+
+#: src/Api/RestRoutes.php
+msgid "Unable to move the slot to the requested time."
+msgstr ""
+
+#: src/Api/RestRoutes.php
+msgid "Invalid slot identifier."
+msgstr ""
+
+#: src/Api/RestRoutes.php
+msgid "Please wait before adjusting capacity again."
+msgstr ""
+
+#: src/Api/RestRoutes.php
+msgid "Unable to update capacity. Check reservations before lowering limits."
+msgstr ""
+
+#: src/Api/RestRoutes.php
+msgid "Please wait before running the Brevo sync again."
+msgstr ""
+
+#: src/Api/RestRoutes.php
+msgid "Event replay recently executed. Please retry shortly."
+msgstr ""
+
+#: src/Api/RestRoutes.php
+msgid "Cache already cleared recently. Try again in a moment."
+msgstr ""
