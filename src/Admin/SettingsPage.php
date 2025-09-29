@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace FP_Exp\Admin;
 
+use FP_Exp\Utils\Helpers;
 use FP_Exp\Utils\Logger;
 use FP_Exp\Utils\Theme;
 
@@ -102,6 +103,7 @@ final class SettingsPage
     {
         $this->register_general_settings();
         $this->register_branding_settings();
+        $this->register_listing_settings();
         $this->register_tracking_settings();
         $this->register_rtb_settings();
         $this->register_brevo_settings();
@@ -146,6 +148,9 @@ final class SettingsPage
             settings_fields('fp_exp_settings_branding');
             do_settings_sections('fp_exp_settings_branding');
             $this->render_branding_contrast();
+        } elseif ('listing' === $active_tab) {
+            settings_fields('fp_exp_settings_listing');
+            do_settings_sections('fp_exp_settings_listing');
         } elseif ('tracking' === $active_tab) {
             settings_fields('fp_exp_settings_tracking');
             do_settings_sections('fp_exp_settings_tracking');
@@ -293,6 +298,33 @@ final class SettingsPage
                 [$this, 'render_branding_field'],
                 'fp_exp_settings_branding',
                 'fp_exp_section_branding',
+                $field
+            );
+        }
+    }
+
+    private function register_listing_settings(): void
+    {
+        register_setting('fp_exp_settings_listing', 'fp_exp_listing', [
+            'type' => 'array',
+            'sanitize_callback' => [$this, 'sanitize_listing'],
+            'default' => [],
+        ]);
+
+        add_settings_section(
+            'fp_exp_section_listing',
+            esc_html__('Showcase defaults', 'fp-experiences'),
+            [$this, 'render_listing_help'],
+            'fp_exp_settings_listing'
+        );
+
+        foreach ($this->get_listing_fields() as $field) {
+            add_settings_field(
+                'fp_exp_listing_' . $field['key'],
+                esc_html($field['label']),
+                [$this, 'render_listing_field'],
+                'fp_exp_settings_listing',
+                'fp_exp_section_listing',
                 $field
             );
         }
@@ -525,6 +557,7 @@ final class SettingsPage
         return [
             'general' => esc_html__('General', 'fp-experiences'),
             'branding' => esc_html__('Branding', 'fp-experiences'),
+            'listing' => esc_html__('Showcase', 'fp-experiences'),
             'tracking' => esc_html__('Tracking', 'fp-experiences'),
             'rtb' => esc_html__('Request-to-Book', 'fp-experiences'),
             'brevo' => esc_html__('Brevo', 'fp-experiences'),
@@ -629,6 +662,11 @@ final class SettingsPage
         echo '<p>' . esc_html__('Dark mode can be applied automatically or when wrapping the shortcode output with the .fp-theme-dark class.', 'fp-experiences') . '</p>';
     }
 
+    public function render_listing_help(): void
+    {
+        echo '<p>' . esc_html__('Set the default filters, ordering, and card badges used by the experiences listing shortcode and Elementor widget.', 'fp-experiences') . '</p>';
+    }
+
     public function render_tracking_help(): void
     {
         echo '<p>' . esc_html__('Provide tracking IDs for each enabled channel. Scripts only load when consent is granted and the channel toggle is enabled.', 'fp-experiences') . '</p>';
@@ -691,6 +729,71 @@ final class SettingsPage
             ['key' => 'radius', 'label' => esc_html__('Border radius', 'fp-experiences'), 'type' => 'text', 'placeholder' => '12px'],
             ['key' => 'shadow', 'label' => esc_html__('Shadow', 'fp-experiences'), 'type' => 'text', 'placeholder' => '0 10px 30px rgba(0,0,0,0.08)'],
             ['key' => 'font', 'label' => esc_html__('Preferred font family', 'fp-experiences'), 'type' => 'text', 'placeholder' => '"Red Hat Display", sans-serif'],
+        ];
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private function get_listing_fields(): array
+    {
+        return [
+            [
+                'key' => 'per_page',
+                'type' => 'number',
+                'label' => esc_html__('Experiences per page', 'fp-experiences'),
+                'min' => 3,
+                'description' => esc_html__('Default number of cards displayed before pagination.', 'fp-experiences'),
+            ],
+            [
+                'key' => 'filters',
+                'type' => 'multicheck',
+                'label' => esc_html__('Enabled filters', 'fp-experiences'),
+                'options' => $this->get_listing_filter_options(),
+                'description' => esc_html__('Choose which filters appear in the showcase search form.', 'fp-experiences'),
+            ],
+            [
+                'key' => 'orderby',
+                'type' => 'select',
+                'label' => esc_html__('Default sort order', 'fp-experiences'),
+                'options' => [
+                    'menu_order' => esc_html__('Manual order', 'fp-experiences'),
+                    'date' => esc_html__('Publish date', 'fp-experiences'),
+                    'title' => esc_html__('Title', 'fp-experiences'),
+                    'price' => esc_html__('Price (lowest first)', 'fp-experiences'),
+                ],
+            ],
+            [
+                'key' => 'order',
+                'type' => 'select',
+                'label' => esc_html__('Default direction', 'fp-experiences'),
+                'options' => [
+                    'ASC' => esc_html__('Ascending', 'fp-experiences'),
+                    'DESC' => esc_html__('Descending', 'fp-experiences'),
+                ],
+            ],
+            [
+                'key' => 'show_price_from',
+                'type' => 'toggle',
+                'label' => esc_html__('Display “price from” badge', 'fp-experiences'),
+                'description' => esc_html__('Show the lowest available ticket price on each card by default.', 'fp-experiences'),
+            ],
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function get_listing_filter_options(): array
+    {
+        return [
+            'search' => esc_html__('Search', 'fp-experiences'),
+            'theme' => esc_html__('Theme', 'fp-experiences'),
+            'language' => esc_html__('Language', 'fp-experiences'),
+            'duration' => esc_html__('Duration', 'fp-experiences'),
+            'price' => esc_html__('Price range', 'fp-experiences'),
+            'family' => esc_html__('Family-friendly', 'fp-experiences'),
+            'date' => esc_html__('Date picker', 'fp-experiences'),
         ];
     }
 
@@ -1048,6 +1151,49 @@ final class SettingsPage
         }
     }
 
+    public function render_listing_field(array $field): void
+    {
+        $settings = get_option('fp_exp_listing', []);
+        $settings = is_array($settings) ? $settings : [];
+        $defaults = Helpers::listing_settings();
+
+        $key = $field['key'];
+        $value = $settings[$key] ?? ($defaults[$key] ?? '');
+
+        if ('number' === $field['type']) {
+            $min = isset($field['min']) ? absint((int) $field['min']) : 1;
+            echo '<input type="number" class="small-text" name="fp_exp_listing[' . esc_attr($key) . ']" value="' . esc_attr((string) $value) . '" min="' . esc_attr((string) $min) . '" />';
+        } elseif ('select' === $field['type']) {
+            echo '<select name="fp_exp_listing[' . esc_attr($key) . ']">';
+            foreach ($field['options'] as $option_value => $label) {
+                $selected = ((string) $value === (string) $option_value) ? 'selected' : '';
+                echo '<option value="' . esc_attr((string) $option_value) . '" ' . $selected . '>' . esc_html($label) . '</option>';
+            }
+            echo '</select>';
+        } elseif ('multicheck' === $field['type']) {
+            $active = is_array($value) ? $value : [];
+            echo '<div class="fp-exp-settings__checkbox-group">';
+            foreach ($field['options'] as $option_value => $label) {
+                $checked = in_array($option_value, $active, true);
+                echo '<label class="fp-exp-settings__checkbox">';
+                echo '<input type="checkbox" name="fp_exp_listing[' . esc_attr($key) . '][]" value="' . esc_attr((string) $option_value) . '" ' . checked($checked, true, false) . ' /> ';
+                echo '<span>' . esc_html($label) . '</span>';
+                echo '</label>';
+            }
+            echo '</div>';
+        } elseif ('toggle' === $field['type']) {
+            $checked = ! empty($value);
+            echo '<label class="fp-exp-settings__toggle">';
+            echo '<input type="checkbox" name="fp_exp_listing[' . esc_attr($key) . ']" value="1" ' . checked($checked, true, false) . ' />';
+            echo ' <span>' . esc_html__('Enabled', 'fp-experiences') . '</span>';
+            echo '</label>';
+        }
+
+        if (! empty($field['description'])) {
+            echo '<p class="description">' . esc_html($field['description']) . '</p>';
+        }
+    }
+
     public function render_rtb_field(array $field): void
     {
         $settings = get_option('fp_exp_rtb', []);
@@ -1313,6 +1459,60 @@ final class SettingsPage
         }
 
         return $sanitised;
+    }
+
+    /**
+     * @param mixed $value
+     * @return array<string, mixed>
+     */
+    public function sanitize_listing($value): array
+    {
+        $defaults = Helpers::listing_settings();
+
+        if (! is_array($value)) {
+            return $defaults;
+        }
+
+        $allowed_filters = array_keys($this->get_listing_filter_options());
+        $filters = [];
+
+        if (! empty($value['filters']) && is_array($value['filters'])) {
+            foreach ($value['filters'] as $filter) {
+                $filter_key = sanitize_key((string) $filter);
+                if (in_array($filter_key, $allowed_filters, true)) {
+                    $filters[] = $filter_key;
+                }
+            }
+        }
+
+        if (empty($filters)) {
+            $filters = $defaults['filters'];
+        }
+
+        $per_page = absint((int) ($value['per_page'] ?? $defaults['per_page']));
+        if ($per_page <= 0) {
+            $per_page = $defaults['per_page'];
+        }
+
+        $order = isset($value['order']) ? strtoupper(sanitize_key((string) $value['order'])) : $defaults['order'];
+        if (! in_array($order, ['ASC', 'DESC'], true)) {
+            $order = $defaults['order'];
+        }
+
+        $orderby = isset($value['orderby']) ? sanitize_key((string) $value['orderby']) : $defaults['orderby'];
+        if (! in_array($orderby, ['menu_order', 'date', 'title', 'price'], true)) {
+            $orderby = $defaults['orderby'];
+        }
+
+        $show_price_from = ! empty($value['show_price_from']);
+
+        return [
+            'filters' => array_values(array_unique($filters)),
+            'per_page' => $per_page,
+            'order' => $order,
+            'orderby' => $orderby,
+            'show_price_from' => $show_price_from,
+        ];
     }
 
     /**
