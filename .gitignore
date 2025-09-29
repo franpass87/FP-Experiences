@@ -1,0 +1,14 @@
+/vendor/
+/node_modules/
+*.map
+*.min.*
+*.zip
+*.png
+*.jpg
+*.gif
+*.woff*
+*.ttf
+*.otf
+*.pdf
+.DS_Store
+Thumbs.db

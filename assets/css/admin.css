@@ -1,0 +1,209 @@
+.fp-exp-calendar-admin .fp-exp-calendar {
+    position: relative;
+    margin-top: 20px;
+}
+
+.fp-exp-calendar.is-loading::after {
+    content: attr(data-loading-text);
+    position: absolute;
+    inset: 0;
+    background: rgba(255, 255, 255, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    color: #1d2327;
+}
+
+.fp-exp-calendar__loading {
+    padding: 40px;
+    text-align: center;
+    color: #50575e;
+}
+
+.fp-exp-calendar__error {
+    padding: 20px;
+    background: #fef2f2;
+    border: 1px solid #dc2626;
+    color: #7f1d1d;
+}
+
+.fp-exp-calendar__toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+}
+
+.fp-exp-calendar__nav {
+    display: flex;
+    gap: 8px;
+}
+
+.fp-exp-calendar__title {
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.fp-exp-calendar__views {
+    display: flex;
+    gap: 8px;
+}
+
+.fp-exp-calendar__inner {
+    background: #fff;
+    border: 1px solid #dcdcde;
+    border-radius: 6px;
+    padding: 16px;
+}
+
+.fp-exp-calendar__grid {
+    display: grid;
+    gap: 8px;
+}
+
+.fp-exp-calendar__grid--month {
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+}
+
+.fp-exp-calendar__grid--week,
+.fp-exp-calendar__grid--day {
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.fp-exp-calendar__row {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.fp-exp-calendar__row--header {
+    font-weight: 600;
+    color: #4b5563;
+}
+
+.fp-exp-calendar__cell {
+    position: relative;
+    min-height: 120px;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    padding: 8px;
+    background: #f9fafb;
+    overflow: hidden;
+}
+
+.fp-exp-calendar__cell.is-muted {
+    background: #f3f4f6;
+    color: #6b7280;
+}
+
+.fp-exp-calendar__cell.is-dragover {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.25);
+}
+
+.fp-exp-calendar__date {
+    font-size: 12px;
+    font-weight: 600;
+    color: #6b7280;
+}
+
+.fp-exp-calendar__slot {
+    margin-top: 8px;
+    padding: 8px;
+    border-radius: 6px;
+    background: #fff;
+    border: 1px solid #d1d5db;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+    cursor: grab;
+}
+
+.fp-exp-calendar__slot:active {
+    cursor: grabbing;
+}
+
+.fp-exp-calendar__slot-title {
+    display: block;
+    margin-bottom: 4px;
+    color: #111827;
+}
+
+.fp-exp-calendar__slot-time,
+.fp-exp-calendar__slot-capacity {
+    font-size: 12px;
+    color: #4b5563;
+}
+
+.fp-exp-calendar__slot-actions {
+    margin-top: 6px;
+    display: flex;
+    gap: 6px;
+    justify-content: flex-end;
+}
+
+.fp-exp-calendar__empty {
+    padding: 24px;
+    text-align: center;
+    color: #6b7280;
+}
+
+.fp-exp-tools {
+    margin-top: 24px;
+    background: #fff;
+    border: 1px solid #dcdcde;
+    border-radius: 6px;
+    padding: 24px;
+}
+
+.fp-exp-tools__grid {
+    display: grid;
+    gap: 16px;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    margin-top: 16px;
+}
+
+.fp-exp-tools__card {
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    padding: 16px;
+    background: #f9fafb;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.fp-exp-tools__card h3 {
+    margin: 0;
+    font-size: 16px;
+}
+
+.fp-exp-tools__card p {
+    margin: 0;
+    color: #4b5563;
+    flex-grow: 1;
+}
+
+.fp-exp-tools__output {
+    margin-top: 20px;
+    font-weight: 600;
+    color: #2563eb;
+}
+
+.fp-exp-contrast-notice {
+    margin-top: 16px;
+}
+
+.fp-exp-contrast-notice__list {
+    margin: 0.5rem 0 0;
+    padding-left: 1.5rem;
+}
+
+.fp-exp-contrast-notice__message {
+    margin: 0.5rem 0 0;
+}
+
+.fp-exp-contrast-notice[hidden] {
+    display: none;
+}
