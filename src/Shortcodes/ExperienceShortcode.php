@@ -41,6 +41,7 @@ use function is_numeric;
 use function sanitize_key;
 use function sanitize_text_field;
 use function trim;
+use function strtolower;
 use function wp_get_attachment_image_src;
 use function wp_get_attachment_image_srcset;
 use function wp_get_attachment_image_url;
@@ -83,6 +84,10 @@ final class ExperienceShortcode extends BaseShortcode
         'radius' => '',
         'shadow' => '',
         'font' => '',
+        'container' => '',
+        'max_width' => '',
+        'gutter' => '',
+        'sidebar' => '',
     ];
 
     /**
@@ -187,6 +192,10 @@ final class ExperienceShortcode extends BaseShortcode
             ],
         ];
 
+        $layout_defaults = $this->get_layout_defaults();
+        $layout = $this->resolve_layout($attributes, $layout_defaults);
+        $render_widget = 'none' !== $layout['sidebar'];
+
         $widget_atts = [
             'id' => (string) $experience_id,
             'sticky' => '0',
@@ -200,7 +209,9 @@ final class ExperienceShortcode extends BaseShortcode
             }
         }
 
-        $widget_html = do_shortcode('[fp_exp_widget ' . $this->build_shortcode_atts($widget_atts) . ']');
+        $widget_html = $render_widget
+            ? do_shortcode('[fp_exp_widget ' . $this->build_shortcode_atts($widget_atts) . ']')
+            : '';
 
         $sections_map = [
             'hero' => [
@@ -341,10 +352,11 @@ final class ExperienceShortcode extends BaseShortcode
             'sections' => $enabled_sections,
             'navigation' => $navigation,
             'meeting_points' => $meeting_data,
-            'sticky_widget' => in_array((string) $attributes['sticky_widget'], ['1', 'true', 'yes'], true),
+            'sticky_widget' => $render_widget && in_array((string) $attributes['sticky_widget'], ['1', 'true', 'yes'], true),
             'widget_html' => $widget_html,
             'schema_json' => $schema,
             'data_layer' => wp_json_encode($data_layer),
+            'layout' => $layout,
         ];
     }
 
@@ -383,6 +395,103 @@ final class ExperienceShortcode extends BaseShortcode
         ]);
 
         return 0;
+    }
+
+    /**
+     * @param array<string, mixed> $attributes
+     * @param array<string, int|string> $defaults
+     *
+     * @return array{container: string, max_width: int, gutter: int, sidebar: string}
+     */
+    private function resolve_layout(array $attributes, array $defaults): array
+    {
+        $container = $this->normalize_container((string) ($attributes['container'] ?? ''), (string) $defaults['container']);
+        $sidebar = $this->normalize_sidebar((string) ($attributes['sidebar'] ?? ''), (string) $defaults['sidebar']);
+        $max_width = $this->normalize_dimension($attributes['max_width'] ?? '', (int) $defaults['max_width']);
+        $gutter = $this->normalize_dimension($attributes['gutter'] ?? '', (int) $defaults['gutter']);
+
+        return [
+            'container' => $container,
+            'max_width' => $max_width,
+            'gutter' => $gutter,
+            'sidebar' => $sidebar,
+        ];
+    }
+
+    /**
+     * @return array{container: string, max_width: int, gutter: int, sidebar: string}
+     */
+    private function get_layout_defaults(): array
+    {
+        $defaults = [
+            'container' => 'boxed',
+            'max_width' => 1200,
+            'gutter' => 24,
+            'sidebar' => 'right',
+        ];
+
+        $option = get_option('fp_exp_experience_layout', []);
+        if (! is_array($option)) {
+            return $defaults;
+        }
+
+        if (isset($option['container'])) {
+            $defaults['container'] = $this->normalize_container((string) $option['container'], $defaults['container']);
+        }
+
+        if (array_key_exists('max_width', $option)) {
+            $defaults['max_width'] = $this->normalize_dimension($option['max_width'], (int) $defaults['max_width']);
+        }
+
+        if (array_key_exists('gutter', $option)) {
+            $defaults['gutter'] = $this->normalize_dimension($option['gutter'], (int) $defaults['gutter']);
+        }
+
+        if (isset($option['sidebar'])) {
+            $defaults['sidebar'] = $this->normalize_sidebar((string) $option['sidebar'], $defaults['sidebar']);
+        }
+
+        return $defaults;
+    }
+
+    private function normalize_container(string $value, string $fallback): string
+    {
+        $value = strtolower(trim($value));
+        $allowed = ['boxed', 'full'];
+
+        if (in_array($value, $allowed, true)) {
+            return $value;
+        }
+
+        return in_array($fallback, $allowed, true) ? $fallback : 'boxed';
+    }
+
+    private function normalize_sidebar(string $value, string $fallback): string
+    {
+        $value = strtolower(trim($value));
+        $allowed = ['right', 'left', 'none'];
+
+        if (in_array($value, $allowed, true)) {
+            return $value;
+        }
+
+        return in_array($fallback, $allowed, true) ? $fallback : 'right';
+    }
+
+    /**
+     * @param mixed $value
+     */
+    private function normalize_dimension($value, int $fallback): int
+    {
+        if (is_numeric($value)) {
+            $int_value = (int) $value;
+
+            if ($int_value >= 0) {
+                return $int_value;
+            }
+        }
+
+        return max(0, $fallback);
     }
 
     private function resolve_sections(string $raw): array

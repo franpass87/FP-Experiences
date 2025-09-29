@@ -36,13 +36,15 @@ FP Experiences brings GetYourGuide-style booking flows to WooCommerce without to
 * `[fp_exp_calendar id="123" months="2"]` – Inline availability calendar for a single experience.
 * `[fp_exp_checkout]` – Isolated checkout that finalises the FP Experiences cart only.
 * `[fp_exp_meeting_points id="123"]` – Outputs the primary meeting point and optional alternatives for an experience, with map links built client-side.
-* `[fp_exp_page id="123" sections="hero,highlights,inclusions,meeting,extras,faq,reviews" sticky_widget="1"]` – Full experience detail page with hero gallery, highlights, inclusions/exclusions, meeting point block, FAQ accordion, reviews, and sticky availability widget. Supports the usual theming overrides (`preset`, `mode`, color variables, `radius`, `shadow`, `font`).
+* `[fp_exp_page id="123" sections="hero,highlights,inclusions,meeting,extras,faq,reviews" sticky_widget="1" container="boxed" max_width="1200" gutter="24" sidebar="right"]` – Full experience detail page with hero gallery, highlights, inclusions/exclusions, meeting point block, FAQ accordion, reviews, and sticky availability widget. Supports theming overrides (`preset`, `mode`, color variables, `radius`, `shadow`, `font`) plus layout controls: `container` (`boxed` or `full`), `max_width`/`gutter` (pixels) and `sidebar` (`right`, `left`, `none`).
 
 The `sections` attribute accepts a comma-separated list of sections to render (hero, highlights, inclusions, meeting, extras, faq, reviews). Meeting point data automatically reuses the Meeting Points module when enabled; otherwise the section is hidden. Set `sticky_widget="0"` to disable the mobile CTA bar.
 
 == Elementor Widgets ==
 
 Six Elementor widgets mirror the shortcodes: List, Widget, Calendar, Checkout, Meeting Points, and the new Experience Page layout. The List widget now bundles the full showcase controls (filters, search, ordering, map toggle, CTA behaviour) plus responsive style controls for columns, card spacing, and badge/price visibility. Each widget exposes theming overrides (colors, radius, fonts) alongside behavioural toggles (sticky mode, inline calendar, consent defaults). The Experience Page widget lets editors pick sections to display and toggle the sticky availability bar while reusing the `[fp_exp_page]` shortcode under the hood.
+
+If your theme applies a narrow content container you can break the layout out to the full viewport with `container="full"` (optionally adjusting `max_width`/`gutter`).
 
 == Admin menu ==
 

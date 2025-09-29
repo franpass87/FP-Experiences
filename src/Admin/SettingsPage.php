@@ -19,6 +19,7 @@ use function add_settings_section;
 use function admin_url;
 use function array_filter;
 use function array_map;
+use function array_merge;
 use function checked;
 use function current_user_can;
 use function delete_transient;
@@ -231,6 +232,12 @@ final class SettingsPage
             'default' => 'yes',
         ]);
 
+        register_setting('fp_exp_settings_general', 'fp_exp_experience_layout', [
+            'type' => 'array',
+            'sanitize_callback' => [$this, 'sanitize_experience_layout'],
+            'default' => [],
+        ]);
+
         add_settings_section(
             'fp_exp_section_general',
             esc_html__('General', 'fp-experiences'),
@@ -273,6 +280,136 @@ final class SettingsPage
                 'label' => esc_html__('Enable meeting points management and widgets.', 'fp-experiences'),
             ]
         );
+
+        add_settings_section(
+            'fp_exp_section_experience_layout',
+            esc_html__('Experience Page Layout', 'fp-experiences'),
+            [$this, 'render_experience_layout_help'],
+            'fp_exp_settings_general'
+        );
+
+        add_settings_field(
+            'fp_exp_experience_layout_container',
+            esc_html__('Container mode', 'fp-experiences'),
+            [$this, 'render_experience_layout_field'],
+            'fp_exp_settings_general',
+            'fp_exp_section_experience_layout',
+            [
+                'key' => 'container',
+                'type' => 'select',
+                'options' => [
+                    'boxed' => esc_html__('Boxed (respect theme container)', 'fp-experiences'),
+                    'full' => esc_html__('Full width (edge to edge)', 'fp-experiences'),
+                ],
+                'description' => esc_html__('Choose whether the experience layout stays inside the theme container or spans the full viewport width.', 'fp-experiences'),
+            ]
+        );
+
+        add_settings_field(
+            'fp_exp_experience_layout_max_width',
+            esc_html__('Maximum width', 'fp-experiences'),
+            [$this, 'render_experience_layout_field'],
+            'fp_exp_settings_general',
+            'fp_exp_section_experience_layout',
+            [
+                'key' => 'max_width',
+                'type' => 'number',
+                'min' => 0,
+                'description' => esc_html__('Desktop max-width in pixels (set 0 to keep the default theme width).', 'fp-experiences'),
+            ]
+        );
+
+        add_settings_field(
+            'fp_exp_experience_layout_gutter',
+            esc_html__('Side padding', 'fp-experiences'),
+            [$this, 'render_experience_layout_field'],
+            'fp_exp_settings_general',
+            'fp_exp_section_experience_layout',
+            [
+                'key' => 'gutter',
+                'type' => 'number',
+                'min' => 0,
+                'description' => esc_html__('Horizontal padding (gutter) in pixels applied on desktop layouts.', 'fp-experiences'),
+            ]
+        );
+
+        add_settings_field(
+            'fp_exp_experience_layout_sidebar',
+            esc_html__('Sidebar position', 'fp-experiences'),
+            [$this, 'render_experience_layout_field'],
+            'fp_exp_settings_general',
+            'fp_exp_section_experience_layout',
+            [
+                'key' => 'sidebar',
+                'type' => 'select',
+                'options' => [
+                    'right' => esc_html__('Right column', 'fp-experiences'),
+                    'left' => esc_html__('Left column', 'fp-experiences'),
+                    'none' => esc_html__('No sidebar (single column)', 'fp-experiences'),
+                ],
+                'description' => esc_html__('Default position for the booking widget on desktop.', 'fp-experiences'),
+            ]
+        );
+    }
+
+    public function render_experience_layout_help(): void
+    {
+        echo '<p>' . esc_html__('Set the default container width, gutter, and sidebar placement used by the Experience Page shortcode and widget.', 'fp-experiences') . '</p>';
+    }
+
+    public function render_experience_layout_field(array $args): void
+    {
+        $layout = $this->get_experience_layout_option();
+        $key = isset($args['key']) ? (string) $args['key'] : '';
+
+        if ('' === $key) {
+            return;
+        }
+
+        $type = $args['type'] ?? 'text';
+        $id = 'fp-exp-experience-layout-' . $key;
+        $name = 'fp_exp_experience_layout[' . $key . ']';
+        $value = $layout[$key] ?? '';
+
+        if ('select' === $type) {
+            $options = is_array($args['options'] ?? null) ? $args['options'] : [];
+            echo '<select id="' . esc_attr($id) . '" name="' . esc_attr($name) . '">';
+            foreach ($options as $option_value => $label) {
+                $selected = (string) $option_value === (string) $value ? ' selected' : '';
+                echo '<option value="' . esc_attr((string) $option_value) . '"' . $selected . '>' . esc_html((string) $label) . '</option>';
+            }
+            echo '</select>';
+        } elseif ('number' === $type) {
+            $min = isset($args['min']) ? (int) $args['min'] : 0;
+            echo '<input type="number" class="small-text" id="' . esc_attr($id) . '" name="' . esc_attr($name) . '" value="' . esc_attr((string) $value) . '" min="' . esc_attr((string) $min) . '" step="1" />';
+        } else {
+            echo '<input type="text" id="' . esc_attr($id) . '" name="' . esc_attr($name) . '" value="' . esc_attr((string) $value) . '" />';
+        }
+
+        if (! empty($args['description'])) {
+            echo '<p class="description">' . esc_html((string) $args['description']) . '</p>';
+        }
+    }
+
+    /**
+     * @return array{container: string, max_width: int, gutter: int, sidebar: string}
+     */
+    private function get_experience_layout_option(): array
+    {
+        $defaults = [
+            'container' => 'boxed',
+            'max_width' => 1200,
+            'gutter' => 24,
+            'sidebar' => 'right',
+        ];
+
+        $option = get_option('fp_exp_experience_layout', []);
+
+        if (! is_array($option)) {
+            return $defaults;
+        }
+
+        return array_merge($defaults, $option);
     }
 
     private function register_branding_settings(): void
@@ -1455,6 +1592,51 @@ final class SettingsPage
             echo '<p><a class="button button-primary" href="' . esc_attr($connect_url) . '">' . esc_html__('Connect Google account', 'fp-experiences') . '</a></p>';
         }
         echo '</div>';
+    }
+
+    /**
+     * @param mixed $value
+     * @return array<string, mixed>
+     */
+    public function sanitize_experience_layout($value): array
+    {
+        $defaults = [
+            'container' => 'boxed',
+            'max_width' => 1200,
+            'gutter' => 24,
+            'sidebar' => 'right',
+        ];
+
+        if (! is_array($value)) {
+            return $defaults;
+        }
+
+        $container = isset($value['container']) ? strtolower(trim((string) $value['container'])) : $defaults['container'];
+        if (! in_array($container, ['boxed', 'full'], true)) {
+            $container = $defaults['container'];
+        }
+
+        $max_width = isset($value['max_width']) ? (int) $value['max_width'] : $defaults['max_width'];
+        if ($max_width < 0) {
+            $max_width = $defaults['max_width'];
+        }
+
+        $gutter = isset($value['gutter']) ? (int) $value['gutter'] : $defaults['gutter'];
+        if ($gutter < 0) {
+            $gutter = $defaults['gutter'];
+        }
+
+        $sidebar = isset($value['sidebar']) ? strtolower(trim((string) $value['sidebar'])) : $defaults['sidebar'];
+        if (! in_array($sidebar, ['right', 'left', 'none'], true)) {
+            $sidebar = $defaults['sidebar'];
+        }
+
+        return [
+            'container' => $container,
+            'max_width' => $max_width,
+            'gutter' => $gutter,
+            'sidebar' => $sidebar,
+        ];
     }
 
     /**
