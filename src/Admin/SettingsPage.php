@@ -29,6 +29,7 @@ use function esc_textarea;
 use function get_option;
 use function get_transient;
 use function in_array;
+use function is_admin;
 use function is_array;
 use function rest_url;
 use function sanitize_email;
@@ -1360,13 +1361,17 @@ final class SettingsPage
         return $sanitised;
     }
 
-    private function maybe_handle_calendar_actions(): void
+    public function maybe_handle_calendar_actions(): void
     {
+        if (! is_admin()) {
+            return;
+        }
+
         if (! current_user_can('manage_options')) {
             return;
         }
 
-        if (! isset($_GET['page']) || $this->menu_slug !== sanitize_key((string) wp_unslash($_GET['page']))) {
+        if (! isset($_GET['page']) || 'fp_exp_settings' !== sanitize_key((string) wp_unslash($_GET['page']))) {
             return;
         }
 
@@ -1374,9 +1379,9 @@ final class SettingsPage
 
         $nonce = isset($_GET['_wpnonce']) ? (string) wp_unslash($_GET['_wpnonce']) : '';
 
-        if ('connect' === $action && wp_verify_nonce($nonce, 'fp_exp_calendar_connect')) {
+        if ('connect' === $action && wp_verify_nonce($nonce, 'fp_exp_calendar_action')) {
             $this->initiate_calendar_connect();
-        } elseif ('disconnect' === $action && wp_verify_nonce($nonce, 'fp_exp_calendar_disconnect')) {
+        } elseif ('disconnect' === $action && wp_verify_nonce($nonce, 'fp_exp_calendar_action')) {
             $this->disconnect_calendar();
         } elseif ('oauth' === $action) {
             $this->handle_calendar_oauth();
