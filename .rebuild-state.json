@@ -1,7 +1,7 @@
 {
   "current": "14",
   "ok": true,
-  "notes": "cycle five D13 acceptance sweep",
+  "notes": {"release":"0.2.0","ok":true},
   "audit_current": "A2",
   "audit": {
     "A0": {

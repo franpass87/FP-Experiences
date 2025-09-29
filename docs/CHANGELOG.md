@@ -3,6 +3,13 @@
 ## [Unreleased]
 - No changes yet.
 
+## [0.2.0] - 2025-09-29
+- Polish UI/UX stile GetYourGuide (layout 2-col, sticky, chips).
+- Bugfix: fallback ID shortcode, flush transients, no-store headers.
+- Admin menu unificato + “Crea Pagina Esperienza”.
+- Listing con filtri e “price from”.
+- Hardened hooks/REST/nonce (no WSOD).
+
 ## [0.1.0] - 2024-05-01
 _Status: production readiness audit complete._
 

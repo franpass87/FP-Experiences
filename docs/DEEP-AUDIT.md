@@ -259,3 +259,5 @@
 - Re-confirmed the Brevo integration with the webhook secret enforced alongside existing booking, layout, and listing sweeps.
 - Logged the acceptance pass in the tracker to close out the cycle.
 - Files: `.rebuild-state.json`, `docs/DEEP-AUDIT.md`, `docs/ACCEPTANCE-TESTS.md`.
+
+Release 0.2.0 prepared on 2025-09-29.

@@ -65,3 +65,5 @@
 
 ## Stato finale
 **READY FOR RELEASE**
+
+Release 0.2.0 prepared on 2025-09-29.
