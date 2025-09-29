@@ -47,7 +47,7 @@ final class Webhooks
             [
                 'methods' => WP_REST_Server::READABLE,
                 'permission_callback' => static function (): bool {
-                    return current_user_can('fp_exp_manage_tools');
+                    return current_user_can('fp_exp_manage');
                 },
                 'callback' => [$this, 'handle_ping'],
             ]

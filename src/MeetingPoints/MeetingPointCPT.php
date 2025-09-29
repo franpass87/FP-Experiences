@@ -49,7 +49,7 @@ final class MeetingPointCPT
             'labels' => $labels,
             'public' => false,
             'show_ui' => true,
-            'show_in_menu' => Helpers::meeting_points_enabled() ? 'fp-exp-settings' : false,
+                'show_in_menu' => false,
             'supports' => ['title'],
             'show_in_rest' => false,
             'rewrite' => false,

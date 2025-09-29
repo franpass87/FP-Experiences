@@ -12,7 +12,6 @@ use const MINUTE_IN_SECONDS;
 
 use function absint;
 use function add_action;
-use function add_menu_page;
 use function add_query_arg;
 use function add_settings_error;
 use function add_settings_field;
@@ -26,6 +25,7 @@ use function delete_transient;
 use function esc_attr;
 use function esc_html;
 use function esc_html__;
+use function esc_url;
 use function esc_textarea;
 use function get_option;
 use function get_transient;
@@ -49,9 +49,11 @@ use function strtolower;
 use function time;
 use function update_option;
 use function wp_generate_password;
+use function get_current_screen;
 use function wp_enqueue_script;
 use function wp_enqueue_style;
 use function wp_localize_script;
+use function wp_strip_all_tags;
 use function wp_nonce_url;
 use function wp_redirect;
 use function wp_remote_get;
@@ -65,38 +67,13 @@ use function wp_verify_nonce;
 
 final class SettingsPage
 {
-    private string $menu_slug = 'fp-exp-settings';
+    private string $menu_slug = 'fp_exp_settings';
 
     public function register_hooks(): void
     {
-        add_action('admin_menu', [$this, 'register_menu']);
         add_action('admin_init', [$this, 'register_settings']);
         add_action('admin_init', [$this, 'maybe_handle_calendar_actions']);
         add_action('admin_enqueue_scripts', [$this, 'enqueue_assets']);
-    }
-
-    public function register_menu(): void
-    {
-        $capability = 'manage_options';
-
-        add_menu_page(
-            esc_html__('FP Experiences', 'fp-experiences'),
-            esc_html__('FP Experiences', 'fp-experiences'),
-            $capability,
-            $this->menu_slug,
-            [$this, 'render_page'],
-            'dashicons-tickets-alt',
-            56
-        );
-
-        add_submenu_page(
-            $this->menu_slug,
-            esc_html__('Settings', 'fp-experiences'),
-            esc_html__('Settings', 'fp-experiences'),
-            $capability,
-            $this->menu_slug,
-            [$this, 'render_page']
-        );
     }
 
     public function register_settings(): void
@@ -112,6 +89,10 @@ final class SettingsPage
 
     public function render_page(): void
     {
+        if (! current_user_can('fp_exp_manage')) {
+            wp_die(esc_html__('You do not have permission to manage FP Experiences settings.', 'fp-experiences'));
+        }
+
         $tabs = $this->get_tabs();
         $active_tab = $this->get_active_tab($tabs);
 
@@ -137,6 +118,20 @@ final class SettingsPage
 
         if ('tools' === $active_tab) {
             $this->render_tools_panel();
+            echo '</div>';
+
+            return;
+        }
+
+        if ('booking' === $active_tab) {
+            $this->render_booking_rules_panel();
+            echo '</div>';
+
+            return;
+        }
+
+        if ('logs' === $active_tab) {
+            $this->render_logs_overview();
             echo '</div>';
 
             return;
@@ -173,19 +168,23 @@ final class SettingsPage
         echo '</div>';
     }
 
-    public function enqueue_assets(string $hook): void
+    public function enqueue_assets(string $hook = ''): void
     {
-        if ('toplevel_page_' . $this->menu_slug !== $hook) {
+        $screen = get_current_screen();
+        if (! $screen || 'fp-exp-dashboard_page_' . $this->menu_slug !== $screen->id) {
             return;
         }
 
         $tabs = $this->get_tabs();
         $active_tab = $this->get_active_tab($tabs);
 
-        if ('tools' !== $active_tab) {
-            return;
+        if ('tools' === $active_tab) {
+            $this->enqueue_tools_assets();
         }
+    }
 
+    public function enqueue_tools_assets(): void
+    {
         wp_enqueue_style('fp-exp-admin', FP_EXP_PLUGIN_URL . 'assets/css/admin.css', [], FP_EXP_VERSION);
         wp_enqueue_script('fp-exp-admin', FP_EXP_PLUGIN_URL . 'assets/js/admin.js', ['wp-api-fetch', 'wp-i18n'], FP_EXP_VERSION, true);
 
@@ -557,16 +556,18 @@ final class SettingsPage
         return [
             'general' => esc_html__('General', 'fp-experiences'),
             'branding' => esc_html__('Branding', 'fp-experiences'),
-            'listing' => esc_html__('Showcase', 'fp-experiences'),
-            'tracking' => esc_html__('Tracking', 'fp-experiences'),
-            'rtb' => esc_html__('Request-to-Book', 'fp-experiences'),
+            'booking' => esc_html__('Booking Rules', 'fp-experiences'),
             'brevo' => esc_html__('Brevo', 'fp-experiences'),
             'calendar' => esc_html__('Calendar', 'fp-experiences'),
+            'tracking' => esc_html__('Tracking', 'fp-experiences'),
+            'rtb' => esc_html__('RTB', 'fp-experiences'),
+            'listing' => esc_html__('Vetrina', 'fp-experiences'),
             'tools' => esc_html__('Tools', 'fp-experiences'),
+            'logs' => esc_html__('Logs', 'fp-experiences'),
         ];
     }
 
-    private function render_tools_panel(): void
+    public function render_tools_panel(): void
     {
         echo '<div class="fp-exp-tools" data-fp-exp-tools="1">';
         echo '<p>' . esc_html__('Run diagnostic and recovery actions. These operations execute immediately and their results are logged for auditing.', 'fp-experiences') . '</p>';
@@ -580,6 +581,88 @@ final class SettingsPage
         }
         echo '</div>';
         echo '<div class="fp-exp-tools__output" aria-live="polite"></div>';
+        echo '</div>';
+    }
+
+    private function render_booking_rules_panel(): void
+    {
+        $meeting_points_enabled = Helpers::meeting_points_enabled();
+        $rtb_mode = Helpers::rtb_mode();
+        $rtb_timeout = Helpers::rtb_hold_timeout();
+
+        $rtb_label = match ($rtb_mode) {
+            'confirm' => esc_html__('Richiede conferma manuale', 'fp-experiences'),
+            'pay_later' => esc_html__('Pagamento differito', 'fp-experiences'),
+            default => esc_html__('Disattivato', 'fp-experiences'),
+        };
+
+        echo '<div class="fp-exp-settings__panel fp-exp-settings__panel--booking">';
+        echo '<h2>' . esc_html__('Regole attive', 'fp-experiences') . '</h2>';
+        echo '<ul class="fp-exp-settings__list">';
+        echo '<li>' . esc_html__('Meeting point: ', 'fp-experiences') . ($meeting_points_enabled ? esc_html__('abilitati', 'fp-experiences') : esc_html__('disabilitati', 'fp-experiences')) . '</li>';
+        echo '<li>' . esc_html__('Modalità richiesta di prenotazione: ', 'fp-experiences') . $rtb_label . '</li>';
+        echo '<li>' . sprintf(
+            /* translators: %s: minutes. */
+            esc_html__('Tempo massimo di risposta: %s minuti', 'fp-experiences'),
+            number_format_i18n($rtb_timeout)
+        ) . '</li>';
+        echo '</ul>';
+
+        $general_link = esc_url(add_query_arg([
+            'page' => $this->menu_slug,
+            'tab' => 'general',
+        ], admin_url('admin.php')));
+        $rtb_link = esc_url(add_query_arg([
+            'page' => $this->menu_slug,
+            'tab' => 'rtb',
+        ], admin_url('admin.php')));
+        $calendar_link = esc_url(add_query_arg([
+            'page' => $this->menu_slug,
+            'tab' => 'calendar',
+        ], admin_url('admin.php')));
+
+        echo '<p>' . esc_html__('Aggiorna le regole intervenendo sulle seguenti schede:', 'fp-experiences') . '</p>';
+        echo '<ul class="fp-exp-settings__links">';
+        echo '<li><a href="' . $general_link . '">' . esc_html__('Generale', 'fp-experiences') . '</a></li>';
+        echo '<li><a href="' . $rtb_link . '">' . esc_html__('RTB', 'fp-experiences') . '</a></li>';
+        echo '<li><a href="' . $calendar_link . '">' . esc_html__('Calendar', 'fp-experiences') . '</a></li>';
+        echo '</ul>';
+        echo '</div>';
+    }
+
+    private function render_logs_overview(): void
+    {
+        $logs = Logger::query([
+            'limit' => 10,
+        ]);
+
+        echo '<div class="fp-exp-settings__panel fp-exp-settings__panel--logs">';
+        echo '<h2>' . esc_html__('Ultime attività', 'fp-experiences') . '</h2>';
+
+        if (! $logs) {
+            echo '<p>' . esc_html__('Nessun evento registrato nei log.', 'fp-experiences') . '</p>';
+        } else {
+            echo '<table class="widefat striped">';
+            echo '<thead><tr>';
+            echo '<th>' . esc_html__('Data', 'fp-experiences') . '</th>';
+            echo '<th>' . esc_html__('Canale', 'fp-experiences') . '</th>';
+            echo '<th>' . esc_html__('Messaggio', 'fp-experiences') . '</th>';
+            echo '</tr></thead><tbody>';
+            foreach ($logs as $entry) {
+                $timestamp = esc_html((string) ($entry['timestamp'] ?? ''));
+                $channel = esc_html((string) ($entry['channel'] ?? ''));
+                $message = esc_html(wp_strip_all_tags((string) ($entry['message'] ?? '')));
+                echo '<tr>';
+                echo '<td>' . $timestamp . '</td>';
+                echo '<td>' . $channel . '</td>';
+                echo '<td>' . $message . '</td>';
+                echo '</tr>';
+            }
+            echo '</tbody></table>';
+        }
+
+        $logs_url = esc_url(admin_url('admin.php?page=fp_exp_logs'));
+        echo '<p><a class="button" href="' . $logs_url . '">' . esc_html__('Apri registro completo', 'fp-experiences') . '</a></p>';
         echo '</div>';
     }
 
@@ -619,7 +702,7 @@ final class SettingsPage
     /**
      * @return array<int, array<string, string>>
      */
-    private function get_tool_actions_localised(): array
+    public function get_tool_actions_localised(): array
     {
         $actions = [];
         foreach ($this->get_tool_actions() as $action) {
@@ -1622,7 +1705,7 @@ final class SettingsPage
             return;
         }
 
-        if (! current_user_can('manage_options')) {
+        if (! current_user_can('fp_exp_manage')) {
             return;
         }
 

@@ -69,7 +69,7 @@ final class ExperienceCPT
                 ],
                 'public' => true,
                 'show_ui' => true,
-                'show_in_menu' => true,
+                'show_in_menu' => false,
                 'menu_position' => 20,
                 'menu_icon' => 'dashicons-location-alt',
                 'show_in_rest' => true,
@@ -81,7 +81,9 @@ final class ExperienceCPT
                 ],
                 'exclude_from_search' => true,
                 'publicly_queryable' => true,
-                'capability_type' => 'post',
+                'capability_type' => ['fp_experience', 'fp_experiences'],
+                'map_meta_cap' => true,
+                'capabilities' => $this->get_capabilities(),
             ]
         );
     }
@@ -186,6 +188,29 @@ final class ExperienceCPT
 
             register_post_meta('fp_experience', $key, $args);
         }
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function get_capabilities(): array
+    {
+        return [
+            'edit_post' => 'edit_fp_experience',
+            'read_post' => 'read_fp_experience',
+            'delete_post' => 'delete_fp_experience',
+            'edit_posts' => 'edit_fp_experiences',
+            'edit_others_posts' => 'edit_others_fp_experiences',
+            'publish_posts' => 'publish_fp_experiences',
+            'read_private_posts' => 'read_private_fp_experiences',
+            'delete_posts' => 'delete_fp_experiences',
+            'delete_private_posts' => 'delete_private_fp_experiences',
+            'delete_published_posts' => 'delete_published_fp_experiences',
+            'delete_others_posts' => 'delete_others_fp_experiences',
+            'edit_private_posts' => 'edit_private_fp_experiences',
+            'edit_published_posts' => 'edit_published_fp_experiences',
+            'create_posts' => 'edit_fp_experiences',
+        ];
     }
 
     /**

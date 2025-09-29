@@ -197,3 +197,128 @@
 .fp-exp-tab-panel textarea {
     width: 100%;
 }
+
+.fp-exp-dashboard {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.fp-exp-dashboard__breadcrumb {
+    font-size: 13px;
+    color: var(--fp-exp-color-muted, #666);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.fp-exp-dashboard__grid {
+    display: grid;
+    gap: 16px;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.fp-exp-dashboard__card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 18px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+}
+
+.fp-exp-dashboard__card-label {
+    margin: 0;
+    font-size: 13px;
+    color: var(--fp-exp-color-muted, #666);
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+}
+
+.fp-exp-dashboard__card-value {
+    margin: 8px 0 0;
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--fp-exp-color-text, #1f1f1f);
+}
+
+.fp-exp-dashboard__card-hint {
+    margin: 6px 0 0;
+    font-size: 13px;
+    color: var(--fp-exp-color-muted, #666);
+}
+
+.fp-exp-dashboard__columns {
+    display: grid;
+    gap: 24px;
+}
+
+.fp-exp-dashboard__section {
+    background: #fff;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+}
+
+.fp-exp-dashboard__section h2 {
+    margin-top: 0;
+}
+
+.fp-exp-dashboard__table th,
+.fp-exp-dashboard__table td {
+    vertical-align: middle;
+}
+
+.fp-exp-dashboard__shortcuts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 0;
+    margin: 0;
+    list-style: none;
+}
+
+.fp-exp-checkin__table td {
+    vertical-align: middle;
+}
+
+.fp-exp-checkin__badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: var(--fp-exp-color-primary, #8b1e3f);
+    color: #fff;
+    font-size: 12px;
+}
+
+.fp-exp-settings__panel {
+    background: #fff;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    margin-top: 16px;
+}
+
+.fp-exp-settings__list {
+    margin: 0 0 16px;
+    padding-left: 18px;
+}
+
+.fp-exp-settings__links {
+    display: flex;
+    gap: 12px;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.fp-exp-help__section {
+    background: #fff;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    margin-top: 16px;
+}
+
+.fp-exp-help__section h2 {
+    margin-top: 0;
+}

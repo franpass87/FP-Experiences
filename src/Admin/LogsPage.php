@@ -7,9 +7,8 @@ namespace FP_Exp\Admin;
 use FP_Exp\Utils\Logger;
 
 use function add_action;
-use function admin_url;
 use function add_query_arg;
-use function add_submenu_page;
+use function admin_url;
 use function check_admin_referer;
 use function class_exists;
 use function esc_attr;
@@ -30,24 +29,12 @@ final class LogsPage
 {
     public function register_hooks(): void
     {
-        add_action('admin_menu', [$this, 'register_menu']);
-    }
-
-    public function register_menu(): void
-    {
-        add_submenu_page(
-            'fp-exp-settings',
-            esc_html__('Logs & Diagnostics', 'fp-experiences'),
-            esc_html__('Logs', 'fp-experiences'),
-            'fp_exp_manage_settings',
-            'fp-exp-logs',
-            [$this, 'render_page']
-        );
+        // Intentionally left blank; menu registered via AdminMenu.
     }
 
     public function render_page(): void
     {
-        if (! current_user_can('fp_exp_manage_settings')) {
+        if (! current_user_can('fp_exp_manage')) {
             wp_die(esc_html__('You do not have permission to view FP Experiences logs.', 'fp-experiences'));
         }
 
@@ -129,10 +116,10 @@ final class LogsPage
     private function render_filters(string $channel, string $search): void
     {
         $channels = Logger::channels();
-        $base_url = add_query_arg('page', 'fp-exp-logs', admin_url('admin.php'));
+        $base_url = add_query_arg('page', 'fp_exp_logs', admin_url('admin.php'));
         $export_url = add_query_arg(
             [
-                'page' => 'fp-exp-logs',
+                'page' => 'fp_exp_logs',
                 'channel' => $channel,
                 's' => $search,
                 'export' => '1',
@@ -141,7 +128,7 @@ final class LogsPage
         );
 
         echo '<form method="get" action="' . esc_url($base_url) . '" class="fp-exp-log-filter">';
-        echo '<input type="hidden" name="page" value="fp-exp-logs" />';
+        echo '<input type="hidden" name="page" value="fp_exp_logs" />';
 
         echo '<label for="fp-exp-log-channel" class="screen-reader-text">' . esc_html__('Filter by channel', 'fp-experiences') . '</label>';
         echo '<select id="fp-exp-log-channel" name="channel">';

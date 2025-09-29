@@ -8,11 +8,17 @@ use FP_Exp\Api\RestRoutes;
 use FP_Exp\Api\Webhooks;
 use FP_Exp\Booking\Cart;
 use FP_Exp\Booking\Checkout as BookingCheckout;
+use FP_Exp\Admin\AdminMenu;
 use FP_Exp\Admin\CalendarAdmin;
 use FP_Exp\Admin\RequestsPage;
 use FP_Exp\Admin\ExperienceMetaBoxes;
 use FP_Exp\Admin\SettingsPage;
 use FP_Exp\Admin\LogsPage;
+use FP_Exp\Admin\ToolsPage;
+use FP_Exp\Admin\CheckinPage;
+use FP_Exp\Admin\OrdersPage;
+use FP_Exp\Admin\HelpPage;
+use FP_Exp\Admin\ExperiencePageCreator;
 use FP_Exp\Booking\Emails;
 use FP_Exp\Booking\Orders;
 use FP_Exp\Booking\Reservations;
@@ -77,6 +83,18 @@ final class Plugin
 
     private ?ExperienceMetaBoxes $experience_meta_boxes = null;
 
+    private ?ToolsPage $tools_page = null;
+
+    private ?CheckinPage $checkin_page = null;
+
+    private ?OrdersPage $orders_page = null;
+
+    private ?HelpPage $help_page = null;
+
+    private ?ExperiencePageCreator $page_creator = null;
+
+    private ?AdminMenu $admin_menu = null;
+
     private ?ElementorWidgetsRegistrar $elementor_widgets = null;
 
     private ?RestRoutes $rest_routes = null;
@@ -122,6 +140,22 @@ final class Plugin
             $this->logs_page = new LogsPage();
             $this->requests_page = new RequestsPage($this->request_to_book);
             $this->experience_meta_boxes = new ExperienceMetaBoxes();
+            $this->tools_page = new ToolsPage($this->settings_page);
+            $this->checkin_page = new CheckinPage();
+            $this->orders_page = new OrdersPage();
+            $this->help_page = new HelpPage();
+            $this->page_creator = new ExperiencePageCreator();
+            $this->admin_menu = new AdminMenu(
+                $this->settings_page,
+                $this->calendar_admin,
+                $this->logs_page,
+                $this->requests_page,
+                $this->tools_page,
+                $this->checkin_page,
+                $this->orders_page,
+                $this->help_page,
+                $this->page_creator
+            );
         }
     }
 
@@ -180,6 +214,26 @@ final class Plugin
 
         if ($this->experience_meta_boxes instanceof ExperienceMetaBoxes) {
             $this->experience_meta_boxes->register_hooks();
+        }
+
+        if ($this->tools_page instanceof ToolsPage) {
+            $this->tools_page->register_hooks();
+        }
+
+        if ($this->checkin_page instanceof CheckinPage) {
+            $this->checkin_page->register_hooks();
+        }
+
+        if ($this->page_creator instanceof ExperiencePageCreator) {
+            $this->page_creator->register_hooks();
+        }
+
+        if ($this->orders_page instanceof OrdersPage) {
+            $this->orders_page->register_hooks();
+        }
+
+        if ($this->admin_menu instanceof AdminMenu) {
+            $this->admin_menu->register_hooks();
         }
 
         if ($this->elementor_widgets instanceof ElementorWidgetsRegistrar) {

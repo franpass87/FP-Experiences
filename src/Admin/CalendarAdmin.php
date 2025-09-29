@@ -14,7 +14,6 @@ use WP_Error;
 use function absint;
 use function add_action;
 use function add_query_arg;
-use function add_submenu_page;
 use function admin_url;
 use function array_filter;
 use function check_admin_referer;
@@ -24,6 +23,7 @@ use function esc_attr;
 use function esc_html;
 use function esc_html__;
 use function esc_url;
+use function get_current_screen;
 use function get_option;
 use function get_posts;
 use function get_the_title;
@@ -56,25 +56,13 @@ final class CalendarAdmin
 
     public function register_hooks(): void
     {
-        add_action('admin_menu', [$this, 'register_menu']);
         add_action('admin_enqueue_scripts', [$this, 'enqueue_assets']);
-    }
-
-    public function register_menu(): void
-    {
-        add_submenu_page(
-            'fp-exp-settings',
-            esc_html__('Calendar & Manual Booking', 'fp-experiences'),
-            esc_html__('Calendar', 'fp-experiences'),
-            'fp_exp_manage_calendar',
-            'fp-exp-calendar',
-            [$this, 'render_page']
-        );
     }
 
     public function enqueue_assets(string $hook): void
     {
-        if ('fp-exp-settings_page_fp-exp-calendar' !== $hook) {
+        $screen = get_current_screen();
+        if (! $screen || 'fp-exp-dashboard_page_fp_exp_calendar' !== $screen->id) {
             return;
         }
 
@@ -120,7 +108,7 @@ final class CalendarAdmin
 
     public function render_page(): void
     {
-        if (! current_user_can('fp_exp_manage_calendar')) {
+        if (! current_user_can('fp_exp_operate')) {
             wp_die(esc_html__('You do not have permission to manage FP Experiences bookings.', 'fp-experiences'));
         }
 
@@ -413,7 +401,7 @@ final class CalendarAdmin
     {
         check_admin_referer('fp_exp_manual_booking', 'fp_exp_manual_booking_nonce');
 
-        if (! current_user_can('fp_exp_manual_bookings')) {
+        if (! current_user_can('fp_exp_operate')) {
             return new WP_Error('fp_exp_manual_permission', esc_html__('You do not have permission to create manual bookings.', 'fp-experiences'));
         }
 
