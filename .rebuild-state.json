@@ -50,5 +50,44 @@
     "step": "DOCS"
   },
   "verify_current": "FRONT-BINDING",
-  "deepfix_current": "D13"
+  "deepfix_current": "D13",
+  "final_acceptance": {
+    "S1": {
+      "label": "Static Review & Lint",
+      "status": "done"
+    },
+    "S2": {
+      "label": "Security Audit",
+      "status": "done"
+    },
+    "S3": {
+      "label": "Data Binding & Meta",
+      "status": "done"
+    },
+    "S4": {
+      "label": "Frontend UX & UI",
+      "status": "done"
+    },
+    "S5": {
+      "label": "Admin UX & UI",
+      "status": "done"
+    },
+    "S6": {
+      "label": "Functional Testing",
+      "status": "done"
+    },
+    "S7": {
+      "label": "Integrations",
+      "status": "done"
+    },
+    "S8": {
+      "label": "Performance & Caching",
+      "status": "done"
+    },
+    "S9": {
+      "label": "Documentation",
+      "status": "done"
+    }
+  },
+  "final_acceptance_current": "COMPLETE"
 }
