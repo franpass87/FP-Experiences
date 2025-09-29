@@ -28,7 +28,47 @@ if (! defined('ABSPATH')) {
 }
 
 $scope_class = $scope_class ?? '';
-$container_classes = trim('fp-exp fp-exp-page ' . $scope_class);
+$layout = $layout ?? [
+    'container' => 'boxed',
+    'max_width' => null,
+    'gutter' => null,
+    'sidebar' => 'right',
+];
+
+$layout_container = $layout['container'] ?? 'boxed';
+$layout_max_width = isset($layout['max_width']) ? (int) $layout['max_width'] : 0;
+$layout_gutter = isset($layout['gutter']) ? (int) $layout['gutter'] : 0;
+$sidebar_position = $layout['sidebar'] ?? 'right';
+
+$wrapper_classes = ['fp-exp', 'fp-layout', 'fp-exp-page'];
+
+if ('' !== $scope_class) {
+    $wrapper_classes[] = $scope_class;
+}
+
+if ('full' === $layout_container) {
+    $wrapper_classes[] = 'is-full';
+}
+
+if ('none' === $sidebar_position) {
+    $wrapper_classes[] = 'is-single';
+}
+
+if ('left' === $sidebar_position) {
+    $wrapper_classes[] = 'is-sidebar-left';
+}
+
+$layout_style = [];
+
+if ($layout_max_width > 0) {
+    $layout_style[] = '--fp-exp-max:' . $layout_max_width . 'px';
+}
+
+if ($layout_gutter > 0) {
+    $layout_style[] = '--fp-exp-gutter:' . $layout_gutter . 'px';
+}
+
+$layout_style_attr = empty($layout_style) ? '' : implode(';', $layout_style);
 
 $navigation = isset($navigation) && is_array($navigation) ? $navigation : [];
 $has_navigation = ! empty($navigation);
@@ -40,9 +80,17 @@ $has_faq = ! empty($faq);
 $has_reviews = ! empty($reviews);
 
 $cta_label = esc_html__('Controlla disponibilità', 'fp-experiences');
+$layout_data = 'none' === $sidebar_position ? 'single' : 'auto';
+$sidebar_data = in_array($sidebar_position, ['left', 'none'], true) ? $sidebar_position : 'right';
 
 ?>
-<section class="<?php echo esc_attr($container_classes); ?>" data-fp-shortcode="experience">
+<div
+    class="<?php echo esc_attr(implode(' ', $wrapper_classes)); ?>"
+    data-fp-shortcode="experience"
+    data-layout="<?php echo esc_attr($layout_data); ?>"
+    data-sidebar="<?php echo esc_attr($sidebar_data); ?>"
+    <?php if ('' !== $layout_style_attr) : ?>style="<?php echo esc_attr($layout_style_attr); ?>"<?php endif; ?>
+>
     <?php if (! empty($data_layer)) : ?>
         <script>
             window.dataLayer = window.dataLayer || [];
@@ -50,15 +98,18 @@ $cta_label = esc_html__('Controlla disponibilità', 'fp-experiences');
         </script>
     <?php endif; ?>
 
-    <div class="fp-exp-page__layout" data-fp-page>
-        <main class="fp-exp-page__main">
+    <div class="fp-grid" data-fp-page>
+        <main class="fp-main">
             <?php if (! empty($sections['hero'])) : ?>
-                <header class="fp-exp-page__hero" id="fp-exp-section-hero" data-fp-section="hero">
-                    <div class="fp-exp-page__hero-media" aria-hidden="<?php echo empty($gallery) ? 'true' : 'false'; ?>">
+                <section class="fp-section fp-hero" id="fp-exp-section-hero" data-fp-section="hero">
+                    <div class="fp-hero-media" aria-hidden="<?php echo empty($gallery) ? 'true' : 'false'; ?>">
                         <?php if (! empty($gallery)) : ?>
-                            <div class="fp-exp-gallery" data-fp-gallery>
-                                <?php foreach ($gallery as $index => $image) : ?>
-                                    <figure class="fp-exp-gallery__item" data-index="<?php echo esc_attr((string) $index); ?>">
+                            <div class="fp-hero fp-exp-gallery" data-fp-gallery>
+                                <?php foreach ($gallery as $index => $image) :
+                                    $figure_classes = ['fp-exp-gallery__item'];
+                                    $figure_classes[] = 0 === $index ? 'fp-hero-main' : 'fp-hero-item';
+                                    ?>
+                                    <figure class="<?php echo esc_attr(implode(' ', $figure_classes)); ?>" data-index="<?php echo esc_attr((string) $index); ?>">
                                         <img
                                             src="<?php echo esc_url($image['url']); ?>"
                                             <?php if (! empty($image['srcset'])) : ?>srcset="<?php echo esc_attr($image['srcset']); ?>"<?php endif; ?>
@@ -71,20 +122,20 @@ $cta_label = esc_html__('Controlla disponibilità', 'fp-experiences');
                                 <?php endforeach; ?>
                             </div>
                         <?php else : ?>
-                            <div class="fp-exp-gallery fp-exp-gallery--placeholder">
+                            <div class="fp-hero fp-exp-gallery fp-exp-gallery--placeholder">
                                 <span aria-hidden="true"></span>
                             </div>
                         <?php endif; ?>
                     </div>
-                    <div class="fp-exp-page__hero-body">
-                        <div class="fp-exp-page__eyebrow">
-                            <span class="fp-exp-page__badge">FP Experiences</span>
+                    <div class="fp-hero-body">
+                        <div class="fp-eyebrow">
+                            <span class="fp-badge">FP Experiences</span>
                         </div>
-                        <h1 class="fp-exp-page__title"><?php echo esc_html($experience['title']); ?></h1>
+                        <h1 class="fp-title"><?php echo esc_html($experience['title']); ?></h1>
                         <?php if (! empty($badges)) : ?>
-                            <ul class="fp-exp-page__badges" role="list">
+                            <ul class="fp-meta" role="list">
                                 <?php foreach ($badges as $badge) : ?>
-                                    <li class="fp-exp-page__badge-item">
+                                    <li class="fp-badge">
                                         <span class="fp-exp-icon fp-exp-icon--<?php echo esc_attr($badge['icon']); ?>" aria-hidden="true">
                                             <?php if ('clock' === $badge['icon']) : ?>
                                                 <svg viewBox="0 0 24 24" role="img" aria-hidden="true"><path fill="currentColor" d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Zm1 10.59 2.12 2.12-1.41 1.41-2.83-2.83V7h2.12Z"/></svg>
@@ -94,15 +145,15 @@ $cta_label = esc_html__('Controlla disponibilità', 'fp-experiences');
                                                 <svg viewBox="0 0 24 24" role="img" aria-hidden="true"><path fill="currentColor" d="M12 12.88 9.17 10H5a3 3 0 0 0-3 3v7h6v-4h2v4h6v-7a3 3 0 0 0-3-3h-1.17Zm9-2.88a4 4 0 1 0-4-4 4 4 0 0 0 4 4Z"/></svg>
                                             <?php endif; ?>
                                         </span>
-                                        <span class="fp-exp-page__badge-label"><?php echo esc_html($badge['label']); ?></span>
+                                        <span class="fp-badge__label"><?php echo esc_html($badge['label']); ?></span>
                                     </li>
                                 <?php endforeach; ?>
                             </ul>
                         <?php endif; ?>
                         <?php if (! empty($experience['summary'])) : ?>
-                            <p class="fp-exp-page__summary"><?php echo esc_html($experience['summary']); ?></p>
+                            <p class="fp-summary"><?php echo esc_html($experience['summary']); ?></p>
                         <?php endif; ?>
-                        <div class="fp-exp-page__hero-cta">
+                        <div class="fp-hero-cta">
                             <a
                                 href="#fp-exp-widget"
                                 class="fp-exp-button"
@@ -113,7 +164,7 @@ $cta_label = esc_html__('Controlla disponibilità', 'fp-experiences');
                             </a>
                         </div>
                     </div>
-                </header>
+                </section>
             <?php endif; ?>
 
             <?php if ($has_navigation) : ?>
@@ -316,18 +367,25 @@ $cta_label = esc_html__('Controlla disponibilità', 'fp-experiences');
             <?php endif; ?>
         </main>
 
-        <aside class="fp-exp-page__aside" data-fp-sticky-container>
-            <div class="fp-exp-page__widget" id="fp-exp-widget">
-                <?php echo $widget_html; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
-            </div>
-        </aside>
+        <?php if ('none' !== $sidebar_position && ! empty($widget_html)) : ?>
+            <aside
+                class="fp-aside"
+                id="fp-exp-widget"
+                data-fp-sticky-container
+                aria-label="<?php esc_attr_e('Riepilogo prenotazione', 'fp-experiences'); ?>"
+            >
+                <div class="fp-exp-page__widget">
+                    <?php echo $widget_html; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+                </div>
+            </aside>
+        <?php endif; ?>
     </div>
 
-    <?php if ($sticky_widget) : ?>
+    <?php if ($sticky_widget && 'none' !== $sidebar_position && ! empty($widget_html)) : ?>
         <div class="fp-exp-page__sticky-bar" data-fp-sticky-bar>
             <button type="button" class="fp-exp-page__sticky-button" data-fp-scroll="widget" data-fp-cta="sticky">
                 <?php echo $cta_label; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
             </button>
         </div>
     <?php endif; ?>
-</section>
+</div>

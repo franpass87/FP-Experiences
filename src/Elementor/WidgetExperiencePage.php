@@ -92,6 +92,58 @@ final class WidgetExperiencePage extends Widget_Base
             ]
         );
 
+        $this->add_control(
+            'container',
+            [
+                'label' => esc_html__('Container', 'fp-experiences'),
+                'type' => Controls_Manager::SELECT,
+                'options' => [
+                    '' => esc_html__('Default', 'fp-experiences'),
+                    'boxed' => esc_html__('Boxed', 'fp-experiences'),
+                    'full' => esc_html__('Full width', 'fp-experiences'),
+                ],
+                'default' => '',
+                'separator' => 'before',
+            ]
+        );
+
+        $this->add_control(
+            'max_width',
+            [
+                'label' => esc_html__('Maximum width (px)', 'fp-experiences'),
+                'type' => Controls_Manager::NUMBER,
+                'min' => 0,
+                'step' => 10,
+                'default' => '',
+            ]
+        );
+
+        $this->add_control(
+            'gutter',
+            [
+                'label' => esc_html__('Side padding (px)', 'fp-experiences'),
+                'type' => Controls_Manager::NUMBER,
+                'min' => 0,
+                'step' => 4,
+                'default' => '',
+            ]
+        );
+
+        $this->add_control(
+            'sidebar',
+            [
+                'label' => esc_html__('Sidebar position', 'fp-experiences'),
+                'type' => Controls_Manager::SELECT,
+                'options' => [
+                    '' => esc_html__('Default', 'fp-experiences'),
+                    'right' => esc_html__('Right column', 'fp-experiences'),
+                    'left' => esc_html__('Left column', 'fp-experiences'),
+                    'none' => esc_html__('No sidebar (single column)', 'fp-experiences'),
+                ],
+                'default' => '',
+            ]
+        );
+
         $this->end_controls_section();
 
         $this->start_controls_section(
@@ -119,6 +171,10 @@ final class WidgetExperiencePage extends Widget_Base
             'id' => (string) ($settings['experience_id'] ?? ''),
             'sections' => $sections ?: 'hero,highlights,inclusions,meeting,extras,faq,reviews',
             'sticky_widget' => ('yes' === ($settings['sticky_widget'] ?? 'yes')) ? '1' : '0',
+            'container' => (string) ($settings['container'] ?? ''),
+            'max_width' => (string) ($settings['max_width'] ?? ''),
+            'gutter' => (string) ($settings['gutter'] ?? ''),
+            'sidebar' => (string) ($settings['sidebar'] ?? ''),
         ];
 
         $atts = array_merge($atts, $this->collect_theme_atts($settings));
