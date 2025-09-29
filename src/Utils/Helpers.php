@@ -5,8 +5,14 @@ declare(strict_types=1);
 namespace FP_Exp\Utils;
 
 use function absint;
+use function apply_filters;
+use function array_filter;
 use function array_map;
+use function array_unique;
+use function array_values;
+use function delete_transient;
 use function explode;
+use function do_action;
 use function get_current_user_id;
 use function get_option;
 use function get_post_meta;
@@ -17,6 +23,7 @@ use function is_bool;
 use function is_numeric;
 use function is_string;
 use function json_decode;
+use function preg_split;
 use function sanitize_text_field;
 use function set_transient;
 use function stripslashes;
@@ -187,6 +194,39 @@ final class Helpers
     }
 
     /**
+     * Normalise array meta to a sanitized list of strings.
+     *
+     * @return array<int, string>
+     */
+    public static function get_meta_array(int $post_id, string $key): array
+    {
+        $raw = get_post_meta($post_id, $key, true);
+
+        if (empty($raw)) {
+            return [];
+        }
+
+        if (is_array($raw)) {
+            $values = $raw;
+        } elseif (is_string($raw)) {
+            $parts = preg_split('/\r\n|\r|\n/', $raw);
+            $values = false !== $parts ? $parts : [$raw];
+        } else {
+            return [];
+        }
+
+        $values = array_map(static function ($value): string {
+            return sanitize_text_field((string) $value);
+        }, $values);
+
+        $values = array_filter($values, static function (string $value): bool {
+            return '' !== $value;
+        });
+
+        return array_values(array_unique($values));
+    }
+
+    /**
      * @return array<string, string>
      */
     public static function read_utm_cookie(): array
@@ -278,5 +318,43 @@ final class Helpers
         }
 
         return 'ip_' . hash('sha256', $identifier);
+    }
+
+    public static function debug_logging_enabled(): bool
+    {
+        $option = get_option('fp_exp_debug_logging', 'yes');
+
+        if (is_bool($option)) {
+            $enabled = $option;
+        } elseif (is_string($option)) {
+            $normalized = strtolower(trim($option));
+            $enabled = ! in_array($normalized, ['0', 'no', 'off', 'false'], true);
+        } elseif (is_numeric($option)) {
+            $enabled = (int) $option > 0;
+        } else {
+            $enabled = (bool) $option;
+        }
+
+        return (bool) apply_filters('fp_exp_debug_logging_enabled', $enabled);
+    }
+
+    /**
+     * @param array<string, mixed> $context
+     */
+    public static function log_debug(string $channel, string $message, array $context = []): void
+    {
+        if (! self::debug_logging_enabled()) {
+            return;
+        }
+
+        Logger::log($channel, $message, $context);
+    }
+
+    public static function clear_experience_transients(int $experience_id): void
+    {
+        delete_transient('fp_exp_pricing_notice_' . $experience_id);
+        delete_transient('fp_exp_calendar_choices');
+
+        do_action('fp_exp_experience_transients_cleared', $experience_id);
     }
 }

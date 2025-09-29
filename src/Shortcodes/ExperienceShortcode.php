@@ -15,6 +15,7 @@ use function absint;
 use function array_fill_keys;
 use function array_filter;
 use function array_map;
+use function array_unique;
 use function array_values;
 use function apply_filters;
 use function do_shortcode;
@@ -29,12 +30,15 @@ use function get_permalink;
 use function get_post;
 use function get_post_meta;
 use function get_post_thumbnail_id;
+use function get_post_type;
+use function get_the_ID;
 use function get_the_terms;
 use function home_url;
 use function implode;
 use function in_array;
 use function is_array;
 use function is_numeric;
+use function sanitize_key;
 use function sanitize_text_field;
 use function trim;
 use function wp_get_attachment_image_src;
@@ -88,7 +92,7 @@ final class ExperienceShortcode extends BaseShortcode
      */
     protected function get_context(array $attributes, ?string $content = null)
     {
-        $experience_id = absint($attributes['id']);
+        $experience_id = $this->resolve_experience_id($attributes);
 
         if ($experience_id <= 0) {
             return new WP_Error('fp_exp_page_invalid', esc_html__('Missing experience ID.', 'fp-experiences'));
@@ -121,33 +125,17 @@ final class ExperienceShortcode extends BaseShortcode
         ]);
 
         $duration_minutes = absint((string) get_post_meta($experience_id, '_fp_duration_minutes', true));
-        $languages_meta = get_post_meta($experience_id, '_fp_languages', true);
-        $languages = is_array($languages_meta) ? array_filter(array_map('sanitize_text_field', $languages_meta)) : [];
+        $languages = Helpers::get_meta_array($experience_id, '_fp_languages');
         $short_desc = sanitize_text_field((string) get_post_meta($experience_id, '_fp_short_desc', true));
         $content_summary = $short_desc ?: wp_trim_words((string) $post->post_excerpt, 36);
 
         $gallery_ids = get_post_meta($experience_id, '_fp_gallery_ids', true);
         $gallery = $this->prepare_gallery($experience_id, $gallery_ids);
 
-        $highlights_meta = get_post_meta($experience_id, '_fp_highlights', true);
-        $highlights = is_array($highlights_meta)
-            ? array_filter(array_map('sanitize_text_field', $highlights_meta))
-            : [];
-
-        $inclusions_meta = get_post_meta($experience_id, '_fp_inclusions', true);
-        $exclusions_meta = get_post_meta($experience_id, '_fp_exclusions', true);
-
-        $inclusions = is_array($inclusions_meta)
-            ? array_filter(array_map('sanitize_text_field', $inclusions_meta))
-            : [];
-        $exclusions = is_array($exclusions_meta)
-            ? array_filter(array_map('sanitize_text_field', $exclusions_meta))
-            : [];
-
-        $what_to_bring_meta = get_post_meta($experience_id, '_fp_what_to_bring', true);
-        $what_to_bring = is_array($what_to_bring_meta)
-            ? array_filter(array_map('sanitize_text_field', $what_to_bring_meta))
-            : [];
+        $highlights = Helpers::get_meta_array($experience_id, '_fp_highlights');
+        $inclusions = Helpers::get_meta_array($experience_id, '_fp_inclusions');
+        $exclusions = Helpers::get_meta_array($experience_id, '_fp_exclusions');
+        $what_to_bring = Helpers::get_meta_array($experience_id, '_fp_what_to_bring');
 
         $notes_raw = get_post_meta($experience_id, '_fp_notes', true);
         $notes = is_array($notes_raw)
@@ -283,6 +271,53 @@ final class ExperienceShortcode extends BaseShortcode
 
         $badges = $this->build_badges($duration_minutes, $languages, $family_friendly);
 
+        $missing_meta = [];
+
+        if ($enabled_sections['highlights'] && empty($highlights)) {
+            $missing_meta[] = '_fp_highlights';
+        }
+
+        if ($enabled_sections['inclusions']) {
+            if (empty($inclusions)) {
+                $missing_meta[] = '_fp_inclusions';
+            }
+
+            if (empty($exclusions)) {
+                $missing_meta[] = '_fp_exclusions';
+            }
+        }
+
+        if ($enabled_sections['extras']) {
+            if (empty($what_to_bring)) {
+                $missing_meta[] = '_fp_what_to_bring';
+            }
+
+            if (empty($notes)) {
+                $missing_meta[] = '_fp_notes';
+            }
+
+            if (empty($policy)) {
+                $missing_meta[] = '_fp_policy_cancel';
+            }
+        }
+
+        if ($enabled_sections['faq'] && empty($faq_items)) {
+            $missing_meta[] = '_fp_faq';
+        }
+
+        if ($enabled_sections['meeting'] && Helpers::meeting_points_enabled() && empty($meeting_data['primary'])) {
+            $missing_meta[] = '_fp_meeting_point_id';
+        }
+
+        if (! empty($missing_meta)) {
+            $normalized_keys = array_values(array_unique(array_map(static fn ($key) => sanitize_key((string) $key), $missing_meta)));
+            Helpers::log_debug('shortcodes', 'Experience shortcode missing meta', [
+                'shortcode' => $this->tag,
+                'experience_id' => $experience_id,
+                'meta_keys' => $normalized_keys,
+            ]);
+        }
+
         return [
             'theme' => $theme,
             'experience' => [
@@ -311,6 +346,43 @@ final class ExperienceShortcode extends BaseShortcode
             'schema_json' => $schema,
             'data_layer' => wp_json_encode($data_layer),
         ];
+    }
+
+    /**
+     * @param array<string, mixed> $attributes
+     */
+    private function resolve_experience_id(array $attributes): int
+    {
+        $experience_id = absint($attributes['id'] ?? 0);
+
+        if ($experience_id > 0) {
+            return $experience_id;
+        }
+
+        $current_id = absint(get_the_ID() ?: 0);
+        if ($current_id <= 0) {
+            Helpers::log_debug('shortcodes', 'Experience shortcode missing explicit ID', [
+                'shortcode' => $this->tag,
+                'context_post_type' => '',
+                'context_post_id' => 0,
+            ]);
+
+            return 0;
+        }
+
+        $post_type = get_post_type($current_id) ?: '';
+
+        if ('fp_experience' === $post_type) {
+            return $current_id;
+        }
+
+        Helpers::log_debug('shortcodes', 'Experience shortcode missing explicit ID', [
+            'shortcode' => $this->tag,
+            'context_post_type' => $post_type,
+            'context_post_id' => $current_id,
+        ]);
+
+        return 0;
     }
 
     private function resolve_sections(string $raw): array

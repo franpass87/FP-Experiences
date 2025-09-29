@@ -18,13 +18,17 @@ use WP_Post;
 use function absint;
 use function apply_filters;
 use function array_filter;
+use function array_unique;
 use function esc_html__;
 use function get_locale;
 use function get_option;
 use function get_post;
 use function get_permalink;
 use function get_post_meta;
+use function get_post_modified_time;
+use function get_post_type;
 use function get_the_title;
+use function get_the_ID;
 use function gmdate;
 use function in_array;
 use function is_array;
@@ -35,6 +39,8 @@ use function sanitize_text_field;
 use function wp_create_nonce;
 use function wp_json_encode;
 use function wp_timezone;
+use function time;
+use function trim;
 use const ARRAY_A;
 
 final class WidgetShortcode extends BaseShortcode
@@ -168,7 +174,9 @@ final class WidgetShortcode extends BaseShortcode
             'show_calendar' => in_array((string) $attributes['show_calendar'], ['1', 'true'], true),
         ];
 
-        return [
+        $modified = get_post_modified_time('U', true, $post);
+
+        $context = [
             'theme' => $theme,
             'scope_class' => $scope,
             'rtb' => $rtb_context,
@@ -177,10 +185,10 @@ final class WidgetShortcode extends BaseShortcode
                 'id' => $experience_id,
                 'title' => get_the_title($post),
                 'permalink' => get_permalink($post),
-                'highlights' => is_array($highlights) ? array_filter($highlights) : [],
+                'highlights' => $highlights,
                 'meeting_point' => $meeting_point,
                 'duration' => $duration,
-                'languages' => is_array($languages) ? array_filter($languages) : [],
+                'languages' => $languages,
             ],
             'tickets' => $tickets,
             'addons' => $addons,
@@ -191,7 +199,67 @@ final class WidgetShortcode extends BaseShortcode
             'locale' => get_locale(),
             'rtb_settings' => $rtb_settings,
             'display_context' => $display_context,
+            'config_version' => $modified ? (string) $modified : (string) time(),
         ];
+
+        $missing_meta = [];
+
+        if (empty($tickets)) {
+            $missing_meta[] = '_fp_ticket_types';
+        }
+
+        if (Helpers::meeting_points_enabled() && '' === trim($meeting_point)) {
+            $missing_meta[] = '_fp_meeting_point_id';
+        }
+
+        if (! empty($missing_meta)) {
+            $normalized_keys = array_values(array_unique(array_map(static fn ($key) => sanitize_key((string) $key), $missing_meta)));
+            Helpers::log_debug('shortcodes', 'Widget shortcode missing meta', [
+                'shortcode' => $this->tag,
+                'experience_id' => $experience_id,
+                'meta_keys' => $normalized_keys,
+            ]);
+        }
+
+        return $context;
+    }
+
+    /**
+     * @param array<string, mixed> $attributes
+     */
+    private function resolve_experience_id(array $attributes): int
+    {
+        $experience_id = absint($attributes['id'] ?? 0);
+
+        if ($experience_id > 0) {
+            return $experience_id;
+        }
+
+        $current_id = absint(get_the_ID() ?: 0);
+
+        if ($current_id <= 0) {
+            Helpers::log_debug('shortcodes', 'Widget shortcode missing explicit ID', [
+                'shortcode' => $this->tag,
+                'context_post_type' => '',
+                'context_post_id' => 0,
+            ]);
+
+            return 0;
+        }
+
+        $post_type = get_post_type($current_id) ?: '';
+
+        if ('fp_experience' === $post_type) {
+            return $current_id;
+        }
+
+        Helpers::log_debug('shortcodes', 'Widget shortcode missing explicit ID', [
+            'shortcode' => $this->tag,
+            'context_post_type' => $post_type,
+            'context_post_id' => $current_id,
+        ]);
+
+        return 0;
     }
 
     /**

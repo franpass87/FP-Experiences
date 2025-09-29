@@ -11,9 +11,13 @@ use WP_Error;
 use function add_shortcode;
 use function esc_html;
 use function shortcode_atts;
+use function header;
+use function headers_sent;
 
 abstract class BaseShortcode
 {
+    private static bool $sent_no_store_header = false;
+
     protected string $tag = '';
 
     /**
@@ -39,6 +43,8 @@ abstract class BaseShortcode
     {
         $atts = is_array($atts) ? $atts : [];
         $attributes = shortcode_atts($this->defaults, $atts, $shortcode_tag ?: $this->tag);
+
+        $this->send_no_store_header();
 
         $context = $this->get_context($attributes, $content);
 
@@ -72,5 +78,21 @@ abstract class BaseShortcode
     protected function get_asset_handle(): string
     {
         return 'front';
+    }
+
+    private function send_no_store_header(): void
+    {
+        if (self::$sent_no_store_header) {
+            return;
+        }
+
+        if (headers_sent()) {
+            return;
+        }
+
+        header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+        header('Pragma: no-cache');
+
+        self::$sent_no_store_header = true;
     }
 }
