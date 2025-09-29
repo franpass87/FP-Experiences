@@ -6,7 +6,9 @@ namespace FP_Exp\Elementor;
 
 use Elementor\Controls_Manager;
 use Elementor\Widget_Base;
+use FP_Exp\Utils\Helpers;
 
+use function absint;
 use function array_filter;
 use function do_shortcode;
 use function esc_attr;
@@ -50,6 +52,8 @@ final class WidgetList extends Widget_Base
             ]
         );
 
+        $defaults = Helpers::listing_settings();
+
         $this->add_control(
             'filters',
             [
@@ -57,12 +61,15 @@ final class WidgetList extends Widget_Base
                 'type' => Controls_Manager::SELECT2,
                 'multiple' => true,
                 'options' => [
+                    'search' => esc_html__('Search', 'fp-experiences'),
                     'theme' => esc_html__('Theme', 'fp-experiences'),
+                    'language' => esc_html__('Language', 'fp-experiences'),
                     'duration' => esc_html__('Duration', 'fp-experiences'),
                     'price' => esc_html__('Price', 'fp-experiences'),
-                    'language' => esc_html__('Language', 'fp-experiences'),
+                    'family' => esc_html__('Family-friendly', 'fp-experiences'),
+                    'date' => esc_html__('Date', 'fp-experiences'),
                 ],
-                'default' => ['theme', 'duration', 'price'],
+                'default' => $defaults['filters'],
             ]
         );
 
@@ -73,27 +80,27 @@ final class WidgetList extends Widget_Base
                 'type' => Controls_Manager::NUMBER,
                 'min' => 1,
                 'max' => 24,
-                'default' => 9,
+                'default' => $defaults['per_page'],
+            ]
+        );
+
+        $this->add_control(
+            'orderby',
+            [
+                'label' => esc_html__('Order by', 'fp-experiences'),
+                'type' => Controls_Manager::SELECT,
+                'options' => [
+                    'menu_order' => esc_html__('Manual order', 'fp-experiences'),
+                    'date' => esc_html__('Publish date', 'fp-experiences'),
+                    'title' => esc_html__('Title', 'fp-experiences'),
+                    'price' => esc_html__('Price (lowest first)', 'fp-experiences'),
+                ],
+                'default' => $defaults['orderby'],
             ]
         );
 
         $this->add_control(
             'order',
-            [
-                'label' => esc_html__('Order by', 'fp-experiences'),
-                'type' => Controls_Manager::SELECT,
-                'options' => [
-                    'menu_order' => esc_html__('Menu order', 'fp-experiences'),
-                    'date' => esc_html__('Publish date', 'fp-experiences'),
-                    'title' => esc_html__('Title', 'fp-experiences'),
-                    'modified' => esc_html__('Last modified', 'fp-experiences'),
-                ],
-                'default' => 'menu_order',
-            ]
-        );
-
-        $this->add_control(
-            'order_direction',
             [
                 'label' => esc_html__('Order direction', 'fp-experiences'),
                 'type' => Controls_Manager::SELECT,
@@ -101,7 +108,116 @@ final class WidgetList extends Widget_Base
                     'ASC' => esc_html__('Ascending', 'fp-experiences'),
                     'DESC' => esc_html__('Descending', 'fp-experiences'),
                 ],
-                'default' => 'ASC',
+                'default' => $defaults['order'],
+            ]
+        );
+
+        $this->add_control(
+            'view',
+            [
+                'label' => esc_html__('Initial view', 'fp-experiences'),
+                'type' => Controls_Manager::SELECT,
+                'options' => [
+                    'grid' => esc_html__('Grid', 'fp-experiences'),
+                    'list' => esc_html__('List', 'fp-experiences'),
+                ],
+                'default' => 'grid',
+            ]
+        );
+
+        $this->add_control(
+            'show_map',
+            [
+                'label' => esc_html__('Show map link', 'fp-experiences'),
+                'type' => Controls_Manager::SWITCHER,
+                'default' => 'no',
+            ]
+        );
+
+        $this->add_control(
+            'cta',
+            [
+                'label' => esc_html__('CTA behaviour', 'fp-experiences'),
+                'type' => Controls_Manager::SELECT,
+                'options' => [
+                    'page' => esc_html__('Open experience page', 'fp-experiences'),
+                    'widget' => esc_html__('Scroll to booking widget', 'fp-experiences'),
+                ],
+                'default' => 'page',
+            ]
+        );
+
+        $this->end_controls_section();
+
+        $this->start_controls_section(
+            'section_layout',
+            [
+                'label' => esc_html__('Layout', 'fp-experiences'),
+                'tab' => Controls_Manager::TAB_STYLE,
+            ]
+        );
+
+        $this->add_responsive_control(
+            'columns',
+            [
+                'label' => esc_html__('Columns', 'fp-experiences'),
+                'type' => Controls_Manager::NUMBER,
+                'min' => 1,
+                'max' => 4,
+                'step' => 1,
+                'default' => 3,
+                'tablet_default' => 2,
+                'mobile_default' => 1,
+            ]
+        );
+
+        $this->add_control(
+            'gap',
+            [
+                'label' => esc_html__('Card spacing', 'fp-experiences'),
+                'type' => Controls_Manager::SELECT,
+                'options' => [
+                    'compact' => esc_html__('Compact', 'fp-experiences'),
+                    'cozy' => esc_html__('Cozy', 'fp-experiences'),
+                    'spacious' => esc_html__('Spacious', 'fp-experiences'),
+                ],
+                'default' => 'cozy',
+            ]
+        );
+
+        $this->add_control(
+            'show_price_from',
+            [
+                'label' => esc_html__('Show “price from” badge', 'fp-experiences'),
+                'type' => Controls_Manager::SWITCHER,
+                'default' => $defaults['show_price_from'] ? 'yes' : 'no',
+            ]
+        );
+
+        $this->add_control(
+            'show_language_badge',
+            [
+                'label' => esc_html__('Show language badge', 'fp-experiences'),
+                'type' => Controls_Manager::SWITCHER,
+                'default' => 'yes',
+            ]
+        );
+
+        $this->add_control(
+            'show_duration_badge',
+            [
+                'label' => esc_html__('Show duration badge', 'fp-experiences'),
+                'type' => Controls_Manager::SWITCHER,
+                'default' => 'yes',
+            ]
+        );
+
+        $this->add_control(
+            'show_family_badge',
+            [
+                'label' => esc_html__('Show family badge', 'fp-experiences'),
+                'type' => Controls_Manager::SWITCHER,
+                'default' => 'yes',
             ]
         );
 
@@ -129,11 +245,34 @@ final class WidgetList extends Widget_Base
         }
 
         $atts = [
-            'filters' => $filters ?: 'theme,duration,price',
+            'filters' => $filters ?: implode(',', $defaults['filters']),
             'per_page' => (string) ($settings['per_page'] ?? '9'),
-            'order' => (string) ($settings['order'] ?? 'menu_order'),
-            'order_direction' => (string) ($settings['order_direction'] ?? 'ASC'),
+            'orderby' => (string) ($settings['orderby'] ?? 'menu_order'),
+            'order' => (string) ($settings['order'] ?? 'ASC'),
+            'view' => (string) ($settings['view'] ?? 'grid'),
+            'show_map' => ('yes' === ($settings['show_map'] ?? 'no')) ? '1' : '0',
+            'cta' => (string) ($settings['cta'] ?? 'page'),
+            'show_price_from' => ('yes' === ($settings['show_price_from'] ?? 'yes')) ? '1' : '0',
+            'badge_lang' => ('yes' === ($settings['show_language_badge'] ?? 'yes')) ? '1' : '0',
+            'badge_duration' => ('yes' === ($settings['show_duration_badge'] ?? 'yes')) ? '1' : '0',
+            'badge_family' => ('yes' === ($settings['show_family_badge'] ?? 'yes')) ? '1' : '0',
         ];
+
+        if (! empty($settings['columns'])) {
+            $atts['columns_desktop'] = (string) absint($settings['columns']);
+        }
+
+        if (! empty($settings['columns_tablet'])) {
+            $atts['columns_tablet'] = (string) absint($settings['columns_tablet']);
+        }
+
+        if (! empty($settings['columns_mobile'])) {
+            $atts['columns_mobile'] = (string) absint($settings['columns_mobile']);
+        }
+
+        if (! empty($settings['gap'])) {
+            $atts['gap'] = (string) $settings['gap'];
+        }
 
         $atts = array_merge($atts, $this->collect_theme_atts($settings));
 

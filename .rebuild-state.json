@@ -46,8 +46,8 @@
     }
   },
   "rebuild": {
-    "feature": "admin-ux",
-    "step": "complete"
+    "feature": "listing",
+    "step": "DOCS"
   },
   "verify_current": "FRONT-BINDING"
 }

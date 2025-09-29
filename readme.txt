@@ -29,7 +29,9 @@ FP Experiences brings GetYourGuide-style booking flows to WooCommerce without to
 
 == Shortcodes ==
 
-* `[fp_exp_list]` – Grid of experiences with filters. Attributes: `filters`, `per_page`, `order`.
+* `[fp_exp_list]` – Mobile-first experiences showcase with accessible filter form (themes, languages, duration, price range, family-friendly toggle, date picker, and text search), sorting controls, pagination, price badges, optional map links, and dataLayer tracking (`view_item_list` + `select_item`). Attributes: `filters`, `per_page`, `page`, `search`, `order`, `orderby`, `view`, `show_map`, `cta`, `badge_lang`, `badge_duration`, `badge_family`, `show_price_from`, plus layout helpers (`columns_desktop`, `columns_tablet`, `columns_mobile`, `gap`). Price badges cache the lowest ticket price per experience via transients and respect dedicated experience pages when available. Examples:
+  * `[fp_exp_list filters="theme,language,price,date,family" per_page="9" view="grid" orderby="price" order="ASC" show_price_from="1" show_map="1"]`
+  * `[fp_exp_list filters="search,theme" per_page="12" view="list" cta="widget" gap="compact"]`
 * `[fp_exp_widget id="123"]` – Booking widget for a specific experience. Attributes: `sticky`, `show_calendar`, `primary`, `accent`, `radius`.
 * `[fp_exp_calendar id="123" months="2"]` – Inline availability calendar for a single experience.
 * `[fp_exp_checkout]` – Isolated checkout that finalises the FP Experiences cart only.
@@ -40,12 +42,13 @@ The `sections` attribute accepts a comma-separated list of sections to render (h
 
 == Elementor Widgets ==
 
-Six Elementor widgets mirror the shortcodes: List, Widget, Calendar, Checkout, Meeting Points, and the new Experience Page layout. Each exposes theming controls (colors, radius, fonts) plus behavioural toggles (sticky mode, inline calendar, consent defaults). The Experience Page widget lets editors pick sections to display and toggle the sticky availability bar while reusing the `[fp_exp_page]` shortcode under the hood.
+Six Elementor widgets mirror the shortcodes: List, Widget, Calendar, Checkout, Meeting Points, and the new Experience Page layout. The List widget now bundles the full showcase controls (filters, search, ordering, map toggle, CTA behaviour) plus responsive style controls for columns, card spacing, and badge/price visibility. Each widget exposes theming overrides (colors, radius, fonts) alongside behavioural toggles (sticky mode, inline calendar, consent defaults). The Experience Page widget lets editors pick sections to display and toggle the sticky availability bar while reusing the `[fp_exp_page]` shortcode under the hood.
 
 == Settings & Tools ==
 
 * **General** – Structure and webmaster emails, locale preferences, VAT class filters, meeting points toggle.
 * **Branding** – Color palette, button radius, shadows, presets, contrast checker, optional Google Font.
+* **Showcase** – Default filters, ordering, and price badge toggle for the experiences listing/Elementor widget.
 * **Tracking** – Enable/disable GA4, Google Ads, Meta Pixel, Clarity, enhanced conversions, and consent defaults.
 * **Brevo** – API key, list ID, attribute mappings, transactional template IDs, webhook diagnostics.
 * **Calendar** – Google OAuth client credentials, redirect URI, connect/disconnect, target calendar.

@@ -24,6 +24,7 @@ use function is_numeric;
 use function is_string;
 use function json_decode;
 use function preg_split;
+use function sanitize_key;
 use function sanitize_text_field;
 use function set_transient;
 use function stripslashes;
@@ -31,6 +32,7 @@ use function time;
 use function trim;
 use function wp_parse_args;
 use function wp_unslash;
+use function function_exists;
 
 final class Helpers
 {
@@ -79,6 +81,73 @@ final class Helpers
             'clarity' => $channels['clarity'],
             'consentDefaults' => $consent_defaults,
         ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public static function listing_settings(): array
+    {
+        $defaults = [
+            'filters' => ['search', 'theme', 'language', 'duration', 'price', 'family', 'date'],
+            'per_page' => 9,
+            'order' => 'ASC',
+            'orderby' => 'menu_order',
+            'show_price_from' => true,
+        ];
+
+        $settings = get_option('fp_exp_listing', []);
+        $settings = is_array($settings) ? $settings : [];
+
+        $filters = $settings['filters'] ?? $defaults['filters'];
+        if (is_string($filters)) {
+            $filters = array_map('trim', explode(',', $filters));
+        }
+
+        $filters = is_array($filters) ? $filters : [];
+        $filters = array_values(array_filter(array_map(static function ($value): string {
+            if (! is_string($value)) {
+                return '';
+            }
+
+            return sanitize_key($value);
+        }, $filters)));
+
+        if (empty($filters)) {
+            $filters = $defaults['filters'];
+        }
+
+        $per_page = absint((int) ($settings['per_page'] ?? $defaults['per_page']));
+        if ($per_page <= 0) {
+            $per_page = $defaults['per_page'];
+        }
+
+        $order = isset($settings['order']) ? strtoupper(sanitize_key((string) $settings['order'])) : $defaults['order'];
+        if (! in_array($order, ['ASC', 'DESC'], true)) {
+            $order = $defaults['order'];
+        }
+
+        $orderby = isset($settings['orderby']) ? sanitize_key((string) $settings['orderby']) : $defaults['orderby'];
+        if (! in_array($orderby, ['menu_order', 'date', 'title', 'price'], true)) {
+            $orderby = $defaults['orderby'];
+        }
+
+        $show_price_from = self::normalize_bool_option($settings['show_price_from'] ?? $defaults['show_price_from'], $defaults['show_price_from']);
+
+        $payload = [
+            'filters' => $filters,
+            'per_page' => $per_page,
+            'order' => $order,
+            'orderby' => $orderby,
+            'show_price_from' => $show_price_from,
+        ];
+
+        /**
+         * Allow third parties to filter the listing defaults.
+         *
+         * @param array<string, mixed> $payload
+         */
+        return (array) apply_filters('fp_exp_listing_settings', $payload);
     }
 
     /**
@@ -354,7 +423,50 @@ final class Helpers
     {
         delete_transient('fp_exp_pricing_notice_' . $experience_id);
         delete_transient('fp_exp_calendar_choices');
+        delete_transient('fp_exp_price_from_' . $experience_id);
 
         do_action('fp_exp_experience_transients_cleared', $experience_id);
+    }
+
+    public static function currency_code(): string
+    {
+        if (function_exists('get_woocommerce_currency')) {
+            $currency = (string) \get_woocommerce_currency();
+            if ($currency) {
+                return $currency;
+            }
+        }
+
+        $option = get_option('woocommerce_currency');
+        if (is_string($option) && '' !== $option) {
+            return $option;
+        }
+
+        return 'EUR';
+    }
+
+    /**
+     * @param mixed $value
+     */
+    private static function normalize_bool_option($value, bool $default): bool
+    {
+        if (is_bool($value)) {
+            return $value;
+        }
+
+        if (is_numeric($value)) {
+            return (int) $value > 0;
+        }
+
+        if (is_string($value)) {
+            $normalized = strtolower(trim($value));
+            if ('' === $normalized) {
+                return $default;
+            }
+
+            return in_array($normalized, ['1', 'yes', 'true', 'on'], true);
+        }
+
+        return $default;
     }
 }

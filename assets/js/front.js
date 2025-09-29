@@ -591,83 +591,83 @@
     function init() {
         captureUtm();
         document.querySelectorAll('[data-fp-shortcode="widget"]').forEach(setupWidget);
-        document.querySelectorAll('[data-fp-shortcode="list"]').forEach(setupListFilters);
+        document.querySelectorAll('[data-fp-shortcode="list"]').forEach(setupListing);
         setupMeetingPoints();
         setupExperiencePages();
     }
 
-    function setupListFilters(section) {
-        const cards = Array.from(section.querySelectorAll('.fp-exp-card'));
-        const filterChoices = section.querySelectorAll('.fp-exp-filter__choice');
-
-        if (!filterChoices.length) {
+    function setupListing(section) {
+        if (!section) {
             return;
         }
 
-        filterChoices.forEach((choice) => {
-            choice.addEventListener('click', () => {
-                const type = choice.getAttribute('data-filter-type');
-                const value = choice.getAttribute('data-filter-value');
+        const itemsValue = section.getAttribute('data-fp-items');
+        if (itemsValue) {
+            try {
+                const parsed = JSON.parse(itemsValue);
+                if (Array.isArray(parsed) && parsed.length) {
+                    const items = parsed.map((item, index) => {
+                        const payload = {
+                            item_id: String(item.item_id || ''),
+                            item_name: item.item_name || '',
+                            index: item.index || index + 1,
+                        };
 
-                if (!type || !value) {
-                    return;
-                }
-
-                choice.classList.toggle('is-active');
-
-                const activeFilters = Array.from(section.querySelectorAll('.fp-exp-filter__choice.is-active'));
-                const criteria = activeFilters.reduce((acc, item) => {
-                    const filterType = item.getAttribute('data-filter-type');
-                    const filterValue = item.getAttribute('data-filter-value');
-
-                    if (filterType && filterValue) {
-                        if (!acc[filterType]) {
-                            acc[filterType] = new Set();
+                        if (item.price && typeof item.price === 'number') {
+                            payload.price = item.price;
                         }
-                        acc[filterType].add(filterValue.toLowerCase());
+
+                        return payload;
+                    });
+
+                    if (items.length) {
+                        pushTrackingEvent('view_item_list', {
+                            ecommerce: {
+                                item_list_name: 'Experiences listing',
+                                items,
+                            },
+                        });
                     }
-
-                    return acc;
-                }, {});
-
-                cards.forEach((card) => {
-                    card.hidden = !matchesFilters(card, criteria);
-                });
-            });
-        });
-    }
-
-    function matchesFilters(card, criteria) {
-        const types = Object.keys(criteria);
-
-        if (!types.length) {
-            return true;
+                }
+            } catch (error) {
+                // Ignore JSON errors.
+            }
         }
 
-        return types.every((type) => {
-            const values = criteria[type];
-
-            if (!values || !values.size) {
-                return true;
+        section.addEventListener('click', (event) => {
+            const target = event.target;
+            if (!(target instanceof Element)) {
+                return;
             }
 
-            if (type === 'price') {
-                const price = parseFloat(card.getAttribute('data-price-from') || '0');
-                const min = Math.min(...Array.from(values).map(parseFloat));
-                return price >= min;
+            const clickable = target.closest('a');
+            if (!clickable) {
+                return;
             }
 
-            if (type === 'duration') {
-                const label = (card.getAttribute('data-duration-label') || '').toLowerCase();
-                return values.has(label);
+            const card = clickable.closest('.fp-listing__card');
+            if (!card) {
+                return;
             }
 
-            if (type === 'theme') {
-                const themes = (card.getAttribute('data-themes') || '').toLowerCase().split('|');
-                return Array.from(values).some((value) => themes.includes(value));
+            const itemId = card.getAttribute('data-experience-id') || '';
+            const itemName = card.getAttribute('data-experience-name') || '';
+            const priceValue = parseFloat(card.getAttribute('data-experience-price') || '');
+
+            const item = {
+                item_id: String(itemId),
+                item_name: itemName,
+            };
+
+            if (!Number.isNaN(priceValue) && priceValue > 0) {
+                item.price = priceValue;
             }
 
-            return true;
+            pushTrackingEvent('select_item', {
+                ecommerce: {
+                    items: [item],
+                },
+            });
         });
     }
 
