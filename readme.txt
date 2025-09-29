@@ -29,7 +29,7 @@ FP Experiences brings GetYourGuide-style booking flows to WooCommerce without to
 
 == Shortcodes ==
 
-* `[fp_exp_list]` – Mobile-first experiences showcase with accessible filter form (themes, languages, duration, price range, family-friendly toggle, date picker, and text search), sorting controls, pagination, price badges, optional map links, and dataLayer tracking (`view_item_list` + `select_item`). Attributes: `filters`, `per_page`, `page`, `search`, `order`, `orderby`, `view`, `show_map`, `cta`, `badge_lang`, `badge_duration`, `badge_family`, `show_price_from`, plus layout helpers (`columns_desktop`, `columns_tablet`, `columns_mobile`, `gap`). Price badges cache the lowest ticket price per experience via transients and respect dedicated experience pages when available. Examples:
+* `[fp_exp_list]` – Mobile-first experiences showcase with accessible filter form (themes, languages, duration, price range, family-friendly toggle, date picker, and text search), sorting controls, pagination, price badges, optional map links, and dataLayer tracking (`view_item_list` + `select_item`). Active theme/language/family selections appear as removable chips with a reset shortcut so visitors can adjust quickly. Attributes: `filters`, `per_page`, `page`, `search`, `order`, `orderby`, `view`, `show_map`, `cta`, `badge_lang`, `badge_duration`, `badge_family`, `show_price_from`, plus layout helpers (`columns_desktop`, `columns_tablet`, `columns_mobile`, `gap`). Price badges cache the lowest ticket price per experience via transients and respect dedicated experience pages when available. Examples:
   * `[fp_exp_list filters="theme,language,price,date,family" per_page="9" view="grid" orderby="price" order="ASC" show_price_from="1" show_map="1"]`
   * `[fp_exp_list filters="search,theme" per_page="12" view="list" cta="widget" gap="compact"]`
 * `[fp_exp_widget id="123"]` – Booking widget for a specific experience. Attributes: `sticky`, `show_calendar`, `primary`, `accent`, `radius`.
@@ -61,11 +61,11 @@ La voce di menu viene replicata anche nella toolbar con collegamenti rapidi (Nuo
 
 == Settings & Tools ==
 
-* **General** – Structure and webmaster emails, locale preferences, VAT class filters, meeting points toggle.
+* **General** – Structure and webmaster emails, locale preferences, VAT class filters, meeting points toggle, Experience Page layout defaults (container, max-width, gutter, sidebar).
 * **Branding** – Color palette, button radius, shadows, presets, contrast checker, optional Google Font.
 * **Showcase** – Default filters, ordering, and price badge toggle for the experiences listing/Elementor widget.
 * **Tracking** – Enable/disable GA4, Google Ads, Meta Pixel, Clarity, enhanced conversions, and consent defaults.
-* **Brevo** – API key, list ID, attribute mappings, transactional template IDs, webhook diagnostics.
+* **Brevo** – API key, webhook secret (required for webhook callbacks), list ID, attribute mappings, transactional template IDs, webhook diagnostics.
 * **Calendar** – Google OAuth client credentials, redirect URI, connect/disconnect, target calendar.
 * **Tools** – Brevo resync, event replay, REST API ping, meeting point CSV import, and cache/log clearance with rate-limited REST endpoints.
 

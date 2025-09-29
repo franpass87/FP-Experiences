@@ -32,6 +32,10 @@ final class GA4
         $settings = Helpers::tracking_settings();
         $config = isset($settings['ga4']) && is_array($settings['ga4']) ? $settings['ga4'] : [];
 
+        if (empty($config['enabled'])) {
+            return;
+        }
+
         if (! empty($config['gtm_id'])) {
             $gtm = esc_html((string) $config['gtm_id']);
             echo "<!-- FP Experiences GTM -->\n";
@@ -52,6 +56,13 @@ final class GA4
     public function render_purchase_event(int $order_id): void
     {
         if (! Consent::granted(Consent::CHANNEL_GA4)) {
+            return;
+        }
+
+        $settings = Helpers::tracking_settings();
+        $config = isset($settings['ga4']) && is_array($settings['ga4']) ? $settings['ga4'] : [];
+
+        if (empty($config['enabled'])) {
             return;
         }
 

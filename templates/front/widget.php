@@ -28,9 +28,9 @@ $display_context = isset($display_context) ? (string) $display_context : '';
 $config_version = isset($config_version) ? (string) $config_version : '';
 
 $dataset = [
-    'experienceId' => $experience['id'],
-    'experienceTitle' => $experience['title'],
-    'experienceUrl' => $experience['permalink'] ?? '',
+    'experienceId' => (int) $experience['id'],
+    'experienceTitle' => wp_strip_all_tags((string) $experience['title']),
+    'experienceUrl' => esc_url_raw((string) ($experience['permalink'] ?? '')),
     'slots' => $slots,
     'tickets' => $tickets,
     'addons' => $addons,
@@ -53,7 +53,7 @@ $rtb_submit_label = 'pay_later' === $rtb_mode
 <div
     class="<?php echo $container_class; ?>"
     data-fp-shortcode="widget"
-    data-config="<?php echo esc_attr(wp_json_encode($dataset)); ?>"
+    data-config="<?php echo esc_attr(wp_json_encode($dataset, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP)); ?>"
     data-sticky="<?php echo esc_attr($behavior['sticky'] ? '1' : '0'); ?>"
     data-display-context="<?php echo esc_attr($display_context); ?>"
     data-config-version="<?php echo esc_attr($config_version); ?>"
@@ -213,8 +213,27 @@ $rtb_submit_label = 'pay_later' === $rtb_mode
                     <h3 class="fp-exp-step__title"><?php echo esc_html__('Summary', 'fp-experiences'); ?></h3>
                 </header>
                 <div class="fp-exp-step__content">
-                    <div class="fp-exp-summary" data-empty-label="<?php echo esc_attr__('Select tickets to see the summary', 'fp-experiences'); ?>">
-                        <p class="fp-exp-summary__empty"><?php echo esc_html__('Select tickets to see the summary', 'fp-experiences'); ?></p>
+                    <div
+                        class="fp-exp-summary"
+                        data-empty-label="<?php echo esc_attr__('Select tickets to see the summary', 'fp-experiences'); ?>"
+                        data-loading-label="<?php echo esc_attr__('Updating price…', 'fp-experiences'); ?>"
+                        data-error-label="<?php echo esc_attr__('We could not refresh the price. Please try again.', 'fp-experiences'); ?>"
+                        data-slot-label="<?php echo esc_attr__('Choose a time to confirm price and availability.', 'fp-experiences'); ?>"
+                        data-tax-label="<?php echo esc_attr__('Taxes included where applicable.', 'fp-experiences'); ?>"
+                        data-base-label="<?php echo esc_attr__('Base price', 'fp-experiences'); ?>"
+                    >
+                        <div class="fp-exp-summary__status" data-fp-summary-status role="status" aria-live="polite">
+                            <p class="fp-exp-summary__message"><?php echo esc_html__('Select tickets to see the summary', 'fp-experiences'); ?></p>
+                        </div>
+                        <div class="fp-exp-summary__body" data-fp-summary-body hidden>
+                            <ul class="fp-exp-summary__lines" data-fp-summary-lines></ul>
+                            <ul class="fp-exp-summary__adjustments" data-fp-summary-adjustments hidden></ul>
+                            <div class="fp-exp-summary__total" data-fp-summary-total-row>
+                                <span class="fp-exp-summary__total-label"><?php esc_html_e('Total', 'fp-experiences'); ?></span>
+                                <span class="fp-exp-summary__total-amount" data-fp-summary-total></span>
+                            </div>
+                            <p class="fp-exp-summary__disclaimer" data-fp-summary-disclaimer hidden></p>
+                        </div>
                     </div>
                     <?php if ($rtb_enabled) : ?>
                         <form

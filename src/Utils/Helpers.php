@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace FP_Exp\Utils;
 
+use WP_REST_Request;
+
 use function absint;
 use function apply_filters;
 use function array_filter;
@@ -13,15 +15,18 @@ use function array_values;
 use function delete_transient;
 use function explode;
 use function do_action;
+use function function_exists;
 use function get_current_user_id;
 use function get_option;
 use function get_post_meta;
 use function get_transient;
+use function home_url;
 use function in_array;
 use function is_array;
 use function is_bool;
 use function is_numeric;
 use function is_string;
+use function is_user_logged_in;
 use function json_decode;
 use function preg_split;
 use function sanitize_key;
@@ -30,9 +35,10 @@ use function set_transient;
 use function stripslashes;
 use function time;
 use function trim;
+use function wp_create_nonce;
 use function wp_parse_args;
 use function wp_unslash;
-use function function_exists;
+use function wp_verify_nonce;
 
 final class Helpers
 {
@@ -198,6 +204,56 @@ final class Helpers
         return self::rtb_mode();
     }
 
+    public static function rest_nonce(): string
+    {
+        return wp_create_nonce('wp_rest');
+    }
+
+    public static function verify_rest_nonce(WP_REST_Request $request, string $action, array $param_keys = ['nonce', '_wpnonce']): bool
+    {
+        $nonce = self::extract_rest_nonce($request, $param_keys);
+
+        if (! $nonce) {
+            return false;
+        }
+
+        return (bool) wp_verify_nonce($nonce, $action);
+    }
+
+    public static function verify_public_rest_request(WP_REST_Request $request): bool
+    {
+        if (self::verify_rest_nonce($request, 'wp_rest', ['_wpnonce'])) {
+            return true;
+        }
+
+        $referer = sanitize_text_field((string) $request->get_header('referer'));
+        if ($referer) {
+            $home = home_url();
+            if ($home && strpos($referer, $home) === 0) {
+                return true;
+            }
+        }
+
+        return is_user_logged_in();
+    }
+
+    private static function extract_rest_nonce(WP_REST_Request $request, array $param_keys): string
+    {
+        $header = $request->get_header('x-wp-nonce');
+        if (is_string($header) && $header) {
+            return sanitize_text_field($header);
+        }
+
+        foreach ($param_keys as $key) {
+            $value = $request->get_param($key);
+            if (is_string($value) && $value) {
+                return sanitize_text_field($value);
+            }
+        }
+
+        return '';
+    }
+
     public static function rtb_hold_timeout(): int
     {
         $settings = self::rtb_settings();
@@ -263,16 +319,18 @@ final class Helpers
     }
 
     /**
-     * Normalise array meta to a sanitized list of strings.
+     * Normalise array meta to a sanitised list of strings.
+     *
+     * @param array<int|string, mixed> $default
      *
      * @return array<int, string>
      */
-    public static function get_meta_array(int $post_id, string $key): array
+    public static function get_meta_array(int $post_id, string $key, array $default = []): array
     {
         $raw = get_post_meta($post_id, $key, true);
 
         if (empty($raw)) {
-            return [];
+            $raw = $default;
         }
 
         if (is_array($raw)) {

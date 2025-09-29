@@ -30,6 +30,13 @@ final class Assets
 
     private bool $registered = false;
 
+    private bool $tokens_injected = false;
+
+    /**
+     * @var array<string, string>
+     */
+    private array $version_cache = [];
+
     private function __construct()
     {
     }
@@ -52,6 +59,11 @@ final class Assets
 
         wp_enqueue_style('fp-exp-front');
         wp_enqueue_script('fp-exp-front');
+
+        if (! $this->tokens_injected) {
+            wp_add_inline_style('fp-exp-front', Theme::design_tokens_css());
+            $this->tokens_injected = true;
+        }
 
         if (! empty($theme)) {
             wp_add_inline_style('fp-exp-front', Theme::build_scope_css($theme, $scope_class));
@@ -118,6 +130,7 @@ final class Assets
             'fpExpConfig',
             [
                 'restUrl' => rest_url('fp-exp/v1/'),
+                'restNonce' => Helpers::rest_nonce(),
                 'ajaxUrl' => admin_url('admin-ajax.php'),
                 'currency' => $currency,
                 'tracking' => Helpers::tracking_config(),
@@ -127,15 +140,22 @@ final class Assets
 
     private function asset_version(string $relative): string
     {
-        $path = trailingslashit(FP_EXP_PLUGIN_DIR) . ltrim($relative, '/');
+        if (isset($this->version_cache[$relative])) {
+            return $this->version_cache[$relative];
+        }
 
+        $path = trailingslashit(FP_EXP_PLUGIN_DIR) . ltrim($relative, '/');
         if (is_readable($path)) {
             $mtime = filemtime($path);
             if (false !== $mtime) {
-                return (string) $mtime;
+                $this->version_cache[$relative] = (string) $mtime;
+
+                return $this->version_cache[$relative];
             }
         }
 
-        return FP_EXP_VERSION;
+        $this->version_cache[$relative] = FP_EXP_VERSION;
+
+        return $this->version_cache[$relative];
     }
 }

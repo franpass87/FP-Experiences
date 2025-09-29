@@ -53,9 +53,14 @@ final class Checkout
             [
                 'methods' => 'POST',
                 'callback' => [$this, 'handle_rest'],
-                'permission_callback' => '__return_true',
+                'permission_callback' => [$this, 'check_checkout_permission'],
             ]
         );
+    }
+
+    public function check_checkout_permission(WP_REST_Request $request): bool
+    {
+        return Helpers::verify_rest_nonce($request, 'fp-exp-checkout');
     }
 
     public function handle_ajax(): void

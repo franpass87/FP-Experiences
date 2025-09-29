@@ -41,7 +41,7 @@ final class Repository
 
         $data = [
             'id' => $post->ID,
-            'title' => $post->post_title,
+            'title' => sanitize_text_field($post->post_title),
             'address' => sanitize_text_field((string) get_post_meta($post->ID, '_fp_mp_address', true)),
             'lat' => self::normalize_float_meta(get_post_meta($post->ID, '_fp_mp_lat', true)),
             'lng' => self::normalize_float_meta(get_post_meta($post->ID, '_fp_mp_lng', true)),
@@ -102,6 +102,20 @@ final class Repository
             'primary' => $primary,
             'alternatives' => $alternatives,
         ];
+    }
+
+    public static function clear_cache(?int $id = null): void
+    {
+        if (null === $id) {
+            self::$cache = [];
+
+            return;
+        }
+
+        $id = absint($id);
+        if ($id > 0) {
+            unset(self::$cache[$id]);
+        }
     }
 
     public static function get_primary_summary_for_experience(int $experience_id, int $primary_id = 0): string

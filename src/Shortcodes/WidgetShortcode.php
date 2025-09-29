@@ -18,6 +18,7 @@ use WP_Post;
 use function absint;
 use function apply_filters;
 use function array_filter;
+use function array_slice;
 use function array_unique;
 use function esc_html__;
 use function get_locale;
@@ -99,10 +100,10 @@ final class WidgetShortcode extends BaseShortcode
 
         $tickets = $this->prepare_tickets(get_post_meta($experience_id, '_fp_ticket_types', true));
         $addons = $this->prepare_addons(get_post_meta($experience_id, '_fp_addons', true));
-        $highlights = get_post_meta($experience_id, '_fp_highlights', true);
+        $highlights = Helpers::get_meta_array($experience_id, '_fp_highlights');
         $meeting_point = Repository::get_primary_summary_for_experience($experience_id);
         $duration = absint((string) get_post_meta($experience_id, '_fp_duration_minutes', true));
-        $languages = get_post_meta($experience_id, '_fp_languages', true);
+        $languages = Helpers::get_meta_array($experience_id, '_fp_languages');
 
         $slots = $this->get_upcoming_slots($experience_id, $tickets, 60);
         $calendar = $this->group_slots_by_day($slots);
@@ -185,7 +186,7 @@ final class WidgetShortcode extends BaseShortcode
                 'id' => $experience_id,
                 'title' => get_the_title($post),
                 'permalink' => get_permalink($post),
-                'highlights' => $highlights,
+                'highlights' => array_slice($highlights, 0, 4),
                 'meeting_point' => $meeting_point,
                 'duration' => $duration,
                 'languages' => $languages,

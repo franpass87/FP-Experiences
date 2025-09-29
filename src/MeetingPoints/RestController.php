@@ -15,6 +15,9 @@ use function array_values;
 use function rest_ensure_response;
 use function absint;
 use function register_rest_route;
+use function sanitize_email;
+use function sanitize_text_field;
+use function sanitize_textarea_field;
 
 final class RestController
 {
@@ -30,7 +33,7 @@ final class RestController
             '/meeting-points/(?P<experience_id>\d+)',
             [
                 'methods' => 'GET',
-                'permission_callback' => '__return_true',
+                'permission_callback' => [$this, 'can_view_meeting_points'],
                 'callback' => [$this, 'get_meeting_points'],
                 'args' => [
                     'experience_id' => [
@@ -40,6 +43,11 @@ final class RestController
                 ],
             ]
         );
+    }
+
+    public function can_view_meeting_points(WP_REST_Request $request): bool
+    {
+        return Helpers::verify_public_rest_request($request);
     }
 
     public function get_meeting_points(WP_REST_Request $request)
@@ -72,16 +80,23 @@ final class RestController
             return null;
         }
 
+        $title = sanitize_text_field((string) ($point['title'] ?? ''));
+        $address = sanitize_textarea_field((string) ($point['address'] ?? ''));
+        $notes = sanitize_textarea_field((string) ($point['notes'] ?? ''));
+        $phone = sanitize_text_field((string) ($point['phone'] ?? ''));
+        $email = sanitize_email((string) ($point['email'] ?? ''));
+        $opening_hours = sanitize_textarea_field((string) ($point['opening_hours'] ?? ''));
+
         return [
-            'id' => (int) $point['id'],
-            'title' => (string) $point['title'],
-            'address' => (string) $point['address'],
+            'id' => (int) ($point['id'] ?? 0),
+            'title' => $title,
+            'address' => $address,
             'lat' => isset($point['lat']) ? (float) $point['lat'] : null,
             'lng' => isset($point['lng']) ? (float) $point['lng'] : null,
-            'notes' => (string) ($point['notes'] ?? ''),
-            'phone' => (string) ($point['phone'] ?? ''),
-            'email' => (string) ($point['email'] ?? ''),
-            'opening_hours' => (string) ($point['opening_hours'] ?? ''),
+            'notes' => $notes,
+            'phone' => $phone,
+            'email' => $email,
+            'opening_hours' => $opening_hours,
         ];
     }
 }

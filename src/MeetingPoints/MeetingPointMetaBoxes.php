@@ -132,5 +132,7 @@ final class MeetingPointMetaBoxes
         update_post_meta($post_id, '_fp_mp_phone', $phone);
         update_post_meta($post_id, '_fp_mp_email', $email);
         update_post_meta($post_id, '_fp_mp_opening_hours', $opening_hours);
+
+        Repository::clear_cache($post_id);
     }
 }

@@ -29,6 +29,10 @@ final class MetaPixel
 
         $settings = Helpers::tracking_settings();
         $config = isset($settings['meta_pixel']) && is_array($settings['meta_pixel']) ? $settings['meta_pixel'] : [];
+
+        if (empty($config['enabled'])) {
+            return;
+        }
         $pixel_id = (string) ($config['pixel_id'] ?? '');
 
         if (! $pixel_id) {
@@ -49,6 +53,13 @@ final class MetaPixel
     public function render_purchase(int $order_id): void
     {
         if (! Consent::granted(Consent::CHANNEL_META)) {
+            return;
+        }
+
+        $settings = Helpers::tracking_settings();
+        $config = isset($settings['meta_pixel']) && is_array($settings['meta_pixel']) ? $settings['meta_pixel'] : [];
+
+        if (empty($config['enabled'])) {
             return;
         }
 

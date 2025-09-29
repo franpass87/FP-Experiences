@@ -19,6 +19,7 @@ use FP_Exp\Admin\CheckinPage;
 use FP_Exp\Admin\OrdersPage;
 use FP_Exp\Admin\HelpPage;
 use FP_Exp\Admin\ExperiencePageCreator;
+use FP_Exp\Admin\Onboarding;
 use FP_Exp\Booking\Emails;
 use FP_Exp\Booking\Orders;
 use FP_Exp\Booking\Reservations;
@@ -35,11 +36,19 @@ use FP_Exp\Integrations\GoogleAds;
 use FP_Exp\Integrations\MetaPixel;
 use FP_Exp\PostTypes\ExperienceCPT;
 use FP_Exp\Shortcodes\Registrar as ShortcodeRegistrar;
+use FP_Exp\Utils\Helpers;
+
+use Throwable;
 
 use function add_action;
+use function __;
+use function esc_html;
+use function esc_html__;
 use function load_plugin_textdomain;
 use function plugin_basename;
+use function sanitize_text_field;
 use function is_admin;
+use function is_multisite;
 
 final class Plugin
 {
@@ -103,6 +112,15 @@ final class Plugin
 
     private ?MeetingPointsManager $meeting_points = null;
 
+    private ?Onboarding $onboarding = null;
+
+    /**
+     * @var array<int, array{component: string, action: string, message: string}>
+     */
+    private array $boot_errors = [];
+
+    private bool $boot_notice_hooked = false;
+
     public static function instance(): Plugin
     {
         if (null === self::$instance) {
@@ -145,6 +163,7 @@ final class Plugin
             $this->orders_page = new OrdersPage();
             $this->help_page = new HelpPage();
             $this->page_creator = new ExperiencePageCreator();
+            $this->onboarding = new Onboarding();
             $this->admin_menu = new AdminMenu(
                 $this->settings_page,
                 $this->calendar_admin,
@@ -170,75 +189,152 @@ final class Plugin
         add_action('plugins_loaded', [$this, 'load_textdomain']);
         add_action('plugins_loaded', [$this, 'register_database_tables']);
 
-        $this->experience_cpt->register_hooks();
-        $this->shortcodes->register();
-        $this->cart->register_hooks();
-        $this->orders->register_hooks();
-        $this->checkout->register_hooks();
-        $this->emails->register_hooks();
-        $this->brevo->register_hooks();
-        $this->request_to_book->register_hooks();
-        $this->google_calendar->register_hooks();
-        $this->ga4->register_hooks();
-        $this->google_ads->register_hooks();
-        $this->meta_pixel->register_hooks();
-        $this->clarity->register_hooks();
+        $this->guard([$this->experience_cpt, 'register_hooks'], ExperienceCPT::class, 'register_hooks');
+        $this->guard([$this->shortcodes, 'register'], ShortcodeRegistrar::class, 'register');
+        $this->guard([$this->cart, 'register_hooks'], Cart::class, 'register_hooks');
+        $this->guard([$this->orders, 'register_hooks'], Orders::class, 'register_hooks');
+        $this->guard([$this->checkout, 'register_hooks'], BookingCheckout::class, 'register_hooks');
+        $this->guard([$this->emails, 'register_hooks'], Emails::class, 'register_hooks');
+        $this->guard([$this->brevo, 'register_hooks'], Brevo::class, 'register_hooks');
+        $this->guard([$this->request_to_book, 'register_hooks'], RequestToBook::class, 'register_hooks');
+        $this->guard([$this->google_calendar, 'register_hooks'], GoogleCalendar::class, 'register_hooks');
+        $this->guard([$this->ga4, 'register_hooks'], GA4::class, 'register_hooks');
+        $this->guard([$this->google_ads, 'register_hooks'], GoogleAds::class, 'register_hooks');
+        $this->guard([$this->meta_pixel, 'register_hooks'], MetaPixel::class, 'register_hooks');
+        $this->guard([$this->clarity, 'register_hooks'], Clarity::class, 'register_hooks');
 
         if ($this->rest_routes instanceof RestRoutes) {
-            $this->rest_routes->register_hooks();
+            $this->guard([$this->rest_routes, 'register_hooks'], RestRoutes::class, 'register_hooks');
         }
 
         if ($this->meeting_points instanceof MeetingPointsManager) {
-            $this->meeting_points->register_hooks();
+            $this->guard([$this->meeting_points, 'register_hooks'], MeetingPointsManager::class, 'register_hooks');
         }
 
         if ($this->webhooks instanceof Webhooks) {
-            $this->webhooks->register_hooks();
+            $this->guard([$this->webhooks, 'register_hooks'], Webhooks::class, 'register_hooks');
         }
 
         if ($this->settings_page instanceof SettingsPage) {
-            $this->settings_page->register_hooks();
+            $this->guard([$this->settings_page, 'register_hooks'], SettingsPage::class, 'register_hooks');
         }
 
         if ($this->calendar_admin instanceof CalendarAdmin) {
-            $this->calendar_admin->register_hooks();
+            $this->guard([$this->calendar_admin, 'register_hooks'], CalendarAdmin::class, 'register_hooks');
         }
 
         if ($this->logs_page instanceof LogsPage) {
-            $this->logs_page->register_hooks();
+            $this->guard([$this->logs_page, 'register_hooks'], LogsPage::class, 'register_hooks');
         }
 
         if ($this->requests_page instanceof RequestsPage) {
-            $this->requests_page->register_hooks();
+            $this->guard([$this->requests_page, 'register_hooks'], RequestsPage::class, 'register_hooks');
         }
 
         if ($this->experience_meta_boxes instanceof ExperienceMetaBoxes) {
-            $this->experience_meta_boxes->register_hooks();
+            $this->guard([$this->experience_meta_boxes, 'register_hooks'], ExperienceMetaBoxes::class, 'register_hooks');
         }
 
         if ($this->tools_page instanceof ToolsPage) {
-            $this->tools_page->register_hooks();
+            $this->guard([$this->tools_page, 'register_hooks'], ToolsPage::class, 'register_hooks');
         }
 
         if ($this->checkin_page instanceof CheckinPage) {
-            $this->checkin_page->register_hooks();
+            $this->guard([$this->checkin_page, 'register_hooks'], CheckinPage::class, 'register_hooks');
         }
 
         if ($this->page_creator instanceof ExperiencePageCreator) {
-            $this->page_creator->register_hooks();
+            $this->guard([$this->page_creator, 'register_hooks'], ExperiencePageCreator::class, 'register_hooks');
         }
 
         if ($this->orders_page instanceof OrdersPage) {
-            $this->orders_page->register_hooks();
+            $this->guard([$this->orders_page, 'register_hooks'], OrdersPage::class, 'register_hooks');
         }
 
         if ($this->admin_menu instanceof AdminMenu) {
-            $this->admin_menu->register_hooks();
+            $this->guard([$this->admin_menu, 'register_hooks'], AdminMenu::class, 'register_hooks');
+        }
+
+        if ($this->onboarding instanceof Onboarding) {
+            $this->guard([$this->onboarding, 'register'], Onboarding::class, 'register');
         }
 
         if ($this->elementor_widgets instanceof ElementorWidgetsRegistrar) {
-            $this->elementor_widgets->register();
+            $this->guard([$this->elementor_widgets, 'register'], ElementorWidgetsRegistrar::class, 'register');
         }
+    }
+
+    /**
+     * @param callable $callback
+     */
+    private function guard(callable $callback, string $component, string $action): void
+    {
+        try {
+            $callback();
+
+            return;
+        } catch (Throwable $exception) {
+            $message = trim($exception->getMessage());
+            if ('' === $message) {
+                $message = get_class($exception);
+            }
+
+            $message = sanitize_text_field($message);
+
+            if (strlen($message) > 160) {
+                $message = substr($message, 0, 157) . '…';
+            }
+
+            $this->boot_errors[] = [
+                'component' => $component,
+                'action' => $action,
+                'message' => $message,
+            ];
+
+            Helpers::log_debug('plugin_boot', 'Component bootstrap failed', [
+                'component' => $component,
+                'action' => $action,
+                'exception' => get_class($exception),
+                'message' => $exception->getMessage(),
+            ]);
+
+            if (! $this->boot_notice_hooked) {
+                add_action('admin_notices', [$this, 'render_boot_errors']);
+
+                if (is_multisite()) {
+                    add_action('network_admin_notices', [$this, 'render_boot_errors']);
+                }
+
+                $this->boot_notice_hooked = true;
+            }
+        }
+    }
+
+    public function render_boot_errors(): void
+    {
+        if (empty($this->boot_errors)) {
+            return;
+        }
+
+        echo '<div class="notice notice-error"><p>' . esc_html__(
+            'FP Experiences could not finish loading some modules. Check the logs for more details.',
+            'fp-experiences'
+        ) . '</p>';
+        echo '<ul>';
+
+        foreach ($this->boot_errors as $error) {
+            $summary = sprintf(
+                /* translators: 1: module name, 2: method, 3: error message */
+                __('%1$s::%2$s — %3$s', 'fp-experiences'),
+                $error['component'],
+                $error['action'],
+                $error['message']
+            );
+
+            echo '<li>' . esc_html($summary) . '</li>';
+        }
+
+        echo '</ul></div>';
     }
 
     public function load_textdomain(): void

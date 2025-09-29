@@ -26,6 +26,9 @@ final class Clarity
 
         $settings = Helpers::tracking_settings();
         $config = isset($settings['clarity']) && is_array($settings['clarity']) ? $settings['clarity'] : [];
+        if (empty($config['enabled'])) {
+            return;
+        }
         $project_id = (string) ($config['project_id'] ?? '');
 
         if (! $project_id) {

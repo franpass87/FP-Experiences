@@ -14,14 +14,18 @@ use function array_filter;
 use function array_map;
 use function esc_url_raw;
 use function get_option;
+use function get_transient;
 use function gmdate;
 use function implode;
 use function is_array;
 use function is_string;
+use function is_wp_error;
 use function rawurlencode;
 use function sanitize_text_field;
+use function set_transient;
 use function sprintf;
 use function strtotime;
+use function time;
 use function wp_json_encode;
 use function wp_remote_delete;
 use function wp_remote_post;
@@ -30,6 +34,8 @@ use function wp_remote_retrieve_body;
 use function wp_remote_retrieve_response_code;
 use function update_option;
 use function wc_get_order;
+use const MINUTE_IN_SECONDS;
+use function __;
 
 final class GoogleCalendar
 {
@@ -160,6 +166,21 @@ final class GoogleCalendar
             return;
         }
 
+        if (is_wp_error($response)) {
+            Logger::log('google_calendar', 'Failed to sync event', [
+                'reservation' => $reservation_id,
+                'error' => $response->get_error_message(),
+            ]);
+
+            $this->record_notice(
+                'event_request',
+                __('Google Calendar event sync failed. Check the logs for details.', 'fp-experiences'),
+                'error'
+            );
+
+            return;
+        }
+
         $code = wp_remote_retrieve_response_code($response);
 
         if ($code >= 200 && $code < 300) {
@@ -217,6 +238,21 @@ final class GoogleCalendar
             'timeout' => 15,
         ]);
 
+        if (is_wp_error($response)) {
+            Logger::log('google_calendar', 'Failed to delete event', [
+                'reservation' => $reservation_id,
+                'error' => $response->get_error_message(),
+            ]);
+
+            $this->record_notice(
+                'event_request',
+                __('Google Calendar event deletion failed. Check the logs for details.', 'fp-experiences'),
+                'error'
+            );
+
+            return;
+        }
+
         $code = wp_remote_retrieve_response_code($response);
 
         if ($code >= 200 && $code < 300) {
@@ -231,6 +267,12 @@ final class GoogleCalendar
             'status' => $code,
             'body' => wp_remote_retrieve_body($response),
         ]);
+
+        $this->record_notice(
+            'event_delete',
+            __('Google Calendar event deletion failed. Check the logs for diagnostics.', 'fp-experiences'),
+            'warning'
+        );
     }
 
     /**
@@ -347,6 +389,26 @@ final class GoogleCalendar
             'body' => wp_remote_retrieve_body($response),
         ]);
 
+        $this->record_notice(
+            'token_refresh',
+            __('Google Calendar token refresh failed. Reconnect the account from Settings → Calendar.', 'fp-experiences'),
+            'error'
+        );
+
         return '';
+    }
+
+    private function record_notice(string $code, string $message, string $type = 'warning'): void
+    {
+        $stored = get_transient('fp_exp_calendar_notices');
+        $notices = is_array($stored) ? $stored : [];
+
+        $notices[$code] = [
+            'message' => sanitize_text_field($message),
+            'type' => $type,
+            'time' => time(),
+        ];
+
+        set_transient('fp_exp_calendar_notices', $notices, 30 * MINUTE_IN_SECONDS);
     }
 }

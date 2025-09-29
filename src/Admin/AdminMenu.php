@@ -217,20 +217,32 @@ final class AdminMenu
             return;
         }
 
+        $screen = get_current_screen();
+        $screen_id = $screen->id ?? '';
+        $screen_base = $screen->base ?? '';
+        $post_type = $screen->post_type ?? '';
+
+        $is_plugin_screen = 'toplevel_page_fp_exp_dashboard' === $screen_id
+            || ('' !== $screen_id && 0 === strpos($screen_id, 'fp-exp-dashboard_page_fp_exp_'));
+        $root_meta = $this->admin_bar_meta($is_plugin_screen || 'fp_experience' === $post_type);
+
         $admin_bar->add_node([
             'id' => 'fp-exp',
             'title' => esc_html__('FP Experiences', 'fp-experiences'),
             'href' => current_user_can('fp_exp_manage')
                 ? admin_url('admin.php?page=fp_exp_dashboard')
                 : admin_url('post-new.php?post_type=fp_experience'),
+            'meta' => $root_meta,
         ]);
 
         if (current_user_can('edit_fp_experiences')) {
+            $is_new_experience = 'fp_experience' === $post_type && 'post' === $screen_base;
             $admin_bar->add_node([
                 'id' => 'fp-exp-new',
                 'parent' => 'fp-exp',
                 'title' => esc_html__('Nuova esperienza', 'fp-experiences'),
                 'href' => admin_url('post-new.php?post_type=fp_experience'),
+                'meta' => $this->admin_bar_meta($is_new_experience),
             ]);
         }
 
@@ -240,6 +252,7 @@ final class AdminMenu
                 'parent' => 'fp-exp',
                 'title' => esc_html__('Calendario', 'fp-experiences'),
                 'href' => admin_url('admin.php?page=fp_exp_calendar'),
+                'meta' => $this->admin_bar_meta('fp-exp-dashboard_page_fp_exp_calendar' === $screen_id),
             ]);
 
             if (Helpers::rtb_mode() !== 'off') {
@@ -248,6 +261,7 @@ final class AdminMenu
                     'parent' => 'fp-exp',
                     'title' => esc_html__('Richieste', 'fp-experiences'),
                     'href' => admin_url('admin.php?page=fp_exp_requests'),
+                    'meta' => $this->admin_bar_meta('fp-exp-dashboard_page_fp_exp_requests' === $screen_id),
                 ]);
             }
         }
@@ -258,8 +272,17 @@ final class AdminMenu
                 'parent' => 'fp-exp',
                 'title' => esc_html__('Impostazioni', 'fp-experiences'),
                 'href' => admin_url('admin.php?page=fp_exp_settings'),
+                'meta' => $this->admin_bar_meta('fp-exp-dashboard_page_fp_exp_settings' === $screen_id),
             ]);
         }
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function admin_bar_meta(bool $is_current): array
+    {
+        return $is_current ? ['aria-current' => 'page'] : [];
     }
 
     public function enqueue_shared_assets(): void

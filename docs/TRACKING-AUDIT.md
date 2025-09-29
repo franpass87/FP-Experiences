@@ -5,6 +5,7 @@
 - **Google Ads**: Uses conversion ID/label stored in settings; payload piggybacks on the dataLayer purchase event. Enhanced conversions honour consent before hashing customer data.
 - **Meta Pixel**: Injected only when pixel ID set and consent granted; purchase payload derived from WooCommerce order meta with optional server-side ID passthrough.
 - **Microsoft Clarity**: Script tag rendered only when toggle enabled and consent channel `clarity` granted.
+- Front-end and PHP integrations double-check the channel `enabled` flag before outputting scripts, preventing dormant IDs from firing without consent.
 
 ## Request-to-Book events
 Front-end script emits dedicated events for RTB lifecycle:

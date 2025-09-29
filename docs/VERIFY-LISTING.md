@@ -13,8 +13,10 @@ Manual smoke-test checklist for the experiences showcase.
 
 - ✅ The filter form renders with search, taxonomy selects, price range inputs, family-friendly checkbox, date picker, sort selectors, and view toggles.
 - ✅ Cards display featured imagery (or gradient placeholder), highlights/description, badges (duration, language, family when relevant), “From €X” price tag, and CTA linking to the dedicated experience page (or the CPT fallback). Map link opens a Google Maps search for the meeting point.
+- ✅ Active theme/language/family filters surface as removable chips above the form alongside a “Reset filters” link; removing a chip resets pagination to page 1.
 - ✅ The “X experiences found” counter updates after submitting filters. Submissions use `GET` so the page can be bookmarked/shared.
 - ✅ Price badge reflects the lowest ticket price (transient cached) and updates when ticket meta changes.
+- ✅ Price range slider defaults to the cached min/max “price from” values; adjusting the range filters cards and keeps min/max sticky on reload.
 - ✅ Pagination retains applied filters/sorting via the query string. Page reset occurs when filters are reapplied.
 - ✅ Date filtering only returns experiences with open slots on the selected day (querying `fp_exp_slots`).
 - ✅ Switching between grid/list views via the toggle updates the layout classes without breaking pagination or filters.

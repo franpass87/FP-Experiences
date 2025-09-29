@@ -69,10 +69,25 @@ final class RequestToBook
             '/rtb/request',
             [
                 'methods' => 'POST',
-                'permission_callback' => '__return_true',
+                'permission_callback' => [$this, 'check_rtb_permission'],
                 'callback' => [$this, 'handle_request'],
             ]
         );
+
+        register_rest_route(
+            'fp-exp/v1',
+            '/rtb/quote',
+            [
+                'methods' => 'POST',
+                'permission_callback' => [$this, 'check_rtb_permission'],
+                'callback' => [$this, 'handle_quote'],
+            ]
+        );
+    }
+
+    public function check_rtb_permission(WP_REST_Request $request): bool
+    {
+        return Helpers::verify_rest_nonce($request, 'fp-exp-rtb');
     }
 
     /**
@@ -185,6 +200,50 @@ final class RequestToBook
         return rest_ensure_response([
             'success' => true,
             'message' => __('Thank you! Your request was received and our team will confirm availability shortly.', 'fp-experiences'),
+        ]);
+    }
+
+    /**
+     * @return WP_REST_Response|WP_Error
+     */
+    public function handle_quote(WP_REST_Request $request)
+    {
+        nocache_headers();
+
+        $nonce = (string) $request->get_param('nonce');
+
+        if (! wp_verify_nonce($nonce, 'fp-exp-rtb')) {
+            return new WP_Error('fp_exp_rtb_nonce', __('Your session expired. Please refresh and try again.', 'fp-experiences'), ['status' => 403]);
+        }
+
+        if (Helpers::hit_rate_limit('rtb_quote_' . Helpers::client_fingerprint(), 20, MINUTE_IN_SECONDS)) {
+            return new WP_Error('fp_exp_rtb_rate_limited', __('Please wait before requesting a new quote.', 'fp-experiences'), ['status' => 429]);
+        }
+
+        $experience_id = absint($request->get_param('experience_id'));
+        $slot_id = absint($request->get_param('slot_id'));
+        $tickets = $this->normalize_array($request->get_param('tickets'));
+        $addons = $this->normalize_array($request->get_param('addons'));
+
+        if ($experience_id <= 0 || $slot_id <= 0) {
+            return new WP_Error('fp_exp_rtb_invalid', __('Select a date and time before continuing.', 'fp-experiences'), ['status' => 400]);
+        }
+
+        $slot = Slots::get_slot($slot_id);
+        if (! $slot || (int) $slot['experience_id'] !== $experience_id) {
+            return new WP_Error('fp_exp_rtb_slot', __('The selected slot is no longer available.', 'fp-experiences'), ['status' => 404]);
+        }
+
+        $breakdown = Pricing::calculate_breakdown(
+            $experience_id,
+            (string) ($slot['start_datetime'] ?? ''),
+            $tickets,
+            $addons
+        );
+
+        return rest_ensure_response([
+            'success' => true,
+            'breakdown' => $breakdown,
         ]);
     }
 
@@ -511,6 +570,27 @@ final class RequestToBook
         $order->set_currency($currency);
         $order->set_shipping_total(0.0);
         $order->set_shipping_tax(0.0);
+
+        $experience_id = absint($reservation['experience_id'] ?? 0);
+        $slot_id = absint($reservation['slot_id'] ?? 0);
+        $tickets = is_array($reservation['pax'] ?? null) ? $reservation['pax'] : [];
+        $addons = is_array($reservation['addons'] ?? null) ? $reservation['addons'] : [];
+        $slot = $slot_id > 0 ? Slots::get_slot($slot_id) : null;
+
+        if ($experience_id > 0 && $slot) {
+            $breakdown = Pricing::calculate_breakdown(
+                $experience_id,
+                (string) ($slot['start_datetime'] ?? ''),
+                $tickets,
+                $addons
+            );
+
+            $context['totals']['total'] = (float) ($breakdown['total'] ?? $context['totals']['total'] ?? 0.0);
+            $context['totals']['currency'] = $breakdown['currency'] ?? $context['totals']['currency'] ?? $currency;
+            $context['totals']['guests'] = (int) ($breakdown['total_guests'] ?? $context['totals']['guests'] ?? 0);
+            $context['tickets'] = $breakdown['tickets'] ?? $context['tickets'] ?? [];
+            $context['addons'] = $breakdown['addons'] ?? $context['addons'] ?? [];
+        }
 
         $contact = isset($context['customer']) && is_array($context['customer']) ? $context['customer'] : [];
         $names = $this->split_contact_name($contact);

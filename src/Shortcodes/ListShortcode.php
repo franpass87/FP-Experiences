@@ -57,6 +57,7 @@ use function strtolower;
 use function trim;
 use function wp_get_post_terms;
 use function wp_list_pluck;
+use function wp_strip_all_tags;
 use function wp_timezone;
 use function wp_unslash;
 use function wp_json_encode;
@@ -103,6 +104,11 @@ final class ListShortcode extends BaseShortcode
         'shadow' => '',
         'font' => '',
     ];
+
+    /**
+     * @var array<string, array<int, array<string, string>>>
+     */
+    private array $term_choices_cache = [];
 
     private const ALLOWED_FILTERS = ['theme', 'language', 'duration', 'price', 'family', 'date', 'search'];
 
@@ -180,6 +186,9 @@ final class ListShortcode extends BaseShortcode
         $experiences = $this->map_experiences($page_ids, $prices, $show_price_from, $badge_flags, $show_map, $cta_mode);
 
         $filters = $this->build_filters($active_filters, $state, $price_range);
+        $filter_chips = $this->build_filter_chips($filters, $state);
+        $has_active_filters = $this->has_active_filters($filters);
+        $reset_url = $this->build_reset_url($state);
         $tracking_items = $this->build_tracking_items($page_ids, $prices);
 
         $theme = Theme::resolve_palette([
@@ -204,6 +213,9 @@ final class ListShortcode extends BaseShortcode
             'theme' => $theme,
             'experiences' => $experiences,
             'filters' => $filters,
+            'filter_chips' => $filter_chips,
+            'has_active_filters' => $has_active_filters,
+            'reset_url' => $reset_url,
             'state' => $state,
             'view' => $view,
             'per_page' => $per_page,
@@ -680,16 +692,180 @@ final class ListShortcode extends BaseShortcode
     }
 
     /**
+     * @param array<string, mixed> $filters
+     * @param array<string, mixed> $state
+     *
+     * @return array<int, array<string, string>>
+     */
+    private function build_filter_chips(array $filters, array $state): array
+    {
+        $chips = [];
+        $base_url = $this->current_url();
+        $base_url = remove_query_arg([self::LISTING_PARAM_PREFIX . 'page'], $base_url);
+
+        foreach (['theme', 'language'] as $taxonomy) {
+            if (empty($state[$taxonomy]) || empty($filters[$taxonomy]['choices'])) {
+                continue;
+            }
+
+            $labels = [];
+            foreach ($filters[$taxonomy]['choices'] as $choice) {
+                if (isset($choice['slug'], $choice['name'])) {
+                    $labels[(string) $choice['slug']] = (string) $choice['name'];
+                }
+            }
+
+            foreach ((array) $state[$taxonomy] as $slug) {
+                $slug = (string) $slug;
+                $label = $labels[$slug] ?? $slug;
+
+                $chip_state = $state;
+                $chip_state['page'] = 1;
+                $chip_state[$taxonomy] = array_values(array_filter(
+                    (array) $chip_state[$taxonomy],
+                    static fn ($value) => (string) $value !== $slug
+                ));
+
+                if (empty($chip_state[$taxonomy])) {
+                    unset($chip_state[$taxonomy]);
+                }
+
+                $query_args = $this->build_query_from_state($chip_state, 1);
+                $url = add_query_arg(
+                    $query_args,
+                    remove_query_arg([self::LISTING_PARAM_PREFIX . $taxonomy], $base_url)
+                );
+
+                $chips[] = [
+                    'type' => $taxonomy,
+                    'label' => $label,
+                    'url' => $url,
+                    'sr_label' => sprintf(
+                        /* translators: %s: filter label. */
+                        __('Remove %s filter', 'fp-experiences'),
+                        $label
+                    ),
+                ];
+            }
+        }
+
+        if (! empty($state['family'])) {
+            $chip_state = $state;
+            $chip_state['page'] = 1;
+            unset($chip_state['family']);
+
+            $query_args = $this->build_query_from_state($chip_state, 1);
+            $url = add_query_arg(
+                $query_args,
+                remove_query_arg([self::LISTING_PARAM_PREFIX . 'family'], $base_url)
+            );
+
+            $chips[] = [
+                'type' => 'family',
+                'label' => __('Family-friendly', 'fp-experiences'),
+                'url' => $url,
+                'sr_label' => __('Remove family-friendly filter', 'fp-experiences'),
+            ];
+        }
+
+        return $chips;
+    }
+
+    /**
+     * @param array<string, mixed> $filters
+     */
+    private function has_active_filters(array $filters): bool
+    {
+        if (! empty($filters['search']['value'])) {
+            return true;
+        }
+
+        foreach (['theme', 'language', 'duration'] as $filter) {
+            if (! empty($filters[$filter]['value'])) {
+                return true;
+            }
+        }
+
+        if (! empty($filters['family']['value'])) {
+            return true;
+        }
+
+        if (! empty($filters['date']['value'])) {
+            return true;
+        }
+
+        if (isset($filters['price'])) {
+            $price = $filters['price'];
+            $min_default = isset($price['min']) ? (float) $price['min'] : null;
+            $max_default = isset($price['max']) ? (float) $price['max'] : null;
+            $current_min = isset($price['value']['min']) ? (float) $price['value']['min'] : $min_default;
+            $current_max = isset($price['value']['max']) ? (float) $price['value']['max'] : $max_default;
+
+            if (null !== $min_default && null !== $current_min && $current_min > $min_default) {
+                return true;
+            }
+
+            if (null !== $max_default && null !== $current_max && $current_max < $max_default) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function build_reset_url(array $state): string
+    {
+        $reset_state = $state;
+        unset(
+            $reset_state['search'],
+            $reset_state['theme'],
+            $reset_state['language'],
+            $reset_state['duration'],
+            $reset_state['price_min'],
+            $reset_state['price_max'],
+            $reset_state['family'],
+            $reset_state['date']
+        );
+
+        $reset_state['page'] = 1;
+
+        $base_url = $this->current_url();
+        $remove = [
+            self::LISTING_PARAM_PREFIX . 'page',
+            self::LISTING_PARAM_PREFIX . 'theme',
+            self::LISTING_PARAM_PREFIX . 'language',
+            self::LISTING_PARAM_PREFIX . 'duration',
+            self::LISTING_PARAM_PREFIX . 'price_min',
+            self::LISTING_PARAM_PREFIX . 'price_max',
+            self::LISTING_PARAM_PREFIX . 'family',
+            self::LISTING_PARAM_PREFIX . 'date',
+            self::LISTING_PARAM_PREFIX . 'search',
+        ];
+
+        $base_url = remove_query_arg($remove, $base_url);
+
+        $query_args = $this->build_query_from_state($reset_state, 1);
+
+        return add_query_arg($query_args, $base_url);
+    }
+
+    /**
      * @return array<int, array<string, string>>
      */
     private function get_term_choices(string $taxonomy): array
     {
+        if (isset($this->term_choices_cache[$taxonomy])) {
+            return $this->term_choices_cache[$taxonomy];
+        }
+
         $terms = get_terms([
             'taxonomy' => $taxonomy,
             'hide_empty' => true,
         ]);
 
         if (is_wp_error($terms) || empty($terms)) {
+            $this->term_choices_cache[$taxonomy] = [];
+
             return [];
         }
 
@@ -700,6 +876,8 @@ final class ListShortcode extends BaseShortcode
                 'name' => $term->name,
             ];
         }
+
+        $this->term_choices_cache[$taxonomy] = $choices;
 
         return $choices;
     }
@@ -877,11 +1055,13 @@ final class ListShortcode extends BaseShortcode
     {
         $items = [];
         foreach ($ids as $position => $id) {
+            $title = wp_strip_all_tags((string) get_the_title($id));
+
             $items[] = [
                 'item_id' => (string) $id,
-                'item_name' => get_the_title($id),
+                'item_name' => $title,
                 'index' => $position + 1,
-                'price' => isset($prices[$id]) && null !== $prices[$id] ? $prices[$id] : null,
+                'price' => isset($prices[$id]) && null !== $prices[$id] ? (float) $prices[$id] : null,
             ];
         }
 
@@ -979,7 +1159,11 @@ final class ListShortcode extends BaseShortcode
 
         foreach (['theme', 'language', 'duration'] as $filter) {
             if (! empty($state[$filter]) && is_array($state[$filter])) {
-                $args[self::LISTING_PARAM_PREFIX . $filter] = $state[$filter];
+                $values = array_values(array_filter(array_map('sanitize_key', (array) $state[$filter])));
+                sort($values);
+                if (! empty($values)) {
+                    $args[self::LISTING_PARAM_PREFIX . $filter] = $values;
+                }
             }
         }
 

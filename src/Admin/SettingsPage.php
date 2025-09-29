@@ -900,6 +900,56 @@ final class SettingsPage
     public function render_brevo_help(): void
     {
         echo '<p>' . esc_html__('Connect your Brevo account to deliver transactional emails and sync contacts with marketing attributes and tags.', 'fp-experiences') . '</p>';
+
+        $settings = get_option('fp_exp_brevo', []);
+        $settings = is_array($settings) ? $settings : [];
+
+        $enabled = ! empty($settings['enabled']);
+        $api_key = isset($settings['api_key']) ? (string) $settings['api_key'] : '';
+        $connected = $enabled && '' !== $api_key;
+
+        if (! $enabled) {
+            echo '<div class="notice notice-info inline"><p>' . esc_html__('Brevo is currently disabled. WooCommerce templates will be used for customer emails.', 'fp-experiences') . '</p></div>';
+        } elseif ($connected) {
+            echo '<div class="notice notice-success inline"><p>' . esc_html__('Brevo connection active. Transactional emails will use the configured templates when available.', 'fp-experiences') . '</p></div>';
+        } else {
+            echo '<div class="notice notice-warning inline"><p>' . esc_html__('Brevo is enabled but the API key is missing. Add the API key to send transactional emails via Brevo.', 'fp-experiences') . '</p></div>';
+        }
+
+        $templates = isset($settings['templates']) && is_array($settings['templates']) ? $settings['templates'] : [];
+        $configured_templates = array_filter($templates, static fn ($value) => absint($value) > 0);
+
+        if ($configured_templates) {
+            echo '<div class="notice notice-info inline"><p>' . sprintf(
+                /* translators: %d: number of configured templates. */
+                esc_html__('%d Brevo templates configured for confirmations and RTB stages.', 'fp-experiences'),
+                count($configured_templates)
+            ) . '</p></div>';
+        } else {
+            echo '<div class="notice notice-info inline"><p>' . esc_html__('Transactional templates are optional; the plugin falls back to WooCommerce emails when none are provided.', 'fp-experiences') . '</p></div>';
+        }
+
+        $notices = get_transient('fp_exp_brevo_notices');
+
+        if (is_array($notices) && $notices) {
+            $classes = [
+                'error' => 'notice-error',
+                'warning' => 'notice-warning',
+                'success' => 'notice-success',
+                'info' => 'notice-info',
+            ];
+
+            foreach ($notices as $notice) {
+                if (empty($notice['message'])) {
+                    continue;
+                }
+
+                $type = isset($notice['type']) ? (string) $notice['type'] : 'info';
+                $class = $classes[$type] ?? 'notice-info';
+
+                echo '<div class="notice ' . esc_attr($class . ' inline') . '"><p>' . esc_html((string) $notice['message']) . '</p></div>';
+            }
+        }
     }
 
     public function render_calendar_help(): void
@@ -1560,13 +1610,49 @@ final class SettingsPage
     private function render_calendar_status(): void
     {
         $settings = $this->get_calendar_settings();
-        $connected = ! empty($settings['access_token']) && ! empty($settings['refresh_token']);
+        $connected = ! empty($settings['access_token']) && ! empty($settings['calendar_id']);
         $status = $connected
             ? esc_html__('Google Calendar is connected.', 'fp-experiences')
             : esc_html__('Google Calendar is not connected.', 'fp-experiences');
 
         echo '<div class="fp-exp-calendar-status">';
         echo '<p><strong>' . $status . '</strong></p>';
+
+        if ($connected) {
+            echo '<div class="notice notice-success inline"><p>' . esc_html__('Reservations will create or update events on the linked calendar.', 'fp-experiences') . '</p></div>';
+        } else {
+            echo '<div class="notice notice-info inline"><p>' . esc_html__('Connect a Google account to synchronise confirmed reservations with your calendar.', 'fp-experiences') . '</p></div>';
+        }
+
+        if ($connected && empty($settings['refresh_token'])) {
+            echo '<div class="notice notice-warning inline"><p>' . esc_html__('Refresh token missing. Reconnect Google Calendar to keep the integration active.', 'fp-experiences') . '</p></div>';
+        }
+
+        if (! empty($settings['access_token']) && empty($settings['calendar_id'])) {
+            echo '<div class="notice notice-warning inline"><p>' . esc_html__('Calendar ID is empty. Events cannot be pushed until a calendar is selected.', 'fp-experiences') . '</p></div>';
+        }
+
+        $notices = get_transient('fp_exp_calendar_notices');
+
+        if (is_array($notices) && $notices) {
+            $classes = [
+                'error' => 'notice-error',
+                'warning' => 'notice-warning',
+                'success' => 'notice-success',
+                'info' => 'notice-info',
+            ];
+
+            foreach ($notices as $notice) {
+                if (empty($notice['message'])) {
+                    continue;
+                }
+
+                $type = isset($notice['type']) ? (string) $notice['type'] : 'info';
+                $class = $classes[$type] ?? 'notice-info';
+
+                echo '<div class="notice ' . esc_attr($class . ' inline') . '"><p>' . esc_html((string) $notice['message']) . '</p></div>';
+            }
+        }
 
         $connect_url = wp_nonce_url(
             add_query_arg([

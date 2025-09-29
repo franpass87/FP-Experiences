@@ -143,9 +143,14 @@ final class ExperienceShortcode extends BaseShortcode
         $what_to_bring = Helpers::get_meta_array($experience_id, '_fp_what_to_bring');
 
         $notes_raw = get_post_meta($experience_id, '_fp_notes', true);
-        $notes = is_array($notes_raw)
-            ? array_filter(array_map('sanitize_text_field', $notes_raw))
-            : ((string) $notes_raw);
+        if (is_array($notes_raw)) {
+            $notes = array_values(array_filter(array_map('wp_kses_post', array_map('strval', $notes_raw)), static function (string $item): bool {
+                return '' !== trim($item);
+            }));
+        } else {
+            $notes_string = (string) $notes_raw;
+            $notes = '' !== $notes_string ? wp_kses_post($notes_string) : '';
+        }
 
         $policy = wp_kses_post((string) get_post_meta($experience_id, '_fp_policy_cancel', true));
 
@@ -195,10 +200,12 @@ final class ExperienceShortcode extends BaseShortcode
         $layout_defaults = $this->get_layout_defaults();
         $layout = $this->resolve_layout($attributes, $layout_defaults);
         $render_widget = 'none' !== $layout['sidebar'];
+        $sticky_requested = in_array((string) ($attributes['sticky_widget'] ?? '1'), ['1', 'true', 'yes'], true);
+        $is_sticky_widget = $render_widget && $sticky_requested;
 
         $widget_atts = [
             'id' => (string) $experience_id,
-            'sticky' => '0',
+            'sticky' => $is_sticky_widget ? '1' : '0',
             'display_context' => 'page',
         ];
 
@@ -352,7 +359,7 @@ final class ExperienceShortcode extends BaseShortcode
             'sections' => $enabled_sections,
             'navigation' => $navigation,
             'meeting_points' => $meeting_data,
-            'sticky_widget' => $render_widget && in_array((string) $attributes['sticky_widget'], ['1', 'true', 'yes'], true),
+            'sticky_widget' => $is_sticky_widget,
             'widget_html' => $widget_html,
             'schema_json' => $schema,
             'data_layer' => wp_json_encode($data_layer),

@@ -23,6 +23,7 @@ use function get_current_user_id;
 use function rest_ensure_response;
 use function sanitize_key;
 use function sanitize_text_field;
+use function wp_strip_all_tags;
 use function wp_remote_get;
 use function wp_remote_retrieve_body;
 use function wp_remote_retrieve_response_code;
@@ -181,17 +182,24 @@ final class RestRoutes
 
         $payload = array_map(
             static function (array $slot): array {
+                $per_type = [];
+                if (isset($slot['capacity_per_type']) && is_array($slot['capacity_per_type'])) {
+                    foreach ($slot['capacity_per_type'] as $type => $amount) {
+                        $per_type[sanitize_key((string) $type)] = (int) $amount;
+                    }
+                }
+
                 return [
-                    'id' => (int) $slot['id'],
-                    'experience_id' => (int) $slot['experience_id'],
-                    'experience_title' => $slot['experience_title'] ?? '',
-                    'start' => $slot['start_datetime'],
-                    'end' => $slot['end_datetime'],
-                    'capacity_total' => (int) $slot['capacity_total'],
-                    'capacity_per_type' => $slot['capacity_per_type'],
-                    'remaining' => $slot['remaining'],
-                    'reserved' => $slot['reserved_total'],
-                    'duration' => $slot['duration'],
+                    'id' => (int) ($slot['id'] ?? 0),
+                    'experience_id' => (int) ($slot['experience_id'] ?? 0),
+                    'experience_title' => sanitize_text_field((string) ($slot['experience_title'] ?? '')),
+                    'start' => sanitize_text_field((string) ($slot['start_datetime'] ?? '')),
+                    'end' => sanitize_text_field((string) ($slot['end_datetime'] ?? '')),
+                    'capacity_total' => (int) ($slot['capacity_total'] ?? 0),
+                    'capacity_per_type' => $per_type,
+                    'remaining' => (int) ($slot['remaining'] ?? 0),
+                    'reserved' => (int) ($slot['reserved_total'] ?? 0),
+                    'duration' => sanitize_text_field((string) ($slot['duration'] ?? '')),
                 ];
             },
             $slots
@@ -311,12 +319,18 @@ final class RestRoutes
             return rest_ensure_response([
                 'success' => false,
                 'status' => 0,
-                'body' => $response->get_error_message(),
+                'body' => sanitize_text_field($response->get_error_message()),
             ]);
         }
 
         $code = wp_remote_retrieve_response_code($response);
         $body = wp_remote_retrieve_body($response);
+        $body = wp_strip_all_tags((string) $body);
+        if (function_exists('mb_substr')) {
+            $body = mb_substr($body, 0, 500);
+        } else {
+            $body = substr($body, 0, 500);
+        }
 
         Logger::log('tools', 'Ping executed', [
             'status' => $code,
