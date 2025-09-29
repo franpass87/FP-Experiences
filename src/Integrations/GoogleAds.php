@@ -28,6 +28,10 @@ final class GoogleAds
 
         $settings = Helpers::tracking_settings();
         $config = isset($settings['google_ads']) && is_array($settings['google_ads']) ? $settings['google_ads'] : [];
+
+        if (empty($config['enabled'])) {
+            return;
+        }
         $conversion_id = (string) ($config['conversion_id'] ?? '');
         $conversion_label = (string) ($config['conversion_label'] ?? '');
 

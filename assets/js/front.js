@@ -1,11 +1,25 @@
 (function () {
     'use strict';
 
+    const { __: i18n__, _n: i18n_n } = (window.wp && window.wp.i18n) || {
+        __: (text) => text,
+        _n: (single, plural, number) => (number === 1 ? single : plural),
+    };
+
     const pluginConfig = window.fpExpConfig || {};
     const trackingConfig = pluginConfig.tracking || {};
     const firedEvents = [];
     const defaultCurrency = pluginConfig.currency || 'EUR';
     const focusableSelector = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+    function buildRestHeaders(base) {
+        const headers = Object.assign({ 'Content-Type': 'application/json' }, base || {});
+        if (pluginConfig.restNonce) {
+            headers['X-WP-Nonce'] = pluginConfig.restNonce;
+        }
+
+        return headers;
+    }
 
     function getFocusableElements(container) {
         if (!container) {
@@ -150,6 +164,78 @@
 
         const pattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         return pattern.test(value);
+    }
+
+    const currencyFormatters = {};
+
+    function formatMoney(value, currency) {
+        const amount = Number(value);
+        if (Number.isNaN(amount)) {
+            return '';
+        }
+
+        const locale = document.documentElement.lang || 'en';
+        const code = currency || defaultCurrency;
+        const key = `${locale}|${code}`;
+
+        if (!currencyFormatters[key]) {
+            try {
+                currencyFormatters[key] = new Intl.NumberFormat(locale, {
+                    style: 'currency',
+                    currency: code,
+                    currencyDisplay: 'symbol',
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                });
+            } catch (error) {
+                currencyFormatters[key] = null;
+            }
+        }
+
+        if (currencyFormatters[key]) {
+            return currencyFormatters[key].format(amount);
+        }
+
+        return `${code} ${amount.toFixed(2)}`;
+    }
+
+    function describeSlot(slot) {
+        if (!slot) {
+            return null;
+        }
+
+        const locale = document.documentElement.lang || 'en';
+
+        if (slot.start_iso) {
+            const date = new Date(slot.start_iso);
+            if (!Number.isNaN(date.getTime())) {
+                try {
+                    const dateLabel = new Intl.DateTimeFormat(locale, {
+                        weekday: 'short',
+                        month: 'short',
+                        day: 'numeric',
+                    }).format(date);
+                    const timeLabel = new Intl.DateTimeFormat(locale, {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                    }).format(date);
+                    return {
+                        label: timeLabel,
+                        detail: dateLabel,
+                    };
+                } catch (error) {
+                    // Fallback to raw values below.
+                }
+            }
+        }
+
+        const label = slot.time || slot.start || '';
+        const detail = slot.start || '';
+
+        return {
+            label,
+            detail,
+        };
     }
 
     function validateRtbForm(form) {
@@ -709,6 +795,52 @@
         const rtbForm = rtbEnabled ? container.querySelector('[data-fp-rtb-form]') : null;
         const rtbStatus = rtbForm ? rtbForm.querySelector('.fp-exp-rtb-form__status') : null;
         const rtbErrorSummary = rtbForm ? rtbForm.querySelector('[data-fp-error-summary]') : null;
+        const summaryUi = createSummaryUi(summaryContainer, summaryButton, rtbForm, rtbStatus);
+        const slotLookup = new Map((config.slots || []).map((slot) => [String(slot.id), slot]));
+        const quoteCache = new Map();
+
+        const fetchBreakdown = (detail) => {
+            if (!detail || !detail.slotId) {
+                return Promise.resolve(null);
+            }
+
+            const payload = {
+                nonce: config.nonce || '',
+                experience_id: parseInt(config.experienceId || detail.experienceId || 0, 10) || 0,
+                slot_id: parseInt(detail.slotId, 10) || 0,
+                tickets: detail.tickets || {},
+                addons: detail.addons || {},
+            };
+
+            const signature = JSON.stringify(payload);
+            if (quoteCache.has(signature)) {
+                return Promise.resolve(quoteCache.get(signature));
+            }
+
+            return fetch(`${pluginConfig.restUrl}rtb/quote`, {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: buildRestHeaders(),
+                body: JSON.stringify(payload),
+            })
+                .then((response) => {
+                    if (!response.ok) {
+                        throw new Error('quote_http_error');
+                    }
+                    return response.json();
+                })
+                .then((response) => {
+                    if (!response || !response.success || !response.breakdown) {
+                        throw new Error('quote_invalid');
+                    }
+                    quoteCache.set(signature, response.breakdown);
+                    return response.breakdown;
+                });
+        };
+
+        const refreshSummary = () => {
+            updateSummary(summaryUi, state, config, slotLookup, fetchBreakdown);
+        };
 
         if (rtbForm) {
             const fields = rtbForm.querySelectorAll('input, textarea');
@@ -727,6 +859,8 @@
             trackingMeta
         ));
 
+        refreshSummary();
+
         container.addEventListener('fpExpWidgetSummaryUpdate', (event) => {
             const detail = event.detail || {};
             detail.context = displayContext;
@@ -738,7 +872,7 @@
             }
 
             const signature = JSON.stringify(detail.tickets || {});
-            if (detail.quantity > 0 && signature !== lastTicketsSignature) {
+            if (detail.quantity > 0 && signature !== lastTicketsSignature && !detail.pricingPending) {
                 pushTrackingEvent('add_to_cart', payload);
                 lastTicketsSignature = signature;
             }
@@ -754,7 +888,7 @@
                 state.selectedDate = date;
                 state.selectedSlot = null;
                 renderSlots(slotsContainer, slotsByDate[date] || [], state);
-                updateSummary(summaryContainer, summaryButton, state, config);
+                refreshSummary();
             });
         });
 
@@ -772,7 +906,7 @@
                 state.selectedSlot = slotButton.getAttribute('data-slot-id');
                 container.querySelectorAll('.fp-exp-slot-option').forEach((btn) => btn.classList.remove('is-active'));
                 slotButton.classList.add('is-active');
-                updateSummary(summaryContainer, summaryButton, state, config);
+                refreshSummary();
             }
 
             if (target.classList.contains('fp-exp-quantity__control')) {
@@ -803,7 +937,7 @@
                         state.tickets[slug] = nextValue;
                     }
                 }
-                updateSummary(summaryContainer, summaryButton, state, config);
+                refreshSummary();
             }
 
             if (target.matches('.fp-exp-addon input[type="checkbox"], .fp-exp-addon input[type="checkbox"] *')) {
@@ -820,7 +954,7 @@
                     return;
                 }
                 state.addons[slug] = checkbox.checked;
-                updateSummary(summaryContainer, summaryButton, state, config);
+                refreshSummary();
             }
         });
 
@@ -857,7 +991,7 @@
             rtbForm.addEventListener('submit', (event) => {
                 event.preventDefault();
 
-                if (!state.lastSummary || !state.lastSummary.slotId) {
+                if (!state.lastSummary || !state.lastSummary.slotId || state.lastSummary.pricingPending) {
                     return;
                 }
 
@@ -891,9 +1025,17 @@
                 const ecommerce = buildEcommercePayload(config, state.lastSummary);
                 pushTrackingEvent('fpExp.request_submit', Object.assign({ ecommerce }, trackingMeta));
 
-                if (rtbStatus) {
-                    rtbStatus.textContent = rtbStatus.getAttribute('data-loading') || '...';
-                }
+                const loadingMessage = rtbStatus
+                    ? (rtbStatus.getAttribute('data-loading') || i18n__('Sending your request…', 'fp-experiences'))
+                    : i18n__('Sending your request…', 'fp-experiences');
+                const successMessage = rtbStatus
+                    ? (rtbStatus.getAttribute('data-success') || i18n__('Request received! We will reply soon.', 'fp-experiences'))
+                    : i18n__('Request received! We will reply soon.', 'fp-experiences');
+                const errorMessage = rtbStatus
+                    ? (rtbStatus.getAttribute('data-error') || i18n__('Unable to submit your request. Please try again.', 'fp-experiences'))
+                    : i18n__('Unable to submit your request. Please try again.');
+
+                setRtbStatus(summaryUi, 'loading', loadingMessage);
 
                 const submitButton = rtbForm.querySelector('.fp-exp-summary__cta');
                 if (submitButton) {
@@ -927,7 +1069,8 @@
 
                 fetch(`${pluginConfig.restUrl}rtb/request`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'same-origin',
+                    headers: buildRestHeaders(),
                     body: JSON.stringify(requestPayload),
                 })
                     .then((response) => response.json())
@@ -935,11 +1078,7 @@
                         const success = Boolean(response && response.success);
                         const message = (response && response.message) || '';
 
-                        if (rtbStatus) {
-                            rtbStatus.textContent = message || (success
-                                ? (rtbStatus.getAttribute('data-success') || 'Request submitted successfully.')
-                                : (rtbStatus.getAttribute('data-error') || 'Unable to submit your request. Please try again.'));
-                        }
+                        setRtbStatus(summaryUi, success ? 'success' : 'error', message || (success ? successMessage : errorMessage));
 
                         if (success) {
                             pushTrackingEvent('fpExp.request_success', Object.assign({ ecommerce }, trackingMeta));
@@ -956,9 +1095,7 @@
                         }
                     })
                     .catch(() => {
-                        if (rtbStatus) {
-                            rtbStatus.textContent = rtbStatus.getAttribute('data-error') || 'Unable to submit your request. Please try again.';
-                        }
+                        setRtbStatus(summaryUi, 'error', errorMessage);
                         if (submitButton) {
                             submitButton.disabled = false;
                         }
@@ -1001,31 +1138,217 @@
         container.appendChild(list);
     }
 
-    function updateSummary(summaryContainer, summaryButton, state, config) {
-        if (!summaryContainer) {
+    function createSummaryUi(container, button, rtbForm, rtbStatus) {
+        if (!container) {
+            return null;
+        }
+
+        return {
+            container,
+            button,
+            body: container.querySelector('[data-fp-summary-body]'),
+            lines: container.querySelector('[data-fp-summary-lines]'),
+            adjustments: container.querySelector('[data-fp-summary-adjustments]'),
+            totalRow: container.querySelector('[data-fp-summary-total-row]'),
+            totalAmount: container.querySelector('[data-fp-summary-total]'),
+            status: container.querySelector('[data-fp-summary-status]'),
+            disclaimer: container.querySelector('[data-fp-summary-disclaimer]'),
+            emptyLabel: container.getAttribute('data-empty-label') || '',
+            loadingLabel: container.getAttribute('data-loading-label') || '',
+            errorLabel: container.getAttribute('data-error-label') || '',
+            slotLabel: container.getAttribute('data-slot-label') || '',
+            taxLabel: container.getAttribute('data-tax-label') || '',
+            baseLabel: container.getAttribute('data-base-label') || '',
+            rtbForm,
+            rtbStatus,
+        };
+    }
+
+    function resetRtbStatus(ui) {
+        if (!ui || !ui.rtbStatus) {
+            return;
+        }
+
+        ui.rtbStatus.textContent = '';
+        ui.rtbStatus.classList.remove('is-error', 'is-success', 'is-loading');
+    }
+
+    function setRtbStatus(ui, state, message) {
+        if (!ui || !ui.rtbStatus) {
+            return;
+        }
+
+        ui.rtbStatus.textContent = message || '';
+        ui.rtbStatus.classList.remove('is-error', 'is-success', 'is-loading');
+        if (state) {
+            ui.rtbStatus.classList.add(`is-${state}`);
+        }
+    }
+
+    function setSummaryState(ui, state, message) {
+        if (!ui) {
+            return;
+        }
+
+        const states = ['empty', 'loading', 'error', 'ready', 'pending'];
+        states.forEach((name) => ui.container.classList.remove(`is-${name}`));
+        if (state) {
+            ui.container.classList.add(`is-${state}`);
+        }
+
+        if (ui.status) {
+            ui.status.innerHTML = '';
+            if (message) {
+                const paragraph = document.createElement('p');
+                paragraph.className = 'fp-exp-summary__message';
+                paragraph.textContent = message;
+                ui.status.appendChild(paragraph);
+            }
+        }
+    }
+
+    function renderSummaryLines(ui, lines, adjustments, total, currency, options = {}) {
+        if (!ui) {
+            return;
+        }
+
+        if (ui.lines) {
+            ui.lines.innerHTML = '';
+            lines.forEach((line) => {
+                const item = document.createElement('li');
+                item.className = 'fp-exp-summary__line';
+
+                const text = document.createElement('div');
+                text.className = 'fp-exp-summary__line-text';
+
+                const label = document.createElement('span');
+                label.className = 'fp-exp-summary__line-label';
+                label.textContent = line.label;
+                text.appendChild(label);
+
+                if (line.detail) {
+                    const meta = document.createElement('span');
+                    meta.className = 'fp-exp-summary__line-meta';
+                    meta.textContent = line.detail;
+                    text.appendChild(meta);
+                }
+
+                item.appendChild(text);
+
+                if (typeof line.amount === 'number') {
+                    const amount = document.createElement('span');
+                    amount.className = 'fp-exp-summary__line-amount';
+                    amount.textContent = formatMoney(line.amount, line.currency || currency);
+                    item.appendChild(amount);
+                }
+
+                ui.lines.appendChild(item);
+            });
+            ui.lines.hidden = !lines.length;
+        }
+
+        if (ui.adjustments) {
+            ui.adjustments.innerHTML = '';
+            if (adjustments && adjustments.length) {
+                adjustments.forEach((adjustment) => {
+                    const item = document.createElement('li');
+                    item.className = 'fp-exp-summary__adjustment';
+
+                    const label = document.createElement('span');
+                    label.className = 'fp-exp-summary__adjustment-label';
+                    label.textContent = adjustment.label;
+                    item.appendChild(label);
+
+                    const amount = document.createElement('span');
+                    amount.className = 'fp-exp-summary__adjustment-amount';
+                    amount.textContent = formatMoney(adjustment.amount, adjustment.currency || currency);
+                    if (adjustment.amount < 0) {
+                        amount.classList.add('is-negative');
+                    }
+                    item.appendChild(amount);
+
+                    ui.adjustments.appendChild(item);
+                });
+                ui.adjustments.hidden = false;
+            } else {
+                ui.adjustments.hidden = true;
+            }
+        }
+
+        if (ui.totalRow) {
+            if (typeof total === 'number') {
+                ui.totalRow.hidden = false;
+                if (ui.totalAmount) {
+                    ui.totalAmount.textContent = formatMoney(total, currency);
+                }
+            } else {
+                ui.totalRow.hidden = true;
+                if (ui.totalAmount) {
+                    ui.totalAmount.textContent = '';
+                }
+            }
+        }
+
+        if (ui.body) {
+            ui.body.hidden = !lines.length && !(adjustments && adjustments.length);
+        }
+
+        if (ui.disclaimer) {
+            if (options.showDisclaimer && ui.taxLabel) {
+                ui.disclaimer.hidden = false;
+                ui.disclaimer.textContent = ui.taxLabel;
+            } else {
+                ui.disclaimer.hidden = true;
+                ui.disclaimer.textContent = '';
+            }
+        }
+    }
+
+    function dispatchSummaryEvent(ui, detail) {
+        if (!ui || !ui.container) {
+            return;
+        }
+
+        ui.container.dispatchEvent(new CustomEvent('fpExpWidgetSummaryUpdate', {
+            bubbles: true,
+            detail,
+        }));
+    }
+
+    function updateRtbFormFields(ui, detail) {
+        if (!ui || !ui.rtbForm) {
+            return;
+        }
+
+        const slotInput = ui.rtbForm.querySelector('input[name="slot_id"]');
+        const ticketsInput = ui.rtbForm.querySelector('input[name="tickets"]');
+        const addonsInput = ui.rtbForm.querySelector('input[name="addons"]');
+        const submit = ui.rtbForm.querySelector('.fp-exp-summary__cta');
+
+        if (slotInput) {
+            slotInput.value = detail.slotId ? String(detail.slotId) : '';
+        }
+        if (ticketsInput) {
+            ticketsInput.value = JSON.stringify(detail.tickets || {});
+        }
+        if (addonsInput) {
+            addonsInput.value = JSON.stringify(detail.addons || {});
+        }
+        if (submit) {
+            submit.disabled = !detail.slotId || !detail.quantity || detail.pricingPending;
+        }
+    }
+
+    function updateSummary(ui, state, config, slotLookup, fetchBreakdown) {
+        if (!ui) {
             return;
         }
 
         const ticketEntries = Object.entries(state.tickets || {}).filter(([, qty]) => Number(qty) > 0);
         const addonEntries = Object.entries(state.addons || {}).filter(([, active]) => Boolean(active));
 
-        if (!ticketEntries.length) {
-            state.lastSummary = null;
-            summaryContainer.innerHTML = `<p class="fp-exp-summary__empty">${summaryContainer.getAttribute('data-empty-label') || ''}</p>`;
-            if (summaryButton) {
-                summaryButton.disabled = true;
-            }
-            if (rtbStatus) {
-                rtbStatus.textContent = '';
-            }
-            return;
-        }
-
-        const list = document.createElement('ul');
-        list.className = 'fp-exp-summary__list';
-
-        let total = 0;
-
+        const ticketLines = [];
+        const ticketMap = {};
         let totalQuantity = 0;
 
         ticketEntries.forEach(([slug, qty]) => {
@@ -1034,90 +1357,214 @@
                 return;
             }
 
-            const price = parseFloat(ticket.price || 0);
             const count = parseInt(qty, 10) || 0;
-            total += price * count;
-            totalQuantity += count;
+            if (count <= 0) {
+                return;
+            }
 
-            const li = document.createElement('li');
-            li.textContent = `${ticket.label} × ${count}`;
-            list.appendChild(li);
+            ticketLines.push({
+                type: 'ticket',
+                slug,
+                label: ticket.label,
+                detail: `× ${count}`,
+                quantity: count,
+            });
+            ticketMap[slug] = count;
+            totalQuantity += count;
         });
 
+        const addonLines = [];
+        const addonMap = {};
         addonEntries.forEach(([slug]) => {
             const addon = (config.addons || []).find((item) => item.slug === slug);
             if (!addon) {
                 return;
             }
-            total += parseFloat(addon.price || 0);
-            const li = document.createElement('li');
-            li.textContent = `${addon.label}`;
-            list.appendChild(li);
-        });
 
-        if (state.selectedSlot) {
-            const slot = (config.slots || []).find((item) => String(item.id) === String(state.selectedSlot));
-            if (slot) {
-                const info = document.createElement('li');
-                info.textContent = `${slot.start} · ${slot.time}`;
-                list.insertBefore(info, list.firstChild);
-            }
-        }
-
-        summaryContainer.innerHTML = '';
-        summaryContainer.appendChild(list);
-
-        const ticketMap = {};
-        ticketEntries.forEach(([slug, qty]) => {
-            ticketMap[slug] = parseInt(qty, 10) || 0;
-        });
-
-        const addonMap = {};
-        addonEntries.forEach(([slug]) => {
+            addonLines.push({
+                type: 'addon',
+                slug,
+                label: addon.label,
+                detail: '',
+            });
             addonMap[slug] = 1;
         });
 
+        const slot = state.selectedSlot ? slotLookup.get(String(state.selectedSlot)) : null;
+        const slotDescription = describeSlot(slot);
+
+        const baseLines = [];
+        if (slotDescription) {
+            baseLines.push({
+                type: 'slot',
+                slug: 'slot',
+                label: slotDescription.label,
+                detail: slotDescription.detail,
+            });
+        }
+
+        const selectionLines = baseLines.concat(ticketLines, addonLines);
+
         const detail = {
             experienceId: config.experienceId,
-            total,
+            slotId: state.selectedSlot ? String(state.selectedSlot) : null,
             tickets: ticketMap,
             addons: addonMap,
-            slotId: state.selectedSlot,
             quantity: totalQuantity,
             currency: defaultCurrency,
+            pricingPending: !slot,
         };
 
-        state.lastSummary = detail;
+        updateRtbFormFields(ui, detail);
+        resetRtbStatus(ui);
 
-        if (summaryButton) {
-            summaryButton.disabled = !state.selectedSlot;
+        if (!ticketEntries.length) {
+            state.lastSummary = null;
+            state.pendingSignature = null;
+            renderSummaryLines(ui, [], [], null, detail.currency, { showDisclaimer: false });
+            setSummaryState(ui, 'empty', ui.emptyLabel);
+            if (ui.button) {
+                ui.button.disabled = true;
+            }
+            dispatchSummaryEvent(ui, detail);
+            return;
         }
 
-        if (rtbForm) {
-            const slotInput = rtbForm.querySelector('input[name="slot_id"]');
-            const ticketsInput = rtbForm.querySelector('input[name="tickets"]');
-            const addonsInput = rtbForm.querySelector('input[name="addons"]');
-            const submit = rtbForm.querySelector('.fp-exp-summary__cta');
+        renderSummaryLines(ui, selectionLines, [], null, detail.currency, { showDisclaimer: false });
 
-            if (slotInput) {
-                slotInput.value = detail.slotId ? String(detail.slotId) : '';
+        if (!slot) {
+            detail.pricingPending = true;
+            state.lastSummary = detail;
+            state.pendingSignature = null;
+            setSummaryState(ui, 'pending', ui.slotLabel || ui.emptyLabel);
+            if (ui.button) {
+                ui.button.disabled = true;
             }
-            if (ticketsInput) {
-                ticketsInput.value = JSON.stringify(detail.tickets || {});
-            }
-            if (addonsInput) {
-                addonsInput.value = JSON.stringify(detail.addons || {});
-            }
-            if (submit) {
-                submit.disabled = !detail.slotId || !detail.quantity;
-            }
+            dispatchSummaryEvent(ui, detail);
+            return;
         }
 
-        const event = new CustomEvent('fpExpWidgetSummaryUpdate', {
-            bubbles: true,
-            detail,
+        if (ui.button) {
+            ui.button.disabled = true;
+        }
+
+        const signature = JSON.stringify({
+            slot: detail.slotId,
+            tickets: detail.tickets,
+            addons: detail.addons,
         });
-        summaryContainer.dispatchEvent(event);
+
+        state.pendingSignature = signature;
+        detail.pricingPending = true;
+        state.lastSummary = detail;
+        setSummaryState(ui, 'loading', ui.loadingLabel || ui.emptyLabel);
+        dispatchSummaryEvent(ui, detail);
+
+        fetchBreakdown(detail)
+            .then((breakdown) => {
+                if (!breakdown || state.pendingSignature !== signature) {
+                    return;
+                }
+
+                const enrichedLines = [];
+
+                if (breakdown.base_price && breakdown.base_price > 0 && ui.baseLabel) {
+                    enrichedLines.push({
+                        type: 'base',
+                        slug: 'base',
+                        label: ui.baseLabel,
+                        detail: '',
+                        amount: breakdown.base_price,
+                        currency: breakdown.currency,
+                    });
+                }
+
+                if (slotDescription) {
+                    enrichedLines.push({
+                        type: 'slot',
+                        slug: 'slot',
+                        label: slotDescription.label,
+                        detail: slotDescription.detail,
+                    });
+                }
+
+                (breakdown.tickets || []).forEach((item) => {
+                    enrichedLines.push({
+                        type: 'ticket',
+                        slug: item.slug,
+                        label: item.label,
+                        detail: `× ${item.quantity}`,
+                        amount: item.line_total,
+                        currency: breakdown.currency,
+                    });
+                });
+
+                (breakdown.addons || []).forEach((item) => {
+                    enrichedLines.push({
+                        type: 'addon',
+                        slug: item.slug,
+                        label: item.label,
+                        detail: item.quantity > 1 ? `× ${item.quantity}` : '',
+                        amount: item.line_total,
+                        currency: breakdown.currency,
+                    });
+                });
+
+                const adjustments = (breakdown.adjustments || []).map((adjustment) => ({
+                    label: adjustment.label,
+                    amount: adjustment.amount,
+                    currency: breakdown.currency,
+                }));
+
+                renderSummaryLines(ui, enrichedLines, adjustments, breakdown.total, breakdown.currency, {
+                    showDisclaimer: true,
+                });
+
+                const statusParts = [];
+                if (slotDescription) {
+                    statusParts.push(`${slotDescription.detail} · ${slotDescription.label}`);
+                }
+                if (breakdown.total_guests) {
+                    statusParts.push(
+                        i18n_n('%d guest', '%d guests', breakdown.total_guests, 'fp-experiences')
+                            .replace('%d', breakdown.total_guests)
+                    );
+                }
+                const statusMessage = statusParts.join(' · ') || ui.emptyLabel;
+
+                const readyDetail = Object.assign({}, detail, {
+                    total: breakdown.total,
+                    subtotal: breakdown.subtotal,
+                    currency: breakdown.currency,
+                    pricingPending: false,
+                    breakdown,
+                });
+
+                state.lastSummary = readyDetail;
+                setSummaryState(ui, 'ready', statusMessage);
+                if (ui.button) {
+                    ui.button.disabled = !readyDetail.slotId || !readyDetail.quantity;
+                }
+                updateRtbFormFields(ui, readyDetail);
+                dispatchSummaryEvent(ui, readyDetail);
+            })
+            .catch(() => {
+                if (state.pendingSignature !== signature) {
+                    return;
+                }
+
+                setSummaryState(ui, 'error', ui.errorLabel || ui.emptyLabel);
+                if (ui.button) {
+                    ui.button.disabled = true;
+                }
+                setRtbStatus(ui, 'error', ui.errorLabel || '');
+                const errorDetail = Object.assign({}, detail, {
+                    pricingPending: true,
+                    error: true,
+                });
+                state.lastSummary = errorDetail;
+                dispatchSummaryEvent(ui, errorDetail);
+            });
     }
 
     function groupSlotsByDate(slots) {

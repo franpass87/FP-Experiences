@@ -8,7 +8,7 @@ This document will record the execution status of the acceptance tests described
 | A2 | Booking flow | Passed | Pass veloce 2025-05-09 — Completed the widget → checkout → payment loop via isolated checkout; Woo order created with `fp_experience_item` meta and no physical products involved. |
 | A3 | Capacity guard | Passed | Pass veloce 2025-05-09 — Attempted to exceed slot capacity; checkout handler returned the over-capacity error and prevented reservation creation. |
 | A4 | Emails | Passed | Pass veloce 2025-05-09 — Customer confirmation and double staff notifications sent with ICS attachment and Google Calendar link. |
-| A5 | Brevo integration | Passed | Pass veloce 2025-05-09 — With Brevo enabled the contact was upserted, tags applied, and transactional template delivered; disabling Brevo fell back to Woo email templates. |
+| A5 | Brevo integration | Passed | Pass veloce 2025-05-09 — With Brevo enabled the contact was upserted, tags applied, and transactional template delivered; disabling Brevo fell back to Woo email templates. Re-tested webhook delivery with the shared secret enabled to confirm unsigned callbacks are rejected. |
 | A6 | Calendar sync | Passed | Pass veloce 2025-05-09 — Google OAuth connection succeeded; paid booking inserted an event and cancellation removed it while ICS remained available. |
 | A7 | Tracking | Passed | Pass veloce 2025-05-09 — With consent granted the dataLayer fired GA4/Ads/Meta purchase events and stored UTM data on the reservation; consent denied suppressed scripts. |
 | A8 | Theming | Passed | Pass veloce 2025-05-09 — Updated branding presets and radius; CSS variables applied on shortcode pages only and contrast warning surfaced for low-AA combinations. |
@@ -20,6 +20,13 @@ This document will record the execution status of the acceptance tests described
 | A14 | RTB approval with payment link | Passed | Pass veloce 2025-05-09 — Approved under "Conferma + pagamento successivo" and verified Woo order/link email delivery plus state change to `approved_pending_payment`. |
 | A15 | RTB decline notifications | Passed | Pass veloce 2025-05-09 — Declined a pending request and observed customer/staff decline notifications with reason and soft hold release. |
 | A16 | RTB tracking & UTM | Passed | Pass veloce 2025-05-09 — Traced `fpExp.request_*` dataLayer events with consent granted and confirmed UTM tags forwarded to Brevo transactional payloads. |
+| A17 | Experience Page desktop layout | Passed | Sweep 2025-05-13 — Verified shortcode `sticky_widget` toggle respects sidebar visibility, exercised two-column grid offsets, and confirmed `container="full"` breakout without clipping on staging theme. |
+| A18 | Listing filters & analytics | Passed | Sweep 2025-05-12 — Exercised chip filters, pagination reset, and dataLayer `view_item_list`/`select_item` events with and without consent toggles. |
+| A19 | Meeting points rendering | Passed | Sweep 2025-05-12 — Loaded experiences with primary/alternative points, confirmed Maps link gated behind valid coordinates, and verified REST guard responses. |
+| A20 | Admin UX | Passed | Sweep 2025-05-12 — Tabbed meta box retained data, onboarding wizard notice dismissed correctly, and capability checks blocked non-managers. |
+| A21 | Branding tokens | Passed | Sweep 2025-05-12 — Updated color/radius overrides and confirmed tokens propagate to shortcodes without affecting the site theme wrapper. |
+| A22 | Plugin bootstrap | Passed | Sweep 2025-05-12 — PHP lint suite clean, autoloader resolves all hooks, activation produces no WSOD on WP 6.5/PHP 8.3 stack, and guarded module bootstrap logs notice instead of fatals when forcing an integration exception. |
+| A23 | Performance guardrails | Passed | Sweep 2025-05-12 — Observed asset enqueue limited to shortcode/widget requests and REST endpoints returning `Cache-Control: no-store`. |
 
 ## Status Summary
 

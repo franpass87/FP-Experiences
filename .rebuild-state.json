@@ -1,7 +1,7 @@
 {
   "current": "14",
   "ok": true,
-  "notes": "hotfix settings callback visibility",
+  "notes": "cycle five D13 acceptance sweep",
   "audit_current": "A2",
   "audit": {
     "A0": {
@@ -49,5 +49,6 @@
     "feature": "exp-layout",
     "step": "DOCS"
   },
-  "verify_current": "FRONT-BINDING"
+  "verify_current": "FRONT-BINDING",
+  "deepfix_current": "D13"
 }

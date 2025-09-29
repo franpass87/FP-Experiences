@@ -172,6 +172,8 @@ final class MeetingPointImporter
             }
         }
 
+        Repository::clear_cache();
+
         set_transient(
             self::TRANSIENT_KEY,
             [

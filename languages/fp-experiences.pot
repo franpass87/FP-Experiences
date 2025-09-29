@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: FP Experiences 0.1.0\\n"
 "Report-Msgid-Bugs-To: https://francescopasseri.com\\n"
-"POT-Creation-Date: 2024-01-01 00:00:00+00:00\\n"
+"POT-Creation-Date: 2025-05-12 00:00:00+00:00\\n"
 "MIME-Version: 1.0\\n"
 "Content-Type: text/plain; charset=UTF-8\\n"
 "Content-Transfer-Encoding: 8bit\\n"
@@ -308,3 +308,192 @@ msgstr ""
 #: src/Api/RestRoutes.php
 msgid "Cache already cleared recently. Try again in a moment."
 msgstr ""
+
+#: src/Admin/SettingsPage.php:912
+msgid "Brevo is currently disabled. WooCommerce templates will be used for customer emails."
+msgstr ""
+
+#: src/Admin/SettingsPage.php:914
+msgid "Brevo connection active. Transactional emails will use the configured templates when available."
+msgstr ""
+
+#: src/Admin/SettingsPage.php:916
+msgid "Brevo is enabled but the API key is missing. Add the API key to send transactional emails via Brevo."
+msgstr ""
+
+#: src/Admin/SettingsPage.php:925
+#, php-format
+msgid "%d Brevo templates configured for confirmations and RTB stages."
+msgstr ""
+
+#: src/Admin/SettingsPage.php:929
+msgid "Transactional templates are optional; the plugin falls back to WooCommerce emails when none are provided."
+msgstr ""
+
+#: src/Admin/SettingsPage.php:1622
+msgid "Reservations will create or update events on the linked calendar."
+msgstr ""
+
+#: src/Admin/SettingsPage.php:1624
+msgid "Connect a Google account to synchronise confirmed reservations with your calendar."
+msgstr ""
+
+#: src/Admin/SettingsPage.php:1628
+msgid "Refresh token missing. Reconnect Google Calendar to keep the integration active."
+msgstr ""
+
+#: src/Admin/SettingsPage.php:1632
+msgid "Calendar ID is empty. Events cannot be pushed until a calendar is selected."
+msgstr ""
+
+#: src/Integrations/Brevo.php:205
+#, php-format
+msgid "Brevo contact sync failed (HTTP %d). Check the logs for details."
+msgstr ""
+
+#: src/Integrations/Brevo.php:245
+msgid "Transactional email template not configured. WooCommerce fallback used."
+msgstr ""
+
+#: src/Integrations/Brevo.php:312
+msgid "Brevo transactional email failed to send. Check the logs for details."
+msgstr ""
+
+#: src/Integrations/Brevo.php:331
+#, php-format
+msgid "Brevo transactional email failed with HTTP %d. Check the logs for details."
+msgstr ""
+
+#: src/Integrations/Brevo.php:403
+msgid "Brevo event tracking failed. Check the logs for diagnostics."
+msgstr ""
+
+#: src/Integrations/Brevo.php:423
+#, php-format
+msgid "Brevo event tracking request returned HTTP %d."
+msgstr ""
+
+#: src/Integrations/GoogleCalendar.php:177
+msgid "Google Calendar event sync failed. Check the logs for details."
+msgstr ""
+
+#: src/Integrations/GoogleCalendar.php:249
+msgid "Google Calendar event deletion failed. Check the logs for details."
+msgstr ""
+
+#: src/Integrations/GoogleCalendar.php:273
+msgid "Google Calendar event deletion failed. Check the logs for diagnostics."
+msgstr ""
+
+#: src/Integrations/GoogleCalendar.php:394
+msgid "Google Calendar token refresh failed. Reconnect the account from Settings → Calendar."
+msgstr ""
+
+#: src/Shortcodes/ListShortcode.php:744
+#, php-format
+msgid "Remove %s filter"
+msgstr ""
+
+#: src/Shortcodes/ListShortcode.php:766
+msgid "Remove family-friendly filter"
+msgstr ""
+
+#: templates/front/list.php:81
+msgid "Reset filters"
+msgstr ""
+#: src/Admin/Onboarding.php:55
+msgid "Benvenuto in FP Experiences"
+msgstr ""
+
+#: src/Admin/Onboarding.php:56
+msgid "Onboarding"
+msgstr ""
+
+#: src/Admin/Onboarding.php:74 src/Admin/Onboarding.php:139
+msgid "You do not have permission to manage FP Experiences."
+msgstr ""
+
+#: src/Admin/Onboarding.php:82
+msgid "FP Experiences — Onboarding"
+msgstr ""
+
+#: src/Admin/Onboarding.php:87
+msgid "✅ Onboarding completato: puoi sempre riaprire questa guida per rivedere i passaggi chiave."
+msgstr ""
+
+#: src/Admin/Onboarding.php:91
+msgid "Ultimo aggiornamento: %s"
+msgstr ""
+
+#: src/Admin/Onboarding.php:98
+msgid "Configura rapidamente il plugin seguendo i tre step consigliati. Ogni step include shortcut verso le aree principali del plugin."
+msgstr ""
+
+#: src/Admin/Onboarding.php:102
+msgid "1. Crea o collega le esperienze"
+msgstr ""
+
+#: src/Admin/Onboarding.php:103
+msgid "Importa le esperienze esistenti o creane di nuove, completando descrizioni, media e prezzi."
+msgstr ""
+
+#: src/Admin/Onboarding.php:104
+msgid "Nuova esperienza"
+msgstr ""
+
+#: src/Admin/Onboarding.php:105
+msgid "Gestisci esperienze"
+msgstr ""
+
+#: src/Admin/Onboarding.php:109
+msgid "2. Imposta disponibilità e prenotazioni"
+msgstr ""
+
+#: src/Admin/Onboarding.php:110
+msgid "Configura calendario, regole di pricing e opzioni di checkout o richiesta di prenotazione."
+msgstr ""
+
+#: src/Admin/Onboarding.php:111
+msgid "Apri calendario"
+msgstr ""
+
+#: src/Admin/Onboarding.php:112
+msgid "Vai alle impostazioni"
+msgstr ""
+
+#: src/Admin/Onboarding.php:116
+msgid "3. Pubblica la vetrina e monitora"
+msgstr ""
+
+#: src/Admin/Onboarding.php:117
+msgid "Inserisci shortcode o widget Elementor per la vetrina e la pagina esperienza, poi verifica tracking e branding."
+msgstr ""
+
+#: src/Admin/Onboarding.php:118
+msgid "Apri guida & shortcode"
+msgstr ""
+
+#: src/Admin/Onboarding.php:119
+msgid "Strumenti utili"
+msgstr ""
+
+#: src/Admin/Onboarding.php:127
+msgid "Segna onboarding come completato"
+msgstr ""
+
+#: src/Admin/Onboarding.php:177
+msgid "Benvenuto! Completa l’onboarding guidato per verificare prezzi, disponibilità e tracking prima di andare live."
+msgstr ""
+
+#: src/Admin/Onboarding.php:178
+msgid "Apri onboarding"
+msgstr ""
+#: src/Plugin.php
+msgid "FP Experiences could not finish loading some modules. Check the logs for more details."
+msgstr ""
+
+#: src/Plugin.php
+#, php-format
+msgid "%1$s::%2$s — %3$s"
+msgstr ""
+

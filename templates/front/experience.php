@@ -80,14 +80,13 @@ $has_faq = ! empty($faq);
 $has_reviews = ! empty($reviews);
 
 $cta_label = esc_html__('Controlla disponibilità', 'fp-experiences');
-$layout_data = 'none' === $sidebar_position ? 'single' : 'auto';
 $sidebar_data = in_array($sidebar_position, ['left', 'none'], true) ? $sidebar_position : 'right';
 
 ?>
 <div
     class="<?php echo esc_attr(implode(' ', $wrapper_classes)); ?>"
     data-fp-shortcode="experience"
-    data-layout="<?php echo esc_attr($layout_data); ?>"
+    data-layout="<?php echo esc_attr($layout_container); ?>"
     data-sidebar="<?php echo esc_attr($sidebar_data); ?>"
     <?php if ('' !== $layout_style_attr) : ?>style="<?php echo esc_attr($layout_style_attr); ?>"<?php endif; ?>
 >
@@ -101,7 +100,7 @@ $sidebar_data = in_array($sidebar_position, ['left', 'none'], true) ? $sidebar_p
     <div class="fp-grid" data-fp-page>
         <main class="fp-main">
             <?php if (! empty($sections['hero'])) : ?>
-                <section class="fp-section fp-hero" id="fp-exp-section-hero" data-fp-section="hero">
+                <section class="fp-section fp-hero-section" id="fp-exp-section-hero" data-fp-section="hero">
                     <div class="fp-hero-media" aria-hidden="<?php echo empty($gallery) ? 'true' : 'false'; ?>">
                         <?php if (! empty($gallery)) : ?>
                             <div class="fp-hero fp-exp-gallery" data-fp-gallery>

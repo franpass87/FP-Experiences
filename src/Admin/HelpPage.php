@@ -33,7 +33,7 @@ final class HelpPage
 
         echo '<section class="fp-exp-help__section">';
         echo '<h2>' . esc_html__('Risorse utili', 'fp-experiences') . '</h2>';
-        echo '<p>' . esc_html__('Tutte le pagine dell'amministrazione FP Experiences rispettano i ruoli guida, operatore e manager. Per supporto aggiuntivo consulta la documentazione interna.', 'fp-experiences') . '</p>';
+        echo '<p>' . esc_html__('Tutte le pagine dell\'amministrazione FP Experiences rispettano i ruoli guida, operatore e manager. Per supporto aggiuntivo consulta la documentazione interna.', 'fp-experiences') . '</p>';
         echo '</section>';
 
         echo '</div>';

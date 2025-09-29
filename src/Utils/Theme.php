@@ -15,6 +15,7 @@ use function is_string;
 use function sanitize_hex_color;
 use function sanitize_key;
 use function sanitize_text_field;
+use function sprintf;
 use function uniqid;
 use function wp_parse_args;
 
@@ -112,7 +113,7 @@ final class Theme
         $palette = wp_parse_args($override_colors, $palette);
 
         foreach ($palette as $key => $value) {
-            if ('radius' === $key || 'shadow' === $key || 'font' === $key) {
+            if ('radius' === $key || 'shadow' === $key || 'font' === $key || 'gap' === $key) {
                 $palette[$key] = is_string($value) ? sanitize_text_field($value) : self::base_palette()[$key];
                 continue;
             }
@@ -203,6 +204,7 @@ final class Theme
             'radius' => '12px',
             'shadow' => '0 10px 30px rgba(0,0,0,0.08)',
             'font' => '',
+            'gap' => '24px',
         ];
     }
 
@@ -230,21 +232,77 @@ final class Theme
      */
     private static function variables_from_palette(array $palette): array
     {
+        $primary = $palette['primary'] ?? '#8B1E3F';
+        $secondary = $palette['secondary'] ?? '#405F3B';
+        $accent = $palette['accent'] ?? '#5B8C5A';
+        $background = $palette['background'] ?? '#FFFFFF';
+        $surface = $palette['surface'] ?? '#F7F4F0';
+        $text = $palette['text'] ?? '#1F1F1F';
+        $muted = $palette['muted'] ?? '#666666';
+        $success = $palette['success'] ?? '#1B998B';
+        $warning = $palette['warning'] ?? '#F4A261';
+        $danger = $palette['danger'] ?? '#C44536';
+        $radius = $palette['radius'] ?? '12px';
+        $shadow = $palette['shadow'] ?? '0 10px 30px rgba(0,0,0,0.08)';
+        $font = $palette['font'] ? $palette['font'] : 'inherit';
+        $gap = $palette['gap'] ?? '24px';
+        $focus_ring = sprintf('color-mix(in srgb, %s 70%%, #ffffff)', $primary);
+        $focus_ring_soft = sprintf('color-mix(in srgb, %s 32%%, #ffffff)', $primary);
+
         return [
-            '--fp-exp-color-primary' => $palette['primary'] ?? '#8B1E3F',
-            '--fp-exp-color-secondary' => $palette['secondary'] ?? '#405F3B',
-            '--fp-exp-color-accent' => $palette['accent'] ?? '#5B8C5A',
-            '--fp-exp-color-background' => $palette['background'] ?? '#FFFFFF',
-            '--fp-exp-color-surface' => $palette['surface'] ?? '#F7F4F0',
-            '--fp-exp-color-text' => $palette['text'] ?? '#1F1F1F',
-            '--fp-exp-color-muted' => $palette['muted'] ?? '#666666',
-            '--fp-exp-color-success' => $palette['success'] ?? '#1B998B',
-            '--fp-exp-color-warning' => $palette['warning'] ?? '#F4A261',
-            '--fp-exp-color-danger' => $palette['danger'] ?? '#C44536',
-            '--fp-exp-radius-base' => $palette['radius'] ?? '12px',
-            '--fp-exp-shadow-base' => $palette['shadow'] ?? '0 10px 30px rgba(0,0,0,0.08)',
-            '--fp-exp-font-family' => $palette['font'] ? $palette['font'] : 'inherit',
+            '--fp-exp-color-primary' => $primary,
+            '--fp-exp-color-secondary' => $secondary,
+            '--fp-exp-color-accent' => $accent,
+            '--fp-exp-color-background' => $background,
+            '--fp-exp-color-surface' => $surface,
+            '--fp-exp-color-text' => $text,
+            '--fp-exp-color-muted' => $muted,
+            '--fp-exp-color-success' => $success,
+            '--fp-exp-color-warning' => $warning,
+            '--fp-exp-color-danger' => $danger,
+            '--fp-exp-radius-base' => $radius,
+            '--fp-exp-shadow-base' => $shadow,
+            '--fp-exp-font-family' => $font,
+            '--fp-exp-gap' => $gap,
+            '--fp-color-primary' => $primary,
+            '--fp-color-secondary' => $secondary,
+            '--fp-color-accent' => $accent,
+            '--fp-color-bg' => $background,
+            '--fp-color-surface' => $surface,
+            '--fp-color-text' => $text,
+            '--fp-color-muted' => $muted,
+            '--fp-color-success' => $success,
+            '--fp-color-warning' => $warning,
+            '--fp-color-danger' => $danger,
+            '--fp-radius' => $radius,
+            '--fp-shadow' => $shadow,
+            '--fp-font-family' => $font,
+            '--fp-gap' => $gap,
+            '--fp-focus-ring' => $focus_ring,
+            '--fp-focus-ring-soft' => $focus_ring_soft,
         ];
+    }
+
+    public static function design_tokens_css(): string
+    {
+        $tokens = [
+            '--fp-color-primary' => '#0B6EFD',
+            '--fp-color-secondary' => '#1857C4',
+            '--fp-color-accent' => '#00A37A',
+            '--fp-color-bg' => '#F7F8FA',
+            '--fp-color-surface' => '#FFFFFF',
+            '--fp-color-text' => '#0F172A',
+            '--fp-color-muted' => '#64748B',
+            '--fp-color-success' => '#1B998B',
+            '--fp-color-warning' => '#F4A261',
+            '--fp-color-danger' => '#C44536',
+            '--fp-radius' => '16px',
+            '--fp-shadow' => '0 8px 24px rgba(15,23,42,0.08)',
+            '--fp-font-family' => 'inherit',
+            '--fp-gap' => '24px',
+        ];
+
+        return ':root{' . self::stringify_variables($tokens) . '}';
     }
 
     /**

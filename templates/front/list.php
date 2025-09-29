@@ -17,18 +17,11 @@ if (! defined('ABSPATH')) {
     exit;
 }
 
-use function add_query_arg;
-use function esc_attr;
-use function esc_html;
-use function esc_html_e;
-use function esc_url;
-use function number_format_i18n;
-use function remove_query_arg;
-use function wp_json_encode;
-use function _n;
-
 $layout = isset($layout) && is_array($layout) ? $layout : [];
 $layout_classes = [];
+$filter_chips = isset($filter_chips) && is_array($filter_chips) ? $filter_chips : [];
+$has_active_filters = ! empty($has_active_filters);
+$reset_url = isset($reset_url) ? (string) $reset_url : '';
 
 if (! empty($layout['desktop'])) {
     $layout_classes[] = 'fp-listing--cols-desktop-' . (int) $layout['desktop'];
@@ -75,6 +68,20 @@ $results_label = sprintf(
             <p class="fp-listing__count" aria-live="polite"><?php echo esc_html($results_label); ?></p>
         </div>
         <div class="fp-listing__controls">
+            <?php if ((! empty($filter_chips) || $has_active_filters) && $reset_url) : ?>
+                <div class="fp-listing__chips" aria-live="polite">
+                    <?php foreach ($filter_chips as $chip) : ?>
+                        <a class="fp-listing__chip" href="<?php echo esc_url($chip['url']); ?>">
+                            <span class="fp-listing__chip-text"><?php echo esc_html($chip['label']); ?></span>
+                            <span class="fp-listing__chip-close" aria-hidden="true">&times;</span>
+                            <span class="screen-reader-text"><?php echo esc_html($chip['sr_label']); ?></span>
+                        </a>
+                    <?php endforeach; ?>
+                    <a class="fp-listing__chip fp-listing__chip--clear" href="<?php echo esc_url($reset_url); ?>">
+                        <span class="fp-listing__chip-text"><?php esc_html_e('Reset filters', 'fp-experiences'); ?></span>
+                    </a>
+                </div>
+            <?php endif; ?>
             <form class="fp-listing__filters" method="get">
                 <input type="hidden" name="fp_exp_page" value="1" />
                 <input type="hidden" name="fp_exp_view" value="<?php echo esc_attr($current_view); ?>" />
@@ -208,7 +215,6 @@ $results_label = sprintf(
 
                 <div class="fp-listing__actions">
                     <button type="submit" class="fp-listing__submit"><?php esc_html_e('Apply filters', 'fp-experiences'); ?></button>
-                    <a class="fp-listing__reset" href="<?php echo esc_url(remove_query_arg(['fp_exp_theme', 'fp_exp_language', 'fp_exp_duration', 'fp_exp_price_min', 'fp_exp_price_max', 'fp_exp_family', 'fp_exp_date', 'fp_exp_search', 'fp_exp_page'], $base_view_url)); ?>"><?php esc_html_e('Reset', 'fp-experiences'); ?></a>
                 </div>
             </form>
             <div class="fp-listing__view" role="group" aria-label="<?php esc_attr_e('Change layout', 'fp-experiences'); ?>">

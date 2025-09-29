@@ -18,6 +18,8 @@ use function base64_encode;
 use function esc_url_raw;
 use function get_option;
 use function get_post_field;
+use function get_transient;
+use function hash_equals;
 use function is_array;
 use function is_numeric;
 use function is_string;
@@ -26,10 +28,15 @@ use function register_rest_route;
 use function sanitize_email;
 use function sanitize_key;
 use function sanitize_text_field;
+use function sprintf;
+use function set_transient;
+use function time;
 use function wp_json_encode;
 use function wp_remote_post;
 use function wp_remote_retrieve_body;
 use function wp_remote_retrieve_response_code;
+use const MINUTE_IN_SECONDS;
+use function __;
 
 final class Brevo
 {
@@ -123,6 +130,24 @@ final class Brevo
      */
     public function handle_webhook(WP_REST_Request $request)
     {
+        $settings = $this->get_settings();
+        $secret = isset($settings['webhook_secret']) ? sanitize_text_field((string) $settings['webhook_secret']) : '';
+
+        if ('' !== $secret) {
+            $provided = sanitize_text_field((string) $request->get_param('secret'));
+            if ('' === $provided) {
+                $provided = sanitize_text_field((string) $request->get_header('x-brevo-secret'));
+            }
+
+            if (! $provided || ! hash_equals($secret, $provided)) {
+                Logger::log('brevo_webhook', 'Webhook rejected: invalid secret', [
+                    'event' => 'unknown',
+                ]);
+
+                return new WP_REST_Response(['received' => false], 403);
+            }
+        }
+
         $payload = $request->get_json_params();
         $event = '';
         $message_id = '';
@@ -191,6 +216,16 @@ final class Brevo
                 'status' => $code,
                 'body' => wp_remote_retrieve_body($response),
             ]);
+
+            $this->record_notice(
+                'contact_sync',
+                sprintf(
+                    /* translators: %d: HTTP status code. */
+                    __('Brevo contact sync failed (HTTP %d). Check the logs for details.', 'fp-experiences'),
+                    $code
+                ),
+                'error'
+            );
         }
     }
 
@@ -223,6 +258,11 @@ final class Brevo
                 'reservation' => $reservation_id,
                 'template_key' => $template_key,
             ]);
+
+            $this->record_notice(
+                'template_' . sanitize_key($template_key),
+                __('Transactional email template not configured. WooCommerce fallback used.', 'fp-experiences')
+            );
 
             return false;
         }
@@ -286,6 +326,12 @@ final class Brevo
                 'error' => $response->get_error_message(),
             ]);
 
+            $this->record_notice(
+                'tx_error',
+                __('Brevo transactional email failed to send. Check the logs for details.', 'fp-experiences'),
+                'error'
+            );
+
             return false;
         }
 
@@ -296,6 +342,16 @@ final class Brevo
                 'status' => $code,
                 'body' => wp_remote_retrieve_body($response),
             ]);
+
+            $this->record_notice(
+                'tx_http',
+                sprintf(
+                    /* translators: %d: HTTP status code. */
+                    __('Brevo transactional email failed with HTTP %d. Check the logs for details.', 'fp-experiences'),
+                    $code
+                ),
+                'error'
+            );
 
             return false;
         }
@@ -361,6 +417,12 @@ final class Brevo
                 'error' => $response->get_error_message(),
             ]);
 
+            $this->record_notice(
+                'event_error',
+                __('Brevo event tracking failed. Check the logs for diagnostics.', 'fp-experiences'),
+                'warning'
+            );
+
             return;
         }
 
@@ -372,6 +434,16 @@ final class Brevo
                 'status' => $code,
                 'body' => wp_remote_retrieve_body($response),
             ]);
+
+            $this->record_notice(
+                'event_http',
+                sprintf(
+                    /* translators: %d: HTTP status code. */
+                    __('Brevo event tracking request returned HTTP %d.', 'fp-experiences'),
+                    $code
+                ),
+                'warning'
+            );
         }
     }
 
@@ -506,5 +578,19 @@ final class Brevo
             'content-type' => 'application/json',
             'accept' => 'application/json',
         ];
+    }
+
+    private function record_notice(string $code, string $message, string $type = 'warning'): void
+    {
+        $stored = get_transient('fp_exp_brevo_notices');
+        $notices = is_array($stored) ? $stored : [];
+
+        $notices[$code] = [
+            'message' => sanitize_text_field($message),
+            'type' => $type,
+            'time' => time(),
+        ];
+
+        set_transient('fp_exp_brevo_notices', $notices, 30 * MINUTE_IN_SECONDS);
     }
 }

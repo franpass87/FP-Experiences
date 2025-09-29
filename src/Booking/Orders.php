@@ -121,7 +121,8 @@ final class Orders
         $utm_data = Helpers::read_utm_cookie();
 
         foreach ($cart['items'] ?? [] as $item) {
-            $line_item = $this->create_line_item($item, $tax_class);
+            $normalized = $this->recalculate_item_totals($item);
+            $line_item = $this->create_line_item($normalized, $tax_class);
 
             if ($line_item instanceof WP_Error) {
                 $order->delete(true);
@@ -134,7 +135,7 @@ final class Orders
 
             $order->add_item($line_item);
 
-            $this->persist_reservation($order, $item, $utm_data);
+            $this->persist_reservation($order, $normalized, $utm_data);
         }
 
         $order->set_cart_tax($tax_total);
@@ -199,6 +200,46 @@ final class Orders
         $order_item->add_meta_data('fp_exp_tax_class', $tax_class, true);
 
         return $order_item;
+    }
+
+    /**
+     * @param array<string, mixed> $item
+     *
+     * @return array<string, mixed>
+     */
+    private function recalculate_item_totals(array $item): array
+    {
+        $experience_id = absint($item['experience_id'] ?? 0);
+        $slot_id = absint($item['slot_id'] ?? 0);
+
+        if ($experience_id <= 0 || $slot_id <= 0) {
+            return $item;
+        }
+
+        $tickets = is_array($item['tickets'] ?? null) ? $item['tickets'] : [];
+        $addons = is_array($item['addons'] ?? null) ? $item['addons'] : [];
+        $slot = Slots::get_slot($slot_id);
+
+        if (! $slot || (int) ($slot['experience_id'] ?? 0) !== $experience_id) {
+            return $item;
+        }
+
+        $breakdown = Pricing::calculate_breakdown(
+            $experience_id,
+            (string) ($slot['start_datetime'] ?? ''),
+            $tickets,
+            $addons
+        );
+
+        $item['totals'] = is_array($item['totals'] ?? null) ? $item['totals'] : [];
+        $item['totals']['subtotal'] = (float) ($breakdown['subtotal'] ?? $item['totals']['subtotal'] ?? 0.0);
+        $item['totals']['total'] = (float) ($breakdown['total'] ?? $item['totals']['total'] ?? 0.0);
+        $item['slot_start'] = $slot['start_datetime'] ?? ($item['slot_start'] ?? '');
+        $item['slot_end'] = $slot['end_datetime'] ?? ($item['slot_end'] ?? '');
+        $item['tickets'] = $breakdown['tickets'] ?? $item['tickets'];
+        $item['addons'] = $breakdown['addons'] ?? $item['addons'];
+
+        return $item;
     }
 
     /**
