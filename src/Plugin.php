@@ -10,6 +10,7 @@ use FP_Exp\Booking\Cart;
 use FP_Exp\Booking\Checkout as BookingCheckout;
 use FP_Exp\Admin\CalendarAdmin;
 use FP_Exp\Admin\RequestsPage;
+use FP_Exp\Admin\ExperienceMetaBoxes;
 use FP_Exp\Admin\SettingsPage;
 use FP_Exp\Admin\LogsPage;
 use FP_Exp\Booking\Emails;
@@ -73,6 +74,8 @@ final class Plugin
 
     private ?RequestsPage $requests_page = null;
 
+    private ?ExperienceMetaBoxes $experience_meta_boxes = null;
+
     private ?ElementorWidgetsRegistrar $elementor_widgets = null;
 
     private ?RestRoutes $rest_routes = null;
@@ -114,6 +117,7 @@ final class Plugin
             $this->calendar_admin = new CalendarAdmin($this->orders);
             $this->logs_page = new LogsPage();
             $this->requests_page = new RequestsPage($this->request_to_book);
+            $this->experience_meta_boxes = new ExperienceMetaBoxes();
         }
     }
 
@@ -164,6 +168,10 @@ final class Plugin
 
         if ($this->requests_page instanceof RequestsPage) {
             $this->requests_page->register_hooks();
+        }
+
+        if ($this->experience_meta_boxes instanceof ExperienceMetaBoxes) {
+            $this->experience_meta_boxes->register_hooks();
         }
 
         if ($this->elementor_widgets instanceof ElementorWidgetsRegistrar) {
