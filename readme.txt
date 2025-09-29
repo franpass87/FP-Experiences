@@ -15,6 +15,7 @@ FP Experiences brings GetYourGuide-style booking flows to WooCommerce without to
 
 * Isolated booking cart that never mixes with WooCommerce products and uses a dedicated checkout shortcode.
 * Experience discovery widgets with availability calendars, ticket types, add-ons, and schema-ready markup.
+* Reusable meeting points with CSV import, experience linking, shortcode, and Elementor widget.
 * Optional Brevo transactional email delivery, Google Calendar sync, and marketing pixels (GA4, Google Ads, Meta, Clarity).
 * Admin calendar with drag-and-drop rescheduling, manual booking creation with payment links, and operations roles for managers, operators, and guides.
 * Consent-aware tracking, theming presets, CSS variable overrides, and Elementor controls for editors.
@@ -32,19 +33,20 @@ FP Experiences brings GetYourGuide-style booking flows to WooCommerce without to
 * `[fp_exp_widget id="123"]` – Booking widget for a specific experience. Attributes: `sticky`, `show_calendar`, `primary`, `accent`, `radius`.
 * `[fp_exp_calendar id="123" months="2"]` – Inline availability calendar for a single experience.
 * `[fp_exp_checkout]` – Isolated checkout that finalises the FP Experiences cart only.
+* `[fp_exp_meeting_points id="123"]` – Outputs the primary meeting point and optional alternatives for an experience, with map links built client-side.
 
 == Elementor Widgets ==
 
-Four Elementor widgets mirror the shortcodes: List, Widget, Calendar, and Checkout. Each exposes theming controls (colors, radius, fonts) plus behavioural toggles (sticky mode, inline calendar, consent defaults).
+Five Elementor widgets mirror the shortcodes: List, Widget, Calendar, Checkout, and Meeting Points. Each exposes theming controls (colors, radius, fonts) plus behavioural toggles (sticky mode, inline calendar, consent defaults).
 
 == Settings & Tools ==
 
-* **General** – Structure and webmaster emails, locale preferences, VAT class filters.
+* **General** – Structure and webmaster emails, locale preferences, VAT class filters, meeting points toggle.
 * **Branding** – Color palette, button radius, shadows, presets, contrast checker, optional Google Font.
 * **Tracking** – Enable/disable GA4, Google Ads, Meta Pixel, Clarity, enhanced conversions, and consent defaults.
 * **Brevo** – API key, list ID, attribute mappings, transactional template IDs, webhook diagnostics.
 * **Calendar** – Google OAuth client credentials, redirect URI, connect/disconnect, target calendar.
-* **Tools** – Brevo resync, event replay, REST API ping, and cache/log clearance with rate-limited REST endpoints.
+* **Tools** – Brevo resync, event replay, REST API ping, meeting point CSV import, and cache/log clearance with rate-limited REST endpoints.
 
 == Hooks ==
 

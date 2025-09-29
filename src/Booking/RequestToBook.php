@@ -6,6 +6,7 @@ namespace FP_Exp\Booking;
 
 use Exception;
 use FP_Exp\Integrations\Brevo;
+use FP_Exp\MeetingPoints\Repository;
 use FP_Exp\Utils\Helpers;
 use FP_Exp\Utils\Logger;
 use WC_Order;
@@ -637,7 +638,7 @@ final class RequestToBook
                 'id' => $experience_id,
                 'title' => $experience ? $experience->post_title : '',
                 'permalink' => $experience ? get_permalink($experience) : '',
-                'meeting_point' => sanitize_text_field((string) get_post_meta($experience_id, '_fp_meeting_point', true)),
+                'meeting_point' => Repository::get_primary_summary_for_experience($experience_id),
             ],
             'slot' => $slot,
             'customer' => $contact,

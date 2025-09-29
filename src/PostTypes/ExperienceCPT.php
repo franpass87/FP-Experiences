@@ -207,6 +207,14 @@ final class ExperienceCPT
             '_fp_meeting_point' => [
                 'type' => 'string',
             ],
+            '_fp_meeting_point_id' => [
+                'type' => 'integer',
+            ],
+            '_fp_meeting_point_alt' => [
+                'type' => 'array',
+                'items' => 'integer',
+                'default' => [],
+            ],
             '_fp_inclusions' => [
                 'type' => 'array',
                 'items' => 'string',

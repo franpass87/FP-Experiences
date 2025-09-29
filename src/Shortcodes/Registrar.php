@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace FP_Exp\Shortcodes;
 
+use FP_Exp\Utils\Helpers;
+
 final class Registrar
 {
     /**
@@ -19,6 +21,10 @@ final class Registrar
             new CalendarShortcode(),
             new CheckoutShortcode(),
         ];
+
+        if (Helpers::meeting_points_enabled()) {
+            $this->shortcodes[] = new MeetingPointsShortcode();
+        }
     }
 
     public function register(): void

@@ -301,6 +301,41 @@
         }
     }
 
+    function setupMeetingPoints() {
+        const containers = document.querySelectorAll('[data-fp-meeting-point]');
+        if (!containers.length) {
+            return;
+        }
+
+        containers.forEach((container) => {
+            const link = container.querySelector('[data-fp-map-link]');
+            if (!(link instanceof HTMLAnchorElement)) {
+                return;
+            }
+
+            const lat = (container.getAttribute('data-lat') || '').trim();
+            const lng = (container.getAttribute('data-lng') || '').trim();
+            const address = (container.getAttribute('data-address') || '').trim();
+
+            let query = '';
+            if (lat && lng) {
+                query = `${lat},${lng}`;
+            } else if (address) {
+                query = address;
+            }
+
+            if (!query) {
+                link.removeAttribute('href');
+                link.classList.add('is-disabled');
+                link.setAttribute('aria-disabled', 'true');
+                return;
+            }
+
+            const url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+            link.href = url;
+        });
+    }
+
     function pushTrackingEvent(eventName, data) {
         const channels = trackingConfig.enabled || {};
 
@@ -408,6 +443,7 @@
         captureUtm();
         document.querySelectorAll('[data-fp-shortcode="widget"]').forEach(setupWidget);
         document.querySelectorAll('[data-fp-shortcode="list"]').forEach(setupListFilters);
+        setupMeetingPoints();
     }
 
     function setupListFilters(section) {
