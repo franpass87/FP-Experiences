@@ -48,5 +48,6 @@
   "rebuild": {
     "feature": "experience-page",
     "step": "complete"
-  }
+  },
+  "verify_current": "SUMMARY"
 }
