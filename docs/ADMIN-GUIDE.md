@@ -25,6 +25,11 @@
 - When disabled, the “Import Meeting Points” submenu and tools are hidden for safety.
 - When enabled, authorised managers can upload CSVs from **Tools → Meeting points**; the importer validates nonce, columns, and duplicates before persisting entries.
 
+## Recovery tools
+- Open **FP Experiences → Dashboard → Tools** to execute maintenance and diagnostic utilities.
+- Use **Resynchronise FP roles** if administrators or managers lose access to the Experiences menu. The action rebuilds custom roles, grants the expected capabilities, and updates the stored role signature.
+- Each tool surfaces a success/error summary along with detailed bullet points returned by the REST endpoint; review them to confirm missing capabilities have been restored or to follow up on warnings.
+
 ## Release & migrations
 - The migration runner executes on `init`/`admin_init`, backfilling `_fp_addons` entries with `image_id` keys and populating the `wp_fp_exp_gift_vouchers` summary table.
 - Inspect run state in the `fp_exp_migrations` option; rerun by deleting the option if troubleshooting on staging.

@@ -1044,6 +1044,12 @@ final class SettingsPage
                 'button' => esc_html__('Replay events', 'fp-experiences'),
             ],
             [
+                'slug' => 'resync-roles',
+                'label' => esc_html__('Resynchronise FP roles', 'fp-experiences'),
+                'description' => esc_html__('Restore the FP Experiences capabilities for administrators and custom roles.', 'fp-experiences'),
+                'button' => esc_html__('Run role sync', 'fp-experiences'),
+            ],
+            [
                 'slug' => 'resync-pages',
                 'label' => esc_html__('Resynchronise experience pages', 'fp-experiences'),
                 'description' => esc_html__('Create or relink WordPress pages for experiences missing the `[fp_exp_page]` shortcode.', 'fp-experiences'),
