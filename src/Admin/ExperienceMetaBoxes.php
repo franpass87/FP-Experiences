@@ -111,14 +111,14 @@ final class ExperienceMetaBoxes
             'fp-exp-admin',
             FP_EXP_PLUGIN_URL . 'assets/css/admin.css',
             [],
-            FP_EXP_VERSION
+            Helpers::asset_version('assets/css/admin.css')
         );
 
         wp_enqueue_script(
             'fp-exp-admin',
             FP_EXP_PLUGIN_URL . 'assets/js/admin.js',
             [],
-            FP_EXP_VERSION,
+            Helpers::asset_version('assets/js/admin.js'),
             true
         );
 

@@ -16,6 +16,7 @@ use function delete_transient;
 use function explode;
 use function do_action;
 use function esc_url_raw;
+use function filemtime;
 use function function_exists;
 use function get_current_user_id;
 use function get_option;
@@ -26,9 +27,11 @@ use function in_array;
 use function is_array;
 use function is_bool;
 use function is_numeric;
+use function is_readable;
 use function is_string;
 use function is_user_logged_in;
 use function json_decode;
+use function ltrim;
 use function preg_split;
 use function sanitize_key;
 use function sanitize_text_field;
@@ -43,8 +46,16 @@ use function wp_parse_args;
 use function wp_unslash;
 use function wp_verify_nonce;
 
+use const FP_EXP_PLUGIN_DIR;
+use const FP_EXP_VERSION;
+
 final class Helpers
 {
+    /**
+     * @var array<string, string>
+     */
+    private static array $asset_version_cache = [];
+
     /**
      * @return array<string, mixed>
      */
@@ -53,6 +64,30 @@ final class Helpers
         $settings = get_option('fp_exp_tracking', []);
 
         return is_array($settings) ? $settings : [];
+    }
+
+    public static function asset_version(string $relative_path): string
+    {
+        $relative_path = ltrim($relative_path, '/');
+
+        if (isset(self::$asset_version_cache[$relative_path])) {
+            return self::$asset_version_cache[$relative_path];
+        }
+
+        $absolute_path = trailingslashit(FP_EXP_PLUGIN_DIR) . $relative_path;
+
+        if (is_readable($absolute_path)) {
+            $mtime = filemtime($absolute_path);
+            if (false !== $mtime) {
+                self::$asset_version_cache[$relative_path] = (string) $mtime;
+
+                return self::$asset_version_cache[$relative_path];
+            }
+        }
+
+        self::$asset_version_cache[$relative_path] = FP_EXP_VERSION;
+
+        return self::$asset_version_cache[$relative_path];
     }
 
     /**

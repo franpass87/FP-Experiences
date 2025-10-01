@@ -8,6 +8,7 @@ use FP_Exp\Booking\Orders;
 use FP_Exp\Booking\Pricing;
 use FP_Exp\Booking\Reservations;
 use FP_Exp\Booking\Slots;
+use FP_Exp\Utils\Helpers;
 use WC_Order;
 use WP_Error;
 
@@ -70,14 +71,14 @@ final class CalendarAdmin
             'fp-exp-admin',
             FP_EXP_PLUGIN_URL . 'assets/css/admin.css',
             [],
-            FP_EXP_VERSION
+            Helpers::asset_version('assets/css/admin.css')
         );
 
         wp_enqueue_script(
             'fp-exp-admin',
             FP_EXP_PLUGIN_URL . 'assets/js/admin.js',
             ['wp-api-fetch', 'wp-i18n'],
-            FP_EXP_VERSION,
+            Helpers::asset_version('assets/js/admin.js'),
             true
         );
 
