@@ -1,9 +1,12 @@
-name: Build plugin zip
+name: Build WP Plugin ZIP
 
 on:
+  workflow_dispatch: {}           # avvio manuale dal tab "Actions"
   push:
+    branches:
+      - main                      # parte su push in main
     tags:
-      - 'v*'
+      - 'v*'                      # parte su push di tag v1.2.3 ecc.
 
 jobs:
   build:
@@ -17,71 +20,48 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.2'
-          tools: composer
+          coverage: none
 
-      - name: Install dependencies
-        run: composer install --no-dev --prefer-dist --no-interaction --optimize-autoloader
-
-      - name: Dump autoloader
-        run: composer dump-autoload -o --classmap-authoritative
-
-      - name: Determine plugin slug
-        id: slug
+      - name: Install composer deps (no dev)
         run: |
-          SLUG=$(php -r '
-          $root = $argv[1];
-          $candidates = glob($root . "/*.php");
-          foreach ($candidates as $candidate) {
-              $handle = fopen($candidate, "rb");
-              if ($handle === false) {
-                  continue;
-              }
-              $buffer = "";
-              $linesRead = 0;
-              while (! feof($handle) && $linesRead < 20) {
-                  $buffer .= (string) fgets($handle);
-                  $linesRead++;
-              }
-              fclose($handle);
-              if (preg_match("/^\\s*\\*\\s*Plugin Name\\s*:/mi", $buffer) && preg_match("/^\\s*\\*\\s*Version\\s*:/mi", $buffer)) {
-                  echo basename($candidate, ".php");
-                  exit(0);
-              }
-          }
-          exit(1);
-          ' "$PWD")
-          echo "slug=$SLUG" >> "$GITHUB_OUTPUT"
+          composer install --no-dev --prefer-dist --no-interaction --optimize-autoloader
+          composer dump-autoload -o --classmap-authoritative
 
-      - name: Prepare build directory
+      - name: Ensure tools present
         run: |
-          mkdir -p build
-          rsync -a --delete \
-            --exclude=.git \
-            --exclude=.github \
-            --exclude=tests \
-            --exclude=docs \
-            --exclude=node_modules \
-            --exclude=*.md \
-            --exclude=phpcs.xml* \
-            --exclude=.idea \
-            --exclude=.vscode \
-            --exclude=build \
-            --exclude=.gitattributes \
-            --exclude=.gitignore \
-            --exclude=tools \
-            --exclude=build.sh \
-            --exclude=.codex-progress.json \
-            --exclude=.rebuild-state.json \
-            ./ build/${{ steps.slug.outputs.slug }}/
+          sudo apt-get update
+          sudo apt-get install -y rsync zip
 
-      - name: Create zip
+      # Se hai build.sh nel repo, lo usiamo; altrimenti pack "inline".
+      - name: Make build.sh executable (if present)
         run: |
+          if [ -f build.sh ]; then
+            chmod +x build.sh
+          fi
+
+      - name: Run build.sh (if present)
+        run: |
+          if [ -f build.sh ]; then
+            ./build.sh --bump=patch || bash build.sh --bump=patch
+          fi
+
+      - name: Package plugin (fallback inline)
+        if: ${{ !hashFiles('build.sh') }}
+        run: |
+          set -e
+          SLUG="$(basename "$GITHUB_WORKSPACE")"
+          mkdir -p build/${SLUG}
+          rsync -a ./ build/${SLUG} \
+            --exclude ".git" --exclude ".github" --exclude ".gitignore" \
+            --exclude "build" --exclude "tests" --exclude "docs" \
+            --exclude "node_modules" --exclude ".idea" --exclude ".vscode" \
+            --exclude "*.md" --exclude ".gitattributes"
           cd build
-          zip -rq "${{ steps.slug.outputs.slug }}.zip" "${{ steps.slug.outputs.slug }}"
+          zip -r "${SLUG}.zip" "${SLUG}"
+          echo "ZIP creato in build/${SLUG}.zip"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: plugin-zip
-          path: build/${{ steps.slug.outputs.slug }}.zip
-          if-no-files-found: error
+          path: build/*.zip
