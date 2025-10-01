@@ -499,11 +499,27 @@ final class RestRoutes
             ]);
         }
 
+        $default_capacity = absint((string) ($availability['slot_capacity'] ?? 0));
+        $default_buffer_before = absint((string) ($availability['buffer_before_minutes'] ?? 0));
+        $default_buffer_after = absint((string) ($availability['buffer_after_minutes'] ?? 0));
+
+        foreach ($rules as $rule) {
+            if (0 === $default_capacity && isset($rule['capacity_total'])) {
+                $default_capacity = absint((string) $rule['capacity_total']);
+            }
+            if (0 === $default_buffer_before && isset($rule['buffer_before'])) {
+                $default_buffer_before = absint((string) $rule['buffer_before']);
+            }
+            if (0 === $default_buffer_after && isset($rule['buffer_after'])) {
+                $default_buffer_after = absint((string) $rule['buffer_after']);
+            }
+        }
+
         $options = [
             'default_duration' => absint((string) ($recurrence['duration'] ?? 60)),
-            'default_capacity' => absint((string) ($availability['slot_capacity'] ?? 0)),
-            'buffer_before' => absint((string) ($availability['buffer_before_minutes'] ?? 0)),
-            'buffer_after' => absint((string) ($availability['buffer_after_minutes'] ?? 0)),
+            'default_capacity' => $default_capacity,
+            'buffer_before' => $default_buffer_before,
+            'buffer_after' => $default_buffer_after,
         ];
 
         $preview = Slots::preview_recurring_slots($experience_id, $rules, [], $options, 12);
@@ -545,11 +561,27 @@ final class RestRoutes
             return new WP_Error('fp_exp_recurrence_rules', __('Unable to build recurrence rules from the provided data.', 'fp-experiences'), ['status' => 422]);
         }
 
+        $default_capacity = absint((string) ($availability['slot_capacity'] ?? 0));
+        $default_buffer_before = absint((string) ($availability['buffer_before_minutes'] ?? 0));
+        $default_buffer_after = absint((string) ($availability['buffer_after_minutes'] ?? 0));
+
+        foreach ($rules as $rule) {
+            if (0 === $default_capacity && isset($rule['capacity_total'])) {
+                $default_capacity = absint((string) $rule['capacity_total']);
+            }
+            if (0 === $default_buffer_before && isset($rule['buffer_before'])) {
+                $default_buffer_before = absint((string) $rule['buffer_before']);
+            }
+            if (0 === $default_buffer_after && isset($rule['buffer_after'])) {
+                $default_buffer_after = absint((string) $rule['buffer_after']);
+            }
+        }
+
         $options = [
             'default_duration' => absint((string) ($recurrence['duration'] ?? 60)),
-            'default_capacity' => absint((string) ($availability['slot_capacity'] ?? 0)),
-            'buffer_before' => absint((string) ($availability['buffer_before_minutes'] ?? 0)),
-            'buffer_after' => absint((string) ($availability['buffer_after_minutes'] ?? 0)),
+            'default_capacity' => $default_capacity,
+            'buffer_before' => $default_buffer_before,
+            'buffer_after' => $default_buffer_after,
             'replace_existing' => ! empty($body['replace_existing']),
         ];
 

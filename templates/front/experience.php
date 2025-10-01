@@ -21,6 +21,7 @@
  * @var string $schema_json
  * @var string $data_layer
  * @var string $scope_class
+ * @var array<string, mixed> $overview
  */
 
 if (! defined('ABSPATH')) {
@@ -72,6 +73,7 @@ if ($layout_gutter > 0) {
 $layout_style_attr = empty($layout_style) ? '' : implode(';', $layout_style);
 
 $navigation = isset($navigation) && is_array($navigation) ? $navigation : [];
+$sections = isset($sections) && is_array($sections) ? $sections : [];
 $has_navigation = ! empty($navigation);
 $has_highlights = ! empty($highlights);
 $has_inclusions = ! empty($inclusions) || ! empty($exclusions);
@@ -80,7 +82,6 @@ $has_extras = ! empty($what_to_bring) || ! empty($notes) || ! empty($policy);
 $has_faq = ! empty($faq);
 $has_reviews = ! empty($reviews);
 
-$cta_label = esc_html__('Controlla disponibilità', 'fp-experiences');
 $sidebar_data = in_array($sidebar_position, ['left', 'none'], true) ? $sidebar_position : 'right';
 
 $gift = isset($gift) && is_array($gift) ? $gift : [];
@@ -95,16 +96,45 @@ $gift_config = [
 $gift_addons = isset($gift['addons']) && is_array($gift['addons']) ? $gift['addons'] : [];
 
 $primary_image = ! empty($gallery) ? $gallery[0] : null;
-$secondary_images = count($gallery) > 1 ? array_slice($gallery, 1, 4) : [];
-$hero_language_badges = array_values(array_filter(
-    $badges,
-    static fn ($badge) => isset($badge['icon']) && 'language' === $badge['icon']
+$gallery_items = array_values(array_filter(
+    array_slice($gallery, 1),
+    static fn ($image) => is_array($image) && ! empty($image['url'])
 ));
+$show_gallery = ! empty($sections['gallery']) && ! empty($gallery_items);
 $hero_fact_badges = array_values(array_filter(
     $badges,
     static fn ($badge) => ! isset($badge['icon']) || 'language' !== $badge['icon']
 ));
 $hero_highlights = array_slice($highlights, 0, 3);
+
+$overview = isset($overview) && is_array($overview) ? $overview : [];
+$overview_themes = isset($overview['themes']) && is_array($overview['themes']) ? $overview['themes'] : [];
+$overview_languages = isset($overview['language_badges']) && is_array($overview['language_badges']) ? $overview['language_badges'] : [];
+$overview_language_terms = isset($overview['language_terms']) && is_array($overview['language_terms']) ? $overview['language_terms'] : [];
+$overview_biases = isset($overview['cognitive_biases']) && is_array($overview['cognitive_biases'])
+    ? array_values(array_filter(array_map('strval', $overview['cognitive_biases'])))
+    : [];
+$overview_duration_label = isset($overview['duration_label']) ? (string) $overview['duration_label'] : '';
+$overview_duration_terms = isset($overview['duration_terms']) && is_array($overview['duration_terms']) ? $overview['duration_terms'] : [];
+$overview_meeting = isset($overview['meeting']) && is_array($overview['meeting']) ? $overview['meeting'] : [];
+$overview_meeting_title = isset($overview_meeting['title']) ? (string) $overview_meeting['title'] : '';
+$overview_meeting_address = isset($overview_meeting['address']) ? (string) $overview_meeting['address'] : '';
+$overview_meeting_summary = isset($overview_meeting['summary']) ? (string) $overview_meeting['summary'] : '';
+$overview_family = ! empty($overview['family_friendly']);
+$overview_has_content = isset($overview_has_content) ? (bool) $overview_has_content : null;
+
+if (null === $overview_has_content) {
+    $overview_has_content = ! empty($overview_themes)
+        || ! empty($overview_languages)
+        || ! empty($overview_biases)
+        || '' !== $overview_duration_label
+        || ! empty($overview_duration_terms)
+        || '' !== $overview_meeting_summary
+        || $overview_family;
+}
+
+$has_overview = ! empty($sections['overview']) && $overview_has_content;
+$cta_label = esc_html__('Controlla disponibilità', 'fp-experiences');
 
 ?>
 <div
@@ -127,32 +157,18 @@ $hero_highlights = array_slice($highlights, 0, 3);
                 <section class="fp-section fp-hero-section" id="fp-exp-section-hero" data-fp-section="hero">
                     <div class="fp-hero-media" aria-hidden="<?php echo null === $primary_image ? 'true' : 'false'; ?>">
                         <?php if ($primary_image) : ?>
-                            <figure class="fp-hero-media__primary">
-                                <img
-                                    src="<?php echo esc_url($primary_image['url']); ?>"
-                                    <?php if (! empty($primary_image['srcset'])) : ?>srcset="<?php echo esc_attr($primary_image['srcset']); ?>"<?php endif; ?>
-                                    <?php if (! empty($primary_image['width'])) : ?>width="<?php echo esc_attr((string) $primary_image['width']); ?>"<?php endif; ?>
-                                    <?php if (! empty($primary_image['height'])) : ?>height="<?php echo esc_attr((string) $primary_image['height']); ?>"<?php endif; ?>
-                                    alt="<?php echo esc_attr($experience['title']); ?>"
-                                    loading="lazy"
-                                />
-                            </figure>
-                            <?php if (! empty($secondary_images)) : ?>
-                                <div class="fp-hero-media__thumbnails">
-                                    <?php foreach ($secondary_images as $index => $image) : ?>
-                                        <figure class="fp-hero-media__thumbnail" data-index="<?php echo esc_attr((string) ($index + 1)); ?>">
-                                            <img
-                                                src="<?php echo esc_url($image['url']); ?>"
-                                                <?php if (! empty($image['srcset'])) : ?>srcset="<?php echo esc_attr($image['srcset']); ?>"<?php endif; ?>
-                                                <?php if (! empty($image['width'])) : ?>width="<?php echo esc_attr((string) $image['width']); ?>"<?php endif; ?>
-                                                <?php if (! empty($image['height'])) : ?>height="<?php echo esc_attr((string) $image['height']); ?>"<?php endif; ?>
-                                                alt="<?php echo esc_attr($experience['title']); ?>"
-                                                loading="lazy"
-                                            />
-                                        </figure>
-                                    <?php endforeach; ?>
-                                </div>
-                            <?php endif; ?>
+                            <img
+                                class="fp-hero-media__image"
+                                src="<?php echo esc_url($primary_image['url']); ?>"
+                                <?php if (! empty($primary_image['srcset'])) : ?>srcset="<?php echo esc_attr($primary_image['srcset']); ?>"<?php endif; ?>
+                                sizes="100vw"
+                                <?php if (! empty($primary_image['width'])) : ?>width="<?php echo esc_attr((string) $primary_image['width']); ?>"<?php endif; ?>
+                                <?php if (! empty($primary_image['height'])) : ?>height="<?php echo esc_attr((string) $primary_image['height']); ?>"<?php endif; ?>
+                                alt="<?php echo esc_attr($experience['title']); ?>"
+                                loading="eager"
+                                decoding="async"
+                                fetchpriority="high"
+                            />
                         <?php else : ?>
                             <div class="fp-hero fp-exp-gallery fp-exp-gallery--placeholder">
                                 <span aria-hidden="true"></span>
@@ -176,30 +192,6 @@ $hero_highlights = array_slice($highlights, 0, 3);
                                 <?php endforeach; ?>
                             </ul>
                         <?php endif; ?>
-                        <?php if (! empty($hero_language_badges)) : ?>
-                            <div class="fp-hero-languages">
-                                <span class="fp-hero-languages__label"><?php esc_html_e('Languages', 'fp-experiences'); ?></span>
-                                <ul class="fp-hero-languages__list" role="list">
-                                    <?php foreach ($hero_language_badges as $badge) :
-                                        $language_meta = isset($badge['language']) && is_array($badge['language']) ? $badge['language'] : [];
-                                        $sprite_id = isset($language_meta['sprite']) ? (string) $language_meta['sprite'] : '';
-                                        $aria_label = isset($language_meta['aria_label']) ? (string) $language_meta['aria_label'] : (string) ($badge['label'] ?? '');
-                                        $readable_label = isset($language_meta['label']) ? (string) $language_meta['label'] : (string) ($badge['label'] ?? '');
-                                        ?>
-                                        <li class="fp-hero-language">
-                                            <?php if ($sprite_id) : ?>
-                                                <span class="fp-hero-language__flag" role="img" aria-label="<?php echo esc_attr($aria_label); ?>">
-                                                    <svg viewBox="0 0 24 16" aria-hidden="true" focusable="false">
-                                                        <use href="<?php echo esc_url($language_sprite . '#' . $sprite_id); ?>"></use>
-                                                    </svg>
-                                                </span>
-                                            <?php endif; ?>
-                                            <span class="fp-hero-language__name"><?php echo esc_html($readable_label); ?></span>
-                                        </li>
-                                    <?php endforeach; ?>
-                                </ul>
-                            </div>
-                        <?php endif; ?>
                         <?php if (! empty($hero_fact_badges)) : ?>
                             <ul class="fp-hero-facts" role="list">
                                 <?php foreach ($hero_fact_badges as $badge) : ?>
@@ -216,16 +208,8 @@ $hero_highlights = array_slice($highlights, 0, 3);
                                 <?php endforeach; ?>
                             </ul>
                         <?php endif; ?>
-                        <div class="fp-hero-cta">
-                            <a
-                                href="#fp-exp-widget"
-                                class="fp-exp-button"
-                                data-fp-scroll="widget"
-                                data-fp-cta="hero"
-                            >
-                                <?php echo $cta_label; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
-                            </a>
-                            <?php if ($gift_enabled) : ?>
+                        <?php if ($gift_enabled) : ?>
+                            <div class="fp-hero-gift-link">
                                 <a
                                     href="#fp-exp-gift"
                                     class="fp-exp-button fp-exp-button--secondary"
@@ -233,8 +217,145 @@ $hero_highlights = array_slice($highlights, 0, 3);
                                 >
                                     <?php esc_html_e('Gift this experience', 'fp-experiences'); ?>
                                 </a>
-                            <?php endif; ?>
-                        </div>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                </section>
+            <?php endif; ?>
+
+            <?php if ($has_overview) : ?>
+                <section class="fp-exp-section fp-exp-overview" id="fp-exp-section-overview" data-fp-section="overview">
+                    <div class="fp-exp-overview__grid">
+                        <?php if (! empty($overview_themes)) : ?>
+                            <div class="fp-exp-overview__item">
+                                <span class="fp-exp-overview__label"><?php esc_html_e('Themes', 'fp-experiences'); ?></span>
+                                <div class="fp-exp-overview__chips">
+                                    <?php foreach ($overview_themes as $theme) : ?>
+                                        <span class="fp-exp-overview__chip"><?php echo esc_html((string) $theme); ?></span>
+                                    <?php endforeach; ?>
+                                </div>
+                            </div>
+                        <?php endif; ?>
+
+                        <?php if ('' !== $overview_duration_label || ! empty($overview_duration_terms)) : ?>
+                            <div class="fp-exp-overview__item">
+                                <span class="fp-exp-overview__label"><?php esc_html_e('Duration', 'fp-experiences'); ?></span>
+                                <?php if ('' !== $overview_duration_label) : ?>
+                                    <span class="fp-exp-overview__value"><?php echo esc_html($overview_duration_label); ?></span>
+                                <?php endif; ?>
+                                <?php if (! empty($overview_duration_terms)) : ?>
+                                    <div class="fp-exp-overview__chips">
+                                        <?php foreach ($overview_duration_terms as $term) : ?>
+                                            <span class="fp-exp-overview__chip"><?php echo esc_html((string) $term); ?></span>
+                                        <?php endforeach; ?>
+                                    </div>
+                                <?php endif; ?>
+                            </div>
+                        <?php endif; ?>
+
+                        <?php if (! empty($overview_languages)) : ?>
+                            <div class="fp-exp-overview__item">
+                                <span class="fp-exp-overview__label"><?php esc_html_e('Languages', 'fp-experiences'); ?></span>
+                                <ul class="fp-exp-overview__languages" role="list">
+                                    <?php foreach ($overview_languages as $badge) :
+                                        if (! is_array($badge)) {
+                                            continue;
+                                        }
+
+                                        $language_meta = isset($badge['language']) && is_array($badge['language']) ? $badge['language'] : [];
+                                        $sprite_id = isset($language_meta['sprite']) ? (string) $language_meta['sprite'] : '';
+                                        $aria_label = isset($language_meta['aria_label']) ? (string) $language_meta['aria_label'] : (string) ($badge['label'] ?? '');
+                                        $readable_label = isset($language_meta['label']) ? (string) $language_meta['label'] : (string) ($badge['label'] ?? '');
+                                        $code = isset($language_meta['code']) ? (string) $language_meta['code'] : (string) ($badge['label'] ?? '');
+                                        ?>
+                                        <li class="fp-exp-overview__language">
+                                            <?php if ($sprite_id) : ?>
+                                                <span class="fp-exp-overview__language-flag" role="img" aria-label="<?php echo esc_attr($aria_label); ?>">
+                                                    <svg viewBox="0 0 24 16" aria-hidden="true" focusable="false">
+                                                        <use href="<?php echo esc_url($language_sprite . '#' . $sprite_id); ?>"></use>
+                                                    </svg>
+                                                </span>
+                                            <?php endif; ?>
+                                            <span class="fp-exp-overview__language-code"><?php echo esc_html($code); ?></span>
+                                            <span class="screen-reader-text"><?php echo esc_html($readable_label); ?></span>
+                                        </li>
+                                    <?php endforeach; ?>
+                                </ul>
+                                <?php if (! empty($overview_language_terms)) : ?>
+                                    <span class="fp-exp-overview__muted"><?php echo esc_html(implode(', ', array_map('strval', $overview_language_terms))); ?></span>
+                                <?php endif; ?>
+                            </div>
+                        <?php endif; ?>
+
+                        <?php if (! empty($overview_biases)) : ?>
+                            <div class="fp-exp-overview__item">
+                                <span class="fp-exp-overview__label"><?php esc_html_e('Bias cognitivi', 'fp-experiences'); ?></span>
+                                <div class="fp-exp-overview__chips">
+                                    <?php foreach ($overview_biases as $bias) : ?>
+                                        <span class="fp-exp-overview__chip"><?php echo esc_html($bias); ?></span>
+                                    <?php endforeach; ?>
+                                </div>
+                            </div>
+                        <?php endif; ?>
+
+                        <?php if ('' !== $overview_meeting_summary) : ?>
+                            <div class="fp-exp-overview__item">
+                                <span class="fp-exp-overview__label"><?php esc_html_e('Meeting point', 'fp-experiences'); ?></span>
+                                <?php if ('' !== $overview_meeting_title) : ?>
+                                    <span class="fp-exp-overview__value"><?php echo esc_html($overview_meeting_title); ?></span>
+                                <?php endif; ?>
+                                <?php if ('' !== $overview_meeting_address) : ?>
+                                    <span class="fp-exp-overview__muted"><?php echo esc_html($overview_meeting_address); ?></span>
+                                <?php endif; ?>
+                            </div>
+                        <?php endif; ?>
+
+                        <?php if ($overview_family) : ?>
+                            <div class="fp-exp-overview__item">
+                                <span class="fp-exp-overview__label"><?php esc_html_e('Family', 'fp-experiences'); ?></span>
+                                <span class="fp-exp-overview__value fp-exp-overview__value--badge"><?php esc_html_e('Family friendly', 'fp-experiences'); ?></span>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                </section>
+            <?php endif; ?>
+
+            <?php if ($show_gallery) : ?>
+                <section class="fp-exp-section fp-exp-gallery" id="fp-exp-section-gallery" data-fp-section="gallery">
+                    <div class="fp-exp-gallery__track" role="list">
+                        <?php foreach ($gallery_items as $index => $image) :
+                            $url = isset($image['url']) ? (string) $image['url'] : '';
+                            if ('' === $url) {
+                                continue;
+                            }
+
+                            $srcset = isset($image['srcset']) ? (string) $image['srcset'] : '';
+                            $width = isset($image['width']) ? (string) $image['width'] : '';
+                            $height = isset($image['height']) ? (string) $image['height'] : '';
+                            $alt = isset($image['alt']) ? (string) $image['alt'] : '';
+                            $caption = isset($image['caption']) ? (string) $image['caption'] : '';
+
+                            if ('' === $alt) {
+                                $alt = $experience['title'];
+                            }
+                            ?>
+                            <figure class="fp-exp-gallery__item" role="listitem">
+                                <img
+                                    class="fp-exp-gallery__image"
+                                    src="<?php echo esc_url($url); ?>"
+                                    <?php if ('' !== $srcset) : ?>srcset="<?php echo esc_attr($srcset); ?>"<?php endif; ?>
+                                    sizes="(min-width: 768px) 50vw, 100vw"
+                                    <?php if ('' !== $width) : ?>width="<?php echo esc_attr($width); ?>"<?php endif; ?>
+                                    <?php if ('' !== $height) : ?>height="<?php echo esc_attr($height); ?>"<?php endif; ?>
+                                    alt="<?php echo esc_attr($alt); ?>"
+                                    loading="lazy"
+                                    decoding="async"
+                                />
+                                <?php if ('' !== $caption) : ?>
+                                    <figcaption class="fp-exp-gallery__caption"><?php echo esc_html($caption); ?></figcaption>
+                                <?php endif; ?>
+                            </figure>
+                        <?php endforeach; ?>
                     </div>
                 </section>
             <?php endif; ?>

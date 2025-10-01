@@ -341,6 +341,11 @@ final class ExperienceCPT
                 'items' => 'string',
                 'default' => [],
             ],
+            '_fp_cognitive_biases' => [
+                'type' => 'array',
+                'items' => 'string',
+                'default' => [],
+            ],
             '_fp_policy_cancel' => [
                 'type' => 'string',
             ],
@@ -357,6 +362,10 @@ final class ExperienceCPT
                 'type' => 'array',
                 'items' => 'integer',
                 'default' => [],
+            ],
+            '_fp_hero_image_id' => [
+                'type' => 'integer',
+                'default' => 0,
             ],
             '_fp_use_rtb' => [
                 'type' => 'boolean',

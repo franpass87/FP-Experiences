@@ -81,14 +81,27 @@ final class ExperiencePageCreator
         }
 
         $content = sprintf('[fp_exp_page id="%d"]', $experience_id);
-        $result = wp_insert_post([
+        $template = $this->locate_full_width_template();
+
+        $page_args = [
             'post_title' => $title,
             'post_content' => $content,
             'post_status' => 'publish',
             'post_type' => 'page',
-        ]);
+            'meta_input' => [
+                '_fp_experience_id' => $experience_id,
+            ],
+        ];
+
+        if ($template) {
+            $page_args['meta_input']['_wp_page_template'] = $template;
+        }
+
+        $result = wp_insert_post($page_args);
 
         if ($result && ! is_wp_error($result)) {
+            update_post_meta($experience_id, '_fp_exp_page_id', (int) $result);
+
             set_transient(self::NOTICE_KEY, [
                 'message' => esc_html__('Pagina esperienza creata con successo.', 'fp-experiences'),
                 'type' => 'success',
@@ -271,7 +284,7 @@ final class ExperiencePageCreator
         ];
 
         if ($template) {
-            $page_args['page_template'] = $template;
+            $page_args['meta_input']['_wp_page_template'] = $template;
         }
 
         $page_id = wp_insert_post($page_args, true);
