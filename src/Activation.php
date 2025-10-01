@@ -66,6 +66,18 @@ final class Activation
     }
 
     /**
+     * Return the capabilities required by FP Experiences managers.
+     *
+     * @return array<string, bool>
+     */
+    public static function manager_capabilities(): array
+    {
+        $roles = self::roles_definition();
+
+        return $roles['fp_exp_manager']['capabilities'];
+    }
+
+    /**
      * @return array<string, array{label: string, primary_capability: string, capabilities: array<string, bool>}>
      */
     private static function roles_definition(): array
