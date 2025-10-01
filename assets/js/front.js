@@ -12,6 +12,35 @@
     const defaultCurrency = pluginConfig.currency || 'EUR';
     const focusableSelector = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
+    function escapeHtml(value) {
+        const div = document.createElement('div');
+        div.textContent = value == null ? '' : String(value);
+
+        return div.innerHTML;
+    }
+
+    function formatCurrency(value, currency) {
+        const amount = typeof value === 'number' ? value : parseFloat(String(value || '0'));
+        const safeCurrency = currency || defaultCurrency;
+
+        if (Number.isNaN(amount)) {
+            return '';
+        }
+
+        if (typeof Intl !== 'undefined' && Intl.NumberFormat) {
+            try {
+                return new Intl.NumberFormat(undefined, {
+                    style: 'currency',
+                    currency: safeCurrency,
+                }).format(amount);
+            } catch (error) {
+                // Fallback to basic formatting below.
+            }
+        }
+
+        return `${amount.toFixed(2)} ${safeCurrency}`;
+    }
+
     function buildRestHeaders(base) {
         const headers = Object.assign({ 'Content-Type': 'application/json' }, base || {});
         if (pluginConfig.restNonce) {
@@ -427,6 +456,7 @@
             setupExperienceScroll(page);
             setupExperienceAccordion(page);
             setupExperienceSticky(page);
+            setupGiftForm(page);
         });
     }
 
@@ -571,6 +601,624 @@
         });
     }
 
+    function setupGiftForm(page) {
+        const giftSection = page.querySelector('[data-fp-gift]');
+        if (!giftSection) {
+            return;
+        }
+
+        const configAttr = giftSection.getAttribute('data-fp-gift-config') || '';
+        let config = {};
+
+        try {
+            config = configAttr ? JSON.parse(configAttr) : {};
+        } catch (error) {
+            config = {};
+        }
+
+        const form = giftSection.querySelector('[data-fp-gift-form]');
+        const feedback = giftSection.querySelector('[data-fp-gift-feedback]');
+        const success = giftSection.querySelector('[data-fp-gift-success]');
+
+        page.querySelectorAll('[data-fp-gift-toggle]').forEach((button) => {
+            button.addEventListener('click', (event) => {
+                event.preventDefault();
+                giftSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                const firstField = form ? form.querySelector('input, textarea, select') : null;
+                if (firstField instanceof HTMLElement) {
+                    window.setTimeout(() => {
+                        firstField.focus();
+                    }, 280);
+                }
+            });
+        });
+
+        if (!form) {
+            return;
+        }
+
+        const submitButton = form.querySelector('[data-fp-gift-submit]');
+        let submitting = false;
+
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault();
+
+            if (submitting) {
+                return;
+            }
+
+            clearGiftFeedback();
+
+            if (typeof form.reportValidity === 'function' && !form.reportValidity()) {
+                showGiftFeedback(feedback, i18n__('Please complete the required fields.', 'fp-experiences'), true);
+                return;
+            }
+
+            const payload = buildGiftPayload(form, config);
+
+            if (!payload) {
+                showGiftFeedback(feedback, i18n__('Unable to prepare the gift checkout. Please try again later.', 'fp-experiences'), true);
+                return;
+            }
+
+            submitting = true;
+            if (submitButton) {
+                submitButton.disabled = true;
+                submitButton.setAttribute('aria-busy', 'true');
+            }
+
+            try {
+                const response = await fetch(`${pluginConfig.restUrl}gift/purchase`, {
+                    method: 'POST',
+                    headers: buildRestHeaders(),
+                    body: JSON.stringify(payload),
+                });
+
+                const data = await response.json().catch(() => ({}));
+
+                if (!response.ok || (data && data.code)) {
+                    const message = data && data.message ? data.message : i18n__('We could not start the gift checkout. Please try again.', 'fp-experiences');
+                    showGiftFeedback(feedback, message, true);
+                    return;
+                }
+
+                if (data && data.checkout_url) {
+                    try {
+                        const value = typeof data.value === 'number' ? data.value : parseFloat(data.value || '0');
+                        const currency = (data && data.currency) ? String(data.currency) : (pluginConfig.currency || 'EUR');
+                        const quantity = typeof payload.quantity === 'number' && payload.quantity > 0 ? payload.quantity : 1;
+                        const unitPrice = quantity > 0 && !Number.isNaN(value) ? value / quantity : value;
+                        const addons = Array.isArray(payload.addons) ? payload.addons.map((addon) => String(addon)) : [];
+                        const ecommerce = {
+                            value: Number.isNaN(value) ? 0 : value,
+                            currency,
+                            items: [
+                                {
+                                    item_id: String(payload.experience_id || ''),
+                                    item_name: config.experienceTitle || '',
+                                    quantity,
+                                    price: Number.isNaN(unitPrice) ? 0 : unitPrice,
+                                },
+                            ],
+                        };
+                        pushTrackingEvent('gift_purchase', {
+                            ecommerce,
+                            gift: {
+                                experienceId: payload.experience_id,
+                                experienceTitle: config.experienceTitle || '',
+                                quantity: payload.quantity,
+                                addons,
+                            },
+                        });
+                    } catch (error) {
+                        // no-op
+                    }
+
+                    window.location.href = data.checkout_url;
+
+                    return;
+                }
+
+                showGiftFeedback(success, i18n__('Gift checkout initialised. Follow the next steps to complete payment.', 'fp-experiences'), false);
+            } catch (error) {
+                showGiftFeedback(feedback, i18n__('We could not start the gift checkout. Please try again.', 'fp-experiences'), true);
+            } finally {
+                submitting = false;
+                if (submitButton) {
+                    submitButton.disabled = false;
+                    submitButton.removeAttribute('aria-busy');
+                }
+            }
+        });
+
+        function buildGiftPayload(formElement, formConfig) {
+            const formData = new FormData(formElement);
+            const experienceId = parseInt(String(formConfig.experienceId || 0), 10);
+
+            if (!experienceId || Number.isNaN(experienceId)) {
+                return null;
+            }
+
+            const quantity = Math.max(1, parseInt(String(formData.get('quantity') || '1'), 10));
+            const addons = formData.getAll('addons[]').map((value) => String(value)).filter((value) => value !== '');
+
+            return {
+                experience_id: experienceId,
+                quantity,
+                addons,
+                purchaser: {
+                    name: String(formData.get('purchaser[name]') || ''),
+                    email: String(formData.get('purchaser[email]') || ''),
+                },
+                recipient: {
+                    name: String(formData.get('recipient[name]') || ''),
+                    email: String(formData.get('recipient[email]') || ''),
+                },
+                message: String(formData.get('message') || ''),
+            };
+        }
+
+        function showGiftFeedback(container, message, isError) {
+            if (!container) {
+                return;
+            }
+
+            container.textContent = message;
+            container.hidden = false;
+
+            if (isError) {
+                container.classList.add('is-error');
+            } else {
+                container.classList.remove('is-error');
+            }
+        }
+
+        function clearGiftFeedback() {
+            if (feedback) {
+                feedback.hidden = true;
+                feedback.textContent = '';
+                feedback.classList.remove('is-error');
+            }
+
+            if (success) {
+                success.hidden = true;
+                success.textContent = '';
+            }
+        }
+    }
+
+    function setupGiftRedeem() {
+        const sections = document.querySelectorAll('[data-fp-gift-redeem]');
+
+        if (!sections.length) {
+            return;
+        }
+
+        sections.forEach((section) => {
+            const lookupForm = section.querySelector('[data-fp-gift-redeem-lookup]');
+            const redeemForm = section.querySelector('[data-fp-gift-redeem-form]');
+            const feedback = section.querySelector('[data-fp-gift-redeem-feedback]');
+            const detailFeedback = section.querySelector('[data-fp-gift-redeem-feedback-details]');
+            const success = section.querySelector('[data-fp-gift-redeem-success]');
+            const details = section.querySelector('[data-fp-gift-redeem-details]');
+            const codeInput = lookupForm ? lookupForm.querySelector('[data-fp-gift-code]') : null;
+            const lookupButton = lookupForm ? lookupForm.querySelector('[data-fp-gift-redeem-lookup-submit]') : null;
+            const slotSelect = redeemForm ? redeemForm.querySelector('[data-fp-gift-redeem-slot]') : null;
+            const redeemButton = redeemForm ? redeemForm.querySelector('[data-fp-gift-redeem-submit]') : null;
+            const titleNode = section.querySelector('[data-fp-gift-redeem-title]');
+            const excerptNode = section.querySelector('[data-fp-gift-redeem-excerpt]');
+            const imageNode = section.querySelector('[data-fp-gift-redeem-image]');
+            const addonsWrapper = section.querySelector('[data-fp-gift-redeem-addons-wrapper]');
+            const addonsList = section.querySelector('[data-fp-gift-redeem-addons]');
+            const quantityNode = section.querySelector('[data-fp-gift-redeem-quantity]');
+            const validityNode = section.querySelector('[data-fp-gift-redeem-validity]');
+            const valueNode = section.querySelector('[data-fp-gift-redeem-value]');
+            const codeLabel = section.querySelector('[data-fp-gift-redeem-code]');
+            let currentVoucher = null;
+            let lookupLoading = false;
+            let redeemLoading = false;
+
+            function toggleButton(button, state) {
+                if (!button) {
+                    return;
+                }
+
+                button.disabled = state;
+
+                if (state) {
+                    button.setAttribute('aria-busy', 'true');
+                } else {
+                    button.removeAttribute('aria-busy');
+                }
+            }
+
+            function clearFeedbackMessages() {
+                [feedback, detailFeedback, success].forEach((target) => {
+                    if (!target) {
+                        return;
+                    }
+
+                    target.hidden = true;
+                    target.textContent = '';
+                    target.classList.remove('is-error');
+                });
+            }
+
+            function showFeedback(target, message, isError) {
+                if (!target) {
+                    return;
+                }
+
+                if (isError) {
+                    target.classList.add('is-error');
+                } else {
+                    target.classList.remove('is-error');
+                }
+
+                target.innerHTML = message;
+                target.hidden = false;
+            }
+
+            function resetDetails() {
+                currentVoucher = null;
+
+                if (details) {
+                    details.hidden = true;
+                }
+
+                if (redeemForm) {
+                    redeemForm.reset();
+                }
+
+                if (slotSelect) {
+                    slotSelect.innerHTML = '';
+                    slotSelect.disabled = true;
+                }
+
+                if (redeemButton) {
+                    redeemButton.disabled = true;
+                }
+
+                if (titleNode) {
+                    titleNode.textContent = '';
+                }
+
+                if (excerptNode) {
+                    excerptNode.innerHTML = '';
+                }
+
+                if (imageNode && imageNode.tagName === 'IMG') {
+                    imageNode.src = '';
+                    imageNode.alt = '';
+                    imageNode.hidden = true;
+                }
+
+                if (addonsList) {
+                    addonsList.innerHTML = '';
+                }
+
+                if (addonsWrapper) {
+                    addonsWrapper.hidden = true;
+                }
+
+                if (quantityNode) {
+                    quantityNode.textContent = '';
+                }
+
+                if (validityNode) {
+                    validityNode.textContent = '';
+                }
+
+                if (valueNode) {
+                    valueNode.textContent = '';
+                }
+
+                if (codeLabel) {
+                    codeLabel.textContent = '';
+                }
+            }
+
+            async function fetchVoucher(code) {
+                const normalized = String(code || '').trim().toLowerCase();
+
+                if (!normalized) {
+                    showFeedback(feedback, escapeHtml(i18n__('Enter a voucher code to continue.', 'fp-experiences')), true);
+
+                    return;
+                }
+
+                if (lookupLoading) {
+                    return;
+                }
+
+                lookupLoading = true;
+                toggleButton(lookupButton, true);
+                clearFeedbackMessages();
+                resetDetails();
+
+                try {
+                    const response = await fetch(`${pluginConfig.restUrl}gift/voucher/${encodeURIComponent(normalized)}`, {
+                        method: 'GET',
+                        headers: buildRestHeaders(),
+                    });
+
+                    const data = await response.json().catch(() => ({}));
+
+                    if (!response.ok || (data && data.code)) {
+                        const message = data && data.message ? data.message : i18n__('We could not find that voucher. Check the code and try again.', 'fp-experiences');
+                        showFeedback(feedback, escapeHtml(message), true);
+
+                        return;
+                    }
+
+                    currentVoucher = Object.assign({}, data, { code: normalized });
+
+                    if (details) {
+                        details.hidden = false;
+                    }
+
+                    if (titleNode) {
+                        titleNode.textContent = data.experience && data.experience.title ? data.experience.title : '';
+                    }
+
+                    if (excerptNode) {
+                        excerptNode.innerHTML = data.experience && data.experience.excerpt ? data.experience.excerpt : '';
+                    }
+
+                    if (imageNode && imageNode.tagName === 'IMG') {
+                        const imageUrl = data.experience && data.experience.image ? data.experience.image : '';
+                        if (imageUrl) {
+                            imageNode.src = imageUrl;
+                            imageNode.alt = data.experience && data.experience.title ? data.experience.title : '';
+                            imageNode.hidden = false;
+                        } else {
+                            imageNode.src = '';
+                            imageNode.alt = '';
+                            imageNode.hidden = true;
+                        }
+                    }
+
+                    if (codeLabel) {
+                        codeLabel.textContent = normalized.toUpperCase();
+                    }
+
+                    if (quantityNode) {
+                        const guests = parseInt(String(data.quantity || '0'), 10);
+                        quantityNode.textContent = guests > 0 ? guests.toString() : '';
+                    }
+
+                    if (validityNode) {
+                        validityNode.textContent = data.valid_until_label || '';
+                    }
+
+                    if (valueNode) {
+                        const formatted = formatCurrency(data.value || 0, data.currency || defaultCurrency);
+                        valueNode.textContent = formatted;
+                    }
+
+                    if (Array.isArray(data.addons) && data.addons.length && addonsList) {
+                        addonsList.innerHTML = '';
+                        data.addons.forEach((addon) => {
+                            const item = document.createElement('li');
+                            const label = addon.label ? String(addon.label) : '';
+                            const qty = addon.quantity ? parseInt(String(addon.quantity), 10) : 0;
+                            const qtyLabel = qty > 0 ? ` × ${qty}` : '';
+                            item.textContent = `${label}${qtyLabel}`;
+                            addonsList.appendChild(item);
+                        });
+                        if (addonsWrapper) {
+                            addonsWrapper.hidden = false;
+                        }
+                    } else {
+                        if (addonsList) {
+                            addonsList.innerHTML = '';
+                        }
+                        if (addonsWrapper) {
+                            addonsWrapper.hidden = true;
+                        }
+                    }
+
+                    if (slotSelect) {
+                        slotSelect.innerHTML = '';
+
+                        const slots = Array.isArray(data.slots) ? data.slots : [];
+
+                        if (slots.length) {
+                            slots.forEach((slot) => {
+                                if (!slot || !slot.id) {
+                                    return;
+                                }
+
+                                const option = document.createElement('option');
+                                option.value = String(slot.id);
+                                const remaining = typeof slot.remaining === 'number' ? slot.remaining : null;
+                                let label = slot.label || i18n__('Available slot', 'fp-experiences');
+
+                                if (remaining !== null && remaining > 0) {
+                                    label = `${label} · ${i18n_n('%d spot left', '%d spots left', remaining).replace('%d', remaining)}`;
+                                }
+
+                                option.textContent = label;
+                                slotSelect.appendChild(option);
+                            });
+
+                            slotSelect.disabled = false;
+                            if (redeemButton) {
+                                redeemButton.disabled = false;
+                            }
+                            if (detailFeedback) {
+                                detailFeedback.hidden = true;
+                                detailFeedback.textContent = '';
+                            }
+                        } else {
+                            slotSelect.disabled = true;
+                            if (redeemButton) {
+                                redeemButton.disabled = true;
+                            }
+                            showFeedback(detailFeedback, escapeHtml(i18n__('No upcoming slots are available. Please contact the operator to schedule manually.', 'fp-experiences')), true);
+                        }
+                    }
+                } catch (error) {
+                    showFeedback(feedback, escapeHtml(i18n__('Unable to load the voucher at this time. Please try again later.', 'fp-experiences')), true);
+                } finally {
+                    lookupLoading = false;
+                    toggleButton(lookupButton, false);
+                }
+            }
+
+            async function redeemVoucher(event) {
+                event.preventDefault();
+
+                if (redeemLoading) {
+                    return;
+                }
+
+                if (!currentVoucher) {
+                    showFeedback(detailFeedback, escapeHtml(i18n__('Look up a voucher before choosing a slot.', 'fp-experiences')), true);
+
+                    return;
+                }
+
+                if (!slotSelect || !slotSelect.value) {
+                    showFeedback(detailFeedback, escapeHtml(i18n__('Select an available slot to continue.', 'fp-experiences')), true);
+                    if (slotSelect) {
+                        slotSelect.focus();
+                    }
+
+                    return;
+                }
+
+                clearFeedbackMessages();
+                redeemLoading = true;
+                toggleButton(redeemButton, true);
+                if (slotSelect) {
+                    slotSelect.disabled = true;
+                }
+
+                try {
+                    const response = await fetch(`${pluginConfig.restUrl}gift/redeem`, {
+                        method: 'POST',
+                        headers: buildRestHeaders(),
+                        body: JSON.stringify({
+                            code: currentVoucher.code,
+                            slot_id: parseInt(String(slotSelect.value), 10),
+                        }),
+                    });
+
+                    const data = await response.json().catch(() => ({}));
+
+                    if (!response.ok || (data && data.code)) {
+                        const message = data && data.message ? data.message : i18n__('We could not redeem the voucher. Try a different slot or contact support.', 'fp-experiences');
+                        showFeedback(detailFeedback, escapeHtml(message), true);
+                        if (slotSelect) {
+                            slotSelect.disabled = false;
+                        }
+                        toggleButton(redeemButton, false);
+
+                        return;
+                    }
+
+                    const experienceId = currentVoucher.experience && currentVoucher.experience.id ? currentVoucher.experience.id : null;
+                    const experienceLink = data.experience && data.experience.permalink ? data.experience.permalink : (currentVoucher.experience && currentVoucher.experience.permalink ? currentVoucher.experience.permalink : '');
+                    const experienceTitle = data.experience && data.experience.title ? data.experience.title : (currentVoucher.experience && currentVoucher.experience.title ? currentVoucher.experience.title : '');
+                    const quantity = typeof currentVoucher.quantity === 'number' && currentVoucher.quantity > 0 ? currentVoucher.quantity : 1;
+                    const addons = Array.isArray(currentVoucher.addons)
+                        ? currentVoucher.addons.map((addon) => {
+                            if (typeof addon === 'string') {
+                                return addon;
+                            }
+
+                            if (addon && typeof addon === 'object' && addon.slug) {
+                                return String(addon.slug);
+                            }
+
+                            return '';
+                        }).filter((slug) => slug !== '')
+                        : [];
+                    const slotId = slotSelect ? parseInt(String(slotSelect.value), 10) : null;
+                    const currency = currentVoucher && currentVoucher.currency
+                        ? String(currentVoucher.currency)
+                        : (pluginConfig.currency || 'EUR');
+                    const ecommerce = {
+                        value: 0,
+                        currency,
+                        items: [
+                            {
+                                item_id: experienceId ? String(experienceId) : '',
+                                item_name: experienceTitle || '',
+                                quantity,
+                                price: 0,
+                            },
+                        ],
+                    };
+                    let successMessage = escapeHtml(i18n__('Voucher redeemed! Check your inbox for confirmation.', 'fp-experiences'));
+
+                    if (experienceLink) {
+                        const safeLink = encodeURI(experienceLink);
+                        const linkLabel = experienceTitle || i18n__('View experience', 'fp-experiences');
+                        successMessage += ` <a href="${safeLink}">${escapeHtml(linkLabel)}</a>`;
+                    }
+
+                    showFeedback(success, successMessage, false);
+
+                    pushTrackingEvent('gift_redeem', {
+                        ecommerce,
+                        gift: {
+                            code: currentVoucher.code,
+                            experienceId,
+                            experienceTitle,
+                            quantity,
+                            addons,
+                            slotId: Number.isFinite(slotId) ? slotId : null,
+                            reservationId: data && data.reservation_id ? data.reservation_id : null,
+                            orderId: data && data.order_id ? data.order_id : null,
+                            value: currentVoucher && typeof currentVoucher.value === 'number' ? currentVoucher.value : null,
+                            currency,
+                        },
+                    });
+
+                    if (redeemButton) {
+                        toggleButton(redeemButton, false);
+                        redeemButton.disabled = true;
+                        redeemButton.setAttribute('aria-disabled', 'true');
+                    }
+                } catch (error) {
+                    showFeedback(detailFeedback, escapeHtml(i18n__('We could not redeem the voucher. Try a different slot or contact support.', 'fp-experiences')), true);
+                    if (slotSelect) {
+                        slotSelect.disabled = false;
+                    }
+                    toggleButton(redeemButton, false);
+
+                    return;
+                } finally {
+                    redeemLoading = false;
+                }
+            }
+
+            resetDetails();
+            clearFeedbackMessages();
+
+            if (lookupForm) {
+                lookupForm.addEventListener('submit', (event) => {
+                    event.preventDefault();
+                    fetchVoucher(codeInput ? codeInput.value : '');
+                });
+            }
+
+            if (redeemForm) {
+                redeemForm.addEventListener('submit', redeemVoucher);
+            }
+
+            const initialCode = section.getAttribute('data-fp-initial-code');
+            if (initialCode) {
+                if (codeInput) {
+                    codeInput.value = initialCode;
+                }
+                fetchVoucher(initialCode);
+            }
+        });
+    }
+
     function pushTrackingEvent(eventName, data) {
         const channels = trackingConfig.enabled || {};
 
@@ -680,6 +1328,7 @@
         document.querySelectorAll('[data-fp-shortcode="list"]').forEach(setupListing);
         setupMeetingPoints();
         setupExperiencePages();
+        setupGiftRedeem();
     }
 
     function setupListing(section) {
@@ -860,6 +1509,93 @@
         ));
 
         refreshSummary();
+
+        const addonElements = Array.from(container.querySelectorAll('.fp-exp-addon'));
+        if (addonElements.length) {
+            const seenAddons = new Set();
+            const observer = typeof window !== 'undefined' && 'IntersectionObserver' in window
+                ? new IntersectionObserver((entries) => {
+                    entries.forEach((entry) => {
+                        if (!entry.isIntersecting) {
+                            return;
+                        }
+
+                        const target = entry.target;
+                        const slug = target.getAttribute('data-addon');
+
+                        if (!slug || seenAddons.has(slug)) {
+                            return;
+                        }
+
+                        seenAddons.add(slug);
+
+                        const labelEl = target.querySelector('.fp-exp-addon__label');
+                        const priceEl = target.querySelector('.fp-exp-addon__price');
+                        const label = labelEl ? labelEl.textContent.trim() : '';
+                        const priceValue = priceEl ? parseFloat(priceEl.getAttribute('data-price') || '') : NaN;
+                        const ecommerce = buildEcommercePayload(config, { quantity: 1, total: getBasePrice(config) });
+                        const payload = Object.assign({
+                            addon: {
+                                slug,
+                                label,
+                            },
+                            experience: {
+                                id: String(config.experienceId || ''),
+                                title: config.experienceTitle || '',
+                            },
+                            ecommerce,
+                        }, trackingMeta);
+
+                        if (Number.isFinite(priceValue)) {
+                            payload.addon.price = priceValue;
+                        }
+
+                        pushTrackingEvent('add_on_view', payload);
+                    });
+                }, { threshold: 0.4 })
+                : null;
+
+            addonElements.forEach((element) => {
+                if (observer) {
+                    observer.observe(element);
+                    return;
+                }
+
+                const slug = element.getAttribute('data-addon');
+                if (!slug || seenAddons.has(slug)) {
+                    return;
+                }
+
+                seenAddons.add(slug);
+
+                const labelEl = element.querySelector('.fp-exp-addon__label');
+                const priceEl = element.querySelector('.fp-exp-addon__price');
+                const label = labelEl ? labelEl.textContent.trim() : '';
+                const priceValue = priceEl ? parseFloat(priceEl.getAttribute('data-price') || '') : NaN;
+                const ecommerce = buildEcommercePayload(config, { quantity: 1, total: getBasePrice(config) });
+                const payload = Object.assign({
+                    addon: {
+                        slug,
+                        label,
+                    },
+                    experience: {
+                        id: String(config.experienceId || ''),
+                        title: config.experienceTitle || '',
+                    },
+                    ecommerce,
+                }, trackingMeta);
+
+                if (Number.isFinite(priceValue)) {
+                    payload.addon.price = priceValue;
+                }
+
+                pushTrackingEvent('add_on_view', payload);
+            });
+
+            if (observer) {
+                window.addEventListener('beforeunload', () => observer.disconnect(), { once: true });
+            }
+        }
 
         container.addEventListener('fpExpWidgetSummaryUpdate', (event) => {
             const detail = event.detail || {};

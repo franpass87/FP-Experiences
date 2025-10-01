@@ -5,7 +5,7 @@ Tags: experiences, booking, wooocommerce, shortcodes, calendar
 Requires at least: 6.0
 Tested up to: 6.4
 Requires PHP: 8.1
-Stable tag: 0.2.0
+Stable tag: 0.3.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -14,10 +14,14 @@ FP Experiences brings GetYourGuide-style booking flows to WooCommerce without to
 == Description ==
 
 * Isolated booking cart that never mixes with WooCommerce products and uses a dedicated checkout shortcode.
-* Experience discovery widgets with availability calendars, ticket types, add-ons, and schema-ready markup.
-* Reusable meeting points with CSV import, experience linking, shortcode, and Elementor widget.
+* Experience discovery widgets with availability calendars, ticket types, add-ons (now with thumbnails), and schema-ready markup.
+* “Gift Your Experience” vouchers with configurable validity, reminder cadence, transactional emails, and front-end purchase/redemption flows.
+* Language badges with local SVG flags on experience cards, widgets, and admin taxonomy pages (text labels included for a11y).
+* Simple archive shortcode with grid/list cards, CTA buttons, and a wider desktop container for the advanced showcase.
+* Automatic landing page creation for each published experience, with a Tools resync command to regenerate missing `[fp_exp_page]` destinations.
+* Reusable meeting points with optional CSV import (advanced toggle), experience linking, shortcode, and Elementor widget.
 * Optional Brevo transactional email delivery, Google Calendar sync, and marketing pixels (GA4, Google Ads, Meta, Clarity).
-* Admin calendar with drag-and-drop rescheduling, manual booking creation with payment links, and operations roles for managers, operators, and guides.
+* Admin calendar with drag-and-drop rescheduling, recurrence previews/regeneration, manual booking creation with payment links, and operations roles for managers, operators, and guides.
 * Consent-aware tracking, theming presets, CSS variable overrides, and Elementor controls for editors.
 
 == Installation ==
@@ -32,9 +36,11 @@ FP Experiences brings GetYourGuide-style booking flows to WooCommerce without to
 * `[fp_exp_list]` – Mobile-first experiences showcase with accessible filter form (themes, languages, duration, price range, family-friendly toggle, date picker, and text search), sorting controls, pagination, price badges, optional map links, and dataLayer tracking (`view_item_list` + `select_item`). Active theme/language/family selections appear as removable chips with a reset shortcut so visitors can adjust quickly. Attributes: `filters`, `per_page`, `page`, `search`, `order`, `orderby`, `view`, `show_map`, `cta`, `badge_lang`, `badge_duration`, `badge_family`, `show_price_from`, plus layout helpers (`columns_desktop`, `columns_tablet`, `columns_mobile`, `gap`). Price badges cache the lowest ticket price per experience via transients and respect dedicated experience pages when available. Examples:
   * `[fp_exp_list filters="theme,language,price,date,family" per_page="9" view="grid" orderby="price" order="ASC" show_price_from="1" show_map="1"]`
   * `[fp_exp_list filters="search,theme" per_page="12" view="list" cta="widget" gap="compact"]`
+* `[fp_exp_simple_archive view="grid" columns="3" order="menu_order" order_direction="ASC"]` – Lightweight archive without filters that outputs responsive cards (image, title, duration, price badge, Dettagli/Prenota CTAs) in grid or list mode. Automatically stretches to a wider desktop container while keeping mobile-friendly spacing. Attributes: `view` (`grid`|`list`), `columns` (1–4, desktop grid), `order` (`menu_order`, `date`, `title`), `order_direction` (`ASC`|`DESC`).
 * `[fp_exp_widget id="123"]` – Booking widget for a specific experience. Attributes: `sticky`, `show_calendar`, `primary`, `accent`, `radius`.
 * `[fp_exp_calendar id="123" months="2"]` – Inline availability calendar for a single experience.
 * `[fp_exp_checkout]` – Isolated checkout that finalises the FP Experiences cart only.
+* `[fp_exp_gift_redeem]` – Voucher redemption form that looks up a gift code, lists prepaid add-ons, shows upcoming slots, and confirms the booking at zero cost.
 * `[fp_exp_meeting_points id="123"]` – Outputs the primary meeting point and optional alternatives for an experience, with map links built client-side.
 * `[fp_exp_page id="123" sections="hero,highlights,inclusions,meeting,extras,faq,reviews" sticky_widget="1" container="boxed" max_width="1200" gutter="24" sidebar="right"]` – Full experience detail page with hero gallery, highlights, inclusions/exclusions, meeting point block, FAQ accordion, reviews, and sticky availability widget. Supports theming overrides (`preset`, `mode`, color variables, `radius`, `shadow`, `font`) plus layout controls: `container` (`boxed` or `full`), `max_width`/`gutter` (pixels) and `sidebar` (`right`, `left`, `none`).
 
@@ -42,7 +48,7 @@ The `sections` attribute accepts a comma-separated list of sections to render (h
 
 == Elementor Widgets ==
 
-Six Elementor widgets mirror the shortcodes: List, Widget, Calendar, Checkout, Meeting Points, and the new Experience Page layout. The List widget now bundles the full showcase controls (filters, search, ordering, map toggle, CTA behaviour) plus responsive style controls for columns, card spacing, and badge/price visibility. Each widget exposes theming overrides (colors, radius, fonts) alongside behavioural toggles (sticky mode, inline calendar, consent defaults). The Experience Page widget lets editors pick sections to display and toggle the sticky availability bar while reusing the `[fp_exp_page]` shortcode under the hood.
+Six Elementor widgets mirror the shortcodes: List, Widget, Calendar, Checkout, Meeting Points, and the new Experience Page layout. The List widget now bundles the full showcase controls (filters, search, ordering, map toggle, CTA behaviour) plus a one-click switch between the advanced archive and the new simple grid/list layout (with column selector). Responsive style controls for columns, card spacing, and badge/price visibility remain available in advanced mode, while both modes inherit theming overrides (colors, radius, fonts) and behavioural toggles (sticky mode, inline calendar, consent defaults). The Experience Page widget lets editors pick sections to display and toggle the sticky availability bar while reusing the `[fp_exp_page]` shortcode under the hood.
 
 If your theme applies a narrow content container you can break the layout out to the full viewport with `container="full"` (optionally adjusting `max_width`/`gutter`).
 
@@ -61,13 +67,14 @@ La voce di menu viene replicata anche nella toolbar con collegamenti rapidi (Nuo
 
 == Settings & Tools ==
 
-* **General** – Structure and webmaster emails, locale preferences, VAT class filters, meeting points toggle, Experience Page layout defaults (container, max-width, gutter, sidebar).
+* **General** – Structure and webmaster emails, locale preferences, VAT class filters, meeting points toggle, advanced meeting point import toggle, Experience Page layout defaults (container, max-width, gutter, sidebar).
 * **Branding** – Color palette, button radius, shadows, presets, contrast checker, optional Google Font.
 * **Showcase** – Default filters, ordering, and price badge toggle for the experiences listing/Elementor widget.
+* **Gift** – Enable vouchers, set default validity (days), configure reminder offsets/time, and define the redemption landing page.
 * **Tracking** – Enable/disable GA4, Google Ads, Meta Pixel, Clarity, enhanced conversions, and consent defaults.
 * **Brevo** – API key, webhook secret (required for webhook callbacks), list ID, attribute mappings, transactional template IDs, webhook diagnostics.
 * **Calendar** – Google OAuth client credentials, redirect URI, connect/disconnect, target calendar.
-* **Tools** – Brevo resync, event replay, REST API ping, meeting point CSV import, and cache/log clearance with rate-limited REST endpoints.
+* **Tools** – Brevo resync, event replay, experience page resync (creates missing `[fp_exp_page]` entries), REST API ping, meeting point CSV import (visible only when the advanced toggle is on), and cache/log clearance with rate-limited REST endpoints.
 
 == Admin UX ==
 
@@ -101,6 +108,10 @@ No. Experiences are stored as a dedicated custom post type with isolated availab
 
 Yes. The plugin scopes CSS and JS to its shortcodes/widgets, injects CSS variables only when needed, and exposes branding controls for overrides.
 
+= How do gift vouchers work? =
+
+Enable the **Gift** settings tab to define voucher validity and reminder cadence. Customers can purchase a gift directly from the experience page; the recipient receives a unique code and redemption link. The `[fp_exp_gift_redeem]` shortcode renders the lookup/booking form so recipients can pick a slot and complete a zero-cost checkout (prepaid add-ons included). Reminders fire automatically 30/7/1 days before expiry, and managers can extend or cancel vouchers from the dedicated admin screen.
+
 = How are transactional emails delivered? =
 
 If Brevo credentials are provided, confirmations, reminders, and cancellations use Brevo templates. Otherwise WooCommerce’s mailer delivers the bundled templates with ICS attachments.
@@ -110,6 +121,14 @@ If Brevo credentials are provided, confirmations, reminders, and cancellations u
 FP Experiences stores reservation details inside custom tables linked to WooCommerce orders. Marketing consent is recorded per order (`_fp_exp_consent_marketing`) and forwarded to Brevo only when enabled. UTM parameters are captured in the `fp_exp_utm` cookie, copied to reservation/order meta, and never displayed publicly. Site owners can export or erase booking data through WooCommerce personal data tools; deleting an order removes the associated reservation payload. API credentials (Brevo, Google Calendar) are kept in WordPress options and can be revoked at any time from the Settings screen.
 
 == Changelog ==
+
+= Unreleased =
+* Added an advanced toggle to enable the meeting point CSV import UI (defaults to disabled for safety).
+* Allow editors to pick images for add-ons and render responsive thumbnails with placeholders on the booking widget.
+* Fixed recurrence generation by binding time sets to RRULEs and exposing preview/regenerate controls in the calendar tab.
+* Added ISO language flags (with accessible text) to admin language terms, editor previews, experience hero badges, listing cards, and the booking widget.
+* Auto-create experience landing pages on publish and add a Tools shortcut to resynchronise missing `[fp_exp_page]` pages.
+* Add the `[fp_exp_simple_archive]` shortcode, widen the desktop archive container, and expose a Simple/Advanced toggle inside the Elementor List widget.
 
 = 0.2.0 =
 * Polish UI/UX stile GetYourGuide (layout 2-col, sticky, chips).

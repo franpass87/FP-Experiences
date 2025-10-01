@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace FP_Exp\Api;
 
+use FP_Exp\Booking\Recurrence;
 use FP_Exp\Booking\Slots;
+use FP_Exp\Gift\VoucherManager;
 use FP_Exp\Utils\Helpers;
 use FP_Exp\Utils\Logger;
 use WP_Error;
@@ -14,6 +16,7 @@ use WP_REST_Response;
 use function __;
 use function absint;
 use function add_action;
+use function apply_filters;
 use function current_user_can;
 use function do_action;
 use function home_url;
@@ -32,6 +35,13 @@ use const MINUTE_IN_SECONDS;
 
 final class RestRoutes
 {
+    private ?VoucherManager $voucher_manager;
+
+    public function __construct(?VoucherManager $voucher_manager = null)
+    {
+        $this->voucher_manager = $voucher_manager;
+    }
+
     public function register_hooks(): void
     {
         add_action('rest_api_init', [$this, 'register_routes']);
@@ -106,6 +116,30 @@ final class RestRoutes
 
         register_rest_route(
             'fp-exp/v1',
+            '/calendar/recurrence/preview',
+            [
+                'methods' => 'POST',
+                'permission_callback' => static function (): bool {
+                    return current_user_can('fp_exp_operate');
+                },
+                'callback' => [$this, 'preview_recurrence_slots'],
+            ]
+        );
+
+        register_rest_route(
+            'fp-exp/v1',
+            '/calendar/recurrence/generate',
+            [
+                'methods' => 'POST',
+                'permission_callback' => static function (): bool {
+                    return current_user_can('fp_exp_operate');
+                },
+                'callback' => [$this, 'generate_recurrence_slots'],
+            ]
+        );
+
+        register_rest_route(
+            'fp-exp/v1',
             '/tools/resync-brevo',
             [
                 'methods' => 'POST',
@@ -151,6 +185,74 @@ final class RestRoutes
                 'callback' => [$this, 'tool_clear_cache'],
             ]
         );
+
+        register_rest_route(
+            'fp-exp/v1',
+            '/tools/resync-pages',
+            [
+                'methods' => 'POST',
+                'permission_callback' => static function (): bool {
+                    return current_user_can('fp_exp_manage');
+                },
+                'callback' => [$this, 'tool_resync_pages'],
+            ]
+        );
+
+        register_rest_route(
+            'fp-exp/v1',
+            '/gift/purchase',
+            [
+                'methods' => 'POST',
+                'permission_callback' => function (WP_REST_Request $request): bool {
+                    return Helpers::verify_public_rest_request($request);
+                },
+                'callback' => [$this, 'purchase_gift_voucher'],
+                'args' => [
+                    'experience_id' => [
+                        'required' => true,
+                        'sanitize_callback' => 'absint',
+                    ],
+                    'quantity' => [
+                        'required' => false,
+                        'sanitize_callback' => 'absint',
+                    ],
+                ],
+            ]
+        );
+
+        register_rest_route(
+            'fp-exp/v1',
+            '/gift/voucher/(?P<code>[A-Za-z0-9\-]+)',
+            [
+                'methods' => 'GET',
+                'permission_callback' => function (WP_REST_Request $request): bool {
+                    return Helpers::verify_public_rest_request($request);
+                },
+                'callback' => [$this, 'get_gift_voucher'],
+            ]
+        );
+
+        register_rest_route(
+            'fp-exp/v1',
+            '/gift/redeem',
+            [
+                'methods' => 'POST',
+                'permission_callback' => function (WP_REST_Request $request): bool {
+                    return Helpers::verify_public_rest_request($request);
+                },
+                'callback' => [$this, 'redeem_gift_voucher'],
+                'args' => [
+                    'code' => [
+                        'required' => true,
+                        'sanitize_callback' => 'sanitize_text_field',
+                    ],
+                    'slot_id' => [
+                        'required' => true,
+                        'sanitize_callback' => 'absint',
+                    ],
+                ],
+            ]
+        );
     }
 
     public function enforce_no_cache($result, $server, $request)
@@ -164,6 +266,76 @@ final class RestRoutes
         $result->header('Expires', 'Wed, 11 Jan 1984 05:00:00 GMT');
 
         return $result;
+    }
+
+    public function purchase_gift_voucher(WP_REST_Request $request)
+    {
+        if (! Helpers::gift_enabled()) {
+            return new WP_Error('fp_exp_gift_disabled', esc_html__('Gift vouchers are disabled.', 'fp-experiences'), ['status' => 400]);
+        }
+
+        if (! $this->voucher_manager instanceof VoucherManager) {
+            return new WP_Error('fp_exp_gift_unavailable', esc_html__('Gift manager unavailable.', 'fp-experiences'), ['status' => 500]);
+        }
+
+        $payload = [
+            'experience_id' => $request->get_param('experience_id'),
+            'quantity' => $request->get_param('quantity'),
+            'addons' => $request->get_param('addons'),
+            'purchaser' => $request->get_param('purchaser'),
+            'recipient' => $request->get_param('recipient'),
+            'message' => $request->get_param('message'),
+        ];
+
+        $result = $this->voucher_manager->create_purchase($payload);
+
+        if (is_wp_error($result)) {
+            $result->add_data(['status' => 400]);
+
+            return $result;
+        }
+
+        return rest_ensure_response($result);
+    }
+
+    public function get_gift_voucher(WP_REST_Request $request)
+    {
+        if (! $this->voucher_manager instanceof VoucherManager) {
+            return new WP_Error('fp_exp_gift_unavailable', esc_html__('Gift manager unavailable.', 'fp-experiences'), ['status' => 500]);
+        }
+
+        $code = sanitize_text_field((string) $request->get_param('code'));
+        $result = $this->voucher_manager->get_voucher_by_code($code);
+
+        if (is_wp_error($result)) {
+            $result->add_data(['status' => 404]);
+
+            return $result;
+        }
+
+        return rest_ensure_response($result);
+    }
+
+    public function redeem_gift_voucher(WP_REST_Request $request)
+    {
+        if (! $this->voucher_manager instanceof VoucherManager) {
+            return new WP_Error('fp_exp_gift_unavailable', esc_html__('Gift manager unavailable.', 'fp-experiences'), ['status' => 500]);
+        }
+
+        $code = sanitize_text_field((string) $request->get_param('code'));
+        $payload = [
+            'slot_id' => $request->get_param('slot_id'),
+        ];
+
+        $result = $this->voucher_manager->redeem_voucher($code, $payload);
+
+        if (is_wp_error($result)) {
+            $result->add_data(['status' => 400]);
+
+            return $result;
+        }
+
+        return rest_ensure_response($result);
     }
 
     public function get_calendar_slots(WP_REST_Request $request)
@@ -272,6 +444,106 @@ final class RestRoutes
         return rest_ensure_response(['success' => true]);
     }
 
+    public function preview_recurrence_slots(WP_REST_Request $request)
+    {
+        $body = $request->get_json_params();
+
+        if (! is_array($body)) {
+            return new WP_Error('fp_exp_recurrence_payload', __('Invalid recurrence payload.', 'fp-experiences'), ['status' => 400]);
+        }
+
+        $experience_id = isset($body['experience_id']) ? absint((string) $body['experience_id']) : 0;
+        $recurrence_raw = isset($body['recurrence']) && is_array($body['recurrence']) ? $body['recurrence'] : [];
+        $availability = isset($body['availability']) && is_array($body['availability']) ? $body['availability'] : [];
+
+        $recurrence = Recurrence::sanitize($recurrence_raw);
+
+        if (! Recurrence::is_actionable($recurrence)) {
+            return rest_ensure_response([
+                'preview' => [],
+            ]);
+        }
+
+        $rules = Recurrence::build_rules($recurrence, [
+            'slot_capacity' => absint((string) ($availability['slot_capacity'] ?? 0)),
+            'buffer_before_minutes' => absint((string) ($availability['buffer_before_minutes'] ?? 0)),
+            'buffer_after_minutes' => absint((string) ($availability['buffer_after_minutes'] ?? 0)),
+        ]);
+
+        if (empty($rules)) {
+            return rest_ensure_response([
+                'preview' => [],
+            ]);
+        }
+
+        $options = [
+            'default_duration' => absint((string) ($recurrence['duration'] ?? 60)),
+            'default_capacity' => absint((string) ($availability['slot_capacity'] ?? 0)),
+            'buffer_before' => absint((string) ($availability['buffer_before_minutes'] ?? 0)),
+            'buffer_after' => absint((string) ($availability['buffer_after_minutes'] ?? 0)),
+        ];
+
+        $preview = Slots::preview_recurring_slots($experience_id, $rules, [], $options, 12);
+
+        return rest_ensure_response([
+            'preview' => $preview,
+        ]);
+    }
+
+    public function generate_recurrence_slots(WP_REST_Request $request)
+    {
+        $body = $request->get_json_params();
+
+        if (! is_array($body)) {
+            return new WP_Error('fp_exp_recurrence_payload', __('Invalid recurrence payload.', 'fp-experiences'), ['status' => 400]);
+        }
+
+        $experience_id = isset($body['experience_id']) ? absint((string) $body['experience_id']) : 0;
+        if ($experience_id <= 0) {
+            return new WP_Error('fp_exp_recurrence_experience', __('Select a valid experience before generating slots.', 'fp-experiences'), ['status' => 400]);
+        }
+
+        $recurrence_raw = isset($body['recurrence']) && is_array($body['recurrence']) ? $body['recurrence'] : [];
+        $availability = isset($body['availability']) && is_array($body['availability']) ? $body['availability'] : [];
+
+        $recurrence = Recurrence::sanitize($recurrence_raw);
+
+        if (! Recurrence::is_actionable($recurrence)) {
+            return new WP_Error('fp_exp_recurrence_invalid', __('Configure at least one valid time set for the recurrence.', 'fp-experiences'), ['status' => 422]);
+        }
+
+        $rules = Recurrence::build_rules($recurrence, [
+            'slot_capacity' => absint((string) ($availability['slot_capacity'] ?? 0)),
+            'buffer_before_minutes' => absint((string) ($availability['buffer_before_minutes'] ?? 0)),
+            'buffer_after_minutes' => absint((string) ($availability['buffer_after_minutes'] ?? 0)),
+        ]);
+
+        if (empty($rules)) {
+            return new WP_Error('fp_exp_recurrence_rules', __('Unable to build recurrence rules from the provided data.', 'fp-experiences'), ['status' => 422]);
+        }
+
+        $options = [
+            'default_duration' => absint((string) ($recurrence['duration'] ?? 60)),
+            'default_capacity' => absint((string) ($availability['slot_capacity'] ?? 0)),
+            'buffer_before' => absint((string) ($availability['buffer_before_minutes'] ?? 0)),
+            'buffer_after' => absint((string) ($availability['buffer_after_minutes'] ?? 0)),
+            'replace_existing' => ! empty($body['replace_existing']),
+        ];
+
+        $created = Slots::generate_recurring_slots($experience_id, $rules, [], $options);
+        $preview = Slots::preview_recurring_slots($experience_id, $rules, [], $options, 12);
+
+        Logger::log('calendar', 'Recurrence slots generated', [
+            'experience_id' => $experience_id,
+            'created' => $created,
+        ]);
+
+        return rest_ensure_response([
+            'created' => $created,
+            'preview' => $preview,
+        ]);
+    }
+
     public function tool_resync_brevo(): WP_REST_Response
     {
         if (Helpers::hit_rate_limit('tools_resync_' . get_current_user_id(), 3, MINUTE_IN_SECONDS)) {
@@ -358,6 +630,48 @@ final class RestRoutes
         return rest_ensure_response([
             'success' => true,
             'message' => __('Plugin caches cleared and logs trimmed.', 'fp-experiences'),
+        ]);
+    }
+
+    public function tool_resync_pages(): WP_REST_Response
+    {
+        if (Helpers::hit_rate_limit('tools_pages_' . get_current_user_id(), 3, MINUTE_IN_SECONDS)) {
+            return rest_ensure_response([
+                'success' => false,
+                'message' => __('Experience page resync already executed. Try again in a moment.', 'fp-experiences'),
+            ]);
+        }
+
+        $summary = apply_filters('fp_exp_tools_resync_pages', [
+            'checked' => 0,
+            'created' => 0,
+        ]);
+
+        if (! is_array($summary)) {
+            $summary = [
+                'checked' => 0,
+                'created' => 0,
+            ];
+        }
+
+        $checked = isset($summary['checked']) ? (int) $summary['checked'] : 0;
+        $created = isset($summary['created']) ? (int) $summary['created'] : 0;
+
+        Logger::log('tools', 'Experience page resync executed', [
+            'checked' => $checked,
+            'created' => $created,
+        ]);
+
+        return rest_ensure_response([
+            'success' => true,
+            'message' => sprintf(
+                /* translators: 1: checked experiences count, 2: created pages count. */
+                __('Checked %1$d experiences; created %2$d pages.', 'fp-experiences'),
+                $checked,
+                $created
+            ),
+            'checked' => $checked,
+            'created' => $created,
         ]);
     }
 }

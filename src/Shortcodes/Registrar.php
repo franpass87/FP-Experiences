@@ -19,11 +19,13 @@ final class Registrar
     public function __construct()
     {
         $this->shortcodes = [
+            new SimpleArchiveShortcode(),
             new ListShortcode(),
             new WidgetShortcode(),
             new CalendarShortcode(),
             new CheckoutShortcode(),
             new ExperienceShortcode(),
+            new GiftRedeemShortcode(),
         ];
 
         if (Helpers::meeting_points_enabled()) {

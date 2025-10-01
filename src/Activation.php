@@ -8,6 +8,7 @@ use FP_Exp\Booking\Reservations;
 use FP_Exp\Booking\Resources;
 use FP_Exp\Booking\Slots;
 use FP_Exp\PostTypes\ExperienceCPT;
+use FP_Exp\Gift\VoucherTable;
 
 use function __;
 use function add_role;
@@ -24,6 +25,7 @@ final class Activation
         Slots::create_table();
         Reservations::create_table();
         Resources::create_table();
+        VoucherTable::create_table();
 
         self::register_roles();
 

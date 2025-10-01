@@ -11,6 +11,7 @@ use Exception;
 use FP_Exp\Booking\Slots;
 use FP_Exp\MeetingPoints\Repository as MeetingPointRepository;
 use FP_Exp\Utils\Helpers;
+use FP_Exp\Utils\LanguageHelper;
 use FP_Exp\Utils\Theme;
 use WP_Post;
 use WP_Query;
@@ -489,6 +490,7 @@ final class ListShortcode extends BaseShortcode
         $short_description = sanitize_text_field((string) get_post_meta($id, '_fp_short_desc', true));
         $duration_minutes = absint((string) get_post_meta($id, '_fp_duration_minutes', true));
         $languages = Helpers::get_meta_array($id, '_fp_languages');
+        $language_badges = LanguageHelper::build_language_badges($languages);
         $family_terms = get_the_terms($id, 'fp_exp_family_friendly');
         $family_friendly = is_array($family_terms) && ! empty($family_terms);
         $duration_label = $this->format_duration($duration_minutes);
@@ -501,11 +503,32 @@ final class ListShortcode extends BaseShortcode
             ];
         }
 
-        if ($badge_flags['language'] && ! empty($languages)) {
-            $badges[] = [
-                'label' => implode(', ', $languages),
-                'context' => 'language',
-            ];
+        if ($badge_flags['language'] && ! empty($language_badges)) {
+            foreach ($language_badges as $language) {
+                if (! is_array($language)) {
+                    continue;
+                }
+
+                $code = isset($language['code']) ? (string) $language['code'] : '';
+                $sprite = isset($language['sprite']) ? (string) $language['sprite'] : '';
+                $label = isset($language['label']) ? (string) $language['label'] : '';
+                $aria_label = isset($language['aria_label']) ? (string) $language['aria_label'] : $label;
+
+                if ('' === $code || '' === $sprite) {
+                    continue;
+                }
+
+                $badges[] = [
+                    'label' => $code,
+                    'context' => 'language',
+                    'language' => [
+                        'code' => $code,
+                        'sprite' => $sprite,
+                        'label' => $label,
+                        'aria_label' => $aria_label,
+                    ],
+                ];
+            }
         }
 
         if ($badge_flags['family'] && $family_friendly) {
@@ -539,6 +562,7 @@ final class ListShortcode extends BaseShortcode
             'map_url' => $map_url,
             'family_friendly' => $family_friendly,
             'languages' => $languages,
+            'language_badges' => $language_badges,
             'duration_minutes' => $duration_minutes,
             'terms' => $terms,
         ];

@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace FP_Exp\Admin;
 
+use FP_Exp\Booking\Recurrence;
 use FP_Exp\MeetingPoints\MeetingPointCPT;
 use FP_Exp\MeetingPoints\Repository;
 use FP_Exp\Utils\Helpers;
+use FP_Exp\Utils\LanguageHelper;
 use WP_Post;
 
 use function absint;
@@ -21,14 +23,20 @@ use function current_user_can;
 use function delete_post_meta;
 use function delete_transient;
 use function esc_attr;
+use function esc_attr__;
 use function esc_html;
 use function esc_html__;
 use function esc_html_e;
 use function esc_textarea;
+use function esc_url;
 use function get_current_screen;
+use function get_edit_post_link;
+use function get_permalink;
 use function get_post;
 use function get_post_meta;
 use function get_posts;
+use function get_post_status;
+use function get_post_status_object;
 use function get_transient;
 use function in_array;
 use function is_array;
@@ -38,14 +46,19 @@ use function sanitize_title;
 use function selected;
 use function set_transient;
 use function update_post_meta;
+use function wp_enqueue_media;
 use function wp_enqueue_script;
 use function wp_enqueue_style;
+use function wp_attachment_is_image;
+use function rest_url;
+use function wp_create_nonce;
 use function wp_is_post_autosave;
 use function wp_is_post_revision;
 use function wp_nonce_field;
 use function wp_unslash;
 use function wp_verify_nonce;
 use function wp_kses_post;
+use function wp_get_attachment_image_src;
 
 final class ExperienceMetaBoxes
 {
@@ -92,6 +105,8 @@ final class ExperienceMetaBoxes
             return;
         }
 
+        wp_enqueue_media();
+
         wp_enqueue_style(
             'fp-exp-admin',
             FP_EXP_PLUGIN_URL . 'assets/css/admin.css',
@@ -107,6 +122,8 @@ final class ExperienceMetaBoxes
             true
         );
 
+        $post_id = isset($_GET['post']) ? absint((string) $_GET['post']) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+
         wp_localize_script(
             'fp-exp-admin',
             'fpExpAdmin',
@@ -117,7 +134,25 @@ final class ExperienceMetaBoxes
                     'ticketWarning' => esc_html__('Aggiungi almeno un tipo di biglietto con un prezzo valido.', 'fp-experiences'),
                     'invalidPrice' => esc_html__('Il prezzo non può essere negativo.', 'fp-experiences'),
                     'invalidQuantity' => esc_html__('La quantità non può essere negativa.', 'fp-experiences'),
+                    'selectImage' => esc_html__('Seleziona immagine', 'fp-experiences'),
+                    'changeImage' => esc_html__('Modifica immagine', 'fp-experiences'),
+                    'removeImage' => esc_html__('Rimuovi immagine', 'fp-experiences'),
+                    'recurrenceMissingTimes' => esc_html__('Aggiungi almeno un orario alla ricorrenza prima di procedere.', 'fp-experiences'),
+                    'recurrencePreviewError' => esc_html__('Impossibile calcolare la ricorrenza: verifica date e orari.', 'fp-experiences'),
+                    'recurrencePreviewEmpty' => esc_html__('Nessuno slot futuro trovato per la regola indicata.', 'fp-experiences'),
+                    'recurrenceGenerateSuccess' => esc_html__('Slot rigenerati: %d creati/aggiornati.', 'fp-experiences'),
+                    'recurrenceGenerateError' => esc_html__('Errore durante la rigenerazione degli slot. Riprova più tardi.', 'fp-experiences'),
+                    'recurrencePostMissing' => esc_html__('Salva l\'esperienza prima di generare gli slot.', 'fp-experiences'),
+                    'recurrenceTimeLabel' => esc_html__('Orario ricorrenza', 'fp-experiences'),
+                    'recurrenceRemoveTime' => esc_html__('Rimuovi orario', 'fp-experiences'),
+                    'recurrenceLoading' => esc_html__('Generazione in corso…', 'fp-experiences'),
                 ],
+                'rest' => [
+                    'nonce' => wp_create_nonce('wp_rest'),
+                    'preview' => rest_url('fp-exp/v1/calendar/recurrence/preview'),
+                    'generate' => rest_url('fp-exp/v1/calendar/recurrence/generate'),
+                ],
+                'experienceId' => $post_id,
             ]
         );
     }
@@ -293,7 +328,85 @@ final class ExperienceMetaBoxes
                             aria-describedby="fp-exp-languages-help"
                         />
                         <p class="fp-exp-field__description" id="fp-exp-languages-help"><?php esc_html_e('Le lingue vengono mostrate nei badge e nel markup schema.', 'fp-experiences'); ?></p>
+                        <?php if (! empty($details['language_badges'])) : ?>
+                            <ul class="fp-exp-language-preview" role="list">
+                                <?php foreach ($details['language_badges'] as $language) :
+                                    if (! is_array($language)) {
+                                        continue;
+                                    }
+
+                                    $sprite_id = isset($language['sprite']) ? (string) $language['sprite'] : '';
+                                    $code = isset($language['code']) ? (string) $language['code'] : '';
+                                    $aria_label = isset($language['aria_label']) ? (string) $language['aria_label'] : $code;
+                                    $label = isset($language['label']) ? (string) $language['label'] : $code;
+
+                                    if ('' === $code) {
+                                        continue;
+                                    }
+                                    ?>
+                                    <li class="fp-exp-language-preview__item">
+                                        <?php if ($sprite_id) : ?>
+                                            <span class="fp-exp-language-preview__flag" role="img" aria-label="<?php echo esc_attr($aria_label); ?>">
+                                                <svg viewBox="0 0 24 16" aria-hidden="true" focusable="false">
+                                                    <use href="<?php echo esc_url(LanguageHelper::get_sprite_url() . '#' . $sprite_id); ?>"></use>
+                                                </svg>
+                                            </span>
+                                        <?php endif; ?>
+                                        <span class="fp-exp-language-preview__code" aria-hidden="true"><?php echo esc_html($code); ?></span>
+                                        <span class="screen-reader-text"><?php echo esc_html($label); ?></span>
+                                    </li>
+                                <?php endforeach; ?>
+                            </ul>
+                        <?php endif; ?>
                     </div>
+                </div>
+
+                <div class="fp-exp-field">
+                    <label class="fp-exp-field__label">
+                        <?php esc_html_e('Pagina pubblica', 'fp-experiences'); ?>
+                        <?php $this->render_tooltip('fp-exp-linked-page-help', esc_html__('Ogni esperienza pubblicata genera una pagina WordPress con lo shortcode completo.', 'fp-experiences')); ?>
+                    </label>
+                    <?php
+                    $page_details = $details['linked_page'] ?? [];
+                    $page_id = isset($page_details['id']) ? (int) $page_details['id'] : 0;
+                    $page_url = isset($page_details['url']) ? (string) $page_details['url'] : '';
+                    $page_edit_url = isset($page_details['edit_url']) ? (string) $page_details['edit_url'] : '';
+                    $page_status = isset($page_details['status_label']) ? (string) $page_details['status_label'] : '';
+                    ?>
+                    <?php if ($page_id && $page_url) : ?>
+                        <div class="fp-exp-field__buttons" role="group" aria-describedby="fp-exp-linked-page-help">
+                            <a
+                                class="button button-secondary"
+                                href="<?php echo esc_url($page_url); ?>"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
+                                <?php esc_html_e('Vedi pagina', 'fp-experiences'); ?>
+                            </a>
+                            <?php if ($page_edit_url) : ?>
+                                <a class="button" href="<?php echo esc_url($page_edit_url); ?>">
+                                    <?php esc_html_e('Modifica pagina', 'fp-experiences'); ?>
+                                </a>
+                            <?php endif; ?>
+                        </div>
+                        <?php if ($page_status) : ?>
+                            <p class="fp-exp-field__description" id="fp-exp-linked-page-help">
+                                <?php
+                                echo esc_html(
+                                    sprintf(
+                                        /* translators: %s: current page status label. */
+                                        __('Stato pagina: %s', 'fp-experiences'),
+                                        $page_status
+                                    )
+                                );
+                                ?>
+                            </p>
+                        <?php endif; ?>
+                    <?php else : ?>
+                        <p class="fp-exp-field__description" id="fp-exp-linked-page-help">
+                            <?php esc_html_e('La pagina viene generata automaticamente alla pubblicazione dell’esperienza.', 'fp-experiences'); ?>
+                        </p>
+                    <?php endif; ?>
                 </div>
 
                 <div class="fp-exp-field fp-exp-field--columns">
@@ -517,6 +630,17 @@ final class ExperienceMetaBoxes
         }
 
         $days = $availability['days_of_week'];
+        $recurrence = $availability['recurrence'] ?? Recurrence::defaults();
+        if (! is_array($recurrence)) {
+            $recurrence = Recurrence::defaults();
+        } else {
+            $recurrence = array_merge(Recurrence::defaults(), $recurrence);
+        }
+
+        $time_sets = $recurrence['time_sets'];
+        if (empty($time_sets)) {
+            $time_sets = [['label' => '', 'times' => ['']]];
+        }
         ?>
         <section
             id="<?php echo esc_attr($panel_id); ?>"
@@ -586,6 +710,84 @@ final class ExperienceMetaBoxes
                     <p class="fp-exp-repeater__actions">
                         <button type="button" class="button button-secondary" data-repeater-add><?php esc_html_e('Aggiungi slot', 'fp-experiences'); ?></button>
                     </p>
+                </div>
+            </fieldset>
+
+            <fieldset class="fp-exp-fieldset">
+                <legend><?php esc_html_e('Ricorrenza automatica', 'fp-experiences'); ?></legend>
+                <div class="fp-exp-field fp-exp-field--switch">
+                    <label class="fp-exp-switch">
+                        <input type="checkbox" name="fp_exp_availability[recurrence][enabled]" value="1" data-recurrence-toggle <?php checked(! empty($recurrence['enabled'])); ?> />
+                        <span><?php esc_html_e('Attiva generazione automatica slot (RRULE)', 'fp-experiences'); ?></span>
+                    </label>
+                    <p class="fp-exp-field__description"><?php esc_html_e('Collega regole ricorrenti agli orari per generare in blocco gli slot futuri senza modificare quelli passati.', 'fp-experiences'); ?></p>
+                </div>
+                <div class="fp-exp-recurrence" data-recurrence-settings <?php echo ! empty($recurrence['enabled']) ? '' : 'hidden'; ?>>
+                    <div class="fp-exp-field fp-exp-field--columns">
+                        <label>
+                            <span class="fp-exp-field__label"><?php esc_html_e('Data inizio', 'fp-experiences'); ?></span>
+                            <input type="date" name="fp_exp_availability[recurrence][start_date]" value="<?php echo esc_attr((string) ($recurrence['start_date'] ?? '')); ?>" />
+                        </label>
+                        <label>
+                            <span class="fp-exp-field__label"><?php esc_html_e('Data fine', 'fp-experiences'); ?></span>
+                            <input type="date" name="fp_exp_availability[recurrence][end_date]" value="<?php echo esc_attr((string) ($recurrence['end_date'] ?? '')); ?>" />
+                        </label>
+                    </div>
+
+                    <div class="fp-exp-field">
+                        <label class="fp-exp-field__label" for="fp-exp-recurrence-frequency"><?php esc_html_e('Frequenza RRULE', 'fp-experiences'); ?></label>
+                        <select id="fp-exp-recurrence-frequency" name="fp_exp_availability[recurrence][frequency]" data-recurrence-frequency>
+                            <option value="daily" <?php selected($recurrence['frequency'], 'daily'); ?>><?php esc_html_e('Quotidiana', 'fp-experiences'); ?></option>
+                            <option value="weekly" <?php selected($recurrence['frequency'], 'weekly'); ?>><?php esc_html_e('Settimanale', 'fp-experiences'); ?></option>
+                            <option value="specific" <?php selected($recurrence['frequency'], 'specific'); ?>><?php esc_html_e('Date specifiche', 'fp-experiences'); ?></option>
+                        </select>
+                        <p class="fp-exp-field__description"><?php esc_html_e('Le ricorrenze giornaliere usano tutti gli orari selezionati; quelle settimanali richiedono i giorni attivi.', 'fp-experiences'); ?></p>
+                    </div>
+
+                    <div class="fp-exp-field" data-recurrence-days <?php echo 'weekly' === $recurrence['frequency'] ? '' : 'hidden'; ?>>
+                        <span class="fp-exp-field__label"><?php esc_html_e('Giorni attivi', 'fp-experiences'); ?></span>
+                        <div class="fp-exp-checkbox-grid">
+                            <?php foreach ($this->get_week_days() as $day_key => $day_label) : ?>
+                                <label>
+                                    <input type="checkbox" name="fp_exp_availability[recurrence][days][]" value="<?php echo esc_attr($day_key); ?>" <?php checked(in_array($this->map_weekday_for_ui($day_key), $recurrence['days'], true)); ?> />
+                                    <span><?php echo esc_html($day_label); ?></span>
+                                </label>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+
+                    <div class="fp-exp-field fp-exp-field--columns">
+                        <label>
+                            <span class="fp-exp-field__label"><?php esc_html_e('Durata slot (minuti)', 'fp-experiences'); ?></span>
+                            <input type="number" min="15" step="5" name="fp_exp_availability[recurrence][duration]" value="<?php echo esc_attr((string) ($recurrence['duration'] ?? 60)); ?>" />
+                        </label>
+                        <div class="fp-exp-field__hint" data-recurrence-errors hidden></div>
+                    </div>
+
+                    <div class="fp-exp-repeater fp-exp-recurrence__sets" data-repeater="recurrence_time_sets" data-repeater-next-index="<?php echo esc_attr((string) count($time_sets)); ?>">
+                        <div class="fp-exp-repeater__items" data-recurrence-time-set-list>
+                            <?php foreach ($time_sets as $index => $set) : ?>
+                                <?php $this->render_time_set_row((string) $index, $set); ?>
+                            <?php endforeach; ?>
+                        </div>
+                        <template data-repeater-template>
+                            <?php $this->render_time_set_row('__INDEX__', ['label' => '', 'times' => ['']], true); ?>
+                        </template>
+                        <p class="fp-exp-repeater__actions">
+                            <button type="button" class="button button-secondary" data-repeater-add><?php esc_html_e('Aggiungi time set', 'fp-experiences'); ?></button>
+                        </p>
+                    </div>
+
+                    <div class="fp-exp-recurrence__actions">
+                        <button type="button" class="button" data-recurrence-preview><?php esc_html_e('Anteprima ricorrenza', 'fp-experiences'); ?></button>
+                        <button type="button" class="button button-primary" data-recurrence-generate><?php esc_html_e('Rigenera slot da RRULE', 'fp-experiences'); ?></button>
+                        <span class="fp-exp-recurrence__status" data-recurrence-status aria-live="polite"></span>
+                    </div>
+
+                    <div class="fp-exp-recurrence__preview" data-recurrence-preview-list hidden>
+                        <h4><?php esc_html_e('Prossimi slot generati', 'fp-experiences'); ?></h4>
+                        <ul></ul>
+                    </div>
                 </div>
             </fieldset>
 
@@ -910,10 +1112,68 @@ final class ExperienceMetaBoxes
         $price_name = $is_template ? 'fp_exp_pricing[addons][__INDEX__][price]' : $name_prefix . '[price]';
         $type_name = $is_template ? 'fp_exp_pricing[addons][__INDEX__][type]' : $name_prefix . '[type]';
         $slug_name = $is_template ? 'fp_exp_pricing[addons][__INDEX__][slug]' : $name_prefix . '[slug]';
+        $image_name = $is_template ? 'fp_exp_pricing[addons][__INDEX__][image_id]' : $name_prefix . '[image_id]';
         $type_value = isset($addon['type']) ? (string) $addon['type'] : 'person';
+        $image_id = isset($addon['image_id']) ? absint((string) $addon['image_id']) : 0;
+        $image = $image_id > 0 ? wp_get_attachment_image_src($image_id, 'thumbnail') : false;
+        $image_url = $image ? (string) $image[0] : '';
+        $image_width = $image ? absint((string) $image[1]) : 0;
+        $image_height = $image ? absint((string) $image[2]) : 0;
+        $image_alt = isset($addon['name']) ? (string) $addon['name'] : '';
         ?>
         <div class="fp-exp-repeater-row" data-repeater-item draggable="true">
             <div class="fp-exp-repeater-row__fields">
+                <div class="fp-exp-addon-media" data-fp-media-control>
+                    <span class="fp-exp-field__label"><?php esc_html_e('Immagine', 'fp-experiences'); ?></span>
+                    <input
+                        type="hidden"
+                        <?php echo $this->field_name_attribute($image_name, $is_template); ?>
+                        value="<?php echo esc_attr((string) $image_id); ?>"
+                        data-fp-media-input
+                    />
+                    <div class="fp-exp-addon-media__preview" data-fp-media-preview>
+                        <div class="fp-exp-addon-media__placeholder" data-fp-media-placeholder <?php echo $image_url ? ' hidden' : ''; ?>>
+                            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                                <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5">
+                                    <rect x="3.75" y="8.25" width="16.5" height="12" rx="2" />
+                                    <path d="M3.75 11.25h16.5" />
+                                    <path d="M12 3.75c-1.657 0-3 1.231-3 2.75 0 1.519 1.343 2.75 3 2.75s3-1.231 3-2.75c0-1.519-1.343-2.75-3-2.75Zm0 0C12 3 11.25 2.25 10.5 2.25S9 3 9 3.75" />
+                                    <path d="M12 3.75c0-.75.75-1.5 1.5-1.5s1.5.75 1.5 1.5" />
+                                </g>
+                            </svg>
+                            <span class="screen-reader-text"><?php esc_html_e('Nessuna immagine selezionata', 'fp-experiences'); ?></span>
+                        </div>
+                        <?php if ($image_url) : ?>
+                            <img
+                                src="<?php echo esc_url($image_url); ?>"
+                                alt="<?php echo esc_attr($image_alt); ?>"
+                                <?php if ($image_width > 0) : ?> width="<?php echo esc_attr((string) $image_width); ?>"<?php endif; ?>
+                                <?php if ($image_height > 0) : ?> height="<?php echo esc_attr((string) $image_height); ?>"<?php endif; ?>
+                                loading="lazy"
+                                data-fp-media-image
+                            />
+                        <?php endif; ?>
+                    </div>
+                    <div class="fp-exp-addon-media__actions">
+                        <button
+                            type="button"
+                            class="button button-secondary fp-exp-addon-media__choose"
+                            data-fp-media-choose
+                            data-label-select="<?php echo esc_attr__('Seleziona immagine', 'fp-experiences'); ?>"
+                            data-label-change="<?php echo esc_attr__('Modifica immagine', 'fp-experiences'); ?>"
+                        >
+                            <?php echo $image_url ? esc_html__('Modifica immagine', 'fp-experiences') : esc_html__('Seleziona immagine', 'fp-experiences'); ?>
+                        </button>
+                        <button
+                            type="button"
+                            class="button-link fp-exp-addon-media__remove"
+                            data-fp-media-remove
+                            <?php echo $image_url ? '' : ' hidden'; ?>
+                        >
+                            <?php esc_html_e('Rimuovi immagine', 'fp-experiences'); ?>
+                        </button>
+                    </div>
+                </div>
                 <label>
                     <span class="fp-exp-field__label"><?php esc_html_e('Nome add-on', 'fp-experiences'); ?></span>
                     <input type="text" <?php echo $this->field_name_attribute($label_name, $is_template); ?> value="<?php echo esc_attr((string) ($addon['name'] ?? '')); ?>" placeholder="<?php echo esc_attr__('Transfer', 'fp-experiences'); ?>" />
@@ -978,6 +1238,62 @@ final class ExperienceMetaBoxes
             </p>
             <p class="fp-exp-repeater-row__remove">
                 <button type="button" class="button-link-delete" data-repeater-remove>&times;</button>
+            </p>
+        </div>
+        <?php
+    }
+
+    private function render_time_set_row(string $index, array $set, bool $is_template = false): void
+    {
+        $label_name = $is_template
+            ? 'fp_exp_availability[recurrence][time_sets][__INDEX__][label]'
+            : 'fp_exp_availability[recurrence][time_sets][' . $index . '][label]';
+        $times_base = $is_template
+            ? 'fp_exp_availability[recurrence][time_sets][__INDEX__][times]'
+            : 'fp_exp_availability[recurrence][time_sets][' . $index . '][times]';
+
+        $label_value = isset($set['label']) ? (string) $set['label'] : '';
+        $times = [];
+
+        if (isset($set['times']) && is_array($set['times'])) {
+            foreach ($set['times'] as $time) {
+                $times[] = (string) $time;
+            }
+        }
+
+        if (empty($times)) {
+            $times = [''];
+        }
+
+        $next_index = $is_template ? 1 : count($times);
+        ?>
+        <div
+            class="fp-exp-repeater-row fp-exp-recurrence-set"
+            data-repeater-item
+            data-time-set
+            data-time-set-next-index="<?php echo esc_attr((string) $next_index); ?>"
+            data-time-set-base="<?php echo esc_attr($times_base); ?>"
+        >
+            <div class="fp-exp-recurrence-set__header">
+                <label>
+                    <span class="fp-exp-field__label"><?php esc_html_e('Nome set (opzionale)', 'fp-experiences'); ?></span>
+                    <input type="text" <?php echo $this->field_name_attribute($label_name, $is_template); ?> value="<?php echo esc_attr($label_value); ?>" placeholder="<?php echo esc_attr__('Mattina', 'fp-experiences'); ?>" />
+                </label>
+                <button type="button" class="button-link-delete" data-repeater-remove>&times;</button>
+            </div>
+            <div class="fp-exp-recurrence-set__chips" data-time-set-chips>
+                <?php foreach ($times as $time_index => $time_value) : ?>
+                    <span class="fp-exp-chip" data-time-set-chip>
+                        <label>
+                            <span class="screen-reader-text"><?php esc_html_e('Orario ricorrenza', 'fp-experiences'); ?></span>
+                            <input type="time" <?php echo $this->field_name_attribute($times_base . '[' . $time_index . ']', $is_template); ?> value="<?php echo esc_attr($time_value); ?>" />
+                        </label>
+                        <button type="button" class="fp-exp-chip__remove" data-time-set-remove aria-label="<?php echo esc_attr__('Rimuovi orario', 'fp-experiences'); ?>">&times;</button>
+                    </span>
+                <?php endforeach; ?>
+            </div>
+            <p class="fp-exp-recurrence-set__actions">
+                <button type="button" class="button button-secondary" data-time-set-add><?php esc_html_e('Aggiungi orario', 'fp-experiences'); ?></button>
             </p>
         </div>
         <?php
@@ -1121,6 +1437,10 @@ final class ExperienceMetaBoxes
                 $price = isset($addon['price']) ? max(0.0, (float) $addon['price']) : 0.0;
                 $type = isset($addon['type']) ? sanitize_key((string) $addon['type']) : 'person';
                 $slug = isset($addon['slug']) ? sanitize_key((string) $addon['slug']) : '';
+                $image_id = isset($addon['image_id']) ? absint((string) $addon['image_id']) : 0;
+                if ($image_id > 0 && ! wp_attachment_is_image($image_id)) {
+                    $image_id = 0;
+                }
                 if ('' === $slug && '' !== $name) {
                     $slug = sanitize_key($name);
                 }
@@ -1138,6 +1458,7 @@ final class ExperienceMetaBoxes
                     'price' => $price,
                     'type' => $type,
                     'slug' => $slug,
+                    'image_id' => $image_id,
                 ];
 
                 $legacy_addons[] = [
@@ -1147,6 +1468,7 @@ final class ExperienceMetaBoxes
                     'allow_multiple' => 'booking' !== $type,
                     'max' => 0,
                     'description' => '',
+                    'image_id' => $image_id,
                 ];
             }
         }
@@ -1269,6 +1591,15 @@ final class ExperienceMetaBoxes
             delete_post_meta($post_id, '_fp_exp_availability');
         } else {
             update_post_meta($post_id, '_fp_exp_availability', $availability);
+        }
+
+        $recurrence_raw = isset($raw['recurrence']) && is_array($raw['recurrence']) ? $raw['recurrence'] : [];
+        $recurrence_meta = Recurrence::sanitize($recurrence_raw);
+
+        if (! empty($recurrence_meta['enabled']) || ! empty($recurrence_meta['time_sets'])) {
+            update_post_meta($post_id, '_fp_exp_recurrence', $recurrence_meta);
+        } else {
+            delete_post_meta($post_id, '_fp_exp_recurrence');
         }
 
         $this->update_or_delete_meta($post_id, '_fp_lead_time_hours', $lead_time);
@@ -1400,11 +1731,41 @@ final class ExperienceMetaBoxes
             'short_desc' => sanitize_text_field((string) get_post_meta($post_id, '_fp_short_desc', true)),
             'duration_minutes' => absint((string) get_post_meta($post_id, '_fp_duration_minutes', true)),
             'languages' => implode(', ', $languages),
+            'language_badges' => LanguageHelper::build_language_badges($languages),
+            'linked_page' => $this->get_linked_page_details($post_id),
             'min_party' => absint((string) get_post_meta($post_id, '_fp_min_party', true)),
             'capacity_slot' => absint((string) get_post_meta($post_id, '_fp_capacity_slot', true)),
             'age_min' => absint((string) get_post_meta($post_id, '_fp_age_min', true)),
             'age_max' => absint((string) get_post_meta($post_id, '_fp_age_max', true)),
             'rules_children' => sanitize_text_field((string) get_post_meta($post_id, '_fp_rules_children', true)),
+        ];
+    }
+
+    /**
+     * @return array<string, int|string>
+     */
+    private function get_linked_page_details(int $post_id): array
+    {
+        $page_id = absint((string) get_post_meta($post_id, '_fp_exp_page_id', true));
+        if (! $page_id) {
+            return [
+                'id' => 0,
+                'url' => '',
+                'edit_url' => '',
+                'status' => '',
+                'status_label' => '',
+            ];
+        }
+
+        $status = get_post_status($page_id) ?: '';
+        $status_object = $status ? get_post_status_object($status) : null;
+
+        return [
+            'id' => $page_id,
+            'url' => get_permalink($page_id) ?: '',
+            'edit_url' => get_edit_post_link($page_id, 'raw') ?: '',
+            'status' => $status,
+            'status_label' => $status_object && ! empty($status_object->label) ? (string) $status_object->label : '',
         ];
     }
     private function get_pricing_meta(int $post_id): array
@@ -1434,6 +1795,7 @@ final class ExperienceMetaBoxes
             'lead_time_hours' => absint((string) get_post_meta($post_id, '_fp_lead_time_hours', true)),
             'buffer_before_minutes' => absint((string) get_post_meta($post_id, '_fp_buffer_before_minutes', true)),
             'buffer_after_minutes' => absint((string) get_post_meta($post_id, '_fp_buffer_after_minutes', true)),
+            'recurrence' => Recurrence::defaults(),
         ];
 
         $meta = get_post_meta($post_id, '_fp_exp_availability', true);
@@ -1448,8 +1810,67 @@ final class ExperienceMetaBoxes
         $availability['lead_time_hours'] = absint((string) ($availability['lead_time_hours'] ?? get_post_meta($post_id, '_fp_lead_time_hours', true)));
         $availability['buffer_before_minutes'] = absint((string) ($availability['buffer_before_minutes'] ?? get_post_meta($post_id, '_fp_buffer_before_minutes', true)));
         $availability['buffer_after_minutes'] = absint((string) ($availability['buffer_after_minutes'] ?? get_post_meta($post_id, '_fp_buffer_after_minutes', true)));
+        $availability['recurrence'] = $this->get_recurrence_meta($post_id);
 
         return $availability;
+    }
+
+    private function get_recurrence_meta(int $post_id): array
+    {
+        $stored = get_post_meta($post_id, '_fp_exp_recurrence', true);
+        if (! is_array($stored)) {
+            return Recurrence::defaults();
+        }
+
+        $stored['enabled'] = ! empty($stored['enabled']);
+        $stored['frequency'] = isset($stored['frequency']) ? sanitize_key((string) $stored['frequency']) : 'weekly';
+
+        if (! in_array($stored['frequency'], ['daily', 'weekly', 'specific'], true)) {
+            $stored['frequency'] = 'weekly';
+        }
+
+        $stored['start_date'] = isset($stored['start_date']) ? sanitize_text_field((string) $stored['start_date']) : '';
+        $stored['end_date'] = isset($stored['end_date']) ? sanitize_text_field((string) $stored['end_date']) : '';
+        $stored['duration'] = isset($stored['duration']) ? absint((string) $stored['duration']) : 60;
+
+        if (! isset($stored['days']) || ! is_array($stored['days'])) {
+            $stored['days'] = [];
+        }
+
+        $time_sets = [];
+        if (isset($stored['time_sets']) && is_array($stored['time_sets'])) {
+            foreach ($stored['time_sets'] as $set) {
+                if (! is_array($set)) {
+                    continue;
+                }
+
+                $label = isset($set['label']) ? sanitize_text_field((string) $set['label']) : '';
+                $times = [];
+
+                if (isset($set['times']) && is_array($set['times'])) {
+                    foreach ($set['times'] as $time) {
+                        $time_string = trim(sanitize_text_field((string) $time));
+                        if ('' === $time_string) {
+                            continue;
+                        }
+                        $times[] = $time_string;
+                    }
+                }
+
+                if (empty($times)) {
+                    continue;
+                }
+
+                $time_sets[] = [
+                    'label' => $label,
+                    'times' => array_values(array_unique($times)),
+                ];
+            }
+        }
+
+        $stored['time_sets'] = $time_sets;
+
+        return array_merge(Recurrence::defaults(), $stored);
     }
     private function get_meeting_point_meta(int $post_id): array
     {
@@ -1635,5 +2056,20 @@ final class ExperienceMetaBoxes
             'sat' => esc_html__('Sabato', 'fp-experiences'),
             'sun' => esc_html__('Domenica', 'fp-experiences'),
         ];
+    }
+
+    private function map_weekday_for_ui(string $day): string
+    {
+        $map = [
+            'mon' => 'monday',
+            'tue' => 'tuesday',
+            'wed' => 'wednesday',
+            'thu' => 'thursday',
+            'fri' => 'friday',
+            'sat' => 'saturday',
+            'sun' => 'sunday',
+        ];
+
+        return $map[$day] ?? $day;
     }
 }

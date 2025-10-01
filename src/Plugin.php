@@ -13,6 +13,7 @@ use FP_Exp\Admin\CalendarAdmin;
 use FP_Exp\Admin\RequestsPage;
 use FP_Exp\Admin\ExperienceMetaBoxes;
 use FP_Exp\Admin\SettingsPage;
+use FP_Exp\Admin\LanguageAdmin;
 use FP_Exp\Admin\LogsPage;
 use FP_Exp\Admin\ToolsPage;
 use FP_Exp\Admin\CheckinPage;
@@ -35,8 +36,12 @@ use FP_Exp\Integrations\GoogleCalendar;
 use FP_Exp\Integrations\GoogleAds;
 use FP_Exp\Integrations\MetaPixel;
 use FP_Exp\PostTypes\ExperienceCPT;
+use FP_Exp\Migrations\Runner as MigrationRunner;
 use FP_Exp\Shortcodes\Registrar as ShortcodeRegistrar;
 use FP_Exp\Utils\Helpers;
+use FP_Exp\Gift\VoucherCPT;
+use FP_Exp\Gift\VoucherManager;
+use FP_Exp\Gift\VoucherTable;
 
 use Throwable;
 
@@ -104,6 +109,8 @@ final class Plugin
 
     private ?AdminMenu $admin_menu = null;
 
+    private ?LanguageAdmin $language_admin = null;
+
     private ?ElementorWidgetsRegistrar $elementor_widgets = null;
 
     private ?RestRoutes $rest_routes = null;
@@ -113,6 +120,12 @@ final class Plugin
     private ?MeetingPointsManager $meeting_points = null;
 
     private ?Onboarding $onboarding = null;
+
+    private ?VoucherCPT $gift_cpt = null;
+
+    private ?VoucherManager $gift_manager = null;
+
+    private ?MigrationRunner $migrations = null;
 
     /**
      * @var array<int, array{component: string, action: string, message: string}>
@@ -148,9 +161,12 @@ final class Plugin
         $this->meta_pixel = new MetaPixel();
         $this->clarity = new Clarity();
         $this->elementor_widgets = new ElementorWidgetsRegistrar();
-        $this->rest_routes = new RestRoutes();
+        $this->gift_cpt = new VoucherCPT();
+        $this->gift_manager = new VoucherManager();
+        $this->rest_routes = new RestRoutes($this->gift_manager);
         $this->webhooks = new Webhooks();
         $this->meeting_points = new MeetingPointsManager();
+        $this->migrations = new MigrationRunner();
 
         if (is_admin()) {
             $this->settings_page = new SettingsPage();
@@ -164,6 +180,7 @@ final class Plugin
             $this->help_page = new HelpPage();
             $this->page_creator = new ExperiencePageCreator();
             $this->onboarding = new Onboarding();
+            $this->language_admin = new LanguageAdmin();
             $this->admin_menu = new AdminMenu(
                 $this->settings_page,
                 $this->calendar_admin,
@@ -207,6 +224,10 @@ final class Plugin
             $this->guard([$this->rest_routes, 'register_hooks'], RestRoutes::class, 'register_hooks');
         }
 
+        if ($this->migrations instanceof MigrationRunner) {
+            $this->guard([$this->migrations, 'register_hooks'], MigrationRunner::class, 'register_hooks');
+        }
+
         if ($this->meeting_points instanceof MeetingPointsManager) {
             $this->guard([$this->meeting_points, 'register_hooks'], MeetingPointsManager::class, 'register_hooks');
         }
@@ -225,6 +246,10 @@ final class Plugin
 
         if ($this->logs_page instanceof LogsPage) {
             $this->guard([$this->logs_page, 'register_hooks'], LogsPage::class, 'register_hooks');
+        }
+
+        if ($this->language_admin instanceof LanguageAdmin) {
+            $this->guard([$this->language_admin, 'register_hooks'], LanguageAdmin::class, 'register_hooks');
         }
 
         if ($this->requests_page instanceof RequestsPage) {
@@ -261,6 +286,14 @@ final class Plugin
 
         if ($this->elementor_widgets instanceof ElementorWidgetsRegistrar) {
             $this->guard([$this->elementor_widgets, 'register'], ElementorWidgetsRegistrar::class, 'register');
+        }
+
+        if ($this->gift_cpt instanceof VoucherCPT) {
+            $this->guard([$this->gift_cpt, 'register_hooks'], VoucherCPT::class, 'register_hooks');
+        }
+
+        if ($this->gift_manager instanceof VoucherManager) {
+            $this->guard([$this->gift_manager, 'register_hooks'], VoucherManager::class, 'register_hooks');
         }
     }
 
@@ -353,12 +386,13 @@ final class Plugin
         $wpdb->fp_exp_slots = Slots::table_name();
         $wpdb->fp_exp_reservations = Reservations::table_name();
         $wpdb->fp_exp_resources = Resources::table_name();
+        $wpdb->fp_exp_gift_vouchers = VoucherTable::table_name();
 
         if (! is_array($wpdb->tables)) {
             $wpdb->tables = [];
         }
 
-        foreach (['fp_exp_slots', 'fp_exp_reservations', 'fp_exp_resources'] as $table) {
+        foreach (['fp_exp_slots', 'fp_exp_reservations', 'fp_exp_resources', 'fp_exp_gift_vouchers'] as $table) {
             if (! in_array($table, $wpdb->tables, true)) {
                 $wpdb->tables[] = $table;
             }
