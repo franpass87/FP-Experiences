@@ -19,7 +19,6 @@ use function admin_url;
 use function array_filter;
 use function check_admin_referer;
 use function checked;
-use function current_user_can;
 use function esc_attr;
 use function esc_html;
 use function esc_html__;
@@ -109,7 +108,7 @@ final class CalendarAdmin
 
     public function render_page(): void
     {
-        if (! current_user_can('fp_exp_operate')) {
+        if (! Helpers::can_operate_fp()) {
             wp_die(esc_html__('You do not have permission to manage FP Experiences bookings.', 'fp-experiences'));
         }
 
@@ -402,7 +401,7 @@ final class CalendarAdmin
     {
         check_admin_referer('fp_exp_manual_booking', 'fp_exp_manual_booking_nonce');
 
-        if (! current_user_can('fp_exp_operate')) {
+        if (! Helpers::can_operate_fp()) {
             return new WP_Error('fp_exp_manual_permission', esc_html__('You do not have permission to create manual bookings.', 'fp-experiences'));
         }
 

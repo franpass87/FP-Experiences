@@ -32,7 +32,7 @@ final class Dashboard
 {
     public static function render(): void
     {
-        if (! current_user_can('fp_exp_manage')) {
+        if (! Helpers::can_manage_fp()) {
             wp_die(esc_html__('You do not have permission to access the FP Experiences dashboard.', 'fp-experiences'));
         }
 
@@ -101,7 +101,7 @@ final class Dashboard
             echo '<li><a class="button button-primary" href="' . esc_url(admin_url('post-new.php?post_type=fp_experience')) . '">' . esc_html__('Crea nuova esperienza', 'fp-experiences') . '</a></li>';
         }
         echo '<li><a class="button" href="' . esc_url(admin_url('edit.php?post_type=fp_experience')) . '">' . esc_html__('Gestisci vetrina', 'fp-experiences') . '</a></li>';
-        if (current_user_can('fp_exp_manage')) {
+        if (Helpers::can_manage_fp()) {
             echo '<li><a class="button" href="' . esc_url(admin_url('admin.php?page=fp_exp_settings')) . '">' . esc_html__('Apri impostazioni', 'fp-experiences') . '</a></li>';
         }
         echo '</ul>';

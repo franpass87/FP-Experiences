@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace FP_Exp\Admin;
 
+use FP_Exp\Utils\Helpers;
 use WP_Query;
 
 use function add_action;
@@ -30,7 +31,7 @@ final class OrdersPage
 
     public function render_page(): void
     {
-        if (! current_user_can('fp_exp_manage') || ! current_user_can('manage_woocommerce')) {
+        if (! Helpers::can_manage_fp() || ! current_user_can('manage_woocommerce')) {
             wp_die(esc_html__('You do not have permission to view experience orders.', 'fp-experiences'));
         }
 

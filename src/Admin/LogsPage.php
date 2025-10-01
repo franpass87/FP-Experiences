@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace FP_Exp\Admin;
 
+use FP_Exp\Utils\Helpers;
 use FP_Exp\Utils\Logger;
 
 use function add_action;
@@ -34,7 +35,7 @@ final class LogsPage
 
     public function render_page(): void
     {
-        if (! current_user_can('fp_exp_manage')) {
+        if (! Helpers::can_manage_fp()) {
             wp_die(esc_html__('You do not have permission to view FP Experiences logs.', 'fp-experiences'));
         }
 

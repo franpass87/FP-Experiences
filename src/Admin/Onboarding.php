@@ -4,12 +4,13 @@ declare(strict_types=1);
 
 namespace FP_Exp\Admin;
 
+use FP_Exp\Utils\Helpers;
+
 use function absint;
 use function add_action;
 use function add_submenu_page;
 use function admin_url;
 use function check_admin_referer;
-use function current_user_can;
 use function esc_attr;
 use function esc_html;
 use function esc_html__;
@@ -70,7 +71,7 @@ final class Onboarding
      */
     public function render(): void
     {
-        if (! current_user_can('fp_exp_manage')) {
+        if (! Helpers::can_manage_fp()) {
             wp_die(esc_html__('You do not have permission to manage FP Experiences.', 'fp-experiences'));
         }
 
@@ -135,7 +136,7 @@ final class Onboarding
      */
     public function handle_submission(): void
     {
-        if (! current_user_can('fp_exp_manage')) {
+        if (! Helpers::can_manage_fp()) {
             wp_die(esc_html__('You do not have permission to manage FP Experiences.', 'fp-experiences'));
         }
 
@@ -155,7 +156,7 @@ final class Onboarding
 
     public function maybe_show_notice(): void
     {
-        if (! current_user_can('fp_exp_manage') || $this->is_completed()) {
+        if (! Helpers::can_manage_fp() || $this->is_completed()) {
             return;
         }
 

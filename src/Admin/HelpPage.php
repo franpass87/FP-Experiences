@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace FP_Exp\Admin;
 
-use function current_user_can;
+use FP_Exp\Utils\Helpers;
+
 use function esc_html;
 use function esc_html__;
 use function wp_die;
@@ -13,7 +14,7 @@ final class HelpPage
 {
     public function render_page(): void
     {
-        if (! current_user_can('fp_exp_guide')) {
+        if (! Helpers::can_access_guides()) {
             wp_die(esc_html__('You do not have permission to access the FP Experiences guide.', 'fp-experiences'));
         }
 

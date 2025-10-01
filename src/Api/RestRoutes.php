@@ -17,7 +17,6 @@ use function __;
 use function absint;
 use function add_action;
 use function apply_filters;
-use function current_user_can;
 use function do_action;
 use function home_url;
 use function is_array;
@@ -56,7 +55,7 @@ final class RestRoutes
             [
                 'methods' => 'GET',
                 'permission_callback' => static function (): bool {
-                    return current_user_can('fp_exp_operate');
+                    return Helpers::can_operate_fp();
                 },
                 'callback' => [$this, 'get_calendar_slots'],
                 'args' => [
@@ -86,7 +85,7 @@ final class RestRoutes
             [
                 'methods' => 'POST',
                 'permission_callback' => static function (): bool {
-                    return current_user_can('fp_exp_operate');
+                    return Helpers::can_operate_fp();
                 },
                 'callback' => [$this, 'move_calendar_slot'],
                 'args' => [
@@ -108,7 +107,7 @@ final class RestRoutes
             [
                 'methods' => 'POST',
                 'permission_callback' => static function (): bool {
-                    return current_user_can('fp_exp_operate');
+                    return Helpers::can_operate_fp();
                 },
                 'callback' => [$this, 'update_slot_capacity'],
             ]
@@ -120,7 +119,7 @@ final class RestRoutes
             [
                 'methods' => 'POST',
                 'permission_callback' => static function (): bool {
-                    return current_user_can('fp_exp_operate');
+                    return Helpers::can_operate_fp();
                 },
                 'callback' => [$this, 'preview_recurrence_slots'],
             ]
@@ -132,7 +131,7 @@ final class RestRoutes
             [
                 'methods' => 'POST',
                 'permission_callback' => static function (): bool {
-                    return current_user_can('fp_exp_operate');
+                    return Helpers::can_operate_fp();
                 },
                 'callback' => [$this, 'generate_recurrence_slots'],
             ]
@@ -144,7 +143,7 @@ final class RestRoutes
             [
                 'methods' => 'POST',
                 'permission_callback' => static function (): bool {
-                    return current_user_can('fp_exp_manage');
+                    return Helpers::can_manage_fp();
                 },
                 'callback' => [$this, 'tool_resync_brevo'],
             ]
@@ -156,7 +155,7 @@ final class RestRoutes
             [
                 'methods' => 'POST',
                 'permission_callback' => static function (): bool {
-                    return current_user_can('fp_exp_manage');
+                    return Helpers::can_manage_fp();
                 },
                 'callback' => [$this, 'tool_replay_events'],
             ]
@@ -168,7 +167,7 @@ final class RestRoutes
             [
                 'methods' => 'POST',
                 'permission_callback' => static function (): bool {
-                    return current_user_can('fp_exp_manage');
+                    return Helpers::can_manage_fp();
                 },
                 'callback' => [$this, 'tool_ping'],
             ]
@@ -180,7 +179,7 @@ final class RestRoutes
             [
                 'methods' => 'POST',
                 'permission_callback' => static function (): bool {
-                    return current_user_can('fp_exp_manage');
+                    return Helpers::can_manage_fp();
                 },
                 'callback' => [$this, 'tool_clear_cache'],
             ]
@@ -192,7 +191,7 @@ final class RestRoutes
             [
                 'methods' => 'POST',
                 'permission_callback' => static function (): bool {
-                    return current_user_can('fp_exp_manage');
+                    return Helpers::can_manage_fp();
                 },
                 'callback' => [$this, 'tool_resync_pages'],
             ]

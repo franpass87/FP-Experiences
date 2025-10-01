@@ -11,7 +11,6 @@ use function add_action;
 use function add_query_arg;
 use function add_submenu_page;
 use function admin_url;
-use function current_user_can;
 use function esc_attr;
 use function esc_html;
 use function esc_html__;
@@ -66,7 +65,7 @@ final class MeetingPointImporter
 
     public function render_page(): void
     {
-        if (! current_user_can('fp_exp_manage')) {
+        if (! Helpers::can_manage_fp()) {
             wp_die(esc_html__('You do not have permission to access this page.', 'fp-experiences'));
         }
 
@@ -111,7 +110,7 @@ final class MeetingPointImporter
             wp_die(esc_html__('Meeting point import is disabled.', 'fp-experiences'));
         }
 
-        if (! current_user_can('fp_exp_manage')) {
+        if (! Helpers::can_manage_fp()) {
             wp_die(esc_html__('You do not have permission to import meeting points.', 'fp-experiences'));
         }
 
