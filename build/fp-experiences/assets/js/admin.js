@@ -508,11 +508,20 @@
         }
 
         function updateDaysVisibility() {
-            if (!daysContainer || !frequency) {
+            if (!frequency) {
                 return;
             }
+
             const show = frequency.value === 'weekly';
-            daysContainer.toggleAttribute('hidden', !show);
+
+            if (daysContainer) {
+                daysContainer.toggleAttribute('hidden', !show);
+            }
+
+            const perSetContainers = Array.from(settings.querySelectorAll('[data-time-set-days]'));
+            perSetContainers.forEach((container) => {
+                container.toggleAttribute('hidden', !show);
+            });
         }
 
         function clearStatus() {
@@ -615,10 +624,23 @@
                 if (!times.length) {
                     return;
                 }
-                recurrence.time_sets.push({
+                const setData = {
                     label: labelInput ? labelInput.value.trim() : '',
                     times,
-                });
+                };
+
+                if (recurrence.frequency === 'weekly') {
+                    const daysContainer = container.querySelector('[data-time-set-days]');
+                    if (daysContainer) {
+                        const checkedDays = Array.from(daysContainer.querySelectorAll('input[type="checkbox"]:checked'));
+                        const days = checkedDays.map((input) => input.value).filter(Boolean);
+                        if (days.length) {
+                            setData.days = days;
+                        }
+                    }
+                }
+
+                recurrence.time_sets.push(setData);
             });
 
             if (!recurrence.time_sets.length) {

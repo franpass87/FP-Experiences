@@ -208,7 +208,7 @@ final class ExperienceShortcode extends BaseShortcode
 
         $widget_atts = [
             'id' => (string) $experience_id,
-            'sticky' => $is_sticky_widget ? '1' : '0',
+            'sticky' => '0',
             'display_context' => 'page',
         ];
 
