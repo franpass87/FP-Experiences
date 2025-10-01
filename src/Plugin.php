@@ -38,6 +38,7 @@ use FP_Exp\Integrations\MetaPixel;
 use FP_Exp\PostTypes\ExperienceCPT;
 use FP_Exp\Migrations\Runner as MigrationRunner;
 use FP_Exp\Shortcodes\Registrar as ShortcodeRegistrar;
+use FP_Exp\Front\SingleExperienceRenderer;
 use FP_Exp\Utils\Helpers;
 use FP_Exp\Gift\VoucherCPT;
 use FP_Exp\Gift\VoucherManager;
@@ -133,6 +134,8 @@ final class Plugin
 
     private ?MigrationRunner $migrations = null;
 
+    private ?SingleExperienceRenderer $single_experience_renderer = null;
+
     /**
      * @var array<int, array{component: string, action: string, message: string}>
      */
@@ -173,6 +176,7 @@ final class Plugin
         $this->webhooks = new Webhooks();
         $this->meeting_points = new MeetingPointsManager();
         $this->migrations = new MigrationRunner();
+        $this->single_experience_renderer = new SingleExperienceRenderer();
 
         if (is_admin()) {
             $this->settings_page = new SettingsPage();
@@ -242,6 +246,10 @@ final class Plugin
 
         if ($this->webhooks instanceof Webhooks) {
             $this->guard([$this->webhooks, 'register_hooks'], Webhooks::class, 'register_hooks');
+        }
+
+        if ($this->single_experience_renderer instanceof SingleExperienceRenderer) {
+            $this->guard([$this->single_experience_renderer, 'register_hooks'], SingleExperienceRenderer::class, 'register_hooks');
         }
 
         if ($this->settings_page instanceof SettingsPage) {

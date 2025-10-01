@@ -72,6 +72,41 @@ final class Helpers
         return current_user_can('fp_exp_guide') || self::can_operate_fp();
     }
 
+    public static function management_capability(): string
+    {
+        return current_user_can('fp_exp_manage') ? 'fp_exp_manage' : 'manage_options';
+    }
+
+    public static function operations_capability(): string
+    {
+        if (current_user_can('fp_exp_operate')) {
+            return 'fp_exp_operate';
+        }
+
+        if (current_user_can('fp_exp_manage')) {
+            return 'fp_exp_manage';
+        }
+
+        return self::management_capability();
+    }
+
+    public static function guide_capability(): string
+    {
+        if (current_user_can('fp_exp_guide')) {
+            return 'fp_exp_guide';
+        }
+
+        if (current_user_can('fp_exp_operate')) {
+            return 'fp_exp_operate';
+        }
+
+        if (current_user_can('fp_exp_manage')) {
+            return 'fp_exp_manage';
+        }
+
+        return self::management_capability();
+    }
+
     /**
      * @return array<string, mixed>
      */

@@ -75,21 +75,23 @@ final class AdminMenu
         add_menu_page(
             esc_html__('FP Experiences', 'fp-experiences'),
             esc_html__('FP Experiences', 'fp-experiences'),
-            'fp_exp_guide',
+            Helpers::guide_capability(),
             'fp_exp_dashboard',
-            [Dashboard::class, 'render'],
+            [$this, 'render_home_page'],
             'dashicons-location',
             58
         );
 
-        add_submenu_page(
-            'fp_exp_dashboard',
-            esc_html__('Dashboard', 'fp-experiences'),
-            esc_html__('Dashboard', 'fp-experiences'),
-            'fp_exp_manage',
-            'fp_exp_dashboard',
-            [Dashboard::class, 'render']
-        );
+        if (Helpers::can_manage_fp()) {
+            add_submenu_page(
+                'fp_exp_dashboard',
+                esc_html__('Dashboard', 'fp-experiences'),
+                esc_html__('Dashboard', 'fp-experiences'),
+                Helpers::management_capability(),
+                'fp_exp_dashboard',
+                [Dashboard::class, 'render']
+            );
+        }
 
         add_submenu_page(
             'fp_exp_dashboard',
@@ -112,7 +114,7 @@ final class AdminMenu
                 'fp_exp_dashboard',
                 esc_html__('Meeting Points', 'fp-experiences'),
                 esc_html__('Meeting point', 'fp-experiences'),
-                'fp_exp_manage',
+                Helpers::management_capability(),
                 'edit.php?post_type=fp_meeting_point'
             );
         }
@@ -121,7 +123,7 @@ final class AdminMenu
             'fp_exp_dashboard',
             esc_html__('Calendar', 'fp-experiences'),
             esc_html__('Calendario', 'fp-experiences'),
-            'fp_exp_operate',
+            Helpers::operations_capability(),
             'fp_exp_calendar',
             [$this->calendar_admin, 'render_page']
         );
@@ -131,7 +133,7 @@ final class AdminMenu
                 'fp_exp_dashboard',
                 esc_html__('Requests', 'fp-experiences'),
                 esc_html__('Richieste', 'fp-experiences'),
-                'fp_exp_operate',
+                Helpers::operations_capability(),
                 'fp_exp_requests',
                 [$this->requests_page, 'render_page']
             );
@@ -141,7 +143,7 @@ final class AdminMenu
             'fp_exp_dashboard',
             esc_html__('Check-in', 'fp-experiences'),
             esc_html__('Check-in', 'fp-experiences'),
-            'fp_exp_operate',
+            Helpers::operations_capability(),
             'fp_exp_checkin',
             [$this->checkin_page, 'render_page']
         );
@@ -161,7 +163,7 @@ final class AdminMenu
             'fp_exp_dashboard',
             esc_html__('Settings', 'fp-experiences'),
             esc_html__('Impostazioni', 'fp-experiences'),
-            'fp_exp_manage',
+            Helpers::management_capability(),
             'fp_exp_settings',
             [$this->settings_page, 'render_page']
         );
@@ -170,7 +172,7 @@ final class AdminMenu
             'fp_exp_dashboard',
             esc_html__('Tools', 'fp-experiences'),
             esc_html__('Tools', 'fp-experiences'),
-            'fp_exp_manage',
+            Helpers::management_capability(),
             'fp_exp_tools',
             [$this->tools_page, 'render_page']
         );
@@ -179,7 +181,7 @@ final class AdminMenu
             'fp_exp_dashboard',
             esc_html__('Logs', 'fp-experiences'),
             esc_html__('Logs', 'fp-experiences'),
-            'fp_exp_manage',
+            Helpers::management_capability(),
             'fp_exp_logs',
             [$this->logs_page, 'render_page']
         );
@@ -188,7 +190,7 @@ final class AdminMenu
             'fp_exp_dashboard',
             esc_html__('Guide & Shortcodes', 'fp-experiences'),
             esc_html__('Guida & Shortcode', 'fp-experiences'),
-            'fp_exp_guide',
+            Helpers::guide_capability(),
             'fp_exp_help',
             [$this->help_page, 'render_page']
         );
@@ -198,11 +200,22 @@ final class AdminMenu
                 'fp_exp_dashboard',
                 esc_html__('Create Experience Page', 'fp-experiences'),
                 esc_html__('Crea pagina esperienza', 'fp-experiences'),
-                'fp_exp_manage',
+                Helpers::management_capability(),
                 'fp_exp_create_page',
                 [$this->page_creator, 'render_page']
             );
         }
+    }
+
+    public function render_home_page(): void
+    {
+        if (Helpers::can_manage_fp()) {
+            Dashboard::render();
+
+            return;
+        }
+
+        $this->help_page->render_page();
     }
 
     public function remove_duplicate_cpt_menus(): void
