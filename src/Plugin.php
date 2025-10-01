@@ -52,6 +52,8 @@ use function esc_html__;
 use function load_plugin_textdomain;
 use function plugin_basename;
 use function sanitize_text_field;
+use function get_option;
+use function update_option;
 use function is_admin;
 use function is_multisite;
 
@@ -205,6 +207,7 @@ final class Plugin
 
         add_action('plugins_loaded', [$this, 'load_textdomain']);
         add_action('plugins_loaded', [$this, 'register_database_tables']);
+        add_action('admin_init', [$this, 'maybe_update_roles']);
 
         $this->guard([$this->experience_cpt, 'register_hooks'], ExperienceCPT::class, 'register_hooks');
         $this->guard([$this->shortcodes, 'register'], ShortcodeRegistrar::class, 'register');
@@ -295,6 +298,19 @@ final class Plugin
         if ($this->gift_manager instanceof VoucherManager) {
             $this->guard([$this->gift_manager, 'register_hooks'], VoucherManager::class, 'register_hooks');
         }
+    }
+
+    public function maybe_update_roles(): void
+    {
+        $current_version = Activation::roles_version();
+        $stored_version = get_option('fp_exp_roles_version');
+
+        if ($stored_version === $current_version) {
+            return;
+        }
+
+        Activation::register_roles();
+        update_option('fp_exp_roles_version', $current_version);
     }
 
     /**
