@@ -92,7 +92,7 @@ final class SettingsPage
 
     public function render_page(): void
     {
-        if (! current_user_can('fp_exp_manage')) {
+        if (! Helpers::can_manage_fp()) {
             wp_die(esc_html__('You do not have permission to manage FP Experiences settings.', 'fp-experiences'));
         }
 
@@ -2201,7 +2201,7 @@ final class SettingsPage
             return;
         }
 
-        if (! current_user_can('fp_exp_manage')) {
+        if (! Helpers::can_manage_fp()) {
             return;
         }
 

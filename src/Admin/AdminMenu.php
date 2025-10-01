@@ -75,7 +75,7 @@ final class AdminMenu
         add_menu_page(
             esc_html__('FP Experiences', 'fp-experiences'),
             esc_html__('FP Experiences', 'fp-experiences'),
-            'fp_exp_manage',
+            'fp_exp_guide',
             'fp_exp_dashboard',
             [Dashboard::class, 'render'],
             'dashicons-location',
@@ -146,7 +146,7 @@ final class AdminMenu
             [$this->checkin_page, 'render_page']
         );
 
-        if (current_user_can('manage_woocommerce') && current_user_can('fp_exp_manage')) {
+        if (current_user_can('manage_woocommerce') && Helpers::can_manage_fp()) {
             add_submenu_page(
                 'fp_exp_dashboard',
                 esc_html__('Orders', 'fp-experiences'),
@@ -213,7 +213,7 @@ final class AdminMenu
 
     public function register_admin_bar_links(WP_Admin_Bar $admin_bar): void
     {
-        if (! current_user_can('fp_exp_guide')) {
+        if (! Helpers::can_access_guides()) {
             return;
         }
 
@@ -229,7 +229,7 @@ final class AdminMenu
         $admin_bar->add_node([
             'id' => 'fp-exp',
             'title' => esc_html__('FP Experiences', 'fp-experiences'),
-            'href' => current_user_can('fp_exp_manage')
+            'href' => Helpers::can_manage_fp()
                 ? admin_url('admin.php?page=fp_exp_dashboard')
                 : admin_url('post-new.php?post_type=fp_experience'),
             'meta' => $root_meta,
@@ -246,7 +246,7 @@ final class AdminMenu
             ]);
         }
 
-        if (current_user_can('fp_exp_operate')) {
+        if (Helpers::can_operate_fp()) {
             $admin_bar->add_node([
                 'id' => 'fp-exp-calendar',
                 'parent' => 'fp-exp',
@@ -266,7 +266,7 @@ final class AdminMenu
             }
         }
 
-        if (current_user_can('fp_exp_manage')) {
+        if (Helpers::can_manage_fp()) {
             $admin_bar->add_node([
                 'id' => 'fp-exp-settings',
                 'parent' => 'fp-exp',

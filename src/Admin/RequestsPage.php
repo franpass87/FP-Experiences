@@ -6,6 +6,7 @@ namespace FP_Exp\Admin;
 
 use FP_Exp\Booking\RequestToBook;
 use FP_Exp\Booking\Reservations;
+use FP_Exp\Utils\Helpers;
 use WP_Error;
 
 use function absint;
@@ -15,7 +16,6 @@ use function add_settings_error;
 use function admin_url;
 use function check_admin_referer;
 use function current_time;
-use function current_user_can;
 use function delete_transient;
 use function esc_attr;
 use function esc_html;
@@ -54,7 +54,7 @@ final class RequestsPage
 
     public function maybe_handle_action(): void
     {
-        if (! current_user_can('fp_exp_operate')) {
+        if (! Helpers::can_operate_fp()) {
             return;
         }
 
@@ -116,7 +116,7 @@ final class RequestsPage
 
     public function render_page(): void
     {
-        if (! current_user_can('fp_exp_operate')) {
+        if (! Helpers::can_operate_fp()) {
             return;
         }
 

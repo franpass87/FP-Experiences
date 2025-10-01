@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace FP_Exp\Admin;
 
+use FP_Exp\Utils\Helpers;
+
 use function add_action;
-use function current_user_can;
 use function esc_html__;
 use function get_current_screen;
 use function settings_errors;
@@ -37,7 +38,7 @@ final class ToolsPage
 
     public function render_page(): void
     {
-        if (! current_user_can('fp_exp_manage')) {
+        if (! Helpers::can_manage_fp()) {
             wp_die(esc_html__('You do not have permission to run FP Experiences tools.', 'fp-experiences'));
         }
 

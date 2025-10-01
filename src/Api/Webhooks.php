@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace FP_Exp\Api;
 
+use FP_Exp\Utils\Helpers;
 use FP_Exp\Utils\Logger;
 use WP_Error;
 use WP_REST_Request;
@@ -14,7 +15,6 @@ use function __;
 use function add_action;
 use function array_filter;
 use function current_time;
-use function current_user_can;
 use function get_option;
 use function get_transient;
 use function hash_equals;
@@ -47,7 +47,7 @@ final class Webhooks
             [
                 'methods' => WP_REST_Server::READABLE,
                 'permission_callback' => static function (): bool {
-                    return current_user_can('fp_exp_manage');
+                    return Helpers::can_manage_fp();
                 },
                 'callback' => [$this, 'handle_ping'],
             ]

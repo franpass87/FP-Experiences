@@ -12,6 +12,7 @@ use function array_filter;
 use function array_map;
 use function array_unique;
 use function array_values;
+use function current_user_can;
 use function delete_transient;
 use function explode;
 use function do_action;
@@ -55,6 +56,21 @@ final class Helpers
      * @var array<string, string>
      */
     private static array $asset_version_cache = [];
+
+    public static function can_manage_fp(): bool
+    {
+        return current_user_can('fp_exp_manage') || current_user_can('manage_options');
+    }
+
+    public static function can_operate_fp(): bool
+    {
+        return current_user_can('fp_exp_operate') || self::can_manage_fp();
+    }
+
+    public static function can_access_guides(): bool
+    {
+        return current_user_can('fp_exp_guide') || self::can_operate_fp();
+    }
 
     /**
      * @return array<string, mixed>

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace FP_Exp\Gift;
 
+use FP_Exp\Utils\Helpers;
 use WP_Post;
 
 use function absint;
@@ -11,7 +12,6 @@ use function add_action;
 use function add_filter;
 use function add_query_arg;
 use function admin_url;
-use function current_user_can;
 use function date_i18n;
 use function esc_attr;
 use function esc_html;
@@ -182,7 +182,7 @@ final class VoucherCPT
      */
     public function filter_row_actions(array $actions, WP_Post $post): array
     {
-        if (self::POST_TYPE !== $post->post_type || ! current_user_can('fp_exp_manage')) {
+        if (self::POST_TYPE !== $post->post_type || ! Helpers::can_manage_fp()) {
             return $actions;
         }
 
@@ -214,7 +214,7 @@ final class VoucherCPT
 
     public function handle_admin_action(): void
     {
-        if (! current_user_can('fp_exp_manage')) {
+        if (! Helpers::can_manage_fp()) {
             wp_die(esc_html__('You do not have permission to manage vouchers.', 'fp-experiences'));
         }
 
