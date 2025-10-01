@@ -565,6 +565,10 @@ final class RequestToBook
             return new WP_Error('fp_exp_rtb_order', __('Unable to generate the payment order. Please try again.', 'fp-experiences'));
         }
 
+        if (is_wp_error($order)) {
+            return new WP_Error('fp_exp_rtb_order', __('Unable to generate the payment order. Please try again.', 'fp-experiences'));
+        }
+
         $order->set_created_via('fp-exp-rtb');
         $currency = $context['totals']['currency'] ?? get_option('woocommerce_currency', 'EUR');
         $order->set_currency($currency);
