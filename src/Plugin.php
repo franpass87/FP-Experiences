@@ -44,6 +44,7 @@ use FP_Exp\Gift\VoucherManager;
 use FP_Exp\Gift\VoucherTable;
 
 use Throwable;
+use WP_User;
 
 use function add_action;
 use function __;
@@ -53,9 +54,12 @@ use function load_plugin_textdomain;
 use function plugin_basename;
 use function sanitize_text_field;
 use function get_option;
+use function get_role;
 use function update_option;
 use function is_admin;
 use function is_multisite;
+use function in_array;
+use function wp_get_current_user;
 
 final class Plugin
 {
@@ -205,6 +209,7 @@ final class Plugin
 
         $this->booted = true;
 
+        add_action('plugins_loaded', [$this, 'maybe_update_roles'], 5);
         add_action('plugins_loaded', [$this, 'load_textdomain']);
         add_action('plugins_loaded', [$this, 'register_database_tables']);
         add_action('admin_init', [$this, 'maybe_update_roles']);
@@ -302,15 +307,58 @@ final class Plugin
 
     public function maybe_update_roles(): void
     {
+        if (! is_admin()) {
+            return;
+        }
+
         $current_version = Activation::roles_version();
         $stored_version = get_option('fp_exp_roles_version');
 
-        if ($stored_version === $current_version) {
+        $administrator = get_role('administrator');
+        $administrator_missing_caps = false;
+        /** @var array<string, bool> $manager_capabilities */
+        $manager_capabilities = Activation::manager_capabilities();
+        $current_user = wp_get_current_user();
+        $current_user_missing_caps = false;
+
+        if ($administrator) {
+            foreach (array_keys($manager_capabilities) as $capability) {
+                if ($administrator->has_cap($capability)) {
+                    continue;
+                }
+
+                $administrator_missing_caps = true;
+                break;
+            }
+        }
+
+        if ($current_user instanceof WP_User && in_array('administrator', $current_user->roles, true)) {
+            foreach (array_keys($manager_capabilities) as $capability) {
+                if ($current_user->has_cap($capability)) {
+                    continue;
+                }
+
+                $current_user_missing_caps = true;
+                break;
+            }
+        }
+
+        if ($stored_version === $current_version && ! $administrator_missing_caps && ! $current_user_missing_caps) {
             return;
         }
 
         Activation::register_roles();
         update_option('fp_exp_roles_version', $current_version);
+
+        if ($current_user_missing_caps && $current_user instanceof WP_User) {
+            foreach (array_keys($manager_capabilities) as $capability) {
+                if ($current_user->has_cap($capability)) {
+                    continue;
+                }
+
+                $current_user->add_cap($capability);
+            }
+        }
     }
 
     /**
