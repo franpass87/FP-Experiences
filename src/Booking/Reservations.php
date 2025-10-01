@@ -210,6 +210,19 @@ final class Reservations
         return (int) $wpdb->insert_id;
     }
 
+    public static function delete_by_order(int $order_id): void
+    {
+        global $wpdb;
+
+        $table = self::table_name();
+        $wpdb->delete(
+            $table,
+            [
+                'order_id' => absint($order_id),
+            ]
+        );
+    }
+
     /**
      * @param array<string, mixed> $data
      */

@@ -22,6 +22,7 @@ use function function_exists;
 use function get_locale;
 use function get_option;
 use function is_array;
+use function is_wp_error;
 use function sanitize_email;
 use function sanitize_text_field;
 use function wc_create_order;
@@ -88,6 +89,10 @@ final class Orders
             return new WP_Error('fp_exp_order_failed', __('Unable to create the order. Please try again.', 'fp-experiences'));
         }
 
+        if (is_wp_error($order)) {
+            return new WP_Error('fp_exp_order_failed', __('Unable to create the order. Please try again.', 'fp-experiences'));
+        }
+
         if (empty($cart['items'])) {
             $order->delete(true);
 
@@ -135,7 +140,11 @@ final class Orders
 
             $order->add_item($line_item);
 
-            $this->persist_reservation($order, $normalized, $utm_data);
+            $reservation_result = $this->persist_reservation($order, $normalized, $utm_data);
+
+            if ($reservation_result instanceof WP_Error) {
+                return $reservation_result;
+            }
         }
 
         $order->set_cart_tax($tax_total);
@@ -245,8 +254,10 @@ final class Orders
     /**
      * @param array<string, mixed> $item
      * @param array<string, string> $utm
+     *
+     * @return true|WP_Error
      */
-    private function persist_reservation(WC_Order $order, array $item, array $utm = []): void
+    private function persist_reservation(WC_Order $order, array $item, array $utm = [])
     {
         $reservation_id = Reservations::create([
             'order_id' => $order->get_id(),
@@ -261,9 +272,16 @@ final class Orders
             'tax_total' => (float) ($item['totals']['tax'] ?? 0.0),
         ]);
 
-        if ($reservation_id > 0) {
-            do_action('fp_exp_reservation_created', $reservation_id, $order->get_id());
+        if ($reservation_id <= 0) {
+            Reservations::delete_by_order($order->get_id());
+            $order->delete(true);
+
+            return new WP_Error('fp_exp_reservation_failed', __('Unable to record your reservation. Please try again.', 'fp-experiences'));
         }
+
+        do_action('fp_exp_reservation_created', $reservation_id, $order->get_id());
+
+        return true;
     }
 
     public function handle_payment_complete(int $order_id): void

@@ -48,6 +48,7 @@ use function in_array;
 use function is_array;
 use function is_email;
 use function is_string;
+use function is_wp_error;
 use function sanitize_email;
 use function sanitize_key;
 use function sanitize_text_field;
@@ -222,6 +223,10 @@ final class VoucherManager
             return new WP_Error('fp_exp_gift_order', esc_html__('Unable to create the order. Please try again.', 'fp-experiences'));
         }
 
+        if (is_wp_error($order)) {
+            return new WP_Error('fp_exp_gift_order', esc_html__('Unable to create the order. Please try again.', 'fp-experiences'));
+        }
+
         $order->set_created_via('fp-exp-gift');
         $order->set_currency($currency ?: 'EUR');
         $order->set_prices_include_tax(false);
@@ -275,6 +280,14 @@ final class VoucherManager
             ),
             'post_author' => get_current_user_id(),
         ]);
+
+        if (is_wp_error($voucher_id)) {
+            $order->delete(true);
+
+            return new WP_Error('fp_exp_gift_voucher', esc_html__('Unable to persist the voucher.', 'fp-experiences'));
+        }
+
+        $voucher_id = (int) $voucher_id;
 
         if ($voucher_id <= 0) {
             $order->delete(true);
@@ -510,6 +523,10 @@ final class VoucherManager
             return new WP_Error('fp_exp_gift_redeem_order', esc_html__('Unable to create the redemption order.', 'fp-experiences'));
         }
 
+        if (is_wp_error($order)) {
+            return new WP_Error('fp_exp_gift_redeem_order', esc_html__('Unable to create the redemption order.', 'fp-experiences'));
+        }
+
         $experience = get_post($experience_id);
         $title = $experience instanceof WP_Post ? $experience->post_title : esc_html__('Experience', 'fp-experiences');
 
@@ -568,6 +585,12 @@ final class VoucherManager
             ],
             'locale' => get_locale(),
         ]);
+
+        if ($reservation_id <= 0) {
+            $order->delete(true);
+
+            return new WP_Error('fp_exp_gift_reservation', esc_html__('Unable to record the voucher redemption. Please try again.', 'fp-experiences'));
+        }
 
         update_post_meta($voucher_id, '_fp_exp_gift_status', 'redeemed');
         update_post_meta($voucher_id, '_fp_exp_gift_redeemed_order_id', $order->get_id());
