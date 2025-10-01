@@ -14,6 +14,9 @@ use function __;
 use function add_role;
 use function flush_rewrite_rules;
 use function get_role;
+use function update_option;
+use function wp_json_encode;
+use function wp_roles;
 
 final class Activation
 {
@@ -28,6 +31,7 @@ final class Activation
         VoucherTable::create_table();
 
         self::register_roles();
+        update_option('fp_exp_roles_version', self::roles_version());
 
         flush_rewrite_rules();
 
@@ -41,7 +45,30 @@ final class Activation
         do_action('fp_exp_plugin_deactivated');
     }
 
-    private static function register_roles(): void
+    public static function register_roles(): void
+    {
+        $roles = self::roles_definition();
+
+        foreach ($roles as $role_name => $role) {
+            self::ensure_role_caps($role_name, $role['label'], $role['capabilities']);
+        }
+
+        self::propagate_custom_role_caps($roles);
+
+        $administrator = get_role('administrator');
+        if ($administrator) {
+            foreach (array_keys($roles['fp_exp_manager']['capabilities']) as $capability) {
+                if (! $administrator->has_cap($capability)) {
+                    $administrator->add_cap($capability);
+                }
+            }
+        }
+    }
+
+    /**
+     * @return array<string, array{label: string, primary_capability: string, capabilities: array<string, bool>}>
+     */
+    private static function roles_definition(): array
     {
         $experience_caps = [
             'edit_fp_experience' => true,
@@ -71,12 +98,6 @@ final class Activation
             $experience_caps
         );
 
-        add_role(
-            'fp_exp_manager',
-            __('FP Experiences Manager', 'fp-experiences'),
-            $manager_caps
-        );
-
         $operator_caps = array_merge(
             [
                 'read' => true,
@@ -87,28 +108,101 @@ final class Activation
             $experience_caps
         );
 
-        add_role(
-            'fp_exp_operator',
-            __('FP Experiences Operator', 'fp-experiences'),
-            $operator_caps
-        );
-
         $guide_caps = [
             'read' => true,
             'fp_exp_guide' => true,
         ];
 
-        add_role(
-            'fp_exp_guide',
-            __('FP Experiences Guide', 'fp-experiences'),
-            $guide_caps
-        );
+        return [
+            'fp_exp_manager' => [
+                'label' => __('FP Experiences Manager', 'fp-experiences'),
+                'primary_capability' => 'fp_exp_manage',
+                'capabilities' => $manager_caps,
+            ],
+            'fp_exp_operator' => [
+                'label' => __('FP Experiences Operator', 'fp-experiences'),
+                'primary_capability' => 'fp_exp_operate',
+                'capabilities' => $operator_caps,
+            ],
+            'fp_exp_guide' => [
+                'label' => __('FP Experiences Guide', 'fp-experiences'),
+                'primary_capability' => 'fp_exp_guide',
+                'capabilities' => $guide_caps,
+            ],
+        ];
+    }
 
-        $administrator = get_role('administrator');
-        if ($administrator) {
-            foreach (array_keys($manager_caps) as $capability) {
-                if (! $administrator->has_cap($capability)) {
-                    $administrator->add_cap($capability);
+    public static function roles_version(): string
+    {
+        $roles = self::roles_definition();
+        $signature = [];
+
+        foreach ($roles as $role_name => $role) {
+            $capabilities = $role['capabilities'];
+            ksort($capabilities);
+            $signature[$role_name] = $capabilities;
+        }
+
+        ksort($signature);
+
+        $payload = wp_json_encode($signature);
+
+        return 'cap:' . md5($payload ?: '');
+    }
+
+    /**
+     * @param array<string, bool> $capabilities
+     */
+    private static function ensure_role_caps(string $role_name, string $display_name, array $capabilities): void
+    {
+        $role = get_role($role_name);
+
+        if (! $role) {
+            add_role($role_name, $display_name, $capabilities);
+
+            return;
+        }
+
+        foreach ($capabilities as $capability => $granted) {
+            if (! $granted) {
+                continue;
+            }
+
+            if (! $role->has_cap($capability)) {
+                $role->add_cap($capability);
+            }
+        }
+    }
+
+    /**
+     * @param array<string, array{label: string, primary_capability: string, capabilities: array<string, bool>}> $roles
+     */
+    private static function propagate_custom_role_caps(array $roles): void
+    {
+        $wp_roles = wp_roles();
+
+        if (! $wp_roles) {
+            return;
+        }
+
+        foreach ($wp_roles->role_objects as $role_name => $role) {
+            if (isset($roles[$role_name])) {
+                continue;
+            }
+
+            foreach ($roles as $role_definition) {
+                $primary_capability = $role_definition['primary_capability'];
+
+                if (! $role->has_cap($primary_capability)) {
+                    continue;
+                }
+
+                foreach ($role_definition['capabilities'] as $capability => $granted) {
+                    if (! $granted || $role->has_cap($capability)) {
+                        continue;
+                    }
+
+                    $role->add_cap($capability);
                 }
             }
         }
