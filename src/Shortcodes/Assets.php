@@ -8,11 +8,9 @@ use FP_Exp\Utils\Helpers;
 use FP_Exp\Utils\Theme;
 
 use function admin_url;
-use function filemtime;
 use function function_exists;
 use function get_woocommerce_currency;
 use function get_option;
-use function is_readable;
 use function is_string;
 use function trailingslashit;
 use function wp_add_inline_style;
@@ -31,11 +29,6 @@ final class Assets
     private bool $registered = false;
 
     private bool $tokens_injected = false;
-
-    /**
-     * @var array<string, string>
-     */
-    private array $version_cache = [];
 
     private function __construct()
     {
@@ -92,13 +85,13 @@ final class Assets
         $front_js = trailingslashit(FP_EXP_PLUGIN_URL) . 'assets/js/front.js';
         $checkout_js = trailingslashit(FP_EXP_PLUGIN_URL) . 'assets/js/checkout.js';
 
-        wp_register_style('fp-exp-front', $style_url, [], $this->asset_version('assets/css/front.css'));
+        wp_register_style('fp-exp-front', $style_url, [], Helpers::asset_version('assets/css/front.css'));
 
         wp_register_script(
             'fp-exp-front',
             $front_js,
             ['wp-i18n'],
-            $this->asset_version('assets/js/front.js'),
+            Helpers::asset_version('assets/js/front.js'),
             true
         );
 
@@ -106,7 +99,7 @@ final class Assets
             'fp-exp-checkout',
             $checkout_js,
             ['fp-exp-front'],
-            $this->asset_version('assets/js/checkout.js'),
+            Helpers::asset_version('assets/js/checkout.js'),
             true
         );
 
@@ -138,24 +131,4 @@ final class Assets
         );
     }
 
-    private function asset_version(string $relative): string
-    {
-        if (isset($this->version_cache[$relative])) {
-            return $this->version_cache[$relative];
-        }
-
-        $path = trailingslashit(FP_EXP_PLUGIN_DIR) . ltrim($relative, '/');
-        if (is_readable($path)) {
-            $mtime = filemtime($path);
-            if (false !== $mtime) {
-                $this->version_cache[$relative] = (string) $mtime;
-
-                return $this->version_cache[$relative];
-            }
-        }
-
-        $this->version_cache[$relative] = FP_EXP_VERSION;
-
-        return $this->version_cache[$relative];
-    }
 }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace FP_Exp\Admin;
 
+use FP_Exp\Utils\Helpers;
 use FP_Exp\Utils\LanguageHelper;
 use WP_Screen;
 use WP_Term;
@@ -75,6 +76,11 @@ final class LanguageAdmin
             return;
         }
 
-        wp_enqueue_style('fp-exp-admin', FP_EXP_PLUGIN_URL . 'assets/css/admin.css', [], FP_EXP_VERSION);
+        wp_enqueue_style(
+            'fp-exp-admin',
+            FP_EXP_PLUGIN_URL . 'assets/css/admin.css',
+            [],
+            Helpers::asset_version('assets/css/admin.css')
+        );
     }
 }
