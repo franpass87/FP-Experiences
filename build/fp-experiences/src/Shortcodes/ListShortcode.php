@@ -30,7 +30,6 @@ use function get_permalink;
 use function get_post_field;
 use function get_post_meta;
 use function get_posts;
-use function get_terms;
 use function get_the_post_thumbnail_url;
 use function get_the_terms;
 use function get_the_title;
@@ -42,7 +41,6 @@ use function is_array;
 use function is_bool;
 use function is_numeric;
 use function is_string;
-use function is_wp_error;
 use function max;
 use function min;
 use function number_format_i18n;
@@ -104,14 +102,8 @@ final class ListShortcode extends BaseShortcode
         'radius' => '',
         'shadow' => '',
         'font' => '',
+        'variant' => '',
     ];
-
-    /**
-     * @var array<string, array<int, array<string, string>>>
-     */
-    private array $term_choices_cache = [];
-
-    private const ALLOWED_FILTERS = ['theme', 'language', 'duration', 'price', 'family', 'date', 'search'];
 
     private const ALLOWED_ORDERBY = ['menu_order', 'date', 'title', 'price'];
 
@@ -132,7 +124,6 @@ final class ListShortcode extends BaseShortcode
 
         $settings = Helpers::listing_settings();
 
-        $active_filters = $this->normalize_filters((string) $attributes['filters'], $settings['filters']);
         $per_page = $this->normalize_positive_int($attributes['per_page'] ?: $settings['per_page'], $settings['per_page']);
         $view = $this->normalize_view((string) $attributes['view']);
         $order = $this->normalize_order($attributes['order'] ?: $settings['order']);
@@ -146,6 +137,12 @@ final class ListShortcode extends BaseShortcode
             'family' => $this->normalize_bool($attributes['badge_family'] ?? '1', true),
         ];
 
+        $variant = $this->normalize_variant((string) $attributes['variant']);
+
+        if ('cards' === $variant) {
+            $view = 'grid';
+        }
+
         $layout = [
             'desktop' => $this->normalize_column_setting($attributes['columns_desktop'] ?? ''),
             'tablet' => $this->normalize_column_setting($attributes['columns_tablet'] ?? ''),
@@ -153,10 +150,38 @@ final class ListShortcode extends BaseShortcode
             'gap' => $this->normalize_gap_setting($attributes['gap'] ?? ''),
         ];
 
-        $state = $this->read_filter_state($active_filters, $attributes, $order, $orderby, $view);
+        if ('cards' === $variant) {
+            if (0 === $layout['desktop']) {
+                $layout['desktop'] = 4;
+            }
+
+            if (0 === $layout['tablet']) {
+                $layout['tablet'] = 2;
+            }
+
+            if (0 === $layout['mobile']) {
+                $layout['mobile'] = 1;
+            }
+
+            if ('' === $layout['gap']) {
+                $layout['gap'] = 'cozy';
+            }
+        }
+
+        $state = $this->read_filter_state([], $attributes, $order, $orderby, $view);
+
+        if ('cards' === $variant) {
+            $state['view'] = 'grid';
+        }
+
         $order = $state['order'] ?? $order;
         $orderby = $state['orderby'] ?? $orderby;
         $view = $state['view'] ?? $view;
+
+        if ('cards' === $variant) {
+            $view = 'grid';
+            $state['view'] = 'grid';
+        }
 
         $query_args = $this->build_query_args($state, $order, $orderby);
         $query = new WP_Query($query_args);
@@ -168,8 +193,6 @@ final class ListShortcode extends BaseShortcode
         }
 
         $prices = $this->load_prices($experience_ids);
-
-        $price_range = $this->determine_price_range($prices);
 
         if (isset($state['price_min'], $state['price_max'])) {
             $experience_ids = $this->filter_by_price($experience_ids, $prices, $state['price_min'], $state['price_max']);
@@ -185,11 +208,6 @@ final class ListShortcode extends BaseShortcode
 
         $page_ids = array_slice($experience_ids, ($current_page - 1) * $per_page, $per_page);
         $experiences = $this->map_experiences($page_ids, $prices, $show_price_from, $badge_flags, $show_map, $cta_mode);
-
-        $filters = $this->build_filters($active_filters, $state, $price_range);
-        $filter_chips = $this->build_filter_chips($filters, $state);
-        $has_active_filters = $this->has_active_filters($filters);
-        $reset_url = $this->build_reset_url($state);
         $tracking_items = $this->build_tracking_items($page_ids, $prices);
 
         $theme = Theme::resolve_palette([
@@ -213,10 +231,6 @@ final class ListShortcode extends BaseShortcode
         return [
             'theme' => $theme,
             'experiences' => $experiences,
-            'filters' => $filters,
-            'filter_chips' => $filter_chips,
-            'has_active_filters' => $has_active_filters,
-            'reset_url' => $reset_url,
             'state' => $state,
             'view' => $view,
             'per_page' => $per_page,
@@ -227,6 +241,12 @@ final class ListShortcode extends BaseShortcode
             'cta_mode' => $cta_mode,
             'badge_flags' => $badge_flags,
             'layout' => $layout,
+            'variant' => $variant,
+            'filters' => [],
+            'filter_chips' => [],
+            'has_active_filters' => false,
+            'reset_url' => '',
+            'show_filters' => false,
             'total' => $total,
             'current_page' => $current_page,
             'total_pages' => $total_pages,
@@ -367,23 +387,6 @@ final class ListShortcode extends BaseShortcode
     }
 
     /**
-     * @return array{min: float|null, max: float|null}
-     */
-    private function determine_price_range(array $prices): array
-    {
-        $values = array_filter($prices, static fn ($value): bool => null !== $value && $value >= 0);
-
-        if (empty($values)) {
-            return ['min' => null, 'max' => null];
-        }
-
-        return [
-            'min' => (float) min($values),
-            'max' => (float) max($values),
-        ];
-    }
-
-    /**
      * @param array<int> $ids
      * @param array<int, float|null> $prices
      *
@@ -495,6 +498,7 @@ final class ListShortcode extends BaseShortcode
         $family_friendly = is_array($family_terms) && ! empty($family_terms);
         $duration_label = $this->format_duration($duration_minutes);
         $badges = [];
+        $language_labels = [];
 
         if ($badge_flags['duration'] && $duration_label) {
             $badges[] = [
@@ -528,6 +532,10 @@ final class ListShortcode extends BaseShortcode
                         'aria_label' => $aria_label,
                     ],
                 ];
+
+                if ('' !== $label) {
+                    $language_labels[] = sanitize_text_field($label);
+                }
             }
         }
 
@@ -549,6 +557,16 @@ final class ListShortcode extends BaseShortcode
             'duration' => wp_list_pluck(wp_get_post_terms($id, 'fp_exp_duration'), 'name'),
         ];
 
+        $primary_theme = '';
+        if (! empty($terms['theme'])) {
+            $primary_theme_value = $terms['theme'][0];
+            if (is_string($primary_theme_value)) {
+                $primary_theme = sanitize_text_field($primary_theme_value);
+            }
+        }
+
+        $language_labels = array_values(array_unique(array_filter($language_labels)));
+
         return [
             'id' => $id,
             'title' => $title,
@@ -564,6 +582,9 @@ final class ListShortcode extends BaseShortcode
             'languages' => $languages,
             'language_badges' => $language_badges,
             'duration_minutes' => $duration_minutes,
+            'duration_label' => $duration_label,
+            'language_labels' => $language_labels,
+            'primary_theme' => $primary_theme,
             'terms' => $terms,
         ];
     }
@@ -647,266 +668,6 @@ final class ListShortcode extends BaseShortcode
     }
 
     /**
-     * @param array<string> $active_filters
-     * @param array<string, mixed> $state
-     *
-     * @return array<string, mixed>
-     */
-    private function build_filters(array $active_filters, array $state, array $price_range): array
-    {
-        $filters = [];
-
-        if (in_array('search', $active_filters, true)) {
-            $filters['search'] = [
-                'value' => $state['search'] ?? '',
-            ];
-        }
-
-        if (in_array('theme', $active_filters, true)) {
-            $filters['theme'] = [
-                'label' => __('Theme', 'fp-experiences'),
-                'choices' => $this->get_term_choices('fp_exp_theme'),
-                'value' => $state['theme'] ?? [],
-            ];
-        }
-
-        if (in_array('language', $active_filters, true)) {
-            $filters['language'] = [
-                'label' => __('Language', 'fp-experiences'),
-                'choices' => $this->get_term_choices('fp_exp_language'),
-                'value' => $state['language'] ?? [],
-            ];
-        }
-
-        if (in_array('duration', $active_filters, true)) {
-            $filters['duration'] = [
-                'label' => __('Duration', 'fp-experiences'),
-                'choices' => $this->get_term_choices('fp_exp_duration'),
-                'value' => $state['duration'] ?? [],
-            ];
-        }
-
-        if (in_array('price', $active_filters, true) && null !== $price_range['min'] && null !== $price_range['max']) {
-            $filters['price'] = [
-                'label' => __('Price range', 'fp-experiences'),
-                'min' => $price_range['min'],
-                'max' => $price_range['max'],
-                'value' => [
-                    'min' => $state['price_min'] ?? $price_range['min'],
-                    'max' => $state['price_max'] ?? $price_range['max'],
-                ],
-            ];
-        }
-
-        if (in_array('family', $active_filters, true)) {
-            $filters['family'] = [
-                'label' => __('Family friendly', 'fp-experiences'),
-                'value' => ! empty($state['family']),
-            ];
-        }
-
-        if (in_array('date', $active_filters, true)) {
-            $filters['date'] = [
-                'label' => __('Date', 'fp-experiences'),
-                'value' => $state['date'] ?? '',
-            ];
-        }
-
-        return $filters;
-    }
-
-    /**
-     * @param array<string, mixed> $filters
-     * @param array<string, mixed> $state
-     *
-     * @return array<int, array<string, string>>
-     */
-    private function build_filter_chips(array $filters, array $state): array
-    {
-        $chips = [];
-        $base_url = $this->current_url();
-        $base_url = remove_query_arg([self::LISTING_PARAM_PREFIX . 'page'], $base_url);
-
-        foreach (['theme', 'language'] as $taxonomy) {
-            if (empty($state[$taxonomy]) || empty($filters[$taxonomy]['choices'])) {
-                continue;
-            }
-
-            $labels = [];
-            foreach ($filters[$taxonomy]['choices'] as $choice) {
-                if (isset($choice['slug'], $choice['name'])) {
-                    $labels[(string) $choice['slug']] = (string) $choice['name'];
-                }
-            }
-
-            foreach ((array) $state[$taxonomy] as $slug) {
-                $slug = (string) $slug;
-                $label = $labels[$slug] ?? $slug;
-
-                $chip_state = $state;
-                $chip_state['page'] = 1;
-                $chip_state[$taxonomy] = array_values(array_filter(
-                    (array) $chip_state[$taxonomy],
-                    static fn ($value) => (string) $value !== $slug
-                ));
-
-                if (empty($chip_state[$taxonomy])) {
-                    unset($chip_state[$taxonomy]);
-                }
-
-                $query_args = $this->build_query_from_state($chip_state, 1);
-                $url = add_query_arg(
-                    $query_args,
-                    remove_query_arg([self::LISTING_PARAM_PREFIX . $taxonomy], $base_url)
-                );
-
-                $chips[] = [
-                    'type' => $taxonomy,
-                    'label' => $label,
-                    'url' => $url,
-                    'sr_label' => sprintf(
-                        /* translators: %s: filter label. */
-                        __('Remove %s filter', 'fp-experiences'),
-                        $label
-                    ),
-                ];
-            }
-        }
-
-        if (! empty($state['family'])) {
-            $chip_state = $state;
-            $chip_state['page'] = 1;
-            unset($chip_state['family']);
-
-            $query_args = $this->build_query_from_state($chip_state, 1);
-            $url = add_query_arg(
-                $query_args,
-                remove_query_arg([self::LISTING_PARAM_PREFIX . 'family'], $base_url)
-            );
-
-            $chips[] = [
-                'type' => 'family',
-                'label' => __('Family-friendly', 'fp-experiences'),
-                'url' => $url,
-                'sr_label' => __('Remove family-friendly filter', 'fp-experiences'),
-            ];
-        }
-
-        return $chips;
-    }
-
-    /**
-     * @param array<string, mixed> $filters
-     */
-    private function has_active_filters(array $filters): bool
-    {
-        if (! empty($filters['search']['value'])) {
-            return true;
-        }
-
-        foreach (['theme', 'language', 'duration'] as $filter) {
-            if (! empty($filters[$filter]['value'])) {
-                return true;
-            }
-        }
-
-        if (! empty($filters['family']['value'])) {
-            return true;
-        }
-
-        if (! empty($filters['date']['value'])) {
-            return true;
-        }
-
-        if (isset($filters['price'])) {
-            $price = $filters['price'];
-            $min_default = isset($price['min']) ? (float) $price['min'] : null;
-            $max_default = isset($price['max']) ? (float) $price['max'] : null;
-            $current_min = isset($price['value']['min']) ? (float) $price['value']['min'] : $min_default;
-            $current_max = isset($price['value']['max']) ? (float) $price['value']['max'] : $max_default;
-
-            if (null !== $min_default && null !== $current_min && $current_min > $min_default) {
-                return true;
-            }
-
-            if (null !== $max_default && null !== $current_max && $current_max < $max_default) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private function build_reset_url(array $state): string
-    {
-        $reset_state = $state;
-        unset(
-            $reset_state['search'],
-            $reset_state['theme'],
-            $reset_state['language'],
-            $reset_state['duration'],
-            $reset_state['price_min'],
-            $reset_state['price_max'],
-            $reset_state['family'],
-            $reset_state['date']
-        );
-
-        $reset_state['page'] = 1;
-
-        $base_url = $this->current_url();
-        $remove = [
-            self::LISTING_PARAM_PREFIX . 'page',
-            self::LISTING_PARAM_PREFIX . 'theme',
-            self::LISTING_PARAM_PREFIX . 'language',
-            self::LISTING_PARAM_PREFIX . 'duration',
-            self::LISTING_PARAM_PREFIX . 'price_min',
-            self::LISTING_PARAM_PREFIX . 'price_max',
-            self::LISTING_PARAM_PREFIX . 'family',
-            self::LISTING_PARAM_PREFIX . 'date',
-            self::LISTING_PARAM_PREFIX . 'search',
-        ];
-
-        $base_url = remove_query_arg($remove, $base_url);
-
-        $query_args = $this->build_query_from_state($reset_state, 1);
-
-        return add_query_arg($query_args, $base_url);
-    }
-
-    /**
-     * @return array<int, array<string, string>>
-     */
-    private function get_term_choices(string $taxonomy): array
-    {
-        if (isset($this->term_choices_cache[$taxonomy])) {
-            return $this->term_choices_cache[$taxonomy];
-        }
-
-        $terms = get_terms([
-            'taxonomy' => $taxonomy,
-            'hide_empty' => true,
-        ]);
-
-        if (is_wp_error($terms) || empty($terms)) {
-            $this->term_choices_cache[$taxonomy] = [];
-
-            return [];
-        }
-
-        $choices = [];
-        foreach ($terms as $term) {
-            $choices[] = [
-                'slug' => $term->slug,
-                'name' => $term->name,
-            ];
-        }
-
-        $this->term_choices_cache[$taxonomy] = $choices;
-
-        return $choices;
-    }
-
-    /**
      * @return array<string, mixed>
      */
     private function read_filter_state(array $active_filters, array $attributes, string $order, string $orderby, string $view_default): array
@@ -970,25 +731,6 @@ final class ListShortcode extends BaseShortcode
         $value = absint((string) $value);
 
         return $value > 0 ? $value : $fallback;
-    }
-
-    private function normalize_filters(string $attribute, array $default): array
-    {
-        if ('' === $attribute) {
-            return $default;
-        }
-
-        $parts = array_map('trim', explode(',', $attribute));
-        $filters = [];
-
-        foreach ($parts as $part) {
-            $part = sanitize_key($part);
-            if ($part && in_array($part, self::ALLOWED_FILTERS, true)) {
-                $filters[] = $part;
-            }
-        }
-
-        return $filters ?: $default;
     }
 
     private function normalize_view(string $view): string
@@ -1070,6 +812,19 @@ final class ListShortcode extends BaseShortcode
         $allowed = ['compact', 'cozy', 'spacious'];
 
         return in_array($value, $allowed, true) ? $value : '';
+    }
+
+    private function normalize_variant(string $value): string
+    {
+        $value = sanitize_key($value);
+
+        if ('' === $value) {
+            return 'cards';
+        }
+
+        $allowed = ['cards', 'classic'];
+
+        return in_array($value, $allowed, true) ? $value : 'cards';
     }
 
     /**

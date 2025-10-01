@@ -20,9 +20,8 @@ if (! defined('ABSPATH')) {
 $layout = isset($layout) && is_array($layout) ? $layout : [];
 $language_sprite = \FP_Exp\Utils\LanguageHelper::get_sprite_url();
 $layout_classes = [];
-$filter_chips = isset($filter_chips) && is_array($filter_chips) ? $filter_chips : [];
-$has_active_filters = ! empty($has_active_filters);
-$reset_url = isset($reset_url) ? (string) $reset_url : '';
+$variant = isset($variant) ? (string) $variant : 'default';
+$is_cards_variant = 'cards' === $variant;
 
 if (! empty($layout['desktop'])) {
     $layout_classes[] = 'fp-listing--cols-desktop-' . (int) $layout['desktop'];
@@ -43,6 +42,10 @@ if (! empty($layout['gap'])) {
 $container_classes = 'fp-exp ' . esc_attr($scope_class) . ' fp-listing fp-listing--' . esc_attr($view);
 if ($layout_classes) {
     $container_classes .= ' ' . esc_attr(implode(' ', $layout_classes));
+}
+$variant_class = preg_replace('/[^a-z0-9_-]/i', '', $variant);
+if ('' !== $variant_class) {
+    $container_classes .= ' fp-listing--variant-' . $variant_class;
 }
 $tracking_json = ! empty($tracking_items) ? wp_json_encode($tracking_items) : '';
 $base_view_url = remove_query_arg(['fp_exp_view', 'fp_exp_page']);
@@ -68,236 +71,172 @@ $results_label = sprintf(
             <h2 class="fp-listing__title"><?php esc_html_e('Experiences', 'fp-experiences'); ?></h2>
             <p class="fp-listing__count" aria-live="polite"><?php echo esc_html($results_label); ?></p>
         </div>
-        <div class="fp-listing__controls">
-            <?php if ((! empty($filter_chips) || $has_active_filters) && $reset_url) : ?>
-                <div class="fp-listing__chips" aria-live="polite">
-                    <?php foreach ($filter_chips as $chip) : ?>
-                        <a class="fp-listing__chip" href="<?php echo esc_url($chip['url']); ?>">
-                            <span class="fp-listing__chip-text"><?php echo esc_html($chip['label']); ?></span>
-                            <span class="fp-listing__chip-close" aria-hidden="true">&times;</span>
-                            <span class="screen-reader-text"><?php echo esc_html($chip['sr_label']); ?></span>
-                        </a>
-                    <?php endforeach; ?>
-                    <a class="fp-listing__chip fp-listing__chip--clear" href="<?php echo esc_url($reset_url); ?>">
-                        <span class="fp-listing__chip-text"><?php esc_html_e('Reset filters', 'fp-experiences'); ?></span>
-                    </a>
+        <?php if (! $is_cards_variant) : ?>
+            <div class="fp-listing__controls">
+                <div class="fp-listing__view" role="group" aria-label="<?php esc_attr_e('Change layout', 'fp-experiences'); ?>">
+                    <a class="fp-listing__view-toggle<?php echo 'grid' === $current_view ? ' is-active' : ''; ?>" href="<?php echo esc_url($grid_url); ?>"><?php esc_html_e('Grid', 'fp-experiences'); ?></a>
+                    <a class="fp-listing__view-toggle<?php echo 'list' === $current_view ? ' is-active' : ''; ?>" href="<?php echo esc_url($list_url); ?>"><?php esc_html_e('List', 'fp-experiences'); ?></a>
                 </div>
-            <?php endif; ?>
-            <form class="fp-listing__filters" method="get">
-                <input type="hidden" name="fp_exp_page" value="1" />
-                <input type="hidden" name="fp_exp_view" value="<?php echo esc_attr($current_view); ?>" />
-                <?php if (isset($filters['search'])) : ?>
-                    <div class="fp-listing__field fp-listing__field--search">
-                        <label class="fp-listing__label" for="fp-exp-search"><?php esc_html_e('Search', 'fp-experiences'); ?></label>
-                        <input
-                            type="search"
-                            id="fp-exp-search"
-                            name="fp_exp_search"
-                            class="fp-listing__input"
-                            value="<?php echo esc_attr((string) ($filters['search']['value'] ?? '')); ?>"
-                            placeholder="<?php esc_attr_e('Search experiences…', 'fp-experiences'); ?>"
-                        />
-                    </div>
-                <?php endif; ?>
-
-                <?php if (isset($filters['theme'])) : ?>
-                    <div class="fp-listing__field">
-                        <label class="fp-listing__label" for="fp-exp-theme"><?php esc_html_e('Theme', 'fp-experiences'); ?></label>
-                        <select id="fp-exp-theme" name="fp_exp_theme[]" class="fp-listing__select" multiple>
-                            <?php foreach ($filters['theme']['choices'] as $choice) : ?>
-                                <option value="<?php echo esc_attr($choice['slug']); ?>" <?php selected(in_array($choice['slug'], (array) ($filters['theme']['value'] ?? []), true)); ?>>
-                                    <?php echo esc_html($choice['name']); ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-                <?php endif; ?>
-
-                <?php if (isset($filters['language'])) : ?>
-                    <div class="fp-listing__field">
-                        <label class="fp-listing__label" for="fp-exp-language"><?php esc_html_e('Language', 'fp-experiences'); ?></label>
-                        <select id="fp-exp-language" name="fp_exp_language[]" class="fp-listing__select" multiple>
-                            <?php foreach ($filters['language']['choices'] as $choice) : ?>
-                                <option value="<?php echo esc_attr($choice['slug']); ?>" <?php selected(in_array($choice['slug'], (array) ($filters['language']['value'] ?? []), true)); ?>>
-                                    <?php echo esc_html($choice['name']); ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-                <?php endif; ?>
-
-                <?php if (isset($filters['duration'])) : ?>
-                    <div class="fp-listing__field">
-                        <label class="fp-listing__label" for="fp-exp-duration"><?php esc_html_e('Duration', 'fp-experiences'); ?></label>
-                        <select id="fp-exp-duration" name="fp_exp_duration[]" class="fp-listing__select" multiple>
-                            <?php foreach ($filters['duration']['choices'] as $choice) : ?>
-                                <option value="<?php echo esc_attr($choice['slug']); ?>" <?php selected(in_array($choice['slug'], (array) ($filters['duration']['value'] ?? []), true)); ?>>
-                                    <?php echo esc_html($choice['name']); ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-                <?php endif; ?>
-
-                <?php if (isset($filters['price'])) :
-                    $price_min = max(0.0, (float) ($filters['price']['min'] ?? 0));
-                    $price_max = max($price_min, (float) ($filters['price']['max'] ?? 0));
-                    $current_min_price = max($price_min, (float) ($filters['price']['value']['min'] ?? $price_min));
-                    $current_max_price = max($current_min_price, (float) ($filters['price']['value']['max'] ?? $price_max));
-                    ?>
-                    <div class="fp-listing__field fp-listing__field--range">
-                        <span class="fp-listing__label"><?php esc_html_e('Price range (€)', 'fp-experiences'); ?></span>
-                        <div class="fp-listing__range-inputs">
-                            <label>
-                                <span class="screen-reader-text"><?php esc_html_e('Minimum price', 'fp-experiences'); ?></span>
-                                <input
-                                    type="number"
-                                    name="fp_exp_price_min"
-                                    class="fp-listing__input"
-                                    min="<?php echo esc_attr((string) $price_min); ?>"
-                                    max="<?php echo esc_attr((string) $price_max); ?>"
-                                    value="<?php echo esc_attr((string) $current_min_price); ?>"
-                                />
-                            </label>
-                            <label>
-                                <span class="screen-reader-text"><?php esc_html_e('Maximum price', 'fp-experiences'); ?></span>
-                                <input
-                                    type="number"
-                                    name="fp_exp_price_max"
-                                    class="fp-listing__input"
-                                    min="<?php echo esc_attr((string) $price_min); ?>"
-                                    max="<?php echo esc_attr((string) $price_max); ?>"
-                                    value="<?php echo esc_attr((string) $current_max_price); ?>"
-                                />
-                            </label>
-                        </div>
-                    </div>
-                <?php endif; ?>
-
-                <?php if (isset($filters['family'])) : ?>
-                    <div class="fp-listing__field fp-listing__field--checkbox">
-                        <label class="fp-listing__checkbox">
-                            <input type="checkbox" name="fp_exp_family" value="1" <?php checked(! empty($filters['family']['value'])); ?> />
-                            <span><?php esc_html_e('Family-friendly only', 'fp-experiences'); ?></span>
-                        </label>
-                    </div>
-                <?php endif; ?>
-
-                <?php if (isset($filters['date'])) : ?>
-                    <div class="fp-listing__field">
-                        <label class="fp-listing__label" for="fp-exp-date"><?php esc_html_e('Date', 'fp-experiences'); ?></label>
-                        <input
-                            type="date"
-                            id="fp-exp-date"
-                            name="fp_exp_date"
-                            class="fp-listing__input"
-                            value="<?php echo esc_attr((string) ($filters['date']['value'] ?? '')); ?>"
-                        />
-                    </div>
-                <?php endif; ?>
-
-                <div class="fp-listing__field fp-listing__field--sort">
-                    <label class="fp-listing__label" for="fp-exp-orderby"><?php esc_html_e('Sort by', 'fp-experiences'); ?></label>
-                    <select id="fp-exp-orderby" name="fp_exp_orderby" class="fp-listing__select">
-                        <option value="menu_order" <?php selected('menu_order' === $current_orderby); ?>><?php esc_html_e('Featured', 'fp-experiences'); ?></option>
-                        <option value="date" <?php selected('date' === $current_orderby); ?>><?php esc_html_e('Publish date', 'fp-experiences'); ?></option>
-                        <option value="title" <?php selected('title' === $current_orderby); ?>><?php esc_html_e('Title', 'fp-experiences'); ?></option>
-                        <option value="price" <?php selected('price' === $current_orderby); ?>><?php esc_html_e('Price', 'fp-experiences'); ?></option>
-                    </select>
-                </div>
-
-                <div class="fp-listing__field fp-listing__field--order">
-                    <label class="fp-listing__label" for="fp-exp-order"><?php esc_html_e('Order', 'fp-experiences'); ?></label>
-                    <select id="fp-exp-order" name="fp_exp_order" class="fp-listing__select">
-                        <option value="ASC" <?php selected('ASC' === $current_order); ?>><?php esc_html_e('Ascending', 'fp-experiences'); ?></option>
-                        <option value="DESC" <?php selected('DESC' === $current_order); ?>><?php esc_html_e('Descending', 'fp-experiences'); ?></option>
-                    </select>
-                </div>
-
-                <div class="fp-listing__actions">
-                    <button type="submit" class="fp-listing__submit"><?php esc_html_e('Apply filters', 'fp-experiences'); ?></button>
-                </div>
-            </form>
-            <div class="fp-listing__view" role="group" aria-label="<?php esc_attr_e('Change layout', 'fp-experiences'); ?>">
-                <a class="fp-listing__view-toggle<?php echo 'grid' === $current_view ? ' is-active' : ''; ?>" href="<?php echo esc_url($grid_url); ?>"><?php esc_html_e('Grid', 'fp-experiences'); ?></a>
-                <a class="fp-listing__view-toggle<?php echo 'list' === $current_view ? ' is-active' : ''; ?>" href="<?php echo esc_url($list_url); ?>"><?php esc_html_e('List', 'fp-experiences'); ?></a>
             </div>
-        </div>
+        <?php endif; ?>
     </header>
 
     <?php if (empty($experiences)) : ?>
-        <p class="fp-listing__empty"><?php esc_html_e('No experiences match your filters. Try adjusting your search.', 'fp-experiences'); ?></p>
+        <p class="fp-listing__empty"><?php esc_html_e('No experiences are available right now. Please check back soon.', 'fp-experiences'); ?></p>
     <?php else : ?>
-        <div class="fp-listing__grid fp-listing__grid--<?php echo esc_attr($current_view); ?>">
+        <div class="fp-listing__grid fp-listing__grid--<?php echo esc_attr($current_view); ?><?php echo $is_cards_variant ? ' fp-listing__grid--cards' : ''; ?>">
             <?php foreach ($experiences as $experience) : ?>
-                <article
-                    class="fp-listing__card"
-                    data-experience-id="<?php echo esc_attr((string) $experience['id']); ?>"
-                    data-experience-name="<?php echo esc_attr($experience['title']); ?>"
-                    data-experience-price="<?php echo esc_attr((string) ($experience['price_from'] ?? '')); ?>"
-                >
-                    <a class="fp-listing__media" href="<?php echo esc_url($experience['permalink']); ?>">
-                        <?php if (! empty($experience['thumbnail'])) : ?>
-                            <img
-                                src="<?php echo esc_url($experience['thumbnail']); ?>"
-                                alt=""
-                                loading="lazy"
-                                class="fp-listing__image"
-                            />
-                        <?php else : ?>
-                            <span class="fp-listing__image fp-listing__image--placeholder" aria-hidden="true"></span>
-                        <?php endif; ?>
-                        <?php if (! empty($experience['price_from_display'])) : ?>
-                            <span class="fp-listing__price-tag"><?php printf(esc_html__('From €%s', 'fp-experiences'), esc_html($experience['price_from_display'])); ?></span>
-                        <?php endif; ?>
-                    </a>
-                    <div class="fp-listing__body">
-                        <h3 class="fp-listing__name">
-                            <a href="<?php echo esc_url($experience['permalink']); ?>"><?php echo esc_html($experience['title']); ?></a>
-                        </h3>
-                        <?php if (! empty($experience['badges'])) : ?>
-                            <ul class="fp-listing__badges">
-                                <?php foreach ($experience['badges'] as $badge) : ?>
-                                    <?php if ('language' === ($badge['context'] ?? '')) :
-                                        $language_meta = isset($badge['language']) && is_array($badge['language']) ? $badge['language'] : [];
-                                        $sprite_id = isset($language_meta['sprite']) ? (string) $language_meta['sprite'] : '';
-                                        $aria_label = isset($language_meta['aria_label']) ? (string) $language_meta['aria_label'] : (string) ($badge['label'] ?? '');
-                                        $readable_label = isset($language_meta['label']) ? (string) $language_meta['label'] : (string) ($badge['label'] ?? '');
-                                        ?>
-                                        <li class="fp-listing__badge fp-listing__badge--language">
-                                            <?php if ($sprite_id) : ?>
-                                                <span class="fp-listing__badge-flag" role="img" aria-label="<?php echo esc_attr($aria_label); ?>">
-                                                    <svg viewBox="0 0 24 16" aria-hidden="true" focusable="false">
-                                                        <use href="<?php echo esc_url($language_sprite . '#' . $sprite_id); ?>"></use>
-                                                    </svg>
-                                                </span>
-                                            <?php endif; ?>
-                                            <span class="fp-listing__badge-text" aria-hidden="true"><?php echo esc_html((string) ($badge['label'] ?? '')); ?></span>
-                                            <span class="screen-reader-text"><?php echo esc_html($readable_label); ?></span>
-                                        </li>
-                                    <?php else : ?>
-                                        <li class="fp-listing__badge fp-listing__badge--<?php echo esc_attr((string) ($badge['context'] ?? '')); ?>"><?php echo esc_html((string) ($badge['label'] ?? '')); ?></li>
+                <?php
+                $language_labels = isset($experience['language_labels']) && is_array($experience['language_labels']) ? array_values(array_filter(array_map('strval', $experience['language_labels']))) : [];
+                $duration_label = isset($experience['duration_label']) ? (string) $experience['duration_label'] : '';
+                $primary_theme = isset($experience['primary_theme']) ? (string) $experience['primary_theme'] : '';
+                $highlight_line = '';
+                if (! empty($experience['highlights']) && is_array($experience['highlights'])) {
+                    $first_highlight = reset($experience['highlights']);
+                    if (is_string($first_highlight)) {
+                        $highlight_line = $first_highlight;
+                    }
+                }
+                if ('' === $highlight_line && ! empty($experience['short_description'])) {
+                    $highlight_line = (string) $experience['short_description'];
+                }
+                ?>
+                <?php if ($is_cards_variant) : ?>
+                    <article
+                        class="fp-listing__card fp-listing__card--gyg"
+                        data-experience-id="<?php echo esc_attr((string) $experience['id']); ?>"
+                        data-experience-name="<?php echo esc_attr($experience['title']); ?>"
+                        data-experience-price="<?php echo esc_attr((string) ($experience['price_from'] ?? '')); ?>"
+                    >
+                        <a class="fp-listing__media" href="<?php echo esc_url($experience['permalink']); ?>">
+                            <?php if (! empty($experience['thumbnail'])) : ?>
+                                <img
+                                    src="<?php echo esc_url($experience['thumbnail']); ?>"
+                                    alt=""
+                                    loading="lazy"
+                                    class="fp-listing__image"
+                                />
+                            <?php else : ?>
+                                <span class="fp-listing__image fp-listing__image--placeholder" aria-hidden="true"></span>
+                            <?php endif; ?>
+                        </a>
+                        <div class="fp-listing__body">
+                            <?php if ('' !== $primary_theme) : ?>
+                                <div class="fp-listing__eyebrow">
+                                    <span class="fp-listing__pill"><?php echo esc_html($primary_theme); ?></span>
+                                </div>
+                            <?php endif; ?>
+                            <h3 class="fp-listing__name">
+                                <a href="<?php echo esc_url($experience['permalink']); ?>"><?php echo esc_html($experience['title']); ?></a>
+                            </h3>
+                            <?php if ('' !== $highlight_line) : ?>
+                                <p class="fp-listing__summary"><?php echo esc_html($highlight_line); ?></p>
+                            <?php endif; ?>
+                            <?php if ('' !== $duration_label || ! empty($language_labels)) : ?>
+                                <div class="fp-listing__meta">
+                                    <?php if ('' !== $duration_label) : ?>
+                                        <span class="fp-listing__meta-item">
+                                            <span class="fp-listing__meta-icon" aria-hidden="true">
+                                                <svg viewBox="0 0 24 24" role="img" focusable="false">
+                                                    <path fill="currentColor" d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Zm1 10.59 2.12 2.12-1.41 1.41-2.83-2.83V7h2.12Z" />
+                                                </svg>
+                                            </span>
+                                            <span><?php echo esc_html($duration_label); ?></span>
+                                        </span>
                                     <?php endif; ?>
-                                <?php endforeach; ?>
-                            </ul>
-                        <?php endif; ?>
-                        <?php if (! empty($experience['highlights'])) : ?>
-                            <ul class="fp-listing__highlights">
-                                <?php foreach ($experience['highlights'] as $highlight) : ?>
-                                    <li><?php echo esc_html($highlight); ?></li>
-                                <?php endforeach; ?>
-                            </ul>
-                        <?php elseif (! empty($experience['short_description'])) : ?>
-                            <p class="fp-listing__excerpt"><?php echo esc_html($experience['short_description']); ?></p>
-                        <?php endif; ?>
-                    </div>
-                    <footer class="fp-listing__footer">
-                        <a class="fp-listing__cta" href="<?php echo esc_url($experience['permalink']); ?>"><?php esc_html_e('Details', 'fp-experiences'); ?></a>
-                        <?php if (! empty($experience['map_url'])) : ?>
-                            <a class="fp-listing__map" href="<?php echo esc_url($experience['map_url']); ?>" target="_blank" rel="noreferrer noopener"><?php esc_html_e('View on map', 'fp-experiences'); ?></a>
-                        <?php endif; ?>
-                    </footer>
-                </article>
+                                    <?php if (! empty($language_labels)) : ?>
+                                        <span class="fp-listing__meta-item">
+                                            <span class="fp-listing__meta-icon" aria-hidden="true">
+                                                <svg viewBox="0 0 24 24" role="img" focusable="false">
+                                                    <path fill="currentColor" d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Zm6.9 9h-2.16a22.46 22.46 0 0 0-1.6-7 8 8 0 0 1 3.76 7ZM12 20a20.41 20.41 0 0 1-2-8h4a20.41 20.41 0 0 1-2 8Zm-2.14-10a20.41 20.41 0 0 1 2.14-8 20.41 20.41 0 0 1 2.14 8Zm-1.1-7a22.46 22.46 0 0 0-1.6 7H5.1A8 8 0 0 1 8.76 3ZM4 13h2.16a22.46 22.46 0 0 0 1.6 7A8 8 0 0 1 4 13Zm11.24 7a22.46 22.46 0 0 0 1.6-7H20a8 8 0 0 1-3.76 7Z" />
+                                                </svg>
+                                            </span>
+                                            <span><?php echo esc_html(implode(', ', $language_labels)); ?></span>
+                                        </span>
+                                    <?php endif; ?>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+                        <footer class="fp-listing__footer fp-listing__footer--gyg">
+                            <?php if (! empty($experience['price_from_display'])) : ?>
+                                <div class="fp-listing__price">
+                                    <span class="fp-listing__price-value"><?php printf(esc_html__('From €%s', 'fp-experiences'), esc_html($experience['price_from_display'])); ?></span>
+                                    <span class="fp-listing__price-note"><?php esc_html_e('per person', 'fp-experiences'); ?></span>
+                                </div>
+                            <?php endif; ?>
+                            <a class="fp-listing__cta" href="<?php echo esc_url($experience['permalink']); ?>"><?php esc_html_e('Details', 'fp-experiences'); ?></a>
+                        </footer>
+                    </article>
+                <?php else : ?>
+                    <article
+                        class="fp-listing__card"
+                        data-experience-id="<?php echo esc_attr((string) $experience['id']); ?>"
+                        data-experience-name="<?php echo esc_attr($experience['title']); ?>"
+                        data-experience-price="<?php echo esc_attr((string) ($experience['price_from'] ?? '')); ?>"
+                    >
+                        <a class="fp-listing__media" href="<?php echo esc_url($experience['permalink']); ?>">
+                            <?php if (! empty($experience['thumbnail'])) : ?>
+                                <img
+                                    src="<?php echo esc_url($experience['thumbnail']); ?>"
+                                    alt=""
+                                    loading="lazy"
+                                    class="fp-listing__image"
+                                />
+                            <?php else : ?>
+                                <span class="fp-listing__image fp-listing__image--placeholder" aria-hidden="true"></span>
+                            <?php endif; ?>
+                            <?php if (! empty($experience['price_from_display'])) : ?>
+                                <span class="fp-listing__price-tag"><?php printf(esc_html__('From €%s', 'fp-experiences'), esc_html($experience['price_from_display'])); ?></span>
+                            <?php endif; ?>
+                        </a>
+                        <div class="fp-listing__body">
+                            <h3 class="fp-listing__name">
+                                <a href="<?php echo esc_url($experience['permalink']); ?>"><?php echo esc_html($experience['title']); ?></a>
+                            </h3>
+                            <?php if (! empty($experience['badges'])) : ?>
+                                <ul class="fp-listing__badges">
+                                    <?php foreach ($experience['badges'] as $badge) : ?>
+                                        <?php if ('language' === ($badge['context'] ?? '')) :
+                                            $language_meta = isset($badge['language']) && is_array($badge['language']) ? $badge['language'] : [];
+                                            $sprite_id = isset($language_meta['sprite']) ? (string) $language_meta['sprite'] : '';
+                                            $aria_label = isset($language_meta['aria_label']) ? (string) $language_meta['aria_label'] : (string) ($badge['label'] ?? '');
+                                            $readable_label = isset($language_meta['label']) ? (string) $language_meta['label'] : (string) ($badge['label'] ?? '');
+                                            ?>
+                                            <li class="fp-listing__badge fp-listing__badge--language">
+                                                <?php if ($sprite_id) : ?>
+                                                    <span class="fp-listing__badge-flag" role="img" aria-label="<?php echo esc_attr($aria_label); ?>">
+                                                        <svg viewBox="0 0 24 16" aria-hidden="true" focusable="false">
+                                                            <use href="<?php echo esc_url($language_sprite . '#' . $sprite_id); ?>"></use>
+                                                        </svg>
+                                                    </span>
+                                                <?php endif; ?>
+                                                <span class="fp-listing__badge-text" aria-hidden="true"><?php echo esc_html((string) ($badge['label'] ?? '')); ?></span>
+                                                <span class="screen-reader-text"><?php echo esc_html($readable_label); ?></span>
+                                            </li>
+                                        <?php else : ?>
+                                            <li class="fp-listing__badge fp-listing__badge--<?php echo esc_attr((string) ($badge['context'] ?? '')); ?>"><?php echo esc_html((string) ($badge['label'] ?? '')); ?></li>
+                                        <?php endif; ?>
+                                    <?php endforeach; ?>
+                                </ul>
+                            <?php endif; ?>
+                            <?php if (! empty($experience['highlights'])) : ?>
+                                <ul class="fp-listing__highlights">
+                                    <?php foreach ($experience['highlights'] as $highlight) : ?>
+                                        <li><?php echo esc_html($highlight); ?></li>
+                                    <?php endforeach; ?>
+                                </ul>
+                            <?php elseif (! empty($experience['short_description'])) : ?>
+                                <p class="fp-listing__excerpt"><?php echo esc_html($experience['short_description']); ?></p>
+                            <?php endif; ?>
+                        </div>
+                        <footer class="fp-listing__footer">
+                            <a class="fp-listing__cta" href="<?php echo esc_url($experience['permalink']); ?>"><?php esc_html_e('Details', 'fp-experiences'); ?></a>
+                            <?php if (! empty($experience['map_url'])) : ?>
+                                <a class="fp-listing__map" href="<?php echo esc_url($experience['map_url']); ?>" target="_blank" rel="noreferrer noopener"><?php esc_html_e('View on map', 'fp-experiences'); ?></a>
+                            <?php endif; ?>
+                        </footer>
+                    </article>
+                <?php endif; ?>
             <?php endforeach; ?>
         </div>
     <?php endif; ?>
