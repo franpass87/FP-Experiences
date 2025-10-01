@@ -619,17 +619,6 @@ final class ExperienceMetaBoxes
     private function render_calendar_tab(array $availability): void
     {
         $panel_id = 'fp-exp-tab-calendar-panel';
-        $times = $availability['times'];
-        if (empty($times)) {
-            $times = [''];
-        }
-
-        $custom_slots = $availability['custom_slots'];
-        if (empty($custom_slots)) {
-            $custom_slots = [['date' => '', 'time' => '']];
-        }
-
-        $days = $availability['days_of_week'];
         $recurrence = $availability['recurrence'] ?? Recurrence::defaults();
         if (! is_array($recurrence)) {
             $recurrence = Recurrence::defaults();
@@ -639,7 +628,7 @@ final class ExperienceMetaBoxes
 
         $time_sets = $recurrence['time_sets'];
         if (empty($time_sets)) {
-            $time_sets = [['label' => '', 'times' => ['']]];
+            $time_sets = [['label' => '', 'times' => [''], 'days' => []]];
         }
         ?>
         <section
@@ -651,68 +640,6 @@ final class ExperienceMetaBoxes
             data-tab-panel="calendar"
             hidden
         >
-            <fieldset class="fp-exp-fieldset">
-                <legend><?php esc_html_e('Frequenza', 'fp-experiences'); ?></legend>
-                <div class="fp-exp-field">
-                    <label class="fp-exp-field__label" for="fp-exp-frequency">
-                        <?php esc_html_e('Ricorrenza slot', 'fp-experiences'); ?>
-                        <?php $this->render_tooltip('fp-exp-frequency-help', esc_html__('Scegli se generare slot giornalieri, settimanali o manuali.', 'fp-experiences')); ?>
-                    </label>
-                    <select id="fp-exp-frequency" name="fp_exp_availability[frequency]" data-frequency-selector aria-describedby="fp-exp-frequency-help">
-                        <option value="daily" <?php selected($availability['frequency'], 'daily'); ?>><?php esc_html_e('Giornaliera', 'fp-experiences'); ?></option>
-                        <option value="weekly" <?php selected($availability['frequency'], 'weekly'); ?>><?php esc_html_e('Settimanale', 'fp-experiences'); ?></option>
-                        <option value="custom" <?php selected($availability['frequency'], 'custom'); ?>><?php esc_html_e('Personalizzata', 'fp-experiences'); ?></option>
-                    </select>
-                    <p class="fp-exp-field__description" id="fp-exp-frequency-help"><?php esc_html_e('La frequenza determina quali blocchi attivare qui sotto.', 'fp-experiences'); ?></p>
-                </div>
-            </fieldset>
-
-            <fieldset class="fp-exp-fieldset" data-frequency-panel="weekly" <?php echo 'weekly' === $availability['frequency'] ? '' : 'hidden'; ?>>
-                <legend><?php esc_html_e('Giorni disponibili', 'fp-experiences'); ?></legend>
-                <div class="fp-exp-checkbox-grid">
-                    <?php foreach ($this->get_week_days() as $day_key => $day_label) : ?>
-                        <label>
-                            <input type="checkbox" name="fp_exp_availability[days_of_week][]" value="<?php echo esc_attr($day_key); ?>" <?php checked(in_array($day_key, $days, true)); ?> />
-                            <span><?php echo esc_html($day_label); ?></span>
-                        </label>
-                    <?php endforeach; ?>
-                </div>
-            </fieldset>
-
-            <fieldset class="fp-exp-fieldset" data-frequency-panel="daily" data-frequency-panel-secondary="weekly" <?php echo in_array($availability['frequency'], ['daily', 'weekly'], true) ? '' : 'hidden'; ?>>
-                <legend><?php esc_html_e('Orari', 'fp-experiences'); ?></legend>
-                <div class="fp-exp-repeater" data-repeater="times" data-repeater-next-index="<?php echo esc_attr((string) count($availability['times'])); ?>">
-                    <div class="fp-exp-repeater__items">
-                        <?php foreach ($times as $index => $time) : ?>
-                            <?php $this->render_time_row((string) $index, $time); ?>
-                        <?php endforeach; ?>
-                    </div>
-                    <template data-repeater-template>
-                        <?php $this->render_time_row('__INDEX__', '', true); ?>
-                    </template>
-                    <p class="fp-exp-repeater__actions">
-                        <button type="button" class="button button-secondary" data-repeater-add><?php esc_html_e('Aggiungi orario', 'fp-experiences'); ?></button>
-                    </p>
-                </div>
-            </fieldset>
-
-            <fieldset class="fp-exp-fieldset" data-frequency-panel="custom" <?php echo 'custom' === $availability['frequency'] ? '' : 'hidden'; ?>>
-                <legend><?php esc_html_e('Slot personalizzati', 'fp-experiences'); ?></legend>
-                <div class="fp-exp-repeater" data-repeater="custom_slots" data-repeater-next-index="<?php echo esc_attr((string) count($availability['custom_slots'])); ?>">
-                    <div class="fp-exp-repeater__items">
-                        <?php foreach ($custom_slots as $index => $slot) : ?>
-                            <?php $this->render_custom_slot_row((string) $index, $slot); ?>
-                        <?php endforeach; ?>
-                    </div>
-                    <template data-repeater-template>
-                        <?php $this->render_custom_slot_row('__INDEX__', ['date' => '', 'time' => ''], true); ?>
-                    </template>
-                    <p class="fp-exp-repeater__actions">
-                        <button type="button" class="button button-secondary" data-repeater-add><?php esc_html_e('Aggiungi slot', 'fp-experiences'); ?></button>
-                    </p>
-                </div>
-            </fieldset>
-
             <fieldset class="fp-exp-fieldset">
                 <legend><?php esc_html_e('Ricorrenza automatica', 'fp-experiences'); ?></legend>
                 <div class="fp-exp-field fp-exp-field--switch">
@@ -767,11 +694,11 @@ final class ExperienceMetaBoxes
                     <div class="fp-exp-repeater fp-exp-recurrence__sets" data-repeater="recurrence_time_sets" data-repeater-next-index="<?php echo esc_attr((string) count($time_sets)); ?>">
                         <div class="fp-exp-repeater__items" data-recurrence-time-set-list>
                             <?php foreach ($time_sets as $index => $set) : ?>
-                                <?php $this->render_time_set_row((string) $index, $set); ?>
+                                <?php $this->render_time_set_row((string) $index, $set, false, (string) ($recurrence['frequency'] ?? 'weekly')); ?>
                             <?php endforeach; ?>
                         </div>
                         <template data-repeater-template>
-                            <?php $this->render_time_set_row('__INDEX__', ['label' => '', 'times' => ['']], true); ?>
+                            <?php $this->render_time_set_row('__INDEX__', ['label' => '', 'times' => [''], 'days' => []], true, (string) ($recurrence['frequency'] ?? 'weekly')); ?>
                         </template>
                         <p class="fp-exp-repeater__actions">
                             <button type="button" class="button button-secondary" data-repeater-add><?php esc_html_e('Aggiungi time set', 'fp-experiences'); ?></button>
@@ -1243,7 +1170,7 @@ final class ExperienceMetaBoxes
         <?php
     }
 
-    private function render_time_set_row(string $index, array $set, bool $is_template = false): void
+    private function render_time_set_row(string $index, array $set, bool $is_template = false, string $frequency = 'weekly'): void
     {
         $label_name = $is_template
             ? 'fp_exp_availability[recurrence][time_sets][__INDEX__][label]'
@@ -1251,13 +1178,23 @@ final class ExperienceMetaBoxes
         $times_base = $is_template
             ? 'fp_exp_availability[recurrence][time_sets][__INDEX__][times]'
             : 'fp_exp_availability[recurrence][time_sets][' . $index . '][times]';
+        $days_base = $is_template
+            ? 'fp_exp_availability[recurrence][time_sets][__INDEX__][days]'
+            : 'fp_exp_availability[recurrence][time_sets][' . $index . '][days]';
 
         $label_value = isset($set['label']) ? (string) $set['label'] : '';
         $times = [];
+        $set_days = [];
 
         if (isset($set['times']) && is_array($set['times'])) {
             foreach ($set['times'] as $time) {
                 $times[] = (string) $time;
+            }
+        }
+
+        if (isset($set['days']) && is_array($set['days'])) {
+            foreach ($set['days'] as $day) {
+                $set_days[] = (string) $day;
             }
         }
 
@@ -1295,6 +1232,18 @@ final class ExperienceMetaBoxes
             <p class="fp-exp-recurrence-set__actions">
                 <button type="button" class="button button-secondary" data-time-set-add><?php esc_html_e('Aggiungi orario', 'fp-experiences'); ?></button>
             </p>
+            <div class="fp-exp-field" data-time-set-days <?php echo 'weekly' === $frequency ? '' : 'hidden'; ?>>
+                <span class="fp-exp-field__label"><?php esc_html_e('Giorni attivi per questo set', 'fp-experiences'); ?></span>
+                <div class="fp-exp-checkbox-grid">
+                    <?php foreach ($this->get_week_days() as $day_key => $day_label) : ?>
+                        <label>
+                            <input type="checkbox" <?php echo $this->field_name_attribute($days_base . '[]', $is_template); ?> value="<?php echo esc_attr($day_key); ?>" <?php checked(in_array($this->map_weekday_for_ui($day_key), $set_days, true)); ?> />
+                            <span><?php echo esc_html($day_label); ?></span>
+                        </label>
+                    <?php endforeach; ?>
+                </div>
+                <p class="fp-exp-field__description"><?php esc_html_e('Lascia vuoto per usare i giorni generali della ricorrenza settimanale.', 'fp-experiences'); ?></p>
+            </div>
         </div>
         <?php
     }
@@ -1846,6 +1795,7 @@ final class ExperienceMetaBoxes
 
                 $label = isset($set['label']) ? sanitize_text_field((string) $set['label']) : '';
                 $times = [];
+                $set_days = [];
 
                 if (isset($set['times']) && is_array($set['times'])) {
                     foreach ($set['times'] as $time) {
@@ -1857,6 +1807,16 @@ final class ExperienceMetaBoxes
                     }
                 }
 
+                if (isset($set['days']) && is_array($set['days'])) {
+                    foreach ($set['days'] as $day) {
+                        $day_key = sanitize_key((string) $day);
+                        $mapped = $this->map_weekday_for_ui($day_key);
+                        if ('' !== $mapped && ! in_array($mapped, $set_days, true)) {
+                            $set_days[] = $mapped;
+                        }
+                    }
+                }
+
                 if (empty($times)) {
                     continue;
                 }
@@ -1864,6 +1824,7 @@ final class ExperienceMetaBoxes
                 $time_sets[] = [
                     'label' => $label,
                     'times' => array_values(array_unique($times)),
+                    'days' => $set_days,
                 ];
             }
         }

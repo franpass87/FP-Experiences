@@ -1,9 +1,17 @@
 (function () {
     'use strict';
 
-    const { __: i18n__, _n: i18n_n } = (window.wp && window.wp.i18n) || {
+    const { __: i18n__, _n: i18n_n, sprintf: i18n_sprintf } = (window.wp && window.wp.i18n) || {
         __: (text) => text,
         _n: (single, plural, number) => (number === 1 ? single : plural),
+        sprintf: (format, ...args) => {
+            let index = 0;
+            return String(format || '').replace(/%[sd]/g, () => {
+                const value = args[index];
+                index += 1;
+                return value == null ? '' : String(value);
+            });
+        },
     };
 
     const pluginConfig = window.fpExpConfig || {};
@@ -482,12 +490,20 @@
                 }
 
                 if (!target) {
+                    const safeKey = typeof CSS !== 'undefined' && typeof CSS.escape === 'function'
+                        ? CSS.escape(targetKey)
+                        : targetKey;
+                    target = page.querySelector(`#fp-exp-section-${safeKey}`);
+                }
+
+                if (!target) {
                     return;
                 }
 
                 event.preventDefault();
 
-                const offset = target.getBoundingClientRect().top + window.scrollY - 80;
+                const rect = target.getBoundingClientRect();
+                const offset = rect.top + window.scrollY - 80;
                 window.scrollTo({ top: Math.max(0, offset), behavior: 'smooth' });
             });
         });
@@ -1614,8 +1630,18 @@
             }
         });
 
-        container.querySelectorAll('.fp-exp-calendar__day').forEach((button) => {
+        const dayButtons = Array.from(container.querySelectorAll('.fp-exp-calendar__day'));
+
+        dayButtons.forEach((button) => {
+            if (!button.disabled && !button.hasAttribute('aria-pressed')) {
+                button.setAttribute('aria-pressed', 'false');
+            }
+
             button.addEventListener('click', () => {
+                if (button.disabled || button.getAttribute('data-available') !== '1') {
+                    return;
+                }
+
                 const date = button.getAttribute('data-date');
                 if (!date) {
                     return;
@@ -1623,6 +1649,15 @@
 
                 state.selectedDate = date;
                 state.selectedSlot = null;
+
+                dayButtons.forEach((day) => {
+                    const isActive = day === button;
+                    day.classList.toggle('is-selected', isActive);
+                    if (!day.disabled) {
+                        day.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+                    }
+                });
+
                 renderSlots(slotsContainer, slotsByDate[date] || [], state);
                 refreshSummary();
             });
@@ -1864,7 +1899,20 @@
             button.type = 'button';
             button.className = 'fp-exp-slot-option';
             button.setAttribute('data-slot-id', slot.id);
-            button.textContent = `${slot.time} · ${slot.remaining} ${slot.remaining === 1 ? 'spot' : 'spots'}`;
+            const parsedRemaining = parseInt(slot.remaining, 10);
+            const remaining = Number.isNaN(parsedRemaining) ? 0 : parsedRemaining;
+            const template = i18n_n('%d spot', '%d spots', remaining);
+            let countLabel = template;
+            if (typeof i18n_sprintf === 'function') {
+                try {
+                    countLabel = i18n_sprintf(template, remaining);
+                } catch (error) {
+                    countLabel = template.replace('%d', String(remaining));
+                }
+            } else {
+                countLabel = template.replace('%d', String(remaining));
+            }
+            button.textContent = `${slot.time} · ${countLabel}`;
             if (state.selectedSlot === String(slot.id)) {
                 button.classList.add('is-active');
             }

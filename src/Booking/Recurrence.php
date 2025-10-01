@@ -123,12 +123,10 @@ final class Recurrence
         $start_date = $definition['start_date'] ?: 'now';
         $end_date = $definition['end_date'] ?: $start_date;
 
-        $rule = [
+        $base_rule = [
             'type' => $definition['frequency'],
             'start_date' => $start_date,
             'end_date' => $end_date,
-            'times' => $times,
-            'days' => $definition['frequency'] === 'weekly' ? $definition['days'] : [],
             'duration' => isset($definition['duration']) ? absint((string) $definition['duration']) : 60,
             'capacity_total' => isset($availability['slot_capacity']) ? absint((string) $availability['slot_capacity']) : 0,
             'capacity_per_type' => $availability['capacity_per_type'] ?? [],
@@ -138,11 +136,65 @@ final class Recurrence
             'buffer_after' => isset($availability['buffer_after_minutes']) ? absint((string) $availability['buffer_after_minutes']) : 0,
         ];
 
-        if ($rule['duration'] <= 0) {
-            $rule['duration'] = 60;
+        if ($base_rule['duration'] <= 0) {
+            $base_rule['duration'] = 60;
         }
 
-        return [$rule];
+        $rules = [];
+
+        foreach ($definition['time_sets'] as $set) {
+            if (! is_array($set) || empty($set['times']) || ! is_array($set['times'])) {
+                continue;
+            }
+
+            $times = [];
+            foreach ($set['times'] as $time) {
+                $time_string = trim((string) $time);
+                if ('' === $time_string) {
+                    continue;
+                }
+                $times[] = $time_string;
+            }
+
+            if (empty($times)) {
+                continue;
+            }
+
+            $times = array_values(array_unique($times));
+            sort($times);
+
+            $rule = $base_rule;
+            $rule['times'] = $times;
+
+            if ('weekly' === $definition['frequency']) {
+                $set_days = [];
+                if (isset($set['days']) && is_array($set['days'])) {
+                    foreach ($set['days'] as $day) {
+                        $mapped = self::map_weekday_key((string) $day);
+                        if ($mapped && ! in_array($mapped, $set_days, true)) {
+                            $set_days[] = $mapped;
+                        }
+                    }
+                }
+
+                if (empty($set_days)) {
+                    $set_days = $definition['days'];
+                }
+
+                if (empty($set_days)) {
+                    continue;
+                }
+
+                sort($set_days);
+                $rule['days'] = $set_days;
+            } else {
+                $rule['days'] = [];
+            }
+
+            $rules[] = $rule;
+        }
+
+        return $rules;
     }
 
     /**
@@ -178,7 +230,7 @@ final class Recurrence
     /**
      * @param array<int, mixed> $time_sets
      *
-     * @return array<int, array{label:string,times:array<int,string>}>
+     * @return array<int, array{label:string,times:array<int,string>,days:array<int,string>}>
      */
     private static function sanitize_time_sets($time_sets): array
     {
@@ -194,6 +246,7 @@ final class Recurrence
 
             $label = isset($set['label']) ? sanitize_text_field((string) $set['label']) : '';
             $times = [];
+            $days = [];
 
             if (isset($set['times']) && is_array($set['times'])) {
                 foreach ($set['times'] as $time) {
@@ -202,6 +255,16 @@ final class Recurrence
                         continue;
                     }
                     $times[] = $time_string;
+                }
+            }
+
+            if (isset($set['days']) && is_array($set['days'])) {
+                foreach ($set['days'] as $day) {
+                    $day_key = sanitize_key((string) $day);
+                    $mapped = self::map_weekday_key($day_key);
+                    if ($mapped && ! in_array($mapped, $days, true)) {
+                        $days[] = $mapped;
+                    }
                 }
             }
 
@@ -215,6 +278,7 @@ final class Recurrence
             $sanitized[] = [
                 'label' => $label,
                 'times' => $times,
+                'days' => $days,
             ];
         }
 

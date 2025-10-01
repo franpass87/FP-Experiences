@@ -116,33 +116,12 @@ $rtb_submit_label = 'pay_later' === $rtb_mode
             <?php endif; ?>
         </div>
     </div>
-    <?php if ($behavior['sticky']) : ?>
-        <button
-            type="button"
-            class="fp-exp-widget__open"
-            data-fp-widget-open="1"
-            aria-expanded="false"
-            aria-controls="<?php echo esc_attr($dialog_id); ?>"
-        >
-            <span class="fp-exp-widget__open-label"><?php echo esc_html__('Open booking panel', 'fp-experiences'); ?></span>
-        </button>
-    <?php endif; ?>
     <div
         class="fp-exp-widget__body"
         data-sticky="<?php echo esc_attr($behavior['sticky'] ? '1' : '0'); ?>"
         id="<?php echo esc_attr($dialog_id); ?>"
-        <?php if ($behavior['sticky']) : ?>role="dialog" aria-modal="true"<?php else : ?>role="group"<?php endif; ?>
+        <?php if ($behavior['sticky']) : ?>role="region"<?php else : ?>role="group"<?php endif; ?>
     >
-        <?php if ($behavior['sticky']) : ?>
-            <button
-                type="button"
-                class="fp-exp-widget__close"
-                data-fp-widget-close="1"
-                aria-label="<?php echo esc_attr__('Close booking panel', 'fp-experiences'); ?>"
-            >
-                <span aria-hidden="true">&times;</span>
-            </button>
-        <?php endif; ?>
         <ol class="fp-exp-widget__steps">
             <li class="fp-exp-step fp-exp-step--dates" data-fp-step="dates">
                 <header>
@@ -155,10 +134,19 @@ $rtb_submit_label = 'pay_later' === $rtb_mode
                             <section class="fp-exp-calendar__month" data-month="<?php echo esc_attr($month_key); ?>">
                                 <header class="fp-exp-calendar__month-header"><?php echo esc_html($month_data['month_label']); ?></header>
                                 <div class="fp-exp-calendar__grid">
-                                    <?php foreach ($month_data['days'] as $day => $day_slots) : ?>
-                                        <button type="button" class="fp-exp-calendar__day" data-date="<?php echo esc_attr($day); ?>" data-available="<?php echo esc_attr(count($day_slots) > 0 ? '1' : '0'); ?>">
+                                    <?php foreach ($month_data['days'] as $day => $day_slots) :
+                                        $slot_count = count($day_slots);
+                                        $is_available = $slot_count > 0;
+                                        ?>
+                                        <button
+                                            type="button"
+                                            class="fp-exp-calendar__day"
+                                            data-date="<?php echo esc_attr($day); ?>"
+                                            data-available="<?php echo esc_attr($is_available ? '1' : '0'); ?>"
+                                            <?php if (! $is_available) : ?>disabled aria-disabled="true"<?php else : ?>aria-pressed="false"<?php endif; ?>
+                                        >
                                             <span class="fp-exp-calendar__day-label"><?php echo esc_html($day); ?></span>
-                                            <span class="fp-exp-calendar__day-count"><?php echo esc_html(sprintf(esc_html__('%d slots', 'fp-experiences'), count($day_slots))); ?></span>
+                                            <span class="fp-exp-calendar__day-count"><?php echo esc_html(sprintf(esc_html__('%d slots', 'fp-experiences'), $slot_count)); ?></span>
                                         </button>
                                     <?php endforeach; ?>
                                 </div>
