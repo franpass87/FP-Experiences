@@ -18,6 +18,7 @@ if (! defined('ABSPATH')) {
 }
 
 $layout = isset($layout) && is_array($layout) ? $layout : [];
+$language_sprite = \FP_Exp\Utils\LanguageHelper::get_sprite_url();
 $layout_classes = [];
 $filter_chips = isset($filter_chips) && is_array($filter_chips) ? $filter_chips : [];
 $has_active_filters = ! empty($has_active_filters);
@@ -257,7 +258,26 @@ $results_label = sprintf(
                         <?php if (! empty($experience['badges'])) : ?>
                             <ul class="fp-listing__badges">
                                 <?php foreach ($experience['badges'] as $badge) : ?>
-                                    <li class="fp-listing__badge fp-listing__badge--<?php echo esc_attr($badge['context']); ?>"><?php echo esc_html($badge['label']); ?></li>
+                                    <?php if ('language' === ($badge['context'] ?? '')) :
+                                        $language_meta = isset($badge['language']) && is_array($badge['language']) ? $badge['language'] : [];
+                                        $sprite_id = isset($language_meta['sprite']) ? (string) $language_meta['sprite'] : '';
+                                        $aria_label = isset($language_meta['aria_label']) ? (string) $language_meta['aria_label'] : (string) ($badge['label'] ?? '');
+                                        $readable_label = isset($language_meta['label']) ? (string) $language_meta['label'] : (string) ($badge['label'] ?? '');
+                                        ?>
+                                        <li class="fp-listing__badge fp-listing__badge--language">
+                                            <?php if ($sprite_id) : ?>
+                                                <span class="fp-listing__badge-flag" role="img" aria-label="<?php echo esc_attr($aria_label); ?>">
+                                                    <svg viewBox="0 0 24 16" aria-hidden="true" focusable="false">
+                                                        <use href="<?php echo esc_url($language_sprite . '#' . $sprite_id); ?>"></use>
+                                                    </svg>
+                                                </span>
+                                            <?php endif; ?>
+                                            <span class="fp-listing__badge-text" aria-hidden="true"><?php echo esc_html((string) ($badge['label'] ?? '')); ?></span>
+                                            <span class="screen-reader-text"><?php echo esc_html($readable_label); ?></span>
+                                        </li>
+                                    <?php else : ?>
+                                        <li class="fp-listing__badge fp-listing__badge--<?php echo esc_attr((string) ($badge['context'] ?? '')); ?>"><?php echo esc_html((string) ($badge['label'] ?? '')); ?></li>
+                                    <?php endif; ?>
                                 <?php endforeach; ?>
                             </ul>
                         <?php endif; ?>

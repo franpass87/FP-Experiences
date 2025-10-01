@@ -11,6 +11,7 @@ use Exception;
 use FP_Exp\Booking\Slots;
 use FP_Exp\MeetingPoints\Repository;
 use FP_Exp\Utils\Helpers;
+use FP_Exp\Utils\LanguageHelper;
 use FP_Exp\Utils\Theme;
 use WP_Error;
 use WP_Post;
@@ -39,6 +40,7 @@ use function sanitize_key;
 use function sanitize_text_field;
 use function wp_create_nonce;
 use function wp_json_encode;
+use function wp_get_attachment_image_src;
 use function wp_timezone;
 use function time;
 use function trim;
@@ -104,6 +106,7 @@ final class WidgetShortcode extends BaseShortcode
         $meeting_point = Repository::get_primary_summary_for_experience($experience_id);
         $duration = absint((string) get_post_meta($experience_id, '_fp_duration_minutes', true));
         $languages = Helpers::get_meta_array($experience_id, '_fp_languages');
+        $language_badges = LanguageHelper::build_language_badges($languages);
 
         $slots = $this->get_upcoming_slots($experience_id, $tickets, 60);
         $calendar = $this->group_slots_by_day($slots);
@@ -190,6 +193,7 @@ final class WidgetShortcode extends BaseShortcode
                 'meeting_point' => $meeting_point,
                 'duration' => $duration,
                 'languages' => $languages,
+                'language_badges' => $language_badges,
             ],
             'tickets' => $tickets,
             'addons' => $addons,
@@ -322,11 +326,20 @@ final class WidgetShortcode extends BaseShortcode
                 continue;
             }
 
+            $image_id = isset($addon['image_id']) ? absint($addon['image_id']) : 0;
+            $image = $image_id > 0 ? wp_get_attachment_image_src($image_id, 'medium') : false;
+
             $addons[] = [
                 'slug' => $slug,
                 'label' => sanitize_text_field((string) ($addon['label'] ?? '')),
                 'description' => sanitize_text_field((string) ($addon['description'] ?? '')),
                 'price' => isset($addon['price']) ? (float) $addon['price'] : 0.0,
+                'image_id' => $image_id,
+                'image' => [
+                    'url' => $image ? (string) $image[0] : '',
+                    'width' => $image ? absint((string) $image[1]) : 0,
+                    'height' => $image ? absint((string) $image[2]) : 0,
+                ],
             ];
         }
 

@@ -8,8 +8,11 @@ _Updated: unify plugin links under a single top-level menu._
   - KPI prenotazioni, riepilogo ordini, azioni rapide.
 - **Esperienze / Nuova esperienza** (`edit_fp_experiences`)
   - CPT `fp_experience` gestito interamente sotto il nuovo menu.
+  - Alla pubblicazione viene creata automaticamente una pagina WordPress con shortcode `[fp_exp_page id="{ID}"]` collegata nel metabox Dettagli.
 - **Meeting point** (`fp_exp_manage`)
   - Visibile solo quando l'opzione “Enable Meeting Points” è attiva.
+- **Gift vouchers** (`fp_exp_manage`)
+  - Elenco CPT `fp_exp_gift_voucher` con colonne stato/validità, azioni rapide per annullare o estendere di 30 giorni, e storico log.
 - **Calendario** (`fp_exp_operate`)
   - Vista calendario/manual booking.
 - **Richieste** (`fp_exp_operate`)
@@ -20,6 +23,8 @@ _Updated: unify plugin links under a single top-level menu._
   - Reindirizza alla lista ordini Woo filtrata sugli item `fp_experience_item`.
 - **Impostazioni / Tools / Logs** (`fp_exp_manage`)
   - Tabs aggiornati: Generale, Branding, Booking Rules, Brevo, Calendar, Tracking, RTB, Vetrina, Tools, Logs.
+  - Il tool di import CSV dei meeting point è nascosto finché non si abilita l'opzione avanzata “Enable meeting point import” nelle impostazioni generali (consigliato solo per operatori esperti; gli strumenti CLI/REST restano disponibili per i tecnici).
+  - Nuovo comando “Risincronizza pagine esperienza” che scansione esperienze pubblicate/bozza e genera le pagine mancanti con `[fp_exp_page]`.
 - **Guida & Shortcode** (`fp_exp_guide`)
   - Documentazione interna e scorciatoie.
 - **Crea pagina esperienza** (`fp_exp_manage`)

@@ -19,6 +19,8 @@ if (! defined('ABSPATH')) {
     exit;
 }
 
+$language_sprite = \FP_Exp\Utils\LanguageHelper::get_sprite_url();
+
 
 $dialog_id = $scope_class . '-dialog';
 $marketing_id = $scope_class . '-consent-marketing';
@@ -74,10 +76,36 @@ $rtb_submit_label = 'pay_later' === $rtb_mode
                     <span><?php echo esc_html(sprintf(esc_html__('%d minutes', 'fp-experiences'), (int) $experience['duration'])); ?></span>
                 </span>
             <?php endif; ?>
-            <?php if (! empty($experience['languages'])) : ?>
+            <?php if (! empty($experience['language_badges'])) : ?>
                 <span class="fp-exp-widget__meta-item">
                     <strong><?php echo esc_html__('Languages', 'fp-experiences'); ?></strong>
-                    <span><?php echo esc_html(implode(', ', $experience['languages'])); ?></span>
+                    <span class="fp-exp-widget__languages">
+                        <?php foreach ($experience['language_badges'] as $language) :
+                            if (! is_array($language)) {
+                                continue;
+                            }
+
+                            $sprite_id = isset($language['sprite']) ? (string) $language['sprite'] : '';
+                            $code = isset($language['code']) ? (string) $language['code'] : '';
+                            $aria_label = isset($language['aria_label']) ? (string) $language['aria_label'] : $code;
+                            $readable_label = isset($language['label']) ? (string) $language['label'] : $code;
+                            if ('' === $code) {
+                                continue;
+                            }
+                            ?>
+                            <span class="fp-exp-widget__language" role="text">
+                                <?php if ($sprite_id) : ?>
+                                    <span class="fp-exp-widget__language-flag" role="img" aria-label="<?php echo esc_attr($aria_label); ?>">
+                                        <svg viewBox="0 0 24 16" aria-hidden="true" focusable="false">
+                                            <use href="<?php echo esc_url($language_sprite . '#' . $sprite_id); ?>"></use>
+                                        </svg>
+                                    </span>
+                                <?php endif; ?>
+                                <span class="fp-exp-widget__language-code" aria-hidden="true"><?php echo esc_html($code); ?></span>
+                                <span class="screen-reader-text"><?php echo esc_html($readable_label); ?></span>
+                            </span>
+                        <?php endforeach; ?>
+                    </span>
                 </span>
             <?php endif; ?>
             <?php if (! empty($experience['meeting_point'])) : ?>
@@ -190,9 +218,38 @@ $rtb_submit_label = 'pay_later' === $rtb_mode
                     <div class="fp-exp-step__content">
                         <ul class="fp-exp-addons">
                             <?php foreach ($addons as $addon) : ?>
+                                <?php
+                                $addon_image = $addon['image'] ?? [];
+                                $image_url = isset($addon_image['url']) ? (string) $addon_image['url'] : '';
+                                $image_width = isset($addon_image['width']) ? (int) $addon_image['width'] : 0;
+                                $image_height = isset($addon_image['height']) ? (int) $addon_image['height'] : 0;
+                                ?>
                                 <li class="fp-exp-addon" data-addon="<?php echo esc_attr($addon['slug']); ?>">
                                     <label>
                                         <input type="checkbox" value="1">
+                                        <span class="fp-exp-addon__media">
+                                            <?php if ($image_url) : ?>
+                                                <img
+                                                    src="<?php echo esc_url($image_url); ?>"
+                                                    alt="<?php echo esc_attr($addon['label']); ?>"
+                                                    loading="lazy"
+                                                    <?php if ($image_width > 0) : ?> width="<?php echo esc_attr((string) $image_width); ?>"<?php endif; ?>
+                                                    <?php if ($image_height > 0) : ?> height="<?php echo esc_attr((string) $image_height); ?>"<?php endif; ?>
+                                                />
+                                            <?php else : ?>
+                                                <span class="fp-exp-addon__media-placeholder" aria-hidden="true">
+                                                    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                                                        <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5">
+                                                            <rect x="3.75" y="8.25" width="16.5" height="12" rx="2" />
+                                                            <path d="M3.75 11.25h16.5" />
+                                                            <path d="M12 3.75c-1.657 0-3 1.231-3 2.75 0 1.519 1.343 2.75 3 2.75s3-1.231 3-2.75c0-1.519-1.343-2.75-3-2.75Zm0 0C12 3 11.25 2.25 10.5 2.25S9 3 9 3.75" />
+                                                            <path d="M12 3.75c0-.75.75-1.5 1.5-1.5s1.5.75 1.5 1.5" />
+                                                        </g>
+                                                    </svg>
+                                                </span>
+                                                <span class="screen-reader-text"><?php esc_html_e('Nessuna immagine disponibile per questo add-on', 'fp-experiences'); ?></span>
+                                            <?php endif; ?>
+                                        </span>
                                         <span class="fp-exp-addon__details">
                                             <span class="fp-exp-addon__label"><?php echo esc_html($addon['label']); ?></span>
                                             <?php if (! empty($addon['description'])) : ?>

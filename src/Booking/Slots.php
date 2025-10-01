@@ -189,6 +189,74 @@ final class Slots
     }
 
     /**
+     * Preview recurring slots without persisting them.
+     *
+     * @param array<int, array<mixed>> $rules
+     * @param array<int, array<mixed>> $exceptions
+     * @param array<string, mixed>     $options
+     *
+     * @return array<int, array<string, string|int>>
+     */
+    public static function preview_recurring_slots(int $experience_id, array $rules, array $exceptions = [], array $options = [], int $limit = 10): array
+    {
+        $defaults = [
+            'default_duration' => 60,
+            'default_capacity' => 0,
+            'buffer_before' => 0,
+            'buffer_after' => 0,
+        ];
+
+        $options = wp_parse_args($options, $defaults);
+        $timezone = wp_timezone();
+        $normalized_exceptions = self::normalize_exceptions($exceptions, $timezone);
+
+        $preview = [];
+        $limit = max(1, $limit);
+        $now = new DateTimeImmutable('now', $timezone);
+
+        foreach ($rules as $rule) {
+            $normalized_rule = self::normalize_rule($rule, $options, $timezone);
+
+            if (null === $normalized_rule) {
+                continue;
+            }
+
+            $occurrences = self::expand_rule($normalized_rule, $timezone);
+
+            foreach ($occurrences as $occurrence) {
+                if (self::is_exception($occurrence['start'], $occurrence['end'], $normalized_exceptions)) {
+                    continue;
+                }
+
+                if ($occurrence['end'] < $now) {
+                    continue;
+                }
+
+                $preview[] = [
+                    'experience_id' => $experience_id,
+                    'start_local' => $occurrence['start']->format('Y-m-d H:i'),
+                    'end_local' => $occurrence['end']->format('Y-m-d H:i'),
+                    'start_utc' => $occurrence['start']->setTimezone(new DateTimeZone('UTC'))->format('Y-m-d H:i:s'),
+                    'end_utc' => $occurrence['end']->setTimezone(new DateTimeZone('UTC'))->format('Y-m-d H:i:s'),
+                ];
+
+                if (count($preview) >= $limit) {
+                    break 2;
+                }
+            }
+        }
+
+        usort(
+            $preview,
+            static function (array $a, array $b): int {
+                return strcmp((string) $a['start_utc'], (string) $b['start_utc']);
+            }
+        );
+
+        return array_slice($preview, 0, $limit);
+    }
+
+    /**
      * Determine if a slot violates configured buffers.
      */
     public static function has_buffer_conflict(
@@ -744,8 +812,13 @@ final class Slots
             foreach ($rule['days'] as $day) {
                 $day_string = strtolower((string) $day);
 
-                if ('' !== $day_string) {
-                    $days[] = $day_string;
+                if ('' === $day_string) {
+                    continue;
+                }
+
+                $normalized_day = self::normalize_weekday_key($day_string);
+                if ($normalized_day) {
+                    $days[] = $normalized_day;
                 }
             }
         }
@@ -993,6 +1066,27 @@ final class Slots
         $result = $wpdb->insert(self::table_name(), $prepared, self::get_formats($prepared));
 
         return false !== $result;
+    }
+
+    private static function normalize_weekday_key(string $day): ?string
+    {
+        $map = [
+            'mon' => 'monday',
+            'tue' => 'tuesday',
+            'wed' => 'wednesday',
+            'thu' => 'thursday',
+            'fri' => 'friday',
+            'sat' => 'saturday',
+            'sun' => 'sunday',
+        ];
+
+        if (isset($map[$day])) {
+            return $map[$day];
+        }
+
+        $day = strtolower($day);
+
+        return in_array($day, $map, true) ? $day : null;
     }
 
     /**

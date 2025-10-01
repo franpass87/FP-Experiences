@@ -1,0 +1,263 @@
+<?php
+
+declare(strict_types=1);
+
+namespace FP_Exp\Booking;
+
+use DateTimeImmutable;
+use Exception;
+
+use function absint;
+use function array_unique;
+use function in_array;
+use function is_array;
+use function sanitize_key;
+use function sanitize_text_field;
+use function sort;
+use function trim;
+
+final class Recurrence
+{
+    /**
+     * Default recurrence configuration.
+     *
+     * @return array<string, mixed>
+     */
+    public static function defaults(): array
+    {
+        return [
+            'enabled' => false,
+            'frequency' => 'weekly',
+            'start_date' => '',
+            'end_date' => '',
+            'days' => [],
+            'duration' => 60,
+            'time_sets' => [],
+        ];
+    }
+
+    /**
+     * Sanitize recurrence definition coming from the admin UI.
+     *
+     * @param array<string, mixed> $raw
+     *
+     * @return array<string, mixed>
+     */
+    public static function sanitize(array $raw): array
+    {
+        $definition = self::defaults();
+
+        $definition['enabled'] = ! empty($raw['enabled']);
+
+        $frequency = isset($raw['frequency']) ? sanitize_key((string) $raw['frequency']) : 'weekly';
+        if (! in_array($frequency, ['daily', 'weekly', 'specific'], true)) {
+            $frequency = 'weekly';
+        }
+        $definition['frequency'] = $frequency;
+
+        $definition['start_date'] = isset($raw['start_date']) ? sanitize_text_field((string) $raw['start_date']) : '';
+        $definition['end_date'] = isset($raw['end_date']) ? sanitize_text_field((string) $raw['end_date']) : '';
+
+        $definition['duration'] = isset($raw['duration']) ? absint((string) $raw['duration']) : 0;
+        if ($definition['duration'] <= 0) {
+            $definition['duration'] = 60;
+        }
+
+        $definition['days'] = [];
+        if ('weekly' === $definition['frequency'] && isset($raw['days']) && is_array($raw['days'])) {
+            foreach ($raw['days'] as $day) {
+                $day_key = sanitize_key((string) $day);
+                $mapped = self::map_weekday_key($day_key);
+                if ($mapped && ! in_array($mapped, $definition['days'], true)) {
+                    $definition['days'][] = $mapped;
+                }
+            }
+        }
+
+        $definition['time_sets'] = self::sanitize_time_sets($raw['time_sets'] ?? []);
+
+        if (! self::validate_dates($definition['start_date'], $definition['end_date'])) {
+            $definition['start_date'] = '';
+            $definition['end_date'] = '';
+        }
+
+        return $definition;
+    }
+
+    /**
+     * Determine if a recurrence definition is actionable.
+     *
+     * @param array<string, mixed> $definition
+     */
+    public static function is_actionable(array $definition): bool
+    {
+        if (empty($definition['enabled'])) {
+            return false;
+        }
+
+        $times = self::flatten_time_sets($definition['time_sets'] ?? []);
+
+        return ! empty($times);
+    }
+
+    /**
+     * Convert a recurrence definition into slot generation rules.
+     *
+     * @param array<string, mixed> $definition
+     * @param array<string, mixed> $availability
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public static function build_rules(array $definition, array $availability): array
+    {
+        if (! self::is_actionable($definition)) {
+            return [];
+        }
+
+        $times = self::flatten_time_sets($definition['time_sets']);
+
+        if (empty($times)) {
+            return [];
+        }
+
+        $start_date = $definition['start_date'] ?: 'now';
+        $end_date = $definition['end_date'] ?: $start_date;
+
+        $rule = [
+            'type' => $definition['frequency'],
+            'start_date' => $start_date,
+            'end_date' => $end_date,
+            'times' => $times,
+            'days' => $definition['frequency'] === 'weekly' ? $definition['days'] : [],
+            'duration' => isset($definition['duration']) ? absint((string) $definition['duration']) : 60,
+            'capacity_total' => isset($availability['slot_capacity']) ? absint((string) $availability['slot_capacity']) : 0,
+            'capacity_per_type' => $availability['capacity_per_type'] ?? [],
+            'resource_lock' => $availability['resource_lock'] ?? [],
+            'price_rules' => $availability['price_rules'] ?? [],
+            'buffer_before' => isset($availability['buffer_before_minutes']) ? absint((string) $availability['buffer_before_minutes']) : 0,
+            'buffer_after' => isset($availability['buffer_after_minutes']) ? absint((string) $availability['buffer_after_minutes']) : 0,
+        ];
+
+        if ($rule['duration'] <= 0) {
+            $rule['duration'] = 60;
+        }
+
+        return [$rule];
+    }
+
+    /**
+     * Flatten a collection of time sets into a simple times array.
+     *
+     * @param array<int, array<string, mixed>> $time_sets
+     *
+     * @return array<int, string>
+     */
+    public static function flatten_time_sets(array $time_sets): array
+    {
+        $times = [];
+        foreach ($time_sets as $set) {
+            if (! is_array($set) || empty($set['times']) || ! is_array($set['times'])) {
+                continue;
+            }
+
+            foreach ($set['times'] as $time) {
+                $time_string = trim((string) $time);
+                if ('' === $time_string) {
+                    continue;
+                }
+                $times[] = $time_string;
+            }
+        }
+
+        $times = array_values(array_unique($times));
+        sort($times);
+
+        return $times;
+    }
+
+    /**
+     * @param array<int, mixed> $time_sets
+     *
+     * @return array<int, array{label:string,times:array<int,string>}>
+     */
+    private static function sanitize_time_sets($time_sets): array
+    {
+        if (! is_array($time_sets)) {
+            return [];
+        }
+
+        $sanitized = [];
+        foreach ($time_sets as $set) {
+            if (! is_array($set)) {
+                continue;
+            }
+
+            $label = isset($set['label']) ? sanitize_text_field((string) $set['label']) : '';
+            $times = [];
+
+            if (isset($set['times']) && is_array($set['times'])) {
+                foreach ($set['times'] as $time) {
+                    $time_string = trim(sanitize_text_field((string) $time));
+                    if ('' === $time_string) {
+                        continue;
+                    }
+                    $times[] = $time_string;
+                }
+            }
+
+            if (empty($times)) {
+                continue;
+            }
+
+            $times = array_values(array_unique($times));
+            sort($times);
+
+            $sanitized[] = [
+                'label' => $label,
+                'times' => $times,
+            ];
+        }
+
+        return $sanitized;
+    }
+
+    private static function map_weekday_key(string $day): ?string
+    {
+        $map = [
+            'mon' => 'monday',
+            'tue' => 'tuesday',
+            'wed' => 'wednesday',
+            'thu' => 'thursday',
+            'fri' => 'friday',
+            'sat' => 'saturday',
+            'sun' => 'sunday',
+        ];
+
+        if (isset($map[$day])) {
+            return $map[$day];
+        }
+
+        $day = strtolower($day);
+        if (in_array($day, $map, true)) {
+            return $day;
+        }
+
+        return null;
+    }
+
+    private static function validate_dates(string $start, string $end): bool
+    {
+        if ('' === $start && '' === $end) {
+            return true;
+        }
+
+        try {
+            $start_dt = new DateTimeImmutable($start ?: 'now');
+            $end_dt = new DateTimeImmutable($end ?: $start ?: 'now');
+        } catch (Exception $exception) {
+            return false;
+        }
+
+        return $start_dt <= $end_dt;
+    }
+}

@@ -15,6 +15,7 @@ use function array_values;
 use function delete_transient;
 use function explode;
 use function do_action;
+use function esc_url_raw;
 use function function_exists;
 use function get_current_user_id;
 use function get_option;
@@ -35,6 +36,8 @@ use function set_transient;
 use function stripslashes;
 use function time;
 use function trim;
+use function strtolower;
+use function trailingslashit;
 use function wp_create_nonce;
 use function wp_parse_args;
 use function wp_unslash;
@@ -154,6 +157,120 @@ final class Helpers
          * @param array<string, mixed> $payload
          */
         return (array) apply_filters('fp_exp_listing_settings', $payload);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public static function gift_settings(): array
+    {
+        $defaults = [
+            'enabled' => false,
+            'validity_days' => 365,
+            'reminders' => [30, 7, 1],
+            'reminder_time' => '09:00',
+            'redeem_page' => '',
+        ];
+
+        $settings = get_option('fp_exp_gift', []);
+        $settings = is_array($settings) ? $settings : [];
+
+        $enabled = self::normalize_bool_option($settings['enabled'] ?? $defaults['enabled'], false);
+
+        $validity = absint((int) ($settings['validity_days'] ?? $defaults['validity_days']));
+        if ($validity <= 0) {
+            $validity = $defaults['validity_days'];
+        }
+
+        $reminders = $settings['reminders'] ?? $defaults['reminders'];
+        if (is_string($reminders)) {
+            $reminders = array_map('trim', explode(',', $reminders));
+        }
+
+        $reminders = is_array($reminders) ? $reminders : [];
+        $reminders = array_values(array_unique(array_filter(array_map(static function ($value) {
+            if ('' === $value) {
+                return null;
+            }
+
+            if (is_numeric($value)) {
+                $number = absint((string) $value);
+
+                return $number > 0 ? $number : null;
+            }
+
+            return null;
+        }, $reminders))));
+
+        if (empty($reminders)) {
+            $reminders = $defaults['reminders'];
+        }
+
+        sort($reminders);
+
+        $time = isset($settings['reminder_time']) ? sanitize_text_field((string) $settings['reminder_time']) : $defaults['reminder_time'];
+        if (! preg_match('/^\d{2}:\d{2}$/', $time)) {
+            $time = $defaults['reminder_time'];
+        }
+
+        $redeem_page = isset($settings['redeem_page']) ? esc_url_raw((string) $settings['redeem_page']) : '';
+
+        return [
+            'enabled' => $enabled,
+            'validity_days' => $validity,
+            'reminders' => $reminders,
+            'reminder_time' => $time,
+            'redeem_page' => $redeem_page,
+        ];
+    }
+
+    public static function gift_enabled(): bool
+    {
+        $settings = self::gift_settings();
+
+        return ! empty($settings['enabled']);
+    }
+
+    public static function gift_validity_days(): int
+    {
+        $settings = self::gift_settings();
+
+        return (int) ($settings['validity_days'] ?? 365);
+    }
+
+    /**
+     * @return array<int>
+     */
+    public static function gift_reminder_offsets(): array
+    {
+        $settings = self::gift_settings();
+        $reminders = $settings['reminders'] ?? [];
+
+        return array_map('absint', is_array($reminders) ? $reminders : []);
+    }
+
+    public static function gift_reminder_time(): string
+    {
+        $settings = self::gift_settings();
+
+        return isset($settings['reminder_time']) ? (string) $settings['reminder_time'] : '09:00';
+    }
+
+    public static function gift_redeem_page(): string
+    {
+        $settings = self::gift_settings();
+        $redeem_page = isset($settings['redeem_page']) ? (string) $settings['redeem_page'] : '';
+
+        if ($redeem_page) {
+            return $redeem_page;
+        }
+
+        $default = trailingslashit(home_url('/gift-redeem/'));
+
+        /**
+         * Allow third parties to change the fallback redemption page URL.
+         */
+        return (string) apply_filters('fp_exp_gift_redeem_page', $default);
     }
 
     /**
@@ -299,23 +416,12 @@ final class Helpers
 
     public static function meeting_points_enabled(): bool
     {
-        $value = get_option('fp_exp_enable_meeting_points', 'yes');
+        return self::normalize_yes_no_option(get_option('fp_exp_enable_meeting_points', 'yes'), true);
+    }
 
-        if (is_bool($value)) {
-            return $value;
-        }
-
-        if (is_numeric($value)) {
-            return (int) $value > 0;
-        }
-
-        if (is_string($value)) {
-            $normalized = strtolower(trim($value));
-
-            return ! in_array($normalized, ['0', 'no', 'off', 'false', ''], true);
-        }
-
-        return (bool) $value;
+    public static function meeting_points_import_enabled(): bool
+    {
+        return self::normalize_yes_no_option(get_option('fp_exp_enable_meeting_point_import', 'no'), false);
     }
 
     /**
@@ -351,6 +457,36 @@ final class Helpers
         });
 
         return array_values(array_unique($values));
+    }
+
+    /**
+     * @param mixed $value
+     */
+    private static function normalize_yes_no_option($value, bool $default): bool
+    {
+        if (is_bool($value)) {
+            return $value;
+        }
+
+        if (is_numeric($value)) {
+            return (int) $value > 0;
+        }
+
+        if (is_string($value)) {
+            $normalized = strtolower(trim($value));
+
+            if ('' === $normalized) {
+                return $default;
+            }
+
+            return in_array($normalized, ['1', 'yes', 'true', 'on'], true);
+        }
+
+        if (null === $value) {
+            return $default;
+        }
+
+        return (bool) $value;
     }
 
     /**

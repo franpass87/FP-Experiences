@@ -6,6 +6,7 @@ namespace FP_Exp\Shortcodes;
 
 use FP_Exp\MeetingPoints\Repository;
 use FP_Exp\Utils\Helpers;
+use FP_Exp\Utils\LanguageHelper;
 use FP_Exp\Utils\Theme;
 use WP_Comment;
 use WP_Error;
@@ -131,6 +132,7 @@ final class ExperienceShortcode extends BaseShortcode
 
         $duration_minutes = absint((string) get_post_meta($experience_id, '_fp_duration_minutes', true));
         $languages = Helpers::get_meta_array($experience_id, '_fp_languages');
+        $language_badges = LanguageHelper::build_language_badges($languages);
         $short_desc = sanitize_text_field((string) get_post_meta($experience_id, '_fp_short_desc', true));
         $content_summary = $short_desc ?: wp_trim_words((string) $post->post_excerpt, 36);
 
@@ -162,6 +164,7 @@ final class ExperienceShortcode extends BaseShortcode
         $meeting_data = $this->prepare_meeting_points($experience_id, $enabled_sections['meeting']);
 
         $tickets = $this->prepare_tickets(get_post_meta($experience_id, '_fp_ticket_types', true));
+        $addons = $this->prepare_addons(get_post_meta($experience_id, '_fp_addons', true));
         $base_price = $this->resolve_price($experience_id, $tickets);
         $currency = $this->resolve_currency();
 
@@ -287,7 +290,7 @@ final class ExperienceShortcode extends BaseShortcode
         $family_terms = get_the_terms($post, 'fp_exp_family_friendly');
         $family_friendly = is_array($family_terms) && ! empty($family_terms);
 
-        $badges = $this->build_badges($duration_minutes, $languages, $family_friendly);
+        $badges = $this->build_badges($duration_minutes, $language_badges, $family_friendly);
 
         $missing_meta = [];
 
@@ -345,6 +348,7 @@ final class ExperienceShortcode extends BaseShortcode
                 'summary' => $content_summary,
                 'duration_minutes' => $duration_minutes,
                 'languages' => $languages,
+                'language_badges' => $language_badges,
             ],
             'gallery' => $gallery,
             'badges' => $badges,
@@ -364,6 +368,15 @@ final class ExperienceShortcode extends BaseShortcode
             'schema_json' => $schema,
             'data_layer' => wp_json_encode($data_layer),
             'layout' => $layout,
+            'gift' => [
+                'enabled' => Helpers::gift_enabled(),
+                'experience_id' => $experience_id,
+                'experience_title' => $post->post_title,
+                'addons' => $addons,
+                'validity_days' => Helpers::gift_validity_days(),
+                'redeem_page' => Helpers::gift_redeem_page(),
+                'currency' => get_option('woocommerce_currency', 'EUR'),
+            ],
         ];
     }
 
@@ -644,6 +657,49 @@ final class ExperienceShortcode extends BaseShortcode
     }
 
     /**
+     * @param mixed $raw
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function prepare_addons($raw): array
+    {
+        if (! is_array($raw)) {
+            return [];
+        }
+
+        $addons = [];
+
+        foreach ($raw as $addon) {
+            if (! is_array($addon)) {
+                continue;
+            }
+
+            $slug = sanitize_key($addon['slug'] ?? ($addon['label'] ?? ''));
+            if ('' === $slug) {
+                continue;
+            }
+
+            $image_id = isset($addon['image_id']) ? absint($addon['image_id']) : 0;
+            $image = $image_id > 0 ? wp_get_attachment_image_src($image_id, 'medium') : false;
+
+            $addons[] = [
+                'slug' => $slug,
+                'label' => sanitize_text_field((string) ($addon['label'] ?? '')),
+                'description' => sanitize_text_field((string) ($addon['description'] ?? '')),
+                'price' => isset($addon['price']) ? (float) $addon['price'] : 0.0,
+                'image' => [
+                    'id' => $image_id,
+                    'url' => $image ? (string) $image[0] : '',
+                    'width' => $image ? absint((string) $image[1]) : 0,
+                    'height' => $image ? absint((string) $image[2]) : 0,
+                ],
+            ];
+        }
+
+        return $addons;
+    }
+
+    /**
      * @param array<int, array<string, mixed>> $tickets
      */
     private function resolve_price(int $experience_id, array $tickets): float
@@ -784,7 +840,7 @@ final class ExperienceShortcode extends BaseShortcode
      *
      * @return array<int, array<string, string>>
      */
-    private function build_badges(int $duration_minutes, array $languages, bool $family_friendly): array
+    private function build_badges(int $duration_minutes, array $language_badges, bool $family_friendly): array
     {
         $badges = [];
 
@@ -801,10 +857,29 @@ final class ExperienceShortcode extends BaseShortcode
             ];
         }
 
-        if (! empty($languages)) {
+        foreach ($language_badges as $language) {
+            if (! is_array($language)) {
+                continue;
+            }
+
+            $code = isset($language['code']) ? (string) $language['code'] : '';
+            $sprite = isset($language['sprite']) ? (string) $language['sprite'] : '';
+            $label = isset($language['label']) ? (string) $language['label'] : '';
+            $aria_label = isset($language['aria_label']) ? (string) $language['aria_label'] : $label;
+
+            if ('' === $code || '' === $sprite) {
+                continue;
+            }
+
             $badges[] = [
                 'icon' => 'language',
-                'label' => implode(', ', $languages),
+                'label' => $code,
+                'language' => [
+                    'code' => $code,
+                    'sprite' => $sprite,
+                    'label' => $label,
+                    'aria_label' => $aria_label,
+                ],
             ];
         }
 

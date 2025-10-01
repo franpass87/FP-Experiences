@@ -55,6 +55,26 @@ final class WidgetList extends Widget_Base
         $defaults = Helpers::listing_settings();
 
         $this->add_control(
+            'archive_mode',
+            [
+                'label' => esc_html__('Archive mode', 'fp-experiences'),
+                'type' => Controls_Manager::CHOOSE,
+                'toggle' => false,
+                'options' => [
+                    'advanced' => [
+                        'title' => esc_html__('Advanced', 'fp-experiences'),
+                        'icon' => 'eicon-filter',
+                    ],
+                    'simple' => [
+                        'title' => esc_html__('Simple', 'fp-experiences'),
+                        'icon' => 'eicon-gallery-grid',
+                    ],
+                ],
+                'default' => 'advanced',
+            ]
+        );
+
+        $this->add_control(
             'filters',
             [
                 'label' => esc_html__('Filters', 'fp-experiences'),
@@ -70,6 +90,9 @@ final class WidgetList extends Widget_Base
                     'date' => esc_html__('Date', 'fp-experiences'),
                 ],
                 'default' => $defaults['filters'],
+                'condition' => [
+                    'archive_mode' => 'advanced',
+                ],
             ]
         );
 
@@ -81,6 +104,9 @@ final class WidgetList extends Widget_Base
                 'min' => 1,
                 'max' => 24,
                 'default' => $defaults['per_page'],
+                'condition' => [
+                    'archive_mode' => 'advanced',
+                ],
             ]
         );
 
@@ -122,6 +148,9 @@ final class WidgetList extends Widget_Base
                     'list' => esc_html__('List', 'fp-experiences'),
                 ],
                 'default' => 'grid',
+                'condition' => [
+                    'archive_mode' => 'advanced',
+                ],
             ]
         );
 
@@ -131,6 +160,9 @@ final class WidgetList extends Widget_Base
                 'label' => esc_html__('Show map link', 'fp-experiences'),
                 'type' => Controls_Manager::SWITCHER,
                 'default' => 'no',
+                'condition' => [
+                    'archive_mode' => 'advanced',
+                ],
             ]
         );
 
@@ -144,6 +176,9 @@ final class WidgetList extends Widget_Base
                     'widget' => esc_html__('Scroll to booking widget', 'fp-experiences'),
                 ],
                 'default' => 'page',
+                'condition' => [
+                    'archive_mode' => 'advanced',
+                ],
             ]
         );
 
@@ -168,6 +203,9 @@ final class WidgetList extends Widget_Base
                 'default' => 3,
                 'tablet_default' => 2,
                 'mobile_default' => 1,
+                'condition' => [
+                    'archive_mode' => 'advanced',
+                ],
             ]
         );
 
@@ -182,6 +220,9 @@ final class WidgetList extends Widget_Base
                     'spacious' => esc_html__('Spacious', 'fp-experiences'),
                 ],
                 'default' => 'cozy',
+                'condition' => [
+                    'archive_mode' => 'advanced',
+                ],
             ]
         );
 
@@ -191,6 +232,9 @@ final class WidgetList extends Widget_Base
                 'label' => esc_html__('Show “price from” badge', 'fp-experiences'),
                 'type' => Controls_Manager::SWITCHER,
                 'default' => $defaults['show_price_from'] ? 'yes' : 'no',
+                'condition' => [
+                    'archive_mode' => 'advanced',
+                ],
             ]
         );
 
@@ -200,6 +244,9 @@ final class WidgetList extends Widget_Base
                 'label' => esc_html__('Show language badge', 'fp-experiences'),
                 'type' => Controls_Manager::SWITCHER,
                 'default' => 'yes',
+                'condition' => [
+                    'archive_mode' => 'advanced',
+                ],
             ]
         );
 
@@ -209,6 +256,9 @@ final class WidgetList extends Widget_Base
                 'label' => esc_html__('Show duration badge', 'fp-experiences'),
                 'type' => Controls_Manager::SWITCHER,
                 'default' => 'yes',
+                'condition' => [
+                    'archive_mode' => 'advanced',
+                ],
             ]
         );
 
@@ -218,6 +268,40 @@ final class WidgetList extends Widget_Base
                 'label' => esc_html__('Show family badge', 'fp-experiences'),
                 'type' => Controls_Manager::SWITCHER,
                 'default' => 'yes',
+                'condition' => [
+                    'archive_mode' => 'advanced',
+                ],
+            ]
+        );
+
+        $this->add_control(
+            'simple_view',
+            [
+                'label' => esc_html__('Layout', 'fp-experiences'),
+                'type' => Controls_Manager::SELECT,
+                'options' => [
+                    'grid' => esc_html__('Grid', 'fp-experiences'),
+                    'list' => esc_html__('List', 'fp-experiences'),
+                ],
+                'default' => 'grid',
+                'condition' => [
+                    'archive_mode' => 'simple',
+                ],
+            ]
+        );
+
+        $this->add_control(
+            'simple_columns',
+            [
+                'label' => esc_html__('Columns (desktop)', 'fp-experiences'),
+                'type' => Controls_Manager::NUMBER,
+                'min' => 1,
+                'max' => 4,
+                'default' => 3,
+                'condition' => [
+                    'archive_mode' => 'simple',
+                    'simple_view' => 'grid',
+                ],
             ]
         );
 
@@ -239,20 +323,65 @@ final class WidgetList extends Widget_Base
     protected function render(): void
     {
         $settings = $this->get_settings_for_display();
+        $defaults = Helpers::listing_settings();
+        $mode = isset($settings['archive_mode']) && 'simple' === $settings['archive_mode'] ? 'simple' : 'advanced';
+
+        if ('simple' === $mode) {
+            $view = is_string($settings['simple_view'] ?? null) && in_array($settings['simple_view'], ['grid', 'list'], true)
+                ? (string) $settings['simple_view']
+                : 'grid';
+
+            $columns = absint((string) ($settings['simple_columns'] ?? 3));
+            $columns = max(1, min(4, $columns));
+
+            $order_field = (string) ($settings['orderby'] ?? 'menu_order');
+            if (! in_array($order_field, ['menu_order', 'date', 'title'], true)) {
+                $order_field = 'menu_order';
+            }
+
+            $direction = (string) ($settings['order'] ?? ($defaults['order'] ?? 'ASC'));
+            if (! in_array($direction, ['ASC', 'DESC'], true)) {
+                $direction = 'ASC';
+            }
+
+            $atts = [
+                'view' => $view,
+                'columns' => (string) $columns,
+                'order' => $order_field,
+                'order_direction' => $direction,
+            ];
+
+            $atts = array_merge($atts, $this->collect_theme_atts($settings));
+
+            echo do_shortcode('[fp_exp_simple_archive ' . $this->build_shortcode_atts($atts) . ']');
+
+            return;
+        }
+
         $filters = $settings['filters'] ?? [];
         if (is_array($filters)) {
             $filters = implode(',', array_filter($filters));
         }
 
+        $filter_string = is_string($filters) ? trim($filters) : '';
+        if ('' === $filter_string) {
+            $filter_string = implode(',', $defaults['filters']);
+        }
+
+        $orderby = (string) ($settings['orderby'] ?? ($defaults['orderby'] ?? 'menu_order'));
+        $order_direction = (string) ($settings['order'] ?? ($defaults['order'] ?? 'ASC'));
+
         $atts = [
-            'filters' => $filters ?: implode(',', $defaults['filters']),
-            'per_page' => (string) ($settings['per_page'] ?? '9'),
-            'orderby' => (string) ($settings['orderby'] ?? 'menu_order'),
-            'order' => (string) ($settings['order'] ?? 'ASC'),
+            'filters' => $filter_string,
+            'per_page' => (string) ($settings['per_page'] ?? ($defaults['per_page'] ?? 9)),
+            'orderby' => $orderby,
+            'order' => $order_direction,
             'view' => (string) ($settings['view'] ?? 'grid'),
             'show_map' => ('yes' === ($settings['show_map'] ?? 'no')) ? '1' : '0',
             'cta' => (string) ($settings['cta'] ?? 'page'),
-            'show_price_from' => ('yes' === ($settings['show_price_from'] ?? 'yes')) ? '1' : '0',
+            'show_price_from' => ('yes' === ($settings['show_price_from'] ?? ($defaults['show_price_from'] ? 'yes' : 'no')))
+                ? '1'
+                : '0',
             'badge_lang' => ('yes' === ($settings['show_language_badge'] ?? 'yes')) ? '1' : '0',
             'badge_duration' => ('yes' === ($settings['show_duration_badge'] ?? 'yes')) ? '1' : '0',
             'badge_family' => ('yes' === ($settings['show_family_badge'] ?? 'yes')) ? '1' : '0',

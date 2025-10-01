@@ -313,6 +313,9 @@ final class ExperienceCPT
                 'items' => 'object',
                 'default' => [],
             ],
+            '_fp_exp_page_id' => [
+                'type' => 'integer',
+            ],
             '_fp_exp_pricing' => [
                 'type' => 'object',
                 'default' => [],

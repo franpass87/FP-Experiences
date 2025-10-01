@@ -50,7 +50,7 @@ final class MeetingPointImporter
 
     public function register_menu(): void
     {
-        if (! Helpers::meeting_points_enabled()) {
+        if (! Helpers::meeting_points_enabled() || ! Helpers::meeting_points_import_enabled()) {
             return;
         }
 
@@ -68,6 +68,10 @@ final class MeetingPointImporter
     {
         if (! current_user_can('fp_exp_manage')) {
             wp_die(esc_html__('You do not have permission to access this page.', 'fp-experiences'));
+        }
+
+        if (! Helpers::meeting_points_import_enabled()) {
+            wp_die(esc_html__('Meeting point import is disabled.', 'fp-experiences'));
         }
 
         $notice = get_transient(self::TRANSIENT_KEY);
@@ -101,6 +105,10 @@ final class MeetingPointImporter
     {
         if (! Helpers::meeting_points_enabled()) {
             wp_die(esc_html__('Meeting points are disabled.', 'fp-experiences'));
+        }
+
+        if (! Helpers::meeting_points_import_enabled()) {
+            wp_die(esc_html__('Meeting point import is disabled.', 'fp-experiences'));
         }
 
         if (! current_user_can('fp_exp_manage')) {

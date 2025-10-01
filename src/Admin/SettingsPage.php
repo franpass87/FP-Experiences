@@ -28,6 +28,7 @@ use function esc_html;
 use function esc_html__;
 use function esc_url;
 use function esc_textarea;
+use function esc_url_raw;
 use function get_option;
 use function get_transient;
 use function in_array;
@@ -80,6 +81,7 @@ final class SettingsPage
     public function register_settings(): void
     {
         $this->register_general_settings();
+        $this->register_gift_settings();
         $this->register_branding_settings();
         $this->register_listing_settings();
         $this->register_tracking_settings();
@@ -144,6 +146,9 @@ final class SettingsPage
             settings_fields('fp_exp_settings_branding');
             do_settings_sections('fp_exp_settings_branding');
             $this->render_branding_contrast();
+        } elseif ('gift' === $active_tab) {
+            settings_fields('fp_exp_settings_gift');
+            do_settings_sections('fp_exp_settings_gift');
         } elseif ('listing' === $active_tab) {
             settings_fields('fp_exp_settings_listing');
             do_settings_sections('fp_exp_settings_listing');
@@ -216,20 +221,14 @@ final class SettingsPage
 
         register_setting('fp_exp_settings_general', 'fp_exp_enable_meeting_points', [
             'type' => 'string',
-            'sanitize_callback' => static function ($value): string {
-                if (is_bool($value)) {
-                    return $value ? 'yes' : 'no';
-                }
-
-                if (is_numeric($value)) {
-                    return (int) $value > 0 ? 'yes' : 'no';
-                }
-
-                $normalized = strtolower(trim((string) $value));
-
-                return in_array($normalized, ['1', 'yes', 'true', 'on'], true) ? 'yes' : 'no';
-            },
+            'sanitize_callback' => [$this, 'sanitize_toggle'],
             'default' => 'yes',
+        ]);
+
+        register_setting('fp_exp_settings_general', 'fp_exp_enable_meeting_point_import', [
+            'type' => 'string',
+            'sanitize_callback' => [$this, 'sanitize_toggle'],
+            'default' => 'no',
         ]);
 
         register_setting('fp_exp_settings_general', 'fp_exp_experience_layout', [
@@ -278,6 +277,21 @@ final class SettingsPage
             [
                 'option' => 'fp_exp_enable_meeting_points',
                 'label' => esc_html__('Enable meeting points management and widgets.', 'fp-experiences'),
+                'default' => 'yes',
+            ]
+        );
+
+        add_settings_field(
+            'fp_exp_enable_meeting_point_import',
+            esc_html__('Meeting point import', 'fp-experiences'),
+            [$this, 'render_toggle_field'],
+            'fp_exp_settings_general',
+            'fp_exp_section_general',
+            [
+                'option' => 'fp_exp_enable_meeting_point_import',
+                'label' => esc_html__('Enable meeting point import (advanced).', 'fp-experiences'),
+                'description' => esc_html__('Keep disabled unless an operator needs to paste CSV data manually. CLI/REST tools remain available.', 'fp-experiences'),
+                'default' => 'no',
             ]
         );
 
@@ -350,6 +364,167 @@ final class SettingsPage
                 'description' => esc_html__('Default position for the booking widget on desktop.', 'fp-experiences'),
             ]
         );
+    }
+
+    private function register_gift_settings(): void
+    {
+        register_setting('fp_exp_settings_gift', 'fp_exp_gift', [
+            'type' => 'array',
+            'sanitize_callback' => [$this, 'sanitize_gift_settings'],
+            'default' => [],
+        ]);
+
+        add_settings_section(
+            'fp_exp_settings_gift_main',
+            esc_html__('Gift Your Experience', 'fp-experiences'),
+            [$this, 'render_gift_settings_intro'],
+            'fp_exp_settings_gift'
+        );
+
+        add_settings_field(
+            'fp_exp_gift_enabled',
+            esc_html__('Enable gift vouchers', 'fp-experiences'),
+            [$this, 'render_gift_toggle'],
+            'fp_exp_settings_gift',
+            'fp_exp_settings_gift_main'
+        );
+
+        add_settings_field(
+            'fp_exp_gift_validity',
+            esc_html__('Default validity (days)', 'fp-experiences'),
+            [$this, 'render_gift_validity_field'],
+            'fp_exp_settings_gift',
+            'fp_exp_settings_gift_main'
+        );
+
+        add_settings_field(
+            'fp_exp_gift_reminders',
+            esc_html__('Reminder schedule (days before expiry)', 'fp-experiences'),
+            [$this, 'render_gift_reminder_field'],
+            'fp_exp_settings_gift',
+            'fp_exp_settings_gift_main'
+        );
+
+        add_settings_field(
+            'fp_exp_gift_reminder_time',
+            esc_html__('Reminder send time', 'fp-experiences'),
+            [$this, 'render_gift_reminder_time_field'],
+            'fp_exp_settings_gift',
+            'fp_exp_settings_gift_main'
+        );
+
+        add_settings_field(
+            'fp_exp_gift_redeem_page',
+            esc_html__('Redemption page URL', 'fp-experiences'),
+            [$this, 'render_gift_redeem_page_field'],
+            'fp_exp_settings_gift',
+            'fp_exp_settings_gift_main'
+        );
+    }
+
+    /**
+     * @param mixed $value
+     *
+     * @return array<string, mixed>
+     */
+    public function sanitize_gift_settings($value): array
+    {
+        $value = is_array($value) ? $value : [];
+
+        $enabled = ! empty($value['enabled']) ? 'yes' : 'no';
+        $validity = isset($value['validity_days']) ? absint((string) $value['validity_days']) : Helpers::gift_validity_days();
+        if ($validity <= 0) {
+            $validity = Helpers::gift_validity_days();
+        }
+
+        $reminders = $value['reminders'] ?? Helpers::gift_reminder_offsets();
+        if (is_string($reminders)) {
+            $reminders = array_map('trim', explode(',', $reminders));
+        }
+
+        $reminders = is_array($reminders) ? $reminders : [];
+        $normalized_reminders = [];
+        foreach ($reminders as $reminder) {
+            if (is_numeric($reminder)) {
+                $days = absint((string) $reminder);
+                if ($days > 0) {
+                    $normalized_reminders[] = $days;
+                }
+            }
+        }
+
+        if (empty($normalized_reminders)) {
+            $normalized_reminders = Helpers::gift_reminder_offsets();
+        }
+
+        sort($normalized_reminders);
+
+        $time = isset($value['reminder_time']) ? sanitize_text_field((string) $value['reminder_time']) : Helpers::gift_reminder_time();
+        if (! preg_match('/^\d{2}:\d{2}$/', $time)) {
+            $time = Helpers::gift_reminder_time();
+        }
+
+        $redeem_page = isset($value['redeem_page']) ? esc_url_raw((string) $value['redeem_page']) : '';
+
+        return [
+            'enabled' => $enabled,
+            'validity_days' => $validity,
+            'reminders' => $normalized_reminders,
+            'reminder_time' => $time,
+            'redeem_page' => $redeem_page,
+        ];
+    }
+
+    public function render_gift_settings_intro(): void
+    {
+        echo '<p>' . esc_html__('Configure the “Gift Your Experience” workflow, default validity, and reminder cadence.', 'fp-experiences') . '</p>';
+    }
+
+    public function render_gift_toggle(): void
+    {
+        $settings = Helpers::gift_settings();
+        $enabled = ! empty($settings['enabled']);
+
+        echo '<label for="fp-exp-gift-enabled">';
+        echo '<input type="checkbox" id="fp-exp-gift-enabled" name="fp_exp_gift[enabled]" value="1" ' . checked($enabled, true, false) . ' /> ';
+        esc_html_e('Allow customers to purchase gift vouchers and send them via email.', 'fp-experiences');
+        echo '</label>';
+    }
+
+    public function render_gift_validity_field(): void
+    {
+        $settings = Helpers::gift_settings();
+        $validity = (int) ($settings['validity_days'] ?? 365);
+
+        echo '<input type="number" min="1" step="1" class="small-text" id="fp-exp-gift-validity" name="fp_exp_gift[validity_days]" value="' . esc_attr((string) $validity) . '" />';
+        echo '<p class="description">' . esc_html__('Number of days the voucher remains valid from purchase.', 'fp-experiences') . '</p>';
+    }
+
+    public function render_gift_reminder_field(): void
+    {
+        $settings = Helpers::gift_settings();
+        $reminders = implode(', ', array_map('absint', $settings['reminders'] ?? []));
+
+        echo '<input type="text" id="fp-exp-gift-reminders" name="fp_exp_gift[reminders]" value="' . esc_attr($reminders) . '" class="regular-text" />';
+        echo '<p class="description">' . esc_html__('Comma-separated list of reminder offsets in days (e.g. 30,7,1).', 'fp-experiences') . '</p>';
+    }
+
+    public function render_gift_reminder_time_field(): void
+    {
+        $settings = Helpers::gift_settings();
+        $time = (string) ($settings['reminder_time'] ?? '09:00');
+
+        echo '<input type="time" id="fp-exp-gift-reminder-time" name="fp_exp_gift[reminder_time]" value="' . esc_attr($time) . '" />';
+        echo '<p class="description">' . esc_html__('Local time used when dispatching scheduled reminder emails.', 'fp-experiences') . '</p>';
+    }
+
+    public function render_gift_redeem_page_field(): void
+    {
+        $settings = Helpers::gift_settings();
+        $redeem_page = (string) ($settings['redeem_page'] ?? '');
+
+        echo '<input type="url" id="fp-exp-gift-redeem-page" name="fp_exp_gift[redeem_page]" value="' . esc_attr($redeem_page) . '" class="regular-text" placeholder="' . esc_attr(Helpers::gift_redeem_page()) . '" />';
+        echo '<p class="description">' . esc_html__('Optional custom URL that hosts the [fp_exp_gift_redeem] shortcode.', 'fp-experiences') . '</p>';
     }
 
     public function render_experience_layout_help(): void
@@ -478,13 +653,45 @@ final class SettingsPage
             return;
         }
 
-        $value = get_option($option, 'yes');
+        $default = isset($args['default']) ? (string) $args['default'] : 'yes';
+        $value = get_option($option, $default);
         $checked = in_array($value, ['yes', '1', 'true', 1, true], true);
 
+        echo '<input type="hidden" name="' . esc_attr($option) . '" value="no" />';
         echo '<label class="fp-exp-settings__toggle">';
         echo '<input type="checkbox" name="' . esc_attr($option) . '" value="yes" ' . checked(true, $checked, false) . ' />';
         echo ' <span>' . esc_html($label) . '</span>';
         echo '</label>';
+
+        if (! empty($args['description'])) {
+            echo '<p class="description">' . esc_html((string) $args['description']) . '</p>';
+        }
+    }
+
+    /**
+     * @param mixed $value
+     */
+    public function sanitize_toggle($value): string
+    {
+        if (is_bool($value)) {
+            return $value ? 'yes' : 'no';
+        }
+
+        if (is_numeric($value)) {
+            return (int) $value > 0 ? 'yes' : 'no';
+        }
+
+        if (is_string($value)) {
+            $normalized = strtolower(trim($value));
+
+            if ('' === $normalized) {
+                return 'no';
+            }
+
+            return in_array($normalized, ['1', 'yes', 'true', 'on'], true) ? 'yes' : 'no';
+        }
+
+        return $value ? 'yes' : 'no';
     }
 
     private function register_tracking_settings(): void
@@ -692,6 +899,7 @@ final class SettingsPage
     {
         return [
             'general' => esc_html__('General', 'fp-experiences'),
+            'gift' => esc_html__('Gift', 'fp-experiences'),
             'branding' => esc_html__('Branding', 'fp-experiences'),
             'booking' => esc_html__('Booking Rules', 'fp-experiences'),
             'brevo' => esc_html__('Brevo', 'fp-experiences'),
@@ -724,6 +932,7 @@ final class SettingsPage
     private function render_booking_rules_panel(): void
     {
         $meeting_points_enabled = Helpers::meeting_points_enabled();
+        $meeting_point_import_enabled = Helpers::meeting_points_import_enabled();
         $rtb_mode = Helpers::rtb_mode();
         $rtb_timeout = Helpers::rtb_hold_timeout();
 
@@ -737,6 +946,7 @@ final class SettingsPage
         echo '<h2>' . esc_html__('Regole attive', 'fp-experiences') . '</h2>';
         echo '<ul class="fp-exp-settings__list">';
         echo '<li>' . esc_html__('Meeting point: ', 'fp-experiences') . ($meeting_points_enabled ? esc_html__('abilitati', 'fp-experiences') : esc_html__('disabilitati', 'fp-experiences')) . '</li>';
+        echo '<li>' . esc_html__('Import meeting point: ', 'fp-experiences') . ($meeting_point_import_enabled ? esc_html__('abilitato (avanzato)', 'fp-experiences') : esc_html__('disabilitato', 'fp-experiences')) . '</li>';
         echo '<li>' . esc_html__('Modalità richiesta di prenotazione: ', 'fp-experiences') . $rtb_label . '</li>';
         echo '<li>' . sprintf(
             /* translators: %s: minutes. */
@@ -820,6 +1030,12 @@ final class SettingsPage
                 'label' => esc_html__('Replay lifecycle events', 'fp-experiences'),
                 'description' => esc_html__('Requeue reservation events for integrations that may have missed them.', 'fp-experiences'),
                 'button' => esc_html__('Replay events', 'fp-experiences'),
+            ],
+            [
+                'slug' => 'resync-pages',
+                'label' => esc_html__('Resynchronise experience pages', 'fp-experiences'),
+                'description' => esc_html__('Create or relink WordPress pages for experiences missing the `[fp_exp_page]` shortcode.', 'fp-experiences'),
+                'button' => esc_html__('Run page resync', 'fp-experiences'),
             ],
             [
                 'slug' => 'ping',
