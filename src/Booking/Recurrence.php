@@ -165,6 +165,15 @@ final class Recurrence
 
             $rule = $base_rule;
             $rule['times'] = $times;
+            if (isset($set['capacity'])) {
+                $rule['capacity_total'] = absint((string) $set['capacity']);
+            }
+            if (isset($set['buffer_before'])) {
+                $rule['buffer_before'] = absint((string) $set['buffer_before']);
+            }
+            if (isset($set['buffer_after'])) {
+                $rule['buffer_after'] = absint((string) $set['buffer_after']);
+            }
 
             if ('weekly' === $definition['frequency']) {
                 $set_days = [];
@@ -230,7 +239,7 @@ final class Recurrence
     /**
      * @param array<int, mixed> $time_sets
      *
-     * @return array<int, array{label:string,times:array<int,string>,days:array<int,string>}>
+     * @return array<int, array{label:string,times:array<int,string>,days:array<int,string>,capacity:int,buffer_before:int,buffer_after:int}>
      */
     private static function sanitize_time_sets($time_sets): array
     {
@@ -247,6 +256,9 @@ final class Recurrence
             $label = isset($set['label']) ? sanitize_text_field((string) $set['label']) : '';
             $times = [];
             $days = [];
+            $capacity = isset($set['capacity']) ? absint((string) $set['capacity']) : 0;
+            $buffer_before = isset($set['buffer_before']) ? absint((string) $set['buffer_before']) : 0;
+            $buffer_after = isset($set['buffer_after']) ? absint((string) $set['buffer_after']) : 0;
 
             if (isset($set['times']) && is_array($set['times'])) {
                 foreach ($set['times'] as $time) {
@@ -279,6 +291,9 @@ final class Recurrence
                 'label' => $label,
                 'times' => $times,
                 'days' => $days,
+                'capacity' => $capacity,
+                'buffer_before' => $buffer_before,
+                'buffer_after' => $buffer_after,
             ];
         }
 

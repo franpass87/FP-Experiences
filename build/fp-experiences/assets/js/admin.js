@@ -627,7 +627,25 @@
                 const setData = {
                     label: labelInput ? labelInput.value.trim() : '',
                     times,
+                    capacity: 0,
+                    buffer_before: 0,
+                    buffer_after: 0,
                 };
+
+                const capacityInput = container.querySelector('input[name*="[capacity]"]');
+                if (capacityInput) {
+                    setData.capacity = parseInt(capacityInput.value || '0', 10) || 0;
+                }
+
+                const bufferBeforeInput = container.querySelector('input[name*="[buffer_before]"]');
+                if (bufferBeforeInput) {
+                    setData.buffer_before = parseInt(bufferBeforeInput.value || '0', 10) || 0;
+                }
+
+                const bufferAfterInput = container.querySelector('input[name*="[buffer_after]"]');
+                if (bufferAfterInput) {
+                    setData.buffer_after = parseInt(bufferAfterInput.value || '0', 10) || 0;
+                }
 
                 if (recurrence.frequency === 'weekly') {
                     const daysContainer = container.querySelector('[data-time-set-days]');

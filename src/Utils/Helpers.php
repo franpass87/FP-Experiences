@@ -42,6 +42,7 @@ use function time;
 use function trim;
 use function strtolower;
 use function trailingslashit;
+use function __;
 use function wp_create_nonce;
 use function wp_parse_args;
 use function wp_unslash;
@@ -389,6 +390,56 @@ final class Helpers
         $settings['fallback'] = is_array($settings['fallback']) ? $settings['fallback'] : [];
 
         return $settings;
+    }
+
+    /**
+     * @return array<int, array{id: string, label: string}>
+     */
+    public static function cognitive_bias_choices(): array
+    {
+        $biases = [
+            'anchoring' => __('Bias di ancoraggio', 'fp-experiences'),
+            'authority' => __('Principio di autorità', 'fp-experiences'),
+            'scarcity' => __('Bias di scarsità', 'fp-experiences'),
+            'social-proof' => __('Riprova sociale', 'fp-experiences'),
+            'loss-aversion' => __('Avversione alla perdita', 'fp-experiences'),
+            'commitment' => __('Impegno e coerenza', 'fp-experiences'),
+            'reciprocity' => __('Reciprocità', 'fp-experiences'),
+            'framing' => __('Effetto framing', 'fp-experiences'),
+        ];
+
+        $choices = [];
+        foreach ($biases as $slug => $label) {
+            $choices[] = [
+                'id' => (string) $slug,
+                'label' => (string) $label,
+            ];
+        }
+
+        return $choices;
+    }
+
+    /**
+     * @param array<int, string> $slugs
+     * @return array<int, string>
+     */
+    public static function cognitive_bias_labels(array $slugs): array
+    {
+        $choices = self::cognitive_bias_choices();
+        $map = [];
+        foreach ($choices as $choice) {
+            $map[$choice['id']] = $choice['label'];
+        }
+
+        $labels = [];
+        foreach ($slugs as $slug) {
+            $key = sanitize_key((string) $slug);
+            if (isset($map[$key])) {
+                $labels[] = $map[$key];
+            }
+        }
+
+        return $labels;
     }
 
     public static function rtb_mode(): string

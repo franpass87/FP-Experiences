@@ -38,8 +38,11 @@ use function get_posts;
 use function get_post_status;
 use function get_post_status_object;
 use function get_transient;
+use function get_post_thumbnail_id;
+use function get_terms;
 use function in_array;
 use function is_array;
+use function is_wp_error;
 use function sanitize_key;
 use function sanitize_text_field;
 use function sanitize_title;
@@ -57,8 +60,11 @@ use function wp_is_post_revision;
 use function wp_nonce_field;
 use function wp_unslash;
 use function wp_verify_nonce;
+use function wp_get_post_terms;
 use function wp_kses_post;
 use function wp_get_attachment_image_src;
+use function wp_set_post_terms;
+use function remove_meta_box;
 
 final class ExperienceMetaBoxes
 {
@@ -77,9 +83,19 @@ final class ExperienceMetaBoxes
     public function register_hooks(): void
     {
         add_action('add_meta_boxes_fp_experience', [$this, 'add_meta_box']);
+        add_action('add_meta_boxes', [$this, 'remove_default_meta_boxes'], 99);
         add_action('save_post_fp_experience', [$this, 'save_meta_boxes'], 10, 3);
         add_action('admin_enqueue_scripts', [$this, 'enqueue_assets']);
         add_action('admin_notices', [$this, 'maybe_show_pricing_notice']);
+    }
+
+    public function remove_default_meta_boxes(): void
+    {
+        remove_meta_box('fp_exp_themediv', 'fp_experience', 'side');
+        remove_meta_box('tagsdiv-fp_exp_language', 'fp_experience', 'side');
+        remove_meta_box('tagsdiv-fp_exp_duration', 'fp_experience', 'side');
+        remove_meta_box('tagsdiv-fp_exp_family_friendly', 'fp_experience', 'side');
+        remove_meta_box('postimagediv', 'fp_experience', 'side');
     }
 
     public function add_meta_box(): void
@@ -359,6 +375,160 @@ final class ExperienceMetaBoxes
                             </ul>
                         <?php endif; ?>
                     </div>
+                </div>
+
+                <?php
+                $hero_image = $details['hero_image'];
+                $hero_id = isset($hero_image['id']) ? (int) $hero_image['id'] : 0;
+                $hero_url = isset($hero_image['url']) ? (string) $hero_image['url'] : '';
+                $hero_width = isset($hero_image['width']) ? (int) $hero_image['width'] : 0;
+                $hero_height = isset($hero_image['height']) ? (int) $hero_image['height'] : 0;
+                ?>
+                <div class="fp-exp-field">
+                    <span class="fp-exp-field__label">
+                        <?php esc_html_e('Immagine hero', 'fp-experiences'); ?>
+                        <?php $this->render_tooltip('fp-exp-hero-image-help', esc_html__('Seleziona l\'immagine principale mostrata come hero a tutta larghezza nella pagina esperienza.', 'fp-experiences')); ?>
+                    </span>
+                    <div class="fp-exp-cover-media" data-fp-media-control>
+                        <input
+                            type="hidden"
+                            id="fp-exp-hero-image"
+                            name="fp_exp_details[hero_image_id]"
+                            value="<?php echo esc_attr((string) $hero_id); ?>"
+                            data-fp-media-input
+                        />
+                        <div class="fp-exp-cover-media__preview" data-fp-media-preview>
+                            <div class="fp-exp-cover-media__placeholder" data-fp-media-placeholder <?php echo $hero_url ? 'hidden' : ''; ?>>
+                                <svg viewBox="0 0 48 32" aria-hidden="true" focusable="false">
+                                    <rect x="1" y="1" width="46" height="30" rx="4" ry="4" fill="none" stroke="currentColor" stroke-width="2" />
+                                    <path d="M16 12a4 4 0 1 1 4 4 4 4 0 0 1-4-4Zm-6 14 8-10 6 7 4-5 8 8Z" fill="currentColor" />
+                                </svg>
+                                <span class="screen-reader-text"><?php esc_html_e('Nessuna immagine selezionata', 'fp-experiences'); ?></span>
+                            </div>
+                            <?php if ($hero_url) : ?>
+                                <img
+                                    src="<?php echo esc_url($hero_url); ?>"
+                                    alt=""
+                                    <?php if ($hero_width > 0) : ?>width="<?php echo esc_attr((string) $hero_width); ?>"<?php endif; ?>
+                                    <?php if ($hero_height > 0) : ?>height="<?php echo esc_attr((string) $hero_height); ?>"<?php endif; ?>
+                                    loading="lazy"
+                                    data-fp-media-image
+                                />
+                            <?php endif; ?>
+                        </div>
+                        <div class="fp-exp-cover-media__actions">
+                            <button
+                                type="button"
+                                class="button button-secondary"
+                                data-fp-media-choose
+                                data-label-select="<?php echo esc_attr__('Seleziona immagine', 'fp-experiences'); ?>"
+                                data-label-change="<?php echo esc_attr__('Modifica immagine', 'fp-experiences'); ?>"
+                            >
+                                <?php echo $hero_url ? esc_html__('Modifica immagine', 'fp-experiences') : esc_html__('Seleziona immagine', 'fp-experiences'); ?>
+                            </button>
+                            <button
+                                type="button"
+                                class="button-link"
+                                data-fp-media-remove
+                                <?php echo $hero_url ? '' : ' hidden'; ?>
+                            >
+                                <?php esc_html_e('Rimuovi immagine', 'fp-experiences'); ?>
+                            </button>
+                        </div>
+                    </div>
+                    <p class="fp-exp-field__description" id="fp-exp-hero-image-help"><?php esc_html_e('Consigliata proporzione 16:9 con soggetti centrati.', 'fp-experiences'); ?></p>
+                </div>
+
+                <div class="fp-exp-field fp-exp-field--taxonomies">
+                    <div class="fp-exp-field">
+                        <span class="fp-exp-field__label">
+                            <?php esc_html_e('Temi esperienza', 'fp-experiences'); ?>
+                            <?php $this->render_tooltip('fp-exp-theme-help', esc_html__('Scegli uno o più temi per alimentare i filtri pubblici.', 'fp-experiences')); ?>
+                        </span>
+                        <div class="fp-exp-checkbox-grid" aria-describedby="fp-exp-theme-help">
+                            <?php foreach ($details['taxonomies']['theme']['choices'] as $choice) :
+                                $term_id = (int) $choice['id'];
+                                ?>
+                                <label>
+                                    <input type="checkbox" name="fp_exp_details[themes][]" value="<?php echo esc_attr((string) $term_id); ?>" <?php checked(in_array($term_id, $details['taxonomies']['theme']['selected'], true)); ?> />
+                                    <span><?php echo esc_html($choice['label']); ?></span>
+                                </label>
+                            <?php endforeach; ?>
+                        </div>
+                        <p class="fp-exp-field__description" id="fp-exp-theme-help"><?php esc_html_e('I temi selezionati compaiono nella panoramica e nelle liste.', 'fp-experiences'); ?></p>
+                    </div>
+
+                    <div class="fp-exp-field">
+                        <span class="fp-exp-field__label">
+                            <?php esc_html_e('Lingue per filtri', 'fp-experiences'); ?>
+                            <?php $this->render_tooltip('fp-exp-language-tax-help', esc_html__('Collega le lingue ai filtri rapidi e mostra le bandierine nella panoramica.', 'fp-experiences')); ?>
+                        </span>
+                        <div class="fp-exp-checkbox-grid" aria-describedby="fp-exp-language-tax-help">
+                            <?php foreach ($details['taxonomies']['language']['choices'] as $choice) :
+                                $term_id = (int) $choice['id'];
+                                ?>
+                                <label>
+                                    <input type="checkbox" name="fp_exp_details[taxonomy_languages][]" value="<?php echo esc_attr((string) $term_id); ?>" <?php checked(in_array($term_id, $details['taxonomies']['language']['selected'], true)); ?> />
+                                    <span><?php echo esc_html($choice['label']); ?></span>
+                                </label>
+                            <?php endforeach; ?>
+                        </div>
+                        <p class="fp-exp-field__description" id="fp-exp-language-tax-help"><?php esc_html_e('Utilizza le stesse lingue definite nei filtri globali.', 'fp-experiences'); ?></p>
+                    </div>
+
+                    <div class="fp-exp-field">
+                        <span class="fp-exp-field__label">
+                            <?php esc_html_e('Durate aggiuntive', 'fp-experiences'); ?>
+                            <?php $this->render_tooltip('fp-exp-duration-tax-help', esc_html__('Associa etichette come "Mezza giornata" o "Serale" per filtrare le esperienze.', 'fp-experiences')); ?>
+                        </span>
+                        <div class="fp-exp-checkbox-grid" aria-describedby="fp-exp-duration-tax-help">
+                            <?php foreach ($details['taxonomies']['duration']['choices'] as $choice) :
+                                $term_id = (int) $choice['id'];
+                                ?>
+                                <label>
+                                    <input type="checkbox" name="fp_exp_details[durations][]" value="<?php echo esc_attr((string) $term_id); ?>" <?php checked(in_array($term_id, $details['taxonomies']['duration']['selected'], true)); ?> />
+                                    <span><?php echo esc_html($choice['label']); ?></span>
+                                </label>
+                            <?php endforeach; ?>
+                        </div>
+                        <p class="fp-exp-field__description" id="fp-exp-duration-tax-help"><?php esc_html_e('Mostrate nella panoramica accanto alla durata in minuti.', 'fp-experiences'); ?></p>
+                    </div>
+
+                    <div class="fp-exp-field">
+                        <span class="fp-exp-field__label">
+                            <?php esc_html_e('Family friendly', 'fp-experiences'); ?>
+                            <?php $this->render_tooltip('fp-exp-family-help', esc_html__('Attiva le etichette per famiglie selezionando le opzioni disponibili.', 'fp-experiences')); ?>
+                        </span>
+                        <div class="fp-exp-checkbox-grid" aria-describedby="fp-exp-family-help">
+                            <?php foreach ($details['taxonomies']['family']['choices'] as $choice) :
+                                $term_id = (int) $choice['id'];
+                                ?>
+                                <label>
+                                    <input type="checkbox" name="fp_exp_details[family_friendly][]" value="<?php echo esc_attr((string) $term_id); ?>" <?php checked(in_array($term_id, $details['taxonomies']['family']['selected'], true)); ?> />
+                                    <span><?php echo esc_html($choice['label']); ?></span>
+                                </label>
+                            <?php endforeach; ?>
+                        </div>
+                        <p class="fp-exp-field__description" id="fp-exp-family-help"><?php esc_html_e('Contrassegna l\'esperienza come adatta alle famiglie e mostra il badge dedicato.', 'fp-experiences'); ?></p>
+                    </div>
+                </div>
+
+                <div class="fp-exp-field">
+                    <span class="fp-exp-field__label">
+                        <?php esc_html_e('Bias cognitivi', 'fp-experiences'); ?>
+                        <?php $this->render_tooltip('fp-exp-bias-help', esc_html__('Evidenzia le leve persuasive che caratterizzano l\'esperienza; vengono mostrate nella panoramica.', 'fp-experiences')); ?>
+                    </span>
+                    <div class="fp-exp-checkbox-grid" aria-describedby="fp-exp-bias-help">
+                        <?php foreach ($details['cognitive_biases']['choices'] as $choice) :
+                            $bias_id = (string) $choice['id'];
+                            ?>
+                            <label>
+                                <input type="checkbox" name="fp_exp_details[cognitive_biases][]" value="<?php echo esc_attr($bias_id); ?>" <?php checked(in_array($bias_id, $details['cognitive_biases']['selected'], true)); ?> />
+                                <span><?php echo esc_html($choice['label']); ?></span>
+                            </label>
+                        <?php endforeach; ?>
+                    </div>
+                    <p class="fp-exp-field__description" id="fp-exp-bias-help"><?php esc_html_e('Scegli fino a tre elementi per creare aspettative chiare nella sezione panoramica.', 'fp-experiences'); ?></p>
                 </div>
 
                 <div class="fp-exp-field">
@@ -698,7 +868,14 @@ final class ExperienceMetaBoxes
                             <?php endforeach; ?>
                         </div>
                         <template data-repeater-template>
-                            <?php $this->render_time_set_row('__INDEX__', ['label' => '', 'times' => [''], 'days' => []], true, (string) ($recurrence['frequency'] ?? 'weekly')); ?>
+                            <?php $this->render_time_set_row('__INDEX__', [
+                                'label' => '',
+                                'times' => [''],
+                                'days' => [],
+                                'capacity' => 0,
+                                'buffer_before' => 0,
+                                'buffer_after' => 0,
+                            ], true, (string) ($recurrence['frequency'] ?? 'weekly')); ?>
                         </template>
                         <p class="fp-exp-repeater__actions">
                             <button type="button" class="button button-secondary" data-repeater-add><?php esc_html_e('Aggiungi time set', 'fp-experiences'); ?></button>
@@ -719,63 +896,19 @@ final class ExperienceMetaBoxes
             </fieldset>
 
             <fieldset class="fp-exp-fieldset">
-                <legend><?php esc_html_e('Capienza e buffer', 'fp-experiences'); ?></legend>
-                <div class="fp-exp-field fp-exp-field--columns">
-                    <div>
-                        <label class="fp-exp-field__label" for="fp-exp-slot-capacity">
-                            <?php esc_html_e('Capienza slot', 'fp-experiences'); ?>
-                        </label>
-                        <input
-                            type="number"
-                            id="fp-exp-slot-capacity"
-                            name="fp_exp_availability[slot_capacity]"
-                            min="0"
-                            step="1"
-                            value="<?php echo esc_attr((string) $availability['slot_capacity']); ?>"
-                        />
-                    </div>
-                    <div>
-                        <label class="fp-exp-field__label" for="fp-exp-lead-time">
-                            <?php esc_html_e('Preavviso minimo (ore)', 'fp-experiences'); ?>
-                        </label>
-                        <input
-                            type="number"
-                            id="fp-exp-lead-time"
-                            name="fp_exp_availability[lead_time_hours]"
-                            min="0"
-                            step="1"
-                            value="<?php echo esc_attr((string) $availability['lead_time_hours']); ?>"
-                        />
-                    </div>
-                </div>
-
-                <div class="fp-exp-field fp-exp-field--columns">
-                    <div>
-                        <label class="fp-exp-field__label" for="fp-exp-buffer-before">
-                            <?php esc_html_e('Buffer prima (minuti)', 'fp-experiences'); ?>
-                        </label>
-                        <input
-                            type="number"
-                            id="fp-exp-buffer-before"
-                            name="fp_exp_availability[buffer_before_minutes]"
-                            min="0"
-                            step="1"
-                            value="<?php echo esc_attr((string) $availability['buffer_before_minutes']); ?>"
-                        />
-                    </div>
-                    <div>
-                        <label class="fp-exp-field__label" for="fp-exp-buffer-after">
-                            <?php esc_html_e('Buffer dopo (minuti)', 'fp-experiences'); ?>
-                        </label>
-                        <input
-                            type="number"
-                            id="fp-exp-buffer-after"
-                            name="fp_exp_availability[buffer_after_minutes]"
-                            min="0"
-                            step="1"
-                            value="<?php echo esc_attr((string) $availability['buffer_after_minutes']); ?>"
-                        />
-                    </div>
+                <legend><?php esc_html_e('Preavviso', 'fp-experiences'); ?></legend>
+                <div class="fp-exp-field">
+                    <label class="fp-exp-field__label" for="fp-exp-lead-time">
+                        <?php esc_html_e('Preavviso minimo (ore)', 'fp-experiences'); ?>
+                    </label>
+                    <input
+                        type="number"
+                        id="fp-exp-lead-time"
+                        name="fp_exp_availability[lead_time_hours]"
+                        min="0"
+                        step="1"
+                        value="<?php echo esc_attr((string) $availability['lead_time_hours']); ?>"
+                    />
                 </div>
             </fieldset>
         </section>
@@ -1181,10 +1314,32 @@ final class ExperienceMetaBoxes
         $days_base = $is_template
             ? 'fp_exp_availability[recurrence][time_sets][__INDEX__][days]'
             : 'fp_exp_availability[recurrence][time_sets][' . $index . '][days]';
+        $capacity_name = $is_template
+            ? 'fp_exp_availability[recurrence][time_sets][__INDEX__][capacity]'
+            : 'fp_exp_availability[recurrence][time_sets][' . $index . '][capacity]';
+        $buffer_before_name = $is_template
+            ? 'fp_exp_availability[recurrence][time_sets][__INDEX__][buffer_before]'
+            : 'fp_exp_availability[recurrence][time_sets][' . $index . '][buffer_before]';
+        $buffer_after_name = $is_template
+            ? 'fp_exp_availability[recurrence][time_sets][__INDEX__][buffer_after]'
+            : 'fp_exp_availability[recurrence][time_sets][' . $index . '][buffer_after]';
 
         $label_value = isset($set['label']) ? (string) $set['label'] : '';
         $times = [];
         $set_days = [];
+        $capacity_value = isset($set['capacity']) ? (string) absint((string) $set['capacity']) : '';
+        $buffer_before_value = isset($set['buffer_before']) ? (string) absint((string) $set['buffer_before']) : '';
+        $buffer_after_value = isset($set['buffer_after']) ? (string) absint((string) $set['buffer_after']) : '';
+
+        if ('0' === $capacity_value) {
+            $capacity_value = '';
+        }
+        if ('0' === $buffer_before_value) {
+            $buffer_before_value = '';
+        }
+        if ('0' === $buffer_after_value) {
+            $buffer_after_value = '';
+        }
 
         if (isset($set['times']) && is_array($set['times'])) {
             foreach ($set['times'] as $time) {
@@ -1244,6 +1399,20 @@ final class ExperienceMetaBoxes
                 </div>
                 <p class="fp-exp-field__description"><?php esc_html_e('Lascia vuoto per usare i giorni generali della ricorrenza settimanale.', 'fp-experiences'); ?></p>
             </div>
+            <div class="fp-exp-field fp-exp-field--columns fp-exp-recurrence-set__metrics">
+                <label>
+                    <span class="fp-exp-field__label"><?php esc_html_e('Capienza slot', 'fp-experiences'); ?></span>
+                    <input type="number" min="0" step="1" <?php echo $this->field_name_attribute($capacity_name, $is_template); ?> value="<?php echo esc_attr($capacity_value); ?>" />
+                </label>
+                <label>
+                    <span class="fp-exp-field__label"><?php esc_html_e('Buffer prima (minuti)', 'fp-experiences'); ?></span>
+                    <input type="number" min="0" step="1" <?php echo $this->field_name_attribute($buffer_before_name, $is_template); ?> value="<?php echo esc_attr($buffer_before_value); ?>" />
+                </label>
+                <label>
+                    <span class="fp-exp-field__label"><?php esc_html_e('Buffer dopo (minuti)', 'fp-experiences'); ?></span>
+                    <input type="number" min="0" step="1" <?php echo $this->field_name_attribute($buffer_after_name, $is_template); ?> value="<?php echo esc_attr($buffer_after_value); ?>" />
+                </label>
+            </div>
         </div>
         <?php
     }
@@ -1293,6 +1462,19 @@ final class ExperienceMetaBoxes
         $age_min = isset($raw['age_min']) ? absint((string) $raw['age_min']) : 0;
         $age_max = isset($raw['age_max']) ? absint((string) $raw['age_max']) : 0;
         $rules_children = isset($raw['rules_children']) ? sanitize_text_field((string) $raw['rules_children']) : '';
+        $hero_id = isset($raw['hero_image_id']) ? absint((string) $raw['hero_image_id']) : 0;
+        if ($hero_id > 0 && ! wp_attachment_is_image($hero_id)) {
+            $hero_id = 0;
+        }
+        $theme_terms = isset($raw['themes']) && is_array($raw['themes']) ? array_filter(array_map('absint', $raw['themes'])) : [];
+        $language_terms = isset($raw['taxonomy_languages']) && is_array($raw['taxonomy_languages'])
+            ? array_filter(array_map('absint', $raw['taxonomy_languages']))
+            : [];
+        $duration_terms = isset($raw['durations']) && is_array($raw['durations']) ? array_filter(array_map('absint', $raw['durations'])) : [];
+        $family_terms = isset($raw['family_friendly']) && is_array($raw['family_friendly']) ? array_filter(array_map('absint', $raw['family_friendly'])) : [];
+        $cognitive_biases = isset($raw['cognitive_biases']) && is_array($raw['cognitive_biases'])
+            ? array_values(array_filter(array_map('sanitize_key', $raw['cognitive_biases'])))
+            : [];
 
         $this->update_or_delete_meta($post_id, '_fp_short_desc', $short_desc);
         $this->update_or_delete_meta($post_id, '_fp_duration_minutes', $duration);
@@ -1302,6 +1484,18 @@ final class ExperienceMetaBoxes
         $this->update_or_delete_meta($post_id, '_fp_age_min', $age_min);
         $this->update_or_delete_meta($post_id, '_fp_age_max', $age_max);
         $this->update_or_delete_meta($post_id, '_fp_rules_children', $rules_children);
+        $this->update_or_delete_meta($post_id, '_fp_cognitive_biases', $cognitive_biases);
+
+        if ($hero_id > 0) {
+            update_post_meta($post_id, '_fp_hero_image_id', $hero_id);
+        } else {
+            delete_post_meta($post_id, '_fp_hero_image_id');
+        }
+
+        wp_set_post_terms($post_id, $theme_terms, 'fp_exp_theme', false);
+        wp_set_post_terms($post_id, $language_terms, 'fp_exp_language', false);
+        wp_set_post_terms($post_id, $duration_terms, 'fp_exp_duration', false);
+        wp_set_post_terms($post_id, $family_terms, 'fp_exp_family_friendly', false);
     }
     private function save_pricing_meta(int $post_id, $raw): string
     {
@@ -1687,7 +1881,118 @@ final class ExperienceMetaBoxes
             'age_min' => absint((string) get_post_meta($post_id, '_fp_age_min', true)),
             'age_max' => absint((string) get_post_meta($post_id, '_fp_age_max', true)),
             'rules_children' => sanitize_text_field((string) get_post_meta($post_id, '_fp_rules_children', true)),
+            'hero_image' => $this->get_hero_image($post_id),
+            'cognitive_biases' => [
+                'choices' => Helpers::cognitive_bias_choices(),
+                'selected' => $this->get_selected_cognitive_biases($post_id),
+            ],
+            'taxonomies' => [
+                'theme' => [
+                    'choices' => $this->get_taxonomy_choices('fp_exp_theme'),
+                    'selected' => $this->get_assigned_terms($post_id, 'fp_exp_theme'),
+                ],
+                'language' => [
+                    'choices' => $this->get_taxonomy_choices('fp_exp_language'),
+                    'selected' => $this->get_assigned_terms($post_id, 'fp_exp_language'),
+                ],
+                'duration' => [
+                    'choices' => $this->get_taxonomy_choices('fp_exp_duration'),
+                    'selected' => $this->get_assigned_terms($post_id, 'fp_exp_duration'),
+                ],
+                'family' => [
+                    'choices' => $this->get_taxonomy_choices('fp_exp_family_friendly'),
+                    'selected' => $this->get_assigned_terms($post_id, 'fp_exp_family_friendly'),
+                ],
+            ],
         ];
+    }
+
+    private function get_hero_image(int $post_id): array
+    {
+        $image_id = absint((string) get_post_meta($post_id, '_fp_hero_image_id', true));
+
+        if ($image_id <= 0) {
+            $gallery_ids = get_post_meta($post_id, '_fp_gallery_ids', true);
+            if (is_array($gallery_ids)) {
+                foreach ($gallery_ids as $candidate) {
+                    $maybe_id = absint($candidate);
+                    if ($maybe_id > 0) {
+                        $image_id = $maybe_id;
+                        break;
+                    }
+                }
+            }
+        }
+
+        if ($image_id <= 0) {
+            $thumbnail_id = get_post_thumbnail_id($post_id);
+            $image_id = $thumbnail_id ? (int) $thumbnail_id : 0;
+        }
+
+        if ($image_id <= 0) {
+            return ['id' => 0, 'url' => '', 'width' => 0, 'height' => 0];
+        }
+
+        $image = wp_get_attachment_image_src($image_id, 'large');
+
+        return [
+            'id' => $image_id,
+            'url' => $image ? (string) ($image[0] ?? '') : '',
+            'width' => $image ? absint((string) ($image[1] ?? 0)) : 0,
+            'height' => $image ? absint((string) ($image[2] ?? 0)) : 0,
+        ];
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function get_selected_cognitive_biases(int $post_id): array
+    {
+        $stored = get_post_meta($post_id, '_fp_cognitive_biases', true);
+
+        if (! is_array($stored)) {
+            return [];
+        }
+
+        $valid = array_map(static fn ($choice) => (string) $choice['id'], Helpers::cognitive_bias_choices());
+
+        return array_values(array_filter(array_map(static function ($item) use ($valid) {
+            $key = sanitize_key((string) $item);
+
+            return in_array($key, $valid, true) ? $key : '';
+        }, $stored)));
+    }
+
+    private function get_taxonomy_choices(string $taxonomy): array
+    {
+        $terms = get_terms([
+            'taxonomy' => $taxonomy,
+            'hide_empty' => false,
+            'orderby' => 'name',
+            'order' => 'ASC',
+        ]);
+
+        if (! is_array($terms) || is_wp_error($terms)) {
+            return [];
+        }
+
+        return array_map(static function ($term) {
+            return [
+                'id' => (int) $term->term_id,
+                'label' => sanitize_text_field((string) $term->name),
+            ];
+        }, $terms);
+    }
+
+    private function get_assigned_terms(int $post_id, string $taxonomy): array
+    {
+        $terms = wp_get_post_terms($post_id, $taxonomy, ['fields' => 'ids']);
+
+        if (! is_array($terms) || is_wp_error($terms)) {
+            return [];
+        }
+
+        return array_values(array_filter(array_map('absint', $terms)));
     }
 
     /**
@@ -1825,6 +2130,9 @@ final class ExperienceMetaBoxes
                     'label' => $label,
                     'times' => array_values(array_unique($times)),
                     'days' => $set_days,
+                    'capacity' => isset($set['capacity']) ? absint((string) $set['capacity']) : 0,
+                    'buffer_before' => isset($set['buffer_before']) ? absint((string) $set['buffer_before']) : 0,
+                    'buffer_after' => isset($set['buffer_after']) ? absint((string) $set['buffer_after']) : 0,
                 ];
             }
         }

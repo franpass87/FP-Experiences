@@ -21,6 +21,8 @@ use function array_values;
 use function apply_filters;
 use function do_shortcode;
 use function esc_attr;
+use function __;
+use function _n;
 use function esc_html__;
 use function explode;
 use function get_bloginfo;
@@ -46,6 +48,7 @@ use function strtolower;
 use function wp_get_attachment_image_src;
 use function wp_get_attachment_image_srcset;
 use function wp_get_attachment_image_url;
+use function wp_get_post_terms;
 use function wp_json_encode;
 use function wp_kses_post;
 use function wp_trim_words;
@@ -54,6 +57,8 @@ final class ExperienceShortcode extends BaseShortcode
 {
     private const ALLOWED_SECTIONS = [
         'hero',
+        'overview',
+        'gallery',
         'highlights',
         'inclusions',
         'meeting',
@@ -136,8 +141,9 @@ final class ExperienceShortcode extends BaseShortcode
         $short_desc = sanitize_text_field((string) get_post_meta($experience_id, '_fp_short_desc', true));
         $content_summary = $short_desc ?: wp_trim_words((string) $post->post_excerpt, 36);
 
+        $hero_image_id = absint((string) get_post_meta($experience_id, '_fp_hero_image_id', true));
         $gallery_ids = get_post_meta($experience_id, '_fp_gallery_ids', true);
-        $gallery = $this->prepare_gallery($experience_id, $gallery_ids);
+        $gallery = $this->prepare_gallery($experience_id, $gallery_ids, $hero_image_id);
 
         $highlights = Helpers::get_meta_array($experience_id, '_fp_highlights');
         $inclusions = Helpers::get_meta_array($experience_id, '_fp_inclusions');
@@ -169,10 +175,26 @@ final class ExperienceShortcode extends BaseShortcode
         $currency = $this->resolve_currency();
 
         $theme_terms = get_the_terms($post, 'fp_exp_theme');
+        $theme_names = [];
         $primary_category = '';
         if (is_array($theme_terms) && ! empty($theme_terms)) {
             $primary_category = sanitize_text_field((string) $theme_terms[0]->name);
+            $theme_names = array_values(array_filter(array_map(static function ($term) {
+                return isset($term->name) ? sanitize_text_field((string) $term->name) : '';
+            }, $theme_terms)));
         }
+
+        $taxonomy_languages = wp_get_post_terms($experience_id, 'fp_exp_language', ['fields' => 'names']);
+        $language_term_names = is_array($taxonomy_languages)
+            ? array_values(array_filter(array_map('sanitize_text_field', $taxonomy_languages)))
+            : [];
+
+        $taxonomy_durations = wp_get_post_terms($experience_id, 'fp_exp_duration', ['fields' => 'names']);
+        $duration_term_names = is_array($taxonomy_durations)
+            ? array_values(array_filter(array_map('sanitize_text_field', $taxonomy_durations)))
+            : [];
+
+        $duration_label = $this->format_duration($duration_minutes);
 
         $schema = $this->build_schema([
             'post' => $post,
@@ -208,7 +230,7 @@ final class ExperienceShortcode extends BaseShortcode
 
         $widget_atts = [
             'id' => (string) $experience_id,
-            'sticky' => '0',
+            'sticky' => $is_sticky_widget ? '1' : '0',
             'display_context' => 'page',
         ];
 
@@ -223,10 +245,67 @@ final class ExperienceShortcode extends BaseShortcode
             ? do_shortcode('[fp_exp_widget ' . $this->build_shortcode_atts($widget_atts) . ']')
             : '';
 
+        $family_terms = get_the_terms($post, 'fp_exp_family_friendly');
+        $family_friendly = is_array($family_terms) && ! empty($family_terms);
+        $cognitive_bias_meta = get_post_meta($post->ID, '_fp_cognitive_biases', true);
+        $cognitive_bias_slugs = is_array($cognitive_bias_meta)
+            ? array_values(array_filter(array_map('sanitize_key', $cognitive_bias_meta)))
+            : [];
+        $cognitive_bias_labels = Helpers::cognitive_bias_labels($cognitive_bias_slugs);
+
+        $badges = $this->build_badges($duration_minutes, $language_badges, $family_friendly);
+
+        $primary_meeting = isset($meeting_data['primary']) && is_array($meeting_data['primary'])
+            ? $meeting_data['primary']
+            : null;
+        $meeting_title = '';
+        $meeting_address = '';
+        $meeting_summary = '';
+
+        if (is_array($primary_meeting)) {
+            $meeting_title = sanitize_text_field((string) ($primary_meeting['title'] ?? ''));
+            $meeting_address = sanitize_text_field((string) ($primary_meeting['address'] ?? ''));
+
+            if ('' !== $meeting_title && '' !== $meeting_address) {
+                $meeting_summary = $meeting_title . ' — ' . $meeting_address;
+            } else {
+                $meeting_summary = $meeting_title ?: $meeting_address;
+            }
+        }
+
+        $overview = [
+            'themes' => $theme_names,
+            'language_terms' => $language_term_names,
+            'language_badges' => $language_badges,
+            'duration_label' => $duration_label,
+            'duration_terms' => $duration_term_names,
+            'duration_minutes' => $duration_minutes,
+            'meeting' => [
+                'title' => $meeting_title,
+                'address' => $meeting_address,
+                'summary' => $meeting_summary,
+            ],
+            'family_friendly' => $family_friendly,
+            'cognitive_biases' => $cognitive_bias_labels,
+        ];
+
+        $overview_has_content = $this->overview_has_content($overview);
+        if (! $overview_has_content) {
+            $enabled_sections['overview'] = false;
+        }
+
         $sections_map = [
             'hero' => [
                 'id' => 'hero',
+                'label' => esc_html__('Intro', 'fp-experiences'),
+            ],
+            'overview' => [
+                'id' => 'overview',
                 'label' => esc_html__('Overview', 'fp-experiences'),
+            ],
+            'gallery' => [
+                'id' => 'gallery',
+                'label' => esc_html__('Gallery', 'fp-experiences'),
             ],
             'highlights' => [
                 'id' => 'highlights',
@@ -260,6 +339,21 @@ final class ExperienceShortcode extends BaseShortcode
                 continue;
             }
 
+            if ('overview' === $section_key && ! $overview_has_content) {
+                continue;
+            }
+
+            if ('gallery' === $section_key) {
+                $valid_gallery = array_filter(
+                    $gallery,
+                    static fn ($image) => is_array($image) && ! empty($image['url'])
+                );
+
+                if (count($valid_gallery) < 2) {
+                    continue;
+                }
+            }
+
             if ('highlights' === $section_key && empty($highlights)) {
                 continue;
             }
@@ -286,11 +380,6 @@ final class ExperienceShortcode extends BaseShortcode
 
             $navigation[] = $sections_map[$section_key];
         }
-
-        $family_terms = get_the_terms($post, 'fp_exp_family_friendly');
-        $family_friendly = is_array($family_terms) && ! empty($family_terms);
-
-        $badges = $this->build_badges($duration_minutes, $language_badges, $family_friendly);
 
         $missing_meta = [];
 
@@ -377,6 +466,8 @@ final class ExperienceShortcode extends BaseShortcode
                 'redeem_page' => Helpers::gift_redeem_page(),
                 'currency' => get_option('woocommerce_currency', 'EUR'),
             ],
+            'overview' => $overview,
+            'overview_has_content' => $overview_has_content,
         ];
     }
 
@@ -406,6 +497,11 @@ final class ExperienceShortcode extends BaseShortcode
 
         if ('fp_experience' === $post_type) {
             return $current_id;
+        }
+
+        $linked_experience_id = absint(get_post_meta($current_id, '_fp_experience_id', true));
+        if ($linked_experience_id > 0) {
+            return $linked_experience_id;
         }
 
         Helpers::log_debug('shortcodes', 'Experience shortcode missing explicit ID', [
@@ -540,18 +636,29 @@ final class ExperienceShortcode extends BaseShortcode
 
     /**
      * @param mixed $raw
+     * @param int   $hero_id
      *
      * @return array<int, array<string, string>>
      */
-    private function prepare_gallery(int $experience_id, $raw): array
+    private function prepare_gallery(int $experience_id, $raw, int $hero_id): array
     {
         $images = [];
+        $ids = [];
+
+        if ($hero_id > 0) {
+            $ids[] = $hero_id;
+        }
 
         if (is_array($raw)) {
-            $ids = array_filter(array_map('absint', $raw));
-        } else {
-            $ids = [];
+            foreach ($raw as $value) {
+                $id = absint($value);
+                if ($id > 0) {
+                    $ids[] = $id;
+                }
+            }
         }
+
+        $ids = array_values(array_unique($ids));
 
         if (empty($ids)) {
             $thumbnail_id = get_post_thumbnail_id($experience_id);
@@ -572,16 +679,62 @@ final class ExperienceShortcode extends BaseShortcode
 
             $src = wp_get_attachment_image_src($id, 'large');
             $srcset = wp_get_attachment_image_srcset($id, 'large');
+            $attachment = get_post($id);
+            $alt = trim((string) get_post_meta($id, '_wp_attachment_image_alt', true));
+            $caption = '';
+
+            if ($attachment instanceof WP_Post) {
+                if ('' === $alt) {
+                    $alt = trim((string) $attachment->post_title);
+                }
+
+                $caption = trim((string) $attachment->post_excerpt);
+            }
+
             $images[] = [
                 'id' => $id,
                 'url' => $url,
                 'width' => is_array($src) ? ($src[1] ?? '') : '',
                 'height' => is_array($src) ? ($src[2] ?? '') : '',
                 'srcset' => $srcset ?: '',
+                'alt' => $alt,
+                'caption' => $caption,
             ];
         }
 
         return $images;
+    }
+
+    /**
+     * @param array<string, mixed> $overview
+     */
+    private function overview_has_content(array $overview): bool
+    {
+        if (empty($overview)) {
+            return false;
+        }
+
+        $has_themes = ! empty($overview['themes']);
+        $has_languages = ! empty($overview['language_badges']);
+        $has_biases = ! empty($overview['cognitive_biases']);
+        $has_duration_label = '' !== ($overview['duration_label'] ?? '');
+        $has_duration_terms = ! empty($overview['duration_terms']);
+
+        $meeting = $overview['meeting'] ?? [];
+        $meeting_summary = '';
+        if (is_array($meeting)) {
+            $meeting_summary = (string) ($meeting['summary'] ?? '');
+        }
+
+        $has_family = ! empty($overview['family_friendly']);
+
+        return $has_themes
+            || $has_languages
+            || $has_biases
+            || $has_duration_label
+            || $has_duration_terms
+            || '' !== $meeting_summary
+            || $has_family;
     }
 
     /**
@@ -840,6 +993,26 @@ final class ExperienceShortcode extends BaseShortcode
      *
      * @return array<int, array<string, string>>
      */
+    private function format_duration(int $minutes): string
+    {
+        if ($minutes <= 0) {
+            return '';
+        }
+
+        $hours = intdiv($minutes, 60);
+        $remaining = $minutes % 60;
+
+        if ($hours > 0 && $remaining > 0) {
+            return sprintf(__('%1$dh %2$dmin', 'fp-experiences'), $hours, $remaining);
+        }
+
+        if ($hours > 0) {
+            return sprintf(_n('%dh', '%dh', $hours, 'fp-experiences'), $hours);
+        }
+
+        return sprintf(_n('%d minute', '%d minutes', $minutes, 'fp-experiences'), $minutes);
+    }
+
     private function build_badges(int $duration_minutes, array $language_badges, bool $family_friendly): array
     {
         $badges = [];

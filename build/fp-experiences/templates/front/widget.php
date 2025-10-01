@@ -60,62 +60,6 @@ $rtb_submit_label = 'pay_later' === $rtb_mode
     data-display-context="<?php echo esc_attr($display_context); ?>"
     data-config-version="<?php echo esc_attr($config_version); ?>"
 >
-    <div class="fp-exp-widget__header">
-        <h2 class="fp-exp-widget__title"><?php echo esc_html($experience['title']); ?></h2>
-        <?php if (! empty($experience['highlights'])) : ?>
-            <ul class="fp-exp-widget__highlights">
-                <?php foreach ($experience['highlights'] as $highlight) : ?>
-                    <li><?php echo esc_html($highlight); ?></li>
-                <?php endforeach; ?>
-            </ul>
-        <?php endif; ?>
-        <div class="fp-exp-widget__meta">
-            <?php if (! empty($experience['duration'])) : ?>
-                <span class="fp-exp-widget__meta-item">
-                    <strong><?php echo esc_html__('Duration', 'fp-experiences'); ?></strong>
-                    <span><?php echo esc_html(sprintf(esc_html__('%d minutes', 'fp-experiences'), (int) $experience['duration'])); ?></span>
-                </span>
-            <?php endif; ?>
-            <?php if (! empty($experience['language_badges'])) : ?>
-                <span class="fp-exp-widget__meta-item">
-                    <strong><?php echo esc_html__('Languages', 'fp-experiences'); ?></strong>
-                    <span class="fp-exp-widget__languages">
-                        <?php foreach ($experience['language_badges'] as $language) :
-                            if (! is_array($language)) {
-                                continue;
-                            }
-
-                            $sprite_id = isset($language['sprite']) ? (string) $language['sprite'] : '';
-                            $code = isset($language['code']) ? (string) $language['code'] : '';
-                            $aria_label = isset($language['aria_label']) ? (string) $language['aria_label'] : $code;
-                            $readable_label = isset($language['label']) ? (string) $language['label'] : $code;
-                            if ('' === $code) {
-                                continue;
-                            }
-                            ?>
-                            <span class="fp-exp-widget__language" role="text">
-                                <?php if ($sprite_id) : ?>
-                                    <span class="fp-exp-widget__language-flag" role="img" aria-label="<?php echo esc_attr($aria_label); ?>">
-                                        <svg viewBox="0 0 24 16" aria-hidden="true" focusable="false">
-                                            <use href="<?php echo esc_url($language_sprite . '#' . $sprite_id); ?>"></use>
-                                        </svg>
-                                    </span>
-                                <?php endif; ?>
-                                <span class="fp-exp-widget__language-code" aria-hidden="true"><?php echo esc_html($code); ?></span>
-                                <span class="screen-reader-text"><?php echo esc_html($readable_label); ?></span>
-                            </span>
-                        <?php endforeach; ?>
-                    </span>
-                </span>
-            <?php endif; ?>
-            <?php if (! empty($experience['meeting_point'])) : ?>
-                <span class="fp-exp-widget__meta-item">
-                    <strong><?php echo esc_html__('Meeting point', 'fp-experiences'); ?></strong>
-                    <span><?php echo esc_html($experience['meeting_point']); ?></span>
-                </span>
-            <?php endif; ?>
-        </div>
-    </div>
     <div
         class="fp-exp-widget__body"
         data-sticky="<?php echo esc_attr($behavior['sticky'] ? '1' : '0'); ?>"
