@@ -78,6 +78,16 @@ final class Activation
     }
 
     /**
+     * Expose the role blueprint so other components can inspect the expected setup.
+     *
+     * @return array<string, array{label: string, primary_capability: string, capabilities: array<string, bool>}>
+     */
+    public static function roles_blueprint(): array
+    {
+        return self::roles_definition();
+    }
+
+    /**
      * @return array<string, array{label: string, primary_capability: string, capabilities: array<string, bool>}>
      */
     private static function roles_definition(): array

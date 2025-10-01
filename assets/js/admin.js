@@ -759,12 +759,43 @@
         const successText = i18n.success || 'Action completed successfully.';
         const errorText = i18n.error || 'Action failed. Check logs for details.';
 
-        function setMessage(message, isError = false) {
+        function setMessage(message, isError = false, details = []) {
             if (!output) {
                 return;
             }
-            output.textContent = message || '';
+            output.innerHTML = '';
             output.classList.toggle('is-error', Boolean(isError));
+
+            const hasMessage = Boolean(message);
+            if (hasMessage) {
+                const paragraph = document.createElement('p');
+                paragraph.textContent = message;
+                output.appendChild(paragraph);
+            }
+
+            const detailList = Array.isArray(details) ? details : [];
+            if (detailList.length) {
+                const list = document.createElement('ul');
+                list.classList.add('fp-exp-tools__details');
+
+                detailList.forEach((detail) => {
+                    const text = detail == null ? '' : String(detail);
+                    if (!text) {
+                        return;
+                    }
+                    const item = document.createElement('li');
+                    item.textContent = text;
+                    list.appendChild(item);
+                });
+
+                if (list.childElementCount) {
+                    output.appendChild(list);
+                }
+            }
+
+            if (!output.childElementCount) {
+                output.textContent = message || '';
+            }
         }
 
         const buttons = Array.from(container.querySelectorAll('[data-action]'));
@@ -803,7 +834,8 @@
                     const payload = await response.json().catch(() => ({}));
                     const success = response.ok && payload && payload.success !== false;
                     const message = payload && payload.message ? String(payload.message) : success ? successText : errorText;
-                    setMessage(message, !success);
+                    const details = payload && Array.isArray(payload.details) ? payload.details : [];
+                    setMessage(message, !success, details);
                 } catch (error) {
                     setMessage(errorText, true);
                 } finally {
