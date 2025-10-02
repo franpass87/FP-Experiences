@@ -41,6 +41,7 @@ use function get_transient;
 use function get_post_thumbnail_id;
 use function get_terms;
 use function in_array;
+use function implode;
 use function is_array;
 use function is_wp_error;
 use function sanitize_key;
@@ -49,6 +50,7 @@ use function sanitize_title;
 use function selected;
 use function set_transient;
 use function strval;
+use function sprintf;
 use function update_post_meta;
 use function wp_enqueue_media;
 use function wp_enqueue_script;
@@ -904,9 +906,22 @@ final class ExperienceMetaBoxes
             $recurrence = array_merge(Recurrence::defaults(), $recurrence);
         }
 
+        $frequency = isset($recurrence['frequency']) ? (string) $recurrence['frequency'] : 'weekly';
+        if (! in_array($frequency, ['daily', 'weekly', 'specific'], true)) {
+            $frequency = 'weekly';
+        }
+
         $time_sets = $recurrence['time_sets'];
+        $recurrence_days = isset($recurrence['days']) && is_array($recurrence['days']) ? $recurrence['days'] : [];
+        $frequency_summary = $this->get_recurrence_frequency_summary($frequency, $recurrence_days);
         if (empty($time_sets)) {
             $time_sets = [['label' => '', 'times' => [''], 'days' => []]];
+        }
+        $custom_slots = isset($availability['custom_slots']) && is_array($availability['custom_slots'])
+            ? $availability['custom_slots']
+            : [];
+        if (empty($custom_slots)) {
+            $custom_slots = [['date' => '', 'time' => '']];
         }
         ?>
         <section
@@ -919,13 +934,81 @@ final class ExperienceMetaBoxes
             hidden
         >
             <fieldset class="fp-exp-fieldset">
+                <legend><?php esc_html_e('Guida rapida agli slot', 'fp-experiences'); ?></legend>
+                <div class="fp-exp-field">
+                    <p class="fp-exp-field__description"><?php esc_html_e('Organizza gli orari seguendo tre passaggi:', 'fp-experiences'); ?></p>
+                    <p class="fp-exp-field__description"><strong><?php esc_html_e('1.', 'fp-experiences'); ?></strong> <?php esc_html_e('Definisci qui sotto la capienza di base e i buffer globali.', 'fp-experiences'); ?></p>
+                    <p class="fp-exp-field__description"><strong><?php esc_html_e('2.', 'fp-experiences'); ?></strong> <?php esc_html_e('Attiva la ricorrenza automatica per generare gli slot ricorrenti.', 'fp-experiences'); ?></p>
+                    <p class="fp-exp-field__description"><strong><?php esc_html_e('3.', 'fp-experiences'); ?></strong> <?php esc_html_e('Aggiungi eventuali eccezioni con gli slot manuali una tantum.', 'fp-experiences'); ?></p>
+                </div>
+            </fieldset>
+
+            <fieldset class="fp-exp-fieldset">
+                <legend><?php esc_html_e('Impostazioni generali degli slot', 'fp-experiences'); ?></legend>
+                <div class="fp-exp-field fp-exp-field--columns">
+                    <div>
+                        <label class="fp-exp-field__label" for="fp-exp-slot-capacity"><?php esc_html_e('Capienza predefinita slot', 'fp-experiences'); ?></label>
+                        <input
+                            type="number"
+                            id="fp-exp-slot-capacity"
+                            name="fp_exp_availability[slot_capacity]"
+                            min="0"
+                            step="1"
+                            value="<?php echo esc_attr((string) $availability['slot_capacity']); ?>"
+                        />
+                        <p class="fp-exp-field__description"><?php esc_html_e('Valore usato per gli slot generati automaticamente. Puoi modificarlo per singolo slot dal calendario.', 'fp-experiences'); ?></p>
+                    </div>
+                    <div>
+                        <label class="fp-exp-field__label" for="fp-exp-lead-time"><?php esc_html_e('Preavviso minimo (ore)', 'fp-experiences'); ?></label>
+                        <input
+                            type="number"
+                            id="fp-exp-lead-time"
+                            name="fp_exp_availability[lead_time_hours]"
+                            min="0"
+                            step="1"
+                            value="<?php echo esc_attr((string) $availability['lead_time_hours']); ?>"
+                        />
+                        <p class="fp-exp-field__description"><?php esc_html_e('Limita la possibilità di prenotare gli slot troppo a ridosso della partenza.', 'fp-experiences'); ?></p>
+                    </div>
+                </div>
+                <div class="fp-exp-field fp-exp-field--columns">
+                    <div>
+                        <label class="fp-exp-field__label" for="fp-exp-buffer-before"><?php esc_html_e('Buffer prima (minuti)', 'fp-experiences'); ?></label>
+                        <input
+                            type="number"
+                            id="fp-exp-buffer-before"
+                            name="fp_exp_availability[buffer_before_minutes]"
+                            min="0"
+                            step="1"
+                            value="<?php echo esc_attr((string) $availability['buffer_before_minutes']); ?>"
+                        />
+                    </div>
+                    <div>
+                        <label class="fp-exp-field__label" for="fp-exp-buffer-after"><?php esc_html_e('Buffer dopo (minuti)', 'fp-experiences'); ?></label>
+                        <input
+                            type="number"
+                            id="fp-exp-buffer-after"
+                            name="fp_exp_availability[buffer_after_minutes]"
+                            min="0"
+                            step="1"
+                            value="<?php echo esc_attr((string) $availability['buffer_after_minutes']); ?>"
+                        />
+                    </div>
+                </div>
+                <p class="fp-exp-field__description"><?php esc_html_e('I buffer vengono applicati quando si generano nuovi slot o si controlla la disponibilità.', 'fp-experiences'); ?></p>
+            </fieldset>
+
+            <fieldset class="fp-exp-fieldset">
                 <legend><?php esc_html_e('Ricorrenza automatica', 'fp-experiences'); ?></legend>
                 <div class="fp-exp-field fp-exp-field--switch">
                     <label class="fp-exp-switch">
                         <input type="checkbox" name="fp_exp_availability[recurrence][enabled]" value="1" data-recurrence-toggle <?php checked(! empty($recurrence['enabled'])); ?> />
                         <span><?php esc_html_e('Attiva generazione automatica slot (RRULE)', 'fp-experiences'); ?></span>
                     </label>
-                    <p class="fp-exp-field__description"><?php esc_html_e('Collega regole ricorrenti agli orari per generare in blocco gli slot futuri senza modificare quelli passati.', 'fp-experiences'); ?></p>
+                    <p class="fp-exp-field__description"><?php esc_html_e('Configura regole ricorrenti per popolare automaticamente il calendario senza toccare gli slot già esistenti.', 'fp-experiences'); ?></p>
+                </div>
+                <div class="fp-exp-field">
+                    <p class="fp-exp-field__description fp-exp-field__description--muted"><?php esc_html_e('Suggerimento: compila gli step dall’alto verso il basso e usa il pulsante di anteprima per verificare il risultato prima di generare.', 'fp-experiences'); ?></p>
                 </div>
                 <div class="fp-exp-recurrence" data-recurrence-settings <?php echo ! empty($recurrence['enabled']) ? '' : 'hidden'; ?>>
                     <div class="fp-exp-field fp-exp-field--columns">
@@ -940,21 +1023,90 @@ final class ExperienceMetaBoxes
                     </div>
 
                     <div class="fp-exp-field">
-                        <label class="fp-exp-field__label" for="fp-exp-recurrence-frequency"><?php esc_html_e('Frequenza RRULE', 'fp-experiences'); ?></label>
-                        <select id="fp-exp-recurrence-frequency" name="fp_exp_availability[recurrence][frequency]" data-recurrence-frequency>
-                            <option value="daily" <?php selected($recurrence['frequency'], 'daily'); ?>><?php esc_html_e('Quotidiana', 'fp-experiences'); ?></option>
-                            <option value="weekly" <?php selected($recurrence['frequency'], 'weekly'); ?>><?php esc_html_e('Settimanale', 'fp-experiences'); ?></option>
-                            <option value="specific" <?php selected($recurrence['frequency'], 'specific'); ?>><?php esc_html_e('Date specifiche', 'fp-experiences'); ?></option>
-                        </select>
-                        <p class="fp-exp-field__description"><?php esc_html_e('Le ricorrenze giornaliere usano tutti gli orari selezionati; quelle settimanali richiedono i giorni attivi.', 'fp-experiences'); ?></p>
+                        <span class="fp-exp-field__label"><?php esc_html_e('Tipo di disponibilità ricorrente', 'fp-experiences'); ?></span>
+                        <div class="fp-exp-radio-cards" role="radiogroup">
+                            <label
+                                class="fp-exp-radio-card<?php echo 'daily' === $frequency ? ' is-selected' : ''; ?>"
+                                data-recurrence-frequency-card
+                                data-frequency-summary-template="<?php echo esc_attr($this->get_recurrence_frequency_summary_template('daily')); ?>"
+                            >
+                                <input
+                                    type="radio"
+                                    name="fp_exp_availability[recurrence][frequency]"
+                                    value="daily"
+                                    data-recurrence-frequency
+                                    <?php checked($frequency, 'daily'); ?>
+                                />
+                                <span class="fp-exp-radio-card__title"><?php esc_html_e('Giornaliera', 'fp-experiences'); ?></span>
+                                <span class="fp-exp-radio-card__text"><?php esc_html_e('Gli stessi orari sono attivi ogni giorno tra la data di inizio e fine.', 'fp-experiences'); ?></span>
+                            </label>
+                            <label
+                                class="fp-exp-radio-card<?php echo 'weekly' === $frequency ? ' is-selected' : ''; ?>"
+                                data-recurrence-frequency-card
+                                data-frequency-summary-template="<?php echo esc_attr($this->get_recurrence_frequency_summary_template('weekly')); ?>"
+                            >
+                                <input
+                                    type="radio"
+                                    name="fp_exp_availability[recurrence][frequency]"
+                                    value="weekly"
+                                    data-recurrence-frequency
+                                    <?php checked($frequency, 'weekly'); ?>
+                                />
+                                <span class="fp-exp-radio-card__title"><?php esc_html_e('Settimanale', 'fp-experiences'); ?></span>
+                                <span class="fp-exp-radio-card__text"><?php esc_html_e('Scegli i giorni della settimana in cui ripetere gli orari.', 'fp-experiences'); ?></span>
+                            </label>
+                            <label
+                                class="fp-exp-radio-card<?php echo 'specific' === $frequency ? ' is-selected' : ''; ?>"
+                                data-recurrence-frequency-card
+                                data-frequency-summary-template="<?php echo esc_attr($this->get_recurrence_frequency_summary_template('specific')); ?>"
+                            >
+                                <input
+                                    type="radio"
+                                    name="fp_exp_availability[recurrence][frequency]"
+                                    value="specific"
+                                    data-recurrence-frequency
+                                    <?php checked($frequency, 'specific'); ?>
+                                />
+                                <span class="fp-exp-radio-card__title"><?php esc_html_e('Date specifiche', 'fp-experiences'); ?></span>
+                                <span class="fp-exp-radio-card__text"><?php esc_html_e('Usa la data di inizio/fine per delimitare il periodo e aggiungi solo gli slot speciali richiesti.', 'fp-experiences'); ?></span>
+                            </label>
+                        </div>
+                        <p class="fp-exp-field__description" data-recurrence-frequency-help data-frequency="daily" <?php echo 'daily' === $frequency ? '' : 'hidden'; ?>>
+                            <?php esc_html_e('Gli orari selezionati verranno generati per ogni giorno del periodo indicato.', 'fp-experiences'); ?>
+                        </p>
+                        <p class="fp-exp-field__description" data-recurrence-frequency-help data-frequency="weekly" <?php echo 'weekly' === $frequency ? '' : 'hidden'; ?>>
+                            <?php esc_html_e('Seleziona i giorni attivi qui sotto o lascia tutti deselezionati per usare gli orari solo nelle date manuali.', 'fp-experiences'); ?>
+                        </p>
+                        <p class="fp-exp-field__description" data-recurrence-frequency-help data-frequency="specific" <?php echo 'specific' === $frequency ? '' : 'hidden'; ?>>
+                            <?php esc_html_e('Questa opzione è ideale per stagionalità limitate o weekend particolari: genera slot solo nelle date indicate manualmente.', 'fp-experiences'); ?>
+                        </p>
+                        <p
+                            class="fp-exp-field__description fp-exp-recurrence__summary"
+                            data-recurrence-frequency-summary
+                            <?php echo '' === $frequency_summary ? 'hidden' : ''; ?>
+                        >
+                            <?php echo esc_html($frequency_summary); ?>
+                        </p>
                     </div>
 
-                    <div class="fp-exp-field" data-recurrence-days <?php echo 'weekly' === $recurrence['frequency'] ? '' : 'hidden'; ?>>
+                    <div
+                        class="fp-exp-field"
+                        data-recurrence-days
+                        data-recurrence-weekly-empty="<?php echo esc_attr__('Nessun giorno selezionato', 'fp-experiences'); ?>"
+                        <?php echo 'weekly' === $frequency ? '' : 'hidden'; ?>
+                    >
                         <span class="fp-exp-field__label"><?php esc_html_e('Giorni attivi', 'fp-experiences'); ?></span>
                         <div class="fp-exp-checkbox-grid">
                             <?php foreach ($this->get_week_days() as $day_key => $day_label) : ?>
                                 <label>
-                                    <input type="checkbox" name="fp_exp_availability[recurrence][days][]" value="<?php echo esc_attr($day_key); ?>" <?php checked(in_array($this->map_weekday_for_ui($day_key), $recurrence['days'], true)); ?> />
+                                    <input
+                                        type="checkbox"
+                                        name="fp_exp_availability[recurrence][days][]"
+                                        value="<?php echo esc_attr($day_key); ?>"
+                                        data-recurrence-day
+                                        data-day-label="<?php echo esc_attr($day_label); ?>"
+                                        <?php checked(in_array($this->map_weekday_for_ui($day_key), $recurrence_days, true)); ?>
+                                    />
                                     <span><?php echo esc_html($day_label); ?></span>
                                 </label>
                             <?php endforeach; ?>
@@ -972,7 +1124,7 @@ final class ExperienceMetaBoxes
                     <div class="fp-exp-repeater fp-exp-recurrence__sets" data-repeater="recurrence_time_sets" data-repeater-next-index="<?php echo esc_attr((string) count($time_sets)); ?>">
                         <div class="fp-exp-repeater__items" data-recurrence-time-set-list>
                             <?php foreach ($time_sets as $index => $set) : ?>
-                                <?php $this->render_time_set_row((string) $index, $set, false, (string) ($recurrence['frequency'] ?? 'weekly')); ?>
+                                <?php $this->render_time_set_row((string) $index, $set, false, $frequency); ?>
                             <?php endforeach; ?>
                         </div>
                         <template data-repeater-template>
@@ -983,7 +1135,7 @@ final class ExperienceMetaBoxes
                                 'capacity' => 0,
                                 'buffer_before' => 0,
                                 'buffer_after' => 0,
-                            ], true, (string) ($recurrence['frequency'] ?? 'weekly')); ?>
+                            ], true, $frequency); ?>
                         </template>
                         <p class="fp-exp-repeater__actions">
                             <button type="button" class="button button-secondary" data-repeater-add><?php esc_html_e('Aggiungi time set', 'fp-experiences'); ?></button>
@@ -1004,20 +1156,22 @@ final class ExperienceMetaBoxes
             </fieldset>
 
             <fieldset class="fp-exp-fieldset">
-                <legend><?php esc_html_e('Preavviso', 'fp-experiences'); ?></legend>
-                <div class="fp-exp-field">
-                    <label class="fp-exp-field__label" for="fp-exp-lead-time">
-                        <?php esc_html_e('Preavviso minimo (ore)', 'fp-experiences'); ?>
-                    </label>
-                    <input
-                        type="number"
-                        id="fp-exp-lead-time"
-                        name="fp_exp_availability[lead_time_hours]"
-                        min="0"
-                        step="1"
-                        value="<?php echo esc_attr((string) $availability['lead_time_hours']); ?>"
-                    />
+                <legend><?php esc_html_e('Slot manuali una tantum', 'fp-experiences'); ?></legend>
+                <p class="fp-exp-field__description"><?php esc_html_e('Inserisci qui le eccezioni al calendario standard, ad esempio eventi speciali o date extra.', 'fp-experiences'); ?></p>
+                <div class="fp-exp-repeater" data-repeater="custom_slots" data-repeater-next-index="<?php echo esc_attr((string) count($custom_slots)); ?>">
+                    <div class="fp-exp-repeater__items">
+                        <?php foreach ($custom_slots as $index => $slot) : ?>
+                            <?php $this->render_custom_slot_row((string) $index, $slot); ?>
+                        <?php endforeach; ?>
+                    </div>
+                    <template data-repeater-template>
+                        <?php $this->render_custom_slot_row('__INDEX__', ['date' => '', 'time' => ''], true); ?>
+                    </template>
+                    <p class="fp-exp-repeater__actions">
+                        <button type="button" class="button button-secondary" data-repeater-add><?php esc_html_e('Aggiungi slot manuale', 'fp-experiences'); ?></button>
+                    </p>
                 </div>
+                <p class="fp-exp-field__description fp-exp-field__description--muted"><?php esc_html_e('Se lasci tutti i campi vuoti non verrà creato alcuno slot extra.', 'fp-experiences'); ?></p>
             </fieldset>
         </section>
         <?php
@@ -1505,7 +1659,9 @@ final class ExperienceMetaBoxes
                         </label>
                     <?php endforeach; ?>
                 </div>
-                <p class="fp-exp-field__description"><?php esc_html_e('Lascia vuoto per usare i giorni generali della ricorrenza settimanale.', 'fp-experiences'); ?></p>
+                <?php if ('weekly' === $frequency) : ?>
+                    <p class="fp-exp-field__description"><?php esc_html_e('Lascia vuoto per usare i giorni generali della ricorrenza settimanale.', 'fp-experiences'); ?></p>
+                <?php endif; ?>
             </div>
             <div class="fp-exp-field fp-exp-field--columns fp-exp-recurrence-set__metrics">
                 <label>
@@ -2422,6 +2578,54 @@ final class ExperienceMetaBoxes
         }
 
         return $options;
+    }
+
+    private function get_recurrence_frequency_summary_template(string $frequency): string
+    {
+        switch ($frequency) {
+            case 'daily':
+                return esc_html__('Gli slot si ripetono ogni giorno nel periodo indicato.', 'fp-experiences');
+            case 'weekly':
+                return esc_html__('Gli slot si ripetono ogni settimana nei giorni selezionati: %s.', 'fp-experiences');
+            case 'specific':
+                return esc_html__('Gli slot vengono generati solo per le date inserite nei set orari.', 'fp-experiences');
+            default:
+                return '';
+        }
+    }
+
+    /**
+     * @param array<int, string> $days
+     */
+    private function get_recurrence_frequency_summary(string $frequency, array $days): string
+    {
+        $template = $this->get_recurrence_frequency_summary_template($frequency);
+
+        if ('' === $template) {
+            return '';
+        }
+
+        if ('weekly' !== $frequency) {
+            return $template;
+        }
+
+        $labels_map = [];
+        foreach ($this->get_week_days() as $day_key => $day_label) {
+            $labels_map[$this->map_weekday_for_ui($day_key)] = $day_label;
+        }
+
+        $selected_labels = [];
+        foreach ($days as $day) {
+            if (isset($labels_map[$day])) {
+                $selected_labels[] = $labels_map[$day];
+            }
+        }
+
+        if (! $selected_labels) {
+            return sprintf($template, esc_html__('Nessun giorno selezionato', 'fp-experiences'));
+        }
+
+        return sprintf($template, implode(', ', $selected_labels));
     }
 
     private function get_week_days(): array

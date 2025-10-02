@@ -638,7 +638,10 @@
         const adminConfig = window.fpExpAdmin || {};
         const restConfig = adminConfig.rest || null;
 
-        const frequency = settings.querySelector('[data-recurrence-frequency]');
+        const frequencyControls = Array.from(settings.querySelectorAll('[data-recurrence-frequency]'));
+        const frequencyCards = frequencyControls
+            .map((control) => (control instanceof HTMLElement ? control.closest('[data-recurrence-frequency-card]') : null))
+            .filter((card) => card instanceof HTMLElement);
         const daysContainer = settings.querySelector('[data-recurrence-days]');
         const status = settings.querySelector('[data-recurrence-status]');
         const errors = settings.querySelector('[data-recurrence-errors]');
@@ -646,17 +649,45 @@
         const previewList = previewWrapper ? previewWrapper.querySelector('ul') : null;
         const previewButton = settings.querySelector('[data-recurrence-preview]');
         const generateButton = settings.querySelector('[data-recurrence-generate]');
+        const summary = settings.querySelector('[data-recurrence-frequency-summary]');
+        const weeklyEmptyMessage =
+            daysContainer instanceof HTMLElement ? daysContainer.dataset.recurrenceWeeklyEmpty || '' : '';
+
+        function getFrequencyValue() {
+            if (!frequencyControls.length) {
+                return '';
+            }
+
+            if (frequencyControls.length === 1) {
+                const [control] = frequencyControls;
+                if (control instanceof HTMLSelectElement || control instanceof HTMLInputElement) {
+                    return control.value;
+                }
+            }
+
+            const checked = frequencyControls.find(
+                (control) => control instanceof HTMLInputElement && control.checked
+            );
+
+            if (checked && checked instanceof HTMLInputElement) {
+                return checked.value;
+            }
+
+            const [fallback] = frequencyControls;
+            if (fallback instanceof HTMLSelectElement || fallback instanceof HTMLInputElement) {
+                return fallback.value;
+            }
+
+            return '';
+        }
 
         function toggleSettings() {
             settings.toggleAttribute('hidden', !toggle.checked);
+            renderFrequencySummary();
         }
 
         function updateDaysVisibility() {
-            if (!frequency) {
-                return;
-            }
-
-            const show = frequency.value === 'weekly';
+            const show = getFrequencyValue() === 'weekly';
 
             if (daysContainer) {
                 daysContainer.toggleAttribute('hidden', !show);
@@ -666,6 +697,90 @@
             perSetContainers.forEach((container) => {
                 container.toggleAttribute('hidden', !show);
             });
+        }
+
+        function updateFrequencyNotes() {
+            const current = getFrequencyValue();
+            const notes = settings.querySelectorAll('[data-recurrence-frequency-help]');
+
+            notes.forEach((note) => {
+                if (!(note instanceof HTMLElement)) {
+                    return;
+                }
+
+                const target = note.dataset.frequency || '';
+                note.toggleAttribute('hidden', target !== current);
+            });
+        }
+
+        function updateFrequencyCards() {
+            const current = getFrequencyValue();
+
+            frequencyCards.forEach((card) => {
+                if (!(card instanceof HTMLElement)) {
+                    return;
+                }
+
+                const input = card.querySelector('[data-recurrence-frequency]');
+                const value = input instanceof HTMLInputElement ? input.value : '';
+                const isSelected = value === current;
+
+                card.classList.toggle('is-selected', isSelected);
+            });
+        }
+
+        function renderFrequencySummary() {
+            if (!(summary instanceof HTMLElement)) {
+                return;
+            }
+
+            const current = getFrequencyValue();
+            const card = frequencyCards.find((item) => {
+                if (!(item instanceof HTMLElement)) {
+                    return false;
+                }
+
+                const input = item.querySelector('[data-recurrence-frequency]');
+                if (!(input instanceof HTMLInputElement)) {
+                    return false;
+                }
+
+                return input.value === current;
+            });
+
+            if (!card || !(card instanceof HTMLElement)) {
+                summary.textContent = '';
+                summary.hidden = true;
+                return;
+            }
+
+            const template = card.dataset.frequencySummaryTemplate || '';
+
+            if (!template) {
+                summary.textContent = '';
+                summary.hidden = true;
+                return;
+            }
+
+            let message = template;
+
+            if (template.includes('%s')) {
+                const checkedDays = daysContainer
+                    ? Array.from(daysContainer.querySelectorAll('input[type="checkbox"]:checked'))
+                    : [];
+
+                const labels = checkedDays
+                    .map((input) =>
+                        input instanceof HTMLInputElement ? input.dataset.dayLabel || input.value || '' : ''
+                    )
+                    .filter((label) => Boolean(label));
+
+                const listText = labels.length ? labels.join(', ') : weeklyEmptyMessage;
+                message = template.replace('%s', listText);
+            }
+
+            summary.textContent = message;
+            summary.hidden = false;
         }
 
         function clearStatus() {
@@ -749,7 +864,7 @@
                 enabled: true,
                 start_date: getInputValue(settings, 'input[name="fp_exp_availability[recurrence][start_date]"]'),
                 end_date: getInputValue(settings, 'input[name="fp_exp_availability[recurrence][end_date]"]'),
-                frequency: frequency ? frequency.value : 'weekly',
+                frequency: getFrequencyValue() || 'weekly',
                 days: [],
                 duration: parseInt(getInputValue(settings, 'input[name="fp_exp_availability[recurrence][duration]"]') || '0', 10) || 0,
                 time_sets: [],
@@ -857,10 +972,29 @@
         });
 
         toggleSettings();
+        updateDaysVisibility();
+        updateFrequencyNotes();
+        updateFrequencyCards();
+        renderFrequencySummary();
 
-        if (frequency) {
-            frequency.addEventListener('change', updateDaysVisibility);
-            updateDaysVisibility();
+        if (frequencyControls.length) {
+            frequencyControls.forEach((control) => {
+                control.addEventListener('change', () => {
+                    updateDaysVisibility();
+                    updateFrequencyNotes();
+                    updateFrequencyCards();
+                    renderFrequencySummary();
+                    clearStatus();
+                    clearErrors();
+                    clearPreview();
+                });
+            });
+        }
+
+        if (daysContainer) {
+            daysContainer.addEventListener('change', () => {
+                renderFrequencySummary();
+            });
         }
 
         if (previewButton) {
