@@ -88,7 +88,7 @@ $format_currency = static function (string $amount) use ($currency_symbol, $curr
         <?php if ($behavior['sticky']) : ?>role="region"<?php else : ?>role="group"<?php endif; ?>
     >
         <ol class="fp-exp-widget__steps">
-            <li class="fp-exp-step fp-exp-step--dates" data-fp-step="dates">
+            <li class="fp-exp-step fp-exp-step--dates" data-fp-step="dates" data-fp-section="calendar">
                 <header>
                     <span class="fp-exp-step__number">1</span>
                     <h3 class="fp-exp-step__title"><?php echo esc_html__('Choose a date', 'fp-experiences'); ?></h3>
