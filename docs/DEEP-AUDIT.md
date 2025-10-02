@@ -1,7 +1,7 @@
 # Deep Audit Log
 
 ## D6 — Experience Page Layout Refresh
-- Updated the experience template wrapper to use the new `fp-hero-section` class and kept the semantic main/aside structure.
+- Updated the experience template wrapper to use the streamlined `fp-exp-section` hero layout while keeping the semantic main/aside structure.
 - Refined front-end CSS tokens and layout rules to deliver the two-column grid, sticky widget, and GetYourGuide-inspired styling.
 - Extended `[fp_exp_page]` so editors can control container mode, max-width, gutter, and sidebar placement via shortcode attributes or the new defaults stored in `fp_exp_experience_layout`.
 - Added a General settings panel (“Experience Page Layout”) with sanitisation to capture those defaults for non-technical users.
