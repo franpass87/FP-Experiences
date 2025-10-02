@@ -1173,7 +1173,10 @@
                         ? calendarConfig.i18n.seatsAvailable
                         : 'seats available';
                     const capacity = document.createElement('span');
-                    capacity.innerHTML = `<strong>${remaining}/${total}</strong> ${seatsLabel}`;
+                    const strong = document.createElement('strong');
+                    strong.textContent = `${remaining}/${total}`;
+                    capacity.appendChild(strong);
+                    capacity.appendChild(document.createTextNode(` ${seatsLabel}`));
                     capacityWrapper.appendChild(capacity);
 
                     const reservedLabel = document.createElement('span');
