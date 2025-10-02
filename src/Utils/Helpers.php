@@ -72,7 +72,7 @@ final class Helpers
      */
     private static ?array $cognitive_bias_icon_cache = null;
 
-    public const COGNITIVE_BIAS_MAX_SELECTION = 3;
+    public const COGNITIVE_BIAS_MAX_SELECTION = 6;
 
     public static function cognitive_bias_max_selection(): int
     {

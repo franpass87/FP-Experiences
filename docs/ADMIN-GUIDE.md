@@ -1,7 +1,7 @@
 # Admin Guide – FP Experiences 0.3.0
 
 ## Add-on images
-- Open an experience and switch to the **Extra/Add-ons** tab.
+- Open an experience and switch to the **Extra** tab.
 - Each add-on row includes a “Scegli immagine” button that opens the WordPress media modal.
 - Select or upload an image (medium size is used on the front end). Remove the image with “Rimuovi”.
 - Images are saved as attachment IDs in `_fp_addons` and lazy-loaded on the widget and listing cards.

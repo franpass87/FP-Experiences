@@ -857,7 +857,7 @@ final class ExperienceMetaBoxes
             </fieldset>
 
             <fieldset class="fp-exp-fieldset">
-                <legend><?php esc_html_e('Add-on', 'fp-experiences'); ?></legend>
+                <legend><?php esc_html_e('Extra', 'fp-experiences'); ?></legend>
                 <div
                     class="fp-exp-repeater"
                     data-repeater="addons"
@@ -873,7 +873,7 @@ final class ExperienceMetaBoxes
                     </template>
                     <p class="fp-exp-repeater__actions">
                         <button type="button" class="button button-secondary" data-repeater-add>
-                            <?php esc_html_e('Aggiungi add-on', 'fp-experiences'); ?>
+                            <?php esc_html_e('Aggiungi extra', 'fp-experiences'); ?>
                         </button>
                     </p>
                 </div>
@@ -1435,6 +1435,7 @@ final class ExperienceMetaBoxes
         $type_name = $is_template ? 'fp_exp_pricing[addons][__INDEX__][type]' : $name_prefix . '[type]';
         $slug_name = $is_template ? 'fp_exp_pricing[addons][__INDEX__][slug]' : $name_prefix . '[slug]';
         $image_name = $is_template ? 'fp_exp_pricing[addons][__INDEX__][image_id]' : $name_prefix . '[image_id]';
+        $description_name = $is_template ? 'fp_exp_pricing[addons][__INDEX__][description]' : $name_prefix . '[description]';
         $type_value = isset($addon['type']) ? (string) $addon['type'] : 'person';
         $image_id = isset($addon['image_id']) ? absint((string) $addon['image_id']) : 0;
         $image = $image_id > 0 ? wp_get_attachment_image_src($image_id, 'thumbnail') : false;
@@ -1497,12 +1498,16 @@ final class ExperienceMetaBoxes
                     </div>
                 </div>
                 <label>
-                    <span class="fp-exp-field__label"><?php esc_html_e('Nome add-on', 'fp-experiences'); ?></span>
+                    <span class="fp-exp-field__label"><?php esc_html_e('Nome extra', 'fp-experiences'); ?></span>
                     <input type="text" <?php echo $this->field_name_attribute($label_name, $is_template); ?> value="<?php echo esc_attr((string) ($addon['name'] ?? '')); ?>" placeholder="<?php echo esc_attr__('Transfer', 'fp-experiences'); ?>" />
                 </label>
                 <label>
                     <span class="fp-exp-field__label"><?php esc_html_e('Codice', 'fp-experiences'); ?></span>
                     <input type="text" <?php echo $this->field_name_attribute($slug_name, $is_template); ?> value="<?php echo esc_attr((string) ($addon['slug'] ?? '')); ?>" placeholder="<?php echo esc_attr__('transfer', 'fp-experiences'); ?>" />
+                </label>
+                <label>
+                    <span class="fp-exp-field__label"><?php esc_html_e('Descrizione breve', 'fp-experiences'); ?></span>
+                    <textarea rows="2" maxlength="160" <?php echo $this->field_name_attribute($description_name, $is_template); ?>><?php echo esc_textarea((string) ($addon['description'] ?? '')); ?></textarea>
                 </label>
                 <label>
                     <span class="fp-exp-field__label"><?php esc_html_e('Prezzo (€)', 'fp-experiences'); ?></span>
@@ -1847,6 +1852,7 @@ final class ExperienceMetaBoxes
                 $type = isset($addon['type']) ? sanitize_key((string) $addon['type']) : 'person';
                 $slug = isset($addon['slug']) ? sanitize_key((string) $addon['slug']) : '';
                 $image_id = isset($addon['image_id']) ? absint((string) $addon['image_id']) : 0;
+                $description = isset($addon['description']) ? sanitize_text_field((string) $addon['description']) : '';
                 if ($image_id > 0 && ! wp_attachment_is_image($image_id)) {
                     $image_id = 0;
                 }
@@ -1868,6 +1874,7 @@ final class ExperienceMetaBoxes
                     'type' => $type,
                     'slug' => $slug,
                     'image_id' => $image_id,
+                    'description' => $description,
                 ];
 
                 $legacy_addons[] = [
@@ -1876,7 +1883,7 @@ final class ExperienceMetaBoxes
                     'price' => $price,
                     'allow_multiple' => 'booking' !== $type,
                     'max' => 0,
-                    'description' => '',
+                    'description' => $description,
                     'image_id' => $image_id,
                 ];
             }
