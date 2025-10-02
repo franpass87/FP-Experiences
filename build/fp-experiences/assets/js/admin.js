@@ -772,17 +772,6 @@
         }
     }
 
-                setStatus(getString('recurrenceLoading') || '');
-
-                try {
-                    const result = await sendRequest(restConfig ? restConfig.generate : null, payload);
-                    const created = result && typeof result.created === 'number' ? result.created : 0;
-                    renderPreview(result && Array.isArray(result.preview) ? result.preview : []);
-                    const success = getString('recurrenceGenerateSuccess');
-                    setStatus(success ? success.replace('%d', String(created)) : '', false);
-                } catch (error) {
-                    setStatus(getString('recurrenceGenerateError') || '', true);
-                }
             });
         }
     }
