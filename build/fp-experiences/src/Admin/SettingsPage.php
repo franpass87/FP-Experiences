@@ -604,7 +604,7 @@ final class SettingsPage
         register_setting('fp_exp_settings_branding', 'fp_exp_branding', [
             'type' => 'array',
             'sanitize_callback' => [$this, 'sanitize_branding'],
-            'default' => [],
+            'default' => ['preset' => Theme::default_preset()],
         ]);
 
         add_settings_section(
@@ -1044,6 +1044,12 @@ final class SettingsPage
                 'button' => esc_html__('Replay events', 'fp-experiences'),
             ],
             [
+                'slug' => 'resync-roles',
+                'label' => esc_html__('Resynchronise FP roles', 'fp-experiences'),
+                'description' => esc_html__('Restore the FP Experiences capabilities for administrators and custom roles.', 'fp-experiences'),
+                'button' => esc_html__('Run role sync', 'fp-experiences'),
+            ],
+            [
                 'slug' => 'resync-pages',
                 'label' => esc_html__('Resynchronise experience pages', 'fp-experiences'),
                 'description' => esc_html__('Create or relink WordPress pages for experiences missing the `[fp_exp_page]` shortcode.', 'fp-experiences'),
@@ -1106,8 +1112,7 @@ final class SettingsPage
 
     public function render_branding_help(): void
     {
-        echo '<p>' . esc_html__('Tune the booking UI to match your visual identity. Choose a preset, then refine individual colors, borders, and fonts.', 'fp-experiences') . '</p>';
-        echo '<p>' . esc_html__('Dark mode can be applied automatically or when wrapping the shortcode output with the .fp-theme-dark class.', 'fp-experiences') . '</p>';
+        echo '<p>' . esc_html__('FP Experiences now uses a single default color palette that keeps every experience readable and on brand.', 'fp-experiences') . '</p>';
     }
 
     public function render_listing_help(): void
@@ -1190,43 +1195,13 @@ final class SettingsPage
      */
     private function get_branding_fields(): array
     {
-        $presets = Theme::presets();
-        $preset_options = ['' => esc_html__('Custom', 'fp-experiences')];
-        foreach ($presets as $key => $data) {
-            $preset_options[$key] = esc_html($data['label']);
-        }
-
         return [
             [
                 'key' => 'preset',
-                'type' => 'select',
-                'label' => esc_html__('Preset', 'fp-experiences'),
-                'options' => $preset_options,
-                'description' => esc_html__('Start from a curated palette, then adjust specific values as needed.', 'fp-experiences'),
+                'type' => 'fixed',
+                'label' => esc_html__('Color palette', 'fp-experiences'),
+                'description' => esc_html__('Brand colors use the default palette and cannot be customized.', 'fp-experiences'),
             ],
-            [
-                'key' => 'mode',
-                'type' => 'select',
-                'label' => esc_html__('Color mode', 'fp-experiences'),
-                'options' => [
-                    'light' => esc_html__('Light', 'fp-experiences'),
-                    'dark' => esc_html__('Dark (requires .fp-theme-dark wrapper)', 'fp-experiences'),
-                    'auto' => esc_html__('Automatic (prefers-color-scheme + .fp-theme-dark)', 'fp-experiences'),
-                ],
-            ],
-            ['key' => 'primary', 'label' => esc_html__('Primary color', 'fp-experiences'), 'type' => 'color'],
-            ['key' => 'secondary', 'label' => esc_html__('Secondary color', 'fp-experiences'), 'type' => 'color'],
-            ['key' => 'accent', 'label' => esc_html__('Accent color', 'fp-experiences'), 'type' => 'color'],
-            ['key' => 'background', 'label' => esc_html__('Background', 'fp-experiences'), 'type' => 'color'],
-            ['key' => 'surface', 'label' => esc_html__('Surface', 'fp-experiences'), 'type' => 'color'],
-            ['key' => 'text', 'label' => esc_html__('Text color', 'fp-experiences'), 'type' => 'color'],
-            ['key' => 'muted', 'label' => esc_html__('Muted text', 'fp-experiences'), 'type' => 'color'],
-            ['key' => 'success', 'label' => esc_html__('Success', 'fp-experiences'), 'type' => 'color'],
-            ['key' => 'warning', 'label' => esc_html__('Warning', 'fp-experiences'), 'type' => 'color'],
-            ['key' => 'danger', 'label' => esc_html__('Danger', 'fp-experiences'), 'type' => 'color'],
-            ['key' => 'radius', 'label' => esc_html__('Border radius', 'fp-experiences'), 'type' => 'text', 'placeholder' => '12px'],
-            ['key' => 'shadow', 'label' => esc_html__('Shadow', 'fp-experiences'), 'type' => 'text', 'placeholder' => '0 10px 30px rgba(0,0,0,0.08)'],
-            ['key' => 'font', 'label' => esc_html__('Preferred font family', 'fp-experiences'), 'type' => 'text', 'placeholder' => '"Red Hat Display", sans-serif'],
         ];
     }
 
@@ -1631,7 +1606,13 @@ final class SettingsPage
         $key = $field['key'];
         $value = $branding[$key] ?? '';
 
-        if ('select' === $field['type']) {
+        if ('preset' === $key) {
+            $value = Theme::default_preset();
+        }
+
+        if ('fixed' === ($field['type'] ?? '')) {
+            echo '<input type="hidden" name="fp_exp_branding[' . esc_attr($key) . ']" value="' . esc_attr((string) $value) . '" />';
+        } elseif ('select' === $field['type']) {
             echo '<select name="fp_exp_branding[' . esc_attr($key) . ']">';
             foreach ($field['options'] as $option_key => $label) {
                 $selected = ((string) $value === (string) $option_key) ? 'selected' : '';
@@ -1814,9 +1795,9 @@ final class SettingsPage
             'data-pass-message' => esc_attr__('Current palette passes AA contrast checks.', 'fp-experiences'),
             'data-warning-primary' => esc_attr__('Primary color contrast against the background is %s:1. Consider adjusting colors for AA compliance.', 'fp-experiences'),
             'data-warning-text' => esc_attr__('Body text contrast is %s:1. Increase contrast for readability.', 'fp-experiences'),
-            'data-default-primary' => esc_attr($palette['primary'] ?? '#8B1E3F'),
-            'data-default-background' => esc_attr($palette['background'] ?? '#FFFFFF'),
-            'data-default-text' => esc_attr($palette['text'] ?? '#1F1F1F'),
+            'data-default-primary' => esc_attr($palette['primary'] ?? '#0B6EFD'),
+            'data-default-background' => esc_attr($palette['background'] ?? '#F7F8FA'),
+            'data-default-text' => esc_attr($palette['text'] ?? '#0F172A'),
         ];
 
         echo '<div class="' . esc_attr(implode(' ', $classes)) . '"';
@@ -1968,30 +1949,8 @@ final class SettingsPage
 
         if (! empty($value['preset']) && isset($presets[$value['preset']])) {
             $sanitised['preset'] = sanitize_key((string) $value['preset']);
-        }
-
-        $mode = isset($value['mode']) ? sanitize_key((string) $value['mode']) : 'light';
-        if (! in_array($mode, ['light', 'dark', 'auto'], true)) {
-            $mode = 'light';
-        }
-        $sanitised['mode'] = $mode;
-
-        $color_keys = ['primary', 'secondary', 'accent', 'background', 'surface', 'text', 'muted', 'success', 'warning', 'danger'];
-
-        foreach ($color_keys as $key) {
-            if (empty($value[$key])) {
-                continue;
-            }
-            $color = sanitize_hex_color((string) $value[$key]);
-            if ($color) {
-                $sanitised[$key] = $color;
-            }
-        }
-
-        foreach (['radius', 'shadow', 'font'] as $key) {
-            if (isset($value[$key]) && '' !== $value[$key]) {
-                $sanitised[$key] = sanitize_text_field((string) $value[$key]);
-            }
+        } else {
+            $sanitised['preset'] = Theme::default_preset();
         }
 
         return $sanitised;
