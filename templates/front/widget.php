@@ -29,7 +29,21 @@ $privacy_id = $scope_class . '-consent-privacy';
 $display_context = isset($display_context) ? (string) $display_context : '';
 $config_version = isset($config_version) ? (string) $config_version : '';
 
+$slots = is_array($slots) ? $slots : [];
+$tickets = is_array($tickets) ? $tickets : [];
+$addons = is_array($addons) ? $addons : [];
 $calendar = is_array($calendar) ? $calendar : [];
+$behavior_defaults = [
+    'sticky' => false,
+    'show_calendar' => false,
+];
+$behavior = is_array($behavior) ? array_merge($behavior_defaults, $behavior) : $behavior_defaults;
+$rtb_defaults = [
+    'enabled' => false,
+    'mode' => 'off',
+    'forced' => false,
+];
+$rtb = is_array($rtb) ? array_merge($rtb_defaults, $rtb) : $rtb_defaults;
 
 $dataset = [
     'experienceId' => (int) $experience['id'],
@@ -95,11 +109,15 @@ $format_currency = static function (string $amount) use ($currency_symbol, $curr
                 </header>
                 <div class="fp-exp-step__content">
                     <div class="fp-exp-calendar" data-show-calendar="<?php echo esc_attr($behavior['show_calendar'] ? '1' : '0'); ?>">
-                        <?php foreach ($calendar as $month_key => $month_data) : ?>
+                        <?php foreach ($calendar as $month_key => $month_data) :
+                            $month_label = isset($month_data['month_label']) ? (string) $month_data['month_label'] : '';
+                            $month_days = isset($month_data['days']) && is_array($month_data['days']) ? $month_data['days'] : [];
+                            ?>
                             <section class="fp-exp-calendar__month" data-month="<?php echo esc_attr($month_key); ?>">
-                                <header class="fp-exp-calendar__month-header"><?php echo esc_html($month_data['month_label']); ?></header>
+                                <header class="fp-exp-calendar__month-header"><?php echo esc_html($month_label); ?></header>
                                 <div class="fp-exp-calendar__grid">
-                                    <?php foreach ($month_data['days'] as $day => $day_slots) :
+                                    <?php foreach ($month_days as $day => $day_slots) :
+                                        $day_slots = is_array($day_slots) ? $day_slots : [];
                                         $slot_count = count($day_slots);
                                         $is_available = $slot_count > 0;
                                         ?>
