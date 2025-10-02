@@ -251,7 +251,7 @@ final class ExperienceShortcode extends BaseShortcode
         $cognitive_bias_slugs = is_array($cognitive_bias_meta)
             ? array_values(array_filter(array_map('sanitize_key', $cognitive_bias_meta)))
             : [];
-        $cognitive_bias_labels = Helpers::cognitive_bias_labels($cognitive_bias_slugs);
+        $cognitive_bias_badges = Helpers::cognitive_bias_badges($cognitive_bias_slugs);
 
         $badges = $this->build_badges($duration_minutes, $language_badges, $family_friendly);
 
@@ -286,7 +286,7 @@ final class ExperienceShortcode extends BaseShortcode
                 'summary' => $meeting_summary,
             ],
             'family_friendly' => $family_friendly,
-            'cognitive_biases' => $cognitive_bias_labels,
+            'cognitive_biases' => $cognitive_bias_badges,
         ];
 
         $overview_has_content = $this->overview_has_content($overview);
