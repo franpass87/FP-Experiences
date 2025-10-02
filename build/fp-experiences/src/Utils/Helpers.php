@@ -60,12 +60,17 @@ final class Helpers
 
     public static function can_manage_fp(): bool
     {
-        return current_user_can('fp_exp_manage') || current_user_can('manage_options');
+        return current_user_can('fp_exp_manage')
+            || current_user_can('manage_options')
+            || current_user_can('manage_woocommerce');
     }
 
     public static function can_operate_fp(): bool
     {
-        return current_user_can('fp_exp_operate') || self::can_manage_fp();
+        return current_user_can('fp_exp_operate')
+            || current_user_can('manage_woocommerce')
+            || current_user_can('edit_shop_orders')
+            || self::can_manage_fp();
     }
 
     public static function can_access_guides(): bool
@@ -88,6 +93,10 @@ final class Helpers
             return 'fp_exp_manage';
         }
 
+        if (current_user_can('manage_woocommerce')) {
+            return 'manage_woocommerce';
+        }
+
         return self::management_capability();
     }
 
@@ -103,6 +112,10 @@ final class Helpers
 
         if (current_user_can('fp_exp_manage')) {
             return 'fp_exp_manage';
+        }
+
+        if (current_user_can('manage_woocommerce')) {
+            return 'manage_woocommerce';
         }
 
         return self::management_capability();

@@ -100,6 +100,10 @@ final class CalendarAdmin
                 'moveConfirm' => esc_html__('Move slot to %s at %s?', 'fp-experiences'),
                 'updateSuccess' => esc_html__('Slot updated successfully.', 'fp-experiences'),
                 'updateError' => esc_html__('Unable to update the slot. Please try again.', 'fp-experiences'),
+                'seatsAvailable' => esc_html__('seats available', 'fp-experiences'),
+                'bookedLabel' => esc_html__('booked', 'fp-experiences'),
+                'untitledExperience' => esc_html__('Untitled experience', 'fp-experiences'),
+                'loadError' => esc_html__('Unable to load the calendar. Please try again.', 'fp-experiences'),
             ],
         ];
 
@@ -174,7 +178,9 @@ final class CalendarAdmin
         ];
 
         echo '<div id="fp-exp-calendar-app" class="fp-exp-calendar" data-loading-text="' . esc_attr__('Loading…', 'fp-experiences') . '" data-bootstrap="' . esc_attr(wp_json_encode($bootstrap)) . '">';
-        echo '<div class="fp-exp-calendar__loading">' . esc_html__('Loading calendar…', 'fp-experiences') . '</div>';
+        echo '<div class="fp-exp-calendar__loading" role="status">' . esc_html__('Loading calendar…', 'fp-experiences') . '</div>';
+        echo '<div class="fp-exp-calendar__body" data-calendar-content hidden></div>';
+        echo '<div class="fp-exp-calendar__feedback" data-calendar-error hidden></div>';
         echo '<noscript>';
         $reservations = Reservations::upcoming(20);
         if ($reservations) {
