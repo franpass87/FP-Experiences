@@ -101,16 +101,12 @@ $gallery_items = array_values(array_filter(
 ));
 
 if ($primary_image) {
-    $primary_image_id = isset($primary_image['id']) ? (int) $primary_image['id'] : 0;
-
-    if ($primary_image_id > 0) {
-        $gallery_items = array_values(array_filter(
-            $gallery_items,
-            static fn ($image) => (int) ($image['id'] ?? 0) !== $primary_image_id
-        ));
-    } elseif (count($gallery_items) > 1) {
-        array_shift($gallery_items);
-    }
+    // Remove the primary image from gallery_items by comparing 'url'
+    $primary_image_url = isset($primary_image['url']) ? (string) $primary_image['url'] : '';
+    $gallery_items = array_values(array_filter(
+        $gallery_items,
+        static fn ($image) => isset($image['url']) && $image['url'] !== $primary_image_url
+    ));
 }
 $show_gallery = ! empty($sections['gallery']) && ! empty($gallery_items);
 $hero_fact_badges = array_values(array_filter(
