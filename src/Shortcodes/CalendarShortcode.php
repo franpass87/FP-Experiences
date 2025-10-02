@@ -153,6 +153,13 @@ final class CalendarShortcode extends BaseShortcode
             ];
         }
 
+        $slot_ids = [];
+        foreach ($rows as $row) {
+            $slot_ids[] = (int) $row['id'];
+        }
+
+        $snapshots = Slots::get_capacity_snapshots($slot_ids);
+
         foreach ($rows as $row) {
             try {
                 $start = new DateTimeImmutable((string) $row['start_datetime'], new DateTimeZone('UTC'));
@@ -161,13 +168,14 @@ final class CalendarShortcode extends BaseShortcode
                 continue;
             }
 
-            $snapshot = Slots::get_capacity_snapshot((int) $row['id']);
+            $slot_id = (int) $row['id'];
+            $snapshot = $snapshots[$slot_id] ?? ['total' => 0, 'per_type' => []];
             $remaining = max(0, (int) $row['capacity_total'] - $snapshot['total']);
             $day_key = $start->setTimezone($timezone)->format('Y-m-d');
             $month_key = $start->setTimezone($timezone)->format('Y-m');
 
             $slot = [
-                'id' => (int) $row['id'],
+                'id' => $slot_id,
                 'date' => $day_key,
                 'time' => $start->setTimezone($timezone)->format('H:i'),
                 'remaining' => $remaining,

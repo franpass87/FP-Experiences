@@ -120,6 +120,11 @@ final class CheckoutShortcode extends BaseShortcode
         return 'checkout';
     }
 
+    protected function should_disable_cache(): bool
+    {
+        return true;
+    }
+
     /**
      * @param array<int, array<string, mixed>> $items
      *

@@ -1,0 +1,299 @@
+{
+  "meta": {
+    "plugin": "FP Experiences",
+    "date": "2024-05-15",
+    "wp_min": "6.6",
+    "php_targets": [
+      "8.2",
+      "8.3"
+    ]
+  },
+  "summary": {
+    "files_scanned": 214,
+    "files_total": 214,
+    "issues_total": 9,
+    "by_severity": {
+      "critical": 0,
+      "high": 3,
+      "medium": 5,
+      "low": 1
+    }
+  },
+  "issues": [
+    {
+      "id": "ISSUE-001",
+      "severity": "high",
+      "category": [
+        "bug",
+        "rest",
+        "nonce"
+      ],
+      "file": "src/Booking/Checkout.php",
+      "line": 48,
+      "snippet": "register_rest_route('fp-exp/v1', '/checkout', [ 'methods' => 'POST', 'callback' => [$this, 'handle_rest'], 'permission_callback' => [$this, 'check_checkout_permission'] ]);",
+      "diagnosis": "REST permission callbacks expect nonces for actions fp-exp-checkout/fp-exp-rtb while the front-end only emits wp_rest nonces. Helpers::verify_rest_nonce() consumes the mismatched X-WP-Nonce header first, so wp_verify_nonce() fails before the payload nonce is considered.",
+      "impact": "Checkout and request-to-book REST submissions receive rest_cookie_invalid_nonce responses, breaking front-end flows and API integrations.",
+      "repro": [
+        "Load an experience checkout page",
+        "Submit the booking form (AJAX uses /wp-json/fp-exp/v1/checkout)",
+        "Observe the 403 rest_cookie_invalid_nonce response"
+      ],
+      "proposed_fix": "Generate endpoint-specific nonces (fp-exp-checkout/fp-exp-rtb) in fpExpConfig.restNonce or change Helpers::verify_rest_nonce() to fall back to the request body nonce when the header verification fails.",
+      "effort": "M",
+      "tags": [
+        "rest",
+        "nonce",
+        "checkout",
+        "rtb"
+      ]
+    },
+    {
+      "id": "ISSUE-002",
+      "severity": "high",
+      "category": [
+        "security",
+        "csrf",
+        "rest"
+      ],
+      "file": "src/Utils/Helpers.php",
+      "line": 477,
+      "snippet": "if (self::verify_rest_nonce($request, 'wp_rest', ['_wpnonce'])) { return true; } ... return is_user_logged_in();",
+      "diagnosis": "verify_public_rest_request() approves any logged-in request even without a nonce or same-origin referer. Gift REST endpoints that call this helper can therefore be invoked via CSRF from another site.",
+      "impact": "Attackers can trick authenticated users into issuing voucher purchases or redemptions, creating WooCommerce orders and exposing recipient data without consent.",
+      "repro": [
+        "Log into the WordPress dashboard",
+        "Visit an attacker page that auto-submits a POST form to /wp-json/fp-exp/v1/gift/purchase",
+        "A pending voucher order appears in WooCommerce despite no REST nonce"
+      ],
+      "proposed_fix": "Remove the is_user_logged_in() fallback and require a valid REST nonce or verified same-origin referer before accepting public requests.",
+      "effort": "M",
+      "tags": [
+        "csrf",
+        "gift",
+        "woocommerce"
+      ]
+    },
+    {
+      "id": "ISSUE-003",
+      "severity": "medium",
+      "category": [
+        "performance",
+        "rest",
+        "compatibility"
+      ],
+      "file": "src/Api/RestRoutes.php",
+      "line": 56,
+      "snippet": "add_action('rest_post_dispatch', [$this, 'enforce_no_cache'], 10, 3);",
+      "diagnosis": "enforce_no_cache() is attached globally to rest_post_dispatch and unconditionally forces no-store headers on every REST response.",
+      "impact": "Disables caching for core and third-party REST endpoints, hurting performance and conflicting with proxies/CDNs.",
+      "repro": [
+        "Request /wp-json/wp/v2/posts",
+        "Inspect response headers and note Cache-Control: no-store set by the plugin"
+      ],
+      "proposed_fix": "Scope the hook to fp-exp routes (check $request->get_route()) or move the header logic inside the plugin's callbacks only.",
+      "effort": "S",
+      "tags": [
+        "rest",
+        "cache"
+      ]
+    },
+    {
+      "id": "ISSUE-004",
+      "severity": "high",
+      "category": [
+        "performance",
+        "caching",
+        "shortcode"
+      ],
+      "file": "src/Shortcodes/BaseShortcode.php",
+      "line": 47,
+      "snippet": "render() calls send_no_store_header(), which sends Cache-Control: no-store/Pragma: no-cache headers.",
+      "diagnosis": "BaseShortcode::send_no_store_header() runs on every shortcode render and emits Cache-Control: no-store and Pragma: no-cache headers for the entire response.",
+      "impact": "Pages embedding plugin shortcodes become uncacheable, preventing CDNs or page caches from storing listings and experience detail pages.",
+      "repro": [
+        "Create a page containing any FP Experiences shortcode (e.g. [fp_exp_calendar]).",
+        "Request the page while logged out.",
+        "Inspect the HTTP response headers and observe Cache-Control: no-store and Pragma: no-cache sent by the plugin."
+      ],
+      "proposed_fix": "Only emit no-store headers for stateful shortcodes (such as checkout) or behind a condition; skip the header for read-only widgets and listings.",
+      "effort": "S",
+      "tags": [
+        "cache-control",
+        "shortcode",
+        "performance"
+      ]
+    },
+    {
+      "id": "ISSUE-005",
+      "severity": "medium",
+      "category": [
+        "security",
+        "session",
+        "cookie"
+      ],
+      "file": "src/Booking/Cart.php",
+      "line": 344,
+      "snippet": "setcookie(self::COOKIE_NAME, $session_id, ['httponly' => false, 'samesite' => 'Lax']);",
+      "diagnosis": "The checkout session cookie fp_exp_sid is created without the HttpOnly flag, leaving it readable by any JavaScript running on the page.",
+      "impact": "An injected or compromised script can steal the booking session, unlock carts or replay checkout requests, undermining payment integrity.",
+      "repro": [
+        "Load any page that initialises the FP Experiences cart.",
+        "Open the browser dev tools and inspect document.cookie.",
+        "Observe fp_exp_sid is present without HttpOnly and can be read via JavaScript."
+      ],
+      "proposed_fix": "Set 'httponly' => true (and keep SameSite=Lax/secure flag) when calling setcookie() in Cart::persist_cookie().",
+      "effort": "S",
+      "tags": [
+        "httponly",
+        "cookie",
+        "session"
+      ]
+    },
+    {
+      "id": "ISSUE-006",
+      "severity": "medium",
+      "category": [
+        "compatibility",
+        "i18n",
+        "ux"
+      ],
+      "file": "templates/front/widget.php",
+      "line": 129,
+      "snippet": "<span class=\"fp-exp-ticket__price\">\u20ac<?php echo esc_html(number_format_i18n((float) $ticket['price'], 2)); ?></span>",
+      "diagnosis": "Frontend templates hardcode the Euro symbol in price labels instead of using WooCommerce's configured currency.",
+      "impact": "Stores running in USD/GBP or other currencies show incorrect symbols on widgets, listings and archives, confusing customers and breaking localisation.",
+      "repro": [
+        "Change WooCommerce currency to USD in settings.",
+        "Render the FP Experiences list or widget shortcode on the front-end.",
+        "Prices still display with a leading \u20ac instead of the configured currency symbol."
+      ],
+      "proposed_fix": "Replace hardcoded '\u20ac' with a dynamic symbol from get_woocommerce_currency_symbol() or wc_price() across the affected templates.",
+      "effort": "S",
+      "tags": [
+        "currency",
+        "localisation",
+        "frontend"
+      ]
+    },
+    {
+      "id": "ISSUE-007",
+      "severity": "medium",
+      "category": [
+        "performance",
+        "cron",
+        "scalability"
+      ],
+      "file": "src/Gift/VoucherManager.php",
+      "line": 395,
+      "snippet": "get_posts(['post_type' => VoucherCPT::POST_TYPE, 'numberposts' => -1, 'meta_value' => 'active']);",
+      "diagnosis": "process_reminders() calls get_posts() with numberposts => -1, loading every voucher WP_Post and its metadata in a single cron execution.",
+      "impact": "Large stores accumulate hundreds of voucher posts; the daily reminder job can exhaust memory or time out on shared hosting, preventing expirations and duplicating reminder emails.",
+      "repro": [
+        "Create >500 active vouchers (status meta = active)",
+        "Wait for the fp_exp_gift_send_reminders cron to run",
+        "Observe PHP timeouts or memory spikes in the error log"
+      ],
+      "proposed_fix": "Query vouchers in small batches (WP_Query with fields => 'ids' and posts_per_page limits) or query the custom voucher table directly so each cron run processes a manageable slice before rescheduling itself.",
+      "effort": "M",
+      "tags": [
+        "wp_query",
+        "cron",
+        "performance",
+        "voucher"
+      ]
+    },
+    {
+      "id": "ISSUE-008",
+      "severity": "low",
+      "category": [
+        "bug",
+        "data-integrity",
+        "admin-ux"
+      ],
+      "file": "src/MeetingPoints/MeetingPointMetaBoxes.php",
+      "line": 115,
+      "snippet": "$data = $_POST['fp_exp_mp'] ?? []; $address = sanitize_text_field((string) ($data['address'] ?? ''));",
+      "diagnosis": "The meeting point meta box saves raw $_POST strings without wp_unslash(), so WordPress escape slashes (O\\'Reilly) are persisted in post meta.",
+      "impact": "Addresses, notes and phone numbers display with stray backslashes in admin tables and REST responses, degrading operator and guest UX.",
+      "repro": [
+        "Edit a meeting point and enter an address containing an apostrophe",
+        "Save the post",
+        "Reload the page and note the backslash in the saved value"
+      ],
+      "proposed_fix": "Call wp_unslash() on the fp_exp_mp payload before sanitising each field so stored strings match the editor input.",
+      "effort": "S",
+      "tags": [
+        "wp_unslash",
+        "meta-box",
+        "meeting-points"
+      ]
+    },
+    {
+      "id": "ISSUE-009",
+      "severity": "medium",
+      "category": [
+        "performance",
+        "nplusone",
+        "shortcode"
+      ],
+      "file": "src/Shortcodes/CalendarShortcode.php",
+      "line": 133,
+      "snippet": "$snapshot = Slots::get_capacity_snapshot((int) $row['id']);",
+      "diagnosis": "CalendarShortcode::collect_slots() and WidgetShortcode::get_upcoming_slots() call Slots::get_capacity_snapshot() inside their foreach loops. Each call queries the reservations table and even reloads the slot row, so rendering 60 slots fires well over 120 extra database queries per page view.",
+      "impact": "Marketing pages embedding the calendar/widget shortcode generate an N+1 query pattern that slows requests and can trigger PHP timeouts on shared hosts when many slots are published.",
+      "repro": [
+        "Publish an experience with dozens of future slots and embed the [fp_exp_calendar] shortcode on a page",
+        "Load the page with Query Monitor enabled",
+        "Observe an extra pair of reservation queries executed for each slot ID"
+      ],
+      "proposed_fix": "Collect slot IDs and fetch reservation totals in bulk (e.g. a grouped query or a Slots::get_capacity_snapshots() helper) so the calendar/widget reuse aggregated data instead of calling Slots::get_capacity_snapshot() per row.",
+      "effort": "M",
+      "tags": [
+        "performance",
+        "wpdb",
+        "shortcode",
+        "nplusone"
+      ]
+    }
+  ],
+  "conflicts": [
+    {
+      "paths": [
+        "build/fp-experiences/src/Plugin.php",
+        "src/Plugin.php"
+      ],
+      "detail": "The build directory duplicates the source tree; keep one authoritative copy and exclude packaged artefacts."
+    }
+  ],
+  "compat": {
+    "deprecated": [],
+    "php_warnings": []
+  },
+  "perf": {
+    "hotspots": [
+      "Global rest_post_dispatch hook forces no-store headers for every REST response.",
+      "BaseShortcode::send_no_store_header() sends Cache-Control: no-store for any shortcode render.",
+      "VoucherManager::process_reminders() loads every voucher via get_posts(-1); batch IDs or hit the custom table to avoid timeouts.",
+      "CalendarShortcode/WidgetShortcode recompute slot capacity by querying reservations for every slot; add a bulk snapshot to remove the N+1 pattern."
+    ],
+    "autoload_options": [],
+    "cron": [
+      "fp_exp_gift_send_reminders queries all vouchers in one request; paginate/batch the reminders."
+    ]
+  },
+  "i18n": {
+    "domain_issues": [
+      "Currency symbol hardcoded to Euro in templates/front/widget.php, templates/front/list.php, templates/front/simple-archive.php.",
+      "Meeting point admin meta boxes ship Italian default strings (Indirizzo completo, Meeting point principale) instead of English base text."
+    ],
+    "missing": []
+  },
+  "tests": {
+    "gaps": [
+      "No automated coverage for checkout and request-to-book flows."
+    ],
+    "suggestions": [
+      "Add PHPUnit/integration tests exercising REST checkout and RTB endpoints once nonce handling is fixed."
+    ]
+  }
+}

@@ -1,0 +1,53 @@
+{
+  "phase": "fix_complete",
+  "started_at": "2025-10-01T22:01:22Z",
+  "last_run_at": "2025-10-02T05:56:15Z",
+  "repo_root": "/workspace/FP-Experiences",
+  "file_manifest_hash": "bfc465a537d511b463a75dba71804f2dec7b1a52bbdd7d899897b2eb46a0aba6",
+  "processed_issues": [
+    "ISSUE-004",
+    "ISSUE-001",
+    "ISSUE-002",
+    "ISSUE-003",
+    "ISSUE-005",
+    "ISSUE-006",
+    "ISSUE-007",
+    "ISSUE-008",
+    "ISSUE-009"
+  ],
+  "pending_issues": [],
+  "fix_batches": [
+    {
+      "id": 1,
+      "completed_at": "2025-10-01T22:01:22Z",
+      "issues": [
+        "ISSUE-004",
+        "ISSUE-001",
+        "ISSUE-002",
+        "ISSUE-003",
+        "ISSUE-005"
+      ],
+      "notes": "Completed high-priority security and caching fixes."
+    },
+    {
+      "id": 2,
+      "completed_at": "2025-10-01T22:05:01Z",
+      "issues": [
+        "ISSUE-006",
+        "ISSUE-007",
+        "ISSUE-008",
+        "ISSUE-009"
+      ],
+      "notes": "Completed localisation, cron, and shortcode performance fixes."
+    }
+  ],
+  "issues_count": {
+    "critical": 0,
+    "high": 0,
+    "medium": 0,
+    "low": 0
+  },
+  "last_commit": "",
+  "issues_fixed": 9,
+  "last_fixed_issue": "ISSUE-009"
+}

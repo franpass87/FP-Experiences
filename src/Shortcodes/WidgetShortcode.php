@@ -374,6 +374,9 @@ final class WidgetShortcode extends BaseShortcode
         $currency = get_option('woocommerce_currency', 'EUR');
         $slots = [];
 
+        $slot_ids = array_map(static fn ($row) => (int) ($row['id'] ?? 0), $rows);
+        $snapshots = Slots::get_capacity_snapshots($slot_ids);
+
         foreach ($rows as $row) {
             try {
                 $start = new DateTimeImmutable((string) $row['start_datetime'], new DateTimeZone('UTC'));
@@ -382,12 +385,13 @@ final class WidgetShortcode extends BaseShortcode
                 continue;
             }
 
-            $snapshot = Slots::get_capacity_snapshot((int) $row['id']);
+            $slot_id = (int) $row['id'];
+            $snapshot = $snapshots[$slot_id] ?? ['total' => 0, 'per_type' => []];
             $remaining = max(0, (int) $row['capacity_total'] - $snapshot['total']);
             $price_from = $this->determine_price($row['price_rules'] ?? null, $tickets);
 
             $slots[] = [
-                'id' => (int) $row['id'],
+                'id' => $slot_id,
                 'start' => $start->setTimezone($timezone)->format('Y-m-d'),
                 'time' => $start->setTimezone($timezone)->format('H:i'),
                 'start_iso' => $start->setTimezone($timezone)->format(DateTimeInterface::ATOM),

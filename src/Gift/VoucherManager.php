@@ -391,53 +391,67 @@ final class VoucherManager
 
         $now = current_time('timestamp', true);
         $offsets = Helpers::gift_reminder_offsets();
+        $batch_size = 50;
+        $page = 1;
 
-        $vouchers = get_posts([
-            'post_type' => VoucherCPT::POST_TYPE,
-            'post_status' => 'any',
-            'numberposts' => -1,
-            'meta_key' => '_fp_exp_gift_status',
-            'meta_value' => 'active',
-        ]);
+        do {
+            $voucher_ids = get_posts([
+                'post_type' => VoucherCPT::POST_TYPE,
+                'post_status' => 'any',
+                'posts_per_page' => $batch_size,
+                'paged' => $page,
+                'fields' => 'ids',
+                'meta_key' => '_fp_exp_gift_status',
+                'meta_value' => 'active',
+                'no_found_rows' => true,
+            ]);
 
-        if (! $vouchers) {
-            return;
-        }
-
-        foreach ($vouchers as $voucher) {
-            $voucher_id = $voucher->ID;
-            $valid_until = (int) get_post_meta($voucher_id, '_fp_exp_gift_valid_until', true);
-
-            if ($valid_until > 0 && $valid_until <= $now) {
-                update_post_meta($voucher_id, '_fp_exp_gift_status', 'expired');
-                $this->append_log($voucher_id, 'expired');
-                $this->sync_voucher_table($voucher_id);
-                $this->send_expired_email($voucher_id);
-                continue;
+            if (! $voucher_ids) {
+                break;
             }
 
-            if ($valid_until <= 0) {
-                continue;
-            }
+            $voucher_ids = array_map('absint', $voucher_ids);
 
-            $sent = get_post_meta($voucher_id, '_fp_exp_gift_reminders_sent', true);
-            $sent = is_array($sent) ? array_map('absint', $sent) : [];
-
-            foreach ($offsets as $offset) {
-                if (in_array($offset, $sent, true)) {
+            foreach ($voucher_ids as $voucher_id) {
+                if ($voucher_id <= 0) {
                     continue;
                 }
 
-                $reminder_timestamp = $valid_until - ($offset * DAY_IN_SECONDS);
-                if ($reminder_timestamp <= $now && $valid_until > $now) {
-                    $this->send_reminder_email($voucher_id, $offset, $valid_until);
-                    $sent[] = $offset;
+                $valid_until = (int) get_post_meta($voucher_id, '_fp_exp_gift_valid_until', true);
+
+                if ($valid_until > 0 && $valid_until <= $now) {
+                    update_post_meta($voucher_id, '_fp_exp_gift_status', 'expired');
+                    $this->append_log($voucher_id, 'expired');
+                    $this->sync_voucher_table($voucher_id);
+                    $this->send_expired_email($voucher_id);
+                    continue;
                 }
+
+                if ($valid_until <= 0) {
+                    continue;
+                }
+
+                $sent = get_post_meta($voucher_id, '_fp_exp_gift_reminders_sent', true);
+                $sent = is_array($sent) ? array_map('absint', $sent) : [];
+
+                foreach ($offsets as $offset) {
+                    if (in_array($offset, $sent, true)) {
+                        continue;
+                    }
+
+                    $reminder_timestamp = $valid_until - ($offset * DAY_IN_SECONDS);
+                    if ($reminder_timestamp <= $now && $valid_until > $now) {
+                        $this->send_reminder_email($voucher_id, $offset, $valid_until);
+                        $sent[] = $offset;
+                    }
+                }
+
+                $sent = array_values(array_unique(array_map('absint', $sent)));
+                update_post_meta($voucher_id, '_fp_exp_gift_reminders_sent', $sent);
             }
 
-            $sent = array_values(array_unique(array_map('absint', $sent)));
-            update_post_meta($voucher_id, '_fp_exp_gift_reminders_sent', $sent);
-        }
+            $page++;
+        } while (count($voucher_ids) === $batch_size);
     }
 
     /**

@@ -14,7 +14,11 @@ use wpdb;
 
 use function __;
 use function absint;
+use function array_fill;
+use function array_filter;
 use function array_sum;
+use function array_unique;
+use function array_values;
 use function current_time;
 use function gmdate;
 use function in_array;
@@ -502,43 +506,120 @@ final class Slots
      */
     public static function get_capacity_snapshot(int $slot_id): array
     {
-        global $wpdb;
+        $snapshots = self::get_capacity_snapshots([$slot_id]);
 
-        $table = Reservations::table_name();
-
-        $sql = $wpdb->prepare(
-            "SELECT status, pax, hold_expires_at FROM {$table} WHERE slot_id = %d AND status != %s",
-            $slot_id,
-            Reservations::STATUS_CANCELLED
-        );
-
-        $results = $wpdb->get_results($sql, ARRAY_A);
-
-        $totals = [
+        return $snapshots[$slot_id] ?? [
             'total' => 0,
             'per_type' => [],
         ];
+    }
 
-        if (! $results) {
-            return $totals;
+    /**
+     * @param array<int> $slot_ids
+     *
+     * @return array<int, array{total:int, per_type:array<string,int>}>
+     */
+    public static function get_capacity_snapshots(array $slot_ids): array
+    {
+        global $wpdb;
+
+        $normalized_ids = array_values(array_unique(array_filter(array_map('absint', $slot_ids))));
+
+        if (! $normalized_ids) {
+            return [];
         }
 
-        $slot = self::get_slot($slot_id);
-        $experience_id = isset($slot['experience_id']) ? absint((int) $slot['experience_id']) : 0;
-        $block_pending = Helpers::rtb_block_capacity($experience_id);
+        $snapshots = [];
+
+        foreach (array_unique($normalized_ids) as $slot_id) {
+            if ($slot_id <= 0) {
+                continue;
+            }
+
+            $snapshots[$slot_id] = [
+                'total' => 0,
+                'per_type' => [],
+            ];
+        }
+
+        if (! $snapshots) {
+            return [];
+        }
+
+        $slot_table = self::table_name();
+        $placeholders = implode(',', array_fill(0, count($snapshots), '%d'));
+
+        $slot_rows = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT id, experience_id FROM {$slot_table} WHERE id IN ({$placeholders})",
+                ...array_keys($snapshots)
+            ),
+            ARRAY_A
+        );
+
+        $experience_map = [];
+        if ($slot_rows) {
+            foreach ($slot_rows as $row) {
+                $slot_id = isset($row['id']) ? absint((string) $row['id']) : 0;
+                if (! $slot_id || ! isset($snapshots[$slot_id])) {
+                    continue;
+                }
+
+                $experience_map[$slot_id] = isset($row['experience_id']) ? absint((string) $row['experience_id']) : 0;
+            }
+        }
+
+        $block_cache = [];
+        $block_map = [];
+        foreach ($experience_map as $slot_id => $experience_id) {
+            if (! array_key_exists($experience_id, $block_cache)) {
+                $block_cache[$experience_id] = Helpers::rtb_block_capacity($experience_id);
+            }
+
+            $block_map[$slot_id] = $block_cache[$experience_id];
+        }
+
+        $reservations_table = Reservations::table_name();
+        $reservation_params = array_merge(array_keys($snapshots), [Reservations::STATUS_CANCELLED]);
+
+        $reservation_rows = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT slot_id, status, pax, hold_expires_at FROM {$reservations_table} " .
+                "WHERE slot_id IN ({$placeholders}) AND status != %s",
+                ...$reservation_params
+            ),
+            ARRAY_A
+        );
+
+        if (! $reservation_rows) {
+            return $snapshots;
+        }
+
         $now = current_time('timestamp', true);
 
-        foreach ($results as $row) {
-            $status = isset($row['status']) ? Reservations::normalize_status((string) $row['status']) : Reservations::STATUS_PENDING;
+        foreach ($reservation_rows as $row) {
+            $slot_id = isset($row['slot_id']) ? absint((string) $row['slot_id']) : 0;
+
+            if (! isset($snapshots[$slot_id])) {
+                continue;
+            }
+
+            $status = isset($row['status'])
+                ? Reservations::normalize_status((string) $row['status'])
+                : Reservations::STATUS_PENDING;
 
             if (Reservations::STATUS_DECLINED === $status) {
                 continue;
             }
 
             if (Reservations::STATUS_PENDING_REQUEST === $status) {
-                $expires_at = ! empty($row['hold_expires_at']) ? strtotime((string) $row['hold_expires_at']) : false;
+                $should_block = $block_map[$slot_id] ?? false;
+                if (! $should_block) {
+                    continue;
+                }
 
-                if (! $block_pending || ! $expires_at || $expires_at <= $now) {
+                $expires_at = ! empty($row['hold_expires_at']) ? strtotime((string) $row['hold_expires_at']) : false;
+                if (! $expires_at || $expires_at <= $now) {
                     continue;
                 }
             }
@@ -553,12 +634,16 @@ final class Slots
                 $type_key = is_string($type) ? sanitize_key($type) : (string) $type;
                 $quantity = absint($quantity);
 
-                $totals['per_type'][$type_key] = ($totals['per_type'][$type_key] ?? 0) + $quantity;
-                $totals['total'] += $quantity;
+                if ($quantity <= 0) {
+                    continue;
+                }
+
+                $snapshots[$slot_id]['per_type'][$type_key] = ($snapshots[$slot_id]['per_type'][$type_key] ?? 0) + $quantity;
+                $snapshots[$slot_id]['total'] += $quantity;
             }
         }
 
-        return $totals;
+        return $snapshots;
     }
 
     /**
