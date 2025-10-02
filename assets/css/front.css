@@ -2898,6 +2898,14 @@
     position: relative;
 }
 
+.fp-exp-page {
+    --fp-exp-sticky-height: 0px;
+}
+
+.fp-exp-page.has-sticky-bar {
+    padding-bottom: calc(var(--fp-exp-sticky-height, 0px));
+}
+
 .fp-exp-page__widget {
     position: relative;
 }
@@ -2911,15 +2919,48 @@
     background: rgba(255, 255, 255, 0.95);
     box-shadow: 0 -12px 30px rgba(0, 0, 0, 0.12);
     display: flex;
-    justify-content: center;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    flex-wrap: wrap;
     z-index: 999;
     opacity: 1;
     transform: translateY(0);
     transition: transform 0.3s ease, opacity 0.3s ease;
 }
 
+@supports (padding-bottom: calc(1px + env(safe-area-inset-bottom))) {
+    .fp-exp-page.has-sticky-bar {
+        padding-bottom: calc(var(--fp-exp-sticky-height, 0px) + env(safe-area-inset-bottom));
+    }
+
+    .fp-exp-page__sticky-bar {
+        padding-bottom: calc(0.75rem + env(safe-area-inset-bottom));
+    }
+}
+
+.fp-exp-page__sticky-price {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    font-weight: 600;
+    color: var(--fp-color-text);
+    line-height: 1.2;
+}
+
+.fp-exp-page__sticky-price-label {
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--fp-color-text-muted, rgba(19, 29, 56, 0.65));
+}
+
+.fp-exp-page__sticky-price-value {
+    font-size: clamp(1.125rem, 2.5vw, 1.5rem);
+}
+
 .fp-exp-page__sticky-button {
-    width: min(540px, 100%);
+    flex: 1 1 240px;
     border: none;
     border-radius: var(--fp-exp-radius-base, 12px);
     background: var(--fp-color-primary);
@@ -2927,6 +2968,14 @@
     font-weight: 600;
     padding: 0.85rem 1.5rem;
     cursor: pointer;
+}
+
+@media (min-width: 640px) {
+    .fp-exp-page__sticky-price {
+        flex-direction: row;
+        align-items: baseline;
+        gap: 0.35rem;
+    }
 }
 
 .fp-exp-page__sticky-button:hover,
@@ -3001,9 +3050,6 @@
         grid-template-columns: repeat(3, minmax(0, 1fr));
     }
 
-    .fp-exp-page__sticky-bar {
-        display: none;
-    }
 }
 
 @media (min-width: 1280px) {

@@ -158,6 +158,26 @@ if (null === $overview_has_content) {
 
 $has_overview = ! empty($sections['overview']) && $overview_has_content;
 $cta_label = esc_html__('Controlla disponibilità', 'fp-experiences');
+$price_from_display = isset($experience['price_from_display']) ? (string) $experience['price_from_display'] : '';
+$currency_code = get_option('woocommerce_currency', 'EUR');
+$currency_symbol = function_exists('get_woocommerce_currency_symbol')
+    ? get_woocommerce_currency_symbol($currency_code)
+    : $currency_code;
+$currency_position = get_option('woocommerce_currency_pos', 'left');
+$format_currency = static function (string $amount) use ($currency_symbol, $currency_position): string {
+    switch ($currency_position) {
+        case 'left_space':
+            return $currency_symbol . ' ' . $amount;
+        case 'right':
+            return $amount . $currency_symbol;
+        case 'right_space':
+            return $amount . ' ' . $currency_symbol;
+        case 'left':
+        default:
+            return $currency_symbol . $amount;
+    }
+};
+$sticky_price_display = '' !== $price_from_display ? $format_currency($price_from_display) : '';
 
 ?>
 <div
@@ -686,7 +706,13 @@ $cta_label = esc_html__('Controlla disponibilità', 'fp-experiences');
 
     <?php if ($sticky_widget && 'none' !== $sidebar_position && ! empty($widget_html)) : ?>
         <div class="fp-exp-page__sticky-bar" data-fp-sticky-bar>
-            <button type="button" class="fp-exp-page__sticky-button" data-fp-scroll="widget" data-fp-cta="sticky">
+            <?php if ('' !== $sticky_price_display) : ?>
+                <span class="fp-exp-page__sticky-price">
+                    <span class="fp-exp-page__sticky-price-label"><?php esc_html_e('From', 'fp-experiences'); ?></span>
+                    <span class="fp-exp-page__sticky-price-value"><?php echo esc_html($sticky_price_display); ?></span>
+                </span>
+            <?php endif; ?>
+            <button type="button" class="fp-exp-page__sticky-button" data-fp-scroll="calendar" data-fp-cta="sticky">
                 <?php echo $cta_label; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
             </button>
         </div>

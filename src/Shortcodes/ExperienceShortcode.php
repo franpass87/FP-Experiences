@@ -41,6 +41,7 @@ use function implode;
 use function in_array;
 use function is_array;
 use function is_numeric;
+use function number_format_i18n;
 use function sanitize_key;
 use function sanitize_text_field;
 use function trim;
@@ -333,6 +334,9 @@ final class ExperienceShortcode extends BaseShortcode
             ]);
         }
 
+        $price_from = $this->calculate_price_from_meta($experience_id);
+        $price_from_display = null !== $price_from ? number_format_i18n($price_from, 0) : '';
+
         return [
             'theme' => $theme,
             'experience' => [
@@ -344,6 +348,8 @@ final class ExperienceShortcode extends BaseShortcode
                 'duration_minutes' => $duration_minutes,
                 'languages' => $languages,
                 'language_badges' => $language_badges,
+                'price_from' => $price_from,
+                'price_from_display' => $price_from_display,
             ],
             'gallery' => $gallery,
             'badges' => $badges,
@@ -416,6 +422,32 @@ final class ExperienceShortcode extends BaseShortcode
         ]);
 
         return 0;
+    }
+
+    private function calculate_price_from_meta(int $experience_id): ?float
+    {
+        $tickets = get_post_meta($experience_id, '_fp_ticket_types', true);
+        if (! is_array($tickets) || empty($tickets)) {
+            return null;
+        }
+
+        $min_price = null;
+        foreach ($tickets as $ticket) {
+            if (! is_array($ticket) || ! isset($ticket['price'])) {
+                continue;
+            }
+
+            $price = (float) $ticket['price'];
+            if ($price <= 0) {
+                continue;
+            }
+
+            if (null === $min_price || $price < $min_price) {
+                $min_price = $price;
+            }
+        }
+
+        return $min_price;
     }
 
     /**
