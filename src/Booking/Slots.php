@@ -523,7 +523,7 @@ final class Slots
     {
         global $wpdb;
 
-        $normalized_ids = array_values(array_filter(array_map('absint', $slot_ids)));
+        $normalized_ids = array_values(array_unique(array_filter(array_map('absint', $slot_ids))));
 
         if (! $normalized_ids) {
             return [];
