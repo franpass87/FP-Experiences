@@ -194,108 +194,110 @@ $sticky_price_display = '' !== $price_from_display ? $format_currency($price_fro
         </script>
     <?php endif; ?>
 
-    <div class="fp-grid fp-exp-page__layout" data-fp-page>
-        <main class="fp-main fp-exp-page__main">
-            <?php if (! empty($sections['hero'])) : ?>
-                <section class="fp-exp-section fp-exp-hero" id="fp-exp-section-hero" data-fp-section="hero">
-                    <div class="fp-exp-hero__layout">
-                        <div class="fp-exp-hero__primary">
-                            <?php if ($primary_image) : ?>
-                                <figure class="fp-exp-hero__media">
-                                    <img
-                                        class="fp-exp-hero__image"
-                                        src="<?php echo esc_url($primary_image['url']); ?>"
-                                        <?php if (! empty($primary_image['srcset'])) : ?>srcset="<?php echo esc_attr($primary_image['srcset']); ?>"<?php endif; ?>
-                                        sizes="(min-width: 1280px) 640px, (min-width: 768px) 60vw, 100vw"
-                                        <?php if (! empty($primary_image['width'])) : ?>width="<?php echo esc_attr((string) $primary_image['width']); ?>"<?php endif; ?>
-                                        <?php if (! empty($primary_image['height'])) : ?>height="<?php echo esc_attr((string) $primary_image['height']); ?>"<?php endif; ?>
-                                        alt="<?php echo esc_attr($experience['title']); ?>"
-                                        loading="eager"
-                                        decoding="async"
-                                        fetchpriority="high"
-                                    />
-                                </figure>
-                            <?php else : ?>
-                                <div class="fp-exp-hero__media fp-exp-hero__media--placeholder" aria-hidden="true">
-                                    <span></span>
+    <?php if (! empty($sections['hero'])) : ?>
+        <section class="fp-exp-section fp-exp-hero" id="fp-exp-section-hero" data-fp-section="hero">
+            <div class="fp-exp-hero__container">
+                <div class="fp-exp-hero__layout">
+                    <div class="fp-exp-hero__primary">
+                        <?php if ($primary_image) : ?>
+                            <figure class="fp-exp-hero__media">
+                                <img
+                                    class="fp-exp-hero__image"
+                                    src="<?php echo esc_url($primary_image['url']); ?>"
+                                    <?php if (! empty($primary_image['srcset'])) : ?>srcset="<?php echo esc_attr($primary_image['srcset']); ?>"<?php endif; ?>
+                                    sizes="(min-width: 1280px) 640px, (min-width: 768px) 60vw, 100vw"
+                                    <?php if (! empty($primary_image['width'])) : ?>width="<?php echo esc_attr((string) $primary_image['width']); ?>"<?php endif; ?>
+                                    <?php if (! empty($primary_image['height'])) : ?>height="<?php echo esc_attr((string) $primary_image['height']); ?>"<?php endif; ?>
+                                    alt="<?php echo esc_attr($experience['title']); ?>"
+                                    loading="eager"
+                                    decoding="async"
+                                    fetchpriority="high"
+                                />
+                            </figure>
+                        <?php else : ?>
+                            <div class="fp-exp-hero__media fp-exp-hero__media--placeholder" aria-hidden="true">
+                                <span></span>
+                            </div>
+                        <?php endif; ?>
+
+                        <div class="fp-exp-hero__content">
+                            <header class="fp-exp-hero__header">
+                                <span class="fp-exp-hero__eyebrow">FP Experiences</span>
+                                <h1 class="fp-exp-hero__title"><?php echo esc_html($experience['title']); ?></h1>
+                                <?php if ('' !== $hero_summary) : ?>
+                                    <p class="fp-exp-hero__summary"><?php echo esc_html($hero_summary); ?></p>
+                                <?php endif; ?>
+                            </header>
+
+                            <?php if (! empty($hero_highlights)) : ?>
+                                <ul class="fp-exp-hero__highlights" role="list">
+                                    <?php foreach ($hero_highlights as $highlight) : ?>
+                                        <li class="fp-exp-hero__highlight">
+                                            <span class="fp-exp-hero__highlight-icon" aria-hidden="true">
+                                                <svg viewBox="0 0 24 24"><path fill="currentColor" d="M9.75 18.25 3.5 12l1.41 1-1.41 4.84 4.84 9.34-9.34L20.5 7.5Z"/></svg>
+                                            </span>
+                                            <span class="fp-exp-hero__highlight-text"><?php echo esc_html($highlight); ?></span>
+                                        </li>
+                                    <?php endforeach; ?>
+                                </ul>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+
+                    <aside class="fp-exp-hero__sidebar">
+                        <div class="fp-exp-hero__card">
+                            <?php if ('' !== $sticky_price_display) : ?>
+                                <div class="fp-exp-hero__price" data-fp-scroll-target="calendar">
+                                    <span class="fp-exp-hero__price-label"><?php esc_html_e('From', 'fp-experiences'); ?></span>
+                                    <span class="fp-exp-hero__price-value"><?php echo esc_html($sticky_price_display); ?></span>
                                 </div>
                             <?php endif; ?>
 
-                            <div class="fp-exp-hero__content">
-                                <header class="fp-exp-hero__header">
-                                    <span class="fp-exp-hero__eyebrow">FP Experiences</span>
-                                    <h1 class="fp-exp-hero__title"><?php echo esc_html($experience['title']); ?></h1>
-                                    <?php if ('' !== $hero_summary) : ?>
-                                        <p class="fp-exp-hero__summary"><?php echo esc_html($hero_summary); ?></p>
-                                    <?php endif; ?>
-                                </header>
-
-                                <?php if (! empty($hero_highlights)) : ?>
-                                    <ul class="fp-exp-hero__highlights" role="list">
-                                        <?php foreach ($hero_highlights as $highlight) : ?>
-                                            <li class="fp-exp-hero__highlight">
-                                                <span class="fp-exp-hero__highlight-icon" aria-hidden="true">
-                                                    <svg viewBox="0 0 24 24"><path fill="currentColor" d="M9.75 18.25 3.5 12l1.41-1.41 4.84 4.84 9.34-9.34L20.5 7.5Z"/></svg>
-                                                </span>
-                                                <span class="fp-exp-hero__highlight-text"><?php echo esc_html($highlight); ?></span>
-                                            </li>
-                                        <?php endforeach; ?>
-                                    </ul>
-                                <?php endif; ?>
-                            </div>
-                        </div>
-
-                        <aside class="fp-exp-hero__sidebar">
-                            <div class="fp-exp-hero__card">
-                                <?php if ('' !== $sticky_price_display) : ?>
-                                    <div class="fp-exp-hero__price" data-fp-scroll-target="calendar">
-                                        <span class="fp-exp-hero__price-label"><?php esc_html_e('From', 'fp-experiences'); ?></span>
-                                        <span class="fp-exp-hero__price-value"><?php echo esc_html($sticky_price_display); ?></span>
-                                    </div>
-                                <?php endif; ?>
-
-                                <div class="fp-exp-hero__actions">
+                            <div class="fp-exp-hero__actions">
+                                <button
+                                    type="button"
+                                    class="fp-exp-button fp-exp-button--primary"
+                                    data-fp-scroll="calendar"
+                                    data-fp-cta="hero"
+                                >
+                                    <?php echo $cta_label; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+                                </button>
+                                <?php if ($show_gallery) : ?>
                                     <button
                                         type="button"
-                                        class="fp-exp-button fp-exp-button--primary"
-                                        data-fp-scroll="calendar"
-                                        data-fp-cta="hero"
+                                        class="fp-exp-button fp-exp-button--secondary"
+                                        data-fp-scroll="gallery"
                                     >
-                                        <?php echo $cta_label; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+                                        <?php esc_html_e('View gallery', 'fp-experiences'); ?>
                                     </button>
-                                    <?php if ($show_gallery) : ?>
-                                        <button
-                                            type="button"
-                                            class="fp-exp-button fp-exp-button--secondary"
-                                            data-fp-scroll="gallery"
-                                        >
-                                            <?php esc_html_e('View gallery', 'fp-experiences'); ?>
-                                        </button>
-                                    <?php endif; ?>
-                                </div>
-
-                                <?php if (! empty($hero_fact_badges)) : ?>
-                                    <ul class="fp-exp-hero__facts" role="list">
-                                        <?php foreach ($hero_fact_badges as $badge) : ?>
-                                            <li class="fp-exp-hero__fact">
-                                                <span class="fp-exp-hero__fact-icon" aria-hidden="true">
-                                                    <?php if ('clock' === ($badge['icon'] ?? '')) : ?>
-                                                        <svg viewBox="0 0 24 24" role="img" aria-hidden="true"><path fill="currentColor" d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Zm1 10.59 2.12 2.12-1.41 1.41-2.83-2.83V7h2.12Z"/></svg>
-                                                    <?php else : ?>
-                                                        <svg viewBox="0 0 24 24" role="img" aria-hidden="true"><path fill="currentColor" d="M12 12.88 9.17 10H5a3 3 0 0 0-3 3v7h6v-4h2v4h6v-7a3 3 0 0 0-3-3h-1.17Zm9-2.88a4 4 0 1 0-4-4 4 4 0 0 0 4 4Z"/></svg>
-                                                    <?php endif; ?>
-                                                </span>
-                                                <span class="fp-exp-hero__fact-text"><?php echo esc_html((string) ($badge['label'] ?? '')); ?></span>
-                                            </li>
-                                        <?php endforeach; ?>
-                                    </ul>
                                 <?php endif; ?>
                             </div>
-                        </aside>
-                    </div>
-                </section>
-            <?php endif; ?>
 
+                            <?php if (! empty($hero_fact_badges)) : ?>
+                                <ul class="fp-exp-hero__facts" role="list">
+                                    <?php foreach ($hero_fact_badges as $badge) : ?>
+                                        <li class="fp-exp-hero__fact">
+                                            <span class="fp-exp-hero__fact-icon" aria-hidden="true">
+                                                <?php if ('clock' === ($badge['icon'] ?? '')) : ?>
+                                                    <svg viewBox="0 0 24 24" role="img" aria-hidden="true"><path fill="currentColor" d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Zm1 10.59 2.12 2.12-1.41 1.41-2.83-2.83V7h2.12Z"/></svg>
+                                                <?php else : ?>
+                                                    <svg viewBox="0 0 24 24" role="img" aria-hidden="true"><path fill="currentColor" d="M12 12.88 9.17 10H5a3 3 0 0 0-3 3v7h6v-4h2v4h6v-7a3 3 0 0 0-3-3h-1.17Zm9-2.88a4 4 0 1 0-4-4 4 4 0 0 0 4 4Z"/></svg>
+                                                <?php endif; ?>
+                                            </span>
+                                            <span class="fp-exp-hero__fact-text"><?php echo esc_html((string) ($badge['label'] ?? '')); ?></span>
+                                        </li>
+                                    <?php endforeach; ?>
+                                </ul>
+                            <?php endif; ?>
+                        </div>
+                    </aside>
+                </div>
+            </div>
+        </section>
+    <?php endif; ?>
+
+    <div class="fp-grid fp-exp-page__layout" data-fp-page>
+        <main class="fp-main fp-exp-page__main">
             <?php if ($gift_enabled) : ?>
                 <section class="fp-exp-section fp-exp-gift" id="fp-exp-hero-gift" data-fp-section="hero-gift">
                     <div class="fp-exp-gift__body">
