@@ -29,6 +29,8 @@ $privacy_id = $scope_class . '-consent-privacy';
 $display_context = isset($display_context) ? (string) $display_context : '';
 $config_version = isset($config_version) ? (string) $config_version : '';
 
+$calendar = is_array($calendar) ? $calendar : [];
+
 $dataset = [
     'experienceId' => (int) $experience['id'],
     'experienceTitle' => wp_strip_all_tags((string) $experience['title']),

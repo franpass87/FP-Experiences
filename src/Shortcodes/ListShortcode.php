@@ -168,7 +168,11 @@ final class ListShortcode extends BaseShortcode
             }
         }
 
-        $state = $this->read_filter_state([], $attributes, $order, $orderby, $view);
+        $active_filters = isset($settings['filters']) && is_array($settings['filters'])
+            ? array_values(array_filter(array_map('strval', $settings['filters'])))
+            : [];
+
+        $state = $this->read_filter_state($active_filters, $attributes, $order, $orderby, $view);
 
         if ('cards' === $variant) {
             $state['view'] = 'grid';
@@ -203,10 +207,30 @@ final class ListShortcode extends BaseShortcode
         }
 
         $total = count($experience_ids);
-        $total_pages = max(1, (int) ceil($total / $per_page));
-        $current_page = min($total_pages, max(1, (int) $state['page']));
+        $used_fallback = false;
 
-        $page_ids = array_slice($experience_ids, ($current_page - 1) * $per_page, $per_page);
+        if (0 === $total && ! $this->has_active_content_filters($state, $active_filters)) {
+            $fallback_query = new WP_Query([
+                'post_type' => 'fp_experience',
+                'post_status' => 'publish',
+                'fields' => 'ids',
+                'posts_per_page' => $per_page,
+                'orderby' => 'date',
+                'order' => 'DESC',
+                'no_found_rows' => true,
+            ]);
+
+            $experience_ids = array_map('absint', $fallback_query->posts);
+            $total = count($experience_ids);
+            $used_fallback = $total > 0;
+        }
+
+        $total_pages = max(1, (int) ceil($total / $per_page));
+        $current_page = $used_fallback ? 1 : min($total_pages, max(1, (int) $state['page']));
+
+        $page_ids = $used_fallback
+            ? $experience_ids
+            : array_slice($experience_ids, ($current_page - 1) * $per_page, $per_page);
         $experiences = $this->map_experiences($page_ids, $prices, $show_price_from, $badge_flags, $show_map, $cta_mode);
         $tracking_items = $this->build_tracking_items($page_ids, $prices);
 
@@ -242,11 +266,11 @@ final class ListShortcode extends BaseShortcode
             'badge_flags' => $badge_flags,
             'layout' => $layout,
             'variant' => $variant,
-            'filters' => [],
+            'filters' => $active_filters,
             'filter_chips' => [],
-            'has_active_filters' => false,
+            'has_active_filters' => $this->has_active_content_filters($state, $active_filters),
             'reset_url' => '',
-            'show_filters' => false,
+            'show_filters' => ! empty($active_filters),
             'total' => $total,
             'current_page' => $current_page,
             'total_pages' => $total_pages,
@@ -724,6 +748,52 @@ final class ListShortcode extends BaseShortcode
         }
 
         return $state;
+    }
+
+    /**
+     * @param array<string, mixed> $state
+     * @param array<int, string>   $filters
+     */
+    private function has_active_content_filters(array $state, array $filters): bool
+    {
+        foreach ($filters as $filter) {
+            switch ($filter) {
+                case 'search':
+                    if (! empty($state['search'])) {
+                        return true;
+                    }
+
+                    break;
+                case 'theme':
+                case 'language':
+                case 'duration':
+                    if (! empty($state[$filter])) {
+                        return true;
+                    }
+
+                    break;
+                case 'price':
+                    if (isset($state['price_min'], $state['price_max'])) {
+                        return true;
+                    }
+
+                    break;
+                case 'family':
+                    if (! empty($state['family'])) {
+                        return true;
+                    }
+
+                    break;
+                case 'date':
+                    if (! empty($state['date'])) {
+                        return true;
+                    }
+
+                    break;
+            }
+        }
+
+        return false;
     }
 
     private function normalize_positive_int($value, int $fallback): int

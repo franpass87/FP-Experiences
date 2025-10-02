@@ -82,16 +82,8 @@ final class AdminMenu
             58
         );
 
-        if (Helpers::can_manage_fp()) {
-            add_submenu_page(
-                'fp_exp_dashboard',
-                esc_html__('Dashboard', 'fp-experiences'),
-                esc_html__('Dashboard', 'fp-experiences'),
-                Helpers::management_capability(),
-                'fp_exp_dashboard',
-                [Dashboard::class, 'render']
-            );
-        }
+        // The top-level callback already appears as the first submenu item, so we avoid
+        // registering an explicit "Dashboard" entry to prevent duplicate menu rows.
 
         add_submenu_page(
             'fp_exp_dashboard',

@@ -889,6 +889,394 @@
         });
     }
 
+    function initCalendarApp() {
+        const container = document.getElementById('fp-exp-calendar-app');
+        if (!container) {
+            return;
+        }
+
+        const calendarConfig = window.fpExpCalendar || {};
+        const endpoints = calendarConfig.endpoints || {};
+        const slotsEndpoint = endpoints.slots;
+        if (!slotsEndpoint) {
+            return;
+        }
+
+        const loadingNode = container.querySelector('.fp-exp-calendar__loading');
+        const bodyNode = container.querySelector('[data-calendar-content]');
+        const errorNode = container.querySelector('[data-calendar-error]');
+
+        if (!loadingNode || !bodyNode || !errorNode) {
+            return;
+        }
+
+        function createUTCDate(year, month, day) {
+            return new Date(Date.UTC(year, month, day));
+        }
+
+        function formatRequestDate(date) {
+            const year = date.getUTCFullYear();
+            const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+            const day = String(date.getUTCDate()).padStart(2, '0');
+
+            return `${year}-${month}-${day}`;
+        }
+
+        function parseBootstrapStart() {
+            try {
+                const raw = container.getAttribute('data-bootstrap');
+                if (!raw) {
+                    return null;
+                }
+                const data = JSON.parse(raw);
+                if (!data || !data.range || !data.range.start) {
+                    return null;
+                }
+                const parts = String(data.range.start).split('-');
+                if (parts.length < 2) {
+                    return null;
+                }
+                const year = Number.parseInt(parts[0], 10);
+                const month = Number.parseInt(parts[1], 10) - 1;
+                if (Number.isNaN(year) || Number.isNaN(month)) {
+                    return null;
+                }
+
+                return createUTCDate(year, month, 1);
+            } catch (error) {
+                return null;
+            }
+        }
+
+        function monthRange(date) {
+            const year = date.getUTCFullYear();
+            const month = date.getUTCMonth();
+
+            return {
+                start: createUTCDate(year, month, 1),
+                end: createUTCDate(year, month + 1, 0),
+            };
+        }
+
+        function addMonths(date, amount) {
+            const year = date.getUTCFullYear();
+            const month = date.getUTCMonth() + amount;
+
+            return createUTCDate(year, month, 1);
+        }
+
+        function formatMonthTitle(date) {
+            try {
+                return new Intl.DateTimeFormat(undefined, {
+                    month: 'long',
+                    year: 'numeric',
+                    timeZone: 'UTC',
+                }).format(date);
+            } catch (error) {
+                const year = date.getUTCFullYear();
+                const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+
+                return `${year}-${month}`;
+            }
+        }
+
+        function formatDayTitle(date) {
+            try {
+                return new Intl.DateTimeFormat(undefined, {
+                    weekday: 'long',
+                    day: 'numeric',
+                    month: 'long',
+                    timeZone: 'UTC',
+                }).format(date);
+            } catch (error) {
+                const year = date.getUTCFullYear();
+                const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+                const day = String(date.getUTCDate()).padStart(2, '0');
+
+                return `${year}-${month}-${day}`;
+            }
+        }
+
+        function parseSlotDate(value) {
+            if (!value) {
+                return null;
+            }
+
+            const iso = String(value).replace(' ', 'T') + 'Z';
+            const date = new Date(iso);
+
+            return Number.isNaN(date.getTime()) ? null : date;
+        }
+
+        function formatTime(date) {
+            if (!date) {
+                return '';
+            }
+
+            try {
+                return new Intl.DateTimeFormat(undefined, {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                }).format(date);
+            } catch (error) {
+                const hours = String(date.getHours()).padStart(2, '0');
+                const minutes = String(date.getMinutes()).padStart(2, '0');
+
+                return `${hours}:${minutes}`;
+            }
+        }
+
+        function clear(node) {
+            while (node.firstChild) {
+                node.removeChild(node.firstChild);
+            }
+        }
+
+        function setLoading(isLoading) {
+            loadingNode.hidden = !isLoading;
+            if (isLoading) {
+                loadingNode.textContent = container.dataset.loadingText || 'Loading…';
+            }
+        }
+
+        function showError(message) {
+            if (message) {
+                errorNode.textContent = message;
+                errorNode.hidden = false;
+            } else {
+                errorNode.hidden = true;
+                errorNode.textContent = '';
+            }
+        }
+
+        const toolbar = document.createElement('div');
+        toolbar.className = 'fp-exp-calendar__toolbar';
+
+        const titleNode = document.createElement('div');
+        titleNode.className = 'fp-exp-calendar__toolbar-title';
+        toolbar.appendChild(titleNode);
+
+        const nav = document.createElement('div');
+        nav.className = 'fp-exp-calendar__nav';
+
+        const prevButton = document.createElement('button');
+        prevButton.type = 'button';
+        prevButton.className = 'button button-secondary';
+        prevButton.textContent = calendarConfig.i18n && calendarConfig.i18n.previous
+            ? calendarConfig.i18n.previous
+            : 'Previous';
+
+        const nextButton = document.createElement('button');
+        nextButton.type = 'button';
+        nextButton.className = 'button button-secondary';
+        nextButton.textContent = calendarConfig.i18n && calendarConfig.i18n.next
+            ? calendarConfig.i18n.next
+            : 'Next';
+
+        nav.appendChild(prevButton);
+        nav.appendChild(nextButton);
+        toolbar.appendChild(nav);
+
+        const listNode = document.createElement('div');
+        listNode.className = 'fp-exp-calendar__list';
+
+        clear(bodyNode);
+        bodyNode.appendChild(toolbar);
+        bodyNode.appendChild(listNode);
+
+        let currentMonth = parseBootstrapStart();
+        if (!currentMonth) {
+            const now = new Date();
+            currentMonth = createUTCDate(now.getUTCFullYear(), now.getUTCMonth(), 1);
+        }
+
+        function renderSlots(slots) {
+            clear(listNode);
+
+            if (!slots.length) {
+                const empty = document.createElement('p');
+                empty.className = 'fp-exp-calendar__empty';
+                empty.textContent = calendarConfig.i18n && calendarConfig.i18n.noSlots
+                    ? calendarConfig.i18n.noSlots
+                    : 'No slots scheduled for this period.';
+                listNode.appendChild(empty);
+
+                return;
+            }
+
+            const groups = new Map();
+
+            slots.forEach((slot) => {
+                const start = typeof slot.start === 'string' ? slot.start : '';
+                const dayKey = start ? start.slice(0, 10) : '';
+                if (!dayKey) {
+                    return;
+                }
+
+                if (!groups.has(dayKey)) {
+                    groups.set(dayKey, []);
+                }
+
+                groups.get(dayKey).push(slot);
+            });
+
+            const orderedDays = Array.from(groups.keys()).sort();
+
+            orderedDays.forEach((dayKey) => {
+                const dayDate = parseSlotDate(`${dayKey} 00:00:00`);
+                const daySection = document.createElement('section');
+                daySection.className = 'fp-exp-calendar__day';
+
+                const header = document.createElement('header');
+                header.className = 'fp-exp-calendar__day-header';
+                header.textContent = formatDayTitle(dayDate || new Date());
+                daySection.appendChild(header);
+
+                const list = document.createElement('ul');
+                list.className = 'fp-exp-calendar__slots';
+
+                groups.get(dayKey).forEach((slot) => {
+                    const item = document.createElement('li');
+                    item.className = 'fp-exp-calendar__slot';
+
+                    const title = document.createElement('div');
+                    title.textContent = slot.experience_title
+                        ? slot.experience_title
+                        : (calendarConfig.i18n && calendarConfig.i18n.untitledExperience
+                            ? calendarConfig.i18n.untitledExperience
+                            : 'Untitled experience');
+                    item.appendChild(title);
+
+                    const startDate = parseSlotDate(slot.start);
+                    const endDate = parseSlotDate(slot.end);
+                    const startLabel = formatTime(startDate);
+                    const endLabel = formatTime(endDate);
+                    const timeLabel = startLabel && endLabel ? `${startLabel} – ${endLabel}` : startLabel;
+
+                    if (timeLabel) {
+                        const time = document.createElement('div');
+                        time.className = 'fp-exp-calendar__slot-meta';
+                        const timeValue = document.createElement('strong');
+                        timeValue.textContent = timeLabel;
+                        time.appendChild(timeValue);
+                        item.appendChild(time);
+                    }
+
+                    const remaining = typeof slot.remaining === 'number' ? slot.remaining : 0;
+                    const total = typeof slot.capacity_total === 'number' ? slot.capacity_total : 0;
+                    const reserved = typeof slot.reserved === 'number' ? slot.reserved : 0;
+
+                    const capacityWrapper = document.createElement('div');
+                    capacityWrapper.className = 'fp-exp-calendar__slot-meta';
+
+                    const seatsLabel = calendarConfig.i18n && calendarConfig.i18n.seatsAvailable
+                        ? calendarConfig.i18n.seatsAvailable
+                        : 'seats available';
+                    const capacity = document.createElement('span');
+                    capacity.innerHTML = `<strong>${remaining}/${total}</strong> ${seatsLabel}`;
+                    capacityWrapper.appendChild(capacity);
+
+                    const reservedLabel = document.createElement('span');
+                    reservedLabel.textContent = `${reserved} ${calendarConfig.i18n && calendarConfig.i18n.bookedLabel
+                        ? calendarConfig.i18n.bookedLabel
+                        : 'booked'}`;
+                    capacityWrapper.appendChild(reservedLabel);
+
+                    const perType = slot.capacity_per_type && typeof slot.capacity_per_type === 'object'
+                        ? Object.entries(slot.capacity_per_type)
+                        : [];
+
+                    if (perType.length) {
+                        perType.forEach(([type, amount]) => {
+                            const badge = document.createElement('span');
+                            badge.textContent = `${type}: ${amount}`;
+                            capacityWrapper.appendChild(badge);
+                        });
+                    }
+
+                    item.appendChild(capacityWrapper);
+                    list.appendChild(item);
+                });
+
+                daySection.appendChild(list);
+                listNode.appendChild(daySection);
+            });
+        }
+
+        function resolveEndpoint(url) {
+            try {
+                return new URL(url).toString();
+            } catch (error) {
+                return new URL(url, window.location.origin).toString();
+            }
+        }
+
+        async function loadMonth(date) {
+            const range = monthRange(date);
+            titleNode.textContent = formatMonthTitle(range.start);
+            setLoading(true);
+            showError('');
+
+            const requestUrl = resolveEndpoint(slotsEndpoint);
+            const url = new URL(requestUrl);
+            url.searchParams.set('start', formatRequestDate(range.start));
+            url.searchParams.set('end', formatRequestDate(range.end));
+
+            try {
+                let payload;
+                const requestHeaders = {
+                    'X-WP-Nonce': calendarConfig.nonce || '',
+                };
+
+                if (window.wp && window.wp.apiFetch) {
+                    payload = await window.wp.apiFetch({
+                        url: url.toString(),
+                        method: 'GET',
+                        headers: requestHeaders,
+                    });
+                } else {
+                    const response = await window.fetch(url.toString(), {
+                        credentials: 'same-origin',
+                        headers: requestHeaders,
+                    });
+
+                    if (!response.ok) {
+                        const errorBody = await response.json().catch(() => ({}));
+                        const message = errorBody && errorBody.message ? String(errorBody.message) : response.statusText;
+                        throw new Error(message || 'Request failed');
+                    }
+
+                    payload = await response.json().catch(() => ({}));
+                }
+
+                const slots = payload && Array.isArray(payload.slots) ? payload.slots : [];
+                renderSlots(slots);
+                bodyNode.hidden = false;
+            } catch (error) {
+                const fallback = calendarConfig.i18n && calendarConfig.i18n.loadError
+                    ? calendarConfig.i18n.loadError
+                    : 'Unable to load the calendar. Please try again.';
+                renderSlots([]);
+                const message = error && error.message ? String(error.message) : fallback;
+                showError(message);
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        prevButton.addEventListener('click', () => {
+            currentMonth = addMonths(currentMonth, -1);
+            loadMonth(currentMonth);
+        });
+
+        nextButton.addEventListener('click', () => {
+            currentMonth = addMonths(currentMonth, 1);
+            loadMonth(currentMonth);
+        });
+
+        loadMonth(currentMonth);
+    }
+
     ready(() => {
         const root = document.querySelector('[data-fp-exp-admin]');
         if (root) {
@@ -899,6 +1287,7 @@
             initFormValidation(root);
         }
 
+        initCalendarApp();
         initTools();
     });
 })();

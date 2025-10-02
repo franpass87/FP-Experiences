@@ -143,15 +143,21 @@ final class Theme
         $css = '';
 
         if ('dark' === $mode) {
-            $css .= '.fp-theme-dark .' . esc_attr($scope_class) . '{' . self::stringify_variables($vars['dark']) . '}';
-        } else {
-            $css .= '.' . esc_attr($scope_class) . '{' . self::stringify_variables($vars['base']) . '}';
+            $css .= '.' . esc_attr($scope_class) . '{' . self::stringify_variables($vars['dark']) . '}';
 
-            if ('auto' === $mode) {
-                $css .= '@media (prefers-color-scheme: dark){.' . esc_attr($scope_class) . '{' . self::stringify_variables($vars['dark']) . '}}';
-                $css .= '.fp-theme-dark .' . esc_attr($scope_class) . '{' . self::stringify_variables($vars['dark']) . '}';
-            }
+            return $css;
         }
+
+        $css .= '.' . esc_attr($scope_class) . '{' . self::stringify_variables($vars['base']) . '}';
+
+        if ('auto' === $mode) {
+            $css .= '@media (prefers-color-scheme: dark){.' . esc_attr($scope_class) . '{' . self::stringify_variables($vars['dark']) . '}}';
+            $css .= '.fp-theme-dark .' . esc_attr($scope_class) . '{' . self::stringify_variables($vars['dark']) . '}';
+
+            return $css;
+        }
+
+        $css .= '.fp-theme-dark .' . esc_attr($scope_class) . '{' . self::stringify_variables($vars['dark']) . '}';
 
         return $css;
     }
