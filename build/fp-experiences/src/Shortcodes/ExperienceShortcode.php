@@ -286,93 +286,6 @@ final class ExperienceShortcode extends BaseShortcode
             $enabled_sections['overview'] = false;
         }
 
-        $sections_map = [
-            'hero' => [
-                'id' => 'hero',
-                'label' => esc_html__('Intro', 'fp-experiences'),
-            ],
-            'overview' => [
-                'id' => 'overview',
-                'label' => esc_html__('Overview', 'fp-experiences'),
-            ],
-            'gallery' => [
-                'id' => 'gallery',
-                'label' => esc_html__('Gallery', 'fp-experiences'),
-            ],
-            'highlights' => [
-                'id' => 'highlights',
-                'label' => esc_html__('Highlights', 'fp-experiences'),
-            ],
-            'inclusions' => [
-                'id' => 'inclusions',
-                'label' => esc_html__('What\'s included', 'fp-experiences'),
-            ],
-            'meeting' => [
-                'id' => 'meeting',
-                'label' => esc_html__('Meeting point', 'fp-experiences'),
-            ],
-            'extras' => [
-                'id' => 'extras',
-                'label' => esc_html__('Good to know', 'fp-experiences'),
-            ],
-            'faq' => [
-                'id' => 'faq',
-                'label' => esc_html__('FAQ', 'fp-experiences'),
-            ],
-            'reviews' => [
-                'id' => 'reviews',
-                'label' => esc_html__('Reviews', 'fp-experiences'),
-            ],
-        ];
-
-        $navigation = [];
-        foreach (self::ALLOWED_SECTIONS as $section_key) {
-            if (! $enabled_sections[$section_key] || empty($sections_map[$section_key])) {
-                continue;
-            }
-
-            if ('overview' === $section_key && ! $overview_has_content) {
-                continue;
-            }
-
-            if ('gallery' === $section_key) {
-                $valid_gallery = array_filter(
-                    $gallery,
-                    static fn ($image) => is_array($image) && ! empty($image['url'])
-                );
-
-                if (count($valid_gallery) < 2) {
-                    continue;
-                }
-            }
-
-            if ('highlights' === $section_key && empty($highlights)) {
-                continue;
-            }
-
-            if ('inclusions' === $section_key && empty($inclusions) && empty($exclusions)) {
-                continue;
-            }
-
-            if ('meeting' === $section_key && empty($meeting_data['primary'])) {
-                continue;
-            }
-
-            if ('extras' === $section_key && empty($what_to_bring) && empty($notes) && empty($policy)) {
-                continue;
-            }
-
-            if ('faq' === $section_key && empty($faq_items)) {
-                continue;
-            }
-
-            if ('reviews' === $section_key && empty($reviews)) {
-                continue;
-            }
-
-            $navigation[] = $sections_map[$section_key];
-        }
-
         $missing_meta = [];
 
         if ($enabled_sections['highlights'] && empty($highlights)) {
@@ -443,7 +356,6 @@ final class ExperienceShortcode extends BaseShortcode
             'faq' => $faq_items,
             'reviews' => $reviews,
             'sections' => $enabled_sections,
-            'navigation' => $navigation,
             'meeting_points' => $meeting_data,
             'sticky_widget' => $is_sticky_widget,
             'widget_html' => $widget_html,
