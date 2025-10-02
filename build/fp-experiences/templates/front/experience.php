@@ -106,6 +106,9 @@ $hero_fact_badges = array_values(array_filter(
     static fn ($badge) => ! isset($badge['icon']) || 'language' !== $badge['icon']
 ));
 $hero_highlights = array_slice($highlights, 0, 3);
+$experience_short_description = isset($experience['short_description']) ? (string) $experience['short_description'] : '';
+$experience_summary = isset($experience['summary']) ? (string) $experience['summary'] : '';
+$hero_summary = '' !== $experience_summary ? $experience_summary : $experience_short_description;
 
 $overview = isset($overview) && is_array($overview) ? $overview : [];
 $overview_themes = isset($overview['themes']) && is_array($overview['themes']) ? $overview['themes'] : [];
@@ -139,8 +142,7 @@ $overview_biases = isset($overview['cognitive_biases']) && is_array($overview['c
         $overview['cognitive_biases']
     )))
     : [];
-$overview_duration_label = isset($overview['duration_label']) ? (string) $overview['duration_label'] : '';
-$overview_duration_terms = isset($overview['duration_terms']) && is_array($overview['duration_terms']) ? $overview['duration_terms'] : [];
+$overview_short_description = isset($overview['short_description']) ? (string) $overview['short_description'] : '';
 $overview_meeting = isset($overview['meeting']) && is_array($overview['meeting']) ? $overview['meeting'] : [];
 $overview_meeting_title = isset($overview_meeting['title']) ? (string) $overview_meeting['title'] : '';
 $overview_meeting_address = isset($overview_meeting['address']) ? (string) $overview_meeting['address'] : '';
@@ -152,8 +154,7 @@ if (null === $overview_has_content) {
     $overview_has_content = ! empty($overview_themes)
         || ! empty($overview_languages)
         || ! empty($overview_biases)
-        || '' !== $overview_duration_label
-        || ! empty($overview_duration_terms)
+        || '' !== $overview_short_description
         || '' !== $overview_meeting_summary
         || $overview_family;
 }
@@ -208,8 +209,8 @@ $cta_label = esc_html__('Controlla disponibilità', 'fp-experiences');
                                 </div>
                                 <h1 class="fp-title"><?php echo esc_html($experience['title']); ?></h1>
                             </div>
-                            <?php if (! empty($experience['summary'])) : ?>
-                                <p class="fp-summary"><?php echo esc_html($experience['summary']); ?></p>
+                            <?php if ('' !== $hero_summary) : ?>
+                                <p class="fp-summary"><?php echo esc_html($hero_summary); ?></p>
                             <?php endif; ?>
                             <?php if (! empty($hero_highlights)) : ?>
                                 <ul class="fp-hero-highlights" role="list">
@@ -272,19 +273,10 @@ $cta_label = esc_html__('Controlla disponibilità', 'fp-experiences');
                             </div>
                         <?php endif; ?>
 
-                        <?php if ('' !== $overview_duration_label || ! empty($overview_duration_terms)) : ?>
+                        <?php if ('' !== $overview_short_description) : ?>
                             <div class="fp-exp-overview__item">
-                                <span class="fp-exp-overview__label"><?php esc_html_e('Duration', 'fp-experiences'); ?></span>
-                                <?php if ('' !== $overview_duration_label) : ?>
-                                    <span class="fp-exp-overview__value"><?php echo esc_html($overview_duration_label); ?></span>
-                                <?php endif; ?>
-                                <?php if (! empty($overview_duration_terms)) : ?>
-                                    <div class="fp-exp-overview__chips">
-                                        <?php foreach ($overview_duration_terms as $term) : ?>
-                                            <span class="fp-exp-overview__chip"><?php echo esc_html((string) $term); ?></span>
-                                        <?php endforeach; ?>
-                                    </div>
-                                <?php endif; ?>
+                                <span class="fp-exp-overview__label"><?php esc_html_e('Descrizione breve', 'fp-experiences'); ?></span>
+                                <span class="fp-exp-overview__value"><?php echo esc_html($overview_short_description); ?></span>
                             </div>
                         <?php endif; ?>
 
