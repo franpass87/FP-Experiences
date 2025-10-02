@@ -108,9 +108,6 @@ $experience_summary = isset($experience['summary']) ? (string) $experience['summ
 $hero_summary = '' !== $experience_summary ? $experience_summary : $experience_short_description;
 
 $overview = isset($overview) && is_array($overview) ? $overview : [];
-$overview_themes = isset($overview['themes']) && is_array($overview['themes']) ? $overview['themes'] : [];
-$overview_languages = isset($overview['language_badges']) && is_array($overview['language_badges']) ? $overview['language_badges'] : [];
-$overview_language_terms = isset($overview['language_terms']) && is_array($overview['language_terms']) ? $overview['language_terms'] : [];
 $overview_biases = isset($overview['cognitive_biases']) && is_array($overview['cognitive_biases'])
     ? array_values(array_filter(array_map(
         static function ($bias) {
@@ -139,21 +136,14 @@ $overview_biases = isset($overview['cognitive_biases']) && is_array($overview['c
         $overview['cognitive_biases']
     )))
     : [];
-$overview_short_description = isset($overview['short_description']) ? (string) $overview['short_description'] : '';
 $overview_meeting = isset($overview['meeting']) && is_array($overview['meeting']) ? $overview['meeting'] : [];
 $overview_meeting_title = isset($overview_meeting['title']) ? (string) $overview_meeting['title'] : '';
 $overview_meeting_address = isset($overview_meeting['address']) ? (string) $overview_meeting['address'] : '';
 $overview_meeting_summary = isset($overview_meeting['summary']) ? (string) $overview_meeting['summary'] : '';
-$overview_family = ! empty($overview['family_friendly']);
 $overview_has_content = isset($overview_has_content) ? (bool) $overview_has_content : null;
 
 if (null === $overview_has_content) {
-    $overview_has_content = ! empty($overview_themes)
-        || ! empty($overview_languages)
-        || ! empty($overview_biases)
-        || '' !== $overview_short_description
-        || '' !== $overview_meeting_summary
-        || $overview_family;
+    $overview_has_content = ! empty($overview_biases);
 }
 
 $has_overview = ! empty($sections['overview']) && $overview_has_content;
@@ -222,7 +212,6 @@ $sticky_price_display = '' !== $price_from_display ? $format_currency($price_fro
 
                         <div class="fp-exp-hero__content">
                             <header class="fp-exp-hero__header">
-                                <span class="fp-exp-hero__eyebrow">FP Experiences</span>
                                 <h1 class="fp-exp-hero__title"><?php echo esc_html($experience['title']); ?></h1>
                                 <?php if ('' !== $hero_summary) : ?>
                                     <p class="fp-exp-hero__summary"><?php echo esc_html($hero_summary); ?></p>
@@ -234,7 +223,9 @@ $sticky_price_display = '' !== $price_from_display ? $format_currency($price_fro
                                     <?php foreach ($hero_highlights as $highlight) : ?>
                                         <li class="fp-exp-hero__highlight">
                                             <span class="fp-exp-hero__highlight-icon" aria-hidden="true">
-                                                <svg viewBox="0 0 24 24"><path fill="currentColor" d="M9.75 18.25 3.5 12l1.41 1-1.41 4.84 4.84 9.34-9.34L20.5 7.5Z"/></svg>
+                                                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                                                    <path fill="currentColor" d="M9.75 18.25 3.5 12l1.41-1.41 4.84 4.84 9.34-9.34L20.5 7.5Z" />
+                                                </svg>
                                             </span>
                                             <span class="fp-exp-hero__highlight-text"><?php echo esc_html($highlight); ?></span>
                                         </li>
@@ -306,13 +297,15 @@ $sticky_price_display = '' !== $price_from_display ? $format_currency($price_fro
                             <h2 class="fp-exp-gift__title fp-exp-section__title"><?php esc_html_e('Gift this experience', 'fp-experiences'); ?></h2>
                             <p class="fp-exp-gift__description"><?php esc_html_e('Acquista un voucher e invialo con un messaggio personalizzato in pochi clic.', 'fp-experiences'); ?></p>
                         </div>
-                        <a
-                            href="#fp-exp-gift"
+                        <button
+                            type="button"
                             class="fp-exp-button fp-exp-button--secondary"
                             data-fp-gift-toggle
+                            aria-controls="fp-exp-gift"
+                            aria-expanded="false"
                         >
                             <?php esc_html_e('Gift this experience', 'fp-experiences'); ?>
-                        </a>
+                        </button>
                     </div>
                 </section>
             <?php endif; ?>
@@ -320,119 +313,44 @@ $sticky_price_display = '' !== $price_from_display ? $format_currency($price_fro
             <?php if ($has_overview) : ?>
                 <section class="fp-exp-section fp-exp-overview" id="fp-exp-section-overview" data-fp-section="overview">
                     <header class="fp-exp-section__header fp-exp-overview__header">
-                        <span class="fp-exp-section__eyebrow"><?php esc_html_e('Overview', 'fp-experiences'); ?></span>
-                        <h2 class="fp-exp-section__title"><?php esc_html_e('Key details at a glance', 'fp-experiences'); ?></h2>
-                        <?php if ('' !== $overview_short_description) : ?>
-                            <p class="fp-exp-overview__summary"><?php echo esc_html($overview_short_description); ?></p>
-                        <?php elseif ('' !== $hero_summary) : ?>
-                            <p class="fp-exp-overview__summary"><?php echo esc_html($hero_summary); ?></p>
-                        <?php endif; ?>
+                        <h2 class="fp-exp-section__title"><?php esc_html_e('Perché prenotare con noi', 'fp-experiences'); ?></h2>
                     </header>
 
-                    <div class="fp-exp-overview__grid">
-                        <?php if (! empty($overview_themes)) : ?>
-                            <div class="fp-exp-overview__item">
-                                <span class="fp-exp-overview__label"><?php esc_html_e('Themes', 'fp-experiences'); ?></span>
-                                <div class="fp-exp-overview__chips">
-                                    <?php foreach ($overview_themes as $theme) : ?>
-                                        <span class="fp-exp-overview__chip"><?php echo esc_html((string) $theme); ?></span>
-                                    <?php endforeach; ?>
-                                </div>
-                            </div>
-                        <?php endif; ?>
+                    <?php if (! empty($overview_biases)) : ?>
+                        <ul class="fp-exp-overview__trust-list" role="list">
+                            <?php foreach ($overview_biases as $bias) :
+                                $label = isset($bias['label']) ? (string) $bias['label'] : '';
+                                if ('' === $label) {
+                                    continue;
+                                }
 
-                        <?php if (! empty($overview_languages)) : ?>
-                            <div class="fp-exp-overview__item">
-                                <span class="fp-exp-overview__label"><?php esc_html_e('Languages', 'fp-experiences'); ?></span>
-                                <ul class="fp-exp-overview__languages" role="list">
-                                    <?php foreach ($overview_languages as $badge) :
-                                        if (! is_array($badge)) {
-                                            continue;
-                                        }
-
-                                        $language_meta = isset($badge['language']) && is_array($badge['language']) ? $badge['language'] : [];
-                                        $sprite_id = isset($language_meta['sprite']) ? (string) $language_meta['sprite'] : '';
-                                        $aria_label = isset($language_meta['aria_label']) ? (string) $language_meta['aria_label'] : (string) ($badge['label'] ?? '');
-                                        $readable_label = isset($language_meta['label']) ? (string) $language_meta['label'] : (string) ($badge['label'] ?? '');
-                                        $code = isset($language_meta['code']) ? (string) $language_meta['code'] : (string) ($badge['label'] ?? '');
-                                        ?>
-                                        <li class="fp-exp-overview__language">
-                                            <?php if ($sprite_id) : ?>
-                                                <span class="fp-exp-overview__language-flag" role="img" aria-label="<?php echo esc_attr($aria_label); ?>">
-                                                    <svg viewBox="0 0 24 16" aria-hidden="true" focusable="false">
-                                                        <use href="<?php echo esc_url($language_sprite . '#' . $sprite_id); ?>"></use>
-                                                    </svg>
-                                                </span>
-                                            <?php endif; ?>
-                                            <span class="fp-exp-overview__language-code"><?php echo esc_html($code); ?></span>
-                                            <span class="screen-reader-text"><?php echo esc_html($readable_label); ?></span>
-                                        </li>
-                                    <?php endforeach; ?>
-                                </ul>
-                                <?php if (! empty($overview_language_terms)) : ?>
-                                    <span class="fp-exp-overview__muted"><?php echo esc_html(implode(', ', array_map('strval', $overview_language_terms))); ?></span>
-                                <?php endif; ?>
-                            </div>
-                        <?php endif; ?>
-
-                        <?php if (! empty($overview_biases)) : ?>
-                            <div class="fp-exp-overview__item">
-                                <span class="fp-exp-overview__label"><?php esc_html_e('Badge di fiducia', 'fp-experiences'); ?></span>
-                                <ul class="fp-exp-overview__chips" role="list">
-                                    <?php foreach ($overview_biases as $bias) :
-                                        $label = isset($bias['label']) ? (string) $bias['label'] : '';
-                                        if ('' === $label) {
-                                            continue;
-                                        }
-
-                                        $tagline = isset($bias['tagline']) ? (string) $bias['tagline'] : '';
-                                        $description = isset($bias['description']) ? (string) $bias['description'] : '';
-                                        $icon_name = isset($bias['icon']) ? (string) $bias['icon'] : '';
-                                        $icon_svg = \FP_Exp\Utils\Helpers::cognitive_bias_icon_svg($icon_name);
-                                        $chip_label_parts = array_values(array_filter([$label, $tagline, $description]));
-                                        $chip_label_text = ! empty($chip_label_parts)
-                                            ? implode(' – ', array_unique($chip_label_parts))
-                                            : '';
-                                        ?>
-                                        <li
-                                            class="fp-exp-overview__chip"
-                                            <?php if ('' !== $chip_label_text) : ?>title="<?php echo esc_attr($chip_label_text); ?>" aria-label="<?php echo esc_attr($chip_label_text); ?>"<?php endif; ?>
-                                        >
-                                            <span class="fp-exp-overview__chip-icon" aria-hidden="true"><?php echo $icon_svg; ?></span>
-                                            <span class="fp-exp-overview__chip-body">
-                                                <span class="fp-exp-overview__chip-label"><?php echo esc_html($label); ?></span>
-                                                <?php if ('' !== $tagline) : ?>
-                                                    <span class="fp-exp-overview__chip-tagline"><?php echo esc_html($tagline); ?></span>
-                                                <?php endif; ?>
-                                                <?php if ('' !== $description) : ?>
-                                                    <span class="fp-exp-overview__chip-description"><?php echo esc_html($description); ?></span>
-                                                <?php endif; ?>
-                                            </span>
-                                        </li>
-                                    <?php endforeach; ?>
-                                </ul>
-                            </div>
-                        <?php endif; ?>
-
-                        <?php if ('' !== $overview_meeting_summary) : ?>
-                            <div class="fp-exp-overview__item">
-                                <span class="fp-exp-overview__label"><?php esc_html_e('Meeting point', 'fp-experiences'); ?></span>
-                                <?php if ('' !== $overview_meeting_title) : ?>
-                                    <span class="fp-exp-overview__value"><?php echo esc_html($overview_meeting_title); ?></span>
-                                <?php endif; ?>
-                                <?php if ('' !== $overview_meeting_address) : ?>
-                                    <span class="fp-exp-overview__muted"><?php echo esc_html($overview_meeting_address); ?></span>
-                                <?php endif; ?>
-                            </div>
-                        <?php endif; ?>
-
-                        <?php if ($overview_family) : ?>
-                            <div class="fp-exp-overview__item">
-                                <span class="fp-exp-overview__label"><?php esc_html_e('Family', 'fp-experiences'); ?></span>
-                                <span class="fp-exp-overview__value fp-exp-overview__value--badge"><?php esc_html_e('Family friendly', 'fp-experiences'); ?></span>
-                            </div>
-                        <?php endif; ?>
-                    </div>
+                                $tagline = isset($bias['tagline']) ? (string) $bias['tagline'] : '';
+                                $description = isset($bias['description']) ? (string) $bias['description'] : '';
+                                $icon_name = isset($bias['icon']) ? (string) $bias['icon'] : '';
+                                $icon_svg = \FP_Exp\Utils\Helpers::cognitive_bias_icon_svg($icon_name);
+                                $chip_label_parts = array_values(array_filter([$label, $tagline, $description]));
+                                $chip_label_text = ! empty($chip_label_parts)
+                                    ? implode(' – ', array_unique($chip_label_parts))
+                                    : '';
+                                ?>
+                                <li
+                                    class="fp-exp-overview__chip"
+                                    <?php if ('' !== $chip_label_text) : ?>title="<?php echo esc_attr($chip_label_text); ?>" aria-label="<?php echo esc_attr($chip_label_text); ?>"<?php endif; ?>
+                                >
+                                    <span class="fp-exp-overview__chip-icon" aria-hidden="true"><?php echo $icon_svg; ?></span>
+                                    <span class="fp-exp-overview__chip-body">
+                                        <span class="fp-exp-overview__chip-label"><?php echo esc_html($label); ?></span>
+                                        <?php if ('' !== $tagline) : ?>
+                                            <span class="fp-exp-overview__chip-tagline"><?php echo esc_html($tagline); ?></span>
+                                        <?php endif; ?>
+                                        <?php if ('' !== $description) : ?>
+                                            <span class="fp-exp-overview__chip-description"><?php echo esc_html($description); ?></span>
+                                        <?php endif; ?>
+                                    </span>
+                                </li>
+                            <?php endforeach; ?>
+                        </ul>
+                    <?php endif; ?>
                 </section>
             <?php endif; ?>
 
@@ -486,6 +404,7 @@ $sticky_price_display = '' !== $price_from_display ? $format_currency($price_fro
                     id="fp-exp-gift"
                     data-fp-gift
                     data-fp-gift-config="<?php echo esc_attr(wp_json_encode($gift_config)); ?>"
+                    hidden
                 >
                     <div class="fp-gift__inner">
                         <h2 class="fp-gift__title"><?php esc_html_e('Gift this experience', 'fp-experiences'); ?></h2>

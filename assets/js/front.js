@@ -655,18 +655,60 @@
         const feedback = giftSection.querySelector('[data-fp-gift-feedback]');
         const success = giftSection.querySelector('[data-fp-gift-success]');
 
-        page.querySelectorAll('[data-fp-gift-toggle]').forEach((button) => {
-            button.addEventListener('click', (event) => {
-                event.preventDefault();
+        const toggleButtons = page.querySelectorAll('[data-fp-gift-toggle]');
+        const setToggleExpanded = (expanded) => {
+            toggleButtons.forEach((button) => {
+                button.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+            });
+        };
+
+        const showGiftSection = ({ focusFirstField = false, scroll = true } = {}) => {
+            const wasHidden = giftSection.hasAttribute('hidden') || giftSection.hidden;
+            if (wasHidden) {
+                giftSection.hidden = false;
+            }
+
+            setToggleExpanded(true);
+
+            if (giftSection.id) {
+                const giftHash = `#${giftSection.id}`;
+                if (window.location.hash !== giftHash) {
+                    try {
+                        window.history.replaceState(null, '', giftHash);
+                    } catch (_error) {
+                        window.location.hash = giftHash;
+                    }
+                }
+            }
+
+            if (scroll) {
                 giftSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                const firstField = form ? form.querySelector('input, textarea, select') : null;
+            }
+
+            if (focusFirstField && form && wasHidden) {
+                const firstField = form.querySelector('input, textarea, select');
                 if (firstField instanceof HTMLElement) {
                     window.setTimeout(() => {
                         firstField.focus();
                     }, 280);
                 }
+            }
+        };
+
+        toggleButtons.forEach((button) => {
+            button.addEventListener('click', (event) => {
+                event.preventDefault();
+                showGiftSection({ focusFirstField: true });
             });
         });
+
+        if (!giftSection.hasAttribute('hidden') && !giftSection.hidden) {
+            setToggleExpanded(true);
+        }
+
+        if (giftSection.id && window.location.hash === `#${giftSection.id}`) {
+            showGiftSection({ scroll: false });
+        }
 
         if (!form) {
             return;

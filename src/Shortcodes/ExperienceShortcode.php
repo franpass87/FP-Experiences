@@ -651,25 +651,25 @@ final class ExperienceShortcode extends BaseShortcode
             return false;
         }
 
-        $has_themes = ! empty($overview['themes']);
-        $has_languages = ! empty($overview['language_badges']);
-        $has_biases = ! empty($overview['cognitive_biases']);
-        $has_short_description = '' !== ($overview['short_description'] ?? '');
+        $biases = $overview['cognitive_biases'] ?? [];
 
-        $meeting = $overview['meeting'] ?? [];
-        $meeting_summary = '';
-        if (is_array($meeting)) {
-            $meeting_summary = (string) ($meeting['summary'] ?? '');
+        if (! is_array($biases)) {
+            return false;
         }
 
-        $has_family = ! empty($overview['family_friendly']);
+        foreach ($biases as $bias) {
+            if (is_array($bias)) {
+                $label = isset($bias['label']) ? (string) $bias['label'] : '';
+            } else {
+                $label = (string) $bias;
+            }
 
-        return $has_themes
-            || $has_languages
-            || $has_biases
-            || $has_short_description
-            || '' !== $meeting_summary
-            || $has_family;
+            if ('' !== trim($label)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

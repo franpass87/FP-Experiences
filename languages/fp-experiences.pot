@@ -292,11 +292,11 @@ msgstr ""
 
 #: src/Admin/CalendarAdmin.php:302
 #: templates/front/widget.php:188
-msgid "Add-ons"
+msgid "Extra"
 msgstr ""
 
 #: src/Admin/CalendarAdmin.php:320
-msgid "No add-ons configured for this experience."
+msgid "No extras configured for this experience."
 msgstr ""
 
 #: src/Admin/CalendarAdmin.php:326
@@ -675,11 +675,11 @@ msgid "Capienza massima gruppo"
 msgstr ""
 
 #: src/Admin/ExperienceMetaBoxes.php:467
-msgid "Add-on"
+msgid "Extra"
 msgstr ""
 
 #: src/Admin/ExperienceMetaBoxes.php:483
-msgid "Aggiungi add-on"
+msgid "Aggiungi extra"
 msgstr ""
 
 #: src/Admin/ExperienceMetaBoxes.php:490
@@ -911,7 +911,7 @@ msgid "Capienza"
 msgstr ""
 
 #: src/Admin/ExperienceMetaBoxes.php:918
-msgid "Nome add-on"
+msgid "Nome extra"
 msgstr ""
 
 #: src/Admin/ExperienceMetaBoxes.php:919
@@ -3478,6 +3478,11 @@ msgstr ""
 
 #: templates/front/widget.php:244
 msgid "Enter your email address."
+msgstr ""
+
+#: templates/front/experience.php:316
+#: build/fp-experiences/templates/front/experience.php:314
+msgid "Perché prenotare con noi"
 msgstr ""
 
 #: templates/front/widget.php:246

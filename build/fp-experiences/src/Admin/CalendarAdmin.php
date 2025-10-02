@@ -305,7 +305,7 @@ final class CalendarAdmin
         }
         echo '</td></tr>';
 
-        echo '<tr><th scope="row"><label>' . esc_html__('Add-ons', 'fp-experiences') . '</label></th><td>';
+        echo '<tr><th scope="row"><label>' . esc_html__('Extra', 'fp-experiences') . '</label></th><td>';
         if ($addon_config) {
             $currency = (string) get_option('woocommerce_currency', 'EUR');
             foreach ($addon_config as $slug => $addon) {
@@ -323,7 +323,7 @@ final class CalendarAdmin
                 }
             }
         } else {
-            echo '<p>' . esc_html__('No add-ons configured for this experience.', 'fp-experiences') . '</p>';
+            echo '<p>' . esc_html__('No extras configured for this experience.', 'fp-experiences') . '</p>';
         }
         echo '</td></tr>';
 

@@ -187,7 +187,7 @@ $format_currency = static function (string $amount) use ($currency_symbol, $curr
                 <li class="fp-exp-step fp-exp-step--addons" data-fp-step="addons">
                     <header>
                         <span class="fp-exp-step__number">3</span>
-                        <h3 class="fp-exp-step__title"><?php echo esc_html__('Add-ons', 'fp-experiences'); ?></h3>
+                        <h3 class="fp-exp-step__title"><?php echo esc_html__('Extra', 'fp-experiences'); ?></h3>
                     </header>
                     <div class="fp-exp-step__content">
                         <ul class="fp-exp-addons">
@@ -199,8 +199,10 @@ $format_currency = static function (string $amount) use ($currency_symbol, $curr
                                 $image_height = isset($addon_image['height']) ? (int) $addon_image['height'] : 0;
                                 ?>
                                 <li class="fp-exp-addon" data-addon="<?php echo esc_attr($addon['slug']); ?>">
-                                    <label>
-                                        <input type="checkbox" value="1">
+                                    <label class="fp-exp-addon__card">
+                                        <span class="fp-exp-addon__input">
+                                            <input type="checkbox" value="1">
+                                        </span>
                                         <span class="fp-exp-addon__media">
                                             <?php if ($image_url) : ?>
                                                 <img
@@ -221,19 +223,21 @@ $format_currency = static function (string $amount) use ($currency_symbol, $curr
                                                         </g>
                                                     </svg>
                                                 </span>
-                                                <span class="screen-reader-text"><?php esc_html_e('Nessuna immagine disponibile per questo add-on', 'fp-experiences'); ?></span>
+                                                <span class="screen-reader-text"><?php esc_html_e('Nessuna immagine disponibile per questo extra', 'fp-experiences'); ?></span>
                                             <?php endif; ?>
                                         </span>
-                                        <span class="fp-exp-addon__details">
-                                            <span class="fp-exp-addon__label"><?php echo esc_html($addon['label']); ?></span>
+                                        <span class="fp-exp-addon__content">
+                                            <span class="fp-exp-addon__header">
+                                                <span class="fp-exp-addon__label"><?php echo esc_html($addon['label']); ?></span>
+                                                <?php
+                                                $addon_price_display = $format_currency(number_format_i18n((float) $addon['price'], 2));
+                                                ?>
+                                                <span class="fp-exp-addon__price" data-price="<?php echo esc_attr((string) $addon['price']); ?>"><?php echo esc_html($addon_price_display); ?></span>
+                                            </span>
                                             <?php if (! empty($addon['description'])) : ?>
-                                                <small class="fp-exp-addon__description"><?php echo esc_html($addon['description']); ?></small>
+                                                <p class="fp-exp-addon__summary"><?php echo esc_html($addon['description']); ?></p>
                                             <?php endif; ?>
                                         </span>
-                                        <?php
-                                        $addon_price_display = $format_currency(number_format_i18n((float) $addon['price'], 2));
-                                        ?>
-                                        <span class="fp-exp-addon__price" data-price="<?php echo esc_attr((string) $addon['price']); ?>"><?php echo esc_html($addon_price_display); ?></span>
                                     </label>
                                 </li>
                             <?php endforeach; ?>
