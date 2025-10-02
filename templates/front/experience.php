@@ -14,7 +14,6 @@
  * @var array<int, array<string, string>> $faq
  * @var array<int, array<string, mixed>> $reviews
  * @var array<string, bool> $sections
- * @var array<int, array<string, string>> $navigation
  * @var array{primary: ?array<string, mixed>, alternatives: array<int, array<string, mixed>>} $meeting_points
  * @var bool $sticky_widget
  * @var string $widget_html
@@ -72,9 +71,7 @@ if ($layout_gutter > 0) {
 
 $layout_style_attr = empty($layout_style) ? '' : implode(';', $layout_style);
 
-$navigation = isset($navigation) && is_array($navigation) ? $navigation : [];
 $sections = isset($sections) && is_array($sections) ? $sections : [];
-$has_navigation = ! empty($navigation);
 $has_highlights = ! empty($highlights);
 $has_inclusions = ! empty($inclusions) || ! empty($exclusions);
 $has_meeting = isset($meeting_points['primary']) && is_array($meeting_points['primary']);
@@ -489,24 +486,6 @@ $cta_label = esc_html__('Controlla disponibilità', 'fp-experiences');
                         <div class="fp-gift__success" data-fp-gift-success hidden></div>
                     </div>
                 </section>
-            <?php endif; ?>
-
-            <?php if ($has_navigation) : ?>
-                <nav class="fp-exp-page__nav" aria-label="<?php esc_attr_e('Experience sections', 'fp-experiences'); ?>">
-                    <ul class="fp-exp-page__nav-list">
-                        <?php foreach ($navigation as $item) : ?>
-                            <li class="fp-exp-page__nav-item">
-                                <button
-                                    type="button"
-                                    class="fp-exp-page__nav-button"
-                                    data-fp-scroll="<?php echo esc_attr($item['id']); ?>"
-                                >
-                                    <?php echo esc_html($item['label']); ?>
-                                </button>
-                            </li>
-                        <?php endforeach; ?>
-                    </ul>
-                </nav>
             <?php endif; ?>
 
             <?php if (! empty($sections['highlights']) && $has_highlights) : ?>

@@ -2722,38 +2722,6 @@
     margin-top: 0.5rem;
 }
 
-.fp-exp-page__nav {
-    display: block;
-    background: var(--fp-color-surface);
-    padding: 0.5rem;
-    border-radius: var(--fp-exp-radius-base, 12px);
-    overflow-x: auto;
-}
-
-.fp-exp-page__nav-list {
-    display: flex;
-    gap: 0.5rem;
-    padding: 0;
-    margin: 0;
-    list-style: none;
-}
-
-.fp-exp-page__nav-button {
-    border: none;
-    background: transparent;
-    color: var(--fp-color-text);
-    padding: 0.6rem 1.2rem;
-    border-radius: 999px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background 0.2s ease, color 0.2s ease;
-}
-
-.fp-exp-page__nav-button:hover,
-.fp-exp-page__nav-button:focus-visible {
-    background: rgba(15, 23, 42, 0.08);
-}
-
 .fp-exp-section {
     background: var(--fp-color-surface);
     border-radius: var(--fp-exp-radius-base, 12px);
