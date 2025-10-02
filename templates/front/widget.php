@@ -51,6 +51,25 @@ $rtb_forced = ! empty($rtb['forced']);
 $rtb_submit_label = 'pay_later' === $rtb_mode
     ? esc_html__('Send approval with payment link', 'fp-experiences')
     : esc_html__('Send booking request', 'fp-experiences');
+
+$currency_code = isset($currency) && is_string($currency) ? $currency : (string) get_option('woocommerce_currency', 'EUR');
+$currency_symbol = function_exists('get_woocommerce_currency_symbol')
+    ? get_woocommerce_currency_symbol($currency_code)
+    : $currency_code;
+$currency_position = get_option('woocommerce_currency_pos', 'left');
+$format_currency = static function (string $amount) use ($currency_symbol, $currency_position): string {
+    switch ($currency_position) {
+        case 'left_space':
+            return $currency_symbol . ' ' . $amount;
+        case 'right':
+            return $amount . $currency_symbol;
+        case 'right_space':
+            return $amount . ' ' . $currency_symbol;
+        case 'left':
+        default:
+            return $currency_symbol . $amount;
+    }
+};
 ?>
 <div
     class="<?php echo $container_class; ?>"
@@ -126,7 +145,10 @@ $rtb_submit_label = 'pay_later' === $rtb_mode
                                         <?php endif; ?>
                                     </th>
                                     <td>
-                                        <span class="fp-exp-ticket__price" data-price="<?php echo esc_attr((string) $ticket['price']); ?>">€<?php echo esc_html(number_format_i18n((float) $ticket['price'], 2)); ?></span>
+                                        <?php
+                                        $ticket_price_display = $format_currency(number_format_i18n((float) $ticket['price'], 2));
+                                        ?>
+                                        <span class="fp-exp-ticket__price" data-price="<?php echo esc_attr((string) $ticket['price']); ?>"><?php echo esc_html($ticket_price_display); ?></span>
                                     </td>
                                     <td>
                                         <div class="fp-exp-quantity">
@@ -188,7 +210,10 @@ $rtb_submit_label = 'pay_later' === $rtb_mode
                                                 <small class="fp-exp-addon__description"><?php echo esc_html($addon['description']); ?></small>
                                             <?php endif; ?>
                                         </span>
-                                        <span class="fp-exp-addon__price" data-price="<?php echo esc_attr((string) $addon['price']); ?>">€<?php echo esc_html(number_format_i18n((float) $addon['price'], 2)); ?></span>
+                                        <?php
+                                        $addon_price_display = $format_currency(number_format_i18n((float) $addon['price'], 2));
+                                        ?>
+                                        <span class="fp-exp-addon__price" data-price="<?php echo esc_attr((string) $addon['price']); ?>"><?php echo esc_html($addon_price_display); ?></span>
                                     </label>
                                 </li>
                             <?php endforeach; ?>

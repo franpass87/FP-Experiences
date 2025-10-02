@@ -350,7 +350,7 @@ final class Cart
                 'expires' => time() + self::COOKIE_TTL,
                 'path' => '/',
                 'secure' => is_ssl(),
-                'httponly' => false,
+                'httponly' => true,
                 'samesite' => 'Lax',
             ]
         );

@@ -30,7 +30,6 @@ use function is_bool;
 use function is_numeric;
 use function is_readable;
 use function is_string;
-use function is_user_logged_in;
 use function json_decode;
 use function ltrim;
 use function preg_split;
@@ -465,13 +464,29 @@ final class Helpers
 
     public static function verify_rest_nonce(WP_REST_Request $request, string $action, array $param_keys = ['nonce', '_wpnonce']): bool
     {
-        $nonce = self::extract_rest_nonce($request, $param_keys);
+        $header_nonce = $request->get_header('x-wp-nonce');
 
-        if (! $nonce) {
-            return false;
+        if (is_string($header_nonce) && $header_nonce) {
+            $header_nonce = sanitize_text_field($header_nonce);
+            if (wp_verify_nonce($header_nonce, $action)) {
+                return true;
+            }
         }
 
-        return (bool) wp_verify_nonce($nonce, $action);
+        foreach ($param_keys as $key) {
+            $value = $request->get_param($key);
+            if (! is_string($value) || '' === $value) {
+                continue;
+            }
+
+            $value = sanitize_text_field($value);
+
+            if (wp_verify_nonce($value, $action)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public static function verify_public_rest_request(WP_REST_Request $request): bool
@@ -488,24 +503,7 @@ final class Helpers
             }
         }
 
-        return is_user_logged_in();
-    }
-
-    private static function extract_rest_nonce(WP_REST_Request $request, array $param_keys): string
-    {
-        $header = $request->get_header('x-wp-nonce');
-        if (is_string($header) && $header) {
-            return sanitize_text_field($header);
-        }
-
-        foreach ($param_keys as $key) {
-            $value = $request->get_param($key);
-            if (is_string($value) && $value) {
-                return sanitize_text_field($value);
-            }
-        }
-
-        return '';
+        return false;
     }
 
     public static function rtb_hold_timeout(): int

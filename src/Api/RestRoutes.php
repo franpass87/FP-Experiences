@@ -36,6 +36,7 @@ use function sanitize_key;
 use function sanitize_text_field;
 use function sprintf;
 use function sort;
+use function strtoupper;
 use function update_option;
 use function wp_strip_all_tags;
 use function wp_remote_get;
@@ -281,6 +282,21 @@ final class RestRoutes
     public function enforce_no_cache($result, $server, $request)
     {
         if (! $result instanceof WP_REST_Response) {
+            return $result;
+        }
+
+        if (! $request instanceof WP_REST_Request) {
+            return $result;
+        }
+
+        $route = $request->get_route();
+
+        if (strpos($route, '/fp-exp/') !== 0) {
+            return $result;
+        }
+
+        $method = strtoupper($request->get_method());
+        if ('GET' === $method) {
             return $result;
         }
 
