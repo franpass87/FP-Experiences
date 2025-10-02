@@ -4,23 +4,18 @@ declare(strict_types=1);
 
 namespace FP_Exp\Utils;
 
-use const ARRAY_FILTER_USE_BOTH;
 use function __;
-use function array_filter;
+use function array_merge;
 use function esc_attr;
 use function get_option;
-use function in_array;
 use function is_array;
-use function is_string;
-use function sanitize_hex_color;
 use function sanitize_key;
-use function sanitize_text_field;
 use function sprintf;
 use function uniqid;
-use function wp_parse_args;
 
 final class Theme
 {
+    private const DEFAULT_PRESET = 'default';
     /**
      * Generate a unique CSS scope class for shortcode instances.
      */
@@ -35,39 +30,18 @@ final class Theme
     public static function presets(): array
     {
         return [
-            'light' => [
-                'label' => __('Light', 'fp-experiences'),
-                'values' => self::base_palette(),
-            ],
-            'dark' => [
-                'label' => __('Dark', 'fp-experiences'),
+            self::DEFAULT_PRESET => [
+                'label' => __('Default', 'fp-experiences'),
                 'values' => array_merge(self::base_palette(), [
-                    'background' => '#101418',
-                    'surface' => '#151B21',
-                    'text' => '#F5F7FA',
-                    'muted' => '#A0AEC0',
-                    'shadow' => '0 14px 40px rgba(0,0,0,0.55)',
-                ]),
-            ],
-            'natural' => [
-                'label' => __('Natural (green)', 'fp-experiences'),
-                'values' => array_merge(self::base_palette(), [
-                    'primary' => '#2E7D32',
-                    'secondary' => '#558B2F',
-                    'accent' => '#8BC34A',
-                    'surface' => '#F1F8E9',
-                ]),
-            ],
-            'wine' => [
-                'label' => __('Wine / Burgundy', 'fp-experiences'),
-                'values' => array_merge(self::base_palette(), [
-                    'primary' => '#7A1E3A',
-                    'secondary' => '#512031',
-                    'accent' => '#C67E7D',
-                    'surface' => '#F8F1F3',
+                    'mode' => 'light',
                 ]),
             ],
         ];
+    }
+
+    public static function default_preset(): string
+    {
+        return self::DEFAULT_PRESET;
     }
 
     /**
@@ -83,51 +57,14 @@ final class Theme
 
         $preset_key = isset($branding['preset']) && isset($presets[$branding['preset']])
             ? (string) $branding['preset']
-            : 'light';
+            : self::DEFAULT_PRESET;
 
         if (isset($overrides['preset']) && isset($presets[$overrides['preset']])) {
             $preset_key = (string) $overrides['preset'];
         }
 
         $palette = $presets[$preset_key]['values'];
-
-        $mode = isset($branding['mode']) ? (string) $branding['mode'] : 'light';
-        if (isset($overrides['mode']) && is_string($overrides['mode'])) {
-            $mode = (string) $overrides['mode'];
-        }
-        if (! in_array($mode, ['light', 'dark', 'auto'], true)) {
-            $mode = 'light';
-        }
-
-        $clean_branding = array_filter($branding, static function ($value, $key): bool {
-            if (in_array($key, ['preset', 'mode'], true)) {
-                return false;
-            }
-
-            return '' !== $value && null !== $value;
-        }, ARRAY_FILTER_USE_BOTH);
-
-        $palette = wp_parse_args($clean_branding, $palette);
-
-        $override_colors = array_filter($overrides, static fn ($value, $key) => ! in_array($key, ['preset', 'mode'], true) && '' !== $value && null !== $value, ARRAY_FILTER_USE_BOTH);
-        $palette = wp_parse_args($override_colors, $palette);
-
-        foreach ($palette as $key => $value) {
-            if ('radius' === $key || 'shadow' === $key || 'font' === $key || 'gap' === $key) {
-                $palette[$key] = is_string($value) ? sanitize_text_field($value) : self::base_palette()[$key];
-                continue;
-            }
-
-            if (! is_string($value)) {
-                $palette[$key] = self::base_palette()[$key];
-                continue;
-            }
-
-            $color = sanitize_hex_color($value);
-            $palette[$key] = $color ?: self::base_palette()[$key];
-        }
-
-        $palette['mode'] = $mode;
+        $palette['mode'] = $palette['mode'] ?? 'light';
         $palette['preset'] = $preset_key;
 
         return $palette;
@@ -170,7 +107,7 @@ final class Theme
     public static function contrast_report(array $palette): array
     {
         $messages = [];
-        $primary_contrast = self::contrast_ratio($palette['primary'] ?? '#8B1E3F', $palette['background'] ?? '#FFFFFF');
+        $primary_contrast = self::contrast_ratio($palette['primary'] ?? '#0B6EFD', $palette['background'] ?? '#F7F8FA');
         if ($primary_contrast < 4.5) {
             $messages[] = sprintf(
                 /* translators: %s: contrast ratio. */
@@ -179,7 +116,7 @@ final class Theme
             );
         }
 
-        $text_contrast = self::contrast_ratio($palette['text'] ?? '#1F1F1F', $palette['background'] ?? '#FFFFFF');
+        $text_contrast = self::contrast_ratio($palette['text'] ?? '#0F172A', $palette['background'] ?? '#F7F8FA');
         if ($text_contrast < 4.5) {
             $messages[] = sprintf(
                 /* translators: %s: contrast ratio. */
@@ -197,18 +134,18 @@ final class Theme
     private static function base_palette(): array
     {
         return [
-            'primary' => '#8B1E3F',
-            'secondary' => '#405F3B',
-            'accent' => '#5B8C5A',
-            'background' => '#FFFFFF',
-            'surface' => '#F7F4F0',
-            'text' => '#1F1F1F',
-            'muted' => '#666666',
+            'primary' => '#0B6EFD',
+            'secondary' => '#1857C4',
+            'accent' => '#00A37A',
+            'background' => '#F7F8FA',
+            'surface' => '#FFFFFF',
+            'text' => '#0F172A',
+            'muted' => '#64748B',
             'success' => '#1B998B',
             'warning' => '#F4A261',
             'danger' => '#C44536',
-            'radius' => '12px',
-            'shadow' => '0 10px 30px rgba(0,0,0,0.08)',
+            'radius' => '16px',
+            'shadow' => '0 8px 24px rgba(15,23,42,0.08)',
             'font' => '',
             'gap' => '24px',
         ];
@@ -238,20 +175,21 @@ final class Theme
      */
     private static function variables_from_palette(array $palette): array
     {
-        $primary = $palette['primary'] ?? '#8B1E3F';
-        $secondary = $palette['secondary'] ?? '#405F3B';
-        $accent = $palette['accent'] ?? '#5B8C5A';
-        $background = $palette['background'] ?? '#FFFFFF';
-        $surface = $palette['surface'] ?? '#F7F4F0';
-        $text = $palette['text'] ?? '#1F1F1F';
-        $muted = $palette['muted'] ?? '#666666';
-        $success = $palette['success'] ?? '#1B998B';
-        $warning = $palette['warning'] ?? '#F4A261';
-        $danger = $palette['danger'] ?? '#C44536';
-        $radius = $palette['radius'] ?? '12px';
-        $shadow = $palette['shadow'] ?? '0 10px 30px rgba(0,0,0,0.08)';
-        $font = $palette['font'] ? $palette['font'] : 'inherit';
-        $gap = $palette['gap'] ?? '24px';
+        $defaults = self::base_palette();
+        $primary = $palette['primary'] ?? $defaults['primary'];
+        $secondary = $palette['secondary'] ?? $defaults['secondary'];
+        $accent = $palette['accent'] ?? $defaults['accent'];
+        $background = $palette['background'] ?? $defaults['background'];
+        $surface = $palette['surface'] ?? $defaults['surface'];
+        $text = $palette['text'] ?? $defaults['text'];
+        $muted = $palette['muted'] ?? $defaults['muted'];
+        $success = $palette['success'] ?? $defaults['success'];
+        $warning = $palette['warning'] ?? $defaults['warning'];
+        $danger = $palette['danger'] ?? $defaults['danger'];
+        $radius = $palette['radius'] ?? $defaults['radius'];
+        $shadow = $palette['shadow'] ?? $defaults['shadow'];
+        $font = $palette['font'] ? $palette['font'] : ($defaults['font'] ?: 'inherit');
+        $gap = $palette['gap'] ?? $defaults['gap'];
         $focus_ring = sprintf('color-mix(in srgb, %s 70%%, #ffffff)', $primary);
         $focus_ring_soft = sprintf('color-mix(in srgb, %s 32%%, #ffffff)', $primary);
 
@@ -331,7 +269,7 @@ final class Theme
      */
     private static function derive_dark_palette(array $palette): array
     {
-        $dark_defaults = self::presets()['dark']['values'];
+        $dark_defaults = self::dark_defaults();
         $dark = $palette;
         $dark['background'] = $dark_defaults['background'];
         $dark['surface'] = $dark_defaults['surface'];
@@ -413,5 +351,19 @@ final class Theme
         $b = (int) round($base[2] * (1 - $ratio) + $mix[2] * $ratio);
 
         return sprintf('#%02X%02X%02X', $r, $g, $b);
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private static function dark_defaults(): array
+    {
+        return [
+            'background' => '#101418',
+            'surface' => '#151B21',
+            'text' => '#F5F7FA',
+            'muted' => '#A0AEC0',
+            'shadow' => '0 14px 40px rgba(0,0,0,0.55)',
+        ];
     }
 }

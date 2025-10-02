@@ -1612,12 +1612,8 @@ msgstr ""
 msgid "Clear caches"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:881
-msgid "Tune the booking UI to match your visual identity. Choose a preset, then refine individual colors, borders, and fonts."
-msgstr ""
-
-#: src/Admin/SettingsPage.php:882
-msgid "Dark mode can be applied automatically or when wrapping the shortcode output with the .fp-theme-dark class."
+#: src/Admin/SettingsPage.php:1115
+msgid "FP Experiences now uses a single default color palette that keeps every experience readable and on brand."
 msgstr ""
 
 #: src/Admin/SettingsPage.php:887
@@ -1662,142 +1658,28 @@ msgstr ""
 msgid "Create an OAuth client in Google Cloud and add the redirect URI below. After saving credentials, connect the account to sync reservations."
 msgstr ""
 
-#: src/Admin/SettingsPage.php:966
-msgid "Custom"
+#: src/Admin/SettingsPage.php:1208
+msgid "Color palette"
 msgstr ""
 
-#: src/Admin/SettingsPage.php:975
-#: src/Elementor/WidgetCalendar.php:106
-#: src/Elementor/WidgetCheckout.php:70
-#: src/Elementor/WidgetExperiencePage.php:190
-#: src/Elementor/WidgetList.php:287
-#: src/Elementor/WidgetWidget.php:121
-msgid "Preset"
+#: src/Admin/SettingsPage.php:1210
+msgid "Brand colors use the default palette and cannot be customized."
 msgstr ""
 
-#: src/Admin/SettingsPage.php:977
-msgid "Start from a curated palette, then adjust specific values as needed."
+#: src/Elementor/WidgetCalendar.php:108
+#: src/Elementor/WidgetCheckout.php:72
+#: src/Elementor/WidgetExperiencePage.php:192
+#: src/Elementor/WidgetList.php:418
+#: src/Elementor/WidgetWidget.php:123
+msgid "Brand colors use the default FP Experiences palette."
 msgstr ""
 
-#: src/Admin/SettingsPage.php:982
-#: src/Elementor/WidgetCalendar.php:121
-#: src/Elementor/WidgetCheckout.php:85
-#: src/Elementor/WidgetExperiencePage.php:205
-#: src/Elementor/WidgetList.php:302
-#: src/Elementor/WidgetWidget.php:136
-msgid "Color mode"
-msgstr ""
-
-#: src/Admin/SettingsPage.php:984
-#: src/Elementor/WidgetCalendar.php:110
-#: src/Elementor/WidgetCalendar.php:125
-#: src/Elementor/WidgetCheckout.php:74
-#: src/Elementor/WidgetCheckout.php:89
-#: src/Elementor/WidgetExperiencePage.php:194
-#: src/Elementor/WidgetExperiencePage.php:209
-#: src/Elementor/WidgetList.php:291
-#: src/Elementor/WidgetList.php:306
-#: src/Elementor/WidgetWidget.php:125
-#: src/Elementor/WidgetWidget.php:140
-#: src/Utils/Theme.php:39
-msgid "Light"
-msgstr ""
-
-#: src/Admin/SettingsPage.php:985
-msgid "Dark (requires .fp-theme-dark wrapper)"
-msgstr ""
-
-#: src/Admin/SettingsPage.php:986
-msgid "Automatic (prefers-color-scheme + .fp-theme-dark)"
-msgstr ""
-
-#: src/Admin/SettingsPage.php:989
-msgid "Primary color"
-msgstr ""
-
-#: src/Admin/SettingsPage.php:990
-msgid "Secondary color"
-msgstr ""
-
-#: src/Admin/SettingsPage.php:991
-msgid "Accent color"
-msgstr ""
-
-#: src/Admin/SettingsPage.php:992
-#: src/Elementor/WidgetCalendar.php:136
-#: src/Elementor/WidgetCheckout.php:100
-#: src/Elementor/WidgetExperiencePage.php:220
-#: src/Elementor/WidgetList.php:317
-#: src/Elementor/WidgetWidget.php:151
-msgid "Background"
-msgstr ""
-
-#: src/Admin/SettingsPage.php:993
-#: src/Elementor/WidgetCalendar.php:137
-#: src/Elementor/WidgetCheckout.php:101
-#: src/Elementor/WidgetExperiencePage.php:221
-#: src/Elementor/WidgetList.php:318
-#: src/Elementor/WidgetWidget.php:152
-msgid "Surface"
-msgstr ""
-
-#: src/Admin/SettingsPage.php:994
-msgid "Text color"
-msgstr ""
-
-#: src/Admin/SettingsPage.php:995
-msgid "Muted text"
-msgstr ""
-
-#: src/Admin/SettingsPage.php:996
-#: src/Elementor/WidgetCalendar.php:140
-#: src/Elementor/WidgetCheckout.php:104
-#: src/Elementor/WidgetExperiencePage.php:224
-#: src/Elementor/WidgetList.php:321
-#: src/Elementor/WidgetWidget.php:155
-msgid "Success"
-msgstr ""
-
-#: src/Admin/SettingsPage.php:997
-#: src/Elementor/WidgetCalendar.php:141
-#: src/Elementor/WidgetCheckout.php:105
-#: src/Elementor/WidgetExperiencePage.php:225
-#: src/Elementor/WidgetList.php:322
-#: src/Elementor/WidgetWidget.php:156
-msgid "Warning"
-msgstr ""
-
-#: src/Admin/SettingsPage.php:998
-#: src/Elementor/WidgetCalendar.php:142
-#: src/Elementor/WidgetCheckout.php:106
-#: src/Elementor/WidgetExperiencePage.php:226
-#: src/Elementor/WidgetList.php:323
-#: src/Elementor/WidgetWidget.php:157
-msgid "Danger"
-msgstr ""
 
 #: src/Admin/SettingsPage.php:999
 #: src/Elementor/WidgetCalendar.php:158
 #: src/Elementor/WidgetCheckout.php:122
 #: src/Elementor/WidgetExperiencePage.php:242
 #: src/Elementor/WidgetList.php:339
-#: src/Elementor/WidgetWidget.php:173
-msgid "Border radius"
-msgstr ""
-
-#: src/Admin/SettingsPage.php:1000
-#: src/Elementor/WidgetCalendar.php:167
-#: src/Elementor/WidgetCheckout.php:131
-#: src/Elementor/WidgetExperiencePage.php:251
-#: src/Elementor/WidgetList.php:348
-#: src/Elementor/WidgetWidget.php:182
-msgid "Shadow"
-msgstr ""
-
-#: src/Admin/SettingsPage.php:1001
-msgid "Preferred font family"
-msgstr ""
-
 #: src/Admin/SettingsPage.php:1014
 #: src/Elementor/WidgetList.php:79
 msgid "Experiences per page"
@@ -2565,41 +2447,8 @@ msgstr ""
 msgid "Months to display"
 msgstr ""
 
-#: src/Elementor/WidgetCalendar.php:109
-#: src/Elementor/WidgetCheckout.php:73
-#: src/Elementor/WidgetExperiencePage.php:101
-#: src/Elementor/WidgetExperiencePage.php:138
-#: src/Elementor/WidgetExperiencePage.php:193
-#: src/Elementor/WidgetList.php:290
-#: src/Elementor/WidgetWidget.php:124
+#: src/Utils/Theme.php:37
 msgid "Default"
-msgstr ""
-
-#: src/Elementor/WidgetCalendar.php:111
-#: src/Elementor/WidgetCheckout.php:75
-#: src/Elementor/WidgetExperiencePage.php:195
-#: src/Elementor/WidgetList.php:292
-#: src/Elementor/WidgetWidget.php:126
-#: src/Utils/Theme.php:43
-msgid "Dark"
-msgstr ""
-
-#: src/Elementor/WidgetCalendar.php:112
-#: src/Elementor/WidgetCheckout.php:76
-#: src/Elementor/WidgetExperiencePage.php:196
-#: src/Elementor/WidgetList.php:293
-#: src/Elementor/WidgetWidget.php:127
-#: src/Utils/Theme.php:53
-msgid "Natural (green)"
-msgstr ""
-
-#: src/Elementor/WidgetCalendar.php:113
-#: src/Elementor/WidgetCheckout.php:77
-#: src/Elementor/WidgetExperiencePage.php:197
-#: src/Elementor/WidgetList.php:294
-#: src/Elementor/WidgetWidget.php:128
-#: src/Utils/Theme.php:62
-msgid "Wine / Burgundy"
 msgstr ""
 
 #: src/Elementor/WidgetCalendar.php:124
