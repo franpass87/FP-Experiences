@@ -517,7 +517,7 @@ final class Slots
     /**
      * @param array<int> $slot_ids
      *
-     * @return array<int, array{total:int, per_type:array<string,int>}> 
+     * @return array<int, array{total:int, per_type:array<string,int>}>
      */
     public static function get_capacity_snapshots(array $slot_ids): array
     {
