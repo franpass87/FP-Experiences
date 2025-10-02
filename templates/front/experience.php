@@ -194,65 +194,104 @@ $sticky_price_display = '' !== $price_from_display ? $format_currency($price_fro
         </script>
     <?php endif; ?>
 
-    <div class="fp-grid" data-fp-page>
-        <main class="fp-main">
+    <div class="fp-grid fp-exp-page__layout" data-fp-page>
+        <main class="fp-main fp-exp-page__main">
             <?php if (! empty($sections['hero'])) : ?>
-                <section class="fp-section fp-hero-section" id="fp-exp-section-hero" data-fp-section="hero">
-                    <div class="fp-hero-section__inner">
-                        <div class="fp-hero-media" aria-hidden="<?php echo null === $primary_image ? 'true' : 'false'; ?>">
+                <section class="fp-exp-section fp-exp-hero" id="fp-exp-section-hero" data-fp-section="hero">
+                    <div class="fp-exp-hero__layout">
+                        <div class="fp-exp-hero__primary">
                             <?php if ($primary_image) : ?>
-                                <img
-                                    class="fp-hero-media__image"
-                                    src="<?php echo esc_url($primary_image['url']); ?>"
-                                    <?php if (! empty($primary_image['srcset'])) : ?>srcset="<?php echo esc_attr($primary_image['srcset']); ?>"<?php endif; ?>
-                                    sizes="100vw"
-                                    <?php if (! empty($primary_image['width'])) : ?>width="<?php echo esc_attr((string) $primary_image['width']); ?>"<?php endif; ?>
-                                    <?php if (! empty($primary_image['height'])) : ?>height="<?php echo esc_attr((string) $primary_image['height']); ?>"<?php endif; ?>
-                                    alt="<?php echo esc_attr($experience['title']); ?>"
-                                    loading="eager"
-                                    decoding="async"
-                                    fetchpriority="high"
-                                />
+                                <figure class="fp-exp-hero__media">
+                                    <img
+                                        class="fp-exp-hero__image"
+                                        src="<?php echo esc_url($primary_image['url']); ?>"
+                                        <?php if (! empty($primary_image['srcset'])) : ?>srcset="<?php echo esc_attr($primary_image['srcset']); ?>"<?php endif; ?>
+                                        sizes="(min-width: 1280px) 640px, (min-width: 768px) 60vw, 100vw"
+                                        <?php if (! empty($primary_image['width'])) : ?>width="<?php echo esc_attr((string) $primary_image['width']); ?>"<?php endif; ?>
+                                        <?php if (! empty($primary_image['height'])) : ?>height="<?php echo esc_attr((string) $primary_image['height']); ?>"<?php endif; ?>
+                                        alt="<?php echo esc_attr($experience['title']); ?>"
+                                        loading="eager"
+                                        decoding="async"
+                                        fetchpriority="high"
+                                    />
+                                </figure>
                             <?php else : ?>
-                                <div class="fp-hero fp-exp-gallery fp-exp-gallery--placeholder">
-                                    <span aria-hidden="true"></span>
+                                <div class="fp-exp-hero__media fp-exp-hero__media--placeholder" aria-hidden="true">
+                                    <span></span>
                                 </div>
                             <?php endif; ?>
-                        </div>
-                        <div class="fp-hero-body">
-                            <div class="fp-hero-body__header">
-                                <div class="fp-eyebrow">
-                                    <span class="fp-badge">FP Experiences</span>
-                                </div>
-                                <h1 class="fp-title"><?php echo esc_html($experience['title']); ?></h1>
+
+                            <div class="fp-exp-hero__content">
+                                <header class="fp-exp-hero__header">
+                                    <span class="fp-exp-hero__eyebrow">FP Experiences</span>
+                                    <h1 class="fp-exp-hero__title"><?php echo esc_html($experience['title']); ?></h1>
+                                    <?php if ('' !== $hero_summary) : ?>
+                                        <p class="fp-exp-hero__summary"><?php echo esc_html($hero_summary); ?></p>
+                                    <?php endif; ?>
+                                </header>
+
+                                <?php if (! empty($hero_highlights)) : ?>
+                                    <ul class="fp-exp-hero__highlights" role="list">
+                                        <?php foreach ($hero_highlights as $highlight) : ?>
+                                            <li class="fp-exp-hero__highlight">
+                                                <span class="fp-exp-hero__highlight-icon" aria-hidden="true">
+                                                    <svg viewBox="0 0 24 24"><path fill="currentColor" d="M9.75 18.25 3.5 12l1.41-1.41 4.84 4.84 9.34-9.34L20.5 7.5Z"/></svg>
+                                                </span>
+                                                <span class="fp-exp-hero__highlight-text"><?php echo esc_html($highlight); ?></span>
+                                            </li>
+                                        <?php endforeach; ?>
+                                    </ul>
+                                <?php endif; ?>
                             </div>
-                            <?php if ('' !== $hero_summary) : ?>
-                                <p class="fp-summary"><?php echo esc_html($hero_summary); ?></p>
-                            <?php endif; ?>
-                            <?php if (! empty($hero_highlights)) : ?>
-                                <ul class="fp-hero-highlights" role="list">
-                                    <?php foreach ($hero_highlights as $highlight) : ?>
-                                        <li class="fp-hero-highlights__item"><?php echo esc_html($highlight); ?></li>
-                                    <?php endforeach; ?>
-                                </ul>
-                            <?php endif; ?>
-                            <?php if (! empty($hero_fact_badges)) : ?>
-                                <ul class="fp-hero-facts" role="list">
-                                    <?php foreach ($hero_fact_badges as $badge) : ?>
-                                        <li class="fp-hero-facts__item">
-                                                <span class="fp-hero-facts__icon" aria-hidden="true">
+                        </div>
+
+                        <aside class="fp-exp-hero__sidebar">
+                            <div class="fp-exp-hero__card">
+                                <?php if ('' !== $sticky_price_display) : ?>
+                                    <div class="fp-exp-hero__price" data-fp-scroll-target="calendar">
+                                        <span class="fp-exp-hero__price-label"><?php esc_html_e('From', 'fp-experiences'); ?></span>
+                                        <span class="fp-exp-hero__price-value"><?php echo esc_html($sticky_price_display); ?></span>
+                                    </div>
+                                <?php endif; ?>
+
+                                <div class="fp-exp-hero__actions">
+                                    <button
+                                        type="button"
+                                        class="fp-exp-button fp-exp-button--primary"
+                                        data-fp-scroll="calendar"
+                                        data-fp-cta="hero"
+                                    >
+                                        <?php echo $cta_label; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+                                    </button>
+                                    <?php if ($show_gallery) : ?>
+                                        <button
+                                            type="button"
+                                            class="fp-exp-button fp-exp-button--secondary"
+                                            data-fp-scroll="gallery"
+                                        >
+                                            <?php esc_html_e('View gallery', 'fp-experiences'); ?>
+                                        </button>
+                                    <?php endif; ?>
+                                </div>
+
+                                <?php if (! empty($hero_fact_badges)) : ?>
+                                    <ul class="fp-exp-hero__facts" role="list">
+                                        <?php foreach ($hero_fact_badges as $badge) : ?>
+                                            <li class="fp-exp-hero__fact">
+                                                <span class="fp-exp-hero__fact-icon" aria-hidden="true">
                                                     <?php if ('clock' === ($badge['icon'] ?? '')) : ?>
                                                         <svg viewBox="0 0 24 24" role="img" aria-hidden="true"><path fill="currentColor" d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Zm1 10.59 2.12 2.12-1.41 1.41-2.83-2.83V7h2.12Z"/></svg>
                                                     <?php else : ?>
                                                         <svg viewBox="0 0 24 24" role="img" aria-hidden="true"><path fill="currentColor" d="M12 12.88 9.17 10H5a3 3 0 0 0-3 3v7h6v-4h2v4h6v-7a3 3 0 0 0-3-3h-1.17Zm9-2.88a4 4 0 1 0-4-4 4 4 0 0 0 4 4Z"/></svg>
                                                     <?php endif; ?>
                                                 </span>
-                                                <span class="fp-hero-facts__text"><?php echo esc_html((string) ($badge['label'] ?? '')); ?></span>
-                                        </li>
-                                    <?php endforeach; ?>
-                                </ul>
-                            <?php endif; ?>
-                        </div>
+                                                <span class="fp-exp-hero__fact-text"><?php echo esc_html((string) ($badge['label'] ?? '')); ?></span>
+                                            </li>
+                                        <?php endforeach; ?>
+                                    </ul>
+                                <?php endif; ?>
+                            </div>
+                        </aside>
                     </div>
                 </section>
             <?php endif; ?>
@@ -278,6 +317,16 @@ $sticky_price_display = '' !== $price_from_display ? $format_currency($price_fro
 
             <?php if ($has_overview) : ?>
                 <section class="fp-exp-section fp-exp-overview" id="fp-exp-section-overview" data-fp-section="overview">
+                    <header class="fp-exp-section__header fp-exp-overview__header">
+                        <span class="fp-exp-section__eyebrow"><?php esc_html_e('Overview', 'fp-experiences'); ?></span>
+                        <h2 class="fp-exp-section__title"><?php esc_html_e('Key details at a glance', 'fp-experiences'); ?></h2>
+                        <?php if ('' !== $overview_short_description) : ?>
+                            <p class="fp-exp-overview__summary"><?php echo esc_html($overview_short_description); ?></p>
+                        <?php elseif ('' !== $hero_summary) : ?>
+                            <p class="fp-exp-overview__summary"><?php echo esc_html($hero_summary); ?></p>
+                        <?php endif; ?>
+                    </header>
+
                     <div class="fp-exp-overview__grid">
                         <?php if (! empty($overview_themes)) : ?>
                             <div class="fp-exp-overview__item">
@@ -287,13 +336,6 @@ $sticky_price_display = '' !== $price_from_display ? $format_currency($price_fro
                                         <span class="fp-exp-overview__chip"><?php echo esc_html((string) $theme); ?></span>
                                     <?php endforeach; ?>
                                 </div>
-                            </div>
-                        <?php endif; ?>
-
-                        <?php if ('' !== $overview_short_description) : ?>
-                            <div class="fp-exp-overview__item">
-                                <span class="fp-exp-overview__label"><?php esc_html_e('Descrizione breve', 'fp-experiences'); ?></span>
-                                <span class="fp-exp-overview__value"><?php echo esc_html($overview_short_description); ?></span>
                             </div>
                         <?php endif; ?>
 
@@ -394,6 +436,10 @@ $sticky_price_display = '' !== $price_from_display ? $format_currency($price_fro
 
             <?php if ($show_gallery) : ?>
                 <section class="fp-exp-section fp-exp-gallery" id="fp-exp-section-gallery" data-fp-section="gallery">
+                    <header class="fp-exp-section__header">
+                        <span class="fp-exp-section__eyebrow"><?php esc_html_e('Gallery', 'fp-experiences'); ?></span>
+                        <h2 class="fp-exp-section__title"><?php esc_html_e('A glimpse of the experience', 'fp-experiences'); ?></h2>
+                    </header>
                     <div class="fp-exp-gallery__track" role="list">
                         <?php foreach ($gallery_items as $index => $image) :
                             $url = isset($image['url']) ? (string) $image['url'] : '';
@@ -434,7 +480,7 @@ $sticky_price_display = '' !== $price_from_display ? $format_currency($price_fro
 
             <?php if ($gift_enabled) : ?>
                 <section
-                    class="fp-section fp-gift"
+                    class="fp-exp-section fp-gift"
                     id="fp-exp-gift"
                     data-fp-gift
                     data-fp-gift-config="<?php echo esc_attr(wp_json_encode($gift_config)); ?>"
@@ -509,113 +555,142 @@ $sticky_price_display = '' !== $price_from_display ? $format_currency($price_fro
             <?php endif; ?>
 
             <?php if (! empty($sections['highlights']) && $has_highlights) : ?>
-                <section class="fp-exp-section" id="fp-exp-section-highlights" data-fp-section="highlights">
-                    <h2 class="fp-exp-section__title"><?php esc_html_e('Highlights', 'fp-experiences'); ?></h2>
-                    <ul class="fp-exp-list" role="list">
-                        <?php foreach ($highlights as $highlight) : ?>
-                            <li class="fp-exp-list__item"><?php echo esc_html($highlight); ?></li>
-                        <?php endforeach; ?>
-                    </ul>
+                <section class="fp-exp-section fp-exp-highlights" id="fp-exp-section-highlights" data-fp-section="highlights">
+                    <header class="fp-exp-section__header">
+                        <span class="fp-exp-section__eyebrow"><?php esc_html_e('Highlights', 'fp-experiences'); ?></span>
+                        <h2 class="fp-exp-section__title"><?php esc_html_e('What makes this experience special', 'fp-experiences'); ?></h2>
+                    </header>
+                    <div class="fp-exp-section__body">
+                        <ul class="fp-exp-highlights__list" role="list">
+                            <?php foreach ($highlights as $highlight) : ?>
+                                <li class="fp-exp-highlights__item">
+                                    <span class="fp-exp-highlights__icon" aria-hidden="true">
+                                        <svg viewBox="0 0 24 24"><path fill="currentColor" d="M9.75 18.25 3.5 12l1.41-1.41 4.84 4.84 9.34-9.34L20.5 7.5Z"/></svg>
+                                    </span>
+                                    <span class="fp-exp-highlights__text"><?php echo esc_html($highlight); ?></span>
+                                </li>
+                            <?php endforeach; ?>
+                        </ul>
+                    </div>
                 </section>
             <?php endif; ?>
 
             <?php if (! empty($sections['inclusions']) && $has_inclusions) : ?>
-                <section class="fp-exp-section" id="fp-exp-section-inclusions" data-fp-section="inclusions">
-                    <div class="fp-exp-section__header">
+                <section class="fp-exp-section fp-exp-inclusions" id="fp-exp-section-inclusions" data-fp-section="inclusions">
+                    <header class="fp-exp-section__header">
                         <h2 class="fp-exp-section__title"><?php esc_html_e('What\'s included', 'fp-experiences'); ?></h2>
                         <?php if (! empty($exclusions)) : ?>
-                            <p class="fp-exp-section__subtitle"><?php esc_html_e('and what\'s not', 'fp-experiences'); ?></p>
+                            <p class="fp-exp-section__summary"><?php esc_html_e('What to expect on the day and what comes at an extra cost.', 'fp-experiences'); ?></p>
                         <?php endif; ?>
-                    </div>
-                    <div class="fp-exp-columns">
-                        <?php if (! empty($inclusions)) : ?>
-                            <div class="fp-exp-column">
-                                <h3 class="fp-exp-column__title"><?php esc_html_e('Included', 'fp-experiences'); ?></h3>
-                                <ul class="fp-exp-list" role="list">
-                                    <?php foreach ($inclusions as $item) : ?>
-                                        <li class="fp-exp-list__item">
-                                            <span class="fp-exp-icon fp-exp-icon--check" aria-hidden="true">
-                                                <svg viewBox="0 0 24 24"><path fill="currentColor" d="M9.75 18.25 3.5 12l1.41-1.41 4.84 4.84 9.34-9.34L20.5 7.5Z"/></svg>
-                                            </span>
-                                            <span><?php echo esc_html($item); ?></span>
-                                        </li>
-                                    <?php endforeach; ?>
-                                </ul>
-                            </div>
-                        <?php endif; ?>
-                        <?php if (! empty($exclusions)) : ?>
-                            <div class="fp-exp-column">
-                                <h3 class="fp-exp-column__title"><?php esc_html_e('Not included', 'fp-experiences'); ?></h3>
-                                <ul class="fp-exp-list" role="list">
-                                    <?php foreach ($exclusions as $item) : ?>
-                                        <li class="fp-exp-list__item">
-                                            <span class="fp-exp-icon fp-exp-icon--cross" aria-hidden="true">
-                                                <svg viewBox="0 0 24 24"><path fill="currentColor" d="m18.3 5.71 1.42 1.42-5.3 5.29 5.3 5.29-1.42 1.42-5.29-5.3-5.29 5.3-1.42-1.42 5.3-5.29-5.3-5.29 1.42-1.42 5.29 5.3Z"/></svg>
-                                            </span>
-                                            <span><?php echo esc_html($item); ?></span>
-                                        </li>
-                                    <?php endforeach; ?>
-                                </ul>
-                            </div>
-                        <?php endif; ?>
+                    </header>
+                    <div class="fp-exp-section__body">
+                        <div class="fp-exp-inclusions__grid">
+                            <?php if (! empty($inclusions)) : ?>
+                                <div class="fp-exp-inclusions__column">
+                                    <h3 class="fp-exp-inclusions__title"><?php esc_html_e('Included', 'fp-experiences'); ?></h3>
+                                    <ul class="fp-exp-inclusions__list" role="list">
+                                        <?php foreach ($inclusions as $item) : ?>
+                                            <li class="fp-exp-inclusions__item">
+                                                <span class="fp-exp-inclusions__icon fp-exp-inclusions__icon--check" aria-hidden="true">
+                                                    <svg viewBox="0 0 24 24"><path fill="currentColor" d="M9.75 18.25 3.5 12l1.41-1.41 4.84 4.84 9.34-9.34L20.5 7.5Z"/></svg>
+                                                </span>
+                                                <span class="fp-exp-inclusions__text"><?php echo esc_html($item); ?></span>
+                                            </li>
+                                        <?php endforeach; ?>
+                                    </ul>
+                                </div>
+                            <?php endif; ?>
+                            <?php if (! empty($exclusions)) : ?>
+                                <div class="fp-exp-inclusions__column">
+                                    <h3 class="fp-exp-inclusions__title"><?php esc_html_e('Not included', 'fp-experiences'); ?></h3>
+                                    <ul class="fp-exp-inclusions__list" role="list">
+                                        <?php foreach ($exclusions as $item) : ?>
+                                            <li class="fp-exp-inclusions__item">
+                                                <span class="fp-exp-inclusions__icon fp-exp-inclusions__icon--cross" aria-hidden="true">
+                                                    <svg viewBox="0 0 24 24"><path fill="currentColor" d="m18.3 5.71 1.42 1.42-5.3 5.29 5.3 5.29-1.42 1.42-5.29-5.3-5.29 5.3-1.42-1.42 5.3-5.29-5.3-5.29 1.42-1.42 5.29 5.3Z"/></svg>
+                                                </span>
+                                                <span class="fp-exp-inclusions__text"><?php echo esc_html($item); ?></span>
+                                            </li>
+                                        <?php endforeach; ?>
+                                    </ul>
+                                </div>
+                            <?php endif; ?>
+                        </div>
                     </div>
                 </section>
             <?php endif; ?>
 
             <?php if (! empty($sections['meeting']) && $has_meeting) : ?>
-                <section class="fp-exp-section" id="fp-exp-section-meeting" data-fp-section="meeting">
-                    <h2 class="fp-exp-section__title"><?php esc_html_e('Meeting point', 'fp-experiences'); ?></h2>
-                    <?php
-                    $primary = $meeting_points['primary'];
-                    $alternatives = $meeting_points['alternatives'];
-                    include __DIR__ . '/meeting-points.php';
-                    ?>
+                <section class="fp-exp-section fp-exp-meeting" id="fp-exp-section-meeting" data-fp-section="meeting">
+                    <header class="fp-exp-section__header">
+                        <h2 class="fp-exp-section__title"><?php esc_html_e('Meeting point', 'fp-experiences'); ?></h2>
+                        <?php if ('' !== $overview_meeting_summary) : ?>
+                            <p class="fp-exp-section__summary"><?php echo esc_html($overview_meeting_summary); ?></p>
+                        <?php endif; ?>
+                    </header>
+                    <div class="fp-exp-section__body fp-exp-section__body--flush">
+                        <?php
+                        $primary = $meeting_points['primary'];
+                        $alternatives = $meeting_points['alternatives'];
+                        include __DIR__ . '/meeting-points.php';
+                        ?>
+                    </div>
                 </section>
             <?php endif; ?>
 
             <?php if (! empty($sections['extras']) && $has_extras) : ?>
-                <section class="fp-exp-section" id="fp-exp-section-extras" data-fp-section="extras">
-                    <h2 class="fp-exp-section__title"><?php esc_html_e('Good to know', 'fp-experiences'); ?></h2>
-                    <div class="fp-exp-columns fp-exp-columns--stack">
-                        <?php if (! empty($what_to_bring)) : ?>
-                            <div class="fp-exp-column">
-                                <h3 class="fp-exp-column__title"><?php esc_html_e('What to bring', 'fp-experiences'); ?></h3>
-                                <ul class="fp-exp-list" role="list">
-                                    <?php foreach ($what_to_bring as $item) : ?>
-                                        <li class="fp-exp-list__item"><?php echo esc_html($item); ?></li>
-                                    <?php endforeach; ?>
-                                </ul>
-                            </div>
-                        <?php endif; ?>
-
-                        <?php if (! empty($notes)) : ?>
-                            <div class="fp-exp-column">
-                                <h3 class="fp-exp-column__title"><?php esc_html_e('Notes', 'fp-experiences'); ?></h3>
-                                <?php if (is_array($notes)) : ?>
-                                    <ul class="fp-exp-list" role="list">
-                                        <?php foreach ($notes as $note) : ?>
-                                            <li class="fp-exp-list__item"><?php echo esc_html($note); ?></li>
+                <section class="fp-exp-section fp-exp-essentials" id="fp-exp-section-extras" data-fp-section="extras">
+                    <header class="fp-exp-section__header">
+                        <h2 class="fp-exp-section__title"><?php esc_html_e('Good to know', 'fp-experiences'); ?></h2>
+                        <p class="fp-exp-section__summary"><?php esc_html_e('Handy tips to plan ahead, plus important notes and policies.', 'fp-experiences'); ?></p>
+                    </header>
+                    <div class="fp-exp-section__body">
+                        <div class="fp-exp-essentials__grid">
+                            <?php if (! empty($what_to_bring)) : ?>
+                                <article class="fp-exp-essentials__card">
+                                    <h3 class="fp-exp-essentials__title"><?php esc_html_e('What to bring', 'fp-experiences'); ?></h3>
+                                    <ul class="fp-exp-essentials__list" role="list">
+                                        <?php foreach ($what_to_bring as $item) : ?>
+                                            <li class="fp-exp-essentials__item"><?php echo esc_html($item); ?></li>
                                         <?php endforeach; ?>
                                     </ul>
-                                <?php else : ?>
-                                    <p class="fp-exp-paragraph"><?php echo esc_html($notes); ?></p>
-                                <?php endif; ?>
-                            </div>
-                        <?php endif; ?>
+                                </article>
+                            <?php endif; ?>
 
-                        <?php if (! empty($policy)) : ?>
-                            <div class="fp-exp-column">
-                                <h3 class="fp-exp-column__title"><?php esc_html_e('Cancellation policy', 'fp-experiences'); ?></h3>
-                                <div class="fp-exp-richtext"><?php echo wp_kses_post($policy); ?></div>
-                            </div>
-                        <?php endif; ?>
+                            <?php if (! empty($notes)) : ?>
+                                <article class="fp-exp-essentials__card">
+                                    <h3 class="fp-exp-essentials__title"><?php esc_html_e('Notes', 'fp-experiences'); ?></h3>
+                                    <?php if (is_array($notes)) : ?>
+                                        <ul class="fp-exp-essentials__list" role="list">
+                                            <?php foreach ($notes as $note) : ?>
+                                                <li class="fp-exp-essentials__item"><?php echo esc_html($note); ?></li>
+                                            <?php endforeach; ?>
+                                        </ul>
+                                    <?php else : ?>
+                                        <p class="fp-exp-essentials__copy"><?php echo esc_html($notes); ?></p>
+                                    <?php endif; ?>
+                                </article>
+                            <?php endif; ?>
+
+                            <?php if (! empty($policy)) : ?>
+                                <article class="fp-exp-essentials__card">
+                                    <h3 class="fp-exp-essentials__title"><?php esc_html_e('Cancellation policy', 'fp-experiences'); ?></h3>
+                                    <div class="fp-exp-essentials__copy fp-exp-essentials__copy--rich">
+                                        <div class="fp-exp-richtext"><?php echo wp_kses_post($policy); ?></div>
+                                    </div>
+                                </article>
+                            <?php endif; ?>
+                        </div>
                     </div>
                 </section>
             <?php endif; ?>
 
             <?php if (! empty($sections['faq']) && $has_faq) : ?>
                 <section class="fp-exp-section" id="fp-exp-section-faq" data-fp-section="faq">
-                    <h2 class="fp-exp-section__title"><?php esc_html_e('Frequently asked questions', 'fp-experiences'); ?></h2>
+                    <header class="fp-exp-section__header">
+                        <span class="fp-exp-section__eyebrow"><?php esc_html_e('FAQ', 'fp-experiences'); ?></span>
+                        <h2 class="fp-exp-section__title"><?php esc_html_e('Frequently asked questions', 'fp-experiences'); ?></h2>
+                    </header>
                     <div class="fp-exp-accordion" data-fp-accordion>
                         <?php foreach ($faq as $index => $item) :
                             $button_id = $scope_class . '-faq-' . $index;
@@ -654,7 +729,10 @@ $sticky_price_display = '' !== $price_from_display ? $format_currency($price_fro
 
             <?php if (! empty($sections['reviews']) && $has_reviews) : ?>
                 <section class="fp-exp-section" id="fp-exp-section-reviews" data-fp-section="reviews">
-                    <h2 class="fp-exp-section__title"><?php esc_html_e('Traveler reviews', 'fp-experiences'); ?></h2>
+                    <header class="fp-exp-section__header">
+                        <span class="fp-exp-section__eyebrow"><?php esc_html_e('Reviews', 'fp-experiences'); ?></span>
+                        <h2 class="fp-exp-section__title"><?php esc_html_e('Traveler reviews', 'fp-experiences'); ?></h2>
+                    </header>
                     <ul class="fp-exp-reviews" role="list">
                         <?php foreach ($reviews as $review) : ?>
                             <li class="fp-exp-review" data-fp-review>
@@ -692,7 +770,7 @@ $sticky_price_display = '' !== $price_from_display ? $format_currency($price_fro
 
         <?php if ('none' !== $sidebar_position && ! empty($widget_html)) : ?>
             <aside
-                class="fp-aside"
+                class="fp-aside fp-exp-page__aside"
                 id="fp-exp-widget"
                 data-fp-sticky-container
                 aria-label="<?php esc_attr_e('Riepilogo prenotazione', 'fp-experiences'); ?>"
