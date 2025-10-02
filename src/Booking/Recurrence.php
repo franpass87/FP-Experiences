@@ -26,7 +26,6 @@ final class Recurrence
     public static function defaults(): array
     {
         return [
-            'enabled' => false,
             'frequency' => 'weekly',
             'start_date' => '',
             'end_date' => '',
@@ -46,8 +45,6 @@ final class Recurrence
     public static function sanitize(array $raw): array
     {
         $definition = self::defaults();
-
-        $definition['enabled'] = ! empty($raw['enabled']);
 
         $frequency = isset($raw['frequency']) ? sanitize_key((string) $raw['frequency']) : 'weekly';
         if (! in_array($frequency, ['daily', 'weekly', 'specific'], true)) {
@@ -91,13 +88,14 @@ final class Recurrence
      */
     public static function is_actionable(array $definition): bool
     {
-        if (empty($definition['enabled'])) {
+        $times = self::flatten_time_sets($definition['time_sets'] ?? []);
+
+        if (empty($times)) {
             return false;
         }
 
-        $times = self::flatten_time_sets($definition['time_sets'] ?? []);
-
-        return ! empty($times);
+        // Removed check for empty 'days' for weekly recurrences to align with admin UI changes.
+        return true;
     }
 
     /**
