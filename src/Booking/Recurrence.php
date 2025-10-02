@@ -94,10 +94,7 @@ final class Recurrence
             return false;
         }
 
-        if (('weekly' === ($definition['frequency'] ?? '')) && empty($definition['days'])) {
-            return false;
-        }
-
+        // Removed check for empty 'days' for weekly recurrences to align with admin UI changes.
         return true;
     }
 
