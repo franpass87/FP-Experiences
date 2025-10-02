@@ -138,8 +138,9 @@ final class ExperienceShortcode extends BaseShortcode
         $duration_minutes = absint((string) get_post_meta($experience_id, '_fp_duration_minutes', true));
         $languages = Helpers::get_meta_array($experience_id, '_fp_languages');
         $language_badges = LanguageHelper::build_language_badges($languages);
-        $short_desc = sanitize_text_field((string) get_post_meta($experience_id, '_fp_short_desc', true));
-        $content_summary = $short_desc ?: wp_trim_words((string) $post->post_excerpt, 36);
+        $short_desc = trim(sanitize_text_field((string) get_post_meta($experience_id, '_fp_short_desc', true)));
+        $content_summary = wp_trim_words((string) $post->post_excerpt, 36);
+        $schema_description = '' !== $short_desc ? $short_desc : $content_summary;
 
         $hero_image_id = absint((string) get_post_meta($experience_id, '_fp_hero_image_id', true));
         $gallery_ids = get_post_meta($experience_id, '_fp_gallery_ids', true);
@@ -189,17 +190,10 @@ final class ExperienceShortcode extends BaseShortcode
             ? array_values(array_filter(array_map('sanitize_text_field', $taxonomy_languages)))
             : [];
 
-        $taxonomy_durations = wp_get_post_terms($experience_id, 'fp_exp_duration', ['fields' => 'names']);
-        $duration_term_names = is_array($taxonomy_durations)
-            ? array_values(array_filter(array_map('sanitize_text_field', $taxonomy_durations)))
-            : [];
-
-        $duration_label = $this->format_duration($duration_minutes);
-
         $schema = $this->build_schema([
             'post' => $post,
             'gallery' => $gallery,
-            'description' => $content_summary,
+            'description' => $schema_description,
             'price' => $base_price,
             'currency' => $currency,
             'duration' => $duration_minutes,
@@ -277,9 +271,7 @@ final class ExperienceShortcode extends BaseShortcode
             'themes' => $theme_names,
             'language_terms' => $language_term_names,
             'language_badges' => $language_badges,
-            'duration_label' => $duration_label,
-            'duration_terms' => $duration_term_names,
-            'duration_minutes' => $duration_minutes,
+            'short_description' => $short_desc,
             'meeting' => [
                 'title' => $meeting_title,
                 'address' => $meeting_address,
@@ -435,6 +427,7 @@ final class ExperienceShortcode extends BaseShortcode
                 'title' => $post->post_title,
                 'permalink' => get_permalink($post),
                 'summary' => $content_summary,
+                'short_description' => $short_desc,
                 'duration_minutes' => $duration_minutes,
                 'languages' => $languages,
                 'language_badges' => $language_badges,
@@ -717,8 +710,7 @@ final class ExperienceShortcode extends BaseShortcode
         $has_themes = ! empty($overview['themes']);
         $has_languages = ! empty($overview['language_badges']);
         $has_biases = ! empty($overview['cognitive_biases']);
-        $has_duration_label = '' !== ($overview['duration_label'] ?? '');
-        $has_duration_terms = ! empty($overview['duration_terms']);
+        $has_short_description = '' !== ($overview['short_description'] ?? '');
 
         $meeting = $overview['meeting'] ?? [];
         $meeting_summary = '';
@@ -731,8 +723,7 @@ final class ExperienceShortcode extends BaseShortcode
         return $has_themes
             || $has_languages
             || $has_biases
-            || $has_duration_label
-            || $has_duration_terms
+            || $has_short_description
             || '' !== $meeting_summary
             || $has_family;
     }
@@ -993,26 +984,6 @@ final class ExperienceShortcode extends BaseShortcode
      *
      * @return array<int, array<string, string>>
      */
-    private function format_duration(int $minutes): string
-    {
-        if ($minutes <= 0) {
-            return '';
-        }
-
-        $hours = intdiv($minutes, 60);
-        $remaining = $minutes % 60;
-
-        if ($hours > 0 && $remaining > 0) {
-            return sprintf(__('%1$dh %2$dmin', 'fp-experiences'), $hours, $remaining);
-        }
-
-        if ($hours > 0) {
-            return sprintf(_n('%dh', '%dh', $hours, 'fp-experiences'), $hours);
-        }
-
-        return sprintf(_n('%d minute', '%d minutes', $minutes, 'fp-experiences'), $minutes);
-    }
-
     private function build_badges(int $duration_minutes, array $language_badges, bool $family_friendly): array
     {
         $badges = [];
