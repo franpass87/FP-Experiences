@@ -112,7 +112,32 @@ $overview_themes = isset($overview['themes']) && is_array($overview['themes']) ?
 $overview_languages = isset($overview['language_badges']) && is_array($overview['language_badges']) ? $overview['language_badges'] : [];
 $overview_language_terms = isset($overview['language_terms']) && is_array($overview['language_terms']) ? $overview['language_terms'] : [];
 $overview_biases = isset($overview['cognitive_biases']) && is_array($overview['cognitive_biases'])
-    ? array_values(array_filter(array_map('strval', $overview['cognitive_biases'])))
+    ? array_values(array_filter(array_map(
+        static function ($bias) {
+            if (! is_array($bias)) {
+                $bias = [
+                    'label' => (string) $bias,
+                ];
+            }
+
+            $label = isset($bias['label']) ? (string) $bias['label'] : '';
+            if ('' === $label) {
+                return null;
+            }
+
+            $tagline = isset($bias['tagline']) ? (string) $bias['tagline'] : '';
+            $description = isset($bias['description']) ? (string) $bias['description'] : '';
+            $icon = isset($bias['icon']) ? (string) $bias['icon'] : '';
+
+            return [
+                'label' => $label,
+                'tagline' => $tagline,
+                'description' => $description,
+                'icon' => $icon,
+            ];
+        },
+        $overview['cognitive_biases']
+    )))
     : [];
 $overview_duration_label = isset($overview['duration_label']) ? (string) $overview['duration_label'] : '';
 $overview_duration_terms = isset($overview['duration_terms']) && is_array($overview['duration_terms']) ? $overview['duration_terms'] : [];
@@ -289,12 +314,40 @@ $cta_label = esc_html__('Controlla disponibilità', 'fp-experiences');
 
                         <?php if (! empty($overview_biases)) : ?>
                             <div class="fp-exp-overview__item">
-                                <span class="fp-exp-overview__label"><?php esc_html_e('Bias cognitivi', 'fp-experiences'); ?></span>
-                                <div class="fp-exp-overview__chips">
-                                    <?php foreach ($overview_biases as $bias) : ?>
-                                        <span class="fp-exp-overview__chip"><?php echo esc_html($bias); ?></span>
+                                <span class="fp-exp-overview__label"><?php esc_html_e('Badge di fiducia', 'fp-experiences'); ?></span>
+                                <ul class="fp-exp-overview__chips" role="list">
+                                    <?php foreach ($overview_biases as $bias) :
+                                        $label = isset($bias['label']) ? (string) $bias['label'] : '';
+                                        if ('' === $label) {
+                                            continue;
+                                        }
+
+                                        $tagline = isset($bias['tagline']) ? (string) $bias['tagline'] : '';
+                                        $description = isset($bias['description']) ? (string) $bias['description'] : '';
+                                        $icon_name = isset($bias['icon']) ? (string) $bias['icon'] : '';
+                                        $icon_svg = \FP_Exp\Utils\Helpers::cognitive_bias_icon_svg($icon_name);
+                                        $chip_label_parts = array_values(array_filter([$label, $tagline, $description]));
+                                        $chip_label_text = ! empty($chip_label_parts)
+                                            ? implode(' – ', array_unique($chip_label_parts))
+                                            : '';
+                                        ?>
+                                        <li
+                                            class="fp-exp-overview__chip"
+                                            <?php if ('' !== $chip_label_text) : ?>title="<?php echo esc_attr($chip_label_text); ?>" aria-label="<?php echo esc_attr($chip_label_text); ?>"<?php endif; ?>
+                                        >
+                                            <span class="fp-exp-overview__chip-icon" aria-hidden="true"><?php echo $icon_svg; ?></span>
+                                            <span class="fp-exp-overview__chip-body">
+                                                <span class="fp-exp-overview__chip-label"><?php echo esc_html($label); ?></span>
+                                                <?php if ('' !== $tagline) : ?>
+                                                    <span class="fp-exp-overview__chip-tagline"><?php echo esc_html($tagline); ?></span>
+                                                <?php endif; ?>
+                                                <?php if ('' !== $description) : ?>
+                                                    <span class="fp-exp-overview__chip-description"><?php echo esc_html($description); ?></span>
+                                                <?php endif; ?>
+                                            </span>
+                                        </li>
                                     <?php endforeach; ?>
-                                </div>
+                                </ul>
                             </div>
                         <?php endif; ?>
 

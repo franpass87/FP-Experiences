@@ -48,6 +48,7 @@ use function sanitize_text_field;
 use function sanitize_title;
 use function selected;
 use function set_transient;
+use function strval;
 use function update_post_meta;
 use function wp_enqueue_media;
 use function wp_enqueue_script;
@@ -162,6 +163,8 @@ final class ExperienceMetaBoxes
                     'recurrenceTimeLabel' => esc_html__('Orario ricorrenza', 'fp-experiences'),
                     'recurrenceRemoveTime' => esc_html__('Rimuovi orario', 'fp-experiences'),
                     'recurrenceLoading' => esc_html__('Generazione in corso…', 'fp-experiences'),
+                    'trustBadgesStatus' => esc_html__('Badge selezionati: %1$s su %2$s', 'fp-experiences'),
+                    'trustBadgesMax' => esc_html__('Hai raggiunto il numero massimo di badge selezionabili.', 'fp-experiences'),
                 ],
                 'rest' => [
                     'nonce' => wp_create_nonce('wp_rest'),
@@ -515,20 +518,125 @@ final class ExperienceMetaBoxes
 
                 <div class="fp-exp-field">
                     <span class="fp-exp-field__label">
-                        <?php esc_html_e('Bias cognitivi', 'fp-experiences'); ?>
+                        <?php esc_html_e('Badge di fiducia', 'fp-experiences'); ?>
                         <?php $this->render_tooltip('fp-exp-bias-help', esc_html__('Evidenzia le leve persuasive che caratterizzano l\'esperienza; vengono mostrate nella panoramica.', 'fp-experiences')); ?>
                     </span>
-                    <div class="fp-exp-checkbox-grid" aria-describedby="fp-exp-bias-help">
+                    <?php
+                    $max_biases = Helpers::cognitive_bias_max_selection();
+                    $selected_biases = isset($details['cognitive_biases']['selected']) && is_array($details['cognitive_biases']['selected'])
+                        ? array_values(array_filter(array_map('strval', $details['cognitive_biases']['selected'])))
+                        : [];
+                    $selected_bias_count = count($selected_biases);
+                    $status_template = __('Badge selezionati: %1$s su %2$s', 'fp-experiences');
+                    $status_limit_message = __('Hai raggiunto il numero massimo di badge selezionabili.', 'fp-experiences');
+                    $search_input_id = 'fp-exp-bias-search';
+                    $grid_id = 'fp-exp-bias-grid';
+                    ?>
+                    <div class="fp-exp-checkbox-grid__search">
+                        <label class="screen-reader-text" for="<?php echo esc_attr($search_input_id); ?>">
+                            <?php esc_html_e('Filtra badge di fiducia', 'fp-experiences'); ?>
+                        </label>
+                        <input
+                            type="search"
+                            id="<?php echo esc_attr($search_input_id); ?>"
+                            class="fp-exp-checkbox-grid__search-input"
+                            data-fp-cognitive-bias-search
+                            placeholder="<?php echo esc_attr__('Cerca badge…', 'fp-experiences'); ?>"
+                            autocomplete="off"
+                            spellcheck="false"
+                            aria-controls="<?php echo esc_attr($grid_id); ?>"
+                        />
+                    </div>
+                    <div
+                        id="<?php echo esc_attr($grid_id); ?>"
+                        class="fp-exp-checkbox-grid"
+                        aria-describedby="fp-exp-bias-status fp-exp-bias-help"
+                        data-fp-cognitive-bias
+                        data-max="<?php echo esc_attr((string) $max_biases); ?>"
+                    >
                         <?php foreach ($details['cognitive_biases']['choices'] as $choice) :
-                            $bias_id = (string) $choice['id'];
+                            $bias_id = (string) ($choice['id'] ?? '');
+                            if ('' === $bias_id) {
+                                continue;
+                            }
+
+                            $label = isset($choice['label']) ? (string) $choice['label'] : '';
+                            if ('' === $label) {
+                                continue;
+                            }
+
+                            $description = isset($choice['description']) ? (string) $choice['description'] : '';
+                            $tagline = isset($choice['tagline']) ? (string) $choice['tagline'] : '';
+                            $icon_name = isset($choice['icon']) ? (string) $choice['icon'] : '';
+                            $icon_svg = Helpers::cognitive_bias_icon_svg($icon_name);
+                            $keywords = isset($choice['keywords']) && is_array($choice['keywords'])
+                                ? array_values(array_filter(array_map('strval', $choice['keywords'])))
+                                : [];
+                            $search_terms = array_merge([$label, $tagline, $description], $keywords);
+                            $search_terms = array_values(array_filter($search_terms, static function ($term): bool {
+                                return '' !== trim((string) $term);
+                            }));
+                            $search_terms = array_map(static function ($term): string {
+                                $value = sanitize_text_field((string) $term);
+                                if ('' === $value) {
+                                    return '';
+                                }
+
+                                if (function_exists('mb_strtolower')) {
+                                    return mb_strtolower($value, 'UTF-8');
+                                }
+
+                                return strtolower($value);
+                            }, $search_terms);
+                            $search_terms = array_values(array_filter($search_terms));
+                            $search_blob = implode(' ', array_unique($search_terms));
                             ?>
-                            <label>
+                            <label class="fp-exp-checkbox-grid__item" data-search="<?php echo esc_attr($search_blob); ?>">
                                 <input type="checkbox" name="fp_exp_details[cognitive_biases][]" value="<?php echo esc_attr($bias_id); ?>" <?php checked(in_array($bias_id, $details['cognitive_biases']['selected'], true)); ?> />
-                                <span><?php echo esc_html($choice['label']); ?></span>
+                                <span class="fp-exp-checkbox-grid__content">
+                                    <span class="fp-exp-checkbox-grid__icon" aria-hidden="true"><?php echo $icon_svg; ?></span>
+                                    <span class="fp-exp-checkbox-grid__body">
+                                        <span class="fp-exp-checkbox-grid__title"><?php echo esc_html($label); ?></span>
+                                        <?php if ('' !== $tagline) : ?>
+                                            <span class="fp-exp-checkbox-grid__tagline"><?php echo esc_html($tagline); ?></span>
+                                        <?php endif; ?>
+                                        <?php if ('' !== $description) : ?>
+                                            <span class="fp-exp-checkbox-grid__description"><?php echo esc_html($description); ?></span>
+                                        <?php endif; ?>
+                                    </span>
+                                </span>
                             </label>
                         <?php endforeach; ?>
                     </div>
-                    <p class="fp-exp-field__description" id="fp-exp-bias-help"><?php esc_html_e('Scegli fino a tre elementi per creare aspettative chiare nella sezione panoramica.', 'fp-experiences'); ?></p>
+                    <p
+                        class="fp-exp-field__description fp-exp-field__description--muted"
+                        data-fp-cognitive-bias-empty
+                        hidden
+                    >
+                        <?php esc_html_e('Nessun badge corrisponde alla ricerca.', 'fp-experiences'); ?>
+                    </p>
+                    <p
+                        class="fp-exp-field__description fp-exp-field__description--status"
+                        id="fp-exp-bias-status"
+                        data-fp-cognitive-bias-status
+                        data-template="<?php echo esc_attr($status_template); ?>"
+                        data-max-message="<?php echo esc_attr($status_limit_message); ?>"
+                    >
+                        <?php
+                        echo esc_html(
+                            sprintf(
+                                $status_template,
+                                $selected_bias_count,
+                                $max_biases
+                            )
+                        );
+
+                        if ($selected_bias_count >= $max_biases && '' !== $status_limit_message) {
+                            echo ' ' . esc_html($status_limit_message);
+                        }
+                        ?>
+                    </p>
+                    <p class="fp-exp-field__description" id="fp-exp-bias-help"><?php esc_html_e('Scegli fino a tre badge di fiducia per creare aspettative chiare nella sezione panoramica.', 'fp-experiences'); ?></p>
                 </div>
 
                 <div class="fp-exp-field">
@@ -1475,6 +1583,8 @@ final class ExperienceMetaBoxes
         $cognitive_biases = isset($raw['cognitive_biases']) && is_array($raw['cognitive_biases'])
             ? array_values(array_filter(array_map('sanitize_key', $raw['cognitive_biases'])))
             : [];
+        $cognitive_biases = array_values(array_unique($cognitive_biases));
+        $cognitive_biases = array_slice($cognitive_biases, 0, Helpers::cognitive_bias_max_selection());
 
         $this->update_or_delete_meta($post_id, '_fp_short_desc', $short_desc);
         $this->update_or_delete_meta($post_id, '_fp_duration_minutes', $duration);

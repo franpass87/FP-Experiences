@@ -482,6 +482,150 @@
         });
     }
 
+    function initCognitiveBiasLimiter(root) {
+        const grids = Array.from(root.querySelectorAll('[data-fp-cognitive-bias]'));
+        if (!grids.length) {
+            return;
+        }
+
+        grids.forEach((grid) => {
+            if (!(grid instanceof HTMLElement)) {
+                return;
+            }
+
+            if (grid.dataset.fpCognitiveBiasInit === '1') {
+                return;
+            }
+
+            const max = parseInt(grid.dataset.max || '0', 10) || 0;
+            if (max <= 0) {
+                return;
+            }
+
+            const field = grid.closest('.fp-exp-field') || root;
+            const status = field ? field.querySelector('[data-fp-cognitive-bias-status]') : null;
+            const searchInput = field ? field.querySelector('[data-fp-cognitive-bias-search]') : null;
+            const emptyState = field ? field.querySelector('[data-fp-cognitive-bias-empty]') : null;
+            const template = status && status.dataset.template
+                ? status.dataset.template
+                : getString('trustBadgesStatus');
+            const maxMessage = status && status.dataset.maxMessage
+                ? status.dataset.maxMessage
+                : getString('trustBadgesMax');
+
+            const checkboxes = Array.from(grid.querySelectorAll('input[type="checkbox"]'));
+            if (!checkboxes.length) {
+                return;
+            }
+
+            const items = checkboxes
+                .map((checkbox) => checkbox.closest('.fp-exp-checkbox-grid__item'))
+                .filter((item) => item instanceof HTMLElement);
+
+            grid.dataset.fpCognitiveBiasInit = '1';
+
+            function renderStatus(count) {
+                if (!status) {
+                    return;
+                }
+
+                let message = template || '';
+                if (message.includes('%1$s')) {
+                    message = message.replace('%1$s', String(count));
+                }
+                if (message.includes('%2$s')) {
+                    message = message.replace('%2$s', String(max));
+                }
+
+                if (!template) {
+                    message = `${count}/${max}`;
+                }
+
+                if (count >= max && maxMessage) {
+                    message = message ? `${message} ${maxMessage}` : maxMessage;
+                }
+
+                status.textContent = message;
+            }
+
+            function updateState() {
+                const selected = checkboxes.filter((checkbox) => checkbox.checked);
+                const count = selected.length;
+                const reached = count >= max;
+
+                checkboxes.forEach((checkbox) => {
+                    const shouldDisable = reached && !checkbox.checked;
+                    checkbox.disabled = shouldDisable;
+                    if (shouldDisable) {
+                        checkbox.setAttribute('aria-disabled', 'true');
+                    } else {
+                        checkbox.removeAttribute('aria-disabled');
+                    }
+
+                    const label = checkbox.closest('label');
+                    if (label) {
+                        label.classList.toggle('is-disabled', shouldDisable);
+                    }
+                });
+
+                grid.classList.toggle('is-max', reached);
+                grid.setAttribute('data-selected-count', String(count));
+                renderStatus(count);
+            }
+
+            function applySearch(rawTerm) {
+                const term = typeof rawTerm === 'string' ? rawTerm.trim().toLowerCase() : '';
+                let visibleCount = 0;
+
+                items.forEach((item) => {
+                    if (!(item instanceof HTMLElement)) {
+                        return;
+                    }
+
+                    const haystack = item.dataset.search || '';
+                    const matches = !term || haystack.includes(term);
+                    item.hidden = !matches;
+
+                    if (matches) {
+                        visibleCount += 1;
+                    }
+                });
+
+                grid.classList.toggle('is-filtered', term.length > 0);
+                grid.classList.toggle('is-empty', visibleCount === 0);
+                grid.setAttribute('data-visible-count', String(visibleCount));
+
+                if (emptyState) {
+                    emptyState.hidden = visibleCount !== 0;
+                }
+            }
+
+            checkboxes.forEach((checkbox) => {
+                checkbox.addEventListener('change', updateState);
+            });
+
+            if (searchInput instanceof HTMLInputElement) {
+                const handleSearch = () => {
+                    applySearch(searchInput.value || '');
+                    updateState();
+                };
+
+                searchInput.addEventListener('input', handleSearch);
+                searchInput.addEventListener('search', handleSearch);
+
+                if (searchInput.value) {
+                    applySearch(searchInput.value);
+                } else {
+                    applySearch('');
+                }
+            } else {
+                applySearch('');
+            }
+
+            updateState();
+        });
+    }
+
     function initRecurrence(root) {
         const toggle = root.querySelector('[data-recurrence-toggle]');
         const settings = root.querySelector('[data-recurrence-settings]');
@@ -1288,6 +1432,7 @@
             initMediaControls(root);
             initRecurrence(root);
             initFormValidation(root);
+            initCognitiveBiasLimiter(root);
         }
 
         initCalendarApp();
