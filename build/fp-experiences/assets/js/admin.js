@@ -227,6 +227,22 @@
                 return;
             }
 
+            function assignTemplateNames(scope) {
+                Array.from(scope.querySelectorAll('[data-name]')).forEach((field) => {
+                    if (field.closest('template')) {
+                        return;
+                    }
+
+                    const templateName = field.getAttribute('data-name');
+                    if (!templateName) {
+                        return;
+                    }
+
+                    field.setAttribute('name', templateName);
+                    field.removeAttribute('data-name');
+                });
+            }
+
             function bindRemoveButtons(scope) {
                 Array.from(scope.querySelectorAll('[data-repeater-remove]')).forEach((button) => {
                     button.addEventListener('click', () => {
@@ -266,6 +282,7 @@
                 if (!newNode) {
                     return;
                 }
+                assignTemplateNames(newNode);
                 bindRemoveButtons(newNode);
                 itemsContainer.appendChild(newNode);
                 initMediaControls(newNode);
@@ -627,9 +644,8 @@
     }
 
     function initRecurrence(root) {
-        const toggle = root.querySelector('[data-recurrence-toggle]');
         const settings = root.querySelector('[data-recurrence-settings]');
-        if (!toggle || !settings) {
+        if (!settings) {
             return;
         }
 
@@ -681,22 +697,12 @@
             return '';
         }
 
-        function toggleSettings() {
-            settings.toggleAttribute('hidden', !toggle.checked);
-            renderFrequencySummary();
-        }
-
         function updateDaysVisibility() {
             const show = getFrequencyValue() === 'weekly';
 
             if (daysContainer) {
                 daysContainer.toggleAttribute('hidden', !show);
             }
-
-            const perSetContainers = Array.from(settings.querySelectorAll('[data-time-set-days]'));
-            perSetContainers.forEach((container) => {
-                container.toggleAttribute('hidden', !show);
-            });
         }
 
         function updateFrequencyNotes() {
@@ -855,13 +861,7 @@
         function collectPayload() {
             clearErrors();
 
-            if (!toggle.checked) {
-                showError(getString('recurrenceMissingTimes'));
-                return null;
-            }
-
             const recurrence = {
-                enabled: true,
                 start_date: getInputValue(settings, 'input[name="fp_exp_availability[recurrence][start_date]"]'),
                 end_date: getInputValue(settings, 'input[name="fp_exp_availability[recurrence][end_date]"]'),
                 frequency: getFrequencyValue() || 'weekly',
@@ -904,17 +904,6 @@
                 const bufferAfterInput = container.querySelector('input[name*="[buffer_after]"]');
                 if (bufferAfterInput) {
                     setData.buffer_after = parseInt(bufferAfterInput.value || '0', 10) || 0;
-                }
-
-                if (recurrence.frequency === 'weekly') {
-                    const daysContainer = container.querySelector('[data-time-set-days]');
-                    if (daysContainer) {
-                        const checkedDays = Array.from(daysContainer.querySelectorAll('input[type="checkbox"]:checked'));
-                        const days = checkedDays.map((input) => input.value).filter(Boolean);
-                        if (days.length) {
-                            setData.days = days;
-                        }
-                    }
                 }
 
                 recurrence.time_sets.push(setData);
@@ -967,11 +956,6 @@
             return response.json();
         }
 
-        toggle.addEventListener('change', () => {
-            toggleSettings();
-        });
-
-        toggleSettings();
         updateDaysVisibility();
         updateFrequencyNotes();
         updateFrequencyCards();

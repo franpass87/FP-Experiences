@@ -44,6 +44,7 @@ use function is_numeric;
 use function number_format_i18n;
 use function sanitize_key;
 use function sanitize_text_field;
+use function sanitize_textarea_field;
 use function trim;
 use function strtolower;
 use function wp_get_attachment_image_src;
@@ -163,6 +164,7 @@ final class ExperienceShortcode extends BaseShortcode
         }
 
         $policy = wp_kses_post((string) get_post_meta($experience_id, '_fp_policy_cancel', true));
+        $children_rules = sanitize_textarea_field((string) get_post_meta($experience_id, '_fp_rules_children', true));
 
         $faq_meta = get_post_meta($experience_id, '_fp_faq', true);
         $faq_items = $this->prepare_faq($faq_meta);
@@ -189,6 +191,16 @@ final class ExperienceShortcode extends BaseShortcode
         $taxonomy_languages = wp_get_post_terms($experience_id, 'fp_exp_language', ['fields' => 'names']);
         $language_term_names = is_array($taxonomy_languages)
             ? array_values(array_filter(array_map('sanitize_text_field', $taxonomy_languages)))
+            : [];
+
+        $taxonomy_durations = wp_get_post_terms($experience_id, 'fp_exp_duration', ['fields' => 'names']);
+        $duration_term_names = is_array($taxonomy_durations)
+            ? array_values(array_filter(array_map('sanitize_text_field', $taxonomy_durations)))
+            : [];
+
+        $taxonomy_family = wp_get_post_terms($experience_id, 'fp_exp_family_friendly', ['fields' => 'names']);
+        $family_term_names = is_array($taxonomy_family)
+            ? array_values(array_filter(array_map('sanitize_text_field', $taxonomy_family)))
             : [];
 
         $schema = $this->build_schema([
@@ -271,6 +283,8 @@ final class ExperienceShortcode extends BaseShortcode
         $overview = [
             'themes' => $theme_names,
             'language_terms' => $language_term_names,
+            'duration_terms' => $duration_term_names,
+            'family_terms' => $family_term_names,
             'language_badges' => $language_badges,
             'short_description' => $short_desc,
             'meeting' => [
@@ -359,6 +373,7 @@ final class ExperienceShortcode extends BaseShortcode
             'what_to_bring' => $what_to_bring,
             'notes' => $notes,
             'policy' => $policy,
+            'children_rules' => $children_rules,
             'faq' => $faq_items,
             'reviews' => $reviews,
             'sections' => $enabled_sections,
@@ -649,6 +664,43 @@ final class ExperienceShortcode extends BaseShortcode
     {
         if (empty($overview)) {
             return false;
+        }
+
+        $string_fields = ['short_description'];
+        foreach ($string_fields as $key) {
+            $value = isset($overview[$key]) ? (string) $overview[$key] : '';
+            if ('' !== trim($value)) {
+                return true;
+            }
+        }
+
+        $array_fields = ['themes', 'language_terms', 'duration_terms', 'family_terms'];
+        foreach ($array_fields as $key) {
+            if (! isset($overview[$key]) || ! is_array($overview[$key])) {
+                continue;
+            }
+
+            foreach ($overview[$key] as $value) {
+                if ('' !== trim((string) $value)) {
+                    return true;
+                }
+            }
+        }
+
+        if (! empty($overview['family_friendly'])) {
+            return true;
+        }
+
+        if (isset($overview['meeting']) && is_array($overview['meeting'])) {
+            foreach (['title', 'address', 'summary'] as $meeting_key) {
+                $meeting_value = isset($overview['meeting'][$meeting_key])
+                    ? (string) $overview['meeting'][$meeting_key]
+                    : '';
+
+                if ('' !== trim($meeting_value)) {
+                    return true;
+                }
+            }
         }
 
         $biases = $overview['cognitive_biases'] ?? [];

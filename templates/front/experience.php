@@ -21,6 +21,7 @@
  * @var string $data_layer
  * @var string $scope_class
  * @var array<string, mixed> $overview
+ * @var string $children_rules
  */
 
 if (! defined('ABSPATH')) {
@@ -75,7 +76,8 @@ $sections = isset($sections) && is_array($sections) ? $sections : [];
 $has_highlights = ! empty($highlights);
 $has_inclusions = ! empty($inclusions) || ! empty($exclusions);
 $has_meeting = isset($meeting_points['primary']) && is_array($meeting_points['primary']);
-$has_extras = ! empty($what_to_bring) || ! empty($notes) || ! empty($policy);
+$children_rules = isset($children_rules) ? trim((string) $children_rules) : '';
+$has_extras = ! empty($what_to_bring) || ! empty($notes) || ! empty($policy) || '' !== $children_rules;
 $has_faq = ! empty($faq);
 $has_reviews = ! empty($reviews);
 
@@ -94,9 +96,22 @@ $gift_addons = isset($gift['addons']) && is_array($gift['addons']) ? $gift['addo
 
 $primary_image = ! empty($gallery) ? $gallery[0] : null;
 $gallery_items = array_values(array_filter(
-    array_slice($gallery, 1),
+    $gallery,
     static fn ($image) => is_array($image) && ! empty($image['url'])
 ));
+
+if ($primary_image) {
+    $primary_image_id = isset($primary_image['id']) ? (int) $primary_image['id'] : 0;
+
+    if ($primary_image_id > 0) {
+        $gallery_items = array_values(array_filter(
+            $gallery_items,
+            static fn ($image) => (int) ($image['id'] ?? 0) !== $primary_image_id
+        ));
+    } elseif (count($gallery_items) > 1) {
+        array_shift($gallery_items);
+    }
+}
 $show_gallery = ! empty($sections['gallery']) && ! empty($gallery_items);
 $hero_fact_badges = array_values(array_filter(
     $badges,
@@ -136,14 +151,51 @@ $overview_biases = isset($overview['cognitive_biases']) && is_array($overview['c
         $overview['cognitive_biases']
     )))
     : [];
+$normalize_overview_list = static function ($values): array {
+    if (! is_array($values)) {
+        return [];
+    }
+
+    $normalized = [];
+    foreach ($values as $value) {
+        if (is_array($value)) {
+            $value = isset($value['label']) ? (string) $value['label'] : '';
+        }
+
+        $value = (string) $value;
+        $value = trim($value);
+
+        if ('' !== $value) {
+            $normalized[] = $value;
+        }
+    }
+
+    return array_values(array_unique($normalized));
+};
 $overview_meeting = isset($overview['meeting']) && is_array($overview['meeting']) ? $overview['meeting'] : [];
 $overview_meeting_title = isset($overview_meeting['title']) ? (string) $overview_meeting['title'] : '';
 $overview_meeting_address = isset($overview_meeting['address']) ? (string) $overview_meeting['address'] : '';
 $overview_meeting_summary = isset($overview_meeting['summary']) ? (string) $overview_meeting['summary'] : '';
+$overview_short_description = isset($overview['short_description']) ? (string) $overview['short_description'] : '';
+$overview_themes = $normalize_overview_list($overview['themes'] ?? []);
+$overview_language_terms = $normalize_overview_list($overview['language_terms'] ?? []);
+$overview_duration_terms = $normalize_overview_list($overview['duration_terms'] ?? []);
+$overview_family_terms = $normalize_overview_list($overview['family_terms'] ?? []);
+$overview_family_friendly = ! empty($overview['family_friendly']);
+$has_overview_detail_lists = ! empty($overview_themes)
+    || ! empty($overview_language_terms)
+    || ! empty($overview_duration_terms)
+    || ! empty($overview_family_terms)
+    || $overview_family_friendly;
+$has_overview_details = '' !== $overview_short_description || $has_overview_detail_lists;
 $overview_has_content = isset($overview_has_content) ? (bool) $overview_has_content : null;
 
 if (null === $overview_has_content) {
-    $overview_has_content = ! empty($overview_biases);
+    $overview_has_content = $has_overview_details
+        || ! empty($overview_biases)
+        || '' !== trim($overview_meeting_title)
+        || '' !== trim($overview_meeting_address)
+        || '' !== trim($overview_meeting_summary);
 }
 
 $has_overview = ! empty($sections['overview']) && $overview_has_content;
@@ -315,6 +367,74 @@ $sticky_price_display = '' !== $price_from_display ? $format_currency($price_fro
                     <header class="fp-exp-section__header fp-exp-overview__header">
                         <h2 class="fp-exp-section__title"><?php esc_html_e('Perché prenotare con noi', 'fp-experiences'); ?></h2>
                     </header>
+
+                    <?php if ($has_overview_details) : ?>
+                        <div class="fp-exp-overview__details">
+                            <?php if ('' !== $overview_short_description) : ?>
+                                <p class="fp-exp-overview__lead"><?php echo esc_html($overview_short_description); ?></p>
+                            <?php endif; ?>
+
+                            <?php if ($has_overview_detail_lists) : ?>
+                                <dl class="fp-exp-overview__grid">
+                                    <?php if (! empty($overview_themes)) : ?>
+                                        <div class="fp-exp-overview__item">
+                                            <dt class="fp-exp-overview__term"><?php esc_html_e('Temi esperienza', 'fp-experiences'); ?></dt>
+                                            <dd class="fp-exp-overview__definition">
+                                                <ul class="fp-exp-overview__list" role="list">
+                                                    <?php foreach ($overview_themes as $theme) : ?>
+                                                        <li class="fp-exp-overview__list-item"><?php echo esc_html($theme); ?></li>
+                                                    <?php endforeach; ?>
+                                                </ul>
+                                            </dd>
+                                        </div>
+                                    <?php endif; ?>
+
+                                    <?php if (! empty($overview_language_terms)) : ?>
+                                        <div class="fp-exp-overview__item">
+                                            <dt class="fp-exp-overview__term"><?php esc_html_e('Lingue per filtri', 'fp-experiences'); ?></dt>
+                                            <dd class="fp-exp-overview__definition">
+                                                <ul class="fp-exp-overview__list" role="list">
+                                                    <?php foreach ($overview_language_terms as $language_term) : ?>
+                                                        <li class="fp-exp-overview__list-item"><?php echo esc_html($language_term); ?></li>
+                                                    <?php endforeach; ?>
+                                                </ul>
+                                            </dd>
+                                        </div>
+                                    <?php endif; ?>
+
+                                    <?php if (! empty($overview_duration_terms)) : ?>
+                                        <div class="fp-exp-overview__item">
+                                            <dt class="fp-exp-overview__term"><?php esc_html_e('Durate aggiuntive', 'fp-experiences'); ?></dt>
+                                            <dd class="fp-exp-overview__definition">
+                                                <ul class="fp-exp-overview__list" role="list">
+                                                    <?php foreach ($overview_duration_terms as $duration_term) : ?>
+                                                        <li class="fp-exp-overview__list-item"><?php echo esc_html($duration_term); ?></li>
+                                                    <?php endforeach; ?>
+                                                </ul>
+                                            </dd>
+                                        </div>
+                                    <?php endif; ?>
+
+                                    <?php if (! empty($overview_family_terms) || $overview_family_friendly) : ?>
+                                        <div class="fp-exp-overview__item">
+                                            <dt class="fp-exp-overview__term"><?php esc_html_e('Family friendly', 'fp-experiences'); ?></dt>
+                                            <dd class="fp-exp-overview__definition">
+                                                <?php if (! empty($overview_family_terms)) : ?>
+                                                    <ul class="fp-exp-overview__list" role="list">
+                                                        <?php foreach ($overview_family_terms as $family_term) : ?>
+                                                            <li class="fp-exp-overview__list-item"><?php echo esc_html($family_term); ?></li>
+                                                        <?php endforeach; ?>
+                                                    </ul>
+                                                <?php else : ?>
+                                                    <span class="fp-exp-overview__value"><?php echo esc_html_x('Yes', 'family friendly indicator', 'fp-experiences'); ?></span>
+                                                <?php endif; ?>
+                                            </dd>
+                                        </div>
+                                    <?php endif; ?>
+                                </dl>
+                            <?php endif; ?>
+                        </div>
+                    <?php endif; ?>
 
                     <?php if (! empty($overview_biases)) : ?>
                         <ul class="fp-exp-overview__trust-list" role="list">
@@ -590,6 +710,13 @@ $sticky_price_display = '' !== $price_from_display ? $format_currency($price_fro
                                     <?php else : ?>
                                         <p class="fp-exp-essentials__copy"><?php echo esc_html($notes); ?></p>
                                     <?php endif; ?>
+                                </article>
+                            <?php endif; ?>
+
+                            <?php if ('' !== $children_rules) : ?>
+                                <article class="fp-exp-essentials__card">
+                                    <h3 class="fp-exp-essentials__title"><?php esc_html_e('Regole bambini', 'fp-experiences'); ?></h3>
+                                    <p class="fp-exp-essentials__copy"><?php echo esc_html($children_rules); ?></p>
                                 </article>
                             <?php endif; ?>
 
