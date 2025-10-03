@@ -662,13 +662,26 @@
             });
         };
 
-        const showGiftSection = ({ focusFirstField = false, scroll = true } = {}) => {
-            const wasHidden = giftSection.hasAttribute('hidden') || giftSection.hidden;
-            if (wasHidden) {
+        const isGiftHidden = () =>
+            giftSection.hasAttribute('hidden') || giftSection.hidden || giftSection.getAttribute('aria-hidden') === 'true';
+
+        const setGiftExpanded = (expanded) => {
+            if (expanded) {
                 giftSection.hidden = false;
+                giftSection.removeAttribute('hidden');
+                giftSection.setAttribute('aria-hidden', 'false');
+            } else {
+                giftSection.hidden = true;
+                giftSection.setAttribute('hidden', '');
+                giftSection.setAttribute('aria-hidden', 'true');
             }
 
-            setToggleExpanded(true);
+            setToggleExpanded(expanded);
+        };
+
+        const showGiftSection = ({ focusFirstField = false, scroll = true } = {}) => {
+            const wasHidden = isGiftHidden();
+            setGiftExpanded(true);
 
             if (giftSection.id) {
                 const giftHash = `#${giftSection.id}`;
@@ -702,8 +715,11 @@
             });
         });
 
-        if (!giftSection.hasAttribute('hidden') && !giftSection.hidden) {
-            setToggleExpanded(true);
+        if (isGiftHidden()) {
+            giftSection.setAttribute('aria-hidden', 'true');
+            setToggleExpanded(false);
+        } else {
+            setGiftExpanded(true);
         }
 
         if (giftSection.id && window.location.hash === `#${giftSection.id}`) {

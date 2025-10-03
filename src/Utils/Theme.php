@@ -9,6 +9,7 @@ use function array_merge;
 use function esc_attr;
 use function get_option;
 use function is_array;
+use function in_array;
 use function sanitize_key;
 use function sprintf;
 use function uniqid;
@@ -45,6 +46,25 @@ final class Theme
     }
 
     /**
+     * @return array<string, string>
+     */
+    public static function default_palette(): array
+    {
+        $presets = self::presets();
+        $preset_key = self::default_preset();
+
+        return $presets[$preset_key]['values'];
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    public static function palette_tokens(): array
+    {
+        return array_keys(self::base_palette());
+    }
+
+    /**
      * @param array<string, mixed> $overrides
      *
      * @return array<string, string>
@@ -66,6 +86,28 @@ final class Theme
         $palette = $presets[$preset_key]['values'];
         $palette['mode'] = $palette['mode'] ?? 'light';
         $palette['preset'] = $preset_key;
+
+        $tokens = self::palette_tokens();
+
+        foreach ($tokens as $token) {
+            if (isset($branding[$token]) && '' !== $branding[$token]) {
+                $palette[$token] = (string) $branding[$token];
+            }
+        }
+
+        if (isset($branding['mode']) && in_array($branding['mode'], ['light', 'dark', 'auto'], true)) {
+            $palette['mode'] = (string) $branding['mode'];
+        }
+
+        foreach ($tokens as $token) {
+            if (isset($overrides[$token]) && '' !== $overrides[$token]) {
+                $palette[$token] = (string) $overrides[$token];
+            }
+        }
+
+        if (isset($overrides['mode']) && in_array($overrides['mode'], ['light', 'dark', 'auto'], true)) {
+            $palette['mode'] = (string) $overrides['mode'];
+        }
 
         return $palette;
     }

@@ -18,6 +18,7 @@ use function add_settings_field;
 use function add_settings_section;
 use function admin_url;
 use function array_filter;
+use function array_key_exists;
 use function array_map;
 use function array_merge;
 use function checked;
@@ -100,6 +101,8 @@ final class SettingsPage
         $active_tab = $this->get_active_tab($tabs);
 
         echo '<div class="wrap fp-exp-settings">';
+        echo '<div class="fp-exp-admin" data-fp-exp-admin>';
+        echo '<div class="fp-exp-admin__body">';
         echo '<h1>' . esc_html__('FP Experiences Settings', 'fp-experiences') . '</h1>';
 
         settings_errors('fp_exp_settings');
@@ -122,6 +125,8 @@ final class SettingsPage
         if ('tools' === $active_tab) {
             $this->render_tools_panel();
             echo '</div>';
+            echo '</div>';
+            echo '</div>';
 
             return;
         }
@@ -129,12 +134,16 @@ final class SettingsPage
         if ('booking' === $active_tab) {
             $this->render_booking_rules_panel();
             echo '</div>';
+            echo '</div>';
+            echo '</div>';
 
             return;
         }
 
         if ('logs' === $active_tab) {
             $this->render_logs_overview();
+            echo '</div>';
+            echo '</div>';
             echo '</div>';
 
             return;
@@ -171,6 +180,8 @@ final class SettingsPage
 
         submit_button();
         echo '</form>';
+        echo '</div>';
+        echo '</div>';
         echo '</div>';
     }
 
@@ -1112,7 +1123,7 @@ final class SettingsPage
 
     public function render_branding_help(): void
     {
-        echo '<p>' . esc_html__('FP Experiences now uses a single default color palette that keeps every experience readable and on brand.', 'fp-experiences') . '</p>';
+        echo '<p>' . esc_html__('Adjust the colors and styling tokens used by FP Experiences widgets to match your branding.', 'fp-experiences') . '</p>';
     }
 
     public function render_listing_help(): void
@@ -1195,12 +1206,127 @@ final class SettingsPage
      */
     private function get_branding_fields(): array
     {
+        $defaults = Theme::default_palette();
+
         return [
             [
                 'key' => 'preset',
                 'type' => 'fixed',
                 'label' => esc_html__('Color palette', 'fp-experiences'),
-                'description' => esc_html__('Brand colors use the default palette and cannot be customized.', 'fp-experiences'),
+            ],
+            [
+                'key' => 'mode',
+                'type' => 'select',
+                'label' => esc_html__('Color mode', 'fp-experiences'),
+                'options' => [
+                    'light' => esc_html__('Light', 'fp-experiences'),
+                    'dark' => esc_html__('Dark', 'fp-experiences'),
+                    'auto' => esc_html__('Match system preference', 'fp-experiences'),
+                ],
+                'default' => $defaults['mode'] ?? 'light',
+                'description' => esc_html__('Choose how widgets adapt to dark themes.', 'fp-experiences'),
+            ],
+            [
+                'key' => 'primary',
+                'type' => 'color',
+                'label' => esc_html__('Primary color', 'fp-experiences'),
+                'default' => $defaults['primary'] ?? '#0B6EFD',
+                'description' => esc_html__('Main call-to-action buttons and highlights.', 'fp-experiences'),
+            ],
+            [
+                'key' => 'secondary',
+                'type' => 'color',
+                'label' => esc_html__('Secondary color', 'fp-experiences'),
+                'default' => $defaults['secondary'] ?? '#1857C4',
+                'description' => esc_html__('Secondary buttons and hover states.', 'fp-experiences'),
+            ],
+            [
+                'key' => 'accent',
+                'type' => 'color',
+                'label' => esc_html__('Accent color', 'fp-experiences'),
+                'default' => $defaults['accent'] ?? '#00A37A',
+                'description' => esc_html__('Used for tags, badges, and decorative elements.', 'fp-experiences'),
+            ],
+            [
+                'key' => 'background',
+                'type' => 'color',
+                'label' => esc_html__('Background color', 'fp-experiences'),
+                'default' => $defaults['background'] ?? '#F7F8FA',
+                'description' => esc_html__('Default page background.', 'fp-experiences'),
+            ],
+            [
+                'key' => 'surface',
+                'type' => 'color',
+                'label' => esc_html__('Surface color', 'fp-experiences'),
+                'default' => $defaults['surface'] ?? '#FFFFFF',
+                'description' => esc_html__('Cards and widget panels.', 'fp-experiences'),
+            ],
+            [
+                'key' => 'text',
+                'type' => 'color',
+                'label' => esc_html__('Text color', 'fp-experiences'),
+                'default' => $defaults['text'] ?? '#0F172A',
+                'description' => esc_html__('Primary body text.', 'fp-experiences'),
+            ],
+            [
+                'key' => 'muted',
+                'type' => 'color',
+                'label' => esc_html__('Muted text color', 'fp-experiences'),
+                'default' => $defaults['muted'] ?? '#64748B',
+                'description' => esc_html__('Captions and subtle labels.', 'fp-experiences'),
+            ],
+            [
+                'key' => 'success',
+                'type' => 'color',
+                'label' => esc_html__('Success color', 'fp-experiences'),
+                'default' => $defaults['success'] ?? '#1B998B',
+                'description' => esc_html__('Confirmation states and success badges.', 'fp-experiences'),
+            ],
+            [
+                'key' => 'warning',
+                'type' => 'color',
+                'label' => esc_html__('Warning color', 'fp-experiences'),
+                'default' => $defaults['warning'] ?? '#F4A261',
+                'description' => esc_html__('Warnings and pending notices.', 'fp-experiences'),
+            ],
+            [
+                'key' => 'danger',
+                'type' => 'color',
+                'label' => esc_html__('Danger color', 'fp-experiences'),
+                'default' => $defaults['danger'] ?? '#C44536',
+                'description' => esc_html__('Errors and destructive actions.', 'fp-experiences'),
+            ],
+            [
+                'key' => 'radius',
+                'type' => 'text',
+                'label' => esc_html__('Border radius', 'fp-experiences'),
+                'default' => $defaults['radius'] ?? '16px',
+                'placeholder' => '16px',
+                'description' => esc_html__('Rounding applied to buttons and cards.', 'fp-experiences'),
+            ],
+            [
+                'key' => 'shadow',
+                'type' => 'text',
+                'label' => esc_html__('Shadow', 'fp-experiences'),
+                'default' => $defaults['shadow'] ?? '0 8px 24px rgba(15,23,42,0.08)',
+                'placeholder' => '0 8px 24px rgba(15,23,42,0.08)',
+                'description' => esc_html__('Box shadow used on floating elements.', 'fp-experiences'),
+            ],
+            [
+                'key' => 'gap',
+                'type' => 'text',
+                'label' => esc_html__('Layout gap', 'fp-experiences'),
+                'default' => $defaults['gap'] ?? '24px',
+                'placeholder' => '24px',
+                'description' => esc_html__('Default vertical spacing between blocks.', 'fp-experiences'),
+            ],
+            [
+                'key' => 'font',
+                'type' => 'text',
+                'label' => esc_html__('Font family', 'fp-experiences'),
+                'default' => $defaults['font'] ?? '',
+                'placeholder' => 'Inter, sans-serif',
+                'description' => esc_html__('Custom font stack for widgets. Leave empty to inherit site fonts.', 'fp-experiences'),
             ],
         ];
     }
@@ -1604,7 +1730,9 @@ final class SettingsPage
         $branding = get_option('fp_exp_branding', []);
         $branding = is_array($branding) ? $branding : [];
         $key = $field['key'];
-        $value = $branding[$key] ?? '';
+        $value = array_key_exists($key, $branding)
+            ? $branding[$key]
+            : ($field['default'] ?? '');
 
         if ('preset' === $key) {
             $value = Theme::default_preset();
@@ -1613,7 +1741,9 @@ final class SettingsPage
         if ('fixed' === ($field['type'] ?? '')) {
             echo '<input type="hidden" name="fp_exp_branding[' . esc_attr($key) . ']" value="' . esc_attr((string) $value) . '" />';
         } elseif ('select' === $field['type']) {
-            echo '<select name="fp_exp_branding[' . esc_attr($key) . ']">';
+            $select_class = $field['input_class'] ?? '';
+            $class_attribute = $select_class ? ' class="' . esc_attr($select_class) . '"' : '';
+            echo '<select name="fp_exp_branding[' . esc_attr($key) . ']"' . $class_attribute . '>';
             foreach ($field['options'] as $option_key => $label) {
                 $selected = ((string) $value === (string) $option_key) ? 'selected' : '';
                 echo '<option value="' . esc_attr((string) $option_key) . '" ' . $selected . '>' . esc_html($label) . '</option>';
@@ -1621,8 +1751,11 @@ final class SettingsPage
             echo '</select>';
         } else {
             $input_type = 'color' === $field['type'] ? 'color' : ('number' === ($field['type'] ?? '') ? 'number' : 'text');
+            $default_class = 'color' === $input_type ? 'fp-exp-settings__color-field' : ('number' === $input_type ? 'small-text' : 'regular-text');
+            $input_class = $field['input_class'] ?? $default_class;
             $placeholder = $field['placeholder'] ?? '';
-            echo '<input type="' . esc_attr($input_type) . '" class="regular-text" name="fp_exp_branding[' . esc_attr($key) . ']" value="' . esc_attr((string) $value) . '" placeholder="' . esc_attr((string) $placeholder) . '" />';
+            $default_value = isset($field['default']) ? ' data-default="' . esc_attr((string) $field['default']) . '"' : '';
+            echo '<input type="' . esc_attr($input_type) . '" class="' . esc_attr($input_class) . '" name="fp_exp_branding[' . esc_attr($key) . ']" value="' . esc_attr((string) $value) . '" placeholder="' . esc_attr((string) $placeholder) . '"' . $default_value . ' />';
         }
 
         if (! empty($field['description'])) {
@@ -1940,17 +2073,78 @@ final class SettingsPage
      */
     public function sanitize_branding($value): array
     {
-        if (! is_array($value)) {
-            return [];
-        }
-
         $presets = Theme::presets();
-        $sanitised = [];
+        $fields = $this->get_branding_fields();
+        $sanitised = [
+            'preset' => Theme::default_preset(),
+        ];
+
+        if (! is_array($value)) {
+            return $sanitised;
+        }
 
         if (! empty($value['preset']) && isset($presets[$value['preset']])) {
             $sanitised['preset'] = sanitize_key((string) $value['preset']);
-        } else {
-            $sanitised['preset'] = Theme::default_preset();
+        }
+
+        foreach ($fields as $field) {
+            $key = $field['key'];
+
+            if ('preset' === $key || ! array_key_exists($key, $value)) {
+                continue;
+            }
+
+            $raw = $value[$key];
+            $type = $field['type'] ?? 'text';
+
+            if ('select' === $type) {
+                $options = $field['options'] ?? [];
+                $option_key = (string) $raw;
+
+                if (! isset($options[$option_key])) {
+                    continue;
+                }
+
+                if (isset($field['default']) && (string) $field['default'] === $option_key) {
+                    continue;
+                }
+
+                $sanitised[$key] = sanitize_key($option_key);
+
+                continue;
+            }
+
+            if ('color' === $type) {
+                $color = sanitize_hex_color((string) $raw);
+
+                if (! $color) {
+                    continue;
+                }
+
+                if (isset($field['default']) && strtolower($color) === strtolower((string) $field['default'])) {
+                    continue;
+                }
+
+                $sanitised[$key] = $color;
+
+                continue;
+            }
+
+            if ('' === (string) $raw) {
+                continue;
+            }
+
+            $text = sanitize_text_field((string) $raw);
+
+            if ('' === $text) {
+                continue;
+            }
+
+            if (isset($field['default']) && $text === (string) $field['default']) {
+                continue;
+            }
+
+            $sanitised[$key] = $text;
         }
 
         return $sanitised;

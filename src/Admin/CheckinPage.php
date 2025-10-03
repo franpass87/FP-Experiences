@@ -94,20 +94,29 @@ final class CheckinPage
         }
 
         $notice = get_transient(self::NOTICE_KEY);
+        $notice_html = '';
         if (is_array($notice) && ! empty($notice['message'])) {
             $class = 'notice notice-' . sanitize_key($notice['type'] ?? 'success');
-            echo '<div class="' . esc_attr($class) . '"><p>' . esc_html((string) $notice['message']) . '</p></div>';
+            $notice_html = '<div class="' . esc_attr($class) . '"><p>' . esc_html((string) $notice['message']) . '</p></div>';
             delete_transient(self::NOTICE_KEY);
         }
 
         $rows = $this->get_upcoming_reservations();
 
         echo '<div class="wrap fp-exp-checkin">';
+        echo '<div class="fp-exp-admin" data-fp-exp-admin>';
+        echo '<div class="fp-exp-admin__body">';
         echo '<h1>' . esc_html__('Console check-in', 'fp-experiences') . '</h1>';
         echo '<p>' . esc_html__('Segna gli ospiti al loro arrivo e controlla le prenotazioni imminenti.', 'fp-experiences') . '</p>';
 
+        if ($notice_html) {
+            echo $notice_html; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+        }
+
         if (! $rows) {
             echo '<p>' . esc_html__('Nessuna prenotazione in arrivo nelle prossime 48 ore.', 'fp-experiences') . '</p>';
+            echo '</div>';
+            echo '</div>';
             echo '</div>';
 
             return;
@@ -146,6 +155,8 @@ final class CheckinPage
         }
 
         echo '</tbody></table>';
+        echo '</div>';
+        echo '</div>';
         echo '</div>';
     }
 

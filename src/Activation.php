@@ -212,6 +212,14 @@ final class Activation
                 continue;
             }
 
+            if ($role->has_cap('manage_woocommerce')) {
+                foreach (['fp_exp_manage', 'fp_exp_operate', 'fp_exp_guide'] as $capability) {
+                    if (! $role->has_cap($capability)) {
+                        $role->add_cap($capability);
+                    }
+                }
+            }
+
             foreach ($roles as $role_definition) {
                 $primary_capability = $role_definition['primary_capability'];
 

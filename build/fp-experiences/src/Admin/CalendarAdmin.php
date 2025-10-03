@@ -136,6 +136,8 @@ final class CalendarAdmin
         }
 
         echo '<div class="wrap fp-exp-calendar-admin">';
+        echo '<div class="fp-exp-admin" data-fp-exp-admin>';
+        echo '<div class="fp-exp-admin__body">';
         echo '<h1>' . esc_html__('FP Experiences — Operations', 'fp-experiences') . '</h1>';
         echo '<h2 class="nav-tab-wrapper">';
         $tabs = [
@@ -166,6 +168,8 @@ final class CalendarAdmin
             $this->render_calendar();
         }
 
+        echo '</div>';
+        echo '</div>';
         echo '</div>';
     }
 

@@ -101,16 +101,12 @@ $gallery_items = array_values(array_filter(
 ));
 
 if ($primary_image) {
-    $primary_image_id = isset($primary_image['id']) ? (int) $primary_image['id'] : 0;
-
-    if ($primary_image_id > 0) {
-        $gallery_items = array_values(array_filter(
-            $gallery_items,
-            static fn ($image) => (int) ($image['id'] ?? 0) !== $primary_image_id
-        ));
-    } elseif (count($gallery_items) > 1) {
-        array_shift($gallery_items);
-    }
+    // Remove the primary image from gallery_items by comparing 'url'
+    $primary_image_url = isset($primary_image['url']) ? (string) $primary_image['url'] : '';
+    $gallery_items = array_values(array_filter(
+        $gallery_items,
+        static fn ($image) => isset($image['url']) && $image['url'] !== $primary_image_url
+    ));
 }
 $show_gallery = ! empty($sections['gallery']) && ! empty($gallery_items);
 $hero_fact_badges = array_values(array_filter(
@@ -172,6 +168,55 @@ $normalize_overview_list = static function ($values): array {
 
     return array_values(array_unique($normalized));
 };
+$overview_term_icon = static function (string $term): string {
+    switch ($term) {
+        case 'themes':
+            return '<svg viewBox="0 0 24 24" role="img" aria-hidden="true" focusable="false"><path fill="currentColor" d="M3 5.5A2.5 2.5 0 0 1 5.5 3h6.59a2.5 2.5 0 0 1 1.77.73l6.41 6.41a2.5 2.5 0 0 1 0 3.54l-6.59 6.59a2.12 2.12 0 0 1-3 0L3.73 13.87A2.5 2.5 0 0 1 3 12.1Zm6.75 1.75a1.75 1.75 0 1 0 1.75-1.75 1.75 1.75 0 0 0-1.75 1.75Z"/></svg>';
+        case 'languages':
+            return '<svg viewBox="0 0 24 24" role="img" aria-hidden="true" focusable="false"><path fill="currentColor" d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Zm5.33 9h-1.83a19.46 19.46 0 0 0-.87-4 8 8 0 0 1 2.7 4ZM12 4a17.43 17.43 0 0 1 2.44 7H9.56A17.43 17.43 0 0 1 12 4ZM8.37 6.91a19.46 19.46 0 0 0-.87 4H5.67a8 8 0 0 1 2.7-4ZM4 12h3.5a19.43 19.43 0 0 0 .88 4H6.33A8 8 0 0 1 4 12Zm2.37 6h2.64a21.13 21.13 0 0 0 1.87 3.38A8 8 0 0 1 6.37 18Zm5.63 3a19.1 19.1 0 0 1-2.55-5h5.1A19.1 19.1 0 0 1 12 21Zm2.69.38A21.13 21.13 0 0 0 15 18h2.64a8 8 0 0 1-3 3.38ZM17.67 16H15.62a19.43 19.43 0 0 0 .88-4H20a8 8 0 0 1-2.33 4Z"/></svg>';
+        case 'duration':
+            return '<svg viewBox="0 0 24 24" role="img" aria-hidden="true" focusable="false"><path fill="currentColor" d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Zm1 11.59L16.12 16l-1.41 1.41L11.88 14V7h2.12Z"/></svg>';
+        case 'family':
+            return '<svg viewBox="0 0 24 24" role="img" aria-hidden="true" focusable="false"><path fill="currentColor" d="M12 21.35 10.55 20c-4.2-3.8-7-6.3-7-9.5A4.5 4.5 0 0 1 8 6a4.49 4.49 0 0 1 4 2.35A4.49 4.49 0 0 1 16 6a4.5 4.5 0 0 1 4.5 4.5c0 3.2-2.8 5.7-7 9.5Z"/></svg>';
+        default:
+            return '<svg viewBox="0 0 24 24" role="img" aria-hidden="true" focusable="false"><path fill="currentColor" d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Zm0 3a7 7 0 1 1-7 7 7 7 0 0 1 7-7Z"/></svg>';
+    }
+};
+
+$normalize_language_key = static function (string $label): string {
+    $label = remove_accents($label);
+    $label = trim((string) $label);
+    $label = strtolower($label);
+    $label = preg_replace('/[^a-z0-9]+/u', '-', $label);
+
+    return trim((string) $label, '-');
+};
+
+$language_flag_icons = [
+    'italiano' => '<svg viewBox="0 0 60 40" role="img" aria-hidden="true" focusable="false"><rect width="20" height="40" fill="#009246"/><rect x="20" width="20" height="40" fill="#ffffff"/><rect x="40" width="20" height="40" fill="#ce2b37"/></svg>',
+    'italian' => '<svg viewBox="0 0 60 40" role="img" aria-hidden="true" focusable="false"><rect width="20" height="40" fill="#009246"/><rect x="20" width="20" height="40" fill="#ffffff"/><rect x="40" width="20" height="40" fill="#ce2b37"/></svg>',
+    'inglese' => '<svg viewBox="0 0 60 40" role="img" aria-hidden="true" focusable="false"><rect width="60" height="40" fill="#012169"/><path fill="#ffffff" d="M0 15h25V0h10v15h25v10H35v15H25V25H0Z"/><path fill="#c8102e" d="M0 17h27V0h6v17h27v6H33v17h-6V23H0Z"/><path fill="#ffffff" d="m0 4.5 17 11.5h-6L0 7.2Zm60 0v2.7L43 16h-6Zm0 31.5-17-11.5h6l11 7.2ZM0 36l17-11.5h6L0 37.5Z"/><path fill="#c8102e" d="m0 1.8 20.4 13.2h-4.5L0 4.5Zm60 0v2.7L39.6 15h4.5ZM60 38.2 39.6 25h4.5L60 35.5ZM0 38.2l20.4-13.2h-4.5L0 35.5Z"/></svg>',
+    'english' => '<svg viewBox="0 0 60 40" role="img" aria-hidden="true" focusable="false"><rect width="60" height="40" fill="#012169"/><path fill="#ffffff" d="M0 15h25V0h10v15h25v10H35v15H25V25H0Z"/><path fill="#c8102e" d="M0 17h27V0h6v17h27v6H33v17h-6V23H0Z"/><path fill="#ffffff" d="m0 4.5 17 11.5h-6L0 7.2Zm60 0v2.7L43 16h-6Zm0 31.5-17-11.5h6l11 7.2ZM0 36l17-11.5h6L0 37.5Z"/><path fill="#c8102e" d="m0 1.8 20.4 13.2h-4.5L0 4.5Zm60 0v2.7L39.6 15h4.5ZM60 38.2 39.6 25h4.5L60 35.5ZM0 38.2l20.4-13.2h-4.5L0 35.5Z"/></svg>',
+    'francese' => '<svg viewBox="0 0 60 40" role="img" aria-hidden="true" focusable="false"><rect width="20" height="40" fill="#0055a4"/><rect x="20" width="20" height="40" fill="#ffffff"/><rect x="40" width="20" height="40" fill="#ef4135"/></svg>',
+    'french' => '<svg viewBox="0 0 60 40" role="img" aria-hidden="true" focusable="false"><rect width="20" height="40" fill="#0055a4"/><rect x="20" width="20" height="40" fill="#ffffff"/><rect x="40" width="20" height="40" fill="#ef4135"/></svg>',
+    'spagnolo' => '<svg viewBox="0 0 60 40" role="img" aria-hidden="true" focusable="false"><rect width="60" height="40" fill="#c60b1e"/><rect y="12" width="60" height="16" fill="#ffc400"/></svg>',
+    'spanish' => '<svg viewBox="0 0 60 40" role="img" aria-hidden="true" focusable="false"><rect width="60" height="40" fill="#c60b1e"/><rect y="12" width="60" height="16" fill="#ffc400"/></svg>',
+    'tedesco' => '<svg viewBox="0 0 60 40" role="img" aria-hidden="true" focusable="false"><rect width="60" height="40" fill="#ffce00"/><rect y="13.3" width="60" height="13.4" fill="#dd0000"/><rect width="60" height="13.3" fill="#000000"/></svg>',
+    'german' => '<svg viewBox="0 0 60 40" role="img" aria-hidden="true" focusable="false"><rect width="60" height="40" fill="#ffce00"/><rect y="13.3" width="60" height="13.4" fill="#dd0000"/><rect width="60" height="13.3" fill="#000000"/></svg>',
+    'portoghese' => '<svg viewBox="0 0 60 40" role="img" aria-hidden="true" focusable="false"><rect width="24" height="40" fill="#006600"/><rect x="24" width="36" height="40" fill="#ff0000"/><circle cx="24" cy="20" r="8" fill="#ffcc29"/></svg>',
+    'portuguese' => '<svg viewBox="0 0 60 40" role="img" aria-hidden="true" focusable="false"><rect width="24" height="40" fill="#006600"/><rect x="24" width="36" height="40" fill="#ff0000"/><circle cx="24" cy="20" r="8" fill="#ffcc29"/></svg>',
+];
+
+$get_language_flag_icon = static function (string $label) use ($language_flag_icons, $normalize_language_key): string {
+    $key = $normalize_language_key($label);
+
+    if (isset($language_flag_icons[$key])) {
+        return $language_flag_icons[$key];
+    }
+
+    return '<svg viewBox="0 0 60 40" role="img" aria-hidden="true" focusable="false"><rect width="60" height="40" rx="4" fill="#0f172a"/><path fill="#38bdf8" d="M12 20a18 18 0 0 1 36 0 18 18 0 0 1-36 0Z" opacity="0.3"/><path fill="#38bdf8" d="M24 20a6 6 0 1 1 6 6 6 6 0 0 1-6-6Z"/></svg>';
+};
+
 $overview_meeting = isset($overview['meeting']) && is_array($overview['meeting']) ? $overview['meeting'] : [];
 $overview_meeting_title = isset($overview_meeting['title']) ? (string) $overview_meeting['title'] : '';
 $overview_meeting_address = isset($overview_meeting['address']) ? (string) $overview_meeting['address'] : '';
@@ -236,58 +281,58 @@ $sticky_price_display = '' !== $price_from_display ? $format_currency($price_fro
         </script>
     <?php endif; ?>
 
-    <div class="fp-grid fp-exp-page__layout" data-fp-page>
-        <main class="fp-main fp-exp-page__main">
-            <?php if (! empty($sections['hero'])) : ?>
-                <section class="fp-exp-section fp-exp-hero" id="fp-exp-section-hero" data-fp-section="hero">
-                    <div class="fp-exp-hero__layout">
-                        <div class="fp-exp-hero__primary">
-                            <?php if ($primary_image) : ?>
-                                <figure class="fp-exp-hero__media">
-                                    <img
-                                        class="fp-exp-hero__image"
-                                        src="<?php echo esc_url($primary_image['url']); ?>"
-                                        <?php if (! empty($primary_image['srcset'])) : ?>srcset="<?php echo esc_attr($primary_image['srcset']); ?>"<?php endif; ?>
-                                        sizes="(min-width: 1280px) 640px, (min-width: 768px) 60vw, 100vw"
-                                        <?php if (! empty($primary_image['width'])) : ?>width="<?php echo esc_attr((string) $primary_image['width']); ?>"<?php endif; ?>
-                                        <?php if (! empty($primary_image['height'])) : ?>height="<?php echo esc_attr((string) $primary_image['height']); ?>"<?php endif; ?>
-                                        alt="<?php echo esc_attr($experience['title']); ?>"
-                                        loading="eager"
-                                        decoding="async"
-                                        fetchpriority="high"
-                                    />
-                                </figure>
-                            <?php else : ?>
-                                <div class="fp-exp-hero__media fp-exp-hero__media--placeholder" aria-hidden="true">
-                                    <span></span>
-                                </div>
-                            <?php endif; ?>
-
-                            <div class="fp-exp-hero__content">
-                                <header class="fp-exp-hero__header">
-                                    <h1 class="fp-exp-hero__title"><?php echo esc_html($experience['title']); ?></h1>
-                                    <?php if ('' !== $hero_summary) : ?>
-                                        <p class="fp-exp-hero__summary"><?php echo esc_html($hero_summary); ?></p>
-                                    <?php endif; ?>
-                                </header>
-
-                                <?php if (! empty($hero_highlights)) : ?>
-                                    <ul class="fp-exp-hero__highlights" role="list">
-                                        <?php foreach ($hero_highlights as $highlight) : ?>
-                                            <li class="fp-exp-hero__highlight">
-                                                <span class="fp-exp-hero__highlight-icon" aria-hidden="true">
-                                                    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                                                        <path fill="currentColor" d="M9.75 18.25 3.5 12l1.41-1.41 4.84 4.84 9.34-9.34L20.5 7.5Z" />
-                                                    </svg>
-                                                </span>
-                                                <span class="fp-exp-hero__highlight-text"><?php echo esc_html($highlight); ?></span>
-                                            </li>
-                                        <?php endforeach; ?>
-                                    </ul>
-                                <?php endif; ?>
+    <?php if (! empty($sections['hero'])) : ?>
+        <section class="fp-exp-section fp-exp-hero" id="fp-exp-section-hero" data-fp-section="hero">
+            <div class="fp-exp-hero__container">
+                <div class="fp-exp-hero__layout">
+                    <div class="fp-exp-hero__primary">
+                        <?php if ($primary_image) : ?>
+                            <figure class="fp-exp-hero__media">
+                                <img
+                                    class="fp-exp-hero__image"
+                                    src="<?php echo esc_url($primary_image['url']); ?>"
+                                    <?php if (! empty($primary_image['srcset'])) : ?>srcset="<?php echo esc_attr($primary_image['srcset']); ?>"<?php endif; ?>
+                                    sizes="(min-width: 1280px) 640px, (min-width: 768px) 60vw, 100vw"
+                                    <?php if (! empty($primary_image['width'])) : ?>width="<?php echo esc_attr((string) $primary_image['width']); ?>"<?php endif; ?>
+                                    <?php if (! empty($primary_image['height'])) : ?>height="<?php echo esc_attr((string) $primary_image['height']); ?>"<?php endif; ?>
+                                    alt="<?php echo esc_attr($experience['title']); ?>"
+                                    loading="eager"
+                                    decoding="async"
+                                    fetchpriority="high"
+                                />
+                            </figure>
+                        <?php else : ?>
+                            <div class="fp-exp-hero__media fp-exp-hero__media--placeholder" aria-hidden="true">
+                                <span></span>
                             </div>
-                        </div>
+                        <?php endif; ?>
 
+                        <div class="fp-exp-hero__content">
+                            <header class="fp-exp-hero__header">
+                                <h1 class="fp-exp-hero__title"><?php echo esc_html($experience['title']); ?></h1>
+                                <?php if ('' !== $hero_summary) : ?>
+                                    <p class="fp-exp-hero__summary"><?php echo esc_html($hero_summary); ?></p>
+                                <?php endif; ?>
+                            </header>
+
+                            <?php if (! empty($hero_highlights)) : ?>
+                                <ul class="fp-exp-hero__highlights" role="list">
+                                    <?php foreach ($hero_highlights as $highlight) : ?>
+                                        <li class="fp-exp-hero__highlight">
+                                            <span class="fp-exp-hero__highlight-icon" aria-hidden="true">
+                                                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                                                    <path fill="currentColor" d="M9.75 18.25 3.5 12l1.41-1.41 4.84 4.84 9.34-9.34L20.5 7.5Z" />
+                                                </svg>
+                                            </span>
+                                            <span class="fp-exp-hero__highlight-text"><?php echo esc_html($highlight); ?></span>
+                                        </li>
+                                    <?php endforeach; ?>
+                                </ul>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+
+                    <?php if ('none' === $sidebar_position || empty($widget_html)) : ?>
                         <aside class="fp-exp-hero__sidebar">
                             <div class="fp-exp-hero__card">
                                 <?php if ('' !== $sticky_price_display) : ?>
@@ -335,10 +380,14 @@ $sticky_price_display = '' !== $price_from_display ? $format_currency($price_fro
                                 <?php endif; ?>
                             </div>
                         </aside>
-                    </div>
-                </section>
-            <?php endif; ?>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </section>
+    <?php endif; ?>
 
+    <div class="fp-grid fp-exp-page__layout" data-fp-page>
+        <main class="fp-main fp-exp-page__main">
             <?php if ($gift_enabled) : ?>
                 <section class="fp-exp-section fp-exp-gift" id="fp-exp-hero-gift" data-fp-section="hero-gift">
                     <div class="fp-exp-gift__body">
@@ -376,7 +425,10 @@ $sticky_price_display = '' !== $price_from_display ? $format_currency($price_fro
                                 <dl class="fp-exp-overview__grid">
                                     <?php if (! empty($overview_themes)) : ?>
                                         <div class="fp-exp-overview__item">
-                                            <dt class="fp-exp-overview__term"><?php esc_html_e('Temi esperienza', 'fp-experiences'); ?></dt>
+                                            <dt class="fp-exp-overview__term">
+                                                <span class="fp-exp-overview__term-icon" aria-hidden="true"><?php echo $overview_term_icon('themes'); ?></span>
+                                                <span class="fp-exp-overview__term-label"><?php esc_html_e('Temi esperienza', 'fp-experiences'); ?></span>
+                                            </dt>
                                             <dd class="fp-exp-overview__definition">
                                                 <ul class="fp-exp-overview__list" role="list">
                                                     <?php foreach ($overview_themes as $theme) : ?>
@@ -389,11 +441,17 @@ $sticky_price_display = '' !== $price_from_display ? $format_currency($price_fro
 
                                     <?php if (! empty($overview_language_terms)) : ?>
                                         <div class="fp-exp-overview__item">
-                                            <dt class="fp-exp-overview__term"><?php esc_html_e('Lingue per filtri', 'fp-experiences'); ?></dt>
+                                            <dt class="fp-exp-overview__term">
+                                                <span class="fp-exp-overview__term-icon" aria-hidden="true"><?php echo $overview_term_icon('languages'); ?></span>
+                                                <span class="fp-exp-overview__term-label"><?php esc_html_e('Lingue per filtri', 'fp-experiences'); ?></span>
+                                            </dt>
                                             <dd class="fp-exp-overview__definition">
                                                 <ul class="fp-exp-overview__list" role="list">
                                                     <?php foreach ($overview_language_terms as $language_term) : ?>
-                                                        <li class="fp-exp-overview__list-item"><?php echo esc_html($language_term); ?></li>
+                                                        <li class="fp-exp-overview__list-item fp-exp-overview__list-item--with-icon">
+                                                            <span class="fp-exp-overview__flag" aria-hidden="true"><?php echo $get_language_flag_icon($language_term); ?></span>
+                                                            <span class="fp-exp-overview__list-text"><?php echo esc_html($language_term); ?></span>
+                                                        </li>
                                                     <?php endforeach; ?>
                                                 </ul>
                                             </dd>
@@ -402,7 +460,10 @@ $sticky_price_display = '' !== $price_from_display ? $format_currency($price_fro
 
                                     <?php if (! empty($overview_duration_terms)) : ?>
                                         <div class="fp-exp-overview__item">
-                                            <dt class="fp-exp-overview__term"><?php esc_html_e('Durate aggiuntive', 'fp-experiences'); ?></dt>
+                                            <dt class="fp-exp-overview__term">
+                                                <span class="fp-exp-overview__term-icon" aria-hidden="true"><?php echo $overview_term_icon('duration'); ?></span>
+                                                <span class="fp-exp-overview__term-label"><?php esc_html_e('Durate aggiuntive', 'fp-experiences'); ?></span>
+                                            </dt>
                                             <dd class="fp-exp-overview__definition">
                                                 <ul class="fp-exp-overview__list" role="list">
                                                     <?php foreach ($overview_duration_terms as $duration_term) : ?>
@@ -415,7 +476,10 @@ $sticky_price_display = '' !== $price_from_display ? $format_currency($price_fro
 
                                     <?php if (! empty($overview_family_terms) || $overview_family_friendly) : ?>
                                         <div class="fp-exp-overview__item">
-                                            <dt class="fp-exp-overview__term"><?php esc_html_e('Family friendly', 'fp-experiences'); ?></dt>
+                                            <dt class="fp-exp-overview__term">
+                                                <span class="fp-exp-overview__term-icon" aria-hidden="true"><?php echo $overview_term_icon('family'); ?></span>
+                                                <span class="fp-exp-overview__term-label"><?php esc_html_e('Family friendly', 'fp-experiences'); ?></span>
+                                            </dt>
                                             <dd class="fp-exp-overview__definition">
                                                 <?php if (! empty($overview_family_terms)) : ?>
                                                     <ul class="fp-exp-overview__list" role="list">
@@ -522,6 +586,7 @@ $sticky_price_display = '' !== $price_from_display ? $format_currency($price_fro
                     id="fp-exp-gift"
                     data-fp-gift
                     data-fp-gift-config="<?php echo esc_attr(wp_json_encode($gift_config)); ?>"
+                    aria-hidden="true"
                     hidden
                 >
                     <div class="fp-gift__inner">

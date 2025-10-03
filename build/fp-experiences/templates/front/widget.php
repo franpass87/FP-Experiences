@@ -29,7 +29,21 @@ $privacy_id = $scope_class . '-consent-privacy';
 $display_context = isset($display_context) ? (string) $display_context : '';
 $config_version = isset($config_version) ? (string) $config_version : '';
 
+$slots = is_array($slots) ? $slots : [];
+$tickets = is_array($tickets) ? $tickets : [];
+$addons = is_array($addons) ? $addons : [];
 $calendar = is_array($calendar) ? $calendar : [];
+$behavior_defaults = [
+    'sticky' => false,
+    'show_calendar' => false,
+];
+$behavior = is_array($behavior) ? array_merge($behavior_defaults, $behavior) : $behavior_defaults;
+$rtb_defaults = [
+    'enabled' => false,
+    'mode' => 'off',
+    'forced' => false,
+];
+$rtb = is_array($rtb) ? array_merge($rtb_defaults, $rtb) : $rtb_defaults;
 
 $dataset = [
     'experienceId' => (int) $experience['id'],
@@ -53,6 +67,98 @@ $rtb_forced = ! empty($rtb['forced']);
 $rtb_submit_label = 'pay_later' === $rtb_mode
     ? esc_html__('Send approval with payment link', 'fp-experiences')
     : esc_html__('Send booking request', 'fp-experiences');
+
+$currency_code = isset($currency) && is_string($currency) ? $currency : (string) get_option('woocommerce_currency', 'EUR');
+$currency_symbol = function_exists('get_woocommerce_currency_symbol')
+    ? get_woocommerce_currency_symbol($currency_code)
+    : $currency_code;
+$currency_position = get_option('woocommerce_currency_pos', 'left');
+$format_currency = static function (string $amount) use ($currency_symbol, $currency_position): string {
+    switch ($currency_position) {
+        case 'left_space':
+            return $currency_symbol . ' ' . $amount;
+        case 'right':
+            return $amount . $currency_symbol;
+        case 'right_space':
+            return $amount . ' ' . $currency_symbol;
+        case 'left':
+        default:
+            return $currency_symbol . $amount;
+    }
+};
+$cta_label = esc_html__('Controlla disponibilità', 'fp-experiences');
+
+$language_badges = isset($experience['language_badges']) && is_array($experience['language_badges'])
+    ? array_values(array_filter(array_map(
+        static function ($language) {
+            if (! is_array($language)) {
+                return null;
+            }
+
+            $label = isset($language['label']) ? trim((string) $language['label']) : '';
+            $sprite = isset($language['sprite']) ? trim((string) $language['sprite']) : '';
+            $aria_label = isset($language['aria_label']) ? (string) $language['aria_label'] : $label;
+
+            if ('' === $label || '' === $sprite) {
+                return null;
+            }
+
+            return [
+                'label' => $label,
+                'sprite' => $sprite,
+                'aria_label' => $aria_label,
+            ];
+        },
+        $experience['language_badges']
+    )))
+    : [];
+
+$duration_minutes = isset($experience['duration']) ? (int) $experience['duration'] : 0;
+$duration_label = '';
+
+if ($duration_minutes > 0) {
+    $hours = (int) floor($duration_minutes / 60);
+    $minutes = $duration_minutes % 60;
+    $duration_label = $hours > 0
+        ? sprintf(esc_html__('%dh %02dm', 'fp-experiences'), $hours, $minutes)
+        : sprintf(esc_html__('%d minutes', 'fp-experiences'), $minutes);
+}
+
+$price_from_value = null;
+
+foreach ($slots as $slot) {
+    if (! is_array($slot)) {
+        continue;
+    }
+
+    $price = isset($slot['price_from']) ? (float) $slot['price_from'] : 0.0;
+
+    if ($price <= 0) {
+        continue;
+    }
+
+    $price_from_value = null === $price_from_value ? $price : min($price_from_value, $price);
+}
+
+if (null === $price_from_value) {
+    foreach ($tickets as $ticket) {
+        if (! is_array($ticket)) {
+            continue;
+        }
+
+        $price = isset($ticket['price']) ? (float) $ticket['price'] : 0.0;
+
+        if ($price <= 0) {
+            continue;
+        }
+
+        $price_from_value = null === $price_from_value ? $price : min($price_from_value, $price);
+    }
+}
+
+$price_from_display = null !== $price_from_value && $price_from_value > 0
+    ? $format_currency(number_format_i18n($price_from_value, 0))
+    : '';
 ?>
 <div
     class="<?php echo $container_class; ?>"
@@ -68,6 +174,65 @@ $rtb_submit_label = 'pay_later' === $rtb_mode
         id="<?php echo esc_attr($dialog_id); ?>"
         <?php if ($behavior['sticky']) : ?>role="region"<?php else : ?>role="group"<?php endif; ?>
     >
+        <div class="fp-exp-hero__card fp-exp-widget__hero-card">
+            <?php if ('' !== $price_from_display) : ?>
+                <div class="fp-exp-hero__price" data-fp-scroll-target="calendar">
+                    <span class="fp-exp-hero__price-label"><?php esc_html_e('From', 'fp-experiences'); ?></span>
+                    <span class="fp-exp-hero__price-value"><?php echo esc_html($price_from_display); ?></span>
+                </div>
+            <?php endif; ?>
+
+            <div class="fp-exp-hero__actions">
+                <button
+                    type="button"
+                    class="fp-exp-button fp-exp-button--primary"
+                    data-fp-scroll="calendar"
+                    data-fp-cta="hero"
+                >
+                    <?php echo $cta_label; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+                </button>
+            </div>
+
+            <?php if (! empty($language_badges) || '' !== $duration_label) : ?>
+                <ul class="fp-exp-hero__facts fp-exp-hero__facts--widget" role="list">
+                    <?php if (! empty($language_badges)) : ?>
+                        <li class="fp-exp-hero__fact fp-exp-hero__fact--languages">
+                            <span class="fp-exp-hero__fact-icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" role="img" aria-hidden="true"><path fill="currentColor" d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Zm5.33 9h-1.83a19.46 19.46 0 0 0-.87-4 8 8 0 0 1 2.7 4ZM12 4a17.43 17.43 0 0 1 2.44 7H9.56A17.43 17.43 0 0 1 12 4ZM8.37 6.91a19.46 19.46 0 0 0-.87 4H5.67a8 8 0 0 1 2.7-4ZM4 12h3.5a19.43 19.43 0 0 0 .88 4H6.33A8 8 0 0 1 4 12Zm2.37 6h2.64a21.13 21.13 0 0 0 1.87 3.38A8 8 0 0 1 6.37 18Zm5.63 3a19.1 19.1 0 0 1-2.55-5h5.1A19.1 19.1 0 0 1 12 21Zm2.69.38A21.13 21.13 0 0 0 15 18h2.64a8 8 0 0 1-3 3.38ZM17.67 16H15.62a19.43 19.43 0 0 0 .88-4H20a8 8 0 0 1-2.33 4Z"/></svg>
+                            </span>
+                            <div class="fp-exp-hero__fact-content">
+                                <span class="fp-exp-hero__fact-label"><?php esc_html_e('Available languages', 'fp-experiences'); ?></span>
+                                <ul class="fp-exp-hero__language-list" role="list">
+                                    <?php foreach ($language_badges as $language) : ?>
+                                        <li class="fp-exp-hero__language">
+                                            <span class="fp-exp-hero__language-flag" aria-hidden="true">
+                                                <svg viewBox="0 0 60 40" role="img" aria-hidden="true" focusable="false">
+                                                    <use xlink:href="<?php echo esc_attr($language_sprite . '#' . $language['sprite']); ?>" href="<?php echo esc_attr($language_sprite . '#' . $language['sprite']); ?>"></use>
+                                                </svg>
+                                            </span>
+                                            <span class="fp-exp-hero__language-label"><?php echo esc_html($language['label']); ?></span>
+                                        </li>
+                                    <?php endforeach; ?>
+                                </ul>
+                            </div>
+                        </li>
+                    <?php endif; ?>
+
+                    <?php if ('' !== $duration_label) : ?>
+                        <li class="fp-exp-hero__fact fp-exp-hero__fact--duration">
+                            <span class="fp-exp-hero__fact-icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" role="img" aria-hidden="true"><path fill="currentColor" d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Zm1 10.59 2.12 2.12-1.41 1.41-2.83-2.83V7h2.12Z"/></svg>
+                            </span>
+                            <div class="fp-exp-hero__fact-content">
+                                <span class="fp-exp-hero__fact-label"><?php esc_html_e('Duration', 'fp-experiences'); ?></span>
+                                <span class="fp-exp-hero__fact-value"><?php echo esc_html($duration_label); ?></span>
+                            </div>
+                        </li>
+                    <?php endif; ?>
+                </ul>
+            <?php endif; ?>
+        </div>
+
         <ol class="fp-exp-widget__steps">
             <li class="fp-exp-step fp-exp-step--dates" data-fp-step="dates" data-fp-section="calendar">
                 <header>
@@ -76,11 +241,15 @@ $rtb_submit_label = 'pay_later' === $rtb_mode
                 </header>
                 <div class="fp-exp-step__content">
                     <div class="fp-exp-calendar" data-show-calendar="<?php echo esc_attr($behavior['show_calendar'] ? '1' : '0'); ?>">
-                        <?php foreach ($calendar as $month_key => $month_data) : ?>
+                        <?php foreach ($calendar as $month_key => $month_data) :
+                            $month_label = isset($month_data['month_label']) ? (string) $month_data['month_label'] : '';
+                            $month_days = isset($month_data['days']) && is_array($month_data['days']) ? $month_data['days'] : [];
+                            ?>
                             <section class="fp-exp-calendar__month" data-month="<?php echo esc_attr($month_key); ?>">
-                                <header class="fp-exp-calendar__month-header"><?php echo esc_html($month_data['month_label']); ?></header>
+                                <header class="fp-exp-calendar__month-header"><?php echo esc_html($month_label); ?></header>
                                 <div class="fp-exp-calendar__grid">
-                                    <?php foreach ($month_data['days'] as $day => $day_slots) :
+                                    <?php foreach ($month_days as $day => $day_slots) :
+                                        $day_slots = is_array($day_slots) ? $day_slots : [];
                                         $slot_count = count($day_slots);
                                         $is_available = $slot_count > 0;
                                         ?>
@@ -128,7 +297,10 @@ $rtb_submit_label = 'pay_later' === $rtb_mode
                                         <?php endif; ?>
                                     </th>
                                     <td>
-                                        <span class="fp-exp-ticket__price" data-price="<?php echo esc_attr((string) $ticket['price']); ?>">€<?php echo esc_html(number_format_i18n((float) $ticket['price'], 2)); ?></span>
+                                        <?php
+                                        $ticket_price_display = $format_currency(number_format_i18n((float) $ticket['price'], 2));
+                                        ?>
+                                        <span class="fp-exp-ticket__price" data-price="<?php echo esc_attr((string) $ticket['price']); ?>"><?php echo esc_html($ticket_price_display); ?></span>
                                     </td>
                                     <td>
                                         <div class="fp-exp-quantity">
@@ -189,7 +361,10 @@ $rtb_submit_label = 'pay_later' === $rtb_mode
                                         <span class="fp-exp-addon__content">
                                             <span class="fp-exp-addon__header">
                                                 <span class="fp-exp-addon__label"><?php echo esc_html($addon['label']); ?></span>
-                                                <span class="fp-exp-addon__price" data-price="<?php echo esc_attr((string) $addon['price']); ?>">€<?php echo esc_html(number_format_i18n((float) $addon['price'], 2)); ?></span>
+                                                <?php
+                                                $addon_price_display = $format_currency(number_format_i18n((float) $addon['price'], 2));
+                                                ?>
+                                                <span class="fp-exp-addon__price" data-price="<?php echo esc_attr((string) $addon['price']); ?>"><?php echo esc_html($addon_price_display); ?></span>
                                             </span>
                                             <?php if (! empty($addon['description'])) : ?>
                                                 <p class="fp-exp-addon__summary"><?php echo esc_html($addon['description']); ?></p>

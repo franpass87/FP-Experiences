@@ -56,10 +56,12 @@ final class LogsPage
             exit;
         }
 
+        $notice_html = '';
+
         if (isset($_POST['fp_exp_clear_logs'])) {
             check_admin_referer('fp_exp_clear_logs', 'fp_exp_clear_logs_nonce');
             Logger::clear();
-            echo '<div class="notice notice-success"><p>' . esc_html__('Logs cleared successfully.', 'fp-experiences') . '</p></div>';
+            $notice_html = '<div class="notice notice-success"><p>' . esc_html__('Logs cleared successfully.', 'fp-experiences') . '</p></div>';
         }
 
         $logs = Logger::query([
@@ -69,7 +71,13 @@ final class LogsPage
         ]);
 
         echo '<div class="wrap">';
+        echo '<div class="fp-exp-admin" data-fp-exp-admin>';
+        echo '<div class="fp-exp-admin__body">';
         echo '<h1>' . esc_html__('FP Experiences Logs', 'fp-experiences') . '</h1>';
+
+        if ($notice_html) {
+            echo $notice_html; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+        }
 
         $this->render_filters($channel_filter, $search_filter);
 
@@ -111,6 +119,8 @@ final class LogsPage
         }
         echo '</table>';
 
+        echo '</div>';
+        echo '</div>';
         echo '</div>';
     }
 

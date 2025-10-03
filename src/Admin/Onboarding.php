@@ -80,6 +80,8 @@ final class Onboarding
         $action_url = admin_url('admin-post.php');
 
         echo '<div class="wrap fp-exp-onboarding">';
+        echo '<div class="fp-exp-admin" data-fp-exp-admin>';
+        echo '<div class="fp-exp-admin__body">';
         echo '<h1>' . esc_html__('FP Experiences — Onboarding', 'fp-experiences') . '</h1>';
 
         if ($completed) {
@@ -128,6 +130,8 @@ final class Onboarding
         echo '<button type="submit" class="button button-primary">' . esc_html__('Segna onboarding come completato', 'fp-experiences') . '</button>';
         echo '</form>';
 
+        echo '</div>';
+        echo '</div>';
         echo '</div>';
     }
 

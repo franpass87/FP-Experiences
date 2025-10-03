@@ -43,11 +43,15 @@ final class ToolsPage
         }
 
         echo '<div class="wrap fp-exp-tools-page">';
+        echo '<div class="fp-exp-admin" data-fp-exp-admin>';
+        echo '<div class="fp-exp-admin__body">';
         echo '<h1>' . esc_html__('Strumenti operativi', 'fp-experiences') . '</h1>';
         echo '<p>' . esc_html__('Esegui azioni di manutenzione: sincronizzazioni Brevo, ripubblicazione eventi, pulizia cache e diagnostica.', 'fp-experiences') . '</p>';
 
         settings_errors('fp_exp_settings');
         $this->settings_page->render_tools_panel();
+        echo '</div>';
+        echo '</div>';
         echo '</div>';
     }
 }
