@@ -156,6 +156,8 @@ final class RequestsPage
         $time_format = get_option('time_format', 'H:i');
 
         echo '<div class="wrap fp-exp-requests">';
+        echo '<div class="fp-exp-admin" data-fp-exp-admin>';
+        echo '<div class="fp-exp-admin__body">';
         echo '<h1>' . esc_html__('Request-to-Book', 'fp-experiences') . '</h1>';
 
         echo '<form method="get" class="fp-exp-requests__filters">';
@@ -272,6 +274,8 @@ final class RequestsPage
 
         echo '</tbody>';
         echo '</table>';
+        echo '</div>';
+        echo '</div>';
         echo '</div>';
     }
 }

@@ -1293,7 +1293,13 @@
     padding: 0;
     display: grid;
     gap: 1rem;
-    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    grid-template-columns: minmax(0, 1fr);
+}
+
+@media (min-width: 768px) {
+    .fp-exp-addons {
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    }
 }
 
 .fp-exp-addon__card {
@@ -1372,6 +1378,7 @@
     align-items: flex-start;
     justify-content: space-between;
     gap: 0.75rem;
+    flex-wrap: wrap;
 }
 
 .fp-exp-addon__label {
@@ -1392,6 +1399,7 @@
     font-weight: 700;
     color: var(--fp-color-text);
     white-space: nowrap;
+    flex-shrink: 0;
 }
 
 @media (max-width: 640px) {
@@ -1532,6 +1540,7 @@
     border: 0;
     text-align: left;
     font-size: 0.95rem;
+    min-width: 0;
 }
 
 .fp-exp-party-table th {
@@ -1562,12 +1571,16 @@
     display: inline-flex;
     align-items: center;
     gap: 0.25rem;
+    white-space: nowrap;
 }
 
 .fp-exp-quantity {
     display: inline-flex;
     align-items: center;
     gap: 0.45rem;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    row-gap: 0.35rem;
 }
 
 .fp-exp-quantity__control {
@@ -1583,6 +1596,7 @@
     cursor: pointer;
     font-size: 1.1rem;
     transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+    flex: 0 0 34px;
 }
 
 .fp-exp-quantity__control:hover,
@@ -1596,7 +1610,7 @@
 
 .fp-exp-quantity__input {
     width: 4.25rem;
-    flex: 0 0 4.25rem;
+    flex: 1 1 4.25rem;
     min-width: 3.25rem;
     text-align: center;
     padding: 0.45rem;
@@ -1606,9 +1620,11 @@
     color: var(--fp-color-text);
 }
 
-.fp-exp-quantity__control,
-.fp-exp-quantity__input {
-    flex-shrink: 0;
+
+@media (max-width: 600px) {
+    .fp-exp-quantity {
+        justify-content: flex-start;
+    }
 }
 
 @media (min-width: 768px) {
@@ -2190,6 +2206,10 @@
     list-style: none;
 }
 
+.fp-exp-hero__facts--widget {
+    gap: 0.95rem;
+}
+
 .fp-exp-hero__fact {
     display: flex;
     align-items: center;
@@ -2211,9 +2231,75 @@
     flex-shrink: 0;
 }
 
+.fp-exp-hero__fact--languages,
+.fp-exp-hero__fact--duration {
+    align-items: flex-start;
+}
+
 .fp-exp-hero__fact-text {
     font-weight: 600;
     line-height: 1.4;
+}
+
+.fp-exp-hero__fact-content {
+    display: grid;
+    gap: 0.35rem;
+    font-weight: 600;
+    line-height: 1.4;
+    width: 100%;
+}
+
+.fp-exp-hero__fact-label {
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: rgba(15, 23, 42, 0.65);
+}
+
+.fp-exp-hero__fact-value {
+    font-size: 1rem;
+}
+
+.fp-exp-hero__language-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem 0.6rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.fp-exp-hero__language {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.3rem 0.6rem;
+    border-radius: 999px;
+    background: rgba(15, 23, 42, 0.08);
+    color: var(--fp-color-text);
+}
+
+.fp-exp-hero__language-flag {
+    display: inline-flex;
+    width: 1.25rem;
+    height: 0.85rem;
+    border-radius: 2px;
+    overflow: hidden;
+    box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.12);
+}
+
+.fp-exp-hero__language-flag svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+.fp-exp-hero__language-label {
+    font-weight: 600;
+}
+
+.fp-exp-widget__hero-card {
+    margin-bottom: clamp(1.25rem, 3vw, 1.75rem);
 }
 
 
@@ -2254,6 +2340,28 @@
     margin: 0;
     font-weight: 600;
     color: var(--fp-color-text);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.fp-exp-overview__term-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.75rem;
+    height: 1.75rem;
+    color: var(--fp-color-primary);
+}
+
+.fp-exp-overview__term-icon svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+.fp-exp-overview__term-label {
+    line-height: 1.2;
 }
 
 .fp-exp-overview__definition {
@@ -2271,6 +2379,28 @@
 
 .fp-exp-overview__list-item {
     line-height: 1.5;
+}
+
+.fp-exp-overview__list-item--with-icon {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.fp-exp-overview__flag {
+    display: inline-flex;
+    width: 1.5rem;
+    height: 1rem;
+    border-radius: 2px;
+    overflow: hidden;
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--fp-color-primary) 15%, transparent);
+    flex-shrink: 0;
+}
+
+.fp-exp-overview__flag svg {
+    width: 100%;
+    height: 100%;
+    display: block;
 }
 
 .fp-exp-overview__value {

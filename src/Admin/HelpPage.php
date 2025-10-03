@@ -19,6 +19,8 @@ final class HelpPage
         }
 
         echo '<div class="wrap fp-exp-help">';
+        echo '<div class="fp-exp-admin" data-fp-exp-admin>';
+        echo '<div class="fp-exp-admin__body">';
         echo '<h1>' . esc_html__('Guida & Shortcode', 'fp-experiences') . '</h1>';
         echo '<p>' . esc_html__('Consulta i componenti disponibili e copia rapidamente gli shortcode nelle pagine del sito.', 'fp-experiences') . '</p>';
 
@@ -37,6 +39,8 @@ final class HelpPage
         echo '<p>' . esc_html__('Tutte le pagine dell\'amministrazione FP Experiences rispettano i ruoli guida, operatore e manager. Per supporto aggiuntivo consulta la documentazione interna.', 'fp-experiences') . '</p>';
         echo '</section>';
 
+        echo '</div>';
+        echo '</div>';
         echo '</div>';
     }
 }

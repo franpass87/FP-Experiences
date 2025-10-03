@@ -39,6 +39,8 @@ final class Dashboard
         $metrics = self::collect_metrics();
 
         echo '<div class="wrap fp-exp-dashboard">';
+        echo '<div class="fp-exp-admin" data-fp-exp-admin>';
+        echo '<div class="fp-exp-admin__body">';
         echo '<nav class="fp-exp-dashboard__breadcrumb" aria-label="' . esc_attr__('Percorso di navigazione', 'fp-experiences') . '">';
         echo '<a href="' . esc_url(admin_url('admin.php?page=fp_exp_dashboard')) . '">' . esc_html__('FP Experiences', 'fp-experiences') . '</a>';
         echo ' <span aria-hidden="true">›</span> ';
@@ -107,6 +109,7 @@ final class Dashboard
         echo '</ul>';
         echo '</section>';
 
+        echo '</div>';
         echo '</div>';
         echo '</div>';
     }
