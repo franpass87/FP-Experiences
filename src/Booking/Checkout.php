@@ -118,13 +118,13 @@ final class Checkout
     private function process_checkout(string $nonce, array $payload)
     {
         if (! wp_verify_nonce($nonce, 'fp-exp-checkout')) {
-            return new WP_Error('fp_exp_invalid_nonce', __('Your session has expired. Please refresh and try again.', 'fp-experiences'), [
+            return new WP_Error('fp_exp_invalid_nonce', __('La sessione è scaduta. Aggiorna la pagina e riprova.', 'fp-experiences'), [
                 'status' => 403,
             ]);
         }
 
         if (Helpers::hit_rate_limit('checkout_' . Helpers::client_fingerprint(), 5, MINUTE_IN_SECONDS)) {
-            return new WP_Error('fp_exp_checkout_rate_limited', __('Please wait before submitting another checkout attempt.', 'fp-experiences'), [
+            return new WP_Error('fp_exp_checkout_rate_limited', __('Attendi prima di inviare un nuovo tentativo di checkout.', 'fp-experiences'), [
                 'status' => 429,
             ]);
         }
@@ -136,7 +136,7 @@ final class Checkout
         }
 
         if (! $this->cart->has_items()) {
-            return new WP_Error('fp_exp_cart_empty', __('Your experience cart is empty.', 'fp-experiences'), [
+            return new WP_Error('fp_exp_cart_empty', __('Il carrello esperienze è vuoto.', 'fp-experiences'), [
                 'status' => 400,
             ]);
         }
@@ -147,7 +147,7 @@ final class Checkout
             $slot_id = (int) ($item['slot_id'] ?? 0);
 
             if ($slot_id <= 0) {
-                return new WP_Error('fp_exp_slot_invalid', __('Selected slot is no longer available.', 'fp-experiences'), [
+                return new WP_Error('fp_exp_slot_invalid', __('Lo slot selezionato non è più disponibile.', 'fp-experiences'), [
                     'status' => 400,
                 ]);
             }
@@ -156,7 +156,7 @@ final class Checkout
             $capacity = Slots::check_capacity($slot_id, $requested);
 
             if (! $capacity['allowed']) {
-                $message = isset($capacity['message']) ? (string) $capacity['message'] : __('Selected slot is sold out.', 'fp-experiences');
+                $message = isset($capacity['message']) ? (string) $capacity['message'] : __('Lo slot selezionato è al completo.', 'fp-experiences');
 
                 return new WP_Error('fp_exp_capacity', $message, [
                     'status' => 409,

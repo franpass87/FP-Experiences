@@ -220,11 +220,11 @@ final class VoucherManager
                 'status' => 'pending',
             ]);
         } catch (Exception $exception) {
-            return new WP_Error('fp_exp_gift_order', esc_html__('Unable to create the order. Please try again.', 'fp-experiences'));
+            return new WP_Error('fp_exp_gift_order', esc_html__('Impossibile creare l’ordine. Riprova.', 'fp-experiences'));
         }
 
         if (is_wp_error($order)) {
-            return new WP_Error('fp_exp_gift_order', esc_html__('Unable to create the order. Please try again.', 'fp-experiences'));
+            return new WP_Error('fp_exp_gift_order', esc_html__('Impossibile creare l’ordine. Riprova.', 'fp-experiences'));
         }
 
         $order->set_created_via('fp-exp-gift');
@@ -589,7 +589,7 @@ final class VoucherManager
         if ($reservation_id <= 0) {
             $order->delete(true);
 
-            return new WP_Error('fp_exp_gift_reservation', esc_html__('Unable to record the voucher redemption. Please try again.', 'fp-experiences'));
+            return new WP_Error('fp_exp_gift_reservation', esc_html__('Impossibile registrare il riscatto del voucher. Riprova.', 'fp-experiences'));
         }
 
         update_post_meta($voucher_id, '_fp_exp_gift_status', 'redeemed');
@@ -990,7 +990,7 @@ final class VoucherManager
         }
 
         $subject = esc_html__('Your experience gift has expired', 'fp-experiences');
-        $message = '<p>' . esc_html__('The voucher linked to your FP Experience gift has expired. Please contact the operator for assistance.', 'fp-experiences') . '</p>';
+        $message = '<p>' . esc_html__('Il voucher collegato alla tua esperienza FP è scaduto. Contatta l’operatore per assistenza.', 'fp-experiences') . '</p>';
 
         wp_mail($email, $subject, $message, ['Content-Type: text/html; charset=UTF-8']);
     }

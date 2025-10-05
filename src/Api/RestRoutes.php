@@ -432,7 +432,7 @@ final class RestRoutes
         }
 
         if (Helpers::hit_rate_limit('calendar_move_' . get_current_user_id(), 10, MINUTE_IN_SECONDS)) {
-            return new WP_Error('fp_exp_rate_limited', __('Too many calendar changes in a short period. Please retry in a moment.', 'fp-experiences'), ['status' => 429]);
+            return new WP_Error('fp_exp_rate_limited', __('Troppe modifiche al calendario in poco tempo. Riprova tra qualche istante.', 'fp-experiences'), ['status' => 429]);
         }
 
         $moved = Slots::move_slot($slot_id, $start, $end);
@@ -465,7 +465,7 @@ final class RestRoutes
         }
 
         if (Helpers::hit_rate_limit('calendar_capacity_' . get_current_user_id(), 10, MINUTE_IN_SECONDS)) {
-            return new WP_Error('fp_exp_rate_limited', __('Please wait before adjusting capacity again.', 'fp-experiences'), ['status' => 429]);
+            return new WP_Error('fp_exp_rate_limited', __('Attendi prima di modificare nuovamente la capacità.', 'fp-experiences'), ['status' => 429]);
         }
 
         $updated = Slots::update_capacity($slot_id, $total, $per_type);
@@ -620,7 +620,7 @@ final class RestRoutes
         if (Helpers::hit_rate_limit('tools_resync_' . get_current_user_id(), 3, MINUTE_IN_SECONDS)) {
             return rest_ensure_response([
                 'success' => false,
-                'message' => __('Please wait before running the Brevo sync again.', 'fp-experiences'),
+                'message' => __('Attendi prima di eseguire di nuovo la sincronizzazione Brevo.', 'fp-experiences'),
             ]);
         }
 
@@ -638,7 +638,7 @@ final class RestRoutes
         if (Helpers::hit_rate_limit('tools_replay_' . get_current_user_id(), 3, MINUTE_IN_SECONDS)) {
             return rest_ensure_response([
                 'success' => false,
-                'message' => __('Event replay recently executed. Please retry shortly.', 'fp-experiences'),
+                'message' => __('Il replay degli eventi è stato eseguito da poco. Riprova più tardi.', 'fp-experiences'),
             ]);
         }
 

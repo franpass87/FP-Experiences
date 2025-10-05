@@ -50,6 +50,7 @@ use function is_array;
 use function is_wp_error;
 use function sanitize_key;
 use function sanitize_text_field;
+use function sanitize_textarea_field;
 use function sanitize_title;
 use function selected;
 use function set_transient;
@@ -142,7 +143,7 @@ final class ExperienceMetaBoxes
         wp_enqueue_script(
             'fp-exp-admin',
             FP_EXP_PLUGIN_URL . 'assets/js/admin.js',
-            [],
+            ['wp-api-fetch', 'wp-i18n'],
             Helpers::asset_version('assets/js/admin.js'),
             true
         );
@@ -171,6 +172,7 @@ final class ExperienceMetaBoxes
                     'recurrenceTimeLabel' => esc_html__('Orario ricorrenza', 'fp-experiences'),
                     'recurrenceRemoveTime' => esc_html__('Rimuovi orario', 'fp-experiences'),
                     'recurrenceLoading' => esc_html__('Generazione in corso…', 'fp-experiences'),
+                    'recurrenceOpenEndedSuffix' => esc_html__('La ricorrenza resta attiva finché non imposti una data di fine.', 'fp-experiences'),
                     'trustBadgesStatus' => esc_html__('Badge selezionati: %1$s su %2$s', 'fp-experiences'),
                     'trustBadgesMax' => esc_html__('Hai raggiunto il numero massimo di badge selezionabili.', 'fp-experiences'),
                 ],
@@ -579,30 +581,74 @@ final class ExperienceMetaBoxes
                         </span>
                         <?php $theme_choices = $details['taxonomies']['theme']['choices']; ?>
                         <?php if (! empty($theme_choices)) : ?>
-                            <div class="fp-exp-checkbox-grid" aria-describedby="fp-exp-theme-help">
+                            <div class="fp-exp-checkbox-grid fp-exp-checkbox-grid--stacked" aria-describedby="fp-exp-theme-help">
                                 <?php foreach ($theme_choices as $choice) :
                                     $term_id = (int) $choice['id'];
+                                    $term_label = isset($choice['label']) ? (string) $choice['label'] : '';
+                                    $term_description = isset($choice['description']) ? (string) $choice['description'] : '';
                                     ?>
-                                    <label>
+                                    <label class="fp-exp-checkbox-grid__badge">
                                         <input type="checkbox" name="fp_exp_details[themes][]" value="<?php echo esc_attr((string) $term_id); ?>" <?php checked(in_array($term_id, $details['taxonomies']['theme']['selected'], true)); ?> />
-                                        <span><?php echo esc_html($choice['label']); ?></span>
+                                        <span class="fp-exp-checkbox-grid__badge-body">
+                                            <span class="fp-exp-checkbox-grid__badge-label"><?php echo esc_html($term_label); ?></span>
+                                            <?php if ('' !== $term_description) : ?>
+                                                <span class="fp-exp-checkbox-grid__badge-description"><?php echo esc_html($term_description); ?></span>
+                                            <?php endif; ?>
+                                        </span>
                                     </label>
                                 <?php endforeach; ?>
                             </div>
                         <?php else : ?>
-                            <p class="fp-exp-field__description fp-exp-field__description--muted"><?php esc_html_e('Non hai ancora creato temi. Inserisci nuove voci qui sotto per aggiungerle all’istante.', 'fp-experiences'); ?></p>
+                            <p class="fp-exp-field__description fp-exp-field__description--muted"><?php esc_html_e('Non hai ancora creato temi. Usa i campi qui sotto per aggiungerne di nuovi.', 'fp-experiences'); ?></p>
                         <?php endif; ?>
-                        <div class="fp-exp-taxonomy-manual">
-                            <label class="fp-exp-taxonomy-manual__label" for="fp-exp-theme-manual"><?php esc_html_e('Crea nuovi temi', 'fp-experiences'); ?></label>
-                            <input
-                                type="text"
-                                id="fp-exp-theme-manual"
-                                name="fp_exp_details[themes_manual]"
-                                class="regular-text"
-                                placeholder="<?php echo esc_attr__('Es. Arte, Gastronomia', 'fp-experiences'); ?>"
-                                autocomplete="off"
-                            />
-                            <p class="fp-exp-field__description"><?php esc_html_e('Separa le voci con una virgola: verranno generate e selezionate automaticamente.', 'fp-experiences'); ?></p>
+                        <div class="fp-exp-taxonomy-editor" data-fp-taxonomy-editor="theme">
+                            <p class="fp-exp-field__description"><?php esc_html_e('Personalizza titolo e descrizione dei temi esistenti oppure aggiungi nuove voci.', 'fp-experiences'); ?></p>
+                            <?php if (! empty($theme_choices)) : ?>
+                                <div class="fp-exp-taxonomy-editor__list" data-fp-taxonomy-existing>
+                                    <?php foreach ($theme_choices as $choice) :
+                                        $term_id = (int) $choice['id'];
+                                        if ($term_id <= 0) {
+                                            continue;
+                                        }
+
+                                        $term_label = isset($choice['label']) ? (string) $choice['label'] : '';
+                                        $term_description = isset($choice['description']) ? (string) $choice['description'] : '';
+                                        ?>
+                                        <div class="fp-exp-taxonomy-editor__item" data-fp-taxonomy-item>
+                                            <input type="hidden" name="fp_exp_details[theme_terms][<?php echo esc_attr((string) $term_id); ?>][id]" value="<?php echo esc_attr((string) $term_id); ?>" />
+                                            <label class="fp-exp-taxonomy-editor__field">
+                                                <span class="fp-exp-field__label"><?php esc_html_e('Titolo tema', 'fp-experiences'); ?></span>
+                                                <input type="text" name="fp_exp_details[theme_terms][<?php echo esc_attr((string) $term_id); ?>][name]" value="<?php echo esc_attr($term_label); ?>" />
+                                            </label>
+                                            <label class="fp-exp-taxonomy-editor__field">
+                                                <span class="fp-exp-field__label"><?php esc_html_e('Descrizione tema', 'fp-experiences'); ?></span>
+                                                <textarea rows="2" name="fp_exp_details[theme_terms][<?php echo esc_attr((string) $term_id); ?>][description]"><?php echo esc_textarea($term_description); ?></textarea>
+                                            </label>
+                                        </div>
+                                    <?php endforeach; ?>
+                                </div>
+                            <?php endif; ?>
+                            <div class="fp-exp-taxonomy-editor__list" data-fp-taxonomy-new></div>
+                            <template data-fp-taxonomy-template>
+                                <div class="fp-exp-taxonomy-editor__item" data-fp-taxonomy-item>
+                                    <label class="fp-exp-taxonomy-editor__field">
+                                        <span class="fp-exp-field__label"><?php esc_html_e('Titolo tema', 'fp-experiences'); ?></span>
+                                        <input type="text" data-name="fp_exp_details[themes_new][__INDEX__][name]" />
+                                    </label>
+                                    <label class="fp-exp-taxonomy-editor__field">
+                                        <span class="fp-exp-field__label"><?php esc_html_e('Descrizione tema', 'fp-experiences'); ?></span>
+                                        <textarea rows="2" data-name="fp_exp_details[themes_new][__INDEX__][description]"></textarea>
+                                    </label>
+                                    <p class="fp-exp-taxonomy-editor__remove">
+                                        <button type="button" class="button-link-delete" data-fp-taxonomy-remove>&times;</button>
+                                    </p>
+                                </div>
+                            </template>
+                            <p class="fp-exp-taxonomy-editor__actions">
+                                <button type="button" class="button button-secondary" data-fp-taxonomy-add>
+                                    <?php esc_html_e('Aggiungi tema', 'fp-experiences'); ?>
+                                </button>
+                            </p>
                         </div>
                         <p class="fp-exp-field__description" id="fp-exp-theme-help"><?php esc_html_e('I temi compaiono nella panoramica dell’esperienza e negli elenchi filtrabili.', 'fp-experiences'); ?></p>
                     </div>
@@ -1102,7 +1148,8 @@ final class ExperienceMetaBoxes
 
         $time_sets = $recurrence['time_sets'];
         $recurrence_days = isset($recurrence['days']) && is_array($recurrence['days']) ? $recurrence['days'] : [];
-        $frequency_summary = $this->get_recurrence_frequency_summary($frequency, $recurrence_days);
+        $is_open_ended = '' === ($recurrence['end_date'] ?? '');
+        $frequency_summary = $this->get_recurrence_frequency_summary($frequency, $recurrence_days, $is_open_ended);
         if (empty($time_sets)) {
             $time_sets = [['label' => '', 'times' => [''], 'days' => []]];
         }
@@ -1200,10 +1247,11 @@ final class ExperienceMetaBoxes
                             <input type="date" name="fp_exp_availability[recurrence][start_date]" value="<?php echo esc_attr((string) ($recurrence['start_date'] ?? '')); ?>" />
                         </label>
                         <label>
-                            <span class="fp-exp-field__label"><?php esc_html_e('Data fine', 'fp-experiences'); ?></span>
+                            <span class="fp-exp-field__label"><?php esc_html_e('Data fine (opzionale)', 'fp-experiences'); ?></span>
                             <input type="date" name="fp_exp_availability[recurrence][end_date]" value="<?php echo esc_attr((string) ($recurrence['end_date'] ?? '')); ?>" />
                         </label>
                     </div>
+                    <p class="fp-exp-field__description fp-exp-field__description--muted"><?php esc_html_e('Lascia vuota la data di fine per mantenere attiva la ricorrenza senza scadenza.', 'fp-experiences'); ?></p>
 
                     <div class="fp-exp-field">
                         <span class="fp-exp-field__label"><?php esc_html_e('Tipo di disponibilità ricorrente', 'fp-experiences'); ?></span>
@@ -1891,9 +1939,28 @@ final class ExperienceMetaBoxes
         }
         $theme_terms = isset($raw['themes']) && is_array($raw['themes']) ? array_filter(array_map('absint', $raw['themes'])) : [];
 
+        $theme_updates = isset($raw['theme_terms']) && is_array($raw['theme_terms'])
+            ? $this->sanitize_taxonomy_term_updates($raw['theme_terms'])
+            : [];
+
+        if (! empty($theme_updates)) {
+            $this->update_taxonomy_term_details($theme_updates, 'fp_exp_theme');
+        }
+
         $theme_manual_labels = $this->parse_manual_taxonomy_input($raw['themes_manual'] ?? '');
         if (! empty($theme_manual_labels)) {
             $theme_terms = array_merge($theme_terms, $this->ensure_taxonomy_terms($theme_manual_labels, 'fp_exp_theme'));
+        }
+
+        $theme_new_entries = isset($raw['themes_new']) && is_array($raw['themes_new'])
+            ? $this->sanitize_taxonomy_new_entries($raw['themes_new'])
+            : [];
+
+        if (! empty($theme_new_entries)) {
+            $theme_terms = array_merge(
+                $theme_terms,
+                $this->create_taxonomy_terms_with_details($theme_new_entries, 'fp_exp_theme')
+            );
         }
 
         $theme_terms = array_values(array_unique(array_filter(array_map('absint', $theme_terms))));
@@ -2028,6 +2095,151 @@ final class ExperienceMetaBoxes
 
                 $term_id = isset($created['term_id']) ? (int) $created['term_id'] : 0;
             }
+
+            if ($term_id > 0) {
+                $term_ids[] = $term_id;
+            }
+        }
+
+        return array_values(array_unique(array_filter(array_map('absint', $term_ids))));
+    }
+
+    /**
+     * @param array<string|int, array<string, mixed>> $raw
+     * @return array<int, array{id: int, name: string, description: string}>
+     */
+    private function sanitize_taxonomy_term_updates(array $raw): array
+    {
+        $entries = [];
+
+        foreach ($raw as $key => $entry) {
+            if (! is_array($entry)) {
+                continue;
+            }
+
+            $term_id = isset($entry['id']) ? absint((string) $entry['id']) : absint((string) $key);
+            $name = isset($entry['name']) ? sanitize_text_field((string) $entry['name']) : '';
+            $description = isset($entry['description']) ? sanitize_textarea_field((string) $entry['description']) : '';
+
+            if ($term_id <= 0 || '' === $name) {
+                continue;
+            }
+
+            $entries[] = [
+                'id' => $term_id,
+                'name' => $name,
+                'description' => $description,
+            ];
+        }
+
+        return $entries;
+    }
+
+    /**
+     * @param array<int, array<string, mixed>> $raw
+     * @return array<int, array{name: string, description: string}>
+     */
+    private function sanitize_taxonomy_new_entries(array $raw): array
+    {
+        $entries = [];
+
+        foreach ($raw as $entry) {
+            if (! is_array($entry)) {
+                continue;
+            }
+
+            $name = isset($entry['name']) ? sanitize_text_field((string) $entry['name']) : '';
+            $description = isset($entry['description']) ? sanitize_textarea_field((string) $entry['description']) : '';
+
+            if ('' === $name) {
+                continue;
+            }
+
+            $entries[] = [
+                'name' => $name,
+                'description' => $description,
+            ];
+        }
+
+        return $entries;
+    }
+
+    /**
+     * @param array<int, array{id: int, name: string, description: string}> $entries
+     */
+    private function update_taxonomy_term_details(array $entries, string $taxonomy): void
+    {
+        foreach ($entries as $entry) {
+            $term_id = $entry['id'];
+            $name = $entry['name'];
+            $description = $entry['description'];
+
+            $term = get_term($term_id, $taxonomy);
+
+            if (! $term || is_wp_error($term)) {
+                continue;
+            }
+
+            $current_name = sanitize_text_field((string) $term->name);
+            $current_description = sanitize_textarea_field((string) $term->description);
+
+            $args = [];
+
+            if ($name !== $current_name) {
+                $args['name'] = $name;
+            }
+
+            if ($description !== $current_description) {
+                $args['description'] = $description;
+            }
+
+            if (empty($args)) {
+                continue;
+            }
+
+            wp_update_term($term_id, $taxonomy, $args);
+        }
+    }
+
+    /**
+     * @param array<int, array{name: string, description: string}> $entries
+     * @return array<int, int>
+     */
+    private function create_taxonomy_terms_with_details(array $entries, string $taxonomy): array
+    {
+        $term_ids = [];
+
+        foreach ($entries as $entry) {
+            $name = $entry['name'];
+            $description = $entry['description'];
+
+            $term_id = 0;
+            $existing = term_exists($name, $taxonomy);
+
+            if (is_array($existing)) {
+                $term_id = isset($existing['term_id']) ? (int) $existing['term_id'] : 0;
+            } elseif (is_int($existing)) {
+                $term_id = $existing;
+            }
+
+            if ($term_id > 0) {
+                wp_update_term($term_id, $taxonomy, [
+                    'description' => $description,
+                ]);
+
+                $term_ids[] = $term_id;
+                continue;
+            }
+
+            $created = wp_insert_term($name, $taxonomy, [
+                'description' => $description,
+            ]);
+
+            if ($created instanceof WP_Error) {
+                continue;
+            }
+
+            $term_id = isset($created['term_id']) ? (int) $created['term_id'] : 0;
 
             if ($term_id > 0) {
                 $term_ids[] = $term_id;
@@ -2690,6 +2902,7 @@ final class ExperienceMetaBoxes
             return [
                 'id' => (int) $term->term_id,
                 'label' => sanitize_text_field((string) $term->name),
+                'description' => sanitize_textarea_field((string) $term->description),
             ];
         }, $terms);
     }
@@ -3040,8 +3253,9 @@ final class ExperienceMetaBoxes
 
     /**
      * @param array<int, string> $days
+     * @param bool               $open_ended
      */
-    private function get_recurrence_frequency_summary(string $frequency, array $days): string
+    private function get_recurrence_frequency_summary(string $frequency, array $days, bool $open_ended = false): string
     {
         $template = $this->get_recurrence_frequency_summary_template($frequency);
 
@@ -3050,7 +3264,9 @@ final class ExperienceMetaBoxes
         }
 
         if ('weekly' !== $frequency) {
-            return $template;
+            return $open_ended
+                ? $template . ' ' . esc_html__('La ricorrenza resta attiva finché non imposti una data di fine.', 'fp-experiences')
+                : $template;
         }
 
         $labels_map = [];
@@ -3065,11 +3281,15 @@ final class ExperienceMetaBoxes
             }
         }
 
-        if (! $selected_labels) {
-            return sprintf($template, esc_html__('Nessun giorno selezionato', 'fp-experiences'));
+        $message = $selected_labels
+            ? sprintf($template, implode(', ', $selected_labels))
+            : sprintf($template, esc_html__('Nessun giorno selezionato', 'fp-experiences'));
+
+        if ($open_ended) {
+            $message .= ' ' . esc_html__('La ricorrenza resta attiva finché non imposti una data di fine.', 'fp-experiences');
         }
 
-        return sprintf($template, implode(', ', $selected_labels));
+        return $message;
     }
 
     private function get_week_days(): array

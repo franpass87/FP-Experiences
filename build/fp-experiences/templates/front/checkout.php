@@ -28,8 +28,8 @@ $container_class = 'fp-exp fp-exp-checkout ' . esc_attr($scope_class);
         class="fp-exp-checkout__form"
         data-nonce="<?php echo esc_attr($nonce); ?>"
         novalidate
-        data-error-required="<?php echo esc_attr__('Please complete the %s field.', 'fp-experiences'); ?>"
-        data-error-email="<?php echo esc_attr__('Enter a valid email address.', 'fp-experiences'); ?>"
+        data-error-required="<?php echo esc_attr__('Completa il campo %s.', 'fp-experiences'); ?>"
+        data-error-email="<?php echo esc_attr__('Inserisci un indirizzo email valido.', 'fp-experiences'); ?>"
     >
         <div
             class="fp-exp-error-summary"
@@ -38,7 +38,7 @@ $container_class = 'fp-exp fp-exp-checkout ' . esc_attr($scope_class);
             aria-live="assertive"
             tabindex="-1"
             hidden
-            data-intro="<?php echo esc_attr__('Please review the highlighted fields:', 'fp-experiences'); ?>"
+            data-intro="<?php echo esc_attr__('Controlla i campi evidenziati:', 'fp-experiences'); ?>"
         ></div>
         <div class="fp-exp-checkout__grid">
             <section class="fp-exp-checkout__section fp-exp-checkout__section--contact">

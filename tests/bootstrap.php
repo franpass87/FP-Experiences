@@ -43,6 +43,16 @@ if (! function_exists('sanitize_text_field')) {
     }
 }
 
+if (! function_exists('sanitize_textarea_field')) {
+    function sanitize_textarea_field(string $text): string
+    {
+        $text = strip_tags($text);
+        $text = preg_replace("/[\r\t]+/", ' ', $text);
+
+        return trim($text);
+    }
+}
+
 if (! function_exists('sanitize_email')) {
     function sanitize_email(string $email): string
     {

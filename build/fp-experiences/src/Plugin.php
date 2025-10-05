@@ -21,6 +21,7 @@ use FP_Exp\Admin\OrdersPage;
 use FP_Exp\Admin\HelpPage;
 use FP_Exp\Admin\ExperiencePageCreator;
 use FP_Exp\Admin\Onboarding;
+use FP_Exp\Localization\AutoTranslator;
 use FP_Exp\Booking\Emails;
 use FP_Exp\Booking\Orders;
 use FP_Exp\Booking\Reservations;
@@ -118,6 +119,8 @@ final class Plugin
 
     private ?LanguageAdmin $language_admin = null;
 
+    private ?AutoTranslator $auto_translator = null;
+
     private ?ElementorWidgetsRegistrar $elementor_widgets = null;
 
     private ?RestRoutes $rest_routes = null;
@@ -177,6 +180,7 @@ final class Plugin
         $this->meeting_points = new MeetingPointsManager();
         $this->migrations = new MigrationRunner();
         $this->single_experience_renderer = new SingleExperienceRenderer();
+        $this->auto_translator = new AutoTranslator();
 
         if (is_admin()) {
             $this->settings_page = new SettingsPage();
@@ -310,6 +314,10 @@ final class Plugin
 
         if ($this->gift_manager instanceof VoucherManager) {
             $this->guard([$this->gift_manager, 'register_hooks'], VoucherManager::class, 'register_hooks');
+        }
+
+        if ($this->auto_translator instanceof AutoTranslator) {
+            $this->guard([$this->auto_translator, 'register_hooks'], AutoTranslator::class, 'register_hooks');
         }
     }
 

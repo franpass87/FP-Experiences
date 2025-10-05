@@ -1,6 +1,8 @@
 (function () {
     'use strict';
 
+    const translate = (window.fpExpTranslate && window.fpExpTranslate.localize) ? window.fpExpTranslate.localize : (value) => value;
+
     function showErrorSummary(container, errors) {
         if (!container) {
             return;
@@ -15,7 +17,7 @@
 
         const intro = document.createElement('p');
         intro.className = 'fp-exp-error-summary__intro';
-        intro.textContent = container.getAttribute('data-intro') || 'Please review the highlighted fields.';
+        intro.textContent = container.getAttribute('data-intro') || translate('Controlla i campi evidenziati.');
         container.appendChild(intro);
 
         const list = document.createElement('ul');
@@ -103,7 +105,7 @@
             return errors;
         }
 
-        const requiredTemplate = form.getAttribute('data-error-required') || 'Please complete the %s field.';
+        const requiredTemplate = form.getAttribute('data-error-required') || translate('Completa il campo %s.');
         const emailMessage = form.getAttribute('data-error-email') || 'Enter a valid email address.';
 
         const requiredFields = Array.from(form.querySelectorAll('[required]'));

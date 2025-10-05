@@ -17,9 +17,10 @@ use function in_array;
 use function get_current_screen;
 use function remove_menu_page;
 use function strpos;
+use function wp_add_inline_script;
 use function wp_enqueue_script;
 use function wp_enqueue_style;
-use function wp_localize_script;
+use function wp_json_encode;
 
 final class AdminMenu
 {
@@ -327,10 +328,13 @@ final class AdminMenu
             true
         );
 
-        wp_localize_script('fp-exp-admin', 'fpExpAdmin', [
-            'strings' => [
-                'ticketWarning' => esc_html__('Aggiungi almeno un tipo di biglietto con un prezzo valido.', 'fp-experiences'),
-            ],
-        ]);
+        $strings = [
+            'ticketWarning' => esc_html__('Aggiungi almeno un tipo di biglietto con un prezzo valido.', 'fp-experiences'),
+        ];
+
+        $inline = 'window.fpExpAdmin = window.fpExpAdmin || {};' .
+            'window.fpExpAdmin.strings = Object.assign({}, window.fpExpAdmin.strings || {}, ' . wp_json_encode($strings) . ');';
+
+        wp_add_inline_script('fp-exp-admin', $inline, 'before');
     }
 }

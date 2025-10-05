@@ -273,7 +273,7 @@ final class Cart
         }
 
         if ((int) $wc_cart->get_cart_contents_count() > 0) {
-            return new WP_Error('fp_exp_cart_conflict', __('Please empty your WooCommerce cart before booking an experience.', 'fp-experiences'));
+            return new WP_Error('fp_exp_cart_conflict', __('Svuota il carrello di WooCommerce prima di prenotare un’esperienza.', 'fp-experiences'));
         }
 
         return null;
@@ -290,7 +290,7 @@ final class Cart
         }
 
         if (function_exists('wc_add_notice')) {
-            wc_add_notice(__('Experiences cannot be purchased together with other products. Please complete your booking first.', 'fp-experiences'), 'error');
+            wc_add_notice(__('Le esperienze non possono essere acquistate insieme ad altri prodotti. Completa prima la prenotazione.', 'fp-experiences'), 'error');
         }
 
         return false;

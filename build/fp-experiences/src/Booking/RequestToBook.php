@@ -100,11 +100,11 @@ final class RequestToBook
         $nonce = (string) $request->get_param('nonce');
 
         if (! wp_verify_nonce($nonce, 'fp-exp-rtb')) {
-            return new WP_Error('fp_exp_rtb_nonce', __('Your session expired. Please refresh and try again.', 'fp-experiences'), ['status' => 403]);
+            return new WP_Error('fp_exp_rtb_nonce', __('La sessione è scaduta. Aggiorna la pagina e riprova.', 'fp-experiences'), ['status' => 403]);
         }
 
         if (Helpers::hit_rate_limit('rtb_' . Helpers::client_fingerprint(), 5, MINUTE_IN_SECONDS)) {
-            return new WP_Error('fp_exp_rtb_rate_limited', __('Please wait before sending another request.', 'fp-experiences'), ['status' => 429]);
+            return new WP_Error('fp_exp_rtb_rate_limited', __('Attendi prima di inviare un’altra richiesta.', 'fp-experiences'), ['status' => 429]);
         }
 
         $experience_id = absint($request->get_param('experience_id'));
@@ -113,17 +113,17 @@ final class RequestToBook
         $addons = $this->normalize_array($request->get_param('addons'));
 
         if ($experience_id <= 0 || $slot_id <= 0) {
-            return new WP_Error('fp_exp_rtb_invalid', __('Select a date and time before submitting your request.', 'fp-experiences'), ['status' => 400]);
+            return new WP_Error('fp_exp_rtb_invalid', __('Seleziona data e ora prima di inviare la richiesta.', 'fp-experiences'), ['status' => 400]);
         }
 
         $slot = Slots::get_slot($slot_id);
         if (! $slot || (int) $slot['experience_id'] !== $experience_id) {
-            return new WP_Error('fp_exp_rtb_slot', __('The selected slot is no longer available.', 'fp-experiences'), ['status' => 404]);
+            return new WP_Error('fp_exp_rtb_slot', __('Lo slot selezionato non è più disponibile.', 'fp-experiences'), ['status' => 404]);
         }
 
         $capacity = Slots::check_capacity($slot_id, $tickets);
         if (empty($capacity['allowed'])) {
-            $message = isset($capacity['message']) ? (string) $capacity['message'] : __('The selected slot cannot accept more guests.', 'fp-experiences');
+            $message = isset($capacity['message']) ? (string) $capacity['message'] : __('Lo slot selezionato non può accettare altri partecipanti.', 'fp-experiences');
 
             return new WP_Error('fp_exp_rtb_capacity', $message, ['status' => 409]);
         }
@@ -131,11 +131,11 @@ final class RequestToBook
         $contact = $this->sanitize_contact($request->get_param('contact'));
 
         if (! $contact['email']) {
-            return new WP_Error('fp_exp_rtb_contact', __('Please provide a valid email address so we can reply to your request.', 'fp-experiences'), ['status' => 400]);
+            return new WP_Error('fp_exp_rtb_contact', __('Fornisci un indirizzo email valido per poterti rispondere.', 'fp-experiences'), ['status' => 400]);
         }
 
         if (empty($request->get_param('consent')['privacy'])) {
-            return new WP_Error('fp_exp_rtb_consent', __('You must accept the privacy policy to send a request.', 'fp-experiences'), ['status' => 400]);
+            return new WP_Error('fp_exp_rtb_consent', __('Devi accettare l’informativa privacy per inviare la richiesta.', 'fp-experiences'), ['status' => 400]);
         }
 
         $slot_start = $slot['start_datetime'] ?? '';
@@ -178,7 +178,7 @@ final class RequestToBook
         ]);
 
         if ($reservation_id <= 0) {
-            return new WP_Error('fp_exp_rtb_store', __('We could not record your request. Please try again.', 'fp-experiences'), ['status' => 500]);
+            return new WP_Error('fp_exp_rtb_store', __('Impossibile registrare la richiesta. Riprova.', 'fp-experiences'), ['status' => 500]);
         }
 
         $context = $this->build_context($reservation_id, $experience_id, $slot, $contact, $breakdown, (string) ($request->get_param('notes') ?? ''));
@@ -199,7 +199,7 @@ final class RequestToBook
 
         return rest_ensure_response([
             'success' => true,
-            'message' => __('Thank you! Your request was received and our team will confirm availability shortly.', 'fp-experiences'),
+            'message' => __('Grazie! Abbiamo ricevuto la tua richiesta e il team confermerà la disponibilità a breve.', 'fp-experiences'),
         ]);
     }
 
@@ -213,11 +213,11 @@ final class RequestToBook
         $nonce = (string) $request->get_param('nonce');
 
         if (! wp_verify_nonce($nonce, 'fp-exp-rtb')) {
-            return new WP_Error('fp_exp_rtb_nonce', __('Your session expired. Please refresh and try again.', 'fp-experiences'), ['status' => 403]);
+            return new WP_Error('fp_exp_rtb_nonce', __('La sessione è scaduta. Aggiorna la pagina e riprova.', 'fp-experiences'), ['status' => 403]);
         }
 
         if (Helpers::hit_rate_limit('rtb_quote_' . Helpers::client_fingerprint(), 20, MINUTE_IN_SECONDS)) {
-            return new WP_Error('fp_exp_rtb_rate_limited', __('Please wait before requesting a new quote.', 'fp-experiences'), ['status' => 429]);
+            return new WP_Error('fp_exp_rtb_rate_limited', __('Attendi prima di richiedere un nuovo preventivo.', 'fp-experiences'), ['status' => 429]);
         }
 
         $experience_id = absint($request->get_param('experience_id'));
@@ -226,12 +226,12 @@ final class RequestToBook
         $addons = $this->normalize_array($request->get_param('addons'));
 
         if ($experience_id <= 0 || $slot_id <= 0) {
-            return new WP_Error('fp_exp_rtb_invalid', __('Select a date and time before continuing.', 'fp-experiences'), ['status' => 400]);
+            return new WP_Error('fp_exp_rtb_invalid', __('Seleziona data e ora prima di proseguire.', 'fp-experiences'), ['status' => 400]);
         }
 
         $slot = Slots::get_slot($slot_id);
         if (! $slot || (int) $slot['experience_id'] !== $experience_id) {
-            return new WP_Error('fp_exp_rtb_slot', __('The selected slot is no longer available.', 'fp-experiences'), ['status' => 404]);
+            return new WP_Error('fp_exp_rtb_slot', __('Lo slot selezionato non è più disponibile.', 'fp-experiences'), ['status' => 404]);
         }
 
         $breakdown = Pricing::calculate_breakdown(
@@ -562,11 +562,11 @@ final class RequestToBook
                 'status' => 'pending',
             ]);
         } catch (Exception $exception) {
-            return new WP_Error('fp_exp_rtb_order', __('Unable to generate the payment order. Please try again.', 'fp-experiences'));
+            return new WP_Error('fp_exp_rtb_order', __('Impossibile generare l’ordine di pagamento. Riprova.', 'fp-experiences'));
         }
 
         if (is_wp_error($order)) {
-            return new WP_Error('fp_exp_rtb_order', __('Unable to generate the payment order. Please try again.', 'fp-experiences'));
+            return new WP_Error('fp_exp_rtb_order', __('Impossibile generare l’ordine di pagamento. Riprova.', 'fp-experiences'));
         }
 
         $order->set_created_via('fp-exp-rtb');
@@ -757,7 +757,7 @@ final class RequestToBook
         $message = $fallbacks[$stage] ?? [];
 
         $subject = ! empty($message['subject']) ? $message['subject'] : __('We received your experience request', 'fp-experiences');
-        $body = ! empty($message['body']) ? $message['body'] : __('Thank you for your request. Our team will get back to you shortly.', 'fp-experiences');
+        $body = ! empty($message['body']) ? $message['body'] : __('Grazie per la richiesta. Il nostro team ti ricontatterà a breve.', 'fp-experiences');
 
         $payload = $this->replace_tokens($subject, $body, $context);
 
