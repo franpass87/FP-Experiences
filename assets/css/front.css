@@ -1,3 +1,4 @@
+.fp-exp-select-day option.is-unavailable{color:#d22}
 .fp-exp {
     font-family: var(--fp-font-family, inherit);
     color: var(--fp-color-text);
@@ -195,6 +196,9 @@
 }
 
 @media (min-width: 768px) {
+    .fp-exp-party-table {
+        table-layout: fixed;
+    }
     .fp-exp-list__grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
@@ -1320,34 +1324,34 @@
 }
 
 @media (min-width: 768px) {
+    /* Forza layout a righe: una sola colonna anche su desktop */
     .fp-exp-addons {
-        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        grid-template-columns: minmax(0, 1fr);
     }
 }
 
 @media (min-width: 1024px) {
+    /* Mantieni una colonna per evitare overflow del contenuto */
     .fp-exp-addons {
-        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        grid-template-columns: minmax(0, 1fr);
     }
 }
 
 .fp-exp-addon__card {
-    display: grid;
-    grid-template-columns: auto minmax(0, 180px) minmax(0, 1fr);
-    gap: 0.85rem 1rem;
-    align-items: flex-start;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+    align-items: stretch;
     padding: 0.85rem 1rem;
     border: 1px solid rgba(15, 23, 42, 0.12);
     border-radius: var(--fp-exp-radius-base, 12px);
     background: var(--fp-color-surface);
     box-shadow: 0 8px 22px rgba(15, 23, 42, 0.08);
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    min-width: 0;
 }
 @media (min-width: 1024px) {
-    .fp-exp-addon__card {
-        grid-template-columns: auto minmax(220px, 280px) minmax(0, 1fr);
-        align-items: center;
-    }
     .fp-exp-addon__media {
         aspect-ratio: 16 / 9;
     }
@@ -1360,9 +1364,11 @@
 }
 
 .fp-exp-addon__input {
+    position: absolute;
+    top: 10px;
+    left: 10px;
     display: flex;
     align-items: center;
-    padding-top: 0.35rem;
 }
 
 .fp-exp-addon__input input[type="checkbox"] {
@@ -1380,7 +1386,6 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    align-self: stretch;
 }
 
 .fp-exp-addon__media img {
@@ -1415,7 +1420,7 @@
 .fp-exp-addon__header {
     display: flex;
     align-items: baseline;
-    justify-content: flex-start;
+    justify-content: space-between;
     gap: 0.75rem;
     flex-wrap: wrap;
 }
@@ -1442,20 +1447,7 @@
     margin-left: auto;
 }
 
-@media (max-width: 640px) {
-    .fp-exp-addon__card {
-        grid-template-columns: auto minmax(0, 1fr);
-        grid-template-rows: auto auto;
-    }
-
-    .fp-exp-addon__media {
-        grid-column: 2 / -1;
-    }
-
-    .fp-exp-addon__content {
-        grid-column: 1 / -1;
-    }
-}
+/* Layout mobile invariato: già a colonna */
 
 .fp-exp-calendar__grid,
 .fp-exp-calendar-only__days {
@@ -1604,6 +1596,7 @@
     text-align: left;
     font-size: 0.95rem;
     min-width: 0;
+    box-sizing: border-box; /* evita che padding+width superino il contenitore */
 }
 
 .fp-exp-party-table th {

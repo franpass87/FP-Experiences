@@ -195,6 +195,9 @@
 }
 
 @media (min-width: 768px) {
+    .fp-exp-party-table {
+        table-layout: fixed;
+    }
     .fp-exp-list__grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }

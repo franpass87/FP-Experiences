@@ -1780,6 +1780,10 @@
 
         const slotsByDate = groupSlotsByDate(config.slots || []);
         const slotsContainer = container.querySelector('.fp-exp-slots');
+        const dropdown = container.querySelector('[data-fp-date-dropdown]');
+        const yearSelect = dropdown ? dropdown.querySelector('.fp-exp-select-year') : null;
+        const monthSelect = dropdown ? dropdown.querySelector('.fp-exp-select-month') : null;
+        const daySelect = dropdown ? dropdown.querySelector('.fp-exp-select-day') : null;
         const summaryContainer = container.querySelector('.fp-exp-summary');
         const summaryButton = container.querySelector('.fp-exp-summary__cta');
         const rtbConfig = config.rtb || {};
@@ -2079,6 +2083,111 @@
                 refreshSummary();
             });
         });
+
+        // Dropdown date selection (YYYY-MM-DD keys from slotsByDate)
+        if (dropdown && yearSelect && monthSelect && daySelect) {
+            const availableDates = Object.keys(slotsByDate).sort();
+            const years = Array.from(new Set(availableDates.map((d) => d.slice(0, 4))));
+
+            // Populate years
+            years.forEach((y) => {
+                const opt = document.createElement('option');
+                opt.value = y;
+                opt.textContent = y;
+                yearSelect.appendChild(opt);
+            });
+
+            const toMonthLabel = (y, m) => {
+                const monthIndex = parseInt(m, 10) - 1;
+                const date = new Date(Number(y), monthIndex, 1);
+                try {
+                    return date.toLocaleString(undefined, { month: 'long' });
+                } catch (e) {
+                    return String(m);
+                }
+            };
+
+            const populateMonths = (y) => {
+                monthSelect.innerHTML = '<option value="" selected disabled>Mese</option>';
+                daySelect.innerHTML = '<option value="" selected disabled>Giorno</option>';
+                daySelect.disabled = true;
+                if (!y) {
+                    monthSelect.disabled = true;
+                    return;
+                }
+                const months = Array.from(new Set(availableDates
+                    .filter((d) => d.startsWith(y + '-'))
+                    .map((d) => d.slice(5, 7))));
+                months.forEach((m) => {
+                    const opt = document.createElement('option');
+                    opt.value = m;
+                    opt.textContent = toMonthLabel(y, m);
+                    monthSelect.appendChild(opt);
+                });
+                monthSelect.disabled = months.length === 0;
+            };
+
+            const populateDays = (y, m) => {
+                daySelect.innerHTML = '<option value="" selected disabled>Giorno</option>';
+                if (!y || !m) {
+                    daySelect.disabled = true;
+                    return;
+                }
+                const monthIndex = parseInt(m, 10) - 1;
+                const totalDays = new Date(Number(y), monthIndex + 1, 0).getDate();
+                const availableSet = new Set(
+                    availableDates
+                        .filter((d) => d.startsWith(y + '-' + m + '-'))
+                        .map((d) => d.slice(8, 10))
+                );
+
+                for (let day = 1; day <= totalDays; day++) {
+                    const dd = String(day).padStart(2, '0');
+                    const isAvailable = availableSet.has(dd);
+                    const opt = document.createElement('option');
+                    opt.value = dd;
+                    opt.textContent = String(day);
+                    if (!isAvailable) {
+                        opt.disabled = true;
+                        opt.className = 'is-unavailable';
+                    }
+                    daySelect.appendChild(opt);
+                }
+
+                daySelect.disabled = totalDays === 0;
+            };
+
+            const onDateChange = () => {
+                const y = yearSelect.value;
+                const m = monthSelect.value;
+                const d = daySelect.value;
+                const hasFull = y && m && d;
+                if (!hasFull) {
+                    renderSlots(slotsContainer, [], state);
+                    return;
+                }
+                const dateKey = `${y}-${m}-${d}`;
+                state.selectedDate = dateKey;
+                state.selectedSlot = null;
+                renderSlots(slotsContainer, slotsByDate[dateKey] || [], state);
+                refreshSummary();
+            };
+
+            yearSelect.addEventListener('change', () => {
+                populateMonths(yearSelect.value);
+                onDateChange();
+            });
+            monthSelect.addEventListener('change', () => {
+                populateDays(yearSelect.value, monthSelect.value);
+                onDateChange();
+            });
+            daySelect.addEventListener('change', onDateChange);
+
+            // Initial state
+            yearSelect.disabled = years.length === 0;
+            monthSelect.disabled = true;
+            daySelect.disabled = true;
+        }
 
         container.addEventListener('click', (event) => {
             const rawTarget = event.target;
