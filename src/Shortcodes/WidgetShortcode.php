@@ -36,8 +36,11 @@ use function in_array;
 use function is_array;
 use function is_numeric;
 use function max;
+use function ksort;
 use function sanitize_key;
 use function sanitize_text_field;
+use function substr;
+use function uksort;
 use function wp_create_nonce;
 use function wp_json_encode;
 use function wp_get_attachment_image_src;
@@ -423,10 +426,53 @@ final class WidgetShortcode extends BaseShortcode
     private function group_slots_by_day(array $slots): array
     {
         $grouped = [];
+        $timezone = wp_timezone();
 
         foreach ($slots as $slot) {
-            $grouped[$slot['start']][] = $slot;
+            $day_key = isset($slot['start']) ? (string) $slot['start'] : '';
+            $month_key = '';
+            $month_label = '';
+
+            if ('' === $day_key) {
+                continue;
+            }
+
+            $month_key = substr($day_key, 0, 7);
+
+            $start_iso = isset($slot['start_iso']) ? (string) $slot['start_iso'] : '';
+            if ('' !== $start_iso) {
+                try {
+                    $start = new DateTimeImmutable($start_iso);
+                    $month_label = $start->setTimezone($timezone)->format('F Y');
+                } catch (Exception $exception) {
+                    $month_label = '';
+                }
+            }
+
+            if (! isset($grouped[$month_key])) {
+                $grouped[$month_key] = [
+                    'month_label' => $month_label,
+                    'days' => [],
+                ];
+            } elseif ('' !== $month_label && empty($grouped[$month_key]['month_label'])) {
+                $grouped[$month_key]['month_label'] = $month_label;
+            }
+
+            if (! isset($grouped[$month_key]['days'][$day_key])) {
+                $grouped[$month_key]['days'][$day_key] = [];
+            }
+
+            $grouped[$month_key]['days'][$day_key][] = $slot;
         }
+
+        uksort($grouped, static fn (string $a, string $b) => strcmp($a, $b));
+
+        foreach ($grouped as &$month) {
+            if (isset($month['days']) && is_array($month['days'])) {
+                ksort($month['days']);
+            }
+        }
+        unset($month);
 
         return $grouped;
     }
