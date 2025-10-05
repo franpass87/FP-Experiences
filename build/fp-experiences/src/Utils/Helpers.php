@@ -246,6 +246,10 @@ final class Helpers
             'order' => 'ASC',
             'orderby' => 'menu_order',
             'show_price_from' => true,
+            'experience_badges' => [
+                'overrides' => [],
+                'custom' => [],
+            ],
         ];
 
         $settings = get_option('fp_exp_listing', []);
@@ -286,12 +290,80 @@ final class Helpers
 
         $show_price_from = self::normalize_bool_option($settings['show_price_from'] ?? $defaults['show_price_from'], $defaults['show_price_from']);
 
+        $badge_settings_raw = isset($settings['experience_badges']) && is_array($settings['experience_badges'])
+            ? $settings['experience_badges']
+            : [];
+
+        $badge_overrides = [];
+        if (isset($badge_settings_raw['overrides']) && is_array($badge_settings_raw['overrides'])) {
+            foreach ($badge_settings_raw['overrides'] as $id => $override) {
+                $badge_id = sanitize_key((string) $id);
+                if ('' === $badge_id || ! is_array($override)) {
+                    continue;
+                }
+
+                $entry = [];
+
+                if (isset($override['label'])) {
+                    $label_value = sanitize_text_field((string) $override['label']);
+                    if ('' !== $label_value) {
+                        $entry['label'] = $label_value;
+                    }
+                }
+
+                if (array_key_exists('description', $override)) {
+                    $entry['description'] = sanitize_text_field((string) $override['description']);
+                }
+
+                if ([] !== $entry) {
+                    $badge_overrides[$badge_id] = $entry;
+                }
+            }
+        }
+
+        $badge_custom = [];
+        $seen_custom = [];
+        if (isset($badge_settings_raw['custom']) && is_array($badge_settings_raw['custom'])) {
+            foreach ($badge_settings_raw['custom'] as $custom_badge) {
+                if (! is_array($custom_badge)) {
+                    continue;
+                }
+
+                $badge_id = isset($custom_badge['id']) ? sanitize_key((string) $custom_badge['id']) : '';
+                $label_value = isset($custom_badge['label']) ? sanitize_text_field((string) $custom_badge['label']) : '';
+
+                if ('' === $badge_id || '' === $label_value) {
+                    continue;
+                }
+
+                if (isset($seen_custom[$badge_id])) {
+                    continue;
+                }
+
+                $seen_custom[$badge_id] = true;
+
+                $description_value = isset($custom_badge['description'])
+                    ? sanitize_text_field((string) $custom_badge['description'])
+                    : '';
+
+                $badge_custom[] = [
+                    'id' => $badge_id,
+                    'label' => $label_value,
+                    'description' => $description_value,
+                ];
+            }
+        }
+
         $payload = [
             'filters' => $filters,
             'per_page' => $per_page,
             'order' => $order,
             'orderby' => $orderby,
             'show_price_from' => $show_price_from,
+            'experience_badges' => [
+                'overrides' => $badge_overrides,
+                'custom' => $badge_custom,
+            ],
         ];
 
         /**
@@ -748,13 +820,12 @@ final class Helpers
     /**
      * @return array<string, array{id: string, label: string, description: string, icon: string}>
      */
-    public static function experience_badge_choices(): array
+    /**
+     * @return array<int, array<string, string>>
+     */
+    public static function default_experience_badge_choices(): array
     {
-        if (null !== self::$experience_badge_choices_cache) {
-            return self::$experience_badge_choices_cache;
-        }
-
-        $defaults = [
+        return [
             [
                 'id' => 'family-friendly',
                 'label' => __('Family friendly', 'fp-experiences'),
@@ -792,6 +863,15 @@ final class Helpers
                 'icon' => 'craft',
             ],
         ];
+    }
+
+    public static function experience_badge_choices(): array
+    {
+        if (null !== self::$experience_badge_choices_cache) {
+            return self::$experience_badge_choices_cache;
+        }
+
+        $defaults = self::default_experience_badge_choices();
 
         $choices = apply_filters('fp_exp_experience_badges', $defaults);
         $choices = is_array($choices) ? $choices : $defaults;
@@ -833,6 +913,65 @@ final class Helpers
                 'description' => __('Perfetta per bambini e genitori.', 'fp-experiences'),
                 'icon' => 'family',
             ];
+        }
+
+        $listing_settings = get_option('fp_exp_listing', []);
+        if (is_array($listing_settings) && isset($listing_settings['experience_badges']) && is_array($listing_settings['experience_badges'])) {
+            $badge_settings = $listing_settings['experience_badges'];
+
+            $overrides = isset($badge_settings['overrides']) && is_array($badge_settings['overrides'])
+                ? $badge_settings['overrides']
+                : [];
+
+            foreach ($overrides as $id => $override) {
+                $badge_id = sanitize_key((string) $id);
+                if ('' === $badge_id || ! isset($normalized[$badge_id]) || ! is_array($override)) {
+                    continue;
+                }
+
+                if (isset($override['label'])) {
+                    $label = sanitize_text_field((string) $override['label']);
+                    if ('' !== $label) {
+                        $normalized[$badge_id]['label'] = $label;
+                    }
+                }
+
+                if (array_key_exists('description', $override)) {
+                    $normalized[$badge_id]['description'] = sanitize_text_field((string) $override['description']);
+                }
+            }
+
+            $custom_badges = isset($badge_settings['custom']) && is_array($badge_settings['custom'])
+                ? $badge_settings['custom']
+                : [];
+
+            foreach ($custom_badges as $custom_badge) {
+                if (! is_array($custom_badge)) {
+                    continue;
+                }
+
+                $badge_id = isset($custom_badge['id']) ? sanitize_key((string) $custom_badge['id']) : '';
+                $label = isset($custom_badge['label']) ? sanitize_text_field((string) $custom_badge['label']) : '';
+
+                if ('' === $badge_id || '' === $label) {
+                    continue;
+                }
+
+                $description = isset($custom_badge['description'])
+                    ? sanitize_text_field((string) $custom_badge['description'])
+                    : '';
+                $icon = isset($custom_badge['icon']) ? sanitize_key((string) $custom_badge['icon']) : '';
+                if ('' === $icon) {
+                    $icon = 'default';
+                }
+
+                $normalized[$badge_id] = [
+                    'id' => $badge_id,
+                    'label' => $label,
+                    'description' => $description,
+                    'icon' => $icon,
+                ];
+            }
         }
 
         self::$experience_badge_choices_cache = $normalized;
