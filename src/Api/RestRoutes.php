@@ -416,6 +416,45 @@ final class RestRoutes
             return new WP_Error('fp_exp_availability_params', __('Parametri non validi.', 'fp-experiences'), ['status' => 400]);
         }
 
+        // Validazione formato date
+        if (! preg_match('/^\d{4}-\d{2}-\d{2}$/', $start) || ! preg_match('/^\d{4}-\d{2}-\d{2}$/', $end)) {
+            return new WP_Error(
+                'fp_exp_invalid_date_format',
+                __('Formato data non valido. Usa YYYY-MM-DD.', 'fp-experiences'),
+                ['status' => 400]
+            );
+        }
+
+        // Validazione range temporale
+        $start_ts = strtotime($start);
+        $end_ts = strtotime($end);
+        
+        if (false === $start_ts || false === $end_ts) {
+            return new WP_Error(
+                'fp_exp_invalid_date',
+                __('Le date fornite non sono valide.', 'fp-experiences'),
+                ['status' => 400]
+            );
+        }
+        
+        if ($end_ts < $start_ts) {
+            return new WP_Error(
+                'fp_exp_invalid_range',
+                __('La data di fine deve essere successiva alla data di inizio.', 'fp-experiences'),
+                ['status' => 400]
+            );
+        }
+
+        // Limita il range a max 1 anno per evitare query pesanti
+        $one_year = 365 * 24 * 60 * 60;
+        if (($end_ts - $start_ts) > $one_year) {
+            return new WP_Error(
+                'fp_exp_range_too_large',
+                __('Il range di date non può superare 1 anno.', 'fp-experiences'),
+                ['status' => 400]
+            );
+        }
+
         $slots = AvailabilityService::get_virtual_slots($experience_id, $start, $end);
 
         return rest_ensure_response([
@@ -426,6 +465,7 @@ final class RestRoutes
                         'start' => sanitize_text_field((string) ($slot['start'] ?? '')),
                         'end' => sanitize_text_field((string) ($slot['end'] ?? '')),
                         'capacity_total' => (int) ($slot['capacity_total'] ?? 0),
+                        'capacity_remaining' => (int) ($slot['capacity_remaining'] ?? 0),
                         'duration' => (int) ($slot['duration'] ?? 0),
                     ];
                 },

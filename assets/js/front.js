@@ -2508,6 +2508,20 @@
                     credentials: 'same-origin',
                     headers: buildRestHeaders(),
                 });
+                
+                // Gestione errori HTTP specifica
+                if (!response.ok) {
+                    let errorMessage = container.getAttribute('data-error-label') || 'Impossibile caricare le fasce';
+                    if (response.status === 404) {
+                        errorMessage = 'Esperienza non trovata';
+                    } else if (response.status === 401 || response.status === 403) {
+                        errorMessage = 'Accesso negato. Ricarica la pagina e riprova.';
+                    } else if (response.status >= 500) {
+                        errorMessage = 'Errore del server. Riprova tra qualche minuto.';
+                    }
+                    throw new Error(errorMessage);
+                }
+                
                 const data = await response.json().catch(() => ({}));
                 const rawSlots = Array.isArray(data.slots) ? data.slots : [];
                 const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
@@ -2518,7 +2532,12 @@
                         const d = new Date(String(sql).replace(' ', 'T') + 'Z');
                         if (Number.isNaN(d.getTime())) return '';
                         try {
-                            return new Intl.DateTimeFormat(undefined, { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' }).format(d);
+                            // Fix: usa il timezone locale invece di UTC
+                            return new Intl.DateTimeFormat(undefined, { 
+                                hour: '2-digit', 
+                                minute: '2-digit', 
+                                timeZone: tz 
+                            }).format(d);
                         } catch (e) {
                             const hh = String(d.getUTCHours()).padStart(2, '0');
                             const mm = String(d.getUTCMinutes()).padStart(2, '0');
@@ -2528,7 +2547,7 @@
                     return {
                         id: start, // synthetic id
                         time: toLocal(start),
-                        remaining: 0,
+                        remaining: parseInt(s.capacity_remaining || s.capacity_total || 0, 10),
                         start_iso: start.replace(' ', 'T') + 'Z',
                         end_iso: end.replace(' ', 'T') + 'Z',
                     };

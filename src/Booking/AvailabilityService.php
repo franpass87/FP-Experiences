@@ -150,14 +150,27 @@ final class AvailabilityService
             ));
         }
 
-        // Converte in payload
+        // Converte in payload e calcola capacità rimanente
         $slots = [];
         foreach ($occurrences as [$start, $end]) {
+            $start_sql = $start->format('Y-m-d H:i:s');
+            $end_sql = $end->format('Y-m-d H:i:s');
+            
+            // Calcola quanti posti sono già prenotati per questo slot virtuale
+            $booked = Reservations::count_bookings_for_virtual_slot(
+                $experience_id,
+                $start_sql,
+                $end_sql
+            );
+            
+            $capacity_remaining = max(0, $capacity - $booked);
+            
             $slots[] = [
                 'experience_id' => $experience_id,
-                'start' => $start->format('Y-m-d H:i:s'),
-                'end' => $end->format('Y-m-d H:i:s'),
+                'start' => $start_sql,
+                'end' => $end_sql,
                 'capacity_total' => $capacity,
+                'capacity_remaining' => $capacity_remaining,
                 'buffer_before' => $buffer_before,
                 'buffer_after' => $buffer_after,
                 'duration' => (int) (($end->getTimestamp() - $start->getTimestamp()) / 60),
