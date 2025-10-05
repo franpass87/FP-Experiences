@@ -48,8 +48,8 @@ $format_currency = static function (string $amount) use ($currency_symbol, $curr
 <section class="<?php echo esc_attr($container_class); ?>" data-fp-shortcode="simple-archive">
     <div class="fp-simple-archive__inner">
         <header class="fp-simple-archive__header">
-            <h2 class="fp-simple-archive__title"><?php esc_html_e('Experiences', 'fp-experiences'); ?></h2>
-            <p class="fp-simple-archive__subtitle"><?php esc_html_e('Hand-picked adventures ready to book.', 'fp-experiences'); ?></p>
+            <h2 class="fp-simple-archive__title"><?php esc_html_e('Esperienze', 'fp-experiences'); ?></h2>
+            <p class="fp-simple-archive__subtitle"><?php esc_html_e('Avventure selezionate pronte da prenotare.', 'fp-experiences'); ?></p>
         </header>
 
         <?php if (empty($experiences)) : ?>
@@ -85,13 +85,13 @@ $format_currency = static function (string $amount) use ($currency_symbol, $curr
                             </h3>
                             <?php if ($duration) : ?>
                                 <p class="fp-simple-archive__meta fp-simple-archive__meta--duration">
-                                    <span class="fp-simple-archive__meta-label"><?php esc_html_e('Duration', 'fp-experiences'); ?>:</span>
+                                    <span class="fp-simple-archive__meta-label"><?php esc_html_e('Durata', 'fp-experiences'); ?>:</span>
                                     <span class="fp-simple-archive__meta-value"><?php echo esc_html($duration); ?></span>
                                 </p>
                             <?php endif; ?>
                             <?php if ('' !== $formatted_price_display) : ?>
                                 <p class="fp-simple-archive__meta fp-simple-archive__meta--price">
-                                    <span class="fp-simple-archive__meta-label"><?php esc_html_e('From', 'fp-experiences'); ?></span>
+                                    <span class="fp-simple-archive__meta-label"><?php esc_html_e('Da', 'fp-experiences'); ?></span>
                                     <span class="fp-simple-archive__meta-value"><?php echo esc_html($formatted_price_display); ?></span>
                                 </p>
                             <?php endif; ?>

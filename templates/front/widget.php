@@ -65,8 +65,8 @@ $rtb_enabled = ! empty($rtb['enabled']);
 $rtb_mode = isset($rtb['mode']) ? (string) $rtb['mode'] : 'off';
 $rtb_forced = ! empty($rtb['forced']);
 $rtb_submit_label = 'pay_later' === $rtb_mode
-    ? esc_html__('Send approval with payment link', 'fp-experiences')
-    : esc_html__('Send booking request', 'fp-experiences');
+    ? esc_html__('Invia approvazione con link di pagamento', 'fp-experiences')
+    : esc_html__('Invia richiesta di prenotazione', 'fp-experiences');
 
 $currency_code = isset($currency) && is_string($currency) ? $currency : (string) get_option('woocommerce_currency', 'EUR');
 $currency_symbol = function_exists('get_woocommerce_currency_symbol')
@@ -177,7 +177,7 @@ $price_from_display = null !== $price_from_value && $price_from_value > 0
         <div class="fp-exp-hero__card fp-exp-widget__hero-card">
             <?php if ('' !== $price_from_display) : ?>
                 <div class="fp-exp-hero__price" data-fp-scroll-target="calendar">
-                    <span class="fp-exp-hero__price-label"><?php esc_html_e('From', 'fp-experiences'); ?></span>
+                    <span class="fp-exp-hero__price-label"><?php esc_html_e('Da', 'fp-experiences'); ?></span>
                     <span class="fp-exp-hero__price-value"><?php echo esc_html($price_from_display); ?></span>
                 </div>
             <?php endif; ?>
@@ -201,7 +201,7 @@ $price_from_display = null !== $price_from_value && $price_from_value > 0
                                 <svg viewBox="0 0 24 24" role="img" aria-hidden="true"><path fill="currentColor" d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Zm5.33 9h-1.83a19.46 19.46 0 0 0-.87-4 8 8 0 0 1 2.7 4ZM12 4a17.43 17.43 0 0 1 2.44 7H9.56A17.43 17.43 0 0 1 12 4ZM8.37 6.91a19.46 19.46 0 0 0-.87 4H5.67a8 8 0 0 1 2.7-4ZM4 12h3.5a19.43 19.43 0 0 0 .88 4H6.33A8 8 0 0 1 4 12Zm2.37 6h2.64a21.13 21.13 0 0 0 1.87 3.38A8 8 0 0 1 6.37 18Zm5.63 3a19.1 19.1 0 0 1-2.55-5h5.1A19.1 19.1 0 0 1 12 21Zm2.69.38A21.13 21.13 0 0 0 15 18h2.64a8 8 0 0 1-3 3.38ZM17.67 16H15.62a19.43 19.43 0 0 0 .88-4H20a8 8 0 0 1-2.33 4Z"/></svg>
                             </span>
                             <div class="fp-exp-hero__fact-content">
-                                <span class="fp-exp-hero__fact-label"><?php esc_html_e('Available languages', 'fp-experiences'); ?></span>
+                                <span class="fp-exp-hero__fact-label"><?php esc_html_e('Lingue disponibili', 'fp-experiences'); ?></span>
                                 <ul class="fp-exp-hero__language-list" role="list">
                                     <?php foreach ($language_badges as $language) : ?>
                                         <li class="fp-exp-hero__language">
@@ -224,7 +224,7 @@ $price_from_display = null !== $price_from_value && $price_from_value > 0
                                 <svg viewBox="0 0 24 24" role="img" aria-hidden="true"><path fill="currentColor" d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Zm1 10.59 2.12 2.12-1.41 1.41-2.83-2.83V7h2.12Z"/></svg>
                             </span>
                             <div class="fp-exp-hero__fact-content">
-                                <span class="fp-exp-hero__fact-label"><?php esc_html_e('Duration', 'fp-experiences'); ?></span>
+                                <span class="fp-exp-hero__fact-label"><?php esc_html_e('Durata', 'fp-experiences'); ?></span>
                                 <span class="fp-exp-hero__fact-value"><?php echo esc_html($duration_label); ?></span>
                             </div>
                         </li>
@@ -247,23 +247,53 @@ $price_from_display = null !== $price_from_value && $price_from_value > 0
                             ?>
                             <section class="fp-exp-calendar__month" data-month="<?php echo esc_attr($month_key); ?>">
                                 <header class="fp-exp-calendar__month-header"><?php echo esc_html($month_label); ?></header>
+                                <?php
+                                // Calcolo intestazioni giorni e riempimento griglia 7xN
+                                try {
+                                    $first_of_month = new \DateTimeImmutable($month_key . '-01');
+                                    $days_in_month = (int) $first_of_month->format('t');
+                                    $leading = max(0, (int) $first_of_month->format('N') - 1); // Lun=1..Dom=7
+                                } catch (\Exception $e) {
+                                    $first_of_month = null;
+                                    $days_in_month = 31;
+                                    $leading = 0;
+                                }
+
+                                // Etichette giorni (Lun..Dom) basate su locale breve
+                                $week_ref = $first_of_month ?: new \DateTimeImmutable('monday this week');
+                                $weekdays = [];
+                                for ($i = 0; $i < 7; $i++) {
+                                    $weekdays[] = $week_ref->modify('+' . $i . ' days')->format('D');
+                                }
+                                ?>
+                                <div class="fp-exp-calendar__weekdays" aria-hidden="true">
+                                    <?php foreach ($weekdays as $wd) : ?>
+                                        <div class="fp-exp-calendar__weekday"><?php echo esc_html($wd); ?></div>
+                                    <?php endforeach; ?>
+                                </div>
                                 <div class="fp-exp-calendar__grid">
-                                    <?php foreach ($month_days as $day => $day_slots) :
-                                        $day_slots = is_array($day_slots) ? $day_slots : [];
+                                    <?php for ($i = 0; $i < $leading; $i++) : ?>
+                                        <div class="fp-exp-calendar__empty" aria-hidden="true"></div>
+                                    <?php endfor; ?>
+                                    <?php for ($day_num = 1; $day_num <= $days_in_month; $day_num++) :
+                                        $date_key = $month_key . '-' . str_pad((string) $day_num, 2, '0', STR_PAD_LEFT);
+                                        $day_slots = isset($month_days[$date_key]) && is_array($month_days[$date_key]) ? $month_days[$date_key] : [];
                                         $slot_count = count($day_slots);
                                         $is_available = $slot_count > 0;
                                         ?>
                                         <button
                                             type="button"
                                             class="fp-exp-calendar__day"
-                                            data-date="<?php echo esc_attr($day); ?>"
+                                            data-date="<?php echo esc_attr($date_key); ?>"
                                             data-available="<?php echo esc_attr($is_available ? '1' : '0'); ?>"
                                             <?php if (! $is_available) : ?>disabled aria-disabled="true"<?php else : ?>aria-pressed="false"<?php endif; ?>
                                         >
-                                            <span class="fp-exp-calendar__day-label"><?php echo esc_html($day); ?></span>
-                                            <span class="fp-exp-calendar__day-count"><?php echo esc_html(sprintf(esc_html__('%d slots', 'fp-experiences'), $slot_count)); ?></span>
+                                            <span class="fp-exp-calendar__day-label"><?php echo esc_html((string) $day_num); ?></span>
+                                            <?php if ($is_available) : ?>
+                                                <span class="fp-exp-calendar__day-count"><?php echo esc_html(sprintf(esc_html__('%d fasce', 'fp-experiences'), $slot_count)); ?></span>
+                                            <?php endif; ?>
                                         </button>
-                                    <?php endforeach; ?>
+                                    <?php endfor; ?>
                                 </div>
                             </section>
                         <?php endforeach; ?>
@@ -282,9 +312,9 @@ $price_from_display = null !== $price_from_value && $price_from_value > 0
                     <table class="fp-exp-party-table">
                         <thead>
                             <tr>
-                                <th scope="col"><?php echo esc_html__('Ticket type', 'fp-experiences'); ?></th>
-                                <th scope="col"><?php echo esc_html__('Price', 'fp-experiences'); ?></th>
-                                <th scope="col"><?php echo esc_html__('Quantity', 'fp-experiences'); ?></th>
+                                <th scope="col"><?php echo esc_html__('Tipo biglietto', 'fp-experiences'); ?></th>
+                                <th scope="col"><?php echo esc_html__('Prezzo', 'fp-experiences'); ?></th>
+                                <th scope="col"><?php echo esc_html__('Quantità', 'fp-experiences'); ?></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -395,17 +425,17 @@ $price_from_display = null !== $price_from_value && $price_from_value > 0
             <li class="fp-exp-step fp-exp-step--summary" data-fp-step="summary">
                 <header>
                     <span class="fp-exp-step__number"><?php echo esc_html(empty($addons) ? '3' : '4'); ?></span>
-                    <h3 class="fp-exp-step__title"><?php echo esc_html__('Summary', 'fp-experiences'); ?></h3>
+                    <h3 class="fp-exp-step__title"><?php echo esc_html__('Riepilogo', 'fp-experiences'); ?></h3>
                 </header>
                 <div class="fp-exp-step__content">
                     <div
                         class="fp-exp-summary"
                         data-empty-label="<?php echo esc_attr__('Seleziona i biglietti per vedere il riepilogo', 'fp-experiences'); ?>"
-                        data-loading-label="<?php echo esc_attr__('Updating price…', 'fp-experiences'); ?>"
+                        data-loading-label="<?php echo esc_attr__('Aggiornamento prezzo…', 'fp-experiences'); ?>"
                         data-error-label="<?php echo esc_attr__('Impossibile aggiornare il prezzo. Riprova.', 'fp-experiences'); ?>"
                         data-slot-label="<?php echo esc_attr__('Scegli un orario per confermare prezzo e disponibilità.', 'fp-experiences'); ?>"
-                        data-tax-label="<?php echo esc_attr__('Taxes included where applicable.', 'fp-experiences'); ?>"
-                        data-base-label="<?php echo esc_attr__('Base price', 'fp-experiences'); ?>"
+                        data-tax-label="<?php echo esc_attr__('Tasse incluse ove applicabile.', 'fp-experiences'); ?>"
+                        data-base-label="<?php echo esc_attr__('Prezzo base', 'fp-experiences'); ?>"
                     >
                         <div class="fp-exp-summary__status" data-fp-summary-status role="status" aria-live="polite">
                             <p class="fp-exp-summary__message"><?php echo esc_html__('Seleziona i biglietti per vedere il riepilogo', 'fp-experiences'); ?></p>
@@ -414,7 +444,7 @@ $price_from_display = null !== $price_from_value && $price_from_value > 0
                             <ul class="fp-exp-summary__lines" data-fp-summary-lines></ul>
                             <ul class="fp-exp-summary__adjustments" data-fp-summary-adjustments hidden></ul>
                             <div class="fp-exp-summary__total" data-fp-summary-total-row>
-                                <span class="fp-exp-summary__total-label"><?php esc_html_e('Total', 'fp-experiences'); ?></span>
+                                <span class="fp-exp-summary__total-label"><?php esc_html_e('Totale', 'fp-experiences'); ?></span>
                                 <span class="fp-exp-summary__total-amount" data-fp-summary-total></span>
                             </div>
                             <p class="fp-exp-summary__disclaimer" data-fp-summary-disclaimer hidden></p>
@@ -428,7 +458,7 @@ $price_from_display = null !== $price_from_value && $price_from_value > 0
                             data-error-name="<?php echo esc_attr__('Inserisci il tuo nome.', 'fp-experiences'); ?>"
                             data-error-email="<?php echo esc_attr__('Inserisci il tuo indirizzo email.', 'fp-experiences'); ?>"
                             data-error-email-format="<?php echo esc_attr__('Inserisci un indirizzo email valido.', 'fp-experiences'); ?>"
-                            data-error-privacy="<?php echo esc_attr__('Accept the privacy policy to continue.', 'fp-experiences'); ?>"
+                            data-error-privacy="<?php echo esc_attr__('Accetta l\'informativa privacy per continuare.', 'fp-experiences'); ?>"
                         >
                             <input type="hidden" name="experience_id" value="<?php echo esc_attr((string) $experience['id']); ?>">
                             <input type="hidden" name="slot_id" value="">
@@ -446,7 +476,7 @@ $price_from_display = null !== $price_from_value && $price_from_value > 0
                                 data-intro="<?php echo esc_attr__('Controlla i campi evidenziati:', 'fp-experiences'); ?>"
                             ></div>
                             <div class="fp-exp-field">
-                                <label class="fp-exp-label" for="fp-exp-rtb-name-<?php echo esc_attr($scope_class); ?>"><?php echo esc_html__('Name and surname', 'fp-experiences'); ?> <span class="fp-exp-required" aria-hidden="true">*</span></label>
+                                <label class="fp-exp-label" for="fp-exp-rtb-name-<?php echo esc_attr($scope_class); ?>"><?php echo esc_html__('Nome e cognome', 'fp-experiences'); ?> <span class="fp-exp-required" aria-hidden="true">*</span></label>
                                 <input type="text" id="fp-exp-rtb-name-<?php echo esc_attr($scope_class); ?>" name="name" class="fp-exp-input" required>
                             </div>
                             <div class="fp-exp-field">
@@ -454,23 +484,23 @@ $price_from_display = null !== $price_from_value && $price_from_value > 0
                                 <input type="email" id="fp-exp-rtb-email-<?php echo esc_attr($scope_class); ?>" name="email" class="fp-exp-input" required>
                             </div>
                             <div class="fp-exp-field">
-                                <label class="fp-exp-label" for="fp-exp-rtb-phone-<?php echo esc_attr($scope_class); ?>"><?php echo esc_html__('Phone number', 'fp-experiences'); ?></label>
+                                <label class="fp-exp-label" for="fp-exp-rtb-phone-<?php echo esc_attr($scope_class); ?>"><?php echo esc_html__('Numero di telefono', 'fp-experiences'); ?></label>
                                 <input type="tel" id="fp-exp-rtb-phone-<?php echo esc_attr($scope_class); ?>" name="phone" class="fp-exp-input">
                             </div>
                             <div class="fp-exp-field">
-                                <label class="fp-exp-label" for="fp-exp-rtb-notes-<?php echo esc_attr($scope_class); ?>"><?php echo esc_html__('Notes or special requests', 'fp-experiences'); ?></label>
+                                <label class="fp-exp-label" for="fp-exp-rtb-notes-<?php echo esc_attr($scope_class); ?>"><?php echo esc_html__('Note o richieste particolari', 'fp-experiences'); ?></label>
                                 <textarea id="fp-exp-rtb-notes-<?php echo esc_attr($scope_class); ?>" name="notes" class="fp-exp-textarea" rows="4"></textarea>
                             </div>
                             <div class="fp-exp-field fp-exp-field--checkbox">
                                 <label for="<?php echo esc_attr($marketing_id); ?>">
                                     <input type="checkbox" id="<?php echo esc_attr($marketing_id); ?>" name="consent_marketing" value="1">
-                                    <span><?php echo esc_html__('I would like to receive news and marketing updates.', 'fp-experiences'); ?></span>
+                                    <span><?php echo esc_html__('Desidero ricevere novità e comunicazioni di marketing.', 'fp-experiences'); ?></span>
                                 </label>
                             </div>
                             <div class="fp-exp-field fp-exp-field--checkbox">
                                 <label for="<?php echo esc_attr($privacy_id); ?>">
                                     <input type="checkbox" id="<?php echo esc_attr($privacy_id); ?>" name="consent_privacy" value="1" required>
-                                    <span><?php echo esc_html__('I agree to the privacy policy and terms of booking.', 'fp-experiences'); ?></span>
+                                    <span><?php echo esc_html__('Accetto l\'informativa privacy e i termini di prenotazione.', 'fp-experiences'); ?></span>
                                 </label>
                             </div>
                             <div class="fp-exp-rtb-form__actions">
@@ -480,7 +510,7 @@ $price_from_display = null !== $price_from_value && $price_from_value > 0
                         </form>
                     <?php else : ?>
                         <button type="button" class="fp-exp-summary__cta" disabled>
-                            <?php echo esc_html__('Proceed to checkout', 'fp-experiences'); ?>
+                            <?php echo esc_html__('Procedi al pagamento', 'fp-experiences'); ?>
                         </button>
                     <?php endif; ?>
                 </div>

@@ -72,7 +72,7 @@ final class CheckoutShortcode extends BaseShortcode
         $cart = Cart::instance();
 
         if (! $cart->has_items()) {
-            return new WP_Error('fp_exp_checkout_empty', esc_html__('Your experience cart is empty.', 'fp-experiences'));
+            return new WP_Error('fp_exp_checkout_empty', esc_html__('Il carrello esperienze è vuoto.', 'fp-experiences'));
         }
 
         $conflict = $cart->check_woocommerce_cart_state();
@@ -86,12 +86,12 @@ final class CheckoutShortcode extends BaseShortcode
         $total_formatted = $this->format_money((float) $totals['total'], (string) $totals['currency']);
 
         $strings = [
-            'contact_details' => esc_html__('Contact details', 'fp-experiences'),
-            'billing_details' => esc_html__('Billing address', 'fp-experiences'),
-            'payment_details' => esc_html__('Payment method', 'fp-experiences'),
-            'order_review' => esc_html__('Order summary', 'fp-experiences'),
-            'submit' => esc_html__('Confirm and pay', 'fp-experiences'),
-            'cart_locked' => esc_html__('The experience cart is locked while you complete payment.', 'fp-experiences'),
+            'contact_details' => esc_html__('Dati di contatto', 'fp-experiences'),
+            'billing_details' => esc_html__('Indirizzo di fatturazione', 'fp-experiences'),
+            'payment_details' => esc_html__('Metodo di pagamento', 'fp-experiences'),
+            'order_review' => esc_html__('Riepilogo ordine', 'fp-experiences'),
+            'submit' => esc_html__('Conferma e paga', 'fp-experiences'),
+            'cart_locked' => esc_html__('Il carrello è bloccato mentre completi il pagamento.', 'fp-experiences'),
         ];
 
         return [
@@ -135,7 +135,7 @@ final class CheckoutShortcode extends BaseShortcode
         $prepared = [];
 
         foreach ($items as $item) {
-            $title = sanitize_text_field((string) ($item['title'] ?? esc_html__('Experience booking', 'fp-experiences')));
+            $title = sanitize_text_field((string) ($item['title'] ?? esc_html__('Prenotazione esperienza', 'fp-experiences')));
             $slot = sanitize_text_field((string) ($item['slot_label'] ?? ($item['slot_start'] ?? '')));
             $tickets = $this->format_ticket_lines($item['tickets'] ?? []);
             $addons = $this->format_addon_lines($item['addons'] ?? []);
