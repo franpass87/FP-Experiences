@@ -1077,7 +1077,7 @@
             const quantity = Math.max(1, parseInt(String(formData.get('quantity') || '1'), 10));
             const addons = formData.getAll('addons[]').map((value) => String(value)).filter((value) => value !== '');
 
-            return {
+            const payload = {
                 experience_id: experienceId,
                 quantity,
                 addons,
@@ -1091,6 +1091,15 @@
                 },
                 message: String(formData.get('message') || ''),
             };
+
+            const scheduledDate = String(formData.get('delivery[send_on]') || '').trim();
+            if (scheduledDate) {
+                payload.delivery = {
+                    send_on: scheduledDate,
+                };
+            }
+
+            return payload;
         }
 
         function showGiftFeedback(container, message, isError) {

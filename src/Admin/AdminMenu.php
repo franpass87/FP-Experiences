@@ -40,6 +40,8 @@ final class AdminMenu
 
     private HelpPage $help_page;
 
+    private EmailsPage $emails_page;
+
     private ?ExperiencePageCreator $page_creator;
 
     public function __construct(
@@ -48,6 +50,7 @@ final class AdminMenu
         LogsPage $logs_page,
         RequestsPage $requests_page,
         ToolsPage $tools_page,
+        EmailsPage $emails_page,
         CheckinPage $checkin_page,
         OrdersPage $orders_page,
         HelpPage $help_page,
@@ -58,6 +61,7 @@ final class AdminMenu
         $this->logs_page = $logs_page;
         $this->requests_page = $requests_page;
         $this->tools_page = $tools_page;
+        $this->emails_page = $emails_page;
         $this->checkin_page = $checkin_page;
         $this->orders_page = $orders_page;
         $this->help_page = $help_page;
@@ -160,6 +164,15 @@ final class AdminMenu
             Helpers::management_capability(),
             'fp_exp_settings',
             [$this->settings_page, 'render_page']
+        );
+
+        add_submenu_page(
+            'fp_exp_dashboard',
+            esc_html__('Email', 'fp-experiences'),
+            esc_html__('Email', 'fp-experiences'),
+            Helpers::management_capability(),
+            'fp_exp_emails',
+            [$this->emails_page, 'render_page']
         );
 
         add_submenu_page(
@@ -280,6 +293,14 @@ final class AdminMenu
                 'title' => esc_html__('Impostazioni', 'fp-experiences'),
                 'href' => admin_url('admin.php?page=fp_exp_settings'),
                 'meta' => $this->admin_bar_meta('fp-exp-dashboard_page_fp_exp_settings' === $screen_id),
+            ]);
+
+            $admin_bar->add_node([
+                'id' => 'fp-exp-emails',
+                'parent' => 'fp-exp',
+                'title' => esc_html__('Email', 'fp-experiences'),
+                'href' => admin_url('admin.php?page=fp_exp_emails'),
+                'meta' => $this->admin_bar_meta('fp-exp-dashboard_page_fp_exp_emails' === $screen_id),
             ]);
         }
     }

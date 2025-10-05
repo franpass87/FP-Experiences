@@ -16,6 +16,7 @@ use FP_Exp\Admin\SettingsPage;
 use FP_Exp\Admin\LanguageAdmin;
 use FP_Exp\Admin\LogsPage;
 use FP_Exp\Admin\ToolsPage;
+use FP_Exp\Admin\EmailsPage;
 use FP_Exp\Admin\CheckinPage;
 use FP_Exp\Admin\OrdersPage;
 use FP_Exp\Admin\HelpPage;
@@ -107,6 +108,8 @@ final class Plugin
 
     private ?ToolsPage $tools_page = null;
 
+    private ?EmailsPage $emails_page = null;
+
     private ?CheckinPage $checkin_page = null;
 
     private ?OrdersPage $orders_page = null;
@@ -189,6 +192,7 @@ final class Plugin
             $this->requests_page = new RequestsPage($this->request_to_book);
             $this->experience_meta_boxes = new ExperienceMetaBoxes();
             $this->tools_page = new ToolsPage($this->settings_page);
+            $this->emails_page = new EmailsPage($this->settings_page);
             $this->checkin_page = new CheckinPage();
             $this->orders_page = new OrdersPage();
             $this->help_page = new HelpPage();
@@ -201,6 +205,7 @@ final class Plugin
                 $this->logs_page,
                 $this->requests_page,
                 $this->tools_page,
+                $this->emails_page,
                 $this->checkin_page,
                 $this->orders_page,
                 $this->help_page,

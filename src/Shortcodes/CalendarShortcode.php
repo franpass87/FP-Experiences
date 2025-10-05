@@ -140,6 +140,20 @@ final class CalendarShortcode extends BaseShortcode
         );
 
         $rows = $wpdb->get_results($sql, ARRAY_A);
+
+        if (! $rows) {
+            $fallback_limit = max(1, $months * 31);
+            $fallback_sql = $wpdb->prepare(
+                "SELECT id, start_datetime, end_datetime, capacity_total FROM {$table} " .
+                "WHERE experience_id = %d AND status = %s AND start_datetime >= %s ORDER BY start_datetime ASC LIMIT %d",
+                $experience_id,
+                Slots::STATUS_OPEN,
+                $now,
+                $fallback_limit
+            );
+
+            $rows = $wpdb->get_results($fallback_sql, ARRAY_A);
+        }
         $timezone = wp_timezone();
         $currency = get_option('woocommerce_currency', 'EUR');
 
@@ -186,8 +200,22 @@ final class CalendarShortcode extends BaseShortcode
                 'price_from' => 0,
             ];
 
+            $month_label = $start->setTimezone($timezone)->format('F Y');
+
+            if (! isset($calendar[$month_key])) {
+                $calendar[$month_key] = [
+                    'month_label' => $month_label,
+                    'days' => [],
+                ];
+            } elseif (! isset($calendar[$month_key]['month_label'])) {
+                $calendar[$month_key]['month_label'] = $month_label;
+            }
+
+            if (! isset($calendar[$month_key]['days'][$day_key])) {
+                $calendar[$month_key]['days'][$day_key] = [];
+            }
+
             $calendar[$month_key]['days'][$day_key][] = $slot;
-            $calendar[$month_key]['month_label'] = $start->setTimezone($timezone)->format('F Y');
             $flat[] = $slot;
         }
 

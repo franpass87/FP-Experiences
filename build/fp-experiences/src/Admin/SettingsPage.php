@@ -83,6 +83,7 @@ final class SettingsPage
 
     public function register_settings(): void
     {
+        $this->register_email_settings();
         $this->register_general_settings();
         $this->register_gift_settings();
         $this->register_branding_settings();
@@ -158,9 +159,6 @@ final class SettingsPage
             } elseif ('rtb' === $active_tab) {
                 settings_fields('fp_exp_settings_rtb');
                 do_settings_sections('fp_exp_settings_rtb');
-            } elseif ('brevo' === $active_tab) {
-                settings_fields('fp_exp_settings_brevo');
-                do_settings_sections('fp_exp_settings_brevo');
             } elseif ('calendar' === $active_tab) {
                 settings_fields('fp_exp_settings_calendar');
                 do_settings_sections('fp_exp_settings_calendar');
@@ -222,26 +220,109 @@ final class SettingsPage
         ]);
     }
 
-    private function register_general_settings(): void
+    private function register_email_settings(): void
     {
-        register_setting('fp_exp_settings_general', 'fp_exp_structure_email', [
+        register_setting('fp_exp_settings_emails', 'fp_exp_structure_email', [
             'type' => 'string',
             'sanitize_callback' => static fn ($value) => sanitize_email((string) $value),
             'default' => '',
         ]);
 
-        register_setting('fp_exp_settings_general', 'fp_exp_webmaster_email', [
+        register_setting('fp_exp_settings_emails', 'fp_exp_webmaster_email', [
             'type' => 'string',
             'sanitize_callback' => static fn ($value) => sanitize_email((string) $value),
             'default' => '',
         ]);
 
-        register_setting('fp_exp_settings_general', 'fp_exp_email_branding', [
+        register_setting('fp_exp_settings_emails', 'fp_exp_email_branding', [
             'type' => 'array',
             'sanitize_callback' => [$this, 'sanitize_email_branding'],
             'default' => [],
         ]);
 
+        add_settings_section(
+            'fp_exp_section_emails_addresses',
+            esc_html__('Sender & recipients', 'fp-experiences'),
+            [$this, 'render_email_addresses_help'],
+            'fp_exp_settings_emails'
+        );
+
+        add_settings_field(
+            'fp_exp_structure_email',
+            esc_html__('Structure email', 'fp-experiences'),
+            [$this, 'render_email_field'],
+            'fp_exp_settings_emails',
+            'fp_exp_section_emails_addresses',
+            [
+                'option' => 'fp_exp_structure_email',
+                'description' => esc_html__('Primary address for booking confirmations and staff alerts.', 'fp-experiences'),
+            ]
+        );
+
+        add_settings_field(
+            'fp_exp_webmaster_email',
+            esc_html__('Webmaster email', 'fp-experiences'),
+            [$this, 'render_email_field'],
+            'fp_exp_settings_emails',
+            'fp_exp_section_emails_addresses',
+            [
+                'option' => 'fp_exp_webmaster_email',
+                'description' => esc_html__('Secondary address to receive staff notifications.', 'fp-experiences'),
+            ]
+        );
+
+        add_settings_section(
+            'fp_exp_section_email_branding',
+            esc_html__('Email branding', 'fp-experiences'),
+            [$this, 'render_email_branding_help'],
+            'fp_exp_settings_emails'
+        );
+
+        add_settings_field(
+            'fp_exp_email_branding_logo',
+            esc_html__('Logo URL', 'fp-experiences'),
+            [$this, 'render_email_branding_field'],
+            'fp_exp_settings_emails',
+            'fp_exp_section_email_branding',
+            [
+                'key' => 'logo',
+                'type' => 'text',
+                'placeholder' => 'https://example.com/logo.png',
+                'description' => esc_html__('Absolute URL to the logo shown in the email header. Leave empty to display only the title.', 'fp-experiences'),
+            ]
+        );
+
+        add_settings_field(
+            'fp_exp_email_branding_header',
+            esc_html__('Header title', 'fp-experiences'),
+            [$this, 'render_email_branding_field'],
+            'fp_exp_settings_emails',
+            'fp_exp_section_email_branding',
+            [
+                'key' => 'header_text',
+                'type' => 'text',
+                'placeholder' => esc_html__('Es. Benvenuto a bordo', 'fp-experiences'),
+                'description' => esc_html__('Appears alongside the logo in the coloured header. Defaults to the site name.', 'fp-experiences'),
+            ]
+        );
+
+        add_settings_field(
+            'fp_exp_email_branding_footer',
+            esc_html__('Footer note', 'fp-experiences'),
+            [$this, 'render_email_branding_field'],
+            'fp_exp_settings_emails',
+            'fp_exp_section_email_branding',
+            [
+                'key' => 'footer_text',
+                'type' => 'textarea',
+                'placeholder' => esc_html__('Es. Seguici sui social o rispondi a questa email per assistenza.', 'fp-experiences'),
+                'description' => esc_html__('Closing message displayed in the email footer. Supports multiple lines.', 'fp-experiences'),
+            ]
+        );
+    }
+
+    private function register_general_settings(): void
+    {
         register_setting('fp_exp_settings_general', 'fp_exp_enable_meeting_points', [
             'type' => 'string',
             'sanitize_callback' => [$this, 'sanitize_toggle'],
@@ -265,30 +346,6 @@ final class SettingsPage
             esc_html__('General', 'fp-experiences'),
             '__return_false',
             'fp_exp_settings_general'
-        );
-
-        add_settings_field(
-            'fp_exp_structure_email',
-            esc_html__('Structure email', 'fp-experiences'),
-            [$this, 'render_email_field'],
-            'fp_exp_settings_general',
-            'fp_exp_section_general',
-            [
-                'option' => 'fp_exp_structure_email',
-                'description' => esc_html__('Primary address for booking confirmations and staff alerts.', 'fp-experiences'),
-            ]
-        );
-
-        add_settings_field(
-            'fp_exp_webmaster_email',
-            esc_html__('Webmaster email', 'fp-experiences'),
-            [$this, 'render_email_field'],
-            'fp_exp_settings_general',
-            'fp_exp_section_general',
-            [
-                'option' => 'fp_exp_webmaster_email',
-                'description' => esc_html__('Secondary address to receive staff notifications.', 'fp-experiences'),
-            ]
         );
 
         add_settings_field(
@@ -318,54 +375,6 @@ final class SettingsPage
             ]
         );
 
-        add_settings_section(
-            'fp_exp_section_email_branding',
-            esc_html__('Email branding', 'fp-experiences'),
-            [$this, 'render_email_branding_help'],
-            'fp_exp_settings_general'
-        );
-
-        add_settings_field(
-            'fp_exp_email_branding_logo',
-            esc_html__('Logo URL', 'fp-experiences'),
-            [$this, 'render_email_branding_field'],
-            'fp_exp_settings_general',
-            'fp_exp_section_email_branding',
-            [
-                'key' => 'logo',
-                'type' => 'text',
-                'placeholder' => 'https://example.com/logo.png',
-                'description' => esc_html__('Absolute URL to the logo shown in the email header. Leave empty to display only the title.', 'fp-experiences'),
-            ]
-        );
-
-        add_settings_field(
-            'fp_exp_email_branding_header',
-            esc_html__('Header title', 'fp-experiences'),
-            [$this, 'render_email_branding_field'],
-            'fp_exp_settings_general',
-            'fp_exp_section_email_branding',
-            [
-                'key' => 'header_text',
-                'type' => 'text',
-                'placeholder' => esc_html__('Es. Benvenuto a bordo', 'fp-experiences'),
-                'description' => esc_html__('Appears alongside the logo in the coloured header. Defaults to the site name.', 'fp-experiences'),
-            ]
-        );
-
-        add_settings_field(
-            'fp_exp_email_branding_footer',
-            esc_html__('Footer note', 'fp-experiences'),
-            [$this, 'render_email_branding_field'],
-            'fp_exp_settings_general',
-            'fp_exp_section_email_branding',
-            [
-                'key' => 'footer_text',
-                'type' => 'textarea',
-                'placeholder' => esc_html__('Es. Seguici sui social o rispondi a questa email per assistenza.', 'fp-experiences'),
-                'description' => esc_html__('Closing message displayed in the email footer. Supports multiple lines.', 'fp-experiences'),
-            ]
-        );
 
         add_settings_section(
             'fp_exp_section_experience_layout',
@@ -992,7 +1001,6 @@ final class SettingsPage
             'gift' => esc_html__('Gift', 'fp-experiences'),
             'branding' => esc_html__('Branding', 'fp-experiences'),
             'booking' => esc_html__('Booking Rules', 'fp-experiences'),
-            'brevo' => esc_html__('Brevo', 'fp-experiences'),
             'calendar' => esc_html__('Calendar', 'fp-experiences'),
             'tracking' => esc_html__('Tracking', 'fp-experiences'),
             'rtb' => esc_html__('RTB', 'fp-experiences'),
@@ -1186,6 +1194,11 @@ final class SettingsPage
         if (! empty($args['description'])) {
             echo '<p class="description">' . esc_html($args['description']) . '</p>';
         }
+    }
+
+    public function render_email_addresses_help(): void
+    {
+        echo '<p>' . esc_html__('Define the default sender and additional recipients for transactional emails.', 'fp-experiences') . '</p>';
     }
 
     public function render_email_branding_help(): void

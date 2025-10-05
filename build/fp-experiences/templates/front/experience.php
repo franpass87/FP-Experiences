@@ -625,6 +625,11 @@ $sticky_price_display = '' !== $price_from_display ? $format_currency($price_fro
                                             <label for="fp-gift-recipient-email"><?php esc_html_e('Recipient email', 'fp-experiences'); ?></label>
                                             <input type="email" id="fp-gift-recipient-email" name="recipient[email]" required />
                                         </div>
+                                        <div class="fp-gift__field">
+                                            <label for="fp-gift-send-on"><?php esc_html_e('Delivery date (optional)', 'fp-experiences'); ?></label>
+                                            <input type="date" id="fp-gift-send-on" name="delivery[send_on]" min="<?php echo esc_attr(gmdate('Y-m-d')); ?>" />
+                                            <p class="fp-gift__field-note"><?php esc_html_e('We will email the gift at 9:00 AM (Europe/Rome). Leave empty to send it right after payment.', 'fp-experiences'); ?></p>
+                                        </div>
                                         <div class="fp-gift__field fp-gift__field--quantity">
                                             <label for="fp-gift-quantity"><?php esc_html_e('Number of guests', 'fp-experiences'); ?></label>
                                             <input type="number" id="fp-gift-quantity" name="quantity" value="1" min="1" step="1" required />
@@ -662,7 +667,7 @@ $sticky_price_display = '' !== $price_from_display ? $format_currency($price_fro
                                             </div>
                                         </fieldset>
                                     <?php endif; ?>
-                                    <p class="fp-gift__note"><?php esc_html_e('You will review the total and complete payment at checkout. The recipient will receive an email with the voucher code immediately after payment.', 'fp-experiences'); ?></p>
+                                    <p class="fp-gift__note"><?php esc_html_e('You will review the total and complete payment at checkout. The recipient will receive the voucher on the scheduled morning or immediately after payment if no date is selected.', 'fp-experiences'); ?></p>
                                     <button type="submit" class="fp-exp-button" data-fp-gift-submit>
                                         <?php esc_html_e('Proceed to checkout', 'fp-experiences'); ?>
                                     </button>
