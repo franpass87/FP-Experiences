@@ -356,7 +356,7 @@ final class ExperienceMetaBoxes
                     <div>
                         <span class="fp-exp-field__label">
                             <?php esc_html_e('Lingue disponibili', 'fp-experiences'); ?>
-                            <?php $this->render_tooltip('fp-exp-language-badge-help', esc_html__('Seleziona le lingue parlate durante l’esperienza: verranno mostrate nei badge pubblici e nel widget di prenotazione.', 'fp-experiences')); ?>
+                            <?php $this->render_tooltip('fp-exp-language-badge-help', esc_html__('Seleziona le lingue parlate durante l'esperienza: verranno mostrate nei badge pubblici e nel widget di prenotazione.', 'fp-experiences')); ?>
                         </span>
                         <?php if (! empty($language_choices)) : ?>
                             <div class="fp-exp-checkbox-grid" aria-describedby="fp-exp-language-badge-help">
@@ -570,11 +570,11 @@ final class ExperienceMetaBoxes
                             </button>
                         </div>
                     </div>
-                    <p class="fp-exp-field__description" id="fp-exp-gallery-help"><?php esc_html_e('Le immagini vengono mostrate nella galleria pubblica seguendo l’ordine impostato qui sopra.', 'fp-experiences'); ?></p>
+                    <p class="fp-exp-field__description" id="fp-exp-gallery-help"><?php esc_html_e('Le immagini vengono mostrate nella galleria pubblica seguendo l'ordine impostato qui sopra.', 'fp-experiences'); ?></p>
                 </div>
 
                 <div class="fp-exp-field fp-exp-field--taxonomies">
-                    <div class="fp-exp-field">
+                    <div class="fp-exp-field" style="display:none">
                         <span class="fp-exp-field__label">
                             <?php esc_html_e("Temi dell'esperienza", 'fp-experiences'); ?>
                             <?php $this->render_tooltip('fp-exp-theme-help', esc_html__('Seleziona i temi da mettere in evidenza nei filtri pubblici e nelle pagine elenco.', 'fp-experiences')); ?>
@@ -644,13 +644,9 @@ final class ExperienceMetaBoxes
                                     </p>
                                 </div>
                             </template>
-                            <p class="fp-exp-taxonomy-editor__actions">
-                                <button type="button" class="button button-secondary" data-fp-taxonomy-add>
-                                    <?php esc_html_e('Aggiungi tema', 'fp-experiences'); ?>
-                                </button>
-                            </p>
+                            <p class="fp-exp-taxonomy-editor__actions"></p>
                         </div>
-                        <p class="fp-exp-field__description" id="fp-exp-theme-help"><?php esc_html_e('I temi compaiono nella panoramica dell’esperienza e negli elenchi filtrabili.', 'fp-experiences'); ?></p>
+                        <p class="fp-exp-field__description" id="fp-exp-theme-help"><?php esc_html_e('I temi compaiono nella panoramica dell'esperienza e negli elenchi filtrabili.', 'fp-experiences'); ?></p>
                     </div>
 
                     <div class="fp-exp-field">
@@ -694,6 +690,85 @@ final class ExperienceMetaBoxes
                             <p class="fp-exp-field__description fp-exp-field__description--muted"><?php esc_html_e('Nessun badge predefinito è attualmente disponibile.', 'fp-experiences'); ?></p>
                         <?php endif; ?>
                         <p class="fp-exp-field__description" id="fp-exp-experience-badges-help"><?php esc_html_e('I badge selezionati compariranno nella pagina esperienza, nelle liste e nei badge rapidi.', 'fp-experiences'); ?></p>
+
+                        <?php
+                        // Editor per modificare titolo/descrizione dei badge selezionati
+                        $badge_overrides = get_post_meta($post_id, '_fp_experience_badge_overrides', true);
+                        $badge_overrides = is_array($badge_overrides) ? $badge_overrides : [];
+                        ?>
+                        <div class="fp-exp-taxonomy-editor fp-exp-taxonomy-editor--compact" aria-describedby="fp-exp-experience-badges-help">
+                            <div class="fp-exp-taxonomy-editor__list">
+                                <?php foreach ($details['experience_badges']['selected'] as $selected_badge_id) :
+                                    $selected_badge_id = sanitize_key((string) $selected_badge_id);
+                                    if ('' === $selected_badge_id) {
+                                        continue;
+                                    }
+                                    $current_label = isset($experience_badge_choices[$selected_badge_id]['label']) ? (string) $experience_badge_choices[$selected_badge_id]['label'] : '';
+                                    $current_desc = isset($experience_badge_choices[$selected_badge_id]['description']) ? (string) $experience_badge_choices[$selected_badge_id]['description'] : '';
+                                    $override_label = isset($badge_overrides[$selected_badge_id]['label']) ? (string) $badge_overrides[$selected_badge_id]['label'] : '';
+                                    $override_desc = isset($badge_overrides[$selected_badge_id]['description']) ? (string) $badge_overrides[$selected_badge_id]['description'] : '';
+                                    ?>
+                                    <div class="fp-exp-taxonomy-editor__item">
+                                        <label class="fp-exp-taxonomy-editor__field">
+                                            <span class="fp-exp-field__label"><?php esc_html_e('Titolo badge', 'fp-experiences'); ?></span>
+                                            <input type="text" name="fp_exp_details[experience_badges_overrides][<?php echo esc_attr($selected_badge_id); ?>][label]" value="<?php echo esc_attr($override_label ?: $current_label); ?>" />
+                                        </label>
+                                        <label class="fp-exp-taxonomy-editor__field">
+                                            <span class="fp-exp-field__label"><?php esc_html_e('Descrizione badge', 'fp-experiences'); ?></span>
+                                            <textarea rows="2" name="fp_exp_details[experience_badges_overrides][<?php echo esc_attr($selected_badge_id); ?>][description]"><?php echo esc_textarea($override_desc !== '' ? $override_desc : $current_desc); ?></textarea>
+                                        </label>
+                                    </div>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
+
+                        <?php
+                        // Badge personalizzati per questa esperienza
+                        $custom_badges_existing = get_post_meta($post_id, '_fp_experience_badge_custom', true);
+                        $custom_badges_existing = is_array($custom_badges_existing) ? $custom_badges_existing : [];
+                        ?>
+                        <div class="fp-exp-taxonomy-editor fp-exp-taxonomy-editor--compact">
+                            <span class="fp-exp-field__label"><?php esc_html_e('Badge personalizzati', 'fp-experiences'); ?></span>
+                            <div class="fp-exp-taxonomy-editor__list">
+                                <?php foreach ($custom_badges_existing as $entry) :
+                                    $cid = sanitize_key((string) ($entry['id'] ?? ''));
+                                    $clabel = sanitize_text_field((string) ($entry['label'] ?? ''));
+                                    $cdesc = sanitize_text_field((string) ($entry['description'] ?? ''));
+                                    ?>
+                                    <div class="fp-exp-taxonomy-editor__item">
+                                        <label class="fp-exp-taxonomy-editor__field">
+                                            <span class="fp-exp-field__label"><?php esc_html_e('ID badge', 'fp-experiences'); ?></span>
+                                            <input type="text" name="fp_exp_details[experience_badges_custom][][id]" value="<?php echo esc_attr($cid); ?>" />
+                                        </label>
+                                        <label class="fp-exp-taxonomy-editor__field">
+                                            <span class="fp-exp-field__label"><?php esc_html_e('Titolo', 'fp-experiences'); ?></span>
+                                            <input type="text" name="fp_exp_details[experience_badges_custom][][label]" value="<?php echo esc_attr($clabel); ?>" />
+                                        </label>
+                                        <label class="fp-exp-taxonomy-editor__field">
+                                            <span class="fp-exp-field__label"><?php esc_html_e('Descrizione', 'fp-experiences'); ?></span>
+                                            <textarea rows="2" name="fp_exp_details[experience_badges_custom][][description]"><?php echo esc_textarea($cdesc); ?></textarea>
+                                        </label>
+                                    </div>
+                                <?php endforeach; ?>
+                                <?php for ($i = 0; $i < 3; $i++) : ?>
+                                    <div class="fp-exp-taxonomy-editor__item">
+                                        <label class="fp-exp-taxonomy-editor__field">
+                                            <span class="fp-exp-field__label"><?php esc_html_e('ID badge', 'fp-experiences'); ?></span>
+                                            <input type="text" name="fp_exp_details[experience_badges_custom][][id]" value="" />
+                                        </label>
+                                        <label class="fp-exp-taxonomy-editor__field">
+                                            <span class="fp-exp-field__label"><?php esc_html_e('Titolo', 'fp-experiences'); ?></span>
+                                            <input type="text" name="fp_exp_details[experience_badges_custom][][label]" value="" />
+                                        </label>
+                                        <label class="fp-exp-taxonomy-editor__field">
+                                            <span class="fp-exp-field__label"><?php esc_html_e('Descrizione', 'fp-experiences'); ?></span>
+                                            <textarea rows="2" name="fp_exp_details[experience_badges_custom][][description]"></textarea>
+                                        </label>
+                                    </div>
+                                <?php endfor; ?>
+                            </div>
+                            <p class="fp-exp-field__description"><?php esc_html_e('Compila ID univoco, titolo e descrizione per aggiungere nuovi badge solo per questa esperienza.', 'fp-experiences'); ?></p>
+                        </div>
                     </div>
                 </div>
 
@@ -863,7 +938,7 @@ final class ExperienceMetaBoxes
                         <?php endif; ?>
                     <?php else : ?>
                         <p class="fp-exp-field__description" id="fp-exp-linked-page-help">
-                            <?php esc_html_e('La pagina viene generata automaticamente alla pubblicazione dell’esperienza.', 'fp-experiences'); ?>
+                            <?php esc_html_e('La pagina viene generata automaticamente alla pubblicazione dell'esperienza.', 'fp-experiences'); ?>
                         </p>
                     <?php endif; ?>
                 </div>
@@ -1238,7 +1313,7 @@ final class ExperienceMetaBoxes
                 <legend><?php esc_html_e('Ricorrenza slot', 'fp-experiences'); ?></legend>
                 <div class="fp-exp-field">
                     <p class="fp-exp-field__description"><?php esc_html_e('Configura regole ricorrenti per popolare automaticamente il calendario senza toccare gli slot già esistenti.', 'fp-experiences'); ?></p>
-                    <p class="fp-exp-field__description fp-exp-field__description--muted"><?php esc_html_e('Suggerimento: compila gli step dall’alto verso il basso e usa il pulsante di anteprima per verificare il risultato prima di generare.', 'fp-experiences'); ?></p>
+                    <p class="fp-exp-field__description fp-exp-field__description--muted"><?php esc_html_e('Suggerimento: compila gli step dall'alto verso il basso e usa il pulsante di anteprima per verificare il risultato prima di generare.', 'fp-experiences'); ?></p>
                 </div>
                 <div class="fp-exp-recurrence" data-recurrence-settings>
                     <div class="fp-exp-field fp-exp-field--columns">
@@ -1979,6 +2054,60 @@ final class ExperienceMetaBoxes
             return isset($available_badges[$badge]);
         }));
 
+        // Overrides per titolo/descrizione dei badge selezionati
+        $badge_overrides_input = isset($raw['experience_badges_overrides']) && is_array($raw['experience_badges_overrides'])
+            ? $raw['experience_badges_overrides']
+            : [];
+        $badge_overrides = [];
+        foreach ($badge_overrides_input as $badge_id => $entry) {
+            $id = sanitize_key((string) $badge_id);
+            if ('' === $id || ! is_array($entry)) {
+                continue;
+            }
+            $label = isset($entry['label']) ? sanitize_text_field((string) $entry['label']) : '';
+            $desc = isset($entry['description']) ? sanitize_text_field((string) $entry['description']) : '';
+            if ('' === $label && '' === $desc) {
+                continue;
+            }
+            $payload = [];
+            if ('' !== $label) {
+                $payload['label'] = $label;
+            }
+            if (array_key_exists('description', $entry)) {
+                $payload['description'] = $desc;
+            }
+            if (! empty($payload)) {
+                $badge_overrides[$id] = $payload;
+            }
+        }
+
+        // Badge personalizzati per questa esperienza
+        $custom_input = isset($raw['experience_badges_custom']) && is_array($raw['experience_badges_custom'])
+            ? $raw['experience_badges_custom']
+            : [];
+        $custom_badges = [];
+        $seen_custom = [];
+        foreach ($custom_input as $entry) {
+            if (! is_array($entry)) {
+                continue;
+            }
+            $cid = isset($entry['id']) ? sanitize_key((string) $entry['id']) : '';
+            $clabel = isset($entry['label']) ? sanitize_text_field((string) $entry['label']) : '';
+            if ('' === $cid || '' === $clabel) {
+                continue;
+            }
+            if (isset($seen_custom[$cid])) {
+                continue;
+            }
+            $seen_custom[$cid] = true;
+            $cdesc = isset($entry['description']) ? sanitize_text_field((string) $entry['description']) : '';
+            $custom_badges[] = [
+                'id' => $cid,
+                'label' => $clabel,
+                'description' => $cdesc,
+            ];
+        }
+
         $gallery_raw = $raw['gallery_ids'] ?? '';
         $gallery_candidates = [];
 
@@ -2011,6 +2140,8 @@ final class ExperienceMetaBoxes
         $this->update_or_delete_meta($post_id, '_fp_rules_children', $rules_children);
         $this->update_or_delete_meta($post_id, '_fp_cognitive_biases', $cognitive_biases);
         $this->update_or_delete_meta($post_id, '_fp_experience_badges', $experience_badges);
+        $this->update_or_delete_meta($post_id, '_fp_experience_badge_overrides', $badge_overrides);
+        $this->update_or_delete_meta($post_id, '_fp_experience_badge_custom', $custom_badges);
         $this->update_or_delete_meta($post_id, '_fp_gallery_ids', $gallery_ids);
 
         $language_selected = isset($raw['languages']) && is_array($raw['languages'])

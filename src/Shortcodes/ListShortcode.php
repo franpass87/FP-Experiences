@@ -614,18 +614,13 @@ final class ListShortcode extends BaseShortcode
         }
 
         $terms = [
-            'theme' => wp_list_pluck(wp_get_post_terms($id, 'fp_exp_theme'), 'name'),
+            // Rimuoviamo l'uso pubblico dei temi
+            'theme' => [],
             'language' => wp_list_pluck(wp_get_post_terms($id, 'fp_exp_language'), 'name'),
             'duration' => wp_list_pluck(wp_get_post_terms($id, 'fp_exp_duration'), 'name'),
         ];
 
         $primary_theme = '';
-        if (! empty($terms['theme'])) {
-            $primary_theme_value = $terms['theme'][0];
-            if (is_string($primary_theme_value)) {
-                $primary_theme = sanitize_text_field($primary_theme_value);
-            }
-        }
 
         $language_labels = array_values(array_unique(array_filter($language_labels)));
 

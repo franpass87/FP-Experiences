@@ -2052,6 +2052,7 @@
         });
 
         const dayButtons = Array.from(container.querySelectorAll('.fp-exp-calendar__day'));
+        const dateInput = container.querySelector('[data-fp-date-input]');
 
         dayButtons.forEach((button) => {
             if (!button.disabled && !button.hasAttribute('aria-pressed')) {
@@ -2083,6 +2084,33 @@
                 refreshSummary();
             });
         });
+
+        // Input nativo data (YYYY-MM-DD)
+        if (dateInput && dateInput instanceof HTMLInputElement) {
+            const availableDates = Object.keys(slotsByDate).sort();
+            const hasDate = (val) => availableDates.includes(val);
+
+            // Se min/max non sono nel markup, impostali dai dati disponibili
+            if (!dateInput.hasAttribute('min') && availableDates.length > 0) {
+                dateInput.min = availableDates[0];
+            }
+            if (!dateInput.hasAttribute('max') && availableDates.length > 0) {
+                dateInput.max = availableDates[availableDates.length - 1];
+            }
+
+            dateInput.addEventListener('change', () => {
+                const value = (dateInput.value || '').trim();
+                if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+                    renderSlots(slotsContainer, [], state);
+                    return;
+                }
+                // accetta qualsiasi giorno ma se non ha slot, mostra lista vuota
+                state.selectedDate = value;
+                state.selectedSlot = null;
+                renderSlots(slotsContainer, slotsByDate[value] || [], state);
+                refreshSummary();
+            });
+        }
 
         // Dropdown date selection (YYYY-MM-DD keys from slotsByDate)
         if (dropdown && yearSelect && monthSelect && daySelect) {

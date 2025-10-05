@@ -240,6 +240,35 @@ $price_from_display = null !== $price_from_value && $price_from_value > 0
                     <h3 class="fp-exp-step__title"><?php echo esc_html__('Scegli una data', 'fp-experiences'); ?></h3>
                 </header>
                 <div class="fp-exp-step__content">
+                    <?php
+                    // Calcolo limiti per l'input data in base agli slot disponibili
+                    $min_date_attr = gmdate('Y-m-d');
+                    $max_date_attr = '';
+                    $all_days = [];
+                    foreach ($calendar as $m_key => $m_data) {
+                        if (isset($m_data['days']) && is_array($m_data['days'])) {
+                            $all_days = array_merge($all_days, array_keys($m_data['days']));
+                        }
+                    }
+                    if (! empty($all_days)) {
+                        sort($all_days);
+                        $last = end($all_days);
+                        if (is_string($last) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $last)) {
+                            $max_date_attr = $last;
+                        }
+                    }
+                    ?>
+                    <div class="fp-exp-date-picker">
+                        <label class="fp-exp-label" for="fp-exp-date-input"><?php echo esc_html__('Data', 'fp-experiences'); ?></label>
+                        <input
+                            type="date"
+                            id="fp-exp-date-input"
+                            class="fp-exp-input fp-exp-date-input"
+                            min="<?php echo esc_attr($min_date_attr); ?>"
+                            <?php if ('' !== $max_date_attr) : ?> max="<?php echo esc_attr($max_date_attr); ?>"<?php endif; ?>
+                            data-fp-date-input
+                        />
+                    </div>
                     <div class="fp-exp-date-dropdown" data-fp-date-dropdown>
                         <label class="screen-reader-text" for="fp-exp-select-year"><?php echo esc_html__('Anno', 'fp-experiences'); ?></label>
                         <select id="fp-exp-select-year" class="fp-exp-select fp-exp-select-year" aria-label="<?php echo esc_attr__('Anno', 'fp-experiences'); ?>">
@@ -254,7 +283,7 @@ $price_from_display = null !== $price_from_value && $price_from_value > 0
                             <option value="" selected disabled><?php echo esc_html__('Giorno', 'fp-experiences'); ?></option>
                         </select>
                     </div>
-                    <div class="fp-exp-calendar" data-show-calendar="<?php echo esc_attr($behavior['show_calendar'] ? '1' : '0'); ?>">
+                    <div class="fp-exp-calendar" data-show-calendar="<?php echo esc_attr($behavior['show_calendar'] ? '1' : '0'); ?>" hidden>
                         <?php foreach ($calendar as $month_key => $month_data) :
                             $month_label = isset($month_data['month_label']) ? (string) $month_data['month_label'] : '';
                             $month_days = isset($month_data['days']) && is_array($month_data['days']) ? $month_data['days'] : [];
