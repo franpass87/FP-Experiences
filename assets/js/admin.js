@@ -1519,8 +1519,8 @@
 
         const calendarConfig = window.fpExpCalendar || {};
         const endpoints = calendarConfig.endpoints || {};
-        const slotsEndpoint = endpoints.slots;
-        if (!slotsEndpoint) {
+        const availabilityEndpoint = endpoints.availability;
+        if (!availabilityEndpoint) {
             return;
         }
 
@@ -1695,6 +1695,27 @@
             ? calendarConfig.i18n.next
             : 'Next';
 
+        // Experience selector
+        const experienceSelect = document.createElement('select');
+        experienceSelect.className = 'fp-exp-calendar__experience';
+        const expOptions = Array.isArray(calendarConfig.experiences) ? calendarConfig.experiences : [];
+        if (expOptions.length) {
+            const placeholder = document.createElement('option');
+            placeholder.value = '';
+            placeholder.textContent = (calendarConfig.i18n && calendarConfig.i18n.selectExperience) ? calendarConfig.i18n.selectExperience : 'Select experience';
+            experienceSelect.appendChild(placeholder);
+            expOptions.forEach((opt) => {
+                if (!opt || typeof opt.id !== 'number') {
+                    return;
+                }
+                const option = document.createElement('option');
+                option.value = String(opt.id);
+                option.textContent = String(opt.title || opt.id);
+                experienceSelect.appendChild(option);
+            });
+        }
+
+        nav.appendChild(experienceSelect);
         nav.appendChild(prevButton);
         nav.appendChild(nextButton);
         toolbar.appendChild(nav);
@@ -1842,10 +1863,14 @@
             setLoading(true);
             showError('');
 
-            const requestUrl = resolveEndpoint(slotsEndpoint);
+            const requestUrl = resolveEndpoint(availabilityEndpoint);
             const url = new URL(requestUrl);
             url.searchParams.set('start', formatRequestDate(range.start));
             url.searchParams.set('end', formatRequestDate(range.end));
+            const selectedExperience = experienceSelect && experienceSelect.value ? parseInt(String(experienceSelect.value), 10) || 0 : 0;
+            if (selectedExperience > 0) {
+                url.searchParams.set('experience', String(selectedExperience));
+            }
 
             try {
                 let payload;
@@ -1896,6 +1921,10 @@
 
         nextButton.addEventListener('click', () => {
             currentMonth = addMonths(currentMonth, 1);
+            loadMonth(currentMonth);
+        });
+
+        experienceSelect.addEventListener('change', () => {
             loadMonth(currentMonth);
         });
 

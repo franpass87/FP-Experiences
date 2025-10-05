@@ -1670,6 +1670,7 @@
         captureUtm();
         document.querySelectorAll('[data-fp-shortcode="widget"]').forEach(setupWidget);
         document.querySelectorAll('[data-fp-shortcode="list"]').forEach(setupListing);
+        document.querySelectorAll('[data-fp-shortcode="calendar"]').forEach(setupCalendarOnly);
         setupMeetingPoints();
         setupExperiencePages();
         setupGiftRedeem();
@@ -2164,6 +2165,28 @@
             refreshSummary();
         });
 
+        // Supporta apertura del selettore data cliccando/focus sull'input
+        (function() {
+            const di = container.querySelector('[data-fp-date-input]');
+            if (di && di instanceof HTMLInputElement) {
+                const openPicker = () => {
+                    if (typeof di.showPicker === 'function') {
+                        try { di.showPicker(); } catch (e) {}
+                    } else {
+                        di.focus();
+                    }
+                };
+                di.addEventListener('focus', openPicker);
+                di.addEventListener('click', openPicker);
+                di.addEventListener('keydown', function(ev){
+                    if (ev.key === 'Enter' || ev.key === ' ') {
+                        ev.preventDefault();
+                        openPicker();
+                    }
+                });
+            }
+        })();
+
         if (!rtbEnabled && summaryButton) {
             summaryButton.addEventListener('click', () => {
                 if (!state.selectedSlot) {
@@ -2309,6 +2332,61 @@
                     });
             });
         }
+    }
+
+    function setupCalendarOnly(container) {
+        if (!container) {
+            return;
+        }
+
+        const experienceId = container.getAttribute('data-experience') || '';
+        const monthsRoot = container.querySelector('.fp-exp-calendar-only__months');
+        if (!monthsRoot) {
+            return;
+        }
+
+        const allDayItems = Array.from(container.querySelectorAll('.fp-exp-calendar-only__day'));
+
+        allDayItems.forEach((dayItem) => {
+            dayItem.addEventListener('click', (event) => {
+                const target = event.target;
+                if (!(target instanceof Element)) {
+                    return;
+                }
+
+                const isSlot = Boolean(target.closest('.fp-exp-calendar-only__slot'));
+                if (isSlot) {
+                    return;
+                }
+
+                const date = dayItem.getAttribute('data-date') || '';
+                if (!date) {
+                    return;
+                }
+
+                allDayItems.forEach((li) => li.classList.toggle('is-selected', li === dayItem));
+
+                const slots = dayItem.querySelector('.fp-exp-calendar-only__slots');
+                if (slots) {
+                    container.querySelectorAll('.fp-exp-calendar-only__slots').forEach((ul) => {
+                        if (ul !== slots) {
+                            ul.hidden = true;
+                        }
+                    });
+                    slots.hidden = false;
+                }
+            });
+        });
+
+        allDayItems.forEach((dayItem) => {
+            dayItem.setAttribute('tabindex', '0');
+            dayItem.addEventListener('keydown', (ev) => {
+                if (ev.key === 'Enter' || ev.key === ' ') {
+                    ev.preventDefault();
+                    dayItem.click();
+                }
+            });
+        });
     }
 
     function renderSlots(container, slots, state) {

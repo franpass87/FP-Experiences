@@ -372,6 +372,69 @@ final class Slots
     }
 
     /**
+     * Ensure a persisted slot exists for the given occurrence; create it if missing.
+     *
+     * @return int Slot ID or 0 on failure
+     */
+    public static function ensure_slot_for_occurrence(int $experience_id, string $start_utc, string $end_utc): int
+    {
+        $experience_id = absint($experience_id);
+        if ($experience_id <= 0) {
+            return 0;
+        }
+
+        // Normalise datetimes
+        try {
+            $start = new DateTimeImmutable($start_utc, new DateTimeZone('UTC'));
+            $end = new DateTimeImmutable($end_utc, new DateTimeZone('UTC'));
+        } catch (Exception $exception) {
+            return 0;
+        }
+
+        if ($end <= $start) {
+            return 0;
+        }
+
+        $start_utc = $start->format('Y-m-d H:i:s');
+        $end_utc = $end->format('Y-m-d H:i:s');
+
+        $existing_id = self::slot_exists($experience_id, $start_utc, $end_utc);
+        if ($existing_id) {
+            return (int) $existing_id;
+        }
+
+        // Pull defaults from experience availability meta
+        $availability = get_post_meta($experience_id, '_fp_exp_availability', true);
+        $capacity_total = 0;
+        $buffer_before = 0;
+        $buffer_after = 0;
+
+        if (is_array($availability)) {
+            $capacity_total = isset($availability['slot_capacity']) ? absint((string) $availability['slot_capacity']) : 0;
+            $buffer_before = isset($availability['buffer_before_minutes']) ? absint((string) $availability['buffer_before_minutes']) : 0;
+            $buffer_after = isset($availability['buffer_after_minutes']) ? absint((string) $availability['buffer_after_minutes']) : 0;
+        }
+
+        if (self::has_buffer_conflict($experience_id, $start_utc, $end_utc, $buffer_before, $buffer_after)) {
+            return 0;
+        }
+
+        $payload = [
+            'experience_id' => $experience_id,
+            'start_datetime' => $start_utc,
+            'end_datetime' => $end_utc,
+            'capacity_total' => $capacity_total,
+            'capacity_per_type' => [],
+            'resource_lock' => [],
+            'status' => self::STATUS_OPEN,
+            'price_rules' => [],
+        ];
+
+        $inserted = self::insert_slot($payload);
+        return $inserted ? (int) $inserted : 0;
+    }
+
+    /**
      * @return array<int, array<string, mixed>>
      */
     public static function get_upcoming_for_experience(int $experience_id, int $limit = 20): array

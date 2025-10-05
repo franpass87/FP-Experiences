@@ -496,6 +496,8 @@ $price_from_display = null !== $price_from_value && $price_from_value > 0
                             <input type="hidden" name="addons" value="">
                             <input type="hidden" name="mode" value="<?php echo esc_attr($rtb_mode); ?>">
                             <input type="hidden" name="forced" value="<?php echo esc_attr($rtb_forced ? '1' : '0'); ?>">
+                            <input type="hidden" name="start" value="" />
+                            <input type="hidden" name="end" value="" />
                             <div
                                 class="fp-exp-error-summary"
                                 data-fp-error-summary

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace FP_Exp\Api;
 
 use FP_Exp\Activation;
+use FP_Exp\Booking\AvailabilityService;
 use FP_Exp\Booking\Recurrence;
 use FP_Exp\Booking\Slots;
 use FP_Exp\Gift\VoucherManager;
@@ -62,6 +63,33 @@ final class RestRoutes
 
     public function register_routes(): void
     {
+        register_rest_route(
+            'fp-exp/v1',
+            '/availability',
+            [
+                'methods' => 'GET',
+                'permission_callback' => function (WP_REST_Request $request): bool {
+                    // Public, ma con verifica leggera standard plugin (anti-abuso)
+                    return Helpers::verify_public_rest_request($request);
+                },
+                'callback' => [$this, 'get_virtual_availability'],
+                'args' => [
+                    'experience' => [
+                        'required' => true,
+                        'sanitize_callback' => 'absint',
+                    ],
+                    'start' => [
+                        'required' => true,
+                        'sanitize_callback' => 'sanitize_text_field',
+                    ],
+                    'end' => [
+                        'required' => true,
+                        'sanitize_callback' => 'sanitize_text_field',
+                    ],
+                ],
+            ]
+        );
+
         register_rest_route(
             'fp-exp/v1',
             '/calendar/slots',
@@ -376,6 +404,34 @@ final class RestRoutes
         }
 
         return rest_ensure_response($result);
+    }
+
+    public function get_virtual_availability(WP_REST_Request $request)
+    {
+        $experience_id = absint((string) $request->get_param('experience'));
+        $start = sanitize_text_field((string) $request->get_param('start'));
+        $end = sanitize_text_field((string) $request->get_param('end'));
+
+        if ($experience_id <= 0 || ! $start || ! $end) {
+            return new WP_Error('fp_exp_availability_params', __('Parametri non validi.', 'fp-experiences'), ['status' => 400]);
+        }
+
+        $slots = AvailabilityService::get_virtual_slots($experience_id, $start, $end);
+
+        return rest_ensure_response([
+            'slots' => array_map(
+                static function (array $slot): array {
+                    return [
+                        'experience_id' => (int) ($slot['experience_id'] ?? 0),
+                        'start' => sanitize_text_field((string) ($slot['start'] ?? '')),
+                        'end' => sanitize_text_field((string) ($slot['end'] ?? '')),
+                        'capacity_total' => (int) ($slot['capacity_total'] ?? 0),
+                        'duration' => (int) ($slot['duration'] ?? 0),
+                    ];
+                },
+                $slots
+            ),
+        ]);
     }
 
     public function get_calendar_slots(WP_REST_Request $request)

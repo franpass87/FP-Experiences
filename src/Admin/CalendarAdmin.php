@@ -79,13 +79,32 @@ final class CalendarAdmin
             true
         );
 
+        // Prepara elenco esperienze per filtro calendario
+        $experiences = get_posts([
+            'post_type' => 'fp_experience',
+            'posts_per_page' => 200,
+            'orderby' => 'title',
+    		'order' => 'ASC',
+            'post_status' => 'publish',
+        ]);
+
+        $experience_options = [];
+        foreach ($experiences as $post) {
+            $experience_options[] = [
+                'id' => (int) $post->ID,
+                'title' => get_the_title((int) $post->ID),
+            ];
+        }
+
         $bootstrap = [
             'endpoints' => [
+                'availability' => rest_url('fp-exp/v1/availability'),
                 'slots' => rest_url('fp-exp/v1/calendar/slots'),
                 'move' => rest_url('fp-exp/v1/calendar/slot'),
                 'capacity' => rest_url('fp-exp/v1/calendar/slot/capacity'),
             ],
             'nonce' => wp_create_nonce('wp_rest'),
+            'experiences' => $experience_options,
             'i18n' => [
                 'month' => esc_html__('Month', 'fp-experiences'),
                 'week' => esc_html__('Week', 'fp-experiences'),
@@ -102,6 +121,7 @@ final class CalendarAdmin
                 'bookedLabel' => esc_html__('booked', 'fp-experiences'),
                 'untitledExperience' => esc_html__('Untitled experience', 'fp-experiences'),
                 'loadError' => esc_html__('Impossibile caricare il calendario. Riprova.', 'fp-experiences'),
+                'selectExperience' => esc_html__('Select experience', 'fp-experiences'),
             ],
         ];
 

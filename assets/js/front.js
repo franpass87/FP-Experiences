@@ -1402,7 +1402,7 @@
                             if (redeemButton) {
                                 redeemButton.disabled = true;
                             }
-                            showFeedback(detailFeedback, escapeHtml(localize('Nessuno slot futuro disponibile. Contatta l’operatore per pianificare manualmente.')), true);
+                            showFeedback(detailFeedback, escapeHtml(localize('Nessuno slot futuro disponibile. Contatta l'operatore per pianificare manualmente.')), true);
                         }
                     }
                 } catch (error) {
@@ -1455,7 +1455,7 @@
                     const data = await response.json().catch(() => ({}));
 
                     if (!response.ok || (data && data.code)) {
-                        const message = data && data.message ? data.message : localize('Non è stato possibile riscattare il voucher. Prova un altro slot o contatta l’assistenza.');
+                        const message = data && data.message ? data.message : localize('Non è stato possibile riscattare il voucher. Prova un altro slot o contatta l'assistenza.');
                         showFeedback(detailFeedback, escapeHtml(message), true);
                         if (slotSelect) {
                             slotSelect.disabled = false;
@@ -1530,7 +1530,7 @@
                         redeemButton.setAttribute('aria-disabled', 'true');
                     }
                 } catch (error) {
-                    showFeedback(detailFeedback, escapeHtml(localize('Non è stato possibile riscattare il voucher. Prova un altro slot o contatta l’assistenza.')), true);
+                    showFeedback(detailFeedback, escapeHtml(localize('Non è stato possibile riscattare il voucher. Prova un altro slot o contatta l'assistenza.')), true);
                     if (slotSelect) {
                         slotSelect.disabled = false;
                     }
@@ -1673,6 +1673,7 @@
         captureUtm();
         document.querySelectorAll('[data-fp-shortcode="widget"]').forEach(setupWidget);
         document.querySelectorAll('[data-fp-shortcode="list"]').forEach(setupListing);
+        document.querySelectorAll('[data-fp-shortcode="calendar"]').forEach(setupCalendarOnly);
         setupMeetingPoints();
         setupExperiencePages();
         setupGiftRedeem();
@@ -2101,6 +2102,25 @@
                 dateInput.max = availableDates[availableDates.length - 1];
             }
 
+            // Apri il selettore quando l'utente interagisce con l'input
+            const openNativePicker = () => {
+                // showPicker è supportato da browser moderni
+                if (typeof dateInput.showPicker === 'function') {
+                    try { dateInput.showPicker(); } catch (e) { /* ignore */ }
+                } else {
+                    // fallback: porta il focus, su alcuni browser apre il widget
+                    dateInput.focus();
+                }
+            };
+            dateInput.addEventListener('focus', openNativePicker);
+            dateInput.addEventListener('click', openNativePicker);
+            dateInput.addEventListener('keydown', (ev) => {
+                if (ev.key === 'Enter' || ev.key === ' ') {
+                    ev.preventDefault();
+                    openNativePicker();
+                }
+            });
+
             dateInput.addEventListener('change', () => {
                 const value = (dateInput.value || '').trim();
                 if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
@@ -2397,6 +2417,8 @@
                     nonce: rtbNonce,
                     experience_id: parseInt(payload.experience_id || '0', 10) || 0,
                     slot_id: parseInt(payload.slot_id || '0', 10) || 0,
+                    start: payload.start || '',
+                    end: payload.end || '',
                     tickets,
                     addons,
                     mode: requestedMode,
@@ -2449,6 +2471,125 @@
                     });
             });
         }
+    }
+
+    function setupCalendarOnly(container) {
+        if (!container) {
+            return;
+        }
+
+        const experienceId = container.getAttribute('data-experience') || '';
+        const monthsRoot = container.querySelector('.fp-exp-calendar-only__months');
+        if (!monthsRoot) {
+            return;
+        }
+
+        const allDayItems = Array.from(container.querySelectorAll('.fp-exp-calendar-only__day'));
+
+        async function loadSlotsForDate(dateKey) {
+            const slotsContainer = container.querySelector('.fp-exp-slots');
+            if (!slotsContainer) {
+                return;
+            }
+
+            // placeholder loading
+            slotsContainer.innerHTML = '';
+            const loading = document.createElement('p');
+            loading.className = 'fp-exp-slots__placeholder';
+            loading.textContent = container.getAttribute('data-loading-label') || 'Caricamento…';
+            slotsContainer.appendChild(loading);
+
+            try {
+                const url = new URL(`${pluginConfig.restUrl}availability`);
+                url.searchParams.set('experience', String(experienceId));
+                url.searchParams.set('start', dateKey);
+                url.searchParams.set('end', dateKey);
+                const response = await fetch(url.toString(), {
+                    credentials: 'same-origin',
+                    headers: buildRestHeaders(),
+                });
+                const data = await response.json().catch(() => ({}));
+                const rawSlots = Array.isArray(data.slots) ? data.slots : [];
+                const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+                const mapped = rawSlots.map((s) => {
+                    const start = String(s.start || '');
+                    const end = String(s.end || '');
+                    const toLocal = (sql) => {
+                        const d = new Date(String(sql).replace(' ', 'T') + 'Z');
+                        if (Number.isNaN(d.getTime())) return '';
+                        try {
+                            return new Intl.DateTimeFormat(undefined, { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' }).format(d);
+                        } catch (e) {
+                            const hh = String(d.getUTCHours()).padStart(2, '0');
+                            const mm = String(d.getUTCMinutes()).padStart(2, '0');
+                            return `${hh}:${mm}`;
+                        }
+                    };
+                    return {
+                        id: start, // synthetic id
+                        time: toLocal(start),
+                        remaining: 0,
+                        start_iso: start.replace(' ', 'T') + 'Z',
+                        end_iso: end.replace(' ', 'T') + 'Z',
+                    };
+                });
+                renderSlots(slotsContainer, mapped, { selectedSlot: null });
+            } catch (e) {
+                const error = document.createElement('p');
+                error.className = 'fp-exp-slots__placeholder';
+                error.textContent = container.getAttribute('data-error-label') || 'Impossibile caricare le fasce';
+                slotsContainer.innerHTML = '';
+                slotsContainer.appendChild(error);
+            }
+        }
+
+        // Evidenziazione giorno e gestione espansione slot + fetch availability
+        allDayItems.forEach((dayItem) => {
+            dayItem.addEventListener('click', (event) => {
+                const target = event.target;
+                if (!(target instanceof Element)) {
+                    return;
+                }
+
+                const isSlot = Boolean(target.closest('.fp-exp-calendar-only__slot'));
+                if (isSlot) {
+                    return; // i click sugli slot hanno il loro comportamento nativo
+                }
+
+                const date = dayItem.getAttribute('data-date') || '';
+                if (!date) {
+                    return;
+                }
+
+                // Toggle selezione visiva
+                allDayItems.forEach((li) => li.classList.toggle('is-selected', li === dayItem));
+
+                // Assicurati che la lista slot sia visibile se esiste
+                const slots = dayItem.querySelector('.fp-exp-calendar-only__slots');
+                if (slots) {
+                    // Collassa le altre
+                    container.querySelectorAll('.fp-exp-calendar-only__slots').forEach((ul) => {
+                        if (ul !== slots) {
+                            ul.hidden = true;
+                        }
+                    });
+                    slots.hidden = false;
+                    // Carica gli slot del giorno via availability
+                    loadSlotsForDate(date);
+                }
+            });
+        });
+
+        // Accessibilità: tasti invio/spazio sul giorno
+        allDayItems.forEach((dayItem) => {
+            dayItem.setAttribute('tabindex', '0');
+            dayItem.addEventListener('keydown', (ev) => {
+                if (ev.key === 'Enter' || ev.key === ' ') {
+                    ev.preventDefault();
+                    dayItem.click();
+                }
+            });
+        });
     }
 
     function renderSlots(container, slots, state) {
@@ -2680,12 +2821,20 @@
         }
 
         const slotInput = ui.rtbForm.querySelector('input[name="slot_id"]');
+        const startInput = ui.rtbForm.querySelector('input[name="start"]');
+        const endInput = ui.rtbForm.querySelector('input[name="end"]');
         const ticketsInput = ui.rtbForm.querySelector('input[name="tickets"]');
         const addonsInput = ui.rtbForm.querySelector('input[name="addons"]');
         const submit = ui.rtbForm.querySelector('.fp-exp-summary__cta');
 
         if (slotInput) {
             slotInput.value = detail.slotId ? String(detail.slotId) : '';
+        }
+        if (startInput) {
+            startInput.value = detail.slot_start || '';
+        }
+        if (endInput) {
+            endInput.value = detail.slot_end || '';
         }
         if (ticketsInput) {
             ticketsInput.value = JSON.stringify(detail.tickets || {});
@@ -2694,7 +2843,8 @@
             addonsInput.value = JSON.stringify(detail.addons || {});
         }
         if (submit) {
-            submit.disabled = !detail.slotId || !detail.quantity || detail.pricingPending;
+            const hasWhen = Boolean(detail.slotId) || (Boolean(detail.slot_start) && Boolean(detail.slot_end));
+            submit.disabled = !hasWhen || !detail.quantity || detail.pricingPending;
         }
     }
 
@@ -2774,6 +2924,21 @@
             pricingPending: !slot,
         };
 
+        // Provide start/end UTC if available from slot data
+        if (slot && slot.start_iso && slot.end_iso) {
+            try {
+                const toUtcSql = (isoLike) => {
+                    const d = new Date(String(isoLike));
+                    if (Number.isNaN(d.getTime())) return '';
+                    const pad = (n) => String(n).padStart(2, '0');
+                    return `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())} ${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}:00`;
+                };
+                detail.slot_start = toUtcSql(slot.start_iso);
+                detail.slot_end = toUtcSql(slot.end_iso);
+            } catch (e) {
+            }
+        }
+        
         updateRtbFormFields(ui, detail);
         resetRtbStatus(ui);
 
