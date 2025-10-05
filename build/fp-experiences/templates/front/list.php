@@ -101,7 +101,7 @@ $format_currency = static function (string $amount) use ($currency_symbol, $curr
     </header>
 
     <?php if (empty($experiences)) : ?>
-        <p class="fp-listing__empty"><?php esc_html_e('No experiences are available right now. Please check back soon.', 'fp-experiences'); ?></p>
+        <p class="fp-listing__empty"><?php esc_html_e('Nessuna esperienza disponibile al momento. Torna a trovarci presto.', 'fp-experiences'); ?></p>
     <?php else : ?>
         <div class="fp-listing__grid fp-listing__grid--<?php echo esc_attr($current_view); ?><?php echo $is_cards_variant ? ' fp-listing__grid--cards' : ''; ?>">
             <?php foreach ($experiences as $experience) : ?>

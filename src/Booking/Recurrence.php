@@ -18,6 +18,8 @@ use function trim;
 
 final class Recurrence
 {
+    private const OPEN_ENDED_WINDOW_MONTHS = 12;
+
     /**
      * Default recurrence configuration.
      *
@@ -119,7 +121,8 @@ final class Recurrence
         }
 
         $start_date = $definition['start_date'] ?: 'now';
-        $end_date = $definition['end_date'] ?: $start_date;
+        $open_ended = '' === $definition['end_date'] && 'specific' !== $definition['frequency'];
+        $end_date = $open_ended ? '' : ($definition['end_date'] ?: $start_date);
 
         $base_rule = [
             'type' => $definition['frequency'],
@@ -133,6 +136,11 @@ final class Recurrence
             'buffer_before' => isset($availability['buffer_before_minutes']) ? absint((string) $availability['buffer_before_minutes']) : 0,
             'buffer_after' => isset($availability['buffer_after_minutes']) ? absint((string) $availability['buffer_after_minutes']) : 0,
         ];
+
+        if ($open_ended) {
+            $base_rule['open_ended'] = true;
+            $base_rule['open_ended_months'] = self::OPEN_ENDED_WINDOW_MONTHS;
+        }
 
         if ($base_rule['duration'] <= 0) {
             $base_rule['duration'] = 60;

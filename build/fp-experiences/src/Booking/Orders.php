@@ -86,11 +86,11 @@ final class Orders
                 'status' => 'pending',
             ]);
         } catch (Exception $exception) {
-            return new WP_Error('fp_exp_order_failed', __('Unable to create the order. Please try again.', 'fp-experiences'));
+            return new WP_Error('fp_exp_order_failed', __('Impossibile creare l’ordine. Riprova.', 'fp-experiences'));
         }
 
         if (is_wp_error($order)) {
-            return new WP_Error('fp_exp_order_failed', __('Unable to create the order. Please try again.', 'fp-experiences'));
+            return new WP_Error('fp_exp_order_failed', __('Impossibile creare l’ordine. Riprova.', 'fp-experiences'));
         }
 
         if (empty($cart['items'])) {
@@ -276,7 +276,7 @@ final class Orders
             Reservations::delete_by_order($order->get_id());
             $order->delete(true);
 
-            return new WP_Error('fp_exp_reservation_failed', __('Unable to record your reservation. Please try again.', 'fp-experiences'));
+            return new WP_Error('fp_exp_reservation_failed', __('Impossibile registrare la prenotazione. Riprova.', 'fp-experiences'));
         }
 
         do_action('fp_exp_reservation_created', $reservation_id, $order->get_id());

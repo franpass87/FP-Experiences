@@ -171,27 +171,6 @@ $overview_biases = isset($overview['cognitive_biases']) && is_array($overview['c
         $overview['cognitive_biases']
     )))
     : [];
-$normalize_overview_list = static function ($values): array {
-    if (! is_array($values)) {
-        return [];
-    }
-
-    $normalized = [];
-    foreach ($values as $value) {
-        if (is_array($value)) {
-            $value = isset($value['label']) ? (string) $value['label'] : '';
-        }
-
-        $value = (string) $value;
-        $value = trim($value);
-
-        if ('' !== $value) {
-            $normalized[] = $value;
-        }
-    }
-
-    return array_values(array_unique($normalized));
-};
 $fontawesome_icon = static function (string $icon, string $style = 'fa-solid'): string {
     return sprintf('<span class="%s %s" aria-hidden="true"></span>', $style, $icon);
 };
@@ -222,7 +201,7 @@ $get_section_icon = static function (string $section) use ($overview_term_icon, 
         case 'highlights':
             return $fontawesome_icon('fa-star');
         case 'inclusions':
-            return $fontawesome_icon('fa-list-check');
+            return $fontawesome_icon('fa-clipboard-list');
         case 'meeting':
             return $fontawesome_icon('fa-map-pin');
         case 'extras':
@@ -236,48 +215,11 @@ $get_section_icon = static function (string $section) use ($overview_term_icon, 
     }
 };
 
-$normalize_language_key = static function (string $label): string {
-    $label = remove_accents($label);
-    $label = trim((string) $label);
-    $label = strtolower($label);
-    $label = preg_replace('/[^a-z0-9]+/u', '-', $label);
-
-    return trim((string) $label, '-');
-};
-
-$language_flag_icons = [
-    'italiano' => '<svg viewBox="0 0 60 40" role="img" aria-hidden="true" focusable="false"><rect width="20" height="40" fill="#009246"/><rect x="20" width="20" height="40" fill="#ffffff"/><rect x="40" width="20" height="40" fill="#ce2b37"/></svg>',
-    'italian' => '<svg viewBox="0 0 60 40" role="img" aria-hidden="true" focusable="false"><rect width="20" height="40" fill="#009246"/><rect x="20" width="20" height="40" fill="#ffffff"/><rect x="40" width="20" height="40" fill="#ce2b37"/></svg>',
-    'inglese' => '<svg viewBox="0 0 60 40" role="img" aria-hidden="true" focusable="false"><rect width="60" height="40" fill="#012169"/><path fill="#ffffff" d="M0 15h25V0h10v15h25v10H35v15H25V25H0Z"/><path fill="#c8102e" d="M0 17h27V0h6v17h27v6H33v17h-6V23H0Z"/><path fill="#ffffff" d="m0 4.5 17 11.5h-6L0 7.2Zm60 0v2.7L43 16h-6Zm0 31.5-17-11.5h6l11 7.2ZM0 36l17-11.5h6L0 37.5Z"/><path fill="#c8102e" d="m0 1.8 20.4 13.2h-4.5L0 4.5Zm60 0v2.7L39.6 15h4.5ZM60 38.2 39.6 25h4.5L60 35.5ZM0 38.2l20.4-13.2h-4.5L0 35.5Z"/></svg>',
-    'english' => '<svg viewBox="0 0 60 40" role="img" aria-hidden="true" focusable="false"><rect width="60" height="40" fill="#012169"/><path fill="#ffffff" d="M0 15h25V0h10v15h25v10H35v15H25V25H0Z"/><path fill="#c8102e" d="M0 17h27V0h6v17h27v6H33v17h-6V23H0Z"/><path fill="#ffffff" d="m0 4.5 17 11.5h-6L0 7.2Zm60 0v2.7L43 16h-6Zm0 31.5-17-11.5h6l11 7.2ZM0 36l17-11.5h6L0 37.5Z"/><path fill="#c8102e" d="m0 1.8 20.4 13.2h-4.5L0 4.5Zm60 0v2.7L39.6 15h4.5ZM60 38.2 39.6 25h4.5L60 35.5ZM0 38.2l20.4-13.2h-4.5L0 35.5Z"/></svg>',
-    'francese' => '<svg viewBox="0 0 60 40" role="img" aria-hidden="true" focusable="false"><rect width="20" height="40" fill="#0055a4"/><rect x="20" width="20" height="40" fill="#ffffff"/><rect x="40" width="20" height="40" fill="#ef4135"/></svg>',
-    'french' => '<svg viewBox="0 0 60 40" role="img" aria-hidden="true" focusable="false"><rect width="20" height="40" fill="#0055a4"/><rect x="20" width="20" height="40" fill="#ffffff"/><rect x="40" width="20" height="40" fill="#ef4135"/></svg>',
-    'spagnolo' => '<svg viewBox="0 0 60 40" role="img" aria-hidden="true" focusable="false"><rect width="60" height="40" fill="#c60b1e"/><rect y="12" width="60" height="16" fill="#ffc400"/></svg>',
-    'spanish' => '<svg viewBox="0 0 60 40" role="img" aria-hidden="true" focusable="false"><rect width="60" height="40" fill="#c60b1e"/><rect y="12" width="60" height="16" fill="#ffc400"/></svg>',
-    'tedesco' => '<svg viewBox="0 0 60 40" role="img" aria-hidden="true" focusable="false"><rect width="60" height="40" fill="#ffce00"/><rect y="13.3" width="60" height="13.4" fill="#dd0000"/><rect width="60" height="13.3" fill="#000000"/></svg>',
-    'german' => '<svg viewBox="0 0 60 40" role="img" aria-hidden="true" focusable="false"><rect width="60" height="40" fill="#ffce00"/><rect y="13.3" width="60" height="13.4" fill="#dd0000"/><rect width="60" height="13.3" fill="#000000"/></svg>',
-    'portoghese' => '<svg viewBox="0 0 60 40" role="img" aria-hidden="true" focusable="false"><rect width="24" height="40" fill="#006600"/><rect x="24" width="36" height="40" fill="#ff0000"/><circle cx="24" cy="20" r="8" fill="#ffcc29"/></svg>',
-    'portuguese' => '<svg viewBox="0 0 60 40" role="img" aria-hidden="true" focusable="false"><rect width="24" height="40" fill="#006600"/><rect x="24" width="36" height="40" fill="#ff0000"/><circle cx="24" cy="20" r="8" fill="#ffcc29"/></svg>',
-];
-
-$get_language_flag_icon = static function (string $label) use ($language_flag_icons, $normalize_language_key): string {
-    $key = $normalize_language_key($label);
-
-    if (isset($language_flag_icons[$key])) {
-        return $language_flag_icons[$key];
-    }
-
-    return '<svg viewBox="0 0 60 40" role="img" aria-hidden="true" focusable="false"><rect width="60" height="40" rx="4" fill="#0f172a"/><path fill="#38bdf8" d="M12 20a18 18 0 0 1 36 0 18 18 0 0 1-36 0Z" opacity="0.3"/><path fill="#38bdf8" d="M24 20a6 6 0 1 1 6 6 6 6 0 0 1-6-6Z"/></svg>';
-};
-
 $overview_meeting = isset($overview['meeting']) && is_array($overview['meeting']) ? $overview['meeting'] : [];
 $overview_meeting_title = isset($overview_meeting['title']) ? (string) $overview_meeting['title'] : '';
 $overview_meeting_address = isset($overview_meeting['address']) ? (string) $overview_meeting['address'] : '';
 $overview_meeting_summary = isset($overview_meeting['summary']) ? (string) $overview_meeting['summary'] : '';
 $overview_short_description = isset($overview['short_description']) ? (string) $overview['short_description'] : '';
-$overview_themes = $normalize_overview_list($overview['themes'] ?? []);
-$overview_language_terms = $normalize_overview_list($overview['language_terms'] ?? []);
-$overview_duration_terms = $normalize_overview_list($overview['duration_terms'] ?? []);
 $overview_experience_badges = [];
 if (isset($overview['experience_badges']) && is_array($overview['experience_badges'])) {
     foreach ($overview['experience_badges'] as $badge) {
@@ -302,10 +244,7 @@ if (isset($overview['experience_badges']) && is_array($overview['experience_badg
         ];
     }
 }
-$has_overview_detail_lists = ! empty($overview_themes)
-    || ! empty($overview_language_terms)
-    || ! empty($overview_duration_terms)
-    || ! empty($overview_experience_badges);
+$has_overview_detail_lists = ! empty($overview_experience_badges);
 $has_overview_details = '' !== $overview_short_description || $has_overview_detail_lists;
 $overview_has_content = isset($overview_has_content) ? (bool) $overview_has_content : null;
 
@@ -499,91 +438,34 @@ $sticky_price_display = '' !== $price_from_display ? $format_currency($price_fro
                                 <p class="fp-exp-overview__lead"><?php echo esc_html($overview_short_description); ?></p>
                             <?php endif; ?>
 
-                            <?php if ($has_overview_detail_lists) : ?>
+                            <?php if (! empty($overview_experience_badges)) : ?>
                                 <dl class="fp-exp-overview__grid">
-                                    <?php if (! empty($overview_themes)) : ?>
-                                        <div class="fp-exp-overview__item">
-                                            <dt class="fp-exp-overview__term">
-                                                <span class="fp-exp-overview__term-icon" aria-hidden="true"><?php echo $overview_term_icon('themes'); ?></span>
-                                                <span class="fp-exp-overview__term-label"><?php esc_html_e('Temi esperienza', 'fp-experiences'); ?></span>
-                                            </dt>
-                                            <dd class="fp-exp-overview__definition">
-                                                <ul class="fp-exp-overview__list" role="list">
-                                                    <?php foreach ($overview_themes as $theme) : ?>
-                                                        <li class="fp-exp-overview__list-item"><?php echo esc_html($theme); ?></li>
-                                                    <?php endforeach; ?>
-                                                </ul>
-                                            </dd>
-                                        </div>
-                                    <?php endif; ?>
+                                    <div class="fp-exp-overview__item">
+                                        <dt class="fp-exp-overview__term">
+                                            <span class="fp-exp-overview__term-label"><?php esc_html_e('Caratteristiche esperienza', 'fp-experiences'); ?></span>
+                                        </dt>
+                                        <dd class="fp-exp-overview__definition">
+                                            <ul class="fp-exp-overview__list" role="list">
+                                                <?php foreach ($overview_experience_badges as $badge) :
+                                                    $badge_label = isset($badge['label']) ? (string) $badge['label'] : '';
+                                                    if ('' === $badge_label) {
+                                                        continue;
+                                                    }
 
-                                    <?php if (! empty($overview_language_terms)) : ?>
-                                        <div class="fp-exp-overview__item">
-                                            <dt class="fp-exp-overview__term">
-                                                <span class="fp-exp-overview__term-icon" aria-hidden="true"><?php echo $overview_term_icon('languages'); ?></span>
-                                                <span class="fp-exp-overview__term-label"><?php esc_html_e('Lingue per filtri', 'fp-experiences'); ?></span>
-                                            </dt>
-                                            <dd class="fp-exp-overview__definition">
-                                                <ul class="fp-exp-overview__list" role="list">
-                                                    <?php foreach ($overview_language_terms as $language_term) : ?>
-                                                        <li class="fp-exp-overview__list-item fp-exp-overview__list-item--with-icon">
-                                                            <span class="fp-exp-overview__flag" aria-hidden="true"><?php echo $get_language_flag_icon($language_term); ?></span>
-                                                            <span class="fp-exp-overview__list-text"><?php echo esc_html($language_term); ?></span>
-                                                        </li>
-                                                    <?php endforeach; ?>
-                                                </ul>
-                                            </dd>
-                                        </div>
-                                    <?php endif; ?>
-
-                                    <?php if (! empty($overview_duration_terms)) : ?>
-                                        <div class="fp-exp-overview__item">
-                                            <dt class="fp-exp-overview__term">
-                                                <span class="fp-exp-overview__term-icon" aria-hidden="true"><?php echo $overview_term_icon('duration'); ?></span>
-                                                <span class="fp-exp-overview__term-label"><?php esc_html_e('Durate aggiuntive', 'fp-experiences'); ?></span>
-                                            </dt>
-                                            <dd class="fp-exp-overview__definition">
-                                                <ul class="fp-exp-overview__list" role="list">
-                                                    <?php foreach ($overview_duration_terms as $duration_term) : ?>
-                                                        <li class="fp-exp-overview__list-item"><?php echo esc_html($duration_term); ?></li>
-                                                    <?php endforeach; ?>
-                                                </ul>
-                                            </dd>
-                                        </div>
-                                    <?php endif; ?>
-
-                                    <?php if (! empty($overview_experience_badges)) : ?>
-                                        <div class="fp-exp-overview__item">
-                                            <dt class="fp-exp-overview__term">
-                                                <span class="fp-exp-overview__term-icon" aria-hidden="true"><?php echo $overview_term_icon('experience'); ?></span>
-                                                <span class="fp-exp-overview__term-label"><?php esc_html_e('Badge esperienza', 'fp-experiences'); ?></span>
-                                            </dt>
-                                            <dd class="fp-exp-overview__definition">
-                                                <ul class="fp-exp-overview__list" role="list">
-                                                    <?php foreach ($overview_experience_badges as $badge) :
-                                                        $badge_label = isset($badge['label']) ? (string) $badge['label'] : '';
-                                                        if ('' === $badge_label) {
-                                                            continue;
-                                                        }
-
-                                                        $badge_icon_name = isset($badge['icon']) ? (string) $badge['icon'] : '';
-                                                        $badge_description = isset($badge['description']) ? (string) $badge['description'] : '';
-                                                        $badge_icon_svg = \FP_Exp\Utils\Helpers::experience_badge_icon_svg($badge_icon_name);
-                                                        ?>
-                                                        <li class="fp-exp-overview__list-item fp-exp-overview__list-item--with-icon">
-                                                            <span class="fp-exp-overview__badge-icon" aria-hidden="true"><?php echo $badge_icon_svg; ?></span>
-                                                            <span class="fp-exp-overview__list-body">
-                                                                <span class="fp-exp-overview__list-text"><?php echo esc_html($badge_label); ?></span>
-                                                                <?php if ('' !== $badge_description) : ?>
-                                                                    <span class="fp-exp-overview__list-hint"><?php echo esc_html($badge_description); ?></span>
-                                                                <?php endif; ?>
-                                                            </span>
-                                                        </li>
-                                                    <?php endforeach; ?>
-                                                </ul>
-                                            </dd>
-                                        </div>
-                                    <?php endif; ?>
+                                                    $badge_description = isset($badge['description']) ? (string) $badge['description'] : '';
+                                                    ?>
+                                                    <li class="fp-exp-overview__list-item">
+                                                        <span class="fp-exp-overview__list-body">
+                                                            <span class="fp-exp-overview__list-text"><?php echo esc_html($badge_label); ?></span>
+                                                            <?php if ('' !== $badge_description) : ?>
+                                                                <span class="fp-exp-overview__list-hint"><?php echo esc_html($badge_description); ?></span>
+                                                            <?php endif; ?>
+                                                        </span>
+                                                    </li>
+                                                <?php endforeach; ?>
+                                            </ul>
+                                        </dd>
+                                    </div>
                                 </dl>
                             <?php endif; ?>
                         </div>
@@ -630,7 +512,6 @@ $sticky_price_display = '' !== $price_from_display ? $format_currency($price_fro
             <?php if ($show_gallery) : ?>
                 <section class="fp-exp-section fp-exp-gallery" id="fp-exp-section-gallery" data-fp-section="gallery">
                     <header class="fp-exp-section__header">
-                        <span class="fp-exp-section__eyebrow"><?php esc_html_e('Gallery', 'fp-experiences'); ?></span>
                         <div class="fp-exp-section__heading">
                             <span class="fp-exp-section__icon" aria-hidden="true"><?php echo $get_section_icon('gallery'); ?></span>
                             <h2 class="fp-exp-section__title"><?php esc_html_e('A glimpse of the experience', 'fp-experiences'); ?></h2>
@@ -678,7 +559,6 @@ $sticky_price_display = '' !== $price_from_display ? $format_currency($price_fro
                 <section class="fp-exp-section fp-exp-gift" id="fp-exp-hero-gift" data-fp-section="hero-gift">
                     <div class="fp-exp-gift__body">
                         <div class="fp-exp-gift__content">
-                            <span class="fp-exp-gift__eyebrow"><?php esc_html_e('Regali', 'fp-experiences'); ?></span>
                             <div class="fp-exp-section__heading">
                                 <span class="fp-exp-section__icon" aria-hidden="true"><?php echo $get_section_icon('gift'); ?></span>
                                 <h2 class="fp-exp-gift__title fp-exp-section__title"><?php esc_html_e('Gift this experience', 'fp-experiences'); ?></h2>
@@ -797,7 +677,6 @@ $sticky_price_display = '' !== $price_from_display ? $format_currency($price_fro
             <?php if (! empty($sections['highlights']) && $has_highlights) : ?>
                 <section class="fp-exp-section fp-exp-highlights" id="fp-exp-section-highlights" data-fp-section="highlights">
                     <header class="fp-exp-section__header">
-                        <span class="fp-exp-section__eyebrow"><?php esc_html_e('Highlights', 'fp-experiences'); ?></span>
                         <div class="fp-exp-section__heading">
                             <span class="fp-exp-section__icon" aria-hidden="true"><?php echo $get_section_icon('highlights'); ?></span>
                             <h2 class="fp-exp-section__title"><?php esc_html_e('What makes this experience special', 'fp-experiences'); ?></h2>
@@ -944,7 +823,6 @@ $sticky_price_display = '' !== $price_from_display ? $format_currency($price_fro
             <?php if (! empty($sections['faq']) && $has_faq) : ?>
                 <section class="fp-exp-section" id="fp-exp-section-faq" data-fp-section="faq">
                     <header class="fp-exp-section__header">
-                        <span class="fp-exp-section__eyebrow"><?php esc_html_e('FAQ', 'fp-experiences'); ?></span>
                         <div class="fp-exp-section__heading">
                             <span class="fp-exp-section__icon" aria-hidden="true"><?php echo $get_section_icon('faq'); ?></span>
                             <h2 class="fp-exp-section__title"><?php esc_html_e('Frequently asked questions', 'fp-experiences'); ?></h2>
@@ -989,7 +867,6 @@ $sticky_price_display = '' !== $price_from_display ? $format_currency($price_fro
             <?php if (! empty($sections['reviews']) && $has_reviews) : ?>
                 <section class="fp-exp-section" id="fp-exp-section-reviews" data-fp-section="reviews">
                     <header class="fp-exp-section__header">
-                        <span class="fp-exp-section__eyebrow"><?php esc_html_e('Reviews', 'fp-experiences'); ?></span>
                         <div class="fp-exp-section__heading">
                             <span class="fp-exp-section__icon" aria-hidden="true"><?php echo $get_section_icon('reviews'); ?></span>
                             <h2 class="fp-exp-section__title"><?php esc_html_e('Traveler reviews', 'fp-experiences'); ?></h2>

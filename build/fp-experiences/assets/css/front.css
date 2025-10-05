@@ -191,7 +191,13 @@
 .fp-exp-list__grid {
     display: grid;
     gap: 1.5rem;
-    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    grid-template-columns: minmax(0, 1fr);
+}
+
+@media (min-width: 768px) {
+    .fp-exp-list__grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
 }
 
 .fp-exp-card {
@@ -336,7 +342,7 @@
     --fp-listing-gap: clamp(20px, 3.5vw, 32px);
     --fp-listing-cols-mobile: 1;
     --fp-listing-cols-tablet: 2;
-    --fp-listing-cols-desktop: 4;
+    --fp-listing-cols-desktop: 2;
     padding-top: clamp(24px, 4vw, 48px);
     padding-bottom: clamp(28px, 5vw, 60px);
 }
@@ -1103,15 +1109,17 @@
 }
 
 .fp-simple-archive__cta--details {
-    border: 1px solid color-mix(in srgb, var(--fp-color-primary) 45%, #d0d7e2);
-    color: var(--fp-color-primary);
-    background: transparent;
+    border: 1px solid color-mix(in srgb, var(--fp-color-primary) 35%, #d0d7e2 65%);
+    background: #fff;
+    color: color-mix(in srgb, var(--fp-color-primary) 80%, #0f172a 20%);
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
 }
 
 .fp-simple-archive__cta--details:hover,
 .fp-simple-archive__cta--details:focus-visible {
-    background: color-mix(in srgb, var(--fp-color-primary) 12%, rgba(255, 255, 255, 0.9));
-    color: color-mix(in srgb, var(--fp-color-primary) 85%, #10203b 15%);
+    background: color-mix(in srgb, var(--fp-color-primary) 8%, #fff);
+    color: color-mix(in srgb, var(--fp-color-primary) 75%, #0f172a 25%);
+    box-shadow: 0 4px 10px color-mix(in srgb, var(--fp-color-primary) 16%, rgba(15, 23, 42, 0.16));
 }
 
 .fp-simple-archive__cta--book {
@@ -1303,15 +1311,29 @@
     grid-template-columns: minmax(0, 1fr);
 }
 
+.fp-exp-addons > li {
+    list-style: none;
+}
+
+.fp-exp-addons > li::marker {
+    content: none;
+}
+
 @media (min-width: 768px) {
     .fp-exp-addons {
-        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    }
+}
+
+@media (min-width: 1024px) {
+    .fp-exp-addons {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }
 
 .fp-exp-addon__card {
     display: grid;
-    grid-template-columns: auto minmax(0, 180px) minmax(0, 1fr);
+    grid-template-columns: auto minmax(0, 200px) minmax(0, 1fr);
     gap: 0.85rem 1rem;
     align-items: stretch;
     padding: 0.85rem 1rem;
@@ -1594,6 +1616,7 @@
     border: 1px solid color-mix(in srgb, var(--fp-color-primary) 18%, rgba(15, 23, 42, 0.12));
     box-shadow: 0 16px 32px rgba(15, 23, 42, 0.08);
     flex-wrap: nowrap;
+    min-width: 0;
 }
 
 .fp-exp-quantity__control {
@@ -1779,12 +1802,17 @@
         text-align: right;
     }
 
+    .fp-exp-party-table tbody td:nth-of-type(3) {
+        width: clamp(180px, 24vw, 220px);
+    }
+
     .fp-exp-ticket__price {
         justify-content: flex-end;
     }
 
     .fp-exp-party-table .fp-exp-quantity {
         margin-left: auto;
+        width: min(220px, 100%);
     }
 }
 
@@ -1890,19 +1918,36 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+    flex-wrap: wrap;
+    gap: 0.75rem;
     border-top: 1px solid rgba(15, 23, 42, 0.12);
-    padding-top: 0.75rem;
+    padding: 0.85rem 1rem 0.75rem;
+    margin-top: 0.25rem;
     font-size: 1.1rem;
     font-weight: 700;
     color: var(--fp-color-text);
+    background: linear-gradient(
+        135deg,
+        color-mix(in srgb, var(--fp-color-primary) 12%, #fff),
+        color-mix(in srgb, var(--fp-color-primary) 5%, #fff)
+    );
+    border-radius: 18px;
+    box-shadow: 0 18px 32px rgba(15, 23, 42, 0.08);
 }
 
 .fp-exp-summary__total-label {
     color: inherit;
+    font-size: 1rem;
 }
 
 .fp-exp-summary__total-amount {
-    color: inherit;
+    color: color-mix(in srgb, var(--fp-color-primary) 88%, #0f172a);
+    font-size: clamp(1.2rem, 2.4vw, 1.6rem);
+    font-weight: 700;
+    margin-left: auto;
+    min-width: 0;
+    text-align: right;
+    word-break: break-word;
 }
 
 .fp-exp-summary__disclaimer {
@@ -2492,21 +2537,6 @@
     gap: 0.5rem;
 }
 
-.fp-exp-overview__term-icon {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 1.75rem;
-    height: 1.75rem;
-    color: var(--fp-color-primary);
-}
-
-.fp-exp-overview__term-icon svg {
-    width: 100%;
-    height: 100%;
-    display: block;
-}
-
 .fp-exp-overview__term-label {
     line-height: 1.2;
 }
@@ -2522,33 +2552,18 @@
     list-style: none;
     display: grid;
     gap: 0.35rem;
+    grid-template-columns: minmax(0, 1fr);
+}
+
+@media (min-width: 768px) {
+    .fp-exp-overview__list {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.75rem 1.5rem;
+    }
 }
 
 .fp-exp-overview__list-item {
     line-height: 1.5;
-}
-
-.fp-exp-overview__list-item--with-icon {
-    display: inline-flex;
-    align-items: flex-start;
-    gap: 0.5rem;
-}
-
-.fp-exp-overview__badge-icon {
-    display: inline-flex;
-    width: 1.75rem;
-    height: 1.75rem;
-    border-radius: 50%;
-    align-items: center;
-    justify-content: center;
-    background: rgba(15, 23, 42, 0.08);
-    color: var(--fp-color-primary, #8b1e3f);
-    flex-shrink: 0;
-}
-
-.fp-exp-overview__badge-icon svg {
-    width: 1.1rem;
-    height: 1.1rem;
 }
 
 .fp-exp-overview__list-body {
@@ -2557,26 +2572,15 @@
     gap: 0.15rem;
 }
 
+.fp-exp-overview__list-text {
+    font-weight: 600;
+    color: var(--fp-color-text);
+}
+
 .fp-exp-overview__list-hint {
     font-size: 0.8125rem;
     line-height: 1.4;
     color: var(--fp-color-text-muted, rgba(15, 23, 42, 0.72));
-}
-
-.fp-exp-overview__flag {
-    display: inline-flex;
-    width: 1.5rem;
-    height: 1rem;
-    border-radius: 2px;
-    overflow: hidden;
-    box-shadow: 0 0 0 1px color-mix(in srgb, var(--fp-color-primary) 15%, transparent);
-    flex-shrink: 0;
-}
-
-.fp-exp-overview__flag svg {
-    width: 100%;
-    height: 100%;
-    display: block;
 }
 
 .fp-exp-overview__value {
@@ -3238,14 +3242,6 @@ body.fp-modal-open {
 .fp-exp-section__icon .fa-light {
     font-size: 1.35rem;
     line-height: 1;
-}
-
-.fp-exp-section__eyebrow {
-    font-size: 0.75rem;
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-    color: var(--fp-color-muted);
-    font-weight: 600;
 }
 
 .fp-exp-section__title {

@@ -34,7 +34,7 @@ $container_class = implode(' ', $class_names);
         </header>
 
         <?php if (empty($experiences)) : ?>
-            <p class="fp-simple-archive__empty"><?php esc_html_e('No experiences available right now. Please check back soon.', 'fp-experiences'); ?></p>
+            <p class="fp-simple-archive__empty"><?php esc_html_e('Nessuna esperienza disponibile al momento. Torna a trovarci presto.', 'fp-experiences'); ?></p>
         <?php else : ?>
             <div class="fp-simple-archive__list">
                 <?php foreach ($experiences as $experience) :

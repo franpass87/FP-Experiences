@@ -33,6 +33,8 @@ use function wp_timezone;
 
 final class Slots
 {
+    private const OPEN_ENDED_DEFAULT_MONTHS = 12;
+
     public const STATUS_OPEN = 'open';
     public const STATUS_CLOSED = 'closed';
     public const STATUS_CANCELLED = 'cancelled';
@@ -877,14 +879,47 @@ final class Slots
             return null;
         }
 
-        $start_date = isset($rule['start_date']) ? (string) $rule['start_date'] : 'now';
-        $end_date = isset($rule['end_date']) ? (string) $rule['end_date'] : $start_date;
+        $start_input = isset($rule['start_date']) ? (string) $rule['start_date'] : 'now';
+        $end_input = isset($rule['end_date']) ? (string) $rule['end_date'] : '';
+        $open_ended = ! empty($rule['open_ended']);
+        $open_ended_months = isset($rule['open_ended_months']) ? absint($rule['open_ended_months']) : 0;
 
         try {
-            $start = new DateTimeImmutable($start_date, $timezone);
-            $end = new DateTimeImmutable($end_date, $timezone);
+            $start = new DateTimeImmutable($start_input, $timezone);
         } catch (Exception $exception) {
             return null;
+        }
+
+        if ($open_ended) {
+            $window_start = $start;
+            $now = new DateTimeImmutable('now', $timezone);
+
+            if ($window_start < $now) {
+                $window_start = $now;
+            }
+
+            $months = $open_ended_months > 0 ? $open_ended_months : self::OPEN_ENDED_DEFAULT_MONTHS;
+
+            try {
+                $interval = new DateInterval('P' . $months . 'M');
+            } catch (Exception $exception) {
+                try {
+                    $interval = new DateInterval('P' . self::OPEN_ENDED_DEFAULT_MONTHS . 'M');
+                } catch (Exception $inner_exception) {
+                    return null;
+                }
+            }
+
+            $start = $window_start;
+            $end = $window_start->add($interval);
+        } else {
+            $end_input = '' !== $end_input ? $end_input : $start_input;
+
+            try {
+                $end = new DateTimeImmutable($end_input, $timezone);
+            } catch (Exception $exception) {
+                return null;
+            }
         }
 
         if ($start > $end) {

@@ -16,6 +16,41 @@
 
     const pluginConfig = window.fpExpConfig || {};
     const trackingConfig = pluginConfig.tracking || {};
+    const browserLocale = ((navigator.languages && navigator.languages[0]) || navigator.language || '').toLowerCase();
+    const isEnglishBrowser = browserLocale.startsWith('en');
+    const autoLocale = pluginConfig.autoLocale || {};
+    const autoLocaleStrings = autoLocale.strings || {};
+    const autoLocalePlurals = autoLocale.plurals || {};
+
+    function localize(text) {
+        if (!text) {
+            return '';
+        }
+
+        if (isEnglishBrowser && autoLocaleStrings[text]) {
+            return autoLocaleStrings[text];
+        }
+
+        return text;
+    }
+
+    function localizePlural(single, plural, number) {
+        if (!isEnglishBrowser) {
+            return number === 1 ? single : plural;
+        }
+
+        const key = `${single}||${plural}`;
+        if (autoLocalePlurals[key]) {
+            const pair = autoLocalePlurals[key];
+            return number === 1 ? (pair[0] || single) : (pair[1] || plural);
+        }
+
+        return number === 1 ? localize(single) : localize(plural);
+    }
+
+    window.fpExpTranslate = window.fpExpTranslate || {};
+    window.fpExpTranslate.localize = localize;
+    window.fpExpTranslate.localizePlural = localizePlural;
     const firedEvents = [];
     const defaultCurrency = pluginConfig.currency || 'EUR';
     const focusableSelector = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
@@ -136,7 +171,7 @@
 
         const intro = document.createElement('p');
         intro.className = 'fp-exp-error-summary__intro';
-        intro.textContent = container.getAttribute('data-intro') || 'Please review the highlighted fields.';
+        intro.textContent = container.getAttribute('data-intro') || localize('Controlla i campi evidenziati.');
         container.appendChild(intro);
 
         const list = document.createElement('ul');
@@ -950,14 +985,14 @@
             clearGiftFeedback();
 
             if (typeof form.reportValidity === 'function' && !form.reportValidity()) {
-                showGiftFeedback(feedback, i18n__('Please complete the required fields.', 'fp-experiences'), true);
+                showGiftFeedback(feedback, localize('Completa i campi obbligatori.'), true);
                 return;
             }
 
             const payload = buildGiftPayload(form, config);
 
             if (!payload) {
-                showGiftFeedback(feedback, i18n__('Unable to prepare the gift checkout. Please try again later.', 'fp-experiences'), true);
+                showGiftFeedback(feedback, localize('Impossibile preparare il checkout del regalo. Riprova più tardi.'), true);
                 return;
             }
 
@@ -977,7 +1012,7 @@
                 const data = await response.json().catch(() => ({}));
 
                 if (!response.ok || (data && data.code)) {
-                    const message = data && data.message ? data.message : i18n__('We could not start the gift checkout. Please try again.', 'fp-experiences');
+                    const message = data && data.message ? data.message : localize('Non è stato possibile avviare il checkout regalo. Riprova.');
                     showGiftFeedback(feedback, message, true);
                     return;
                 }
@@ -1019,9 +1054,9 @@
                     return;
                 }
 
-                showGiftFeedback(success, i18n__('Gift checkout initialised. Follow the next steps to complete payment.', 'fp-experiences'), false);
+                showGiftFeedback(success, localize('Checkout regalo avviato. Segui i prossimi passaggi per completare il pagamento.'), false);
             } catch (error) {
-                showGiftFeedback(feedback, i18n__('We could not start the gift checkout. Please try again.', 'fp-experiences'), true);
+                showGiftFeedback(feedback, localize('Non è stato possibile avviare il checkout regalo. Riprova.'), true);
             } finally {
                 submitting = false;
                 if (submitButton) {
@@ -1222,7 +1257,7 @@
                 const normalized = String(code || '').trim().toLowerCase();
 
                 if (!normalized) {
-                    showFeedback(feedback, escapeHtml(i18n__('Enter a voucher code to continue.', 'fp-experiences')), true);
+                showFeedback(feedback, escapeHtml(localize('Inserisci un codice voucher per continuare.')), true);
 
                     return;
                 }
@@ -1245,7 +1280,7 @@
                     const data = await response.json().catch(() => ({}));
 
                     if (!response.ok || (data && data.code)) {
-                        const message = data && data.message ? data.message : i18n__('We could not find that voucher. Check the code and try again.', 'fp-experiences');
+                        const message = data && data.message ? data.message : localize('Non abbiamo trovato questo voucher. Controlla il codice e riprova.');
                         showFeedback(feedback, escapeHtml(message), true);
 
                         return;
@@ -1332,10 +1367,10 @@
                                 const option = document.createElement('option');
                                 option.value = String(slot.id);
                                 const remaining = typeof slot.remaining === 'number' ? slot.remaining : null;
-                                let label = slot.label || i18n__('Available slot', 'fp-experiences');
+                                let label = slot.label || localize('Slot disponibile');
 
                                 if (remaining !== null && remaining > 0) {
-                                    label = `${label} · ${i18n_n('%d spot left', '%d spots left', remaining).replace('%d', remaining)}`;
+                                    label = `${label} · ${localizePlural('%d posto disponibile', '%d posti disponibili', remaining).replace('%d', remaining)}`;
                                 }
 
                                 option.textContent = label;
@@ -1355,11 +1390,11 @@
                             if (redeemButton) {
                                 redeemButton.disabled = true;
                             }
-                            showFeedback(detailFeedback, escapeHtml(i18n__('No upcoming slots are available. Please contact the operator to schedule manually.', 'fp-experiences')), true);
+                            showFeedback(detailFeedback, escapeHtml(localize('Nessuno slot futuro disponibile. Contatta l’operatore per pianificare manualmente.')), true);
                         }
                     }
                 } catch (error) {
-                    showFeedback(feedback, escapeHtml(i18n__('Unable to load the voucher at this time. Please try again later.', 'fp-experiences')), true);
+                    showFeedback(feedback, escapeHtml(localize('Impossibile caricare il voucher in questo momento. Riprova più tardi.')), true);
                 } finally {
                     lookupLoading = false;
                     toggleButton(lookupButton, false);
@@ -1374,13 +1409,13 @@
                 }
 
                 if (!currentVoucher) {
-                    showFeedback(detailFeedback, escapeHtml(i18n__('Look up a voucher before choosing a slot.', 'fp-experiences')), true);
+                    showFeedback(detailFeedback, escapeHtml(localize('Cerca un voucher prima di scegliere uno slot.')), true);
 
                     return;
                 }
 
                 if (!slotSelect || !slotSelect.value) {
-                    showFeedback(detailFeedback, escapeHtml(i18n__('Select an available slot to continue.', 'fp-experiences')), true);
+                    showFeedback(detailFeedback, escapeHtml(localize('Seleziona uno slot disponibile per continuare.')), true);
                     if (slotSelect) {
                         slotSelect.focus();
                     }
@@ -1408,7 +1443,7 @@
                     const data = await response.json().catch(() => ({}));
 
                     if (!response.ok || (data && data.code)) {
-                        const message = data && data.message ? data.message : i18n__('We could not redeem the voucher. Try a different slot or contact support.', 'fp-experiences');
+                        const message = data && data.message ? data.message : localize('Non è stato possibile riscattare il voucher. Prova un altro slot o contatta l’assistenza.');
                         showFeedback(detailFeedback, escapeHtml(message), true);
                         if (slotSelect) {
                             slotSelect.disabled = false;
@@ -1451,11 +1486,11 @@
                             },
                         ],
                     };
-                    let successMessage = escapeHtml(i18n__('Voucher redeemed! Check your inbox for confirmation.', 'fp-experiences'));
+                    let successMessage = escapeHtml(localize('Voucher riscattato! Controlla la tua casella di posta per la conferma.'));
 
                     if (experienceLink) {
                         const safeLink = encodeURI(experienceLink);
-                        const linkLabel = experienceTitle || i18n__('View experience', 'fp-experiences');
+                        const linkLabel = experienceTitle || localize('Vedi esperienza');
                         successMessage += ` <a href="${safeLink}">${escapeHtml(linkLabel)}</a>`;
                     }
 
@@ -1483,7 +1518,7 @@
                         redeemButton.setAttribute('aria-disabled', 'true');
                     }
                 } catch (error) {
-                    showFeedback(detailFeedback, escapeHtml(i18n__('We could not redeem the voucher. Try a different slot or contact support.', 'fp-experiences')), true);
+                    showFeedback(detailFeedback, escapeHtml(localize('Non è stato possibile riscattare il voucher. Prova un altro slot o contatta l’assistenza.')), true);
                     if (slotSelect) {
                         slotSelect.disabled = false;
                     }
@@ -2037,8 +2072,19 @@
         });
 
         container.addEventListener('click', (event) => {
-            const target = event.target;
-            if (!(target instanceof HTMLElement)) {
+            const rawTarget = event.target;
+            if (!(rawTarget instanceof Node)) {
+                return;
+            }
+
+            let target = null;
+            if (rawTarget.nodeType === Node.ELEMENT_NODE) {
+                target = rawTarget;
+            } else if (rawTarget.parentElement) {
+                target = rawTarget.parentElement;
+            }
+
+            if (!target) {
                 return;
             }
 
@@ -2075,11 +2121,9 @@
                 refreshSummary();
             }
 
-            if (target.matches('.fp-exp-addon input[type="checkbox"], .fp-exp-addon input[type="checkbox"] *')) {
-                const checkbox = target.closest('.fp-exp-addon input[type="checkbox"]');
-                if (!checkbox) {
-                    return;
-                }
+            const checkbox = target.closest('.fp-exp-addon input[type="checkbox"]');
+
+            if (checkbox) {
                 const addonRow = checkbox.closest('.fp-exp-addon');
                 if (!addonRow) {
                     return;
@@ -2179,14 +2223,14 @@
                 pushTrackingEvent('fpExp.request_submit', Object.assign({ ecommerce }, trackingMeta));
 
                 const loadingMessage = rtbStatus
-                    ? (rtbStatus.getAttribute('data-loading') || i18n__('Sending your request…', 'fp-experiences'))
-                    : i18n__('Sending your request…', 'fp-experiences');
+                    ? (rtbStatus.getAttribute('data-loading') || localize('Invio della richiesta…'))
+                    : localize('Invio della richiesta…');
                 const successMessage = rtbStatus
-                    ? (rtbStatus.getAttribute('data-success') || i18n__('Request received! We will reply soon.', 'fp-experiences'))
-                    : i18n__('Request received! We will reply soon.', 'fp-experiences');
+                    ? (rtbStatus.getAttribute('data-success') || localize('Richiesta ricevuta! Ti risponderemo al più presto.'))
+                    : localize('Richiesta ricevuta! Ti risponderemo al più presto.');
                 const errorMessage = rtbStatus
-                    ? (rtbStatus.getAttribute('data-error') || i18n__('Unable to submit your request. Please try again.', 'fp-experiences'))
-                    : i18n__('Unable to submit your request. Please try again.');
+                    ? (rtbStatus.getAttribute('data-error') || localize('Impossibile inviare la richiesta. Riprova.'))
+                    : localize('Impossibile inviare la richiesta. Riprova.');
 
                 setRtbStatus(summaryUi, 'loading', loadingMessage);
 
@@ -2283,7 +2327,7 @@
             button.setAttribute('data-slot-id', slot.id);
             const parsedRemaining = parseInt(slot.remaining, 10);
             const remaining = Number.isNaN(parsedRemaining) ? 0 : parsedRemaining;
-            const template = i18n_n('%d spot', '%d spots', remaining);
+            const template = localizePlural('%d posto', '%d posti', remaining);
             let countLabel = template;
             if (typeof i18n_sprintf === 'function') {
                 try {
@@ -2692,7 +2736,7 @@
                 }
                 if (breakdown.total_guests) {
                     statusParts.push(
-                        i18n_n('%d guest', '%d guests', breakdown.total_guests, 'fp-experiences')
+                        localizePlural('%d ospite', '%d ospiti', breakdown.total_guests)
                             .replace('%d', breakdown.total_guests)
                     );
                 }

@@ -15,7 +15,7 @@ $initial_code = $initial_code ? preg_replace('/[^a-z0-9\-]/', '', $initial_code)
 >
     <div class="fp-gift-redeem__inner">
         <h1 class="fp-gift-redeem__title"><?php esc_html_e('Redeem your experience gift', 'fp-experiences'); ?></h1>
-        <p class="fp-gift-redeem__intro"><?php esc_html_e('Enter your voucher code to view the available dates and confirm your reservation.', 'fp-experiences'); ?></p>
+    <p class="fp-gift-redeem__intro"><?php esc_html_e('Inserisci il codice voucher per vedere le date disponibili e confermare la prenotazione.', 'fp-experiences'); ?></p>
         <div class="fp-gift__feedback" data-fp-gift-redeem-feedback aria-live="polite" hidden></div>
         <form class="fp-gift-redeem__lookup" data-fp-gift-redeem-lookup novalidate>
             <label class="fp-gift-redeem__field">
@@ -69,7 +69,7 @@ $initial_code = $initial_code ? preg_replace('/[^a-z0-9\-]/', '', $initial_code)
                 <div class="fp-gift__feedback" data-fp-gift-redeem-feedback-details aria-live="polite" hidden></div>
                 <form class="fp-gift-redeem__form" data-fp-gift-redeem-form novalidate>
                     <label class="fp-gift-redeem__field">
-                        <span class="fp-gift-redeem__label"><?php esc_html_e('Select a date and time', 'fp-experiences'); ?></span>
+                        <span class="fp-gift-redeem__label"><?php esc_html_e('Scegli data e ora', 'fp-experiences'); ?></span>
                         <select data-fp-gift-redeem-slot required disabled></select>
                     </label>
                     <button type="submit" class="fp-exp-button" data-fp-gift-redeem-submit disabled>

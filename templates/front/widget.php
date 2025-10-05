@@ -237,7 +237,7 @@ $price_from_display = null !== $price_from_value && $price_from_value > 0
             <li class="fp-exp-step fp-exp-step--dates" data-fp-step="dates" data-fp-section="calendar">
                 <header>
                     <span class="fp-exp-step__number">1</span>
-                    <h3 class="fp-exp-step__title"><?php echo esc_html__('Choose a date', 'fp-experiences'); ?></h3>
+                    <h3 class="fp-exp-step__title"><?php echo esc_html__('Scegli una data', 'fp-experiences'); ?></h3>
                 </header>
                 <div class="fp-exp-step__content">
                     <div class="fp-exp-calendar" data-show-calendar="<?php echo esc_attr($behavior['show_calendar'] ? '1' : '0'); ?>">
@@ -268,15 +268,15 @@ $price_from_display = null !== $price_from_value && $price_from_value > 0
                             </section>
                         <?php endforeach; ?>
                     </div>
-                    <div class="fp-exp-slots" aria-live="polite" data-empty-label="<?php echo esc_attr__('Select a date to view time slots', 'fp-experiences'); ?>">
-                        <p class="fp-exp-slots__placeholder"><?php echo esc_html__('Select a date to view time slots', 'fp-experiences'); ?></p>
+                    <div class="fp-exp-slots" aria-live="polite" data-empty-label="<?php echo esc_attr__('Seleziona una data per vedere le fasce orarie', 'fp-experiences'); ?>">
+                        <p class="fp-exp-slots__placeholder"><?php echo esc_html__('Seleziona una data per vedere le fasce orarie', 'fp-experiences'); ?></p>
                     </div>
                 </div>
             </li>
             <li class="fp-exp-step fp-exp-step--party" data-fp-step="party">
                 <header>
                     <span class="fp-exp-step__number">2</span>
-                    <h3 class="fp-exp-step__title"><?php echo esc_html__('Select tickets', 'fp-experiences'); ?></h3>
+                    <h3 class="fp-exp-step__title"><?php echo esc_html__('Seleziona i biglietti', 'fp-experiences'); ?></h3>
                 </header>
                 <div class="fp-exp-step__content">
                     <table class="fp-exp-party-table">
@@ -304,8 +304,8 @@ $price_from_display = null !== $price_from_value && $price_from_value > 0
                                     </td>
                                     <td>
                                         <div class="fp-exp-quantity">
-                                            <button type="button" class="fp-exp-quantity__control" data-action="decrease" aria-label="<?php echo esc_attr(sprintf(esc_html__('Decrease %s', 'fp-experiences'), $ticket['label'])); ?>">
-                                                <span class="screen-reader-text"><?php echo esc_html(sprintf(esc_html__('Decrease %s', 'fp-experiences'), $ticket['label'])); ?></span>
+                                            <button type="button" class="fp-exp-quantity__control" data-action="decrease" aria-label="<?php echo esc_attr(sprintf(esc_html__('Riduci %s', 'fp-experiences'), $ticket['label'])); ?>">
+                                                <span class="screen-reader-text"><?php echo esc_html(sprintf(esc_html__('Riduci %s', 'fp-experiences'), $ticket['label'])); ?></span>
                                                 <span aria-hidden="true" class="fp-exp-quantity__icon">
                                                     <svg viewBox="0 0 24 24" role="img" aria-hidden="true" focusable="false">
                                                         <path d="M6 12h12" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.8" />
@@ -313,8 +313,8 @@ $price_from_display = null !== $price_from_value && $price_from_value > 0
                                                 </span>
                                             </button>
                                             <input type="number" class="fp-exp-quantity__input" min="0" max="<?php echo esc_attr((string) ($ticket['cap'] ?? '')); ?>" value="0" aria-label="<?php echo esc_attr(sprintf(esc_html__('%s quantity', 'fp-experiences'), $ticket['label'])); ?>">
-                                            <button type="button" class="fp-exp-quantity__control" data-action="increase" aria-label="<?php echo esc_attr(sprintf(esc_html__('Increase %s', 'fp-experiences'), $ticket['label'])); ?>">
-                                                <span class="screen-reader-text"><?php echo esc_html(sprintf(esc_html__('Increase %s', 'fp-experiences'), $ticket['label'])); ?></span>
+                                            <button type="button" class="fp-exp-quantity__control" data-action="increase" aria-label="<?php echo esc_attr(sprintf(esc_html__('Aumenta %s', 'fp-experiences'), $ticket['label'])); ?>">
+                                                <span class="screen-reader-text"><?php echo esc_html(sprintf(esc_html__('Aumenta %s', 'fp-experiences'), $ticket['label'])); ?></span>
                                                 <span aria-hidden="true" class="fp-exp-quantity__icon">
                                                     <svg viewBox="0 0 24 24" role="img" aria-hidden="true" focusable="false">
                                                         <path d="M12 6v12" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.8" />
@@ -400,15 +400,15 @@ $price_from_display = null !== $price_from_value && $price_from_value > 0
                 <div class="fp-exp-step__content">
                     <div
                         class="fp-exp-summary"
-                        data-empty-label="<?php echo esc_attr__('Select tickets to see the summary', 'fp-experiences'); ?>"
+                        data-empty-label="<?php echo esc_attr__('Seleziona i biglietti per vedere il riepilogo', 'fp-experiences'); ?>"
                         data-loading-label="<?php echo esc_attr__('Updating price…', 'fp-experiences'); ?>"
-                        data-error-label="<?php echo esc_attr__('We could not refresh the price. Please try again.', 'fp-experiences'); ?>"
-                        data-slot-label="<?php echo esc_attr__('Choose a time to confirm price and availability.', 'fp-experiences'); ?>"
+                        data-error-label="<?php echo esc_attr__('Impossibile aggiornare il prezzo. Riprova.', 'fp-experiences'); ?>"
+                        data-slot-label="<?php echo esc_attr__('Scegli un orario per confermare prezzo e disponibilità.', 'fp-experiences'); ?>"
                         data-tax-label="<?php echo esc_attr__('Taxes included where applicable.', 'fp-experiences'); ?>"
                         data-base-label="<?php echo esc_attr__('Base price', 'fp-experiences'); ?>"
                     >
                         <div class="fp-exp-summary__status" data-fp-summary-status role="status" aria-live="polite">
-                            <p class="fp-exp-summary__message"><?php echo esc_html__('Select tickets to see the summary', 'fp-experiences'); ?></p>
+                            <p class="fp-exp-summary__message"><?php echo esc_html__('Seleziona i biglietti per vedere il riepilogo', 'fp-experiences'); ?></p>
                         </div>
                         <div class="fp-exp-summary__body" data-fp-summary-body hidden>
                             <ul class="fp-exp-summary__lines" data-fp-summary-lines></ul>
@@ -425,9 +425,9 @@ $price_from_display = null !== $price_from_value && $price_from_value > 0
                             class="fp-exp-rtb-form"
                             data-fp-rtb-form="1"
                             data-nonce="<?php echo esc_attr($rtb_nonce); ?>"
-                            data-error-name="<?php echo esc_attr__('Enter your name.', 'fp-experiences'); ?>"
-                            data-error-email="<?php echo esc_attr__('Enter your email address.', 'fp-experiences'); ?>"
-                            data-error-email-format="<?php echo esc_attr__('Enter a valid email address.', 'fp-experiences'); ?>"
+                            data-error-name="<?php echo esc_attr__('Inserisci il tuo nome.', 'fp-experiences'); ?>"
+                            data-error-email="<?php echo esc_attr__('Inserisci il tuo indirizzo email.', 'fp-experiences'); ?>"
+                            data-error-email-format="<?php echo esc_attr__('Inserisci un indirizzo email valido.', 'fp-experiences'); ?>"
                             data-error-privacy="<?php echo esc_attr__('Accept the privacy policy to continue.', 'fp-experiences'); ?>"
                         >
                             <input type="hidden" name="experience_id" value="<?php echo esc_attr((string) $experience['id']); ?>">
@@ -443,7 +443,7 @@ $price_from_display = null !== $price_from_value && $price_from_value > 0
                                 aria-live="assertive"
                                 tabindex="-1"
                                 hidden
-                                data-intro="<?php echo esc_attr__('Please review the highlighted fields:', 'fp-experiences'); ?>"
+                                data-intro="<?php echo esc_attr__('Controlla i campi evidenziati:', 'fp-experiences'); ?>"
                             ></div>
                             <div class="fp-exp-field">
                                 <label class="fp-exp-label" for="fp-exp-rtb-name-<?php echo esc_attr($scope_class); ?>"><?php echo esc_html__('Name and surname', 'fp-experiences'); ?> <span class="fp-exp-required" aria-hidden="true">*</span></label>
@@ -476,7 +476,7 @@ $price_from_display = null !== $price_from_value && $price_from_value > 0
                             <div class="fp-exp-rtb-form__actions">
                                 <button type="submit" class="fp-exp-summary__cta" disabled><?php echo $rtb_submit_label; ?></button>
                             </div>
-                            <div class="fp-exp-rtb-form__status" role="status" aria-live="polite" data-loading="<?php echo esc_attr__('Sending your request…', 'fp-experiences'); ?>" data-success="<?php echo esc_attr__('Request received! We will reply soon.', 'fp-experiences'); ?>" data-error="<?php echo esc_attr__('Unable to submit your request. Please try again.', 'fp-experiences'); ?>"></div>
+                            <div class="fp-exp-rtb-form__status" role="status" aria-live="polite" data-loading="<?php echo esc_attr__('Invio della richiesta…', 'fp-experiences'); ?>" data-success="<?php echo esc_attr__('Richiesta ricevuta! Ti risponderemo al più presto.', 'fp-experiences'); ?>" data-error="<?php echo esc_attr__('Impossibile inviare la richiesta. Riprova.', 'fp-experiences'); ?>"></div>
                         </form>
                     <?php else : ?>
                         <button type="button" class="fp-exp-summary__cta" disabled>

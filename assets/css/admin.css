@@ -5,6 +5,36 @@
     --fp-exp-admin-border: rgba(15, 23, 42, 0.08);
 }
 
+body.fp-exp-admin-shell {
+    background: linear-gradient(160deg, #f9f6f2 0%, #efe7de 100%);
+}
+
+body.fp-exp-admin-shell #wpbody {
+    min-height: 100vh;
+}
+
+body.fp-exp-admin-shell #wpbody-content {
+    margin: 0;
+    padding: 32px clamp(16px, 4vw, 48px) 48px;
+    box-sizing: border-box;
+}
+
+body.fp-exp-admin-shell #wpbody-content > .wrap {
+    margin: 0 auto;
+    max-width: 1200px;
+    width: 100%;
+    padding: 0;
+}
+
+body.fp-exp-admin-shell #wpbody-content > .wrap > :first-child {
+    margin-top: 0;
+}
+
+body.fp-exp-admin-shell #screen-meta,
+body.fp-exp-admin-shell #screen-meta-links {
+    margin-right: clamp(16px, 4vw, 48px);
+}
+
 .fp-exp-admin {
     position: relative;
     border: 0;
@@ -176,6 +206,62 @@
 
 .fp-exp-taxonomy-manual .regular-text {
     max-width: 100%;
+}
+
+.fp-exp-taxonomy-editor {
+    display: grid;
+    gap: 16px;
+    margin-top: 12px;
+}
+
+.fp-exp-taxonomy-editor__list {
+    display: grid;
+    gap: 12px;
+}
+
+.fp-exp-taxonomy-editor__item {
+    border: 1px solid rgba(15, 23, 42, 0.12);
+    border-radius: calc(var(--fp-exp-admin-radius) - 4px);
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.9);
+    display: grid;
+    gap: 12px;
+}
+
+.fp-exp-taxonomy-editor__field {
+    display: grid;
+    gap: 4px;
+}
+
+.fp-exp-taxonomy-editor__field textarea {
+    min-height: 72px;
+}
+
+.fp-exp-taxonomy-editor__remove {
+    display: flex;
+    justify-content: flex-end;
+    margin: 0;
+}
+
+.fp-exp-taxonomy-editor__remove .button-link-delete {
+    font-size: 24px;
+    line-height: 1;
+}
+
+.fp-exp-taxonomy-editor__actions {
+    margin: 0;
+}
+
+@media (min-width: 782px) {
+    .fp-exp-taxonomy-editor__item {
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        align-items: start;
+    }
+
+    .fp-exp-taxonomy-editor__remove {
+        justify-content: flex-start;
+        align-items: flex-start;
+    }
 }
 
 .fp-exp-cover-media {
@@ -415,9 +501,19 @@
 }
 
 .fp-exp-recurrence__summary {
-    margin-top: 8px;
+    display: block;
+    margin-top: 12px;
+    padding: 12px 14px;
     font-size: 12px;
+    line-height: 1.5;
     color: var(--fp-exp-color-muted, #505050);
+    background: rgba(15, 23, 42, 0.04);
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    border-radius: var(--fp-exp-admin-radius);
+}
+
+.fp-exp-recurrence__summary[hidden] {
+    display: none !important;
 }
 
 .fp-exp-tools {

@@ -1,4 +1,6 @@
 (function () {
+    const translateAdmin = (window.fpExpTranslate && window.fpExpTranslate.localize) ? window.fpExpTranslate.localize : (value) => value;
+
     function ready(fn) {
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', fn);
@@ -11,7 +13,12 @@
         if (!window.fpExpAdmin || !window.fpExpAdmin.strings) {
             return '';
         }
-        return window.fpExpAdmin.strings[key] || '';
+        const value = window.fpExpAdmin.strings[key];
+        if (typeof value === 'string') {
+            return translateAdmin(value);
+        }
+
+        return translateAdmin(value || '');
     }
 
     function resolveAttachmentSource(data) {
@@ -102,9 +109,9 @@
             control.dataset.fpMediaBound = '1';
 
             const labels = {
-                select: chooseButton.dataset.labelSelect || getString('selectImage') || 'Select image',
-                change: chooseButton.dataset.labelChange || getString('changeImage') || 'Change image',
-                remove: getString('removeImage') || removeButton.textContent || 'Remove image',
+                select: chooseButton.dataset.labelSelect || getString('selectImage') || 'Seleziona immagine',
+                change: chooseButton.dataset.labelChange || getString('changeImage') || 'Modifica immagine',
+                remove: getString('removeImage') || removeButton.textContent || 'Rimuovi immagine',
             };
 
             removeButton.textContent = labels.remove;
@@ -249,9 +256,9 @@
             control.dataset.fpGalleryBound = '1';
 
             const labels = {
-                add: addButton.dataset.labelSelect || getString('selectImages') || addButton.textContent || 'Select images',
-                addMore: addButton.dataset.labelUpdate || getString('addImages') || addButton.textContent || 'Add images',
-                clear: clearButton.dataset.labelClear || getString('clearGallery') || clearButton.textContent || 'Remove all images',
+                add: addButton.dataset.labelSelect || getString('selectImages') || addButton.textContent || 'Seleziona immagini',
+                addMore: addButton.dataset.labelUpdate || getString('addImages') || addButton.textContent || 'Aggiungi immagini',
+                clear: clearButton.dataset.labelClear || getString('clearGallery') || clearButton.textContent || 'Rimuovi tutte le immagini',
             };
 
             function getItems() {
@@ -465,6 +472,90 @@
 
                 frame.open();
             });
+        });
+    }
+
+    function initTaxonomyEditors(root) {
+        if (!root) {
+            return;
+        }
+
+        const editors = Array.from(root.querySelectorAll('[data-fp-taxonomy-editor]'));
+
+        editors.forEach((editor) => {
+            if (!(editor instanceof HTMLElement) || editor.dataset.fpTaxonomyInit === '1') {
+                return;
+            }
+
+            const template = editor.querySelector('template[data-fp-taxonomy-template]');
+            const addButton = editor.querySelector('[data-fp-taxonomy-add]');
+            const newContainer = editor.querySelector('[data-fp-taxonomy-new]');
+
+            if (!template || !newContainer || !(addButton instanceof HTMLElement)) {
+                return;
+            }
+
+            editor.dataset.fpTaxonomyInit = '1';
+
+            function assignTemplateNames(scope) {
+                Array.from(scope.querySelectorAll('[data-name]')).forEach((field) => {
+                    if (field.closest('template')) {
+                        return;
+                    }
+
+                    const templateName = field.getAttribute('data-name');
+
+                    if (!templateName) {
+                        return;
+                    }
+
+                    field.setAttribute('name', templateName);
+                    field.removeAttribute('data-name');
+                });
+            }
+
+            function bindRemove(target) {
+                Array.from(target.querySelectorAll('[data-fp-taxonomy-remove]')).forEach((button) => {
+                    button.addEventListener('click', (event) => {
+                        event.preventDefault();
+                        const item = button.closest('[data-fp-taxonomy-item]');
+                        if (item) {
+                            item.remove();
+                        }
+                    });
+                });
+            }
+
+            function addRow(focus = true) {
+                const nextIndex = parseInt(editor.dataset.fpTaxonomyNextIndex || '0', 10) || 0;
+                const html = template.innerHTML.replace(/__INDEX__/g, String(nextIndex));
+                const wrapper = document.createElement('div');
+                wrapper.innerHTML = html;
+                const row = wrapper.firstElementChild;
+
+                if (!row) {
+                    return;
+                }
+
+                assignTemplateNames(row);
+                bindRemove(row);
+                newContainer.appendChild(row);
+                editor.dataset.fpTaxonomyNextIndex = String(nextIndex + 1);
+
+                if (focus) {
+                    const focusable = row.querySelector('input, textarea');
+                    if (focusable) {
+                        focusable.focus();
+                    }
+                }
+            }
+
+            addButton.addEventListener('click', (event) => {
+                event.preventDefault();
+                addRow(true);
+            });
+
+            bindRemove(newContainer);
         });
     }
 
@@ -918,8 +1009,12 @@
         const previewButton = settings.querySelector('[data-recurrence-preview]');
         const generateButton = settings.querySelector('[data-recurrence-generate]');
         const summary = settings.querySelector('[data-recurrence-frequency-summary]');
+        const startDateInput = settings.querySelector('input[name="fp_exp_availability[recurrence][start_date]"]');
+        const endDateInput = settings.querySelector('input[name="fp_exp_availability[recurrence][end_date]"]');
         const weeklyEmptyMessage =
             daysContainer instanceof HTMLElement ? daysContainer.dataset.recurrenceWeeklyEmpty || '' : '';
+        const openEndedSuffix =
+            getString('recurrenceOpenEndedSuffix') || 'La ricorrenza resta attiva finché non imposti una data di fine.';
 
         function getFrequencyValue() {
             if (!frequencyControls.length) {
@@ -1035,6 +1130,10 @@
 
                 const listText = labels.length ? labels.join(', ') : weeklyEmptyMessage;
                 message = template.replace('%s', listText);
+            }
+
+            if ((!endDateInput || !endDateInput.value) && openEndedSuffix) {
+                message = `${message} ${openEndedSuffix}`.trim();
             }
 
             summary.textContent = message;
@@ -1231,6 +1330,15 @@
             daysContainer.addEventListener('change', () => {
                 renderFrequencySummary();
             });
+        }
+
+        if (startDateInput) {
+            startDateInput.addEventListener('change', renderFrequencySummary);
+        }
+
+        if (endDateInput) {
+            endDateInput.addEventListener('change', renderFrequencySummary);
+            endDateInput.addEventListener('input', renderFrequencySummary);
         }
 
         if (previewButton) {
@@ -1795,12 +1903,22 @@
     }
 
     ready(() => {
+        const html = document.documentElement;
+        if (html) {
+            html.classList.add('fp-exp-admin-shell');
+        }
+
+        if (document.body) {
+            document.body.classList.add('fp-exp-admin-shell');
+        }
+
         const root = document.querySelector('[data-fp-exp-admin]');
         if (root) {
             initTabs(root);
             initRepeaters(root);
             initMediaControls(root);
             initGalleryControls(root);
+            initTaxonomyEditors(root);
             initRecurrence(root);
             initFormValidation(root);
             initCognitiveBiasLimiter(root);

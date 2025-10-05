@@ -97,11 +97,11 @@ final class CalendarAdmin
                 'perTypePrompt' => esc_html__('Optional capacity override for %s (leave blank to keep current)', 'fp-experiences'),
                 'moveConfirm' => esc_html__('Move slot to %s at %s?', 'fp-experiences'),
                 'updateSuccess' => esc_html__('Slot updated successfully.', 'fp-experiences'),
-                'updateError' => esc_html__('Unable to update the slot. Please try again.', 'fp-experiences'),
+                'updateError' => esc_html__('Impossibile aggiornare lo slot. Riprova.', 'fp-experiences'),
                 'seatsAvailable' => esc_html__('seats available', 'fp-experiences'),
                 'bookedLabel' => esc_html__('booked', 'fp-experiences'),
                 'untitledExperience' => esc_html__('Untitled experience', 'fp-experiences'),
-                'loadError' => esc_html__('Unable to load the calendar. Please try again.', 'fp-experiences'),
+                'loadError' => esc_html__('Impossibile caricare il calendario. Riprova.', 'fp-experiences'),
             ],
         ];
 

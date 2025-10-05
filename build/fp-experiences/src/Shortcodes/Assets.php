@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace FP_Exp\Shortcodes;
 
+use FP_Exp\Localization\AutoTranslator;
 use FP_Exp\Utils\Helpers;
 use FP_Exp\Utils\Theme;
 
@@ -139,6 +140,10 @@ final class Assets
                 'ajaxUrl' => admin_url('admin-ajax.php'),
                 'currency' => $currency,
                 'tracking' => Helpers::tracking_config(),
+                'autoLocale' => [
+                    'strings' => AutoTranslator::strings(),
+                    'plurals' => AutoTranslator::plurals(),
+                ],
             ]
         );
     }

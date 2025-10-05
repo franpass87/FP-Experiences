@@ -2921,7 +2921,7 @@ final class SettingsPage
         delete_transient('fp_exp_calendar_state_' . $state);
 
         if (! $cached_state) {
-            add_settings_error('fp_exp_settings', 'fp_exp_calendar_state_expired', esc_html__('OAuth session expired. Please try again.', 'fp-experiences'));
+            add_settings_error('fp_exp_settings', 'fp_exp_calendar_state_expired', esc_html__('La sessione OAuth è scaduta. Riprova.', 'fp-experiences'));
             return;
         }
 
