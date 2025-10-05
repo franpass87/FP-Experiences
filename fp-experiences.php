@@ -35,6 +35,52 @@ if (! defined('FP_EXP_VERSION')) {
     define('FP_EXP_VERSION', '0.3.2');
 }
 
+// Early bootstrap guard: detect common issues and surface an admin notice instead of a fatal.
+// Stores last boot error in option 'fp_exp_boot_error' and shows an admin notice in wp‑admin.
+(function () {
+	// Helper to persist and render a meaningful admin notice.
+	$store_and_hook_notice = function (string $message, array $context = []): void {
+		$payload = [
+			'timestamp' => gmdate('Y-m-d H:i:s'),
+			'php' => PHP_VERSION,
+			'wp' => defined('WP_VERSION') ? WP_VERSION : (isset($GLOBALS['wp_version']) ? (string) $GLOBALS['wp_version'] : ''),
+			'file' => __FILE__,
+			'context' => $context,
+			'message' => $message,
+		];
+
+		update_option('fp_exp_boot_error', $payload, false);
+
+		// Hook notice for admins only.
+		add_action('admin_notices', static function () use ($payload): void {
+			if (! current_user_can('activate_plugins')) {
+				return;
+			}
+			$summary = isset($payload['message']) ? (string) $payload['message'] : 'FP Experiences: boot error';
+			echo '<div class="notice notice-error"><p>' . esc_html($summary) . '</p></div>';
+		});
+	};
+
+	// 1) PHP version check (plugin requires >= 8.0 per composer.json; recommend >= 8.1).
+	if (version_compare(PHP_VERSION, '8.0', '<')) {
+		$store_and_hook_notice('FP Experiences richiede PHP >= 8.0. Versione attuale: ' . PHP_VERSION);
+		return;
+	}
+
+	// 2) WordPress version check (soft guard to help on early fatals in very old sites).
+	global $wp_version;
+	if (is_string($wp_version) && $wp_version !== '' && version_compare($wp_version, '6.0', '<')) {
+		$store_and_hook_notice('FP Experiences richiede WordPress >= 6.0. Versione attuale: ' . $wp_version);
+		return;
+	}
+
+	// 3) Basic structure sanity checks before loading anything else.
+	if (! is_dir(__DIR__ . '/src')) {
+		$store_and_hook_notice('Struttura plugin non valida: cartella \'src\' mancante. Verifica lo ZIP caricato.');
+		return;
+	}
+})();
+
 $autoload = __DIR__ . '/vendor/autoload.php';
 
 if (is_readable($autoload)) {
@@ -62,4 +108,39 @@ use FP_Exp\Plugin;
 register_activation_hook(__FILE__, [Activation::class, 'activate']);
 register_deactivation_hook(__FILE__, [Activation::class, 'deactivate']);
 
-Plugin::instance()->boot();
+// Final guard: if the main Plugin class is missing or boot throws, show a notice instead of a fatal.
+(function () {
+	$store_and_hook_notice = function (string $message, array $context = []): void {
+		$payload = [
+			'timestamp' => gmdate('Y-m-d H:i:s'),
+			'php' => PHP_VERSION,
+			'wp' => defined('WP_VERSION') ? WP_VERSION : (isset($GLOBALS['wp_version']) ? (string) $GLOBALS['wp_version'] : ''),
+			'file' => __FILE__,
+			'context' => $context,
+			'message' => $message,
+		];
+		update_option('fp_exp_boot_error', $payload, false);
+		add_action('admin_notices', static function () use ($payload): void {
+			if (! current_user_can('activate_plugins')) {
+				return;
+			}
+			$summary = isset($payload['message']) ? (string) $payload['message'] : 'FP Experiences: boot error';
+			echo '<div class="notice notice-error"><p>' . esc_html($summary) . '</p></div>';
+		});
+	};
+
+	if (! class_exists(Plugin::class)) {
+		$store_and_hook_notice('Impossibile avviare FP Experiences: classe principale assente. Verifica autoload/vendor e struttura dello ZIP.', [
+			'class' => Plugin::class,
+		]);
+		return;
+	}
+
+	try {
+		Plugin::instance()->boot();
+	} catch (\Throwable $e) {
+		$store_and_hook_notice('Errore in avvio FP Experiences: ' . ($e->getMessage() ?: get_class($e)), [
+			'exception' => get_class($e),
+		]);
+	}
+})();
