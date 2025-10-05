@@ -61,6 +61,7 @@ use function wp_date;
 use function wp_insert_post;
 use function wp_mail;
 use function wp_schedule_event;
+use function wp_schedule_single_event;
 use function wp_unschedule_event;
 use function wp_timezone;
 use function wc_create_order;
@@ -70,15 +71,18 @@ use function explode;
 
 use const DAY_IN_SECONDS;
 use const HOUR_IN_SECONDS;
+use const MINUTE_IN_SECONDS;
 
 final class VoucherManager
 {
     private const CRON_HOOK = 'fp_exp_gift_send_reminders';
+    private const DELIVERY_CRON_HOOK = 'fp_exp_gift_send_scheduled_voucher';
 
     public function register_hooks(): void
     {
         add_action('init', [$this, 'maybe_schedule_cron']);
         add_action(self::CRON_HOOK, [$this, 'process_reminders']);
+        add_action(self::DELIVERY_CRON_HOOK, [$this, 'maybe_send_scheduled_voucher']);
         add_action('woocommerce_payment_complete', [$this, 'handle_payment_complete'], 20);
         add_action('woocommerce_order_status_cancelled', [$this, 'handle_order_cancelled'], 20);
         add_action('woocommerce_order_fully_refunded', [$this, 'handle_order_cancelled'], 20);
@@ -200,6 +204,7 @@ final class VoucherManager
         $purchaser = $this->sanitize_contact($payload['purchaser'] ?? []);
         $recipient = $this->sanitize_contact($payload['recipient'] ?? []);
         $recipient['message'] = isset($payload['message']) ? sanitize_textarea_field((string) $payload['message']) : '';
+        $delivery = $this->normalize_delivery($payload['delivery'] ?? []);
 
         if (! $purchaser['email']) {
             return new WP_Error('fp_exp_gift_purchaser_email', esc_html__('Provide the purchaser email address.', 'fp-experiences'));
@@ -306,6 +311,7 @@ final class VoucherManager
         update_post_meta($voucher_id, '_fp_exp_gift_valid_until', $valid_until);
         update_post_meta($voucher_id, '_fp_exp_gift_value', $total);
         update_post_meta($voucher_id, '_fp_exp_gift_currency', $order->get_currency());
+        update_post_meta($voucher_id, '_fp_exp_gift_delivery', $delivery);
         update_post_meta($voucher_id, '_fp_exp_gift_logs', [
             [
                 'event' => 'created',
@@ -360,6 +366,19 @@ final class VoucherManager
             update_post_meta($voucher_id, '_fp_exp_gift_status', 'active');
             $this->append_log($voucher_id, 'activated', $order_id);
             $this->sync_voucher_table($voucher_id);
+            $delivery = get_post_meta($voucher_id, '_fp_exp_gift_delivery', true);
+            $delivery = is_array($delivery) ? $delivery : [];
+            $send_at = isset($delivery['send_at']) ? (int) $delivery['send_at'] : 0;
+            $now = current_time('timestamp', true);
+
+            if ($send_at > ($now + MINUTE_IN_SECONDS)) {
+                $this->schedule_delivery($voucher_id, $send_at);
+                $this->append_log($voucher_id, 'scheduled', $order_id);
+
+                continue;
+            }
+
+            $this->clear_delivery_schedule($voucher_id);
             $this->send_voucher_email($voucher_id);
         }
     }
@@ -377,10 +396,54 @@ final class VoucherManager
                 continue;
             }
 
+            $this->clear_delivery_schedule($voucher_id);
+            $delivery = get_post_meta($voucher_id, '_fp_exp_gift_delivery', true);
+            if (is_array($delivery)) {
+                $delivery['send_at'] = 0;
+                unset($delivery['scheduled_at']);
+                update_post_meta($voucher_id, '_fp_exp_gift_delivery', $delivery);
+            }
             update_post_meta($voucher_id, '_fp_exp_gift_status', 'cancelled');
             $this->append_log($voucher_id, 'cancelled', $order_id);
             $this->sync_voucher_table($voucher_id);
         }
+    }
+
+    public function maybe_send_scheduled_voucher($voucher_id): void
+    {
+        $voucher_id = absint($voucher_id);
+
+        if ($voucher_id <= 0) {
+            return;
+        }
+
+        $status = sanitize_key((string) get_post_meta($voucher_id, '_fp_exp_gift_status', true));
+        if ('active' !== $status) {
+            $this->clear_delivery_schedule($voucher_id);
+
+            return;
+        }
+
+        $delivery = get_post_meta($voucher_id, '_fp_exp_gift_delivery', true);
+        $delivery = is_array($delivery) ? $delivery : [];
+        $sent_at = isset($delivery['sent_at']) ? (int) $delivery['sent_at'] : 0;
+
+        if ($sent_at > 0) {
+            $this->clear_delivery_schedule($voucher_id);
+
+            return;
+        }
+
+        $send_at = isset($delivery['send_at']) ? (int) $delivery['send_at'] : 0;
+        $now = current_time('timestamp', true);
+
+        if ($send_at > ($now + MINUTE_IN_SECONDS)) {
+            $this->schedule_delivery($voucher_id, $send_at);
+
+            return;
+        }
+
+        $this->send_voucher_email($voucher_id);
     }
 
     public function process_reminders(): void
@@ -650,6 +713,62 @@ final class VoucherManager
     }
 
     /**
+     * @param mixed $data
+     *
+     * @return array{send_on: string, send_at: int, timezone: string, scheduled_at?: int, sent_at?: int}
+     */
+    private function normalize_delivery($data): array
+    {
+        $delivery = [
+            'send_on' => '',
+            'send_at' => 0,
+            'timezone' => 'Europe/Rome',
+        ];
+
+        if (! is_array($data)) {
+            return $delivery;
+        }
+
+        $send_on = '';
+        if (isset($data['send_on'])) {
+            $send_on = (string) $data['send_on'];
+        } elseif (isset($data['date'])) {
+            $send_on = (string) $data['date'];
+        }
+
+        $send_on = sanitize_text_field($send_on);
+
+        if (! preg_match('/^\d{4}-\d{2}-\d{2}$/', $send_on)) {
+            return $delivery;
+        }
+
+        $delivery['send_on'] = $send_on;
+
+        $time = '09:00';
+        if (isset($data['time']) && preg_match('/^\d{2}:\d{2}$/', (string) $data['time'])) {
+            $time = (string) $data['time'];
+        }
+
+        try {
+            $timezone = new DateTimeZone($delivery['timezone']);
+        } catch (Exception $exception) {
+            $wp_timezone = wp_timezone();
+            $timezone = $wp_timezone instanceof DateTimeZone ? $wp_timezone : new DateTimeZone('UTC');
+            $delivery['timezone'] = $timezone->getName();
+        }
+
+        try {
+            $scheduled = new DateTimeImmutable(sprintf('%s %s', $send_on, $time), $timezone);
+            $delivery['send_at'] = $scheduled->setTimezone(new DateTimeZone('UTC'))->getTimestamp();
+        } catch (Exception $exception) {
+            $delivery['send_on'] = '';
+            $delivery['send_at'] = 0;
+        }
+
+        return $delivery;
+    }
+
+    /**
      * @param array<string, mixed> $data
      *
      * @return array{name: string, email: string, phone: string}
@@ -671,6 +790,42 @@ final class VoucherManager
             'email' => $email,
             'phone' => $phone,
         ];
+    }
+
+    private function schedule_delivery(int $voucher_id, int $send_at): void
+    {
+        $voucher_id = absint($voucher_id);
+
+        if ($voucher_id <= 0 || $send_at <= 0) {
+            return;
+        }
+
+        $existing = wp_get_scheduled_event(self::DELIVERY_CRON_HOOK, [$voucher_id]);
+        if ($existing) {
+            wp_unschedule_event($existing->timestamp, self::DELIVERY_CRON_HOOK, [$voucher_id]);
+        }
+
+        wp_schedule_single_event($send_at, self::DELIVERY_CRON_HOOK, [$voucher_id]);
+
+        $delivery = get_post_meta($voucher_id, '_fp_exp_gift_delivery', true);
+        $delivery = is_array($delivery) ? $delivery : [];
+        $delivery['send_at'] = $send_at;
+        $delivery['scheduled_at'] = $send_at;
+        update_post_meta($voucher_id, '_fp_exp_gift_delivery', $delivery);
+    }
+
+    private function clear_delivery_schedule(int $voucher_id): void
+    {
+        $voucher_id = absint($voucher_id);
+
+        if ($voucher_id <= 0) {
+            return;
+        }
+
+        $existing = wp_get_scheduled_event(self::DELIVERY_CRON_HOOK, [$voucher_id]);
+        if ($existing) {
+            wp_unschedule_event($existing->timestamp, self::DELIVERY_CRON_HOOK, [$voucher_id]);
+        }
     }
 
     private function append_log(int $voucher_id, string $event, ?int $order_id = null): void
@@ -953,6 +1108,15 @@ final class VoucherManager
             $copy .= '<p>' . esc_html__('Voucher code:', 'fp-experiences') . ' <strong>' . esc_html(strtoupper($code)) . '</strong></p>';
             wp_mail($purchaser_email, esc_html__('Gift voucher dispatched', 'fp-experiences'), $copy, $headers);
         }
+
+        $delivery = get_post_meta($voucher_id, '_fp_exp_gift_delivery', true);
+        $delivery = is_array($delivery) ? $delivery : [];
+        $delivery['sent_at'] = current_time('timestamp', true);
+        $delivery['send_at'] = 0;
+        unset($delivery['scheduled_at']);
+        update_post_meta($voucher_id, '_fp_exp_gift_delivery', $delivery);
+        $this->clear_delivery_schedule($voucher_id);
+        $this->append_log($voucher_id, 'dispatched');
     }
 
     private function send_reminder_email(int $voucher_id, int $offset, int $valid_until): void

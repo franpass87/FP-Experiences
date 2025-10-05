@@ -1327,7 +1327,7 @@
 
 @media (min-width: 1024px) {
     .fp-exp-addons {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
     }
 }
 
@@ -1803,7 +1803,7 @@
     }
 
     .fp-exp-party-table tbody td:nth-of-type(3) {
-        width: clamp(180px, 24vw, 220px);
+        width: clamp(160px, 22%, 200px);
     }
 
     .fp-exp-ticket__price {
@@ -1812,7 +1812,7 @@
 
     .fp-exp-party-table .fp-exp-quantity {
         margin-left: auto;
-        width: min(220px, 100%);
+        width: min(200px, 100%);
     }
 }
 
@@ -2762,7 +2762,7 @@ body.fp-modal-open {
     position: relative;
     z-index: 1;
     width: min(760px, 100%);
-    max-height: calc(100vh - 3rem);
+    max-height: calc(100vh - 6rem);
     overflow: auto;
     border-radius: var(--fp-exp-radius-large, 20px);
     outline: none;
@@ -2808,7 +2808,7 @@ body.fp-modal-open {
     }
 
     .fp-gift-modal__dialog {
-        max-height: calc(100vh - 2rem);
+        max-height: calc(100vh - 3rem);
     }
 
     .fp-gift-modal__close {
@@ -2872,6 +2872,12 @@ body.fp-modal-open {
     border-color: var(--fp-color-primary);
     box-shadow: 0 0 0 3px rgba(19, 29, 56, 0.12);
     outline: none;
+}
+
+.fp-gift__field-note {
+    margin: 0.35rem 0 0;
+    font-size: 0.95rem;
+    color: var(--fp-color-text-muted, rgba(19, 29, 56, 0.7));
 }
 
 .fp-gift__field textarea {
@@ -3230,11 +3236,13 @@ body.fp-modal-open {
     color: var(--fp-color-section-icon, #fff);
     box-shadow: 0 8px 16px rgba(15, 23, 42, 0.12);
     flex-shrink: 0;
+    line-height: 0;
 }
 
 .fp-exp-section__icon svg {
     width: 1.35rem;
     height: 1.35rem;
+    display: block;
 }
 
 .fp-exp-section__icon .fa-solid,

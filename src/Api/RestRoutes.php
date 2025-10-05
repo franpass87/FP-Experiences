@@ -324,6 +324,7 @@ final class RestRoutes
             'purchaser' => $request->get_param('purchaser'),
             'recipient' => $request->get_param('recipient'),
             'message' => $request->get_param('message'),
+            'delivery' => $request->get_param('delivery'),
         ];
 
         $result = $this->voucher_manager->create_purchase($payload);
