@@ -59,6 +59,25 @@ $results_label = sprintf(
     _n('%d experience found', '%d experiences found', (int) $total, 'fp-experiences'),
     (int) $total
 );
+
+$currency_code = isset($currency) && is_string($currency) ? $currency : (string) get_option('woocommerce_currency', 'EUR');
+$currency_symbol = function_exists('get_woocommerce_currency_symbol')
+    ? get_woocommerce_currency_symbol($currency_code)
+    : $currency_code;
+$currency_position = get_option('woocommerce_currency_pos', 'left');
+$format_currency = static function (string $amount) use ($currency_symbol, $currency_position): string {
+    switch ($currency_position) {
+        case 'left_space':
+            return $currency_symbol . ' ' . $amount;
+        case 'right':
+            return $amount . $currency_symbol;
+        case 'right_space':
+            return $amount . ' ' . $currency_symbol;
+        case 'left':
+        default:
+            return $currency_symbol . $amount;
+    }
+};
 ?>
 <section
     class="<?php echo $container_classes; ?>"
@@ -90,6 +109,8 @@ $results_label = sprintf(
                 $language_labels = isset($experience['language_labels']) && is_array($experience['language_labels']) ? array_values(array_filter(array_map('strval', $experience['language_labels']))) : [];
                 $duration_label = isset($experience['duration_label']) ? (string) $experience['duration_label'] : '';
                 $primary_theme = isset($experience['primary_theme']) ? (string) $experience['primary_theme'] : '';
+                $raw_price_from_display = isset($experience['price_from_display']) ? (string) $experience['price_from_display'] : '';
+                $formatted_price_from_display = '' !== $raw_price_from_display ? $format_currency($raw_price_from_display) : '';
                 $highlight_line = '';
                 if (! empty($experience['highlights']) && is_array($experience['highlights'])) {
                     $first_highlight = reset($experience['highlights']);
@@ -158,9 +179,9 @@ $results_label = sprintf(
                             <?php endif; ?>
                         </div>
                         <footer class="fp-listing__footer fp-listing__footer--gyg">
-                            <?php if (! empty($experience['price_from_display'])) : ?>
+                            <?php if ('' !== $formatted_price_from_display) : ?>
                                 <div class="fp-listing__price">
-                                    <span class="fp-listing__price-value"><?php printf(esc_html__('From €%s', 'fp-experiences'), esc_html($experience['price_from_display'])); ?></span>
+                                    <span class="fp-listing__price-value"><?php printf(esc_html__('From %s', 'fp-experiences'), esc_html($formatted_price_from_display)); ?></span>
                                     <span class="fp-listing__price-note"><?php esc_html_e('per person', 'fp-experiences'); ?></span>
                                 </div>
                             <?php endif; ?>
@@ -185,8 +206,8 @@ $results_label = sprintf(
                             <?php else : ?>
                                 <span class="fp-listing__image fp-listing__image--placeholder" aria-hidden="true"></span>
                             <?php endif; ?>
-                            <?php if (! empty($experience['price_from_display'])) : ?>
-                                <span class="fp-listing__price-tag"><?php printf(esc_html__('From €%s', 'fp-experiences'), esc_html($experience['price_from_display'])); ?></span>
+                            <?php if ('' !== $formatted_price_from_display) : ?>
+                                <span class="fp-listing__price-tag"><?php printf(esc_html__('From %s', 'fp-experiences'), esc_html($formatted_price_from_display)); ?></span>
                             <?php endif; ?>
                         </a>
                         <div class="fp-listing__body">
@@ -214,7 +235,20 @@ $results_label = sprintf(
                                                 <span class="screen-reader-text"><?php echo esc_html($readable_label); ?></span>
                                             </li>
                                         <?php else : ?>
-                                            <li class="fp-listing__badge fp-listing__badge--<?php echo esc_attr((string) ($badge['context'] ?? '')); ?>"><?php echo esc_html((string) ($badge['label'] ?? '')); ?></li>
+                                            <?php
+                                            $badge_context = isset($badge['context']) ? (string) $badge['context'] : '';
+                                            $badge_slug = isset($badge['id']) ? sanitize_html_class((string) $badge['id']) : '';
+                                            $badge_classes = ['fp-listing__badge'];
+
+                                            if ('' !== $badge_context) {
+                                                $badge_classes[] = 'fp-listing__badge--' . sanitize_html_class($badge_context);
+                                            }
+
+                                            if ('' !== $badge_slug) {
+                                                $badge_classes[] = 'fp-listing__badge--' . $badge_slug;
+                                            }
+                                            ?>
+                                            <li class="<?php echo esc_attr(implode(' ', $badge_classes)); ?>"><?php echo esc_html((string) ($badge['label'] ?? '')); ?></li>
                                         <?php endif; ?>
                                     <?php endforeach; ?>
                                 </ul>

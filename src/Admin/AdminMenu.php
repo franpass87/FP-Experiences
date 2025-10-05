@@ -13,6 +13,7 @@ use function add_submenu_page;
 use function admin_url;
 use function current_user_can;
 use function esc_html__;
+use function in_array;
 use function get_current_screen;
 use function remove_menu_page;
 use function strpos;
@@ -298,7 +299,16 @@ final class AdminMenu
         }
 
         $screen_id = $screen->id ?? '';
-        if ('toplevel_page_fp_exp_dashboard' !== $screen_id && 0 !== strpos($screen_id, 'fp-exp-dashboard_page_fp_exp_')) {
+        $managed_screens = [
+            'toplevel_page_fp_exp_dashboard',
+            'edit-fp_experience',
+            'fp_experience',
+            'edit-fp_meeting_point',
+            'fp_meeting_point',
+        ];
+
+        $is_managed = in_array($screen_id, $managed_screens, true) || 0 === strpos($screen_id, 'fp-exp-dashboard_page_fp_exp_');
+        if (! $is_managed) {
             return;
         }
 

@@ -12,3 +12,5 @@
 *.pdf
 .DS_Store
 Thumbs.db
+
+.phpunit.cache/

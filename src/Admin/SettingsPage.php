@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace FP_Exp\Admin;
 
+use FP_Exp\Booking\EmailTranslator;
+use FP_Exp\Booking\Emails;
 use FP_Exp\Utils\Helpers;
 use FP_Exp\Utils\Logger;
 use FP_Exp\Utils\Theme;
@@ -100,14 +102,23 @@ final class SettingsPage
         $tabs = $this->get_tabs();
         $active_tab = $this->get_active_tab($tabs);
 
-        echo '<div class="wrap fp-exp-settings">';
+        echo '<div class="wrap">';
         echo '<div class="fp-exp-admin" data-fp-exp-admin>';
         echo '<div class="fp-exp-admin__body">';
-        echo '<h1>' . esc_html__('FP Experiences Settings', 'fp-experiences') . '</h1>';
+        echo '<div class="fp-exp-admin__layout fp-exp-settings">';
+        echo '<header class="fp-exp-admin__header">';
+        echo '<nav class="fp-exp-admin__breadcrumb" aria-label="' . esc_attr__('Percorso di navigazione', 'fp-experiences') . '">';
+        echo '<a href="' . esc_url(admin_url('admin.php?page=fp_exp_dashboard')) . '">' . esc_html__('FP Experiences', 'fp-experiences') . '</a>';
+        echo ' <span aria-hidden="true">›</span> ';
+        echo '<span>' . esc_html__('Impostazioni', 'fp-experiences') . '</span>';
+        echo '</nav>';
+        echo '<h1 class="fp-exp-admin__title">' . esc_html__('FP Experiences — Settings', 'fp-experiences') . '</h1>';
+        echo '<p class="fp-exp-admin__intro">' . esc_html__('Configura preferenze, integrazioni e regole operative delle esperienze.', 'fp-experiences') . '</p>';
+        echo '</header>';
 
         settings_errors('fp_exp_settings');
 
-        echo '<h2 class="nav-tab-wrapper">';
+        echo '<div class="fp-exp-tabs nav-tab-wrapper">';
         foreach ($tabs as $slug => $label) {
             $url = add_query_arg([
                 'page' => $this->menu_slug,
@@ -116,70 +127,53 @@ final class SettingsPage
             $classes = 'nav-tab' . ($active_tab === $slug ? ' nav-tab-active' : '');
             echo '<a class="' . esc_attr($classes) . '" href="' . esc_attr($url) . '">' . esc_html($label) . '</a>';
         }
-        echo '</h2>';
-
-        if ('calendar' === $active_tab) {
-            $this->render_calendar_status();
-        }
+        echo '</div>';
 
         if ('tools' === $active_tab) {
             $this->render_tools_panel();
-            echo '</div>';
-            echo '</div>';
-            echo '</div>';
-
-            return;
-        }
-
-        if ('booking' === $active_tab) {
+        } elseif ('booking' === $active_tab) {
             $this->render_booking_rules_panel();
-            echo '</div>';
-            echo '</div>';
-            echo '</div>';
-
-            return;
-        }
-
-        if ('logs' === $active_tab) {
+        } elseif ('logs' === $active_tab) {
             $this->render_logs_overview();
-            echo '</div>';
-            echo '</div>';
-            echo '</div>';
-
-            return;
-        }
-
-        echo '<form action="options.php" method="post" class="fp-exp-settings__form">';
-
-        if ('branding' === $active_tab) {
-            settings_fields('fp_exp_settings_branding');
-            do_settings_sections('fp_exp_settings_branding');
-            $this->render_branding_contrast();
-        } elseif ('gift' === $active_tab) {
-            settings_fields('fp_exp_settings_gift');
-            do_settings_sections('fp_exp_settings_gift');
-        } elseif ('listing' === $active_tab) {
-            settings_fields('fp_exp_settings_listing');
-            do_settings_sections('fp_exp_settings_listing');
-        } elseif ('tracking' === $active_tab) {
-            settings_fields('fp_exp_settings_tracking');
-            do_settings_sections('fp_exp_settings_tracking');
-        } elseif ('rtb' === $active_tab) {
-            settings_fields('fp_exp_settings_rtb');
-            do_settings_sections('fp_exp_settings_rtb');
-        } elseif ('brevo' === $active_tab) {
-            settings_fields('fp_exp_settings_brevo');
-            do_settings_sections('fp_exp_settings_brevo');
-        } elseif ('calendar' === $active_tab) {
-            settings_fields('fp_exp_settings_calendar');
-            do_settings_sections('fp_exp_settings_calendar');
         } else {
-            settings_fields('fp_exp_settings_general');
-            do_settings_sections('fp_exp_settings_general');
+            if ('calendar' === $active_tab) {
+                $this->render_calendar_status();
+            }
+
+            echo '<form action="options.php" method="post" class="fp-exp-settings__form">';
+
+            if ('branding' === $active_tab) {
+                settings_fields('fp_exp_settings_branding');
+                do_settings_sections('fp_exp_settings_branding');
+                $this->render_branding_contrast();
+            } elseif ('gift' === $active_tab) {
+                settings_fields('fp_exp_settings_gift');
+                do_settings_sections('fp_exp_settings_gift');
+            } elseif ('listing' === $active_tab) {
+                settings_fields('fp_exp_settings_listing');
+                do_settings_sections('fp_exp_settings_listing');
+            } elseif ('tracking' === $active_tab) {
+                settings_fields('fp_exp_settings_tracking');
+                do_settings_sections('fp_exp_settings_tracking');
+            } elseif ('rtb' === $active_tab) {
+                settings_fields('fp_exp_settings_rtb');
+                do_settings_sections('fp_exp_settings_rtb');
+            } elseif ('brevo' === $active_tab) {
+                settings_fields('fp_exp_settings_brevo');
+                do_settings_sections('fp_exp_settings_brevo');
+            } elseif ('calendar' === $active_tab) {
+                settings_fields('fp_exp_settings_calendar');
+                do_settings_sections('fp_exp_settings_calendar');
+            } else {
+                settings_fields('fp_exp_settings_general');
+                do_settings_sections('fp_exp_settings_general');
+            }
+
+            submit_button();
+            echo '</form>';
         }
 
-        submit_button();
-        echo '</form>';
+        echo '</div>';
         echo '</div>';
         echo '</div>';
         echo '</div>';
@@ -240,6 +234,12 @@ final class SettingsPage
             'type' => 'string',
             'sanitize_callback' => static fn ($value) => sanitize_email((string) $value),
             'default' => '',
+        ]);
+
+        register_setting('fp_exp_settings_general', 'fp_exp_email_branding', [
+            'type' => 'array',
+            'sanitize_callback' => [$this, 'sanitize_email_branding'],
+            'default' => [],
         ]);
 
         register_setting('fp_exp_settings_general', 'fp_exp_enable_meeting_points', [
@@ -315,6 +315,55 @@ final class SettingsPage
                 'label' => esc_html__('Enable meeting point import (advanced).', 'fp-experiences'),
                 'description' => esc_html__('Keep disabled unless an operator needs to paste CSV data manually. CLI/REST tools remain available.', 'fp-experiences'),
                 'default' => 'no',
+            ]
+        );
+
+        add_settings_section(
+            'fp_exp_section_email_branding',
+            esc_html__('Email branding', 'fp-experiences'),
+            [$this, 'render_email_branding_help'],
+            'fp_exp_settings_general'
+        );
+
+        add_settings_field(
+            'fp_exp_email_branding_logo',
+            esc_html__('Logo URL', 'fp-experiences'),
+            [$this, 'render_email_branding_field'],
+            'fp_exp_settings_general',
+            'fp_exp_section_email_branding',
+            [
+                'key' => 'logo',
+                'type' => 'text',
+                'placeholder' => 'https://example.com/logo.png',
+                'description' => esc_html__('Absolute URL to the logo shown in the email header. Leave empty to display only the title.', 'fp-experiences'),
+            ]
+        );
+
+        add_settings_field(
+            'fp_exp_email_branding_header',
+            esc_html__('Header title', 'fp-experiences'),
+            [$this, 'render_email_branding_field'],
+            'fp_exp_settings_general',
+            'fp_exp_section_email_branding',
+            [
+                'key' => 'header_text',
+                'type' => 'text',
+                'placeholder' => esc_html__('Es. Benvenuto a bordo', 'fp-experiences'),
+                'description' => esc_html__('Appears alongside the logo in the coloured header. Defaults to the site name.', 'fp-experiences'),
+            ]
+        );
+
+        add_settings_field(
+            'fp_exp_email_branding_footer',
+            esc_html__('Footer note', 'fp-experiences'),
+            [$this, 'render_email_branding_field'],
+            'fp_exp_settings_general',
+            'fp_exp_section_email_branding',
+            [
+                'key' => 'footer_text',
+                'type' => 'textarea',
+                'placeholder' => esc_html__('Es. Seguici sui social o rispondi a questa email per assistenza.', 'fp-experiences'),
+                'description' => esc_html__('Closing message displayed in the email footer. Supports multiple lines.', 'fp-experiences'),
             ]
         );
 
@@ -715,6 +764,24 @@ final class SettingsPage
         }
 
         return $value ? 'yes' : 'no';
+    }
+
+    /**
+     * @param mixed $value
+     *
+     * @return array<string, string>
+     */
+    public function sanitize_email_branding($value): array
+    {
+        if (! is_array($value)) {
+            $value = [];
+        }
+
+        return [
+            'logo' => esc_url_raw((string) ($value['logo'] ?? '')),
+            'header_text' => sanitize_text_field((string) ($value['header_text'] ?? '')),
+            'footer_text' => sanitize_textarea_field((string) ($value['footer_text'] ?? '')),
+        ];
     }
 
     private function register_tracking_settings(): void
@@ -1118,6 +1185,76 @@ final class SettingsPage
         echo '<input type="email" class="regular-text" name="' . esc_attr($option) . '" value="' . esc_attr((string) $value) . '" />';
         if (! empty($args['description'])) {
             echo '<p class="description">' . esc_html($args['description']) . '</p>';
+        }
+    }
+
+    public function render_email_branding_help(): void
+    {
+        echo '<p>' . esc_html__('Personalizza intestazione e footer delle email transazionali con logo e messaggi di cortesia.', 'fp-experiences') . '</p>';
+
+        $emails = new Emails();
+        $templates = [
+            'customer-confirmation' => esc_html__('Customer confirmation', 'fp-experiences'),
+            'customer-reminder' => esc_html__('Customer reminder', 'fp-experiences'),
+            'customer-post-experience' => esc_html__('Post-experience follow-up', 'fp-experiences'),
+            'staff-notification' => esc_html__('Staff notification', 'fp-experiences'),
+        ];
+        $languages = [
+            EmailTranslator::LANGUAGE_IT => esc_html__('Italiano', 'fp-experiences'),
+            EmailTranslator::LANGUAGE_EN => esc_html__('English', 'fp-experiences'),
+        ];
+
+        echo '<div class="fp-exp-email-previews">';
+
+        foreach ($templates as $template => $label) {
+            echo '<details class="fp-exp-email-previews__item">';
+            echo '<summary class="fp-exp-email-previews__summary">' . esc_html($label) . '</summary>';
+            echo '<div class="fp-exp-email-previews__body">';
+
+            foreach ($languages as $code => $language_label) {
+                $preview = $emails->render_preview($template, $code);
+
+                if ('' === trim($preview)) {
+                    continue;
+                }
+
+                echo '<div class="fp-exp-email-previews__preview" data-language="' . esc_attr($code) . '">';
+                echo '<h4 class="fp-exp-email-previews__label">' . esc_html($language_label) . '</h4>';
+                echo '<div class="fp-exp-email-previews__frame">';
+                echo $preview; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+                echo '</div>';
+                echo '</div>';
+            }
+
+            echo '</div>';
+            echo '</details>';
+        }
+
+        echo '</div>';
+    }
+
+    public function render_email_branding_field(array $args): void
+    {
+        $settings = get_option('fp_exp_email_branding', []);
+        $settings = is_array($settings) ? $settings : [];
+        $key = $args['key'] ?? '';
+
+        if (! $key) {
+            return;
+        }
+
+        $value = $settings[$key] ?? '';
+        $placeholder = isset($args['placeholder']) ? (string) $args['placeholder'] : '';
+        $type = $args['type'] ?? 'text';
+
+        if ('textarea' === $type) {
+            echo '<textarea name="fp_exp_email_branding[' . esc_attr($key) . ']" rows="4" class="large-text" placeholder="' . esc_attr($placeholder) . '">' . esc_textarea((string) $value) . '</textarea>';
+        } else {
+            echo '<input type="text" class="regular-text" name="fp_exp_email_branding[' . esc_attr($key) . ']" value="' . esc_attr((string) $value) . '" placeholder="' . esc_attr($placeholder) . '" />';
+        }
+
+        if (! empty($args['description'])) {
+            echo '<p class="description">' . esc_html((string) $args['description']) . '</p>';
         }
     }
 
@@ -1594,7 +1731,22 @@ final class SettingsPage
                 'key' => 'list_id',
                 'label' => esc_html__('Default list ID', 'fp-experiences'),
                 'type' => 'number',
+                'min' => 1,
                 'description' => esc_html__('Optional: contacts will be subscribed to this list on sync.', 'fp-experiences'),
+            ],
+            [
+                'key' => 'lists[it]',
+                'label' => esc_html__('Italian list ID', 'fp-experiences'),
+                'type' => 'number',
+                'min' => 1,
+                'description' => esc_html__('Used when the reservation prefix starts with “ita”. Falls back to the default list when empty.', 'fp-experiences'),
+            ],
+            [
+                'key' => 'lists[en]',
+                'label' => esc_html__('English list ID', 'fp-experiences'),
+                'type' => 'number',
+                'min' => 1,
+                'description' => esc_html__('Used for all other reservations. Falls back to the default list when empty.', 'fp-experiences'),
             ],
             [
                 'key' => 'subscribe_to_list',
@@ -1850,7 +2002,8 @@ final class SettingsPage
             $checked = ! empty($value);
             echo '<label><input type="checkbox" name="' . esc_attr($name) . '" value="1" ' . checked($checked, true, false) . ' /> ' . esc_html__('Enabled', 'fp-experiences') . '</label>';
         } elseif ('number' === $field['type']) {
-            echo '<input type="number" class="small-text" name="' . esc_attr($name) . '" value="' . esc_attr((string) $value) . '" />';
+            $min = isset($field['min']) ? max(0, (int) $field['min']) : 0;
+            echo '<input type="number" class="small-text" inputmode="numeric" pattern="[0-9]*" step="1" min="' . esc_attr((string) $min) . '" name="' . esc_attr($name) . '" value="' . esc_attr((string) $value) . '" />';
         } else {
             $placeholder = $field['placeholder'] ?? '';
             echo '<input type="text" class="regular-text" name="' . esc_attr($name) . '" value="' . esc_attr((string) $value) . '" placeholder="' . esc_attr((string) $placeholder) . '" />';
@@ -1872,7 +2025,8 @@ final class SettingsPage
             $checked = ! empty($value);
             echo '<label><input type="checkbox" name="' . esc_attr($name) . '" value="1" ' . checked($checked, true, false) . ' /> ' . esc_html__('Enabled', 'fp-experiences') . '</label>';
         } elseif ('number' === $field['type']) {
-            echo '<input type="number" class="small-text" name="' . esc_attr($name) . '" value="' . esc_attr((string) $value) . '" />';
+            $min = isset($field['min']) ? max(0, (int) $field['min']) : 0;
+            echo '<input type="number" class="small-text" inputmode="numeric" pattern="[0-9]*" step="1" min="' . esc_attr((string) $min) . '" name="' . esc_attr($name) . '" value="' . esc_attr((string) $value) . '" />';
         } else {
             $placeholder = $field['placeholder'] ?? '';
             echo '<input type="text" class="regular-text" name="' . esc_attr($name) . '" value="' . esc_attr((string) $value) . '" placeholder="' . esc_attr((string) $placeholder) . '" />';
@@ -2263,6 +2417,19 @@ final class SettingsPage
         $sanitised['webhook_secret'] = isset($value['webhook_secret']) ? sanitize_text_field((string) $value['webhook_secret']) : '';
         $sanitised['list_id'] = isset($value['list_id']) ? absint($value['list_id']) : 0;
         $sanitised['subscribe_to_list'] = ! empty($value['subscribe_to_list']);
+
+        $lists = [];
+        if (isset($value['lists']) && is_array($value['lists'])) {
+            foreach ($value['lists'] as $language => $list_id) {
+                $language_key = sanitize_key((string) $language);
+                $list_value = absint($list_id);
+
+                if ($list_value > 0) {
+                    $lists[$language_key] = $list_value;
+                }
+            }
+        }
+        $sanitised['lists'] = $lists;
 
         $mapping = [];
         if (isset($value['attribute_mapping']) && is_array($value['attribute_mapping'])) {

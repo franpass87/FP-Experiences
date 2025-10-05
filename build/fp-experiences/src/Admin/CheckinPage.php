@@ -106,8 +106,16 @@ final class CheckinPage
         echo '<div class="wrap fp-exp-checkin">';
         echo '<div class="fp-exp-admin" data-fp-exp-admin>';
         echo '<div class="fp-exp-admin__body">';
-        echo '<h1>' . esc_html__('Console check-in', 'fp-experiences') . '</h1>';
-        echo '<p>' . esc_html__('Segna gli ospiti al loro arrivo e controlla le prenotazioni imminenti.', 'fp-experiences') . '</p>';
+        echo '<div class="fp-exp-admin__layout">';
+        echo '<header class="fp-exp-admin__header">';
+        echo '<nav class="fp-exp-admin__breadcrumb" aria-label="' . esc_attr__('Percorso di navigazione', 'fp-experiences') . '">';
+        echo '<a href="' . esc_url(admin_url('admin.php?page=fp_exp_dashboard')) . '">' . esc_html__('FP Experiences', 'fp-experiences') . '</a>';
+        echo ' <span aria-hidden="true">›</span> ';
+        echo '<span>' . esc_html__('Check-in', 'fp-experiences') . '</span>';
+        echo '</nav>';
+        echo '<h1 class="fp-exp-admin__title">' . esc_html__('Console check-in', 'fp-experiences') . '</h1>';
+        echo '<p class="fp-exp-admin__intro">' . esc_html__('Segna gli ospiti al loro arrivo e controlla le prenotazioni imminenti.', 'fp-experiences') . '</p>';
+        echo '</header>';
 
         if ($notice_html) {
             echo $notice_html; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
@@ -115,6 +123,7 @@ final class CheckinPage
 
         if (! $rows) {
             echo '<p>' . esc_html__('Nessuna prenotazione in arrivo nelle prossime 48 ore.', 'fp-experiences') . '</p>';
+            echo '</div>';
             echo '</div>';
             echo '</div>';
             echo '</div>';
@@ -155,6 +164,7 @@ final class CheckinPage
         }
 
         echo '</tbody></table>';
+        echo '</div>';
         echo '</div>';
         echo '</div>';
         echo '</div>';

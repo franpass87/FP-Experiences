@@ -138,7 +138,16 @@ final class ExperienceShortcode extends BaseShortcode
         ]);
 
         $duration_minutes = absint((string) get_post_meta($experience_id, '_fp_duration_minutes', true));
+        $taxonomy_languages = wp_get_post_terms($experience_id, 'fp_exp_language', ['fields' => 'names']);
+        $language_term_names = is_array($taxonomy_languages)
+            ? array_values(array_filter(array_map('sanitize_text_field', $taxonomy_languages)))
+            : [];
+
         $languages = Helpers::get_meta_array($experience_id, '_fp_languages');
+        if (empty($languages)) {
+            $languages = $language_term_names;
+        }
+
         $language_badges = LanguageHelper::build_language_badges($languages);
         $short_desc = trim(sanitize_text_field((string) get_post_meta($experience_id, '_fp_short_desc', true)));
         $content_summary = wp_trim_words((string) $post->post_excerpt, 36);
@@ -188,19 +197,9 @@ final class ExperienceShortcode extends BaseShortcode
             }, $theme_terms)));
         }
 
-        $taxonomy_languages = wp_get_post_terms($experience_id, 'fp_exp_language', ['fields' => 'names']);
-        $language_term_names = is_array($taxonomy_languages)
-            ? array_values(array_filter(array_map('sanitize_text_field', $taxonomy_languages)))
-            : [];
-
         $taxonomy_durations = wp_get_post_terms($experience_id, 'fp_exp_duration', ['fields' => 'names']);
         $duration_term_names = is_array($taxonomy_durations)
             ? array_values(array_filter(array_map('sanitize_text_field', $taxonomy_durations)))
-            : [];
-
-        $taxonomy_family = wp_get_post_terms($experience_id, 'fp_exp_family_friendly', ['fields' => 'names']);
-        $family_term_names = is_array($taxonomy_family)
-            ? array_values(array_filter(array_map('sanitize_text_field', $taxonomy_family)))
             : [];
 
         $schema = $this->build_schema([
@@ -252,15 +251,23 @@ final class ExperienceShortcode extends BaseShortcode
             ? do_shortcode('[fp_exp_widget ' . $this->build_shortcode_atts($widget_atts) . ']')
             : '';
 
-        $family_terms = get_the_terms($post, 'fp_exp_family_friendly');
-        $family_friendly = is_array($family_terms) && ! empty($family_terms);
+        $experience_badge_slugs = Helpers::get_meta_array($post->ID, '_fp_experience_badges');
+
+        if (empty($experience_badge_slugs)) {
+            $legacy_family_terms = get_the_terms($post, 'fp_exp_family_friendly');
+            if (is_array($legacy_family_terms) && ! empty($legacy_family_terms)) {
+                $experience_badge_slugs[] = 'family-friendly';
+            }
+        }
+
+        $experience_badges = Helpers::experience_badge_payload($experience_badge_slugs);
         $cognitive_bias_meta = get_post_meta($post->ID, '_fp_cognitive_biases', true);
         $cognitive_bias_slugs = is_array($cognitive_bias_meta)
             ? array_values(array_filter(array_map('sanitize_key', $cognitive_bias_meta)))
             : [];
         $cognitive_bias_badges = Helpers::cognitive_bias_badges($cognitive_bias_slugs);
 
-        $badges = $this->build_badges($duration_minutes, $language_badges, $family_friendly);
+        $badges = $this->build_badges($duration_minutes, $language_badges, $experience_badges);
 
         $primary_meeting = isset($meeting_data['primary']) && is_array($meeting_data['primary'])
             ? $meeting_data['primary']
@@ -284,15 +291,14 @@ final class ExperienceShortcode extends BaseShortcode
             'themes' => $theme_names,
             'language_terms' => $language_term_names,
             'duration_terms' => $duration_term_names,
-            'family_terms' => $family_term_names,
             'language_badges' => $language_badges,
+            'experience_badges' => $experience_badges,
             'short_description' => $short_desc,
             'meeting' => [
                 'title' => $meeting_title,
                 'address' => $meeting_address,
                 'summary' => $meeting_summary,
             ],
-            'family_friendly' => $family_friendly,
             'cognitive_biases' => $cognitive_bias_badges,
         ];
 
@@ -674,7 +680,7 @@ final class ExperienceShortcode extends BaseShortcode
             }
         }
 
-        $array_fields = ['themes', 'language_terms', 'duration_terms', 'family_terms'];
+        $array_fields = ['themes', 'language_terms', 'duration_terms'];
         foreach ($array_fields as $key) {
             if (! isset($overview[$key]) || ! is_array($overview[$key])) {
                 continue;
@@ -687,8 +693,18 @@ final class ExperienceShortcode extends BaseShortcode
             }
         }
 
-        if (! empty($overview['family_friendly'])) {
-            return true;
+        if (isset($overview['experience_badges']) && is_array($overview['experience_badges'])) {
+            foreach ($overview['experience_badges'] as $badge) {
+                if (is_array($badge)) {
+                    $label = isset($badge['label']) ? (string) $badge['label'] : '';
+                } else {
+                    $label = (string) $badge;
+                }
+
+                if ('' !== trim($label)) {
+                    return true;
+                }
+            }
         }
 
         if (isset($overview['meeting']) && is_array($overview['meeting'])) {
@@ -976,11 +992,12 @@ final class ExperienceShortcode extends BaseShortcode
     }
 
     /**
-     * @param array<int, string> $languages
+     * @param array<int, array<string, string>> $language_badges
+     * @param array<int, array<string, mixed>>  $experience_badges
      *
-     * @return array<int, array<string, string>>
+     * @return array<int, array<string, mixed>>
      */
-    private function build_badges(int $duration_minutes, array $language_badges, bool $family_friendly): array
+    private function build_badges(int $duration_minutes, array $language_badges, array $experience_badges): array
     {
         $badges = [];
 
@@ -1023,10 +1040,25 @@ final class ExperienceShortcode extends BaseShortcode
             ];
         }
 
-        if ($family_friendly) {
+        foreach ($experience_badges as $badge) {
+            if (! is_array($badge)) {
+                continue;
+            }
+
+            $label = isset($badge['label']) ? (string) $badge['label'] : '';
+            if ('' === $label) {
+                continue;
+            }
+
+            $icon = isset($badge['icon']) ? (string) $badge['icon'] : '';
+            $id = isset($badge['id']) ? (string) $badge['id'] : '';
+            $description = isset($badge['description']) ? (string) $badge['description'] : '';
+
             $badges[] = [
-                'icon' => 'family',
-                'label' => esc_html__('Family friendly', 'fp-experiences'),
+                'icon' => $icon ?: 'default',
+                'label' => $label,
+                'id' => $id,
+                'description' => $description,
             ];
         }
 

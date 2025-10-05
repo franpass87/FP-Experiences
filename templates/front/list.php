@@ -235,7 +235,20 @@ $format_currency = static function (string $amount) use ($currency_symbol, $curr
                                                 <span class="screen-reader-text"><?php echo esc_html($readable_label); ?></span>
                                             </li>
                                         <?php else : ?>
-                                            <li class="fp-listing__badge fp-listing__badge--<?php echo esc_attr((string) ($badge['context'] ?? '')); ?>"><?php echo esc_html((string) ($badge['label'] ?? '')); ?></li>
+                                            <?php
+                                            $badge_context = isset($badge['context']) ? (string) $badge['context'] : '';
+                                            $badge_slug = isset($badge['id']) ? sanitize_html_class((string) $badge['id']) : '';
+                                            $badge_classes = ['fp-listing__badge'];
+
+                                            if ('' !== $badge_context) {
+                                                $badge_classes[] = 'fp-listing__badge--' . sanitize_html_class($badge_context);
+                                            }
+
+                                            if ('' !== $badge_slug) {
+                                                $badge_classes[] = 'fp-listing__badge--' . $badge_slug;
+                                            }
+                                            ?>
+                                            <li class="<?php echo esc_attr(implode(' ', $badge_classes)); ?>"><?php echo esc_html((string) ($badge['label'] ?? '')); ?></li>
                                         <?php endif; ?>
                                     <?php endforeach; ?>
                                 </ul>

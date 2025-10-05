@@ -92,7 +92,7 @@ final class ExperienceMetaBoxes
     {
         add_action('add_meta_boxes_fp_experience', [$this, 'add_meta_box']);
         add_action('add_meta_boxes', [$this, 'remove_default_meta_boxes'], 99);
-        add_action('save_post_fp_experience', [$this, 'save_meta_boxes'], 10, 3);
+        add_action('save_post_fp_experience', [$this, 'save_meta_boxes'], 20, 3);
         add_action('admin_enqueue_scripts', [$this, 'enqueue_assets']);
         add_action('admin_notices', [$this, 'maybe_show_pricing_notice']);
     }
@@ -100,9 +100,6 @@ final class ExperienceMetaBoxes
     public function remove_default_meta_boxes(): void
     {
         remove_meta_box('fp_exp_themediv', 'fp_experience', 'side');
-        remove_meta_box('tagsdiv-fp_exp_language', 'fp_experience', 'side');
-        remove_meta_box('tagsdiv-fp_exp_duration', 'fp_experience', 'side');
-        remove_meta_box('tagsdiv-fp_exp_family_friendly', 'fp_experience', 'side');
         remove_meta_box('postimagediv', 'fp_experience', 'side');
     }
 
@@ -345,21 +342,12 @@ final class ExperienceMetaBoxes
                         <p class="fp-exp-field__description" id="fp-exp-duration-help"><?php esc_html_e('Inserisci solo numeri interi.', 'fp-experiences'); ?></p>
                     </div>
                     <div>
-                        <label class="fp-exp-field__label" for="fp-exp-languages">
-                            <?php esc_html_e('Lingue disponibili', 'fp-experiences'); ?>
-                            <?php $this->render_tooltip('fp-exp-languages-help', esc_html__('Separa le lingue con una virgola. Esempio: Italiano, Inglese.', 'fp-experiences')); ?>
-                        </label>
-                        <input
-                            type="text"
-                            id="fp-exp-languages"
-                            name="fp_exp_details[languages]"
-                            value="<?php echo esc_attr((string) $details['languages']); ?>"
-                            placeholder="<?php echo esc_attr__('Italiano, Inglese', 'fp-experiences'); ?>"
-                            aria-describedby="fp-exp-languages-help"
-                        />
-                        <p class="fp-exp-field__description" id="fp-exp-languages-help"><?php esc_html_e('Le lingue vengono mostrate nei badge e nel markup schema.', 'fp-experiences'); ?></p>
+                        <span class="fp-exp-field__label">
+                            <?php esc_html_e('Badge lingue mostrati', 'fp-experiences'); ?>
+                            <?php $this->render_tooltip('fp-exp-language-badge-help', esc_html__('Le lingue si sincronizzano con la sezione "Lingue per i filtri" e vengono usate nei badge pubblici e nello schema.', 'fp-experiences')); ?>
+                        </span>
                         <?php if (! empty($details['language_badges'])) : ?>
-                            <ul class="fp-exp-language-preview" role="list">
+                            <ul class="fp-exp-language-preview" role="list" aria-describedby="fp-exp-language-badge-help">
                                 <?php foreach ($details['language_badges'] as $language) :
                                     if (! is_array($language)) {
                                         continue;
@@ -387,6 +375,9 @@ final class ExperienceMetaBoxes
                                     </li>
                                 <?php endforeach; ?>
                             </ul>
+                            <p class="fp-exp-field__description" id="fp-exp-language-badge-help"><?php esc_html_e('Aggiorna le lingue selezionando le voci nel riquadro "Lingue per i filtri" qui sotto.', 'fp-experiences'); ?></p>
+                        <?php else : ?>
+                            <p class="fp-exp-field__description" id="fp-exp-language-badge-help"><?php esc_html_e('Nessuna lingua selezionata: scegli le lingue nel riquadro "Lingue per i filtri" per mostrare i badge.', 'fp-experiences'); ?></p>
                         <?php endif; ?>
                     </div>
                 </div>
@@ -456,8 +447,8 @@ final class ExperienceMetaBoxes
                 <div class="fp-exp-field fp-exp-field--taxonomies">
                     <div class="fp-exp-field">
                         <span class="fp-exp-field__label">
-                            <?php esc_html_e('Temi esperienza', 'fp-experiences'); ?>
-                            <?php $this->render_tooltip('fp-exp-theme-help', esc_html__('Scegli uno o più temi per alimentare i filtri pubblici.', 'fp-experiences')); ?>
+                            <?php esc_html_e("Temi dell'esperienza", 'fp-experiences'); ?>
+                            <?php $this->render_tooltip('fp-exp-theme-help', esc_html__('Seleziona i temi da mettere in evidenza nei filtri pubblici e nelle pagine elenco.', 'fp-experiences')); ?>
                         </span>
                         <?php $theme_choices = $details['taxonomies']['theme']['choices']; ?>
                         <?php if (! empty($theme_choices)) : ?>
@@ -472,10 +463,10 @@ final class ExperienceMetaBoxes
                                 <?php endforeach; ?>
                             </div>
                         <?php else : ?>
-                            <p class="fp-exp-field__description fp-exp-field__description--muted"><?php esc_html_e('Non ci sono temi configurati. Aggiungi nuove voci qui sotto per crearli al volo.', 'fp-experiences'); ?></p>
+                            <p class="fp-exp-field__description fp-exp-field__description--muted"><?php esc_html_e('Non hai ancora creato temi. Inserisci nuove voci qui sotto per aggiungerle all’istante.', 'fp-experiences'); ?></p>
                         <?php endif; ?>
                         <div class="fp-exp-taxonomy-manual">
-                            <label class="fp-exp-taxonomy-manual__label" for="fp-exp-theme-manual"><?php esc_html_e('Aggiungi temi', 'fp-experiences'); ?></label>
+                            <label class="fp-exp-taxonomy-manual__label" for="fp-exp-theme-manual"><?php esc_html_e('Crea nuovi temi', 'fp-experiences'); ?></label>
                             <input
                                 type="text"
                                 id="fp-exp-theme-manual"
@@ -484,114 +475,52 @@ final class ExperienceMetaBoxes
                                 placeholder="<?php echo esc_attr__('Es. Arte, Gastronomia', 'fp-experiences'); ?>"
                                 autocomplete="off"
                             />
-                            <p class="fp-exp-field__description"><?php esc_html_e('Separa le voci con una virgola. Le nuove voci verranno create e selezionate automaticamente.', 'fp-experiences'); ?></p>
+                            <p class="fp-exp-field__description"><?php esc_html_e('Separa le voci con una virgola: verranno generate e selezionate automaticamente.', 'fp-experiences'); ?></p>
                         </div>
-                        <p class="fp-exp-field__description" id="fp-exp-theme-help"><?php esc_html_e('I temi selezionati compaiono nella panoramica e nelle liste.', 'fp-experiences'); ?></p>
+                        <p class="fp-exp-field__description" id="fp-exp-theme-help"><?php esc_html_e('I temi compaiono nella panoramica dell’esperienza e negli elenchi filtrabili.', 'fp-experiences'); ?></p>
                     </div>
 
                     <div class="fp-exp-field">
                         <span class="fp-exp-field__label">
-                            <?php esc_html_e('Lingue per filtri', 'fp-experiences'); ?>
-                            <?php $this->render_tooltip('fp-exp-language-tax-help', esc_html__('Collega le lingue ai filtri rapidi e mostra le bandierine nella panoramica.', 'fp-experiences')); ?>
+                            <?php esc_html_e('Badge esperienza', 'fp-experiences'); ?>
+                            <?php $this->render_tooltip('fp-exp-experience-badges-help', esc_html__('Scegli le etichette predefinite da mostrare nella scheda esperienza e negli elenchi.', 'fp-experiences')); ?>
                         </span>
-                        <?php $language_choices = $details['taxonomies']['language']['choices']; ?>
-                        <?php if (! empty($language_choices)) : ?>
-                            <div class="fp-exp-checkbox-grid" aria-describedby="fp-exp-language-tax-help">
-                                <?php foreach ($language_choices as $choice) :
-                                    $term_id = (int) $choice['id'];
-                                    ?>
-                                    <label>
-                                        <input type="checkbox" name="fp_exp_details[taxonomy_languages][]" value="<?php echo esc_attr((string) $term_id); ?>" <?php checked(in_array($term_id, $details['taxonomies']['language']['selected'], true)); ?> />
-                                        <span><?php echo esc_html($choice['label']); ?></span>
-                                    </label>
-                                <?php endforeach; ?>
-                            </div>
-                        <?php else : ?>
-                            <p class="fp-exp-field__description fp-exp-field__description--muted"><?php esc_html_e('Non ci sono lingue predefinite. Inserisci nuove lingue qui sotto per attivarle nei filtri.', 'fp-experiences'); ?></p>
-                        <?php endif; ?>
-                        <div class="fp-exp-taxonomy-manual">
-                            <label class="fp-exp-taxonomy-manual__label" for="fp-exp-language-manual"><?php esc_html_e('Aggiungi lingue per i filtri', 'fp-experiences'); ?></label>
-                            <input
-                                type="text"
-                                id="fp-exp-language-manual"
-                                name="fp_exp_details[taxonomy_languages_manual]"
-                                class="regular-text"
-                                placeholder="<?php echo esc_attr__('Es. Italiano, Inglese', 'fp-experiences'); ?>"
-                                autocomplete="off"
-                            />
-                            <p class="fp-exp-field__description"><?php esc_html_e('Le lingue aggiunte verranno disponibili nei filtri rapidi e nelle bandierine della panoramica.', 'fp-experiences'); ?></p>
-                        </div>
-                        <p class="fp-exp-field__description" id="fp-exp-language-tax-help"><?php esc_html_e('Utilizza le stesse lingue definite nei filtri globali.', 'fp-experiences'); ?></p>
-                    </div>
+                        <?php $experience_badge_choices = $details['experience_badges']['choices']; ?>
+                        <?php if (! empty($experience_badge_choices)) : ?>
+                            <div class="fp-exp-checkbox-grid fp-exp-checkbox-grid--stacked" aria-describedby="fp-exp-experience-badges-help">
+                                <?php foreach ($experience_badge_choices as $badge_choice) :
+                                    $badge_id = isset($badge_choice['id']) ? (string) $badge_choice['id'] : '';
+                                    if ('' === $badge_id) {
+                                        continue;
+                                    }
 
-                    <div class="fp-exp-field">
-                        <span class="fp-exp-field__label">
-                            <?php esc_html_e('Durate aggiuntive', 'fp-experiences'); ?>
-                            <?php $this->render_tooltip('fp-exp-duration-tax-help', esc_html__('Associa etichette come "Mezza giornata" o "Serale" per filtrare le esperienze.', 'fp-experiences')); ?>
-                        </span>
-                        <?php $duration_choices = $details['taxonomies']['duration']['choices']; ?>
-                        <?php if (! empty($duration_choices)) : ?>
-                            <div class="fp-exp-checkbox-grid" aria-describedby="fp-exp-duration-tax-help">
-                                <?php foreach ($duration_choices as $choice) :
-                                    $term_id = (int) $choice['id'];
-                                    ?>
-                                    <label>
-                                        <input type="checkbox" name="fp_exp_details[durations][]" value="<?php echo esc_attr((string) $term_id); ?>" <?php checked(in_array($term_id, $details['taxonomies']['duration']['selected'], true)); ?> />
-                                        <span><?php echo esc_html($choice['label']); ?></span>
-                                    </label>
-                                <?php endforeach; ?>
-                            </div>
-                        <?php else : ?>
-                            <p class="fp-exp-field__description fp-exp-field__description--muted"><?php esc_html_e('Nessuna etichetta durata è disponibile. Creane di nuove qui sotto per arricchire i filtri.', 'fp-experiences'); ?></p>
-                        <?php endif; ?>
-                        <div class="fp-exp-taxonomy-manual">
-                            <label class="fp-exp-taxonomy-manual__label" for="fp-exp-duration-manual"><?php esc_html_e('Aggiungi etichette durata', 'fp-experiences'); ?></label>
-                            <input
-                                type="text"
-                                id="fp-exp-duration-manual"
-                                name="fp_exp_details[durations_manual]"
-                                class="regular-text"
-                                placeholder="<?php echo esc_attr__('Es. Mezza giornata, Serale', 'fp-experiences'); ?>"
-                                autocomplete="off"
-                            />
-                            <p class="fp-exp-field__description"><?php esc_html_e('Usa etichette descrittive per aiutare gli utenti a filtrare (es. "Mattina", "Weekend").', 'fp-experiences'); ?></p>
-                        </div>
-                        <p class="fp-exp-field__description" id="fp-exp-duration-tax-help"><?php esc_html_e('Mostrate nella panoramica accanto alla durata in minuti.', 'fp-experiences'); ?></p>
-                    </div>
+                                    $badge_label = isset($badge_choice['label']) ? (string) $badge_choice['label'] : '';
+                                    if ('' === $badge_label) {
+                                        continue;
+                                    }
 
-                    <div class="fp-exp-field">
-                        <span class="fp-exp-field__label">
-                            <?php esc_html_e('Family friendly', 'fp-experiences'); ?>
-                            <?php $this->render_tooltip('fp-exp-family-help', esc_html__('Attiva le etichette per famiglie selezionando le opzioni disponibili.', 'fp-experiences')); ?>
-                        </span>
-                        <?php $family_choices = $details['taxonomies']['family']['choices']; ?>
-                        <?php if (! empty($family_choices)) : ?>
-                            <div class="fp-exp-checkbox-grid" aria-describedby="fp-exp-family-help">
-                                <?php foreach ($family_choices as $choice) :
-                                    $term_id = (int) $choice['id'];
+                                    $badge_description = isset($badge_choice['description']) ? (string) $badge_choice['description'] : '';
                                     ?>
-                                    <label>
-                                        <input type="checkbox" name="fp_exp_details[family_friendly][]" value="<?php echo esc_attr((string) $term_id); ?>" <?php checked(in_array($term_id, $details['taxonomies']['family']['selected'], true)); ?> />
-                                        <span><?php echo esc_html($choice['label']); ?></span>
+                                    <label class="fp-exp-checkbox-grid__badge">
+                                        <input
+                                            type="checkbox"
+                                            name="fp_exp_details[experience_badges][]"
+                                            value="<?php echo esc_attr($badge_id); ?>"
+                                            <?php checked(in_array($badge_id, $details['experience_badges']['selected'], true)); ?>
+                                        />
+                                        <span class="fp-exp-checkbox-grid__badge-body">
+                                            <span class="fp-exp-checkbox-grid__badge-label"><?php echo esc_html($badge_label); ?></span>
+                                            <?php if ('' !== $badge_description) : ?>
+                                                <span class="fp-exp-checkbox-grid__badge-description"><?php echo esc_html($badge_description); ?></span>
+                                            <?php endif; ?>
+                                        </span>
                                     </label>
                                 <?php endforeach; ?>
                             </div>
                         <?php else : ?>
-                            <p class="fp-exp-field__description fp-exp-field__description--muted"><?php esc_html_e('Non ci sono etichette family friendly disponibili. Puoi crearne di nuove qui sotto.', 'fp-experiences'); ?></p>
+                            <p class="fp-exp-field__description fp-exp-field__description--muted"><?php esc_html_e('Nessun badge predefinito è attualmente disponibile.', 'fp-experiences'); ?></p>
                         <?php endif; ?>
-                        <div class="fp-exp-taxonomy-manual">
-                            <label class="fp-exp-taxonomy-manual__label" for="fp-exp-family-manual"><?php esc_html_e('Aggiungi etichette family friendly', 'fp-experiences'); ?></label>
-                            <input
-                                type="text"
-                                id="fp-exp-family-manual"
-                                name="fp_exp_details[family_friendly_manual]"
-                                class="regular-text"
-                                placeholder="<?php echo esc_attr__('Es. Adatta ai bambini, Accessibile passeggini', 'fp-experiences'); ?>"
-                                autocomplete="off"
-                            />
-                            <p class="fp-exp-field__description"><?php esc_html_e('Scrivi le etichette che vuoi mostrare: verranno create come opzioni selezionabili e assegnate subito.', 'fp-experiences'); ?></p>
-                        </div>
-                        <p class="fp-exp-field__description" id="fp-exp-family-help"><?php esc_html_e('Contrassegna l\'esperienza come adatta alle famiglie e mostra il badge dedicato.', 'fp-experiences'); ?></p>
+                        <p class="fp-exp-field__description" id="fp-exp-experience-badges-help"><?php esc_html_e('I badge selezionati compariranno nella pagina esperienza, nelle liste e nei badge rapidi.', 'fp-experiences'); ?></p>
                     </div>
                 </div>
 
@@ -994,6 +923,12 @@ final class ExperienceMetaBoxes
         if (empty($time_sets)) {
             $time_sets = [['label' => '', 'times' => [''], 'days' => []]];
         }
+        $custom_slots = isset($availability['custom_slots']) && is_array($availability['custom_slots'])
+            ? $availability['custom_slots']
+            : [];
+        if (empty($custom_slots)) {
+            $custom_slots = [['date' => '', 'time' => '']];
+        }
         ?>
         <section
             id="<?php echo esc_attr($panel_id); ?>"
@@ -1004,6 +939,71 @@ final class ExperienceMetaBoxes
             data-tab-panel="calendar"
             hidden
         >
+            <fieldset class="fp-exp-fieldset">
+                <legend><?php esc_html_e('Guida rapida agli slot', 'fp-experiences'); ?></legend>
+                <div class="fp-exp-field">
+                    <p class="fp-exp-field__description"><?php esc_html_e('Organizza gli orari seguendo tre passaggi:', 'fp-experiences'); ?></p>
+                    <p class="fp-exp-field__description"><strong><?php esc_html_e('1.', 'fp-experiences'); ?></strong> <?php esc_html_e('Definisci qui sotto la capienza di base e i buffer globali.', 'fp-experiences'); ?></p>
+                    <p class="fp-exp-field__description"><strong><?php esc_html_e('2.', 'fp-experiences'); ?></strong> <?php esc_html_e('Compila la ricorrenza qui sotto per programmare gli slot ricorrenti.', 'fp-experiences'); ?></p>
+                    <p class="fp-exp-field__description"><strong><?php esc_html_e('3.', 'fp-experiences'); ?></strong> <?php esc_html_e('Aggiungi eventuali eccezioni con gli slot manuali una tantum.', 'fp-experiences'); ?></p>
+                </div>
+            </fieldset>
+
+            <fieldset class="fp-exp-fieldset">
+                <legend><?php esc_html_e('Impostazioni generali degli slot', 'fp-experiences'); ?></legend>
+                <div class="fp-exp-field fp-exp-field--columns">
+                    <div>
+                        <label class="fp-exp-field__label" for="fp-exp-slot-capacity"><?php esc_html_e('Capienza predefinita slot', 'fp-experiences'); ?></label>
+                        <input
+                            type="number"
+                            id="fp-exp-slot-capacity"
+                            name="fp_exp_availability[slot_capacity]"
+                            min="0"
+                            step="1"
+                            value="<?php echo esc_attr((string) $availability['slot_capacity']); ?>"
+                        />
+                        <p class="fp-exp-field__description"><?php esc_html_e('Valore usato per gli slot generati automaticamente. Puoi modificarlo per singolo slot dal calendario.', 'fp-experiences'); ?></p>
+                    </div>
+                    <div>
+                        <label class="fp-exp-field__label" for="fp-exp-lead-time"><?php esc_html_e('Preavviso minimo (ore)', 'fp-experiences'); ?></label>
+                        <input
+                            type="number"
+                            id="fp-exp-lead-time"
+                            name="fp_exp_availability[lead_time_hours]"
+                            min="0"
+                            step="1"
+                            value="<?php echo esc_attr((string) $availability['lead_time_hours']); ?>"
+                        />
+                        <p class="fp-exp-field__description"><?php esc_html_e('Limita la possibilità di prenotare gli slot troppo a ridosso della partenza.', 'fp-experiences'); ?></p>
+                    </div>
+                </div>
+                <div class="fp-exp-field fp-exp-field--columns">
+                    <div>
+                        <label class="fp-exp-field__label" for="fp-exp-buffer-before"><?php esc_html_e('Buffer prima (minuti)', 'fp-experiences'); ?></label>
+                        <input
+                            type="number"
+                            id="fp-exp-buffer-before"
+                            name="fp_exp_availability[buffer_before_minutes]"
+                            min="0"
+                            step="1"
+                            value="<?php echo esc_attr((string) $availability['buffer_before_minutes']); ?>"
+                        />
+                    </div>
+                    <div>
+                        <label class="fp-exp-field__label" for="fp-exp-buffer-after"><?php esc_html_e('Buffer dopo (minuti)', 'fp-experiences'); ?></label>
+                        <input
+                            type="number"
+                            id="fp-exp-buffer-after"
+                            name="fp_exp_availability[buffer_after_minutes]"
+                            min="0"
+                            step="1"
+                            value="<?php echo esc_attr((string) $availability['buffer_after_minutes']); ?>"
+                        />
+                    </div>
+                </div>
+                <p class="fp-exp-field__description"><?php esc_html_e('I buffer vengono applicati quando si generano nuovi slot o si controlla la disponibilità.', 'fp-experiences'); ?></p>
+            </fieldset>
+
             <fieldset class="fp-exp-fieldset">
                 <legend><?php esc_html_e('Ricorrenza slot', 'fp-experiences'); ?></legend>
                 <div class="fp-exp-field">
@@ -1038,7 +1038,6 @@ final class ExperienceMetaBoxes
                                     <?php checked($frequency, 'daily'); ?>
                                 />
                                 <span class="fp-exp-radio-card__title"><?php esc_html_e('Giornaliera', 'fp-experiences'); ?></span>
-                                <span class="fp-exp-radio-card__text"><?php esc_html_e('Gli stessi orari sono attivi ogni giorno tra la data di inizio e fine.', 'fp-experiences'); ?></span>
                             </label>
                             <label
                                 class="fp-exp-radio-card<?php echo 'weekly' === $frequency ? ' is-selected' : ''; ?>"
@@ -1053,7 +1052,6 @@ final class ExperienceMetaBoxes
                                     <?php checked($frequency, 'weekly'); ?>
                                 />
                                 <span class="fp-exp-radio-card__title"><?php esc_html_e('Settimanale', 'fp-experiences'); ?></span>
-                                <span class="fp-exp-radio-card__text"><?php esc_html_e('Scegli i giorni della settimana in cui ripetere gli orari.', 'fp-experiences'); ?></span>
                             </label>
                             <label
                                 class="fp-exp-radio-card<?php echo 'specific' === $frequency ? ' is-selected' : ''; ?>"
@@ -1068,17 +1066,16 @@ final class ExperienceMetaBoxes
                                     <?php checked($frequency, 'specific'); ?>
                                 />
                                 <span class="fp-exp-radio-card__title"><?php esc_html_e('Date specifiche', 'fp-experiences'); ?></span>
-                                <span class="fp-exp-radio-card__text"><?php esc_html_e('Usa la data di inizio/fine per delimitare il periodo e aggiungi solo gli slot speciali richiesti.', 'fp-experiences'); ?></span>
                             </label>
                         </div>
                         <p class="fp-exp-field__description" data-recurrence-frequency-help data-frequency="daily" <?php echo 'daily' === $frequency ? '' : 'hidden'; ?>>
-                            <?php esc_html_e('Gli orari selezionati verranno generati per ogni giorno del periodo indicato.', 'fp-experiences'); ?>
+                            <?php esc_html_e('Gli stessi orari sono attivi ogni giorno tra la data di inizio e fine. Gli orari selezionati verranno generati per ogni giorno del periodo indicato.', 'fp-experiences'); ?>
                         </p>
                         <p class="fp-exp-field__description" data-recurrence-frequency-help data-frequency="weekly" <?php echo 'weekly' === $frequency ? '' : 'hidden'; ?>>
-                            <?php esc_html_e('Seleziona i giorni attivi della settimana in cui generare gli orari ricorrenti.', 'fp-experiences'); ?>
+                            <?php esc_html_e('Scegli i giorni della settimana in cui ripetere gli orari. Seleziona i giorni attivi della settimana in cui generare gli orari ricorrenti.', 'fp-experiences'); ?>
                         </p>
                         <p class="fp-exp-field__description" data-recurrence-frequency-help data-frequency="specific" <?php echo 'specific' === $frequency ? '' : 'hidden'; ?>>
-                            <?php esc_html_e('Questa opzione è ideale per stagionalità limitate o weekend particolari: genera slot solo nelle date indicate manualmente.', 'fp-experiences'); ?>
+                            <?php esc_html_e('Usa la data di inizio/fine per delimitare il periodo e aggiungi solo gli slot speciali richiesti. Questa opzione è ideale per stagionalità limitate o weekend particolari: genera slot solo nelle date indicate manualmente.', 'fp-experiences'); ?>
                         </p>
                         <p
                             class="fp-exp-field__description fp-exp-recurrence__summary"
@@ -1156,20 +1153,22 @@ final class ExperienceMetaBoxes
             </fieldset>
 
             <fieldset class="fp-exp-fieldset">
-                <legend><?php esc_html_e('Preavviso', 'fp-experiences'); ?></legend>
-                <div class="fp-exp-field">
-                    <label class="fp-exp-field__label" for="fp-exp-lead-time">
-                        <?php esc_html_e('Preavviso minimo (ore)', 'fp-experiences'); ?>
-                    </label>
-                    <input
-                        type="number"
-                        id="fp-exp-lead-time"
-                        name="fp_exp_availability[lead_time_hours]"
-                        min="0"
-                        step="1"
-                        value="<?php echo esc_attr((string) $availability['lead_time_hours']); ?>"
-                    />
+                <legend><?php esc_html_e('Slot manuali una tantum', 'fp-experiences'); ?></legend>
+                <p class="fp-exp-field__description"><?php esc_html_e('Inserisci qui le eccezioni al calendario standard, ad esempio eventi speciali o date extra.', 'fp-experiences'); ?></p>
+                <div class="fp-exp-repeater" data-repeater="custom_slots" data-repeater-next-index="<?php echo esc_attr((string) count($custom_slots)); ?>">
+                    <div class="fp-exp-repeater__items">
+                        <?php foreach ($custom_slots as $index => $slot) : ?>
+                            <?php $this->render_custom_slot_row((string) $index, $slot); ?>
+                        <?php endforeach; ?>
+                    </div>
+                    <template data-repeater-template>
+                        <?php $this->render_custom_slot_row('__INDEX__', ['date' => '', 'time' => ''], true); ?>
+                    </template>
+                    <p class="fp-exp-repeater__actions">
+                        <button type="button" class="button button-secondary" data-repeater-add><?php esc_html_e('Aggiungi slot manuale', 'fp-experiences'); ?></button>
+                    </p>
                 </div>
+                <p class="fp-exp-field__description fp-exp-field__description--muted"><?php esc_html_e('Se lasci tutti i campi vuoti non verrà creato alcuno slot extra.', 'fp-experiences'); ?></p>
             </fieldset>
         </section>
         <?php
@@ -1698,8 +1697,6 @@ final class ExperienceMetaBoxes
 
         $short_desc = isset($raw['short_desc']) ? sanitize_text_field((string) $raw['short_desc']) : '';
         $duration = isset($raw['duration_minutes']) ? absint((string) $raw['duration_minutes']) : 0;
-        $languages_raw = isset($raw['languages']) ? (string) $raw['languages'] : '';
-        $languages = array_filter(array_map('sanitize_text_field', array_map('trim', explode(',', $languages_raw))));
         $min_party = isset($raw['min_party']) ? absint((string) $raw['min_party']) : 0;
         $capacity_slot = isset($raw['capacity_slot']) ? absint((string) $raw['capacity_slot']) : 0;
         $age_min = isset($raw['age_min']) ? absint((string) $raw['age_min']) : 0;
@@ -1710,51 +1707,37 @@ final class ExperienceMetaBoxes
             $hero_id = 0;
         }
         $theme_terms = isset($raw['themes']) && is_array($raw['themes']) ? array_filter(array_map('absint', $raw['themes'])) : [];
-        $language_terms = isset($raw['taxonomy_languages']) && is_array($raw['taxonomy_languages'])
-            ? array_filter(array_map('absint', $raw['taxonomy_languages']))
-            : [];
-        $duration_terms = isset($raw['durations']) && is_array($raw['durations']) ? array_filter(array_map('absint', $raw['durations'])) : [];
-        $family_terms = isset($raw['family_friendly']) && is_array($raw['family_friendly']) ? array_filter(array_map('absint', $raw['family_friendly'])) : [];
 
         $theme_manual_labels = $this->parse_manual_taxonomy_input($raw['themes_manual'] ?? '');
         if (! empty($theme_manual_labels)) {
             $theme_terms = array_merge($theme_terms, $this->ensure_taxonomy_terms($theme_manual_labels, 'fp_exp_theme'));
         }
 
-        $language_manual_labels = $this->parse_manual_taxonomy_input($raw['taxonomy_languages_manual'] ?? '');
-        if (! empty($language_manual_labels)) {
-            $language_terms = array_merge($language_terms, $this->ensure_taxonomy_terms($language_manual_labels, 'fp_exp_language'));
-        }
-
-        $duration_manual_labels = $this->parse_manual_taxonomy_input($raw['durations_manual'] ?? '');
-        if (! empty($duration_manual_labels)) {
-            $duration_terms = array_merge($duration_terms, $this->ensure_taxonomy_terms($duration_manual_labels, 'fp_exp_duration'));
-        }
-
-        $family_manual_labels = $this->parse_manual_taxonomy_input($raw['family_friendly_manual'] ?? '');
-        if (! empty($family_manual_labels)) {
-            $family_terms = array_merge($family_terms, $this->ensure_taxonomy_terms($family_manual_labels, 'fp_exp_family_friendly'));
-        }
-
         $theme_terms = array_values(array_unique(array_filter(array_map('absint', $theme_terms))));
-        $language_terms = array_values(array_unique(array_filter(array_map('absint', $language_terms))));
-        $duration_terms = array_values(array_unique(array_filter(array_map('absint', $duration_terms))));
-        $family_terms = array_values(array_unique(array_filter(array_map('absint', $family_terms))));
         $cognitive_biases = isset($raw['cognitive_biases']) && is_array($raw['cognitive_biases'])
             ? array_values(array_filter(array_map('sanitize_key', $raw['cognitive_biases'])))
             : [];
         $cognitive_biases = array_values(array_unique($cognitive_biases));
         $cognitive_biases = array_slice($cognitive_biases, 0, Helpers::cognitive_bias_max_selection());
 
+        $experience_badges = isset($raw['experience_badges']) && is_array($raw['experience_badges'])
+            ? array_values(array_filter(array_map('sanitize_key', $raw['experience_badges'])))
+            : [];
+        $experience_badges = array_values(array_unique($experience_badges));
+        $available_badges = Helpers::experience_badge_choices();
+        $experience_badges = array_values(array_filter($experience_badges, static function (string $badge) use ($available_badges): bool {
+            return isset($available_badges[$badge]);
+        }));
+
         $this->update_or_delete_meta($post_id, '_fp_short_desc', $short_desc);
         $this->update_or_delete_meta($post_id, '_fp_duration_minutes', $duration);
-        $this->update_or_delete_meta($post_id, '_fp_languages', $languages);
         $this->update_or_delete_meta($post_id, '_fp_min_party', $min_party);
         $this->update_or_delete_meta($post_id, '_fp_capacity_slot', $capacity_slot);
         $this->update_or_delete_meta($post_id, '_fp_age_min', $age_min);
         $this->update_or_delete_meta($post_id, '_fp_age_max', $age_max);
         $this->update_or_delete_meta($post_id, '_fp_rules_children', $rules_children);
         $this->update_or_delete_meta($post_id, '_fp_cognitive_biases', $cognitive_biases);
+        $this->update_or_delete_meta($post_id, '_fp_experience_badges', $experience_badges);
 
         if ($hero_id > 0) {
             update_post_meta($post_id, '_fp_hero_image_id', $hero_id);
@@ -1763,9 +1746,10 @@ final class ExperienceMetaBoxes
         }
 
         wp_set_post_terms($post_id, $theme_terms, 'fp_exp_theme', false);
-        wp_set_post_terms($post_id, $language_terms, 'fp_exp_language', false);
-        wp_set_post_terms($post_id, $duration_terms, 'fp_exp_duration', false);
-        wp_set_post_terms($post_id, $family_terms, 'fp_exp_family_friendly', false);
+
+        $language_terms = $this->get_assigned_terms($post_id, 'fp_exp_language');
+        $language_names = $this->get_term_names_by_ids($language_terms, 'fp_exp_language');
+        $this->update_or_delete_meta($post_id, '_fp_languages', $language_names);
     }
 
     /**
@@ -1828,6 +1812,7 @@ final class ExperienceMetaBoxes
 
         return array_values(array_unique(array_filter(array_map('absint', $term_ids))));
     }
+
     private function save_pricing_meta(int $post_id, $raw): string
     {
         if (! is_array($raw)) {
@@ -2255,14 +2240,13 @@ final class ExperienceMetaBoxes
     }
     private function get_details_meta(int $post_id): array
     {
-        $languages_meta = get_post_meta($post_id, '_fp_languages', true);
-        $languages = is_array($languages_meta) ? array_filter(array_map('sanitize_text_field', $languages_meta)) : [];
+        $language_selected = $this->get_assigned_terms($post_id, 'fp_exp_language');
+        $language_names = $this->get_term_names_by_ids($language_selected, 'fp_exp_language');
 
         return [
             'short_desc' => sanitize_text_field((string) get_post_meta($post_id, '_fp_short_desc', true)),
             'duration_minutes' => absint((string) get_post_meta($post_id, '_fp_duration_minutes', true)),
-            'languages' => implode(', ', $languages),
-            'language_badges' => LanguageHelper::build_language_badges($languages),
+            'language_badges' => LanguageHelper::build_language_badges($language_names),
             'linked_page' => $this->get_linked_page_details($post_id),
             'min_party' => absint((string) get_post_meta($post_id, '_fp_min_party', true)),
             'capacity_slot' => absint((string) get_post_meta($post_id, '_fp_capacity_slot', true)),
@@ -2274,25 +2258,84 @@ final class ExperienceMetaBoxes
                 'choices' => Helpers::cognitive_bias_choices(),
                 'selected' => $this->get_selected_cognitive_biases($post_id),
             ],
+            'experience_badges' => [
+                'choices' => Helpers::experience_badge_choices(),
+                'selected' => $this->get_selected_experience_badges($post_id),
+            ],
             'taxonomies' => [
                 'theme' => [
                     'choices' => $this->get_taxonomy_choices('fp_exp_theme'),
                     'selected' => $this->get_assigned_terms($post_id, 'fp_exp_theme'),
                 ],
-                'language' => [
-                    'choices' => $this->get_taxonomy_choices('fp_exp_language'),
-                    'selected' => $this->get_assigned_terms($post_id, 'fp_exp_language'),
-                ],
-                'duration' => [
-                    'choices' => $this->get_taxonomy_choices('fp_exp_duration'),
-                    'selected' => $this->get_assigned_terms($post_id, 'fp_exp_duration'),
-                ],
-                'family' => [
-                    'choices' => $this->get_taxonomy_choices('fp_exp_family_friendly'),
-                    'selected' => $this->get_assigned_terms($post_id, 'fp_exp_family_friendly'),
-                ],
             ],
         ];
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function get_selected_experience_badges(int $post_id): array
+    {
+        $stored = get_post_meta($post_id, '_fp_experience_badges', true);
+
+        if (! is_array($stored)) {
+            $stored = [];
+        }
+
+        $badges = array_map(static fn ($badge): string => sanitize_key((string) $badge), $stored);
+        $badges = array_values(array_unique(array_filter($badges)));
+
+        if (empty($badges)) {
+            $family_terms = $this->get_assigned_terms($post_id, 'fp_exp_family_friendly');
+            if (! empty($family_terms)) {
+                $badges[] = 'family-friendly';
+            }
+        }
+
+        $available = Helpers::experience_badge_choices();
+
+        return array_values(array_filter($badges, static function (string $badge) use ($available): bool {
+            return isset($available[$badge]);
+        }));
+    }
+
+    /**
+     * @param array<int, int> $term_ids
+     * @return array<int, string>
+     */
+    private function get_term_names_by_ids(array $term_ids, string $taxonomy): array
+    {
+        if (empty($term_ids)) {
+            return [];
+        }
+
+        $terms = get_terms([
+            'taxonomy' => $taxonomy,
+            'hide_empty' => false,
+            'include' => $term_ids,
+        ]);
+
+        if (! is_array($terms) || is_wp_error($terms)) {
+            return [];
+        }
+
+        $names_by_id = [];
+        foreach ($terms as $term) {
+            if (! isset($term->term_id)) {
+                continue;
+            }
+
+            $names_by_id[(int) $term->term_id] = sanitize_text_field((string) $term->name);
+        }
+
+        $ordered = [];
+        foreach ($term_ids as $term_id) {
+            if (isset($names_by_id[$term_id]) && '' !== $names_by_id[$term_id]) {
+                $ordered[] = $names_by_id[$term_id];
+            }
+        }
+
+        return array_values(array_unique($ordered));
     }
 
     private function get_hero_image(int $post_id): array

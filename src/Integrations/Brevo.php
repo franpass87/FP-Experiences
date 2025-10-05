@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace FP_Exp\Integrations;
 
+use FP_Exp\Booking\EmailTranslator;
 use FP_Exp\Booking\Emails;
 use FP_Exp\Booking\Reservations;
 use FP_Exp\Utils\Logger;
@@ -31,6 +32,8 @@ use function sanitize_text_field;
 use function sprintf;
 use function set_transient;
 use function time;
+use function max;
+use function round;
 use function wp_json_encode;
 use function wp_remote_post;
 use function wp_remote_retrieve_body;
@@ -110,6 +113,54 @@ final class Brevo
         $context['status_label'] = 'cancelled';
         $this->send_transactional('cancel', $context, $reservation_id);
         $this->send_event('reservation_cancelled', $context, $reservation_id);
+    }
+
+    /**
+     * @param array<string, mixed> $context
+     */
+    public function queue_automation_events(array $context, int $reservation_id): void
+    {
+        if (! $this->is_enabled()) {
+            return;
+        }
+
+        $timers = isset($context['timers']) && is_array($context['timers']) ? $context['timers'] : [];
+        $slot = isset($context['slot']) && is_array($context['slot']) ? $context['slot'] : [];
+
+        $start_timestamp = isset($slot['start_timestamp']) ? absint((int) $slot['start_timestamp']) : 0;
+        $end_timestamp = isset($slot['end_timestamp']) ? absint((int) $slot['end_timestamp']) : $start_timestamp;
+
+        $reminder_timestamp = isset($timers['reminder_timestamp']) ? absint((int) $timers['reminder_timestamp']) : 0;
+        if ($reminder_timestamp > 0) {
+            $offset_minutes = ($start_timestamp > 0 && $reminder_timestamp > 0)
+                ? max(0, (int) round(($start_timestamp - $reminder_timestamp) / 60))
+                : 0;
+
+            $this->send_event('reservation_reminder_scheduled', $context, $reservation_id, [
+                'trigger_at' => sanitize_text_field((string) ($timers['reminder_iso'] ?? '')),
+                'trigger_timestamp' => $reminder_timestamp,
+                'trigger_local_date' => sanitize_text_field((string) ($timers['reminder_local_date'] ?? '')),
+                'trigger_local_time' => sanitize_text_field((string) ($timers['reminder_local_time'] ?? '')),
+                'trigger_offset_minutes' => $offset_minutes,
+                'schedule_label' => '24h_before_start',
+            ]);
+        }
+
+        $followup_timestamp = isset($timers['followup_timestamp']) ? absint((int) $timers['followup_timestamp']) : 0;
+        if ($followup_timestamp > 0) {
+            $offset_minutes = ($followup_timestamp > 0 && $end_timestamp > 0)
+                ? max(0, (int) round(($followup_timestamp - $end_timestamp) / 60))
+                : 0;
+
+            $this->send_event('reservation_followup_scheduled', $context, $reservation_id, [
+                'trigger_at' => sanitize_text_field((string) ($timers['followup_iso'] ?? '')),
+                'trigger_timestamp' => $followup_timestamp,
+                'trigger_local_date' => sanitize_text_field((string) ($timers['followup_local_date'] ?? '')),
+                'trigger_local_time' => sanitize_text_field((string) ($timers['followup_local_time'] ?? '')),
+                'trigger_offset_minutes' => $offset_minutes,
+                'schedule_label' => '24h_after_experience',
+            ]);
+        }
     }
 
     public function register_rest_routes(): void
@@ -362,7 +413,7 @@ final class Brevo
     /**
      * @param array<string, mixed> $context
      */
-    private function send_event(string $event, array $context, int $reservation_id): void
+    private function send_event(string $event, array $context, int $reservation_id, array $additional_properties = []): void
     {
         $settings = $this->get_settings();
         $api_key = (string) ($settings['api_key'] ?? '');
@@ -381,15 +432,17 @@ final class Brevo
             return;
         }
 
-        $properties = [
-            'reservation_id' => $reservation_id,
-            'order_id' => absint((int) ($context['order']['id'] ?? 0)),
-            'experience_id' => absint((int) ($context['experience']['id'] ?? 0)),
-            'experience_name' => sanitize_text_field((string) ($context['experience']['title'] ?? '')),
-            'start' => sanitize_text_field((string) ($context['slot']['start_iso'] ?? '')),
-            'total' => (float) ($context['totals']['gross'] ?? 0.0),
-            'currency' => sanitize_text_field((string) ($context['order']['currency'] ?? '')),
-        ];
+        $properties = $this->build_event_properties($context, $reservation_id);
+
+        if ($additional_properties) {
+            foreach ($additional_properties as $key => $value) {
+                if (is_string($value)) {
+                    $additional_properties[$key] = sanitize_text_field($value);
+                }
+            }
+
+            $properties = array_merge($properties, $additional_properties);
+        }
 
         $properties = array_filter(
             $properties,
@@ -445,6 +498,56 @@ final class Brevo
                 'warning'
             );
         }
+    }
+
+    /**
+     * @param array<string, mixed> $context
+     *
+     * @return array<string, mixed>
+     */
+    private function build_event_properties(array $context, int $reservation_id): array
+    {
+        $slot = isset($context['slot']) && is_array($context['slot']) ? $context['slot'] : [];
+        $order = isset($context['order']) && is_array($context['order']) ? $context['order'] : [];
+        $experience = isset($context['experience']) && is_array($context['experience']) ? $context['experience'] : [];
+        $totals = isset($context['totals']) && is_array($context['totals']) ? $context['totals'] : [];
+        $timers = isset($context['timers']) && is_array($context['timers']) ? $context['timers'] : [];
+
+        $reminder_offset = isset($timers['reminder_offset']) ? (int) $timers['reminder_offset'] : 0;
+        $followup_offset = isset($timers['followup_offset']) ? (int) $timers['followup_offset'] : 0;
+
+        return [
+            'reservation_id' => $reservation_id,
+            'order_id' => absint((int) ($order['id'] ?? 0)),
+            'order_number' => sanitize_text_field((string) ($order['number'] ?? '')),
+            'experience_id' => absint((int) ($experience['id'] ?? 0)),
+            'experience_name' => sanitize_text_field((string) ($experience['title'] ?? '')),
+            'experience_permalink' => esc_url_raw((string) ($experience['permalink'] ?? '')),
+            'language' => sanitize_text_field((string) ($context['language'] ?? '')),
+            'language_locale' => sanitize_text_field((string) ($context['language_locale'] ?? '')),
+            'start_iso' => sanitize_text_field((string) ($slot['start_iso'] ?? '')),
+            'start_timestamp' => absint((int) ($slot['start_timestamp'] ?? 0)),
+            'start_local_date' => sanitize_text_field((string) ($slot['start_local_date'] ?? '')),
+            'start_local_time' => sanitize_text_field((string) ($slot['start_local_time'] ?? '')),
+            'end_iso' => sanitize_text_field((string) ($slot['end_iso'] ?? '')),
+            'end_timestamp' => absint((int) ($slot['end_timestamp'] ?? 0)),
+            'timezone' => sanitize_text_field((string) ($slot['timezone'] ?? '')),
+            'reminder_iso' => sanitize_text_field((string) ($timers['reminder_iso'] ?? '')),
+            'reminder_timestamp' => absint((int) ($timers['reminder_timestamp'] ?? 0)),
+            'reminder_local_date' => sanitize_text_field((string) ($timers['reminder_local_date'] ?? '')),
+            'reminder_local_time' => sanitize_text_field((string) ($timers['reminder_local_time'] ?? '')),
+            'reminder_offset_minutes' => $reminder_offset > 0 ? absint((int) round($reminder_offset / 60)) : 0,
+            'followup_iso' => sanitize_text_field((string) ($timers['followup_iso'] ?? '')),
+            'followup_timestamp' => absint((int) ($timers['followup_timestamp'] ?? 0)),
+            'followup_local_date' => sanitize_text_field((string) ($timers['followup_local_date'] ?? '')),
+            'followup_local_time' => sanitize_text_field((string) ($timers['followup_local_time'] ?? '')),
+            'followup_offset_minutes' => $followup_offset > 0 ? absint((int) round($followup_offset / 60)) : 0,
+            'booking_iso' => sanitize_text_field((string) ($timers['booked_iso'] ?? '')),
+            'booking_timestamp' => absint((int) ($timers['booked_timestamp'] ?? 0)),
+            'total' => (float) ($totals['gross'] ?? 0.0),
+            'currency' => sanitize_text_field((string) ($order['currency'] ?? '')),
+            'pax_total' => absint((int) ($totals['pax_total'] ?? 0)),
+        ];
     }
 
     /**
@@ -519,8 +622,15 @@ final class Brevo
         $attributes[$last_name_key] = sanitize_text_field((string) ($customer['last_name'] ?? ''));
         $attributes[$phone_key] = sanitize_text_field((string) ($customer['phone'] ?? ''));
 
-        if (! empty($context['locale'])) {
-            $attributes[$language_key] = sanitize_text_field((string) $context['locale']);
+        $language_value = '';
+        if (! empty($context['language_locale'])) {
+            $language_value = (string) $context['language_locale'];
+        } elseif (! empty($context['locale'])) {
+            $language_value = (string) $context['locale'];
+        }
+
+        if ('' !== $language_value) {
+            $attributes[$language_key] = sanitize_text_field($language_value);
         }
 
         $consent = $context['consent']['marketing'] ?? false;
@@ -560,9 +670,27 @@ final class Brevo
             $payload['tags'] = $tags;
         }
 
-        $list_id = absint((int) ($settings['list_id'] ?? 0));
-        if ($list_id > 0 && ! empty($settings['subscribe_to_list'])) {
-            $payload['listIds'] = [$list_id];
+        if (! empty($settings['subscribe_to_list'])) {
+            $language = EmailTranslator::normalize((string) ($context['language'] ?? $context['language_locale'] ?? ''));
+            $language_key = EmailTranslator::LANGUAGE_IT === $language ? 'it' : 'en';
+
+            $list_ids = [];
+            $configured_lists = isset($settings['lists']) && is_array($settings['lists']) ? $settings['lists'] : [];
+
+            if (! empty($configured_lists[$language_key])) {
+                $list_ids[] = absint((int) $configured_lists[$language_key]);
+            }
+
+            if (! $list_ids) {
+                $fallback_id = absint((int) ($settings['list_id'] ?? 0));
+                if ($fallback_id > 0) {
+                    $list_ids[] = $fallback_id;
+                }
+            }
+
+            if ($list_ids) {
+                $payload['listIds'] = array_values(array_unique(array_filter($list_ids)));
+            }
         }
 
         return $payload;

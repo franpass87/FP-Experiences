@@ -481,7 +481,7 @@
             publishButtons.forEach((button) => {
                 button.classList.add('is-busy');
                 button.setAttribute('aria-disabled', 'true');
-                button.disabled = true;
+                button.setAttribute('data-fp-exp-busy', '1');
             });
 
             if (hasError) {
@@ -493,7 +493,7 @@
                 publishButtons.forEach((button) => {
                     button.classList.remove('is-busy');
                     button.removeAttribute('aria-disabled');
-                    button.disabled = false;
+                    button.removeAttribute('data-fp-exp-busy');
                 });
             }
         });
