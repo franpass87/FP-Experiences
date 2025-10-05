@@ -1385,6 +1385,20 @@ final class SettingsPage
                 'description' => esc_html__('Used for tags, badges, and decorative elements.', 'fp-experiences'),
             ],
             [
+                'key' => 'section_icon_background',
+                'type' => 'color',
+                'label' => esc_html__('Section icon background', 'fp-experiences'),
+                'default' => $defaults['section_icon_background'] ?? '#0B6EFD',
+                'description' => esc_html__('Background fill used behind section icons.', 'fp-experiences'),
+            ],
+            [
+                'key' => 'section_icon_color',
+                'type' => 'color',
+                'label' => esc_html__('Section icon color', 'fp-experiences'),
+                'default' => $defaults['section_icon_color'] ?? '#FFFFFF',
+                'description' => esc_html__('Icon color displayed within section icon circles.', 'fp-experiences'),
+            ],
+            [
                 'key' => 'background',
                 'type' => 'color',
                 'label' => esc_html__('Background color', 'fp-experiences'),
@@ -1513,6 +1527,12 @@ final class SettingsPage
                 'type' => 'toggle',
                 'label' => esc_html__('Display “price from” badge', 'fp-experiences'),
                 'description' => esc_html__('Show the lowest available ticket price on each card by default.', 'fp-experiences'),
+            ],
+            [
+                'key' => 'experience_badges',
+                'type' => 'experience_badges',
+                'label' => esc_html__('Experience badges', 'fp-experiences'),
+                'description' => esc_html__('Customize the preset badge labels and descriptions or add new options for editors to assign.', 'fp-experiences'),
             ],
         ];
     }
@@ -1945,6 +1965,104 @@ final class SettingsPage
                 echo '</label>';
             }
             echo '</div>';
+        } elseif ('experience_badges' === $field['type']) {
+            $badge_settings = is_array($value) ? $value : [];
+            $badge_overrides = isset($badge_settings['overrides']) && is_array($badge_settings['overrides'])
+                ? $badge_settings['overrides']
+                : [];
+            $badge_custom = isset($badge_settings['custom']) && is_array($badge_settings['custom'])
+                ? $badge_settings['custom']
+                : [];
+
+            $default_badges = Helpers::default_experience_badge_choices();
+
+            echo '<div class="fp-exp-badge-settings">';
+
+            if (! empty($default_badges)) {
+                echo '<div class="fp-exp-badge-settings__group">';
+                echo '<h4 class="fp-exp-badge-settings__title">' . esc_html__('Predefined badges', 'fp-experiences') . '</h4>';
+                echo '<div class="fp-exp-badge-settings__rows">';
+                foreach ($default_badges as $default_badge) {
+                    if (! is_array($default_badge)) {
+                        continue;
+                    }
+
+                    $badge_id = isset($default_badge['id']) ? sanitize_key((string) $default_badge['id']) : '';
+                    if ('' === $badge_id) {
+                        continue;
+                    }
+
+                    $default_label = isset($default_badge['label']) ? (string) $default_badge['label'] : '';
+                    $default_description = isset($default_badge['description']) ? (string) $default_badge['description'] : '';
+
+                    $override = isset($badge_overrides[$badge_id]) && is_array($badge_overrides[$badge_id])
+                        ? $badge_overrides[$badge_id]
+                        : [];
+
+                    $label_value = isset($override['label']) && '' !== (string) $override['label']
+                        ? (string) $override['label']
+                        : $default_label;
+
+                    $description_value = array_key_exists('description', $override)
+                        ? (string) $override['description']
+                        : $default_description;
+
+                    $id_text = sprintf(
+                        /* translators: %s: badge identifier slug. */
+                        esc_html__('ID: %s', 'fp-experiences'),
+                        esc_html($badge_id)
+                    );
+
+                    echo '<div class="fp-exp-repeater-row fp-exp-badge-settings__row">';
+                    echo '<div class="fp-exp-repeater-row__fields">';
+                    echo '<label>';
+                    echo '<span class="fp-exp-field__label">' . esc_html__('Name', 'fp-experiences') . ' ';
+                    echo '<span class="fp-exp-field__description">' . $id_text . '</span>';
+                    echo '</span>';
+                    echo '<input type="text" name="fp_exp_listing[experience_badges][overrides][' . esc_attr($badge_id) . '][label]" value="' . esc_attr($label_value) . '" />';
+                    echo '</label>';
+                    echo '<label>';
+                    echo '<span class="fp-exp-field__label">' . esc_html__('Short description', 'fp-experiences') . '</span>';
+                    echo '<input type="text" name="fp_exp_listing[experience_badges][overrides][' . esc_attr($badge_id) . '][description]" value="' . esc_attr($description_value) . '" placeholder="' . esc_attr__('Optional summary shown under the badge name.', 'fp-experiences') . '" />';
+                    echo '</label>';
+                    echo '</div>';
+                    echo '</div>';
+                }
+                echo '</div>';
+                echo '</div>';
+            }
+
+            $custom_badges = [];
+            if (! empty($badge_custom)) {
+                foreach ($badge_custom as $custom_badge) {
+                    if (is_array($custom_badge)) {
+                        $custom_badges[] = $custom_badge;
+                    }
+                }
+            }
+
+            $next_index = count($custom_badges);
+
+            echo '<div class="fp-exp-badge-settings__group">';
+            echo '<h4 class="fp-exp-badge-settings__title">' . esc_html__('Custom badges', 'fp-experiences') . '</h4>';
+            echo '<div class="fp-exp-repeater" data-repeater="experience_badges_custom" data-repeater-next-index="' . esc_attr((string) $next_index) . '">';
+            echo '<div class="fp-exp-repeater__items">';
+            foreach ($custom_badges as $index => $custom_badge) {
+                $this->render_experience_badge_custom_row((string) $index, $custom_badge, false);
+            }
+            echo '</div>';
+            echo '<p class="fp-exp-repeater__actions"><button type="button" class="button" data-repeater-add>' . esc_html__('Add badge', 'fp-experiences') . '</button></p>';
+            echo '<template data-repeater-template>';
+            $this->render_experience_badge_custom_row('__INDEX__', [
+                'id' => '',
+                'label' => '',
+                'description' => '',
+            ], true);
+            echo '</template>';
+            echo '</div>';
+            echo '</div>';
+
+            echo '</div>';
         } elseif ('toggle' === $field['type']) {
             $checked = ! empty($value);
             echo '<label class="fp-exp-settings__toggle">';
@@ -1956,6 +2074,71 @@ final class SettingsPage
         if (! empty($field['description'])) {
             echo '<p class="description">' . esc_html($field['description']) . '</p>';
         }
+    }
+
+    private function render_experience_badge_custom_row(string $index, array $badge, bool $is_template = false): void
+    {
+        $name_prefix = 'fp_exp_listing[experience_badges][custom][' . $index . ']';
+        $id_name = $is_template
+            ? 'fp_exp_listing[experience_badges][custom][__INDEX__][id]'
+            : $name_prefix . '[id]';
+        $label_name = $is_template
+            ? 'fp_exp_listing[experience_badges][custom][__INDEX__][label]'
+            : $name_prefix . '[label]';
+        $description_name = $is_template
+            ? 'fp_exp_listing[experience_badges][custom][__INDEX__][description]'
+            : $name_prefix . '[description]';
+
+        $badge_id = isset($badge['id']) ? (string) $badge['id'] : '';
+        $badge_label = isset($badge['label']) ? (string) $badge['label'] : '';
+        $badge_description = isset($badge['description']) ? (string) $badge['description'] : '';
+
+        ?>
+        <div class="fp-exp-repeater-row" data-repeater-item draggable="true">
+            <div class="fp-exp-repeater-row__fields">
+                <label>
+                    <span class="fp-exp-field__label"><?php esc_html_e('ID', 'fp-experiences'); ?></span>
+                    <input
+                        type="text"
+                        <?php echo $this->experience_badge_field_attribute($id_name, $is_template); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+                        value="<?php echo esc_attr($badge_id); ?>"
+                        placeholder="<?php echo esc_attr__('e.g. degustazione-serale', 'fp-experiences'); ?>"
+                    />
+                    <span class="fp-exp-field__description"><?php esc_html_e('Lowercase letters, numbers, and dashes only.', 'fp-experiences'); ?></span>
+                </label>
+                <label>
+                    <span class="fp-exp-field__label"><?php esc_html_e('Name', 'fp-experiences'); ?></span>
+                    <input
+                        type="text"
+                        <?php echo $this->experience_badge_field_attribute($label_name, $is_template); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+                        value="<?php echo esc_attr($badge_label); ?>"
+                        placeholder="<?php echo esc_attr__('e.g. Degustazione serale', 'fp-experiences'); ?>"
+                    />
+                </label>
+                <label>
+                    <span class="fp-exp-field__label"><?php esc_html_e('Short description', 'fp-experiences'); ?></span>
+                    <input
+                        type="text"
+                        <?php echo $this->experience_badge_field_attribute($description_name, $is_template); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+                        value="<?php echo esc_attr($badge_description); ?>"
+                        placeholder="<?php echo esc_attr__('Optional summary shown under the badge name.', 'fp-experiences'); ?>"
+                    />
+                </label>
+            </div>
+            <p class="fp-exp-repeater-row__remove">
+                <button type="button" class="button-link-delete" data-repeater-remove>&times;</button>
+            </p>
+        </div>
+        <?php
+    }
+
+    private function experience_badge_field_attribute(string $name, bool $is_template): string
+    {
+        if ($is_template) {
+            return 'data-name="' . esc_attr($name) . '"';
+        }
+
+        return 'name="' . esc_attr($name) . '"';
     }
 
     public function render_rtb_field(array $field): void
@@ -2392,13 +2575,139 @@ final class SettingsPage
 
         $show_price_from = ! empty($value['show_price_from']);
 
+        $experience_badges = $this->sanitize_experience_badge_settings($value['experience_badges'] ?? []);
+
         return [
             'filters' => array_values(array_unique($filters)),
             'per_page' => $per_page,
             'order' => $order,
             'orderby' => $orderby,
             'show_price_from' => $show_price_from,
+            'experience_badges' => $experience_badges,
         ];
+    }
+
+    /**
+     * @param mixed $value
+     * @return array<string, mixed>
+     */
+    private function sanitize_experience_badge_settings($value): array
+    {
+        $result = [
+            'overrides' => [],
+            'custom' => [],
+        ];
+
+        if (! is_array($value)) {
+            return $result;
+        }
+
+        $default_badges = Helpers::default_experience_badge_choices();
+        $default_lookup = [];
+
+        foreach ($default_badges as $badge) {
+            if (! is_array($badge)) {
+                continue;
+            }
+
+            $badge_id = isset($badge['id']) ? sanitize_key((string) $badge['id']) : '';
+            if ('' === $badge_id) {
+                continue;
+            }
+
+            $default_lookup[$badge_id] = [
+                'label' => isset($badge['label']) ? (string) $badge['label'] : '',
+                'description' => isset($badge['description']) ? (string) $badge['description'] : '',
+            ];
+        }
+
+        if (isset($value['overrides']) && is_array($value['overrides'])) {
+            foreach ($value['overrides'] as $id => $override) {
+                $badge_id = sanitize_key((string) $id);
+                if ('' === $badge_id || ! isset($default_lookup[$badge_id])) {
+                    continue;
+                }
+
+                $override = is_array($override) ? $override : [];
+
+                $default_label = $default_lookup[$badge_id]['label'] ?? '';
+                $default_description = $default_lookup[$badge_id]['description'] ?? '';
+
+                $entry = [];
+
+                if (array_key_exists('label', $override)) {
+                    $label_value = sanitize_text_field((string) $override['label']);
+                    if ('' !== $label_value && $label_value !== $default_label) {
+                        $entry['label'] = $label_value;
+                    }
+                }
+
+                if (array_key_exists('description', $override)) {
+                    $description_value = sanitize_text_field((string) $override['description']);
+                    if ($description_value !== $default_description) {
+                        $entry['description'] = $description_value;
+                    }
+                }
+
+                if ([] !== $entry) {
+                    $result['overrides'][$badge_id] = $entry;
+                }
+            }
+        }
+
+        $seen_custom = [];
+        if (isset($value['custom']) && is_array($value['custom'])) {
+            foreach ($value['custom'] as $custom_badge) {
+                if (! is_array($custom_badge)) {
+                    continue;
+                }
+
+                $badge_id = isset($custom_badge['id']) ? sanitize_key((string) $custom_badge['id']) : '';
+                $label_value = isset($custom_badge['label']) ? sanitize_text_field((string) $custom_badge['label']) : '';
+
+                if ('' === $badge_id || '' === $label_value) {
+                    continue;
+                }
+
+                $description_value = isset($custom_badge['description'])
+                    ? sanitize_text_field((string) $custom_badge['description'])
+                    : '';
+
+                if (isset($default_lookup[$badge_id])) {
+                    $entry = [];
+                    $default_label = $default_lookup[$badge_id]['label'] ?? '';
+                    $default_description = $default_lookup[$badge_id]['description'] ?? '';
+
+                    if ($label_value !== $default_label) {
+                        $entry['label'] = $label_value;
+                    }
+
+                    if ($description_value !== $default_description) {
+                        $entry['description'] = $description_value;
+                    }
+
+                    if ([] !== $entry && ! isset($result['overrides'][$badge_id])) {
+                        $result['overrides'][$badge_id] = $entry;
+                    }
+
+                    continue;
+                }
+
+                if (isset($result['overrides'][$badge_id]) || isset($seen_custom[$badge_id])) {
+                    continue;
+                }
+
+                $seen_custom[$badge_id] = true;
+
+                $result['custom'][] = [
+                    'id' => $badge_id,
+                    'label' => $label_value,
+                    'description' => $description_value,
+                ];
+            }
+        }
+
+        return $result;
     }
 
     /**

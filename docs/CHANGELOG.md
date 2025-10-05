@@ -1,7 +1,13 @@
 # Changelog
 
 ## [Unreleased]
-- No changes yet.
+- Added a hero gallery manager to the experience details tab with drag ordering, multi-select uploads, and quick clearing.
+- Moved language selection into the details tab, allowing manual term creation and badge previews prior to saving.
+- Introduced a configurable badge library under **Settings → Showcase** so presets can be renamed or extended for editors.
+- Expanded branding controls with section icon background/foreground pickers and switched public templates to Font Awesome icons.
+- Streamlined essentials/notes lists to rely on native bullets and reduced section title sizing for better hierarchy.
+- Fixed ticket quantity buttons, restored desktop ticket table alignment, and kept the sticky CTA button legible after clicks.
+- Updated contributor documentation with the PHP syntax check helper covering both source and build trees.
 
 ## [0.3.0] - 2025-09-30
 - Added an advanced setting to toggle the meeting point CSV import tool (disabled by default) and clarified the admin visibility rules.

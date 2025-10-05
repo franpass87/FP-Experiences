@@ -179,6 +179,8 @@ final class Theme
             'primary' => '#0B6EFD',
             'secondary' => '#1857C4',
             'accent' => '#00A37A',
+            'section_icon_background' => '#0B6EFD',
+            'section_icon_color' => '#FFFFFF',
             'background' => '#F7F8FA',
             'surface' => '#FFFFFF',
             'text' => '#0F172A',
@@ -221,6 +223,8 @@ final class Theme
         $primary = $palette['primary'] ?? $defaults['primary'];
         $secondary = $palette['secondary'] ?? $defaults['secondary'];
         $accent = $palette['accent'] ?? $defaults['accent'];
+        $section_icon_background = $palette['section_icon_background'] ?? $defaults['section_icon_background'];
+        $section_icon_color = $palette['section_icon_color'] ?? $defaults['section_icon_color'];
         $background = $palette['background'] ?? $defaults['background'];
         $surface = $palette['surface'] ?? $defaults['surface'];
         $text = $palette['text'] ?? $defaults['text'];
@@ -239,6 +243,8 @@ final class Theme
             '--fp-exp-color-primary' => $primary,
             '--fp-exp-color-secondary' => $secondary,
             '--fp-exp-color-accent' => $accent,
+            '--fp-exp-color-section-icon-background' => $section_icon_background,
+            '--fp-exp-color-section-icon' => $section_icon_color,
             '--fp-exp-color-background' => $background,
             '--fp-exp-color-surface' => $surface,
             '--fp-exp-color-text' => $text,
@@ -253,6 +259,8 @@ final class Theme
             '--fp-color-primary' => $primary,
             '--fp-color-secondary' => $secondary,
             '--fp-color-accent' => $accent,
+            '--fp-color-section-icon-background' => $section_icon_background,
+            '--fp-color-section-icon' => $section_icon_color,
             '--fp-color-bg' => $background,
             '--fp-color-surface' => $surface,
             '--fp-color-text' => $text,
@@ -275,6 +283,8 @@ final class Theme
             '--fp-color-primary' => '#0B6EFD',
             '--fp-color-secondary' => '#1857C4',
             '--fp-color-accent' => '#00A37A',
+            '--fp-color-section-icon-background' => '#0B6EFD',
+            '--fp-color-section-icon' => '#FFFFFF',
             '--fp-color-bg' => '#F7F8FA',
             '--fp-color-surface' => '#FFFFFF',
             '--fp-color-text' => '#0F172A',
@@ -322,6 +332,8 @@ final class Theme
         $dark['primary'] = self::mix_with_color($palette['primary'] ?? '#8B1E3F', '#FFFFFF', 0.18);
         $dark['secondary'] = self::mix_with_color($palette['secondary'] ?? '#405F3B', '#FFFFFF', 0.12);
         $dark['accent'] = self::mix_with_color($palette['accent'] ?? '#5B8C5A', '#FFFFFF', 0.15);
+        $dark['section_icon_background'] = self::mix_with_color($palette['section_icon_background'] ?? '#0B6EFD', '#FFFFFF', 0.18);
+        $dark['section_icon_color'] = '#FFFFFF';
 
         return $dark;
     }

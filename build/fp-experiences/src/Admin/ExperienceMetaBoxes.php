@@ -43,6 +43,7 @@ use function get_post_status_object;
 use function get_transient;
 use function get_post_thumbnail_id;
 use function get_terms;
+use function get_the_title;
 use function in_array;
 use function implode;
 use function is_array;
@@ -69,6 +70,7 @@ use function wp_verify_nonce;
 use function wp_get_post_terms;
 use function wp_kses_post;
 use function wp_get_attachment_image_src;
+use function wp_get_attachment_url;
 use function wp_set_post_terms;
 use function remove_meta_box;
 use function term_exists;
@@ -100,6 +102,8 @@ final class ExperienceMetaBoxes
     public function remove_default_meta_boxes(): void
     {
         remove_meta_box('fp_exp_themediv', 'fp_experience', 'side');
+        remove_meta_box('tagsdiv-fp_exp_language', 'fp_experience', 'side');
+        remove_meta_box('tagsdiv-fp_exp_duration', 'fp_experience', 'side');
         remove_meta_box('postimagediv', 'fp_experience', 'side');
     }
 
@@ -341,14 +345,60 @@ final class ExperienceMetaBoxes
                         />
                         <p class="fp-exp-field__description" id="fp-exp-duration-help"><?php esc_html_e('Inserisci solo numeri interi.', 'fp-experiences'); ?></p>
                     </div>
+                    <?php
+                    $language_details = isset($details['languages']) && is_array($details['languages']) ? $details['languages'] : [];
+                    $language_choices = isset($language_details['choices']) && is_array($language_details['choices']) ? $language_details['choices'] : [];
+                    $language_selected = isset($language_details['selected']) && is_array($language_details['selected']) ? $language_details['selected'] : [];
+                    $language_badges = isset($details['language_badges']) && is_array($details['language_badges']) ? $details['language_badges'] : [];
+                    ?>
                     <div>
                         <span class="fp-exp-field__label">
-                            <?php esc_html_e('Badge lingue mostrati', 'fp-experiences'); ?>
-                            <?php $this->render_tooltip('fp-exp-language-badge-help', esc_html__('Le lingue si sincronizzano con la sezione "Lingue per i filtri" e vengono usate nei badge pubblici e nello schema.', 'fp-experiences')); ?>
+                            <?php esc_html_e('Lingue disponibili', 'fp-experiences'); ?>
+                            <?php $this->render_tooltip('fp-exp-language-badge-help', esc_html__('Seleziona le lingue parlate durante l’esperienza: verranno mostrate nei badge pubblici e nel widget di prenotazione.', 'fp-experiences')); ?>
                         </span>
-                        <?php if (! empty($details['language_badges'])) : ?>
+                        <?php if (! empty($language_choices)) : ?>
+                            <div class="fp-exp-checkbox-grid" aria-describedby="fp-exp-language-badge-help">
+                                <?php foreach ($language_choices as $choice) :
+                                    if (! is_array($choice)) {
+                                        continue;
+                                    }
+
+                                    $term_id = isset($choice['id']) ? (int) $choice['id'] : 0;
+                                    $label = isset($choice['label']) ? (string) $choice['label'] : '';
+
+                                    if ($term_id <= 0 || '' === $label) {
+                                        continue;
+                                    }
+                                    ?>
+                                    <label>
+                                        <input
+                                            type="checkbox"
+                                            name="fp_exp_details[languages][]"
+                                            value="<?php echo esc_attr((string) $term_id); ?>"
+                                            <?php checked(in_array($term_id, $language_selected, true)); ?>
+                                        />
+                                        <span><?php echo esc_html($label); ?></span>
+                                    </label>
+                                <?php endforeach; ?>
+                            </div>
+                        <?php else : ?>
+                            <p class="fp-exp-field__description fp-exp-field__description--muted"><?php esc_html_e('Non hai ancora creato lingue. Aggiungi nuove voci qui sotto per iniziare.', 'fp-experiences'); ?></p>
+                        <?php endif; ?>
+                        <div class="fp-exp-taxonomy-manual">
+                            <label class="fp-exp-taxonomy-manual__label" for="fp-exp-languages-manual"><?php esc_html_e('Aggiungi nuove lingue', 'fp-experiences'); ?></label>
+                            <input
+                                type="text"
+                                id="fp-exp-languages-manual"
+                                name="fp_exp_details[languages_manual]"
+                                class="regular-text"
+                                placeholder="<?php echo esc_attr__('Es. Italiano, English, Deutsch', 'fp-experiences'); ?>"
+                                autocomplete="off"
+                            />
+                            <p class="fp-exp-field__description"><?php esc_html_e('Separa le voci con una virgola: verranno create come termini e selezionate automaticamente.', 'fp-experiences'); ?></p>
+                        </div>
+                        <?php if (! empty($language_badges)) : ?>
                             <ul class="fp-exp-language-preview" role="list" aria-describedby="fp-exp-language-badge-help">
-                                <?php foreach ($details['language_badges'] as $language) :
+                                <?php foreach ($language_badges as $language) :
                                     if (! is_array($language)) {
                                         continue;
                                     }
@@ -375,10 +425,10 @@ final class ExperienceMetaBoxes
                                     </li>
                                 <?php endforeach; ?>
                             </ul>
-                            <p class="fp-exp-field__description" id="fp-exp-language-badge-help"><?php esc_html_e('Aggiorna le lingue selezionando le voci nel riquadro "Lingue per i filtri" qui sotto.', 'fp-experiences'); ?></p>
                         <?php else : ?>
-                            <p class="fp-exp-field__description" id="fp-exp-language-badge-help"><?php esc_html_e('Nessuna lingua selezionata: scegli le lingue nel riquadro "Lingue per i filtri" per mostrare i badge.', 'fp-experiences'); ?></p>
+                            <p class="fp-exp-field__description fp-exp-field__description--muted"><?php esc_html_e('Nessuna lingua selezionata al momento.', 'fp-experiences'); ?></p>
                         <?php endif; ?>
+                        <p class="fp-exp-field__description" id="fp-exp-language-badge-help"><?php esc_html_e('Le lingue selezionate vengono mostrate nei badge pubblici, nel widget e nei filtri.', 'fp-experiences'); ?></p>
                     </div>
                 </div>
 
@@ -442,6 +492,83 @@ final class ExperienceMetaBoxes
                         </div>
                     </div>
                     <p class="fp-exp-field__description" id="fp-exp-hero-image-help"><?php esc_html_e('Consigliata proporzione 16:9 con soggetti centrati.', 'fp-experiences'); ?></p>
+                </div>
+
+                <?php
+                $gallery_details = $details['gallery'];
+                $gallery_items = [];
+                $gallery_ids = [];
+
+                if (isset($gallery_details['items']) && is_array($gallery_details['items'])) {
+                    $gallery_items = $gallery_details['items'];
+                }
+
+                if (isset($gallery_details['ids']) && is_array($gallery_details['ids'])) {
+                    $gallery_ids = array_values(array_filter(array_map('absint', $gallery_details['ids'])));
+                } elseif (! empty($gallery_items)) {
+                    foreach ($gallery_items as $gallery_item) {
+                        if (! is_array($gallery_item)) {
+                            continue;
+                        }
+
+                        $candidate_id = isset($gallery_item['id']) ? absint((string) $gallery_item['id']) : 0;
+                        if ($candidate_id > 0) {
+                            $gallery_ids[] = $candidate_id;
+                        }
+                    }
+                }
+
+                $gallery_ids = array_values(array_unique(array_filter($gallery_ids)));
+                $gallery_value = implode(',', array_map('strval', $gallery_ids));
+                ?>
+                <div class="fp-exp-field">
+                    <span class="fp-exp-field__label">
+                        <?php esc_html_e('Galleria immagini', 'fp-experiences'); ?>
+                        <?php $this->render_tooltip('fp-exp-gallery-help', esc_html__('Seleziona e ordina le immagini da mostrare nella galleria della pagina esperienza.', 'fp-experiences')); ?>
+                    </span>
+                    <div class="fp-exp-gallery-control" data-fp-gallery-control>
+                        <input
+                            type="hidden"
+                            name="fp_exp_details[gallery_ids]"
+                            value="<?php echo esc_attr($gallery_value); ?>"
+                            data-fp-gallery-input
+                        />
+                        <template data-fp-gallery-item-template>
+                            <?php $this->render_gallery_item([], true); ?>
+                        </template>
+                        <ul class="fp-exp-gallery-control__list" data-fp-gallery-list role="list">
+                            <?php foreach ($gallery_items as $gallery_item) :
+                                if (! is_array($gallery_item)) {
+                                    continue;
+                                }
+                                $this->render_gallery_item($gallery_item);
+                            endforeach; ?>
+                        </ul>
+                        <p class="fp-exp-gallery-control__empty" data-fp-gallery-empty <?php echo empty($gallery_items) ? '' : ' hidden'; ?>>
+                            <?php esc_html_e('Nessuna immagine selezionata al momento.', 'fp-experiences'); ?>
+                        </p>
+                        <div class="fp-exp-gallery-control__actions">
+                            <button
+                                type="button"
+                                class="button button-secondary"
+                                data-fp-gallery-add
+                                data-label-select="<?php echo esc_attr__('Seleziona immagini', 'fp-experiences'); ?>"
+                                data-label-update="<?php echo esc_attr__('Aggiungi altre immagini', 'fp-experiences'); ?>"
+                            >
+                                <?php echo empty($gallery_items) ? esc_html__('Seleziona immagini', 'fp-experiences') : esc_html__('Aggiungi altre immagini', 'fp-experiences'); ?>
+                            </button>
+                            <button
+                                type="button"
+                                class="button-link"
+                                data-fp-gallery-clear
+                                data-label-clear="<?php echo esc_attr__('Rimuovi tutte', 'fp-experiences'); ?>"
+                                <?php echo empty($gallery_items) ? ' hidden' : ''; ?>
+                            >
+                                <?php esc_html_e('Rimuovi tutte', 'fp-experiences'); ?>
+                            </button>
+                        </div>
+                    </div>
+                    <p class="fp-exp-field__description" id="fp-exp-gallery-help"><?php esc_html_e('Le immagini vengono mostrate nella galleria pubblica seguendo l’ordine impostato qui sopra.', 'fp-experiences'); ?></p>
                 </div>
 
                 <div class="fp-exp-field fp-exp-field--taxonomies">
@@ -777,6 +904,62 @@ final class ExperienceMetaBoxes
                 </div>
             </fieldset>
         </section>
+        <?php
+    }
+
+    private function render_gallery_item(array $image, bool $is_template = false): void
+    {
+        $image_id = isset($image['id']) ? absint((string) $image['id']) : 0;
+        $image_url = isset($image['url']) ? (string) $image['url'] : '';
+        $image_alt = isset($image['alt']) ? (string) $image['alt'] : '';
+        ?>
+        <li class="fp-exp-gallery-control__item" data-fp-gallery-item<?php echo (! $is_template && $image_id > 0) ? ' data-id="' . esc_attr((string) $image_id) . '"' : ''; ?>>
+            <div class="fp-exp-gallery-control__thumb">
+                <span class="fp-exp-gallery-control__placeholder" data-fp-gallery-placeholder <?php echo $image_url ? ' hidden' : ''; ?>>
+                    <svg viewBox="0 0 48 32" aria-hidden="true" focusable="false">
+                        <rect x="1" y="1" width="46" height="30" rx="4" ry="4" fill="none" stroke="currentColor" stroke-width="2" />
+                        <path d="M16 12a4 4 0 1 1 4 4 4 4 0 0 1-4-4Zm-6 14 8-10 6 7 4-5 8 8Z" fill="currentColor" />
+                    </svg>
+                    <span class="screen-reader-text"><?php esc_html_e('Nessuna immagine selezionata', 'fp-experiences'); ?></span>
+                </span>
+                <?php if ($image_url) : ?>
+                    <img
+                        src="<?php echo esc_url($image_url); ?>"
+                        alt="<?php echo esc_attr($image_alt); ?>"
+                        loading="lazy"
+                        data-fp-gallery-image
+                    />
+                <?php else : ?>
+                    <img src="" alt="" loading="lazy" data-fp-gallery-image hidden />
+                <?php endif; ?>
+            </div>
+            <div class="fp-exp-gallery-control__toolbar">
+                <button
+                    type="button"
+                    class="fp-exp-gallery-control__move"
+                    data-fp-gallery-move="prev"
+                    aria-label="<?php esc_attr_e('Sposta prima', 'fp-experiences'); ?>"
+                >
+                    <span aria-hidden="true">↑</span>
+                </button>
+                <button
+                    type="button"
+                    class="fp-exp-gallery-control__move"
+                    data-fp-gallery-move="next"
+                    aria-label="<?php esc_attr_e('Sposta dopo', 'fp-experiences'); ?>"
+                >
+                    <span aria-hidden="true">↓</span>
+                </button>
+            </div>
+            <button
+                type="button"
+                class="fp-exp-gallery-control__remove"
+                data-fp-gallery-remove
+                aria-label="<?php esc_attr_e('Rimuovi immagine', 'fp-experiences'); ?>"
+            >
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </li>
         <?php
     }
     private function render_pricing_tab(array $pricing): void
@@ -1729,6 +1912,29 @@ final class ExperienceMetaBoxes
             return isset($available_badges[$badge]);
         }));
 
+        $gallery_raw = $raw['gallery_ids'] ?? '';
+        $gallery_candidates = [];
+
+        if (is_array($gallery_raw)) {
+            $gallery_candidates = $gallery_raw;
+        } elseif (is_string($gallery_raw) && '' !== trim($gallery_raw)) {
+            $gallery_candidates = explode(',', $gallery_raw);
+        }
+
+        $gallery_ids = [];
+        foreach ($gallery_candidates as $candidate) {
+            if (is_array($candidate)) {
+                $candidate = reset($candidate);
+            }
+
+            $candidate_id = absint((string) $candidate);
+            if ($candidate_id > 0 && wp_attachment_is_image($candidate_id)) {
+                $gallery_ids[] = $candidate_id;
+            }
+        }
+
+        $gallery_ids = array_values(array_unique($gallery_ids));
+
         $this->update_or_delete_meta($post_id, '_fp_short_desc', $short_desc);
         $this->update_or_delete_meta($post_id, '_fp_duration_minutes', $duration);
         $this->update_or_delete_meta($post_id, '_fp_min_party', $min_party);
@@ -1738,6 +1944,23 @@ final class ExperienceMetaBoxes
         $this->update_or_delete_meta($post_id, '_fp_rules_children', $rules_children);
         $this->update_or_delete_meta($post_id, '_fp_cognitive_biases', $cognitive_biases);
         $this->update_or_delete_meta($post_id, '_fp_experience_badges', $experience_badges);
+        $this->update_or_delete_meta($post_id, '_fp_gallery_ids', $gallery_ids);
+
+        $language_selected = isset($raw['languages']) && is_array($raw['languages'])
+            ? array_values(array_filter(array_map('absint', $raw['languages'])))
+            : [];
+        $language_manual_labels = isset($raw['languages_manual'])
+            ? $this->parse_manual_taxonomy_input($raw['languages_manual'])
+            : [];
+
+        if (! empty($language_manual_labels)) {
+            $language_selected = array_merge(
+                $language_selected,
+                $this->ensure_taxonomy_terms($language_manual_labels, 'fp_exp_language')
+            );
+        }
+
+        $language_selected = array_values(array_unique(array_filter(array_map('absint', $language_selected))));
 
         if ($hero_id > 0) {
             update_post_meta($post_id, '_fp_hero_image_id', $hero_id);
@@ -1746,6 +1969,7 @@ final class ExperienceMetaBoxes
         }
 
         wp_set_post_terms($post_id, $theme_terms, 'fp_exp_theme', false);
+        wp_set_post_terms($post_id, $language_selected, 'fp_exp_language', false);
 
         $language_terms = $this->get_assigned_terms($post_id, 'fp_exp_language');
         $language_names = $this->get_term_names_by_ids($language_terms, 'fp_exp_language');
@@ -2247,6 +2471,10 @@ final class ExperienceMetaBoxes
             'short_desc' => sanitize_text_field((string) get_post_meta($post_id, '_fp_short_desc', true)),
             'duration_minutes' => absint((string) get_post_meta($post_id, '_fp_duration_minutes', true)),
             'language_badges' => LanguageHelper::build_language_badges($language_names),
+            'languages' => [
+                'choices' => $this->get_taxonomy_choices('fp_exp_language'),
+                'selected' => $language_selected,
+            ],
             'linked_page' => $this->get_linked_page_details($post_id),
             'min_party' => absint((string) get_post_meta($post_id, '_fp_min_party', true)),
             'capacity_slot' => absint((string) get_post_meta($post_id, '_fp_capacity_slot', true)),
@@ -2254,6 +2482,7 @@ final class ExperienceMetaBoxes
             'age_max' => absint((string) get_post_meta($post_id, '_fp_age_max', true)),
             'rules_children' => sanitize_text_field((string) get_post_meta($post_id, '_fp_rules_children', true)),
             'hero_image' => $this->get_hero_image($post_id),
+            'gallery' => $this->get_gallery_for_editor($post_id),
             'cognitive_biases' => [
                 'choices' => Helpers::cognitive_bias_choices(),
                 'selected' => $this->get_selected_cognitive_biases($post_id),
@@ -2371,6 +2600,56 @@ final class ExperienceMetaBoxes
             'url' => $image ? (string) ($image[0] ?? '') : '',
             'width' => $image ? absint((string) ($image[1] ?? 0)) : 0,
             'height' => $image ? absint((string) ($image[2] ?? 0)) : 0,
+        ];
+    }
+
+    private function get_gallery_for_editor(int $post_id): array
+    {
+        $stored = get_post_meta($post_id, '_fp_gallery_ids', true);
+
+        if (! is_array($stored)) {
+            $stored = [];
+        }
+
+        $ids = array_values(array_unique(array_filter(array_map('absint', $stored))));
+        $items = [];
+
+        foreach ($ids as $image_id) {
+            if ($image_id <= 0 || ! wp_attachment_is_image($image_id)) {
+                continue;
+            }
+
+            $source = wp_get_attachment_image_src($image_id, 'medium');
+            $url = $source ? (string) ($source[0] ?? '') : '';
+            $width = $source ? absint((string) ($source[1] ?? 0)) : 0;
+            $height = $source ? absint((string) ($source[2] ?? 0)) : 0;
+
+            if ('' === $url) {
+                $fallback = wp_get_attachment_url($image_id);
+                $url = $fallback ? (string) $fallback : '';
+            }
+
+            $alt = get_post_meta($image_id, '_wp_attachment_image_alt', true);
+            if (! is_string($alt)) {
+                $alt = '';
+            }
+
+            if ('' === $alt) {
+                $alt = get_the_title($image_id);
+            }
+
+            $items[] = [
+                'id' => $image_id,
+                'url' => $url,
+                'width' => $width,
+                'height' => $height,
+                'alt' => $alt ? (string) $alt : '',
+            ];
+        }
+
+        return [
+            'ids' => $ids,
+            'items' => $items,
         ];
     }
 

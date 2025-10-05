@@ -6,6 +6,26 @@
 - Select or upload an image (medium size is used on the front end). Remove the image with “Rimuovi”.
 - Images are saved as attachment IDs in `_fp_addons` and lazy-loaded on the widget and listing cards.
 
+## Experience gallery
+- Within the **Dettagli** tab expand the **Galleria immagini** panel.
+- Click **Seleziona immagini** to open the media modal; multi-select uploads are supported.
+- Drag thumbnails to reorder the gallery, use the ✕ control on each tile to remove, or click **Rimuovi tutte** to clear the selection.
+- The stored IDs feed the hero carousel on `[fp_exp_page]` and the Elementor Experience Page widget.
+
+## Language badges in the editor
+- Still in **Dettagli**, use the checkbox grid under **Lingue disponibili** to mark the languages spoken during the experience.
+- Add missing languages by typing comma-separated values into **Aggiungi nuove lingue**; terms are created and auto-selected on save.
+- A live preview shows the resulting badges (flag + label) exactly as they appear on the hero card and booking widget.
+
+## Badge library (Settings → Showcase)
+- Navigate to **FP Experiences → Settings → Showcase** and scroll to **Experience badges**.
+- Edit the preset labels/descriptions or add new rows for organisation-specific highlights.
+- The configured library powers the badge selector on the experience form and the public template badges.
+
+## Section icon branding
+- Visit **Settings → Branding** and adjust **Section icon background** and **Section icon color** to match your palette.
+- Colours cascade through the CSS variable system and apply to every Font Awesome-based section icon on the front end.
+
 ## Recurring slots & time sets
 - Go to **Calendario & Slot → Ricorrenze** inside an experience.
 - Define the RRULE (frequency, interval, exclusions) and pick the **Time set** chips that map to the recurrence.

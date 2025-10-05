@@ -113,6 +113,30 @@ $hero_fact_badges = array_values(array_filter(
     $badges,
     static fn ($badge) => ! isset($badge['icon']) || 'language' !== $badge['icon']
 ));
+$hero_language_badges = isset($experience['language_badges']) && is_array($experience['language_badges'])
+    ? array_values(array_filter(array_map(
+        static function ($language) {
+            if (! is_array($language)) {
+                return null;
+            }
+
+            $label = isset($language['label']) ? trim((string) $language['label']) : '';
+            $sprite = isset($language['sprite']) ? trim((string) $language['sprite']) : '';
+            $aria_label = isset($language['aria_label']) ? (string) $language['aria_label'] : $label;
+
+            if ('' === $label || '' === $sprite) {
+                return null;
+            }
+
+            return [
+                'label' => $label,
+                'sprite' => $sprite,
+                'aria_label' => $aria_label,
+            ];
+        },
+        $experience['language_badges']
+    )))
+    : [];
 $hero_highlights = array_slice($highlights, 0, 3);
 $experience_short_description = isset($experience['short_description']) ? (string) $experience['short_description'] : '';
 $experience_summary = isset($experience['summary']) ? (string) $experience['summary'] : '';
@@ -168,43 +192,47 @@ $normalize_overview_list = static function ($values): array {
 
     return array_values(array_unique($normalized));
 };
-$overview_term_icon = static function (string $term): string {
+$fontawesome_icon = static function (string $icon, string $style = 'fa-solid'): string {
+    return sprintf('<span class="%s %s" aria-hidden="true"></span>', $style, $icon);
+};
+
+$overview_term_icon = static function (string $term) use ($fontawesome_icon): string {
     switch ($term) {
         case 'themes':
-            return '<svg viewBox="0 0 24 24" role="img" aria-hidden="true" focusable="false"><path fill="currentColor" d="M3 5.5A2.5 2.5 0 0 1 5.5 3h6.59a2.5 2.5 0 0 1 1.77.73l6.41 6.41a2.5 2.5 0 0 1 0 3.54l-6.59 6.59a2.12 2.12 0 0 1-3 0L3.73 13.87A2.5 2.5 0 0 1 3 12.1Zm6.75 1.75a1.75 1.75 0 1 0 1.75-1.75 1.75 1.75 0 0 0-1.75 1.75Z"/></svg>';
+            return $fontawesome_icon('fa-shapes');
         case 'languages':
-            return '<svg viewBox="0 0 24 24" role="img" aria-hidden="true" focusable="false"><path fill="currentColor" d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Zm5.33 9h-1.83a19.46 19.46 0 0 0-.87-4 8 8 0 0 1 2.7 4ZM12 4a17.43 17.43 0 0 1 2.44 7H9.56A17.43 17.43 0 0 1 12 4ZM8.37 6.91a19.46 19.46 0 0 0-.87 4H5.67a8 8 0 0 1 2.7-4ZM4 12h3.5a19.43 19.43 0 0 0 .88 4H6.33A8 8 0 0 1 4 12Zm2.37 6h2.64a21.13 21.13 0 0 0 1.87 3.38A8 8 0 0 1 6.37 18Zm5.63 3a19.1 19.1 0 0 1-2.55-5h5.1A19.1 19.1 0 0 1 12 21Zm2.69.38A21.13 21.13 0 0 0 15 18h2.64a8 8 0 0 1-3 3.38ZM17.67 16H15.62a19.43 19.43 0 0 0 .88-4H20a8 8 0 0 1-2.33 4Z"/></svg>';
+            return $fontawesome_icon('fa-language');
         case 'duration':
-            return '<svg viewBox="0 0 24 24" role="img" aria-hidden="true" focusable="false"><path fill="currentColor" d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Zm1 11.59L16.12 16l-1.41 1.41L11.88 14V7h2.12Z"/></svg>';
+            return $fontawesome_icon('fa-clock');
         case 'experience':
-            return '<svg viewBox="0 0 24 24" role="img" aria-hidden="true" focusable="false"><path fill="currentColor" d="M12 2a10 10 0 0 0-9.54 7H2a1 1 0 0 0-1 .76l-.94 4.22A1 1 0 0 0 1 15h1.21A10 10 0 1 0 12 2Zm0 2a8 8 0 0 1 7.73 6H4.27A8 8 0 0 1 12 4Zm0 16a8 8 0 0 1-7.73-6h15.46A8 8 0 0 1 12 20Zm0-10.59L13.41 12 12 13.41 10.59 12Zm0 4L13.41 16 12 17.41 10.59 16Z"/></svg>';
+            return $fontawesome_icon('fa-location-dot');
         default:
-            return '<svg viewBox="0 0 24 24" role="img" aria-hidden="true" focusable="false"><path fill="currentColor" d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Zm0 3a7 7 0 1 1-7 7 7 7 0 0 1 7-7Z"/></svg>';
+            return $fontawesome_icon('fa-circle');
     }
 };
 
-$get_section_icon = static function (string $section) use ($overview_term_icon): string {
+$get_section_icon = static function (string $section) use ($overview_term_icon, $fontawesome_icon): string {
     switch ($section) {
         case 'overview':
-            return $overview_term_icon('experience');
+            return $fontawesome_icon('fa-circle-info');
         case 'gallery':
-            return '<svg viewBox="0 0 24 24" role="img" aria-hidden="true" focusable="false"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m7 14 3-3 3.25 4.34 2.25-2.34 4.5 5H4Z"/><circle cx="9" cy="10" r="2"/></svg>';
+            return $fontawesome_icon('fa-images');
         case 'gift':
-            return '<svg viewBox="0 0 24 24" role="img" aria-hidden="true" focusable="false"><path d="M20 7h-2.35A2.65 2.65 0 0 0 15 3.5a2.5 2.5 0 0 0-3 2.4 2.5 2.5 0 0 0-3-2.4A2.65 2.65 0 0 0 6.35 7H4a2 2 0 0 0-2 2v3h20V9a2 2 0 0 0-2-2Zm-9-1.5a1.5 1.5 0 0 1 3 0V7h-3Zm11 7.5H2v7a2 2 0 0 0 2 2h6v-7h4v7h6a2 2 0 0 0 2-2Z"/></svg>';
+            return $fontawesome_icon('fa-gift');
         case 'highlights':
-            return '<svg viewBox="0 0 24 24" role="img" aria-hidden="true" focusable="false"><path d="M12 3.5 14.59 9l6.07.46-4.67 3.96 1.44 5.91L12 16.86l-5.43 3.51 1.44-5.91L3.34 9.46 9.41 9Z"/></svg>';
+            return $fontawesome_icon('fa-star');
         case 'inclusions':
-            return '<svg viewBox="0 0 24 24" role="img" aria-hidden="true" focusable="false"><path d="M9 2h6l1.5 1.5H18a3 3 0 0 1 3 3v12a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V6a3 3 0 0 1 3-3h1.5Zm3 12.75 3.53-3.53-1.41-1.41L12 12.47l-1.12-1.12-1.41 1.41Z"/></svg>';
+            return $fontawesome_icon('fa-list-check');
         case 'meeting':
-            return '<svg viewBox="0 0 24 24" role="img" aria-hidden="true" focusable="false"><path d="M12 2a7 7 0 0 1 7 7c0 4.2-4.27 9.86-6.12 12a1.1 1.1 0 0 1-1.76 0C9.27 18.86 5 13.2 5 9a7 7 0 0 1 7-7Zm0 4a3 3 0 1 0 3 3 3 3 0 0 0-3-3Z"/></svg>';
+            return $fontawesome_icon('fa-map-pin');
         case 'extras':
-            return '<svg viewBox="0 0 24 24" role="img" aria-hidden="true" focusable="false"><path d="M12 2a7 7 0 0 1 7 7c0 3.4-2.25 6.66-4.31 9.3L12 22l-2.69-3.7C7.25 15.66 5 12.4 5 9a7 7 0 0 1 7-7Zm0 5a1.25 1.25 0 1 0 1.25 1.25A1.25 1.25 0 0 0 12 7Zm-2 8h4v-1a2 2 0 0 0-4 0Z"/></svg>';
+            return $fontawesome_icon('fa-heart');
         case 'faq':
-            return '<svg viewBox="0 0 24 24" role="img" aria-hidden="true" focusable="false"><path d="M5 3h14a2 2 0 0 1 2 2v11l-4-3H7a2 2 0 0 1-2-2Z"/><path d="M11 9a1 1 0 0 1 2 0c0 1.5-2 1.38-2 3h2c0-.87 2-1 2-3a3 3 0 1 0-6 0h2Zm1 6a1.25 1.25 0 1 0 1.25 1.25A1.25 1.25 0 0 0 12 15Z"/></svg>';
+            return $fontawesome_icon('fa-circle-question');
         case 'reviews':
-            return '<svg viewBox="0 0 24 24" role="img" aria-hidden="true" focusable="false"><path d="M4 4h16a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-4l-4 4-4-4H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Zm4.75 5.5 1.8 1.8 3.7-3.7L16.66 9l-4.1 4.1a1 1 0 0 1-1.42 0L7.84 9.8Z"/></svg>';
+            return $fontawesome_icon('fa-comments');
         default:
-            return '<svg viewBox="0 0 24 24" role="img" aria-hidden="true" focusable="false"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Zm0 5a1.5 1.5 0 0 1 1.5 1.5c0 1.39-1.5 1.5-1.5 3.5h1.5c0-1.16 1.5-1.33 1.5-3.5A3 3 0 1 0 9 8.5h1.5A1.5 1.5 0 0 1 12 7Zm0 9a1.25 1.25 0 1 0 1.25 1.25A1.25 1.25 0 0 0 12 16Z"/></svg>';
+            return $fontawesome_icon('fa-circle-question');
     }
 };
 
@@ -408,8 +436,30 @@ $sticky_price_display = '' !== $price_from_display ? $format_currency($price_fro
                                     <?php endif; ?>
                                 </div>
 
-                                <?php if (! empty($hero_fact_badges)) : ?>
+                                <?php if (! empty($hero_fact_badges) || ! empty($hero_language_badges)) : ?>
                                     <ul class="fp-exp-hero__facts" role="list">
+                                        <?php if (! empty($hero_language_badges)) : ?>
+                                            <li class="fp-exp-hero__fact fp-exp-hero__fact--languages">
+                                                <span class="fp-exp-hero__fact-icon" aria-hidden="true">
+                                                    <svg viewBox="0 0 24 24" role="img" aria-hidden="true"><path fill="currentColor" d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Zm5.33 9h-1.83a19.46 19.46 0 0 0-.87-4 8 8 0 0 1 2.7 4ZM12 4a17.43 17.43 0 0 1 2.44 7H9.56A17.43 17.43 0 0 1 12 4ZM8.37 6.91a19.46 19.46 0 0 0-.87 4H5.67a8 8 0 0 1 2.7-4ZM4 12h3.5a19.43 19.43 0 0 0 .88 4H6.33A8 8 0 0 1 4 12Zm2.37 6h2.64a21.13 21.13 0 0 0 1.87 3.38A8 8 0 0 1 6.37 18Zm5.63 3a19.1 19.1 0 0 1-2.55-5h5.1A19.1 19.1 0 0 1 12 21Zm2.69.38A21.13 21.13 0 0 0 15 18h2.64a8 8 0 0 1-3 3.38ZM17.67 16H15.62a19.43 19.43 0 0 0 .88-4H20a8 8 0 0 1-2.33 4Z"/></svg>
+                                                </span>
+                                                <div class="fp-exp-hero__fact-content">
+                                                    <span class="fp-exp-hero__fact-label"><?php esc_html_e('Available languages', 'fp-experiences'); ?></span>
+                                                    <ul class="fp-exp-hero__language-list" role="list">
+                                                        <?php foreach ($hero_language_badges as $language) : ?>
+                                                            <li class="fp-exp-hero__language">
+                                                                <span class="fp-exp-hero__language-flag" aria-hidden="true">
+                                                                    <svg viewBox="0 0 60 40" role="img" aria-hidden="true" focusable="false">
+                                                                        <use xlink:href="<?php echo esc_attr($language_sprite . '#' . $language['sprite']); ?>" href="<?php echo esc_attr($language_sprite . '#' . $language['sprite']); ?>"></use>
+                                                                    </svg>
+                                                                </span>
+                                                                <span class="fp-exp-hero__language-label"><?php echo esc_html($language['label']); ?></span>
+                                                            </li>
+                                                        <?php endforeach; ?>
+                                                    </ul>
+                                                </div>
+                                            </li>
+                                        <?php endif; ?>
                                         <?php foreach ($hero_fact_badges as $badge) : ?>
                                             <li class="fp-exp-hero__fact">
                                                 <span class="fp-exp-hero__fact-icon" aria-hidden="true">
@@ -848,9 +898,9 @@ $sticky_price_display = '' !== $price_from_display ? $format_currency($price_fro
                             <?php if (! empty($what_to_bring)) : ?>
                                 <article class="fp-exp-essentials__card">
                                     <h3 class="fp-exp-essentials__title"><?php esc_html_e('What to bring', 'fp-experiences'); ?></h3>
-                                    <ul class="fp-exp-essentials__list" role="list">
+                                    <ul class="fp-exp-essentials__list">
                                         <?php foreach ($what_to_bring as $item) : ?>
-                                            <li class="fp-exp-essentials__item"><?php echo esc_html($item); ?></li>
+                                            <li><?php echo esc_html($item); ?></li>
                                         <?php endforeach; ?>
                                     </ul>
                                 </article>
@@ -860,9 +910,9 @@ $sticky_price_display = '' !== $price_from_display ? $format_currency($price_fro
                                 <article class="fp-exp-essentials__card">
                                     <h3 class="fp-exp-essentials__title"><?php esc_html_e('Notes', 'fp-experiences'); ?></h3>
                                     <?php if (is_array($notes)) : ?>
-                                        <ul class="fp-exp-essentials__list" role="list">
+                                        <ul class="fp-exp-essentials__list">
                                             <?php foreach ($notes as $note) : ?>
-                                                <li class="fp-exp-essentials__item"><?php echo esc_html($note); ?></li>
+                                                <li><?php echo esc_html($note); ?></li>
                                             <?php endforeach; ?>
                                         </ul>
                                     <?php else : ?>

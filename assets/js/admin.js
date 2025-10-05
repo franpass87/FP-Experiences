@@ -14,6 +14,22 @@
         return window.fpExpAdmin.strings[key] || '';
     }
 
+    function resolveAttachmentSource(data) {
+        if (!data) {
+            return { url: '', width: 0, height: 0 };
+        }
+
+        const sizes = data.sizes || {};
+        const preferred =
+            sizes.thumbnail || sizes.medium || sizes.medium_large || sizes.large || sizes.full || {};
+
+        return {
+            url: preferred.url || data.url || '',
+            width: preferred.width || data.width || 0,
+            height: preferred.height || data.height || 0,
+        };
+    }
+
     function initTabs(root) {
         const tabs = Array.from(root.querySelectorAll('.fp-exp-tab'));
         const panels = Array.from(root.querySelectorAll('.fp-exp-tab-panel'));
@@ -109,22 +125,6 @@
                 setButtonState(false);
             }
 
-            function resolveSource(data) {
-                if (!data) {
-                    return { url: '', width: 0, height: 0 };
-                }
-
-                const sizes = data.sizes || {};
-                const preferred = sizes.thumbnail || sizes.medium || sizes.medium_large || sizes.large || sizes.full;
-                const source = preferred || {};
-
-                return {
-                    url: source.url || data.url || '',
-                    width: source.width || data.width || 0,
-                    height: source.height || data.height || 0,
-                };
-            }
-
             function renderImage(attachment) {
                 if (!attachment) {
                     input.value = '';
@@ -132,7 +132,7 @@
                     return;
                 }
 
-                const source = resolveSource(attachment);
+                const source = resolveAttachmentSource(attachment);
                 if (!source.url) {
                     input.value = '';
                     renderPlaceholder();
@@ -217,6 +217,257 @@
         });
     }
 
+    function initGalleryControls(root) {
+        if (!root || !window.wp || !window.wp.media) {
+            return;
+        }
+
+        const controls = Array.from(root.querySelectorAll('[data-fp-gallery-control]'));
+
+        controls.forEach((control) => {
+            if (!(control instanceof HTMLElement) || control.dataset.fpGalleryBound === '1') {
+                return;
+            }
+
+            const input = control.querySelector('[data-fp-gallery-input]');
+            const list = control.querySelector('[data-fp-gallery-list]');
+            const template = control.querySelector('template[data-fp-gallery-item-template]');
+            const emptyMessage = control.querySelector('[data-fp-gallery-empty]');
+            const addButton = control.querySelector('[data-fp-gallery-add]');
+            const clearButton = control.querySelector('[data-fp-gallery-clear]');
+
+            if (
+                !(input instanceof HTMLInputElement) ||
+                !(list instanceof HTMLElement) ||
+                !(template instanceof HTMLTemplateElement) ||
+                !(addButton instanceof HTMLButtonElement) ||
+                !(clearButton instanceof HTMLButtonElement)
+            ) {
+                return;
+            }
+
+            control.dataset.fpGalleryBound = '1';
+
+            const labels = {
+                add: addButton.dataset.labelSelect || getString('selectImages') || addButton.textContent || 'Select images',
+                addMore: addButton.dataset.labelUpdate || getString('addImages') || addButton.textContent || 'Add images',
+                clear: clearButton.dataset.labelClear || getString('clearGallery') || clearButton.textContent || 'Remove all images',
+            };
+
+            function getItems() {
+                return Array.from(list.querySelectorAll('[data-fp-gallery-item]')).filter(
+                    (item) => item instanceof HTMLElement
+                );
+            }
+
+            function getIds() {
+                return getItems()
+                    .map((item) => Number.parseInt(item.dataset.id || '0', 10))
+                    .filter((id) => Number.isInteger(id) && id > 0);
+            }
+
+            function updateEmptyState() {
+                const hasItems = getItems().length > 0;
+                if (emptyMessage instanceof HTMLElement) {
+                    emptyMessage.hidden = hasItems;
+                }
+                addButton.textContent = hasItems ? labels.addMore : labels.add;
+                clearButton.hidden = !hasItems;
+                clearButton.textContent = labels.clear;
+            }
+
+            function serializeIds() {
+                const ids = getIds();
+                input.value = ids.join(',');
+                updateEmptyState();
+            }
+
+            function bindItem(item) {
+                const removeButton = item.querySelector('[data-fp-gallery-remove]');
+                if (removeButton instanceof HTMLButtonElement) {
+                    removeButton.addEventListener('click', (event) => {
+                        event.preventDefault();
+                        item.remove();
+                        serializeIds();
+                    });
+                }
+
+                const moveButtons = Array.from(item.querySelectorAll('[data-fp-gallery-move]'));
+                moveButtons.forEach((button) => {
+                    if (!(button instanceof HTMLButtonElement)) {
+                        return;
+                    }
+
+                    button.addEventListener('click', (event) => {
+                        event.preventDefault();
+                        const direction = button.dataset.fpGalleryMove || button.dataset.direction || '';
+                        if (direction === 'prev') {
+                            const prev = item.previousElementSibling;
+                            if (prev) {
+                                list.insertBefore(item, prev);
+                                serializeIds();
+                            }
+                        } else if (direction === 'next') {
+                            const next = item.nextElementSibling;
+                            if (next) {
+                                list.insertBefore(next, item);
+                                serializeIds();
+                            }
+                        }
+                    });
+                });
+            }
+
+            function populateItem(element, data) {
+                if (!(element instanceof HTMLElement)) {
+                    return;
+                }
+
+                const rawId = data && (data.id || data.ID || data.Id || data.value);
+                const id = Number.parseInt(rawId ? String(rawId) : '', 10) || 0;
+                element.dataset.id = id > 0 ? String(id) : '';
+
+                const placeholder = element.querySelector('[data-fp-gallery-placeholder]');
+                const image = element.querySelector('[data-fp-gallery-image]');
+                const source = data && data.url ? data : resolveAttachmentSource(data);
+
+                if (image instanceof HTMLImageElement) {
+                    if (source.url) {
+                        image.src = source.url;
+                        image.alt = data && (data.alt || data.title) ? String(data.alt || data.title) : '';
+                        image.hidden = false;
+                    } else {
+                        image.removeAttribute('src');
+                        image.alt = '';
+                        image.hidden = true;
+                    }
+                }
+
+                if (placeholder instanceof HTMLElement) {
+                    placeholder.hidden = Boolean(source.url);
+                }
+            }
+
+            function addItems(items) {
+                if (!Array.isArray(items) || !items.length) {
+                    return;
+                }
+
+                const existingIds = new Set(getIds());
+
+                items.forEach((itemData) => {
+                    const candidateId = Number.parseInt(
+                        itemData && (itemData.id || itemData.ID || itemData.Id || itemData.value) ?
+                            String(itemData.id || itemData.ID || itemData.Id || itemData.value) :
+                            '',
+                        10
+                    );
+                    if (!candidateId || existingIds.has(candidateId)) {
+                        return;
+                    }
+
+                    const fragment = template.content.cloneNode(true);
+                    const placeholderItem = fragment.querySelector('[data-fp-gallery-item]');
+                    if (!(placeholderItem instanceof HTMLElement)) {
+                        return;
+                    }
+
+                    list.appendChild(fragment);
+                    const appended = list.lastElementChild;
+                    if (!(appended instanceof HTMLElement)) {
+                        return;
+                    }
+
+                    const source = resolveAttachmentSource(itemData);
+                    populateItem(appended, {
+                        id: candidateId,
+                        url: source.url,
+                        alt: itemData && itemData.alt ? itemData.alt : itemData && itemData.title ? itemData.title : '',
+                    });
+                    bindItem(appended);
+                    existingIds.add(candidateId);
+                });
+
+                serializeIds();
+            }
+
+            getItems().forEach((item) => {
+                bindItem(item);
+            });
+
+            serializeIds();
+
+            clearButton.addEventListener('click', (event) => {
+                event.preventDefault();
+                getItems().forEach((item) => item.remove());
+                serializeIds();
+            });
+
+            let frame;
+
+            addButton.addEventListener('click', (event) => {
+                event.preventDefault();
+
+                if (frame) {
+                    frame.open();
+                    return;
+                }
+
+                frame = window.wp.media({
+                    title: labels.add,
+                    multiple: true,
+                    library: { type: 'image' },
+                    button: { text: labels.addMore },
+                });
+
+                frame.on('open', () => {
+                    const selection = frame.state().get('selection');
+                    if (!selection || typeof selection.reset !== 'function') {
+                        return;
+                    }
+
+                    const ids = getIds();
+                    if (!ids.length) {
+                        return;
+                    }
+
+                    const attachments = ids
+                        .map((id) => {
+                            const attachment = window.wp.media.attachment(id);
+                            if (attachment) {
+                                attachment.fetch();
+                            }
+                            return attachment;
+                        })
+                        .filter((attachment) => attachment);
+
+                    selection.reset(attachments);
+                });
+
+                frame.on('select', () => {
+                    const selection = frame.state().get('selection');
+                    if (!selection || typeof selection.map !== 'function') {
+                        return;
+                    }
+
+                    const items = selection.map((attachment) => attachment.toJSON());
+                    addItems(
+                        items.map((itemData) => {
+                            const source = resolveAttachmentSource(itemData);
+                            return {
+                                id: itemData.id || itemData.ID,
+                                url: source.url,
+                                alt: itemData.alt || itemData.title || '',
+                            };
+                        })
+                    );
+                });
+
+                frame.open();
+            });
+        });
+    }
+
     function initRepeaters(root) {
         const repeaterNodes = Array.from(root.querySelectorAll('[data-repeater]'));
         repeaterNodes.forEach((repeater) => {
@@ -286,6 +537,7 @@
                 bindRemoveButtons(newNode);
                 itemsContainer.appendChild(newNode);
                 initMediaControls(newNode);
+                initGalleryControls(newNode);
                 initRecurrenceTimeSets(newNode);
                 repeater.dataset.repeaterNextIndex = String(nextIndex + 1);
                 const focusTarget = newNode.querySelector('input, select, textarea');
@@ -1548,6 +1800,7 @@
             initTabs(root);
             initRepeaters(root);
             initMediaControls(root);
+            initGalleryControls(root);
             initRecurrence(root);
             initFormValidation(root);
             initCognitiveBiasLimiter(root);

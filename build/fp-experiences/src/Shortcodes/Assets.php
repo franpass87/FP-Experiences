@@ -85,7 +85,19 @@ final class Assets
         $front_js = trailingslashit(FP_EXP_PLUGIN_URL) . 'assets/js/front.js';
         $checkout_js = trailingslashit(FP_EXP_PLUGIN_URL) . 'assets/js/checkout.js';
 
-        wp_register_style('fp-exp-front', $style_url, [], Helpers::asset_version('assets/css/front.css'));
+        wp_register_style(
+            'fp-exp-fontawesome',
+            'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css',
+            [],
+            '6.5.2'
+        );
+
+        wp_register_style(
+            'fp-exp-front',
+            $style_url,
+            ['fp-exp-fontawesome'],
+            Helpers::asset_version('assets/css/front.css')
+        );
 
         wp_register_script(
             'fp-exp-front',

@@ -2053,10 +2053,12 @@
                 refreshSummary();
             }
 
-            if (target.classList.contains('fp-exp-quantity__control')) {
-                const action = target.getAttribute('data-action');
-                const input = target.parentElement
-                    ? target.parentElement.querySelector('.fp-exp-quantity__input')
+            const quantityControl = target.closest('.fp-exp-quantity__control');
+
+            if (quantityControl) {
+                const action = quantityControl.getAttribute('data-action');
+                const input = quantityControl.parentElement
+                    ? quantityControl.parentElement.querySelector('.fp-exp-quantity__input')
                     : null;
                 if (!(input instanceof HTMLInputElement)) {
                     return;
