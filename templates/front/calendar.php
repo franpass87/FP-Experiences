@@ -17,7 +17,7 @@ $container_class = 'fp-exp fp-exp-calendar-only ' . esc_attr($scope_class);
 ?>
 <div class="<?php echo $container_class; ?>" data-fp-shortcode="calendar" data-experience="<?php echo esc_attr((string) $experience['id']); ?>">
     <header class="fp-exp-calendar-only__header">
-        <h2 class="fp-exp-calendar-only__title"><?php echo esc_html(sprintf(esc_html__('%s availability', 'fp-experiences'), $experience['title'])); ?></h2>
+        <h2 class="fp-exp-calendar-only__title"><?php echo esc_html(sprintf(esc_html__('Disponibilità di %s', 'fp-experiences'), $experience['title'])); ?></h2>
     </header>
     <div class="fp-exp-calendar-only__months">
         <?php foreach ($months as $month_key => $month_data) : ?>
@@ -28,7 +28,7 @@ $container_class = 'fp-exp fp-exp-calendar-only ' . esc_attr($scope_class);
                         <li class="fp-exp-calendar-only__day" data-date="<?php echo esc_attr($day); ?>">
                             <span class="fp-exp-calendar-only__day-label"><?php echo esc_html($day); ?></span>
                             <span class="fp-exp-calendar-only__day-count">
-                                <?php echo esc_html(sprintf(esc_html__('%d slots', 'fp-experiences'), count($slots))); ?>
+                                <?php echo esc_html(sprintf(esc_html__('%d fasce', 'fp-experiences'), count($slots))); ?>
                             </span>
                             <?php if (! empty($slots)) : ?>
                                 <ul class="fp-exp-calendar-only__slots">
@@ -36,7 +36,7 @@ $container_class = 'fp-exp fp-exp-calendar-only ' . esc_attr($scope_class);
                                         <li class="fp-exp-calendar-only__slot" data-slot-id="<?php echo esc_attr((string) $slot['id']); ?>">
                                             <time datetime="<?php echo esc_attr($slot['start_iso']); ?>"><?php echo esc_html($slot['time']); ?></time>
                                             <span class="fp-exp-calendar-only__slot-capacity" data-remaining="<?php echo esc_attr((string) $slot['remaining']); ?>">
-                                                <?php echo esc_html(sprintf(esc_html__('%d places left', 'fp-experiences'), (int) $slot['remaining'])); ?>
+                                                <?php echo esc_html(sprintf(esc_html__('%d posti rimasti', 'fp-experiences'), (int) $slot['remaining'])); ?>
                                             </span>
                                         </li>
                                     <?php endforeach; ?>

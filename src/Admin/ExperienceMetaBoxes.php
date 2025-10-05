@@ -356,7 +356,7 @@ final class ExperienceMetaBoxes
                     <div>
                         <span class="fp-exp-field__label">
                             <?php esc_html_e('Lingue disponibili', 'fp-experiences'); ?>
-                            <?php $this->render_tooltip('fp-exp-language-badge-help', esc_html__('Seleziona le lingue parlate durante l'esperienza: verranno mostrate nei badge pubblici e nel widget di prenotazione.', 'fp-experiences')); ?>
+                            <?php $this->render_tooltip('fp-exp-language-badge-help', esc_html__("Seleziona le lingue parlate durante l'esperienza: verranno mostrate nei badge pubblici e nel widget di prenotazione.", 'fp-experiences')); ?>
                         </span>
                         <?php if (! empty($language_choices)) : ?>
                             <div class="fp-exp-checkbox-grid" aria-describedby="fp-exp-language-badge-help">

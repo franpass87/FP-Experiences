@@ -121,7 +121,7 @@ if ($duration_minutes > 0) {
     $minutes = $duration_minutes % 60;
     $duration_label = $hours > 0
         ? sprintf(esc_html__('%dh %02dm', 'fp-experiences'), $hours, $minutes)
-        : sprintf(esc_html__('%d minutes', 'fp-experiences'), $minutes);
+        : sprintf(esc_html__('%d minuti', 'fp-experiences'), $minutes);
 }
 
 $price_from_value = null;
@@ -385,7 +385,7 @@ $price_from_display = null !== $price_from_value && $price_from_value > 0
                                                     </svg>
                                                 </span>
                                             </button>
-                                            <input type="number" class="fp-exp-quantity__input" min="0" max="<?php echo esc_attr((string) ($ticket['cap'] ?? '')); ?>" value="0" aria-label="<?php echo esc_attr(sprintf(esc_html__('%s quantity', 'fp-experiences'), $ticket['label'])); ?>">
+                                            <input type="number" class="fp-exp-quantity__input" min="0" max="<?php echo esc_attr((string) ($ticket['cap'] ?? '')); ?>" value="0" aria-label="<?php echo esc_attr(sprintf(esc_html__('Quantità %s', 'fp-experiences'), $ticket['label'])); ?>">
                                             <button type="button" class="fp-exp-quantity__control" data-action="increase" aria-label="<?php echo esc_attr(sprintf(esc_html__('Aumenta %s', 'fp-experiences'), $ticket['label'])); ?>">
                                                 <span class="screen-reader-text"><?php echo esc_html(sprintf(esc_html__('Aumenta %s', 'fp-experiences'), $ticket['label'])); ?></span>
                                                 <span aria-hidden="true" class="fp-exp-quantity__icon">
