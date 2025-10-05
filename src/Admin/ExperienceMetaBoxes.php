@@ -570,7 +570,7 @@ final class ExperienceMetaBoxes
                             </button>
                         </div>
                     </div>
-                    <p class="fp-exp-field__description" id="fp-exp-gallery-help"><?php esc_html_e('Le immagini vengono mostrate nella galleria pubblica seguendo l'ordine impostato qui sopra.', 'fp-experiences'); ?></p>
+					<p class="fp-exp-field__description" id="fp-exp-gallery-help"><?php esc_html_e("Le immagini vengono mostrate nella galleria pubblica seguendo l'ordine impostato qui sopra.", 'fp-experiences'); ?></p>
                 </div>
 
                 <div class="fp-exp-field fp-exp-field--taxonomies">
@@ -646,7 +646,7 @@ final class ExperienceMetaBoxes
                             </template>
                             <p class="fp-exp-taxonomy-editor__actions"></p>
                         </div>
-                        <p class="fp-exp-field__description" id="fp-exp-theme-help"><?php esc_html_e('I temi compaiono nella panoramica dell'esperienza e negli elenchi filtrabili.', 'fp-experiences'); ?></p>
+						<p class="fp-exp-field__description" id="fp-exp-theme-help"><?php esc_html_e("I temi compaiono nella panoramica dell'esperienza e negli elenchi filtrabili.", 'fp-experiences'); ?></p>
                     </div>
 
                     <div class="fp-exp-field">
@@ -938,7 +938,7 @@ final class ExperienceMetaBoxes
                         <?php endif; ?>
                     <?php else : ?>
                         <p class="fp-exp-field__description" id="fp-exp-linked-page-help">
-                            <?php esc_html_e('La pagina viene generata automaticamente alla pubblicazione dell'esperienza.', 'fp-experiences'); ?>
+							<?php esc_html_e("La pagina viene generata automaticamente alla pubblicazione dell'esperienza.", 'fp-experiences'); ?>
                         </p>
                     <?php endif; ?>
                 </div>
@@ -1313,7 +1313,7 @@ final class ExperienceMetaBoxes
                 <legend><?php esc_html_e('Ricorrenza slot', 'fp-experiences'); ?></legend>
                 <div class="fp-exp-field">
                     <p class="fp-exp-field__description"><?php esc_html_e('Configura regole ricorrenti per popolare automaticamente il calendario senza toccare gli slot già esistenti.', 'fp-experiences'); ?></p>
-                    <p class="fp-exp-field__description fp-exp-field__description--muted"><?php esc_html_e('Suggerimento: compila gli step dall'alto verso il basso e usa il pulsante di anteprima per verificare il risultato prima di generare.', 'fp-experiences'); ?></p>
+							<p class="fp-exp-field__description fp-exp-field__description--muted"><?php esc_html_e("Suggerimento: compila gli step dall'alto verso il basso e usa il pulsante di anteprima per verificare il risultato prima di generare.", 'fp-experiences'); ?></p>
                 </div>
                 <div class="fp-exp-recurrence" data-recurrence-settings>
                     <div class="fp-exp-field fp-exp-field--columns">
@@ -1679,7 +1679,7 @@ final class ExperienceMetaBoxes
                         <?php $this->render_tooltip('fp-exp-schema-help', esc_html__('Incolla JSON-LD valido per sovrascrivere lo schema generato automaticamente.', 'fp-experiences')); ?>
                     </label>
                     <textarea id="fp-exp-schema-json" name="fp_exp_seo[schema_json]" rows="6" aria-describedby="fp-exp-schema-help" class="code"><?php echo esc_textarea($seo['schema_json']); ?></textarea>
-                    <p class="fp-exp-field__description" id="fp-exp-schema-help"><?php esc_html_e("Lascia vuoto per usare lo schema standard dell'esperienza.", 'fp-experiences'); ?></p>
+						<p class="fp-exp-field__description" id="fp-exp-schema-help"><?php esc_html_e("Lascia vuoto per usare lo schema standard dell\'esperienza.", 'fp-experiences'); ?></p>
                 </div>
             </fieldset>
         </section>
