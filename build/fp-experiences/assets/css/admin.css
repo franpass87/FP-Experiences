@@ -438,9 +438,9 @@ body.fp-exp-admin-shell #screen-meta-links {
 .fp-exp-radio-card {
     position: relative;
     display: grid;
-    gap: 6px;
+    gap: 4px;
     align-content: start;
-    padding: 18px;
+    padding: 14px 16px;
     border: 1px solid rgba(15, 23, 42, 0.05);
     border-radius: var(--fp-exp-admin-radius);
     background: linear-gradient(135deg, #ffffff 0%, rgba(249, 247, 243, 0.94) 100%);
