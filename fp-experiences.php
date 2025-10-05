@@ -139,8 +139,15 @@ register_deactivation_hook(__FILE__, [Activation::class, 'deactivate']);
 	try {
 		Plugin::instance()->boot();
 	} catch (\Throwable $e) {
-		$store_and_hook_notice('Errore in avvio FP Experiences: ' . ($e->getMessage() ?: get_class($e)), [
+		$message = 'Errore in avvio FP Experiences: ' . ($e->getMessage() ?: get_class($e));
+		$context = [
 			'exception' => get_class($e),
-		]);
+			'file' => method_exists($e, 'getFile') ? $e->getFile() : '',
+			'line' => method_exists($e, 'getLine') ? (string) $e->getLine() : '',
+		];
+		if (! empty($context['file']) && ! empty($context['line'])) {
+			$message .= ' in ' . $context['file'] . ':' . $context['line'];
+		}
+		$store_and_hook_notice($message, $context);
 	}
 })();
