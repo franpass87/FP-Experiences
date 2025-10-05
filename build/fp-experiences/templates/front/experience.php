@@ -176,10 +176,35 @@ $overview_term_icon = static function (string $term): string {
             return '<svg viewBox="0 0 24 24" role="img" aria-hidden="true" focusable="false"><path fill="currentColor" d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Zm5.33 9h-1.83a19.46 19.46 0 0 0-.87-4 8 8 0 0 1 2.7 4ZM12 4a17.43 17.43 0 0 1 2.44 7H9.56A17.43 17.43 0 0 1 12 4ZM8.37 6.91a19.46 19.46 0 0 0-.87 4H5.67a8 8 0 0 1 2.7-4ZM4 12h3.5a19.43 19.43 0 0 0 .88 4H6.33A8 8 0 0 1 4 12Zm2.37 6h2.64a21.13 21.13 0 0 0 1.87 3.38A8 8 0 0 1 6.37 18Zm5.63 3a19.1 19.1 0 0 1-2.55-5h5.1A19.1 19.1 0 0 1 12 21Zm2.69.38A21.13 21.13 0 0 0 15 18h2.64a8 8 0 0 1-3 3.38ZM17.67 16H15.62a19.43 19.43 0 0 0 .88-4H20a8 8 0 0 1-2.33 4Z"/></svg>';
         case 'duration':
             return '<svg viewBox="0 0 24 24" role="img" aria-hidden="true" focusable="false"><path fill="currentColor" d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Zm1 11.59L16.12 16l-1.41 1.41L11.88 14V7h2.12Z"/></svg>';
-        case 'family':
-            return '<svg viewBox="0 0 24 24" role="img" aria-hidden="true" focusable="false"><path fill="currentColor" d="M12 21.35 10.55 20c-4.2-3.8-7-6.3-7-9.5A4.5 4.5 0 0 1 8 6a4.49 4.49 0 0 1 4 2.35A4.49 4.49 0 0 1 16 6a4.5 4.5 0 0 1 4.5 4.5c0 3.2-2.8 5.7-7 9.5Z"/></svg>';
+        case 'experience':
+            return '<svg viewBox="0 0 24 24" role="img" aria-hidden="true" focusable="false"><path fill="currentColor" d="M12 2a10 10 0 0 0-9.54 7H2a1 1 0 0 0-1 .76l-.94 4.22A1 1 0 0 0 1 15h1.21A10 10 0 1 0 12 2Zm0 2a8 8 0 0 1 7.73 6H4.27A8 8 0 0 1 12 4Zm0 16a8 8 0 0 1-7.73-6h15.46A8 8 0 0 1 12 20Zm0-10.59L13.41 12 12 13.41 10.59 12Zm0 4L13.41 16 12 17.41 10.59 16Z"/></svg>';
         default:
             return '<svg viewBox="0 0 24 24" role="img" aria-hidden="true" focusable="false"><path fill="currentColor" d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Zm0 3a7 7 0 1 1-7 7 7 7 0 0 1 7-7Z"/></svg>';
+    }
+};
+
+$get_section_icon = static function (string $section) use ($overview_term_icon): string {
+    switch ($section) {
+        case 'overview':
+            return $overview_term_icon('experience');
+        case 'gallery':
+            return '<svg viewBox="0 0 24 24" role="img" aria-hidden="true" focusable="false"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m7 14 3-3 3.25 4.34 2.25-2.34 4.5 5H4Z"/><circle cx="9" cy="10" r="2"/></svg>';
+        case 'gift':
+            return '<svg viewBox="0 0 24 24" role="img" aria-hidden="true" focusable="false"><path d="M20 7h-2.35A2.65 2.65 0 0 0 15 3.5a2.5 2.5 0 0 0-3 2.4 2.5 2.5 0 0 0-3-2.4A2.65 2.65 0 0 0 6.35 7H4a2 2 0 0 0-2 2v3h20V9a2 2 0 0 0-2-2Zm-9-1.5a1.5 1.5 0 0 1 3 0V7h-3Zm11 7.5H2v7a2 2 0 0 0 2 2h6v-7h4v7h6a2 2 0 0 0 2-2Z"/></svg>';
+        case 'highlights':
+            return '<svg viewBox="0 0 24 24" role="img" aria-hidden="true" focusable="false"><path d="M12 3.5 14.59 9l6.07.46-4.67 3.96 1.44 5.91L12 16.86l-5.43 3.51 1.44-5.91L3.34 9.46 9.41 9Z"/></svg>';
+        case 'inclusions':
+            return '<svg viewBox="0 0 24 24" role="img" aria-hidden="true" focusable="false"><path d="M9 2h6l1.5 1.5H18a3 3 0 0 1 3 3v12a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V6a3 3 0 0 1 3-3h1.5Zm3 12.75 3.53-3.53-1.41-1.41L12 12.47l-1.12-1.12-1.41 1.41Z"/></svg>';
+        case 'meeting':
+            return '<svg viewBox="0 0 24 24" role="img" aria-hidden="true" focusable="false"><path d="M12 2a7 7 0 0 1 7 7c0 4.2-4.27 9.86-6.12 12a1.1 1.1 0 0 1-1.76 0C9.27 18.86 5 13.2 5 9a7 7 0 0 1 7-7Zm0 4a3 3 0 1 0 3 3 3 3 0 0 0-3-3Z"/></svg>';
+        case 'extras':
+            return '<svg viewBox="0 0 24 24" role="img" aria-hidden="true" focusable="false"><path d="M12 2a7 7 0 0 1 7 7c0 3.4-2.25 6.66-4.31 9.3L12 22l-2.69-3.7C7.25 15.66 5 12.4 5 9a7 7 0 0 1 7-7Zm0 5a1.25 1.25 0 1 0 1.25 1.25A1.25 1.25 0 0 0 12 7Zm-2 8h4v-1a2 2 0 0 0-4 0Z"/></svg>';
+        case 'faq':
+            return '<svg viewBox="0 0 24 24" role="img" aria-hidden="true" focusable="false"><path d="M5 3h14a2 2 0 0 1 2 2v11l-4-3H7a2 2 0 0 1-2-2Z"/><path d="M11 9a1 1 0 0 1 2 0c0 1.5-2 1.38-2 3h2c0-.87 2-1 2-3a3 3 0 1 0-6 0h2Zm1 6a1.25 1.25 0 1 0 1.25 1.25A1.25 1.25 0 0 0 12 15Z"/></svg>';
+        case 'reviews':
+            return '<svg viewBox="0 0 24 24" role="img" aria-hidden="true" focusable="false"><path d="M4 4h16a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-4l-4 4-4-4H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Zm4.75 5.5 1.8 1.8 3.7-3.7L16.66 9l-4.1 4.1a1 1 0 0 1-1.42 0L7.84 9.8Z"/></svg>';
+        default:
+            return '<svg viewBox="0 0 24 24" role="img" aria-hidden="true" focusable="false"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Zm0 5a1.5 1.5 0 0 1 1.5 1.5c0 1.39-1.5 1.5-1.5 3.5h1.5c0-1.16 1.5-1.33 1.5-3.5A3 3 0 1 0 9 8.5h1.5A1.5 1.5 0 0 1 12 7Zm0 9a1.25 1.25 0 1 0 1.25 1.25A1.25 1.25 0 0 0 12 16Z"/></svg>';
     }
 };
 
@@ -225,13 +250,34 @@ $overview_short_description = isset($overview['short_description']) ? (string) $
 $overview_themes = $normalize_overview_list($overview['themes'] ?? []);
 $overview_language_terms = $normalize_overview_list($overview['language_terms'] ?? []);
 $overview_duration_terms = $normalize_overview_list($overview['duration_terms'] ?? []);
-$overview_family_terms = $normalize_overview_list($overview['family_terms'] ?? []);
-$overview_family_friendly = ! empty($overview['family_friendly']);
+$overview_experience_badges = [];
+if (isset($overview['experience_badges']) && is_array($overview['experience_badges'])) {
+    foreach ($overview['experience_badges'] as $badge) {
+        if (! is_array($badge)) {
+            continue;
+        }
+
+        $label = isset($badge['label']) ? (string) $badge['label'] : '';
+        if ('' === $label) {
+            continue;
+        }
+
+        $icon = isset($badge['icon']) ? (string) $badge['icon'] : '';
+        $description = isset($badge['description']) ? (string) $badge['description'] : '';
+        $id = isset($badge['id']) ? (string) $badge['id'] : '';
+
+        $overview_experience_badges[] = [
+            'label' => $label,
+            'icon' => $icon,
+            'description' => $description,
+            'id' => $id,
+        ];
+    }
+}
 $has_overview_detail_lists = ! empty($overview_themes)
     || ! empty($overview_language_terms)
     || ! empty($overview_duration_terms)
-    || ! empty($overview_family_terms)
-    || $overview_family_friendly;
+    || ! empty($overview_experience_badges);
 $has_overview_details = '' !== $overview_short_description || $has_overview_detail_lists;
 $overview_has_content = isset($overview_has_content) ? (bool) $overview_has_content : null;
 
@@ -370,7 +416,7 @@ $sticky_price_display = '' !== $price_from_display ? $format_currency($price_fro
                                                     <?php if ('clock' === ($badge['icon'] ?? '')) : ?>
                                                         <svg viewBox="0 0 24 24" role="img" aria-hidden="true"><path fill="currentColor" d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Zm1 10.59 2.12 2.12-1.41 1.41-2.83-2.83V7h2.12Z"/></svg>
                                                     <?php else : ?>
-                                                        <svg viewBox="0 0 24 24" role="img" aria-hidden="true"><path fill="currentColor" d="M12 12.88 9.17 10H5a3 3 0 0 0-3 3v7h6v-4h2v4h6v-7a3 3 0 0 0-3-3h-1.17Zm9-2.88a4 4 0 1 0-4-4 4 4 0 0 0 4 4Z"/></svg>
+                                                        <?php echo \FP_Exp\Utils\Helpers::experience_badge_icon_svg((string) ($badge['icon'] ?? '')); ?>
                                                     <?php endif; ?>
                                                 </span>
                                                 <span class="fp-exp-hero__fact-text"><?php echo esc_html((string) ($badge['label'] ?? '')); ?></span>
@@ -388,31 +434,13 @@ $sticky_price_display = '' !== $price_from_display ? $format_currency($price_fro
 
     <div class="fp-grid fp-exp-page__layout" data-fp-page>
         <main class="fp-main fp-exp-page__main">
-            <?php if ($gift_enabled) : ?>
-                <section class="fp-exp-section fp-exp-gift" id="fp-exp-hero-gift" data-fp-section="hero-gift">
-                    <div class="fp-exp-gift__body">
-                        <div class="fp-exp-gift__content">
-                            <span class="fp-exp-gift__eyebrow"><?php esc_html_e('Regali', 'fp-experiences'); ?></span>
-                            <h2 class="fp-exp-gift__title fp-exp-section__title"><?php esc_html_e('Gift this experience', 'fp-experiences'); ?></h2>
-                            <p class="fp-exp-gift__description"><?php esc_html_e('Acquista un voucher e invialo con un messaggio personalizzato in pochi clic.', 'fp-experiences'); ?></p>
-                        </div>
-                        <button
-                            type="button"
-                            class="fp-exp-button fp-exp-button--secondary"
-                            data-fp-gift-toggle
-                            aria-controls="fp-exp-gift"
-                            aria-expanded="false"
-                        >
-                            <?php esc_html_e('Gift this experience', 'fp-experiences'); ?>
-                        </button>
-                    </div>
-                </section>
-            <?php endif; ?>
-
             <?php if ($has_overview) : ?>
                 <section class="fp-exp-section fp-exp-overview" id="fp-exp-section-overview" data-fp-section="overview">
                     <header class="fp-exp-section__header fp-exp-overview__header">
-                        <h2 class="fp-exp-section__title"><?php esc_html_e('Perché prenotare con noi', 'fp-experiences'); ?></h2>
+                        <div class="fp-exp-section__heading">
+                            <span class="fp-exp-section__icon" aria-hidden="true"><?php echo $get_section_icon('overview'); ?></span>
+                            <h2 class="fp-exp-section__title"><?php esc_html_e('Perché prenotare con noi', 'fp-experiences'); ?></h2>
+                        </div>
                     </header>
 
                     <?php if ($has_overview_details) : ?>
@@ -474,22 +502,35 @@ $sticky_price_display = '' !== $price_from_display ? $format_currency($price_fro
                                         </div>
                                     <?php endif; ?>
 
-                                    <?php if (! empty($overview_family_terms) || $overview_family_friendly) : ?>
+                                    <?php if (! empty($overview_experience_badges)) : ?>
                                         <div class="fp-exp-overview__item">
                                             <dt class="fp-exp-overview__term">
-                                                <span class="fp-exp-overview__term-icon" aria-hidden="true"><?php echo $overview_term_icon('family'); ?></span>
-                                                <span class="fp-exp-overview__term-label"><?php esc_html_e('Family friendly', 'fp-experiences'); ?></span>
+                                                <span class="fp-exp-overview__term-icon" aria-hidden="true"><?php echo $overview_term_icon('experience'); ?></span>
+                                                <span class="fp-exp-overview__term-label"><?php esc_html_e('Badge esperienza', 'fp-experiences'); ?></span>
                                             </dt>
                                             <dd class="fp-exp-overview__definition">
-                                                <?php if (! empty($overview_family_terms)) : ?>
-                                                    <ul class="fp-exp-overview__list" role="list">
-                                                        <?php foreach ($overview_family_terms as $family_term) : ?>
-                                                            <li class="fp-exp-overview__list-item"><?php echo esc_html($family_term); ?></li>
-                                                        <?php endforeach; ?>
-                                                    </ul>
-                                                <?php else : ?>
-                                                    <span class="fp-exp-overview__value"><?php echo esc_html_x('Yes', 'family friendly indicator', 'fp-experiences'); ?></span>
-                                                <?php endif; ?>
+                                                <ul class="fp-exp-overview__list" role="list">
+                                                    <?php foreach ($overview_experience_badges as $badge) :
+                                                        $badge_label = isset($badge['label']) ? (string) $badge['label'] : '';
+                                                        if ('' === $badge_label) {
+                                                            continue;
+                                                        }
+
+                                                        $badge_icon_name = isset($badge['icon']) ? (string) $badge['icon'] : '';
+                                                        $badge_description = isset($badge['description']) ? (string) $badge['description'] : '';
+                                                        $badge_icon_svg = \FP_Exp\Utils\Helpers::experience_badge_icon_svg($badge_icon_name);
+                                                        ?>
+                                                        <li class="fp-exp-overview__list-item fp-exp-overview__list-item--with-icon">
+                                                            <span class="fp-exp-overview__badge-icon" aria-hidden="true"><?php echo $badge_icon_svg; ?></span>
+                                                            <span class="fp-exp-overview__list-body">
+                                                                <span class="fp-exp-overview__list-text"><?php echo esc_html($badge_label); ?></span>
+                                                                <?php if ('' !== $badge_description) : ?>
+                                                                    <span class="fp-exp-overview__list-hint"><?php echo esc_html($badge_description); ?></span>
+                                                                <?php endif; ?>
+                                                            </span>
+                                                        </li>
+                                                    <?php endforeach; ?>
+                                                </ul>
                                             </dd>
                                         </div>
                                     <?php endif; ?>
@@ -540,7 +581,10 @@ $sticky_price_display = '' !== $price_from_display ? $format_currency($price_fro
                 <section class="fp-exp-section fp-exp-gallery" id="fp-exp-section-gallery" data-fp-section="gallery">
                     <header class="fp-exp-section__header">
                         <span class="fp-exp-section__eyebrow"><?php esc_html_e('Gallery', 'fp-experiences'); ?></span>
-                        <h2 class="fp-exp-section__title"><?php esc_html_e('A glimpse of the experience', 'fp-experiences'); ?></h2>
+                        <div class="fp-exp-section__heading">
+                            <span class="fp-exp-section__icon" aria-hidden="true"><?php echo $get_section_icon('gallery'); ?></span>
+                            <h2 class="fp-exp-section__title"><?php esc_html_e('A glimpse of the experience', 'fp-experiences'); ?></h2>
+                        </div>
                     </header>
                     <div class="fp-exp-gallery__track" role="list">
                         <?php foreach ($gallery_items as $index => $image) :
@@ -581,88 +625,133 @@ $sticky_price_display = '' !== $price_from_display ? $format_currency($price_fro
             <?php endif; ?>
 
             <?php if ($gift_enabled) : ?>
-                <section
-                    class="fp-exp-section fp-gift"
+                <section class="fp-exp-section fp-exp-gift" id="fp-exp-hero-gift" data-fp-section="hero-gift">
+                    <div class="fp-exp-gift__body">
+                        <div class="fp-exp-gift__content">
+                            <span class="fp-exp-gift__eyebrow"><?php esc_html_e('Regali', 'fp-experiences'); ?></span>
+                            <div class="fp-exp-section__heading">
+                                <span class="fp-exp-section__icon" aria-hidden="true"><?php echo $get_section_icon('gift'); ?></span>
+                                <h2 class="fp-exp-gift__title fp-exp-section__title"><?php esc_html_e('Gift this experience', 'fp-experiences'); ?></h2>
+                            </div>
+                            <p class="fp-exp-gift__description"><?php esc_html_e('Acquista un voucher e invialo con un messaggio personalizzato in pochi clic.', 'fp-experiences'); ?></p>
+                        </div>
+                        <button
+                            type="button"
+                            class="fp-exp-button fp-exp-button--secondary"
+                            data-fp-gift-toggle
+                            aria-controls="fp-exp-gift"
+                            aria-haspopup="dialog"
+                            aria-expanded="false"
+                        >
+                            <?php esc_html_e('Gift this experience', 'fp-experiences'); ?>
+                        </button>
+                    </div>
+                </section>
+            <?php endif; ?>
+
+            <?php if ($gift_enabled) : ?>
+                <div
+                    class="fp-gift-modal"
                     id="fp-exp-gift"
                     data-fp-gift
                     data-fp-gift-config="<?php echo esc_attr(wp_json_encode($gift_config)); ?>"
                     aria-hidden="true"
                     hidden
                 >
-                    <div class="fp-gift__inner">
-                        <h2 class="fp-gift__title"><?php esc_html_e('Gift this experience', 'fp-experiences'); ?></h2>
-                        <p class="fp-gift__intro"><?php esc_html_e('Purchase a voucher, personalise a message, and send it via email in a few clicks.', 'fp-experiences'); ?></p>
-                        <div class="fp-gift__feedback" data-fp-gift-feedback aria-live="polite" hidden></div>
-                        <form class="fp-gift__form" data-fp-gift-form novalidate>
-                            <div class="fp-gift__grid">
-                                <div class="fp-gift__field">
-                                    <label for="fp-gift-purchaser-name"><?php esc_html_e('Your name', 'fp-experiences'); ?></label>
-                                    <input type="text" id="fp-gift-purchaser-name" name="purchaser[name]" required />
-                                </div>
-                                <div class="fp-gift__field">
-                                    <label for="fp-gift-purchaser-email"><?php esc_html_e('Your email', 'fp-experiences'); ?></label>
-                                    <input type="email" id="fp-gift-purchaser-email" name="purchaser[email]" required />
-                                </div>
-                                <div class="fp-gift__field">
-                                    <label for="fp-gift-recipient-name"><?php esc_html_e('Recipient name', 'fp-experiences'); ?></label>
-                                    <input type="text" id="fp-gift-recipient-name" name="recipient[name]" required />
-                                </div>
-                                <div class="fp-gift__field">
-                                    <label for="fp-gift-recipient-email"><?php esc_html_e('Recipient email', 'fp-experiences'); ?></label>
-                                    <input type="email" id="fp-gift-recipient-email" name="recipient[email]" required />
-                                </div>
-                                <div class="fp-gift__field fp-gift__field--quantity">
-                                    <label for="fp-gift-quantity"><?php esc_html_e('Number of guests', 'fp-experiences'); ?></label>
-                                    <input type="number" id="fp-gift-quantity" name="quantity" value="1" min="1" step="1" required />
-                                </div>
-                                <div class="fp-gift__field fp-gift__field--message">
-                                    <label for="fp-gift-message"><?php esc_html_e('Personal message (optional)', 'fp-experiences'); ?></label>
-                                    <textarea id="fp-gift-message" name="message" rows="3"></textarea>
-                                </div>
-                            </div>
-                            <?php if ($gift_addons) : ?>
-                                <fieldset class="fp-gift__addons">
-                                    <legend><?php esc_html_e('Prepaid add-ons', 'fp-experiences'); ?></legend>
-                                    <div class="fp-gift__addons-grid">
-                                        <?php foreach ($gift_addons as $addon) :
-                                            $addon_price = isset($addon['price']) ? (float) $addon['price'] : 0.0;
-                                            if (function_exists('wc_price')) {
-                                                $formatted_price = wc_price($addon_price);
-                                            } else {
-                                                $currency_code = get_option('woocommerce_currency', 'EUR');
-                                                $symbol = function_exists('get_woocommerce_currency_symbol')
-                                                    ? get_woocommerce_currency_symbol($currency_code)
-                                                    : $currency_code;
-                                                $formatted_price = esc_html(number_format_i18n($addon_price, 2) . ' ' . $symbol);
-                                            }
-                                            ?>
-                                            <label class="fp-gift__addon">
-                                                <input type="checkbox" name="addons[]" value="<?php echo esc_attr((string) ($addon['slug'] ?? '')); ?>" />
-                                                <span class="fp-gift__addon-label"><?php echo esc_html((string) ($addon['label'] ?? '')); ?></span>
-                                                <?php if (! empty($addon['description'])) : ?>
-                                                    <span class="fp-gift__addon-desc"><?php echo esc_html((string) $addon['description']); ?></span>
-                                                <?php endif; ?>
-                                                <span class="fp-gift__addon-price"><?php echo wp_kses_post($formatted_price); ?></span>
-                                            </label>
-                                        <?php endforeach; ?>
+                    <div class="fp-gift-modal__backdrop" data-fp-gift-backdrop aria-hidden="true"></div>
+                    <div
+                        class="fp-gift-modal__dialog"
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="fp-exp-gift-title"
+                        aria-describedby="fp-exp-gift-intro"
+                        data-fp-gift-dialog
+                        tabindex="-1"
+                    >
+                        <button type="button" class="fp-gift-modal__close" data-fp-gift-close>
+                            <span class="screen-reader-text"><?php esc_html_e('Close gift form', 'fp-experiences'); ?></span>
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="m12 10.59 4.95-4.95 1.41 1.41L13.41 12l4.95 4.95-1.41 1.41L12 13.41l-4.95 4.95-1.41-1.41L10.59 12 5.64 7.05l1.41-1.41Z"/></svg>
+                        </button>
+                        <div class="fp-gift">
+                            <div class="fp-gift__inner">
+                                <h2 class="fp-gift__title" id="fp-exp-gift-title"><?php esc_html_e('Gift this experience', 'fp-experiences'); ?></h2>
+                                <p class="fp-gift__intro" id="fp-exp-gift-intro"><?php esc_html_e('Purchase a voucher, personalise a message, and send it via email in a few clicks.', 'fp-experiences'); ?></p>
+                                <div class="fp-gift__feedback" data-fp-gift-feedback aria-live="polite" hidden></div>
+                                <form class="fp-gift__form" data-fp-gift-form novalidate>
+                                    <div class="fp-gift__grid">
+                                        <div class="fp-gift__field">
+                                            <label for="fp-gift-purchaser-name"><?php esc_html_e('Your name', 'fp-experiences'); ?></label>
+                                            <input type="text" id="fp-gift-purchaser-name" name="purchaser[name]" required />
+                                        </div>
+                                        <div class="fp-gift__field">
+                                            <label for="fp-gift-purchaser-email"><?php esc_html_e('Your email', 'fp-experiences'); ?></label>
+                                            <input type="email" id="fp-gift-purchaser-email" name="purchaser[email]" required />
+                                        </div>
+                                        <div class="fp-gift__field">
+                                            <label for="fp-gift-recipient-name"><?php esc_html_e('Recipient name', 'fp-experiences'); ?></label>
+                                            <input type="text" id="fp-gift-recipient-name" name="recipient[name]" required />
+                                        </div>
+                                        <div class="fp-gift__field">
+                                            <label for="fp-gift-recipient-email"><?php esc_html_e('Recipient email', 'fp-experiences'); ?></label>
+                                            <input type="email" id="fp-gift-recipient-email" name="recipient[email]" required />
+                                        </div>
+                                        <div class="fp-gift__field fp-gift__field--quantity">
+                                            <label for="fp-gift-quantity"><?php esc_html_e('Number of guests', 'fp-experiences'); ?></label>
+                                            <input type="number" id="fp-gift-quantity" name="quantity" value="1" min="1" step="1" required />
+                                        </div>
+                                        <div class="fp-gift__field fp-gift__field--message">
+                                            <label for="fp-gift-message"><?php esc_html_e('Personal message (optional)', 'fp-experiences'); ?></label>
+                                            <textarea id="fp-gift-message" name="message" rows="3"></textarea>
+                                        </div>
                                     </div>
-                                </fieldset>
-                            <?php endif; ?>
-                            <p class="fp-gift__note"><?php esc_html_e('You will review the total and complete payment at checkout. The recipient will receive an email with the voucher code immediately after payment.', 'fp-experiences'); ?></p>
-                            <button type="submit" class="fp-exp-button" data-fp-gift-submit>
-                                <?php esc_html_e('Proceed to checkout', 'fp-experiences'); ?>
-                            </button>
-                        </form>
-                        <div class="fp-gift__success" data-fp-gift-success hidden></div>
+                                    <?php if ($gift_addons) : ?>
+                                        <fieldset class="fp-gift__addons">
+                                            <legend><?php esc_html_e('Prepaid add-ons', 'fp-experiences'); ?></legend>
+                                            <div class="fp-gift__addons-grid">
+                                                <?php foreach ($gift_addons as $addon) :
+                                                    $addon_price = isset($addon['price']) ? (float) $addon['price'] : 0.0;
+                                                    if (function_exists('wc_price')) {
+                                                        $formatted_price = wc_price($addon_price);
+                                                    } else {
+                                                        $currency_code = get_option('woocommerce_currency', 'EUR');
+                                                        $symbol = function_exists('get_woocommerce_currency_symbol')
+                                                            ? get_woocommerce_currency_symbol($currency_code)
+                                                            : $currency_code;
+                                                        $formatted_price = esc_html(number_format_i18n($addon_price, 2) . ' ' . $symbol);
+                                                    }
+                                                    ?>
+                                                    <label class="fp-gift__addon">
+                                                        <input type="checkbox" name="addons[]" value="<?php echo esc_attr((string) ($addon['slug'] ?? '')); ?>" />
+                                                        <span class="fp-gift__addon-label"><?php echo esc_html((string) ($addon['label'] ?? '')); ?></span>
+                                                        <?php if (! empty($addon['description'])) : ?>
+                                                            <span class="fp-gift__addon-desc"><?php echo esc_html((string) $addon['description']); ?></span>
+                                                        <?php endif; ?>
+                                                        <span class="fp-gift__addon-price"><?php echo wp_kses_post($formatted_price); ?></span>
+                                                    </label>
+                                                <?php endforeach; ?>
+                                            </div>
+                                        </fieldset>
+                                    <?php endif; ?>
+                                    <p class="fp-gift__note"><?php esc_html_e('You will review the total and complete payment at checkout. The recipient will receive an email with the voucher code immediately after payment.', 'fp-experiences'); ?></p>
+                                    <button type="submit" class="fp-exp-button" data-fp-gift-submit>
+                                        <?php esc_html_e('Proceed to checkout', 'fp-experiences'); ?>
+                                    </button>
+                                </form>
+                                <div class="fp-gift__success" data-fp-gift-success hidden></div>
+                            </div>
+                        </div>
                     </div>
-                </section>
+                </div>
             <?php endif; ?>
 
             <?php if (! empty($sections['highlights']) && $has_highlights) : ?>
                 <section class="fp-exp-section fp-exp-highlights" id="fp-exp-section-highlights" data-fp-section="highlights">
                     <header class="fp-exp-section__header">
                         <span class="fp-exp-section__eyebrow"><?php esc_html_e('Highlights', 'fp-experiences'); ?></span>
-                        <h2 class="fp-exp-section__title"><?php esc_html_e('What makes this experience special', 'fp-experiences'); ?></h2>
+                        <div class="fp-exp-section__heading">
+                            <span class="fp-exp-section__icon" aria-hidden="true"><?php echo $get_section_icon('highlights'); ?></span>
+                            <h2 class="fp-exp-section__title"><?php esc_html_e('What makes this experience special', 'fp-experiences'); ?></h2>
+                        </div>
                     </header>
                     <div class="fp-exp-section__body">
                         <ul class="fp-exp-highlights__list" role="list">
@@ -682,7 +771,10 @@ $sticky_price_display = '' !== $price_from_display ? $format_currency($price_fro
             <?php if (! empty($sections['inclusions']) && $has_inclusions) : ?>
                 <section class="fp-exp-section fp-exp-inclusions" id="fp-exp-section-inclusions" data-fp-section="inclusions">
                     <header class="fp-exp-section__header">
-                        <h2 class="fp-exp-section__title"><?php esc_html_e('What\'s included', 'fp-experiences'); ?></h2>
+                        <div class="fp-exp-section__heading">
+                            <span class="fp-exp-section__icon" aria-hidden="true"><?php echo $get_section_icon('inclusions'); ?></span>
+                            <h2 class="fp-exp-section__title"><?php esc_html_e('What\'s included', 'fp-experiences'); ?></h2>
+                        </div>
                         <?php if (! empty($exclusions)) : ?>
                             <p class="fp-exp-section__summary"><?php esc_html_e('What to expect on the day and what comes at an extra cost.', 'fp-experiences'); ?></p>
                         <?php endif; ?>
@@ -727,10 +819,10 @@ $sticky_price_display = '' !== $price_from_display ? $format_currency($price_fro
             <?php if (! empty($sections['meeting']) && $has_meeting) : ?>
                 <section class="fp-exp-section fp-exp-meeting" id="fp-exp-section-meeting" data-fp-section="meeting">
                     <header class="fp-exp-section__header">
-                        <h2 class="fp-exp-section__title"><?php esc_html_e('Meeting point', 'fp-experiences'); ?></h2>
-                        <?php if ('' !== $overview_meeting_summary) : ?>
-                            <p class="fp-exp-section__summary"><?php echo esc_html($overview_meeting_summary); ?></p>
-                        <?php endif; ?>
+                        <div class="fp-exp-section__heading">
+                            <span class="fp-exp-section__icon" aria-hidden="true"><?php echo $get_section_icon('meeting'); ?></span>
+                            <h2 class="fp-exp-section__title"><?php esc_html_e('Meeting point', 'fp-experiences'); ?></h2>
+                        </div>
                     </header>
                     <div class="fp-exp-section__body fp-exp-section__body--flush">
                         <?php
@@ -745,7 +837,10 @@ $sticky_price_display = '' !== $price_from_display ? $format_currency($price_fro
             <?php if (! empty($sections['extras']) && $has_extras) : ?>
                 <section class="fp-exp-section fp-exp-essentials" id="fp-exp-section-extras" data-fp-section="extras">
                     <header class="fp-exp-section__header">
-                        <h2 class="fp-exp-section__title"><?php esc_html_e('Good to know', 'fp-experiences'); ?></h2>
+                        <div class="fp-exp-section__heading">
+                            <span class="fp-exp-section__icon" aria-hidden="true"><?php echo $get_section_icon('extras'); ?></span>
+                            <h2 class="fp-exp-section__title"><?php esc_html_e('Good to know', 'fp-experiences'); ?></h2>
+                        </div>
                         <p class="fp-exp-section__summary"><?php esc_html_e('Handy tips to plan ahead, plus important notes and policies.', 'fp-experiences'); ?></p>
                     </header>
                     <div class="fp-exp-section__body">
@@ -800,7 +895,10 @@ $sticky_price_display = '' !== $price_from_display ? $format_currency($price_fro
                 <section class="fp-exp-section" id="fp-exp-section-faq" data-fp-section="faq">
                     <header class="fp-exp-section__header">
                         <span class="fp-exp-section__eyebrow"><?php esc_html_e('FAQ', 'fp-experiences'); ?></span>
-                        <h2 class="fp-exp-section__title"><?php esc_html_e('Frequently asked questions', 'fp-experiences'); ?></h2>
+                        <div class="fp-exp-section__heading">
+                            <span class="fp-exp-section__icon" aria-hidden="true"><?php echo $get_section_icon('faq'); ?></span>
+                            <h2 class="fp-exp-section__title"><?php esc_html_e('Frequently asked questions', 'fp-experiences'); ?></h2>
+                        </div>
                     </header>
                     <div class="fp-exp-accordion" data-fp-accordion>
                         <?php foreach ($faq as $index => $item) :
@@ -842,7 +940,10 @@ $sticky_price_display = '' !== $price_from_display ? $format_currency($price_fro
                 <section class="fp-exp-section" id="fp-exp-section-reviews" data-fp-section="reviews">
                     <header class="fp-exp-section__header">
                         <span class="fp-exp-section__eyebrow"><?php esc_html_e('Reviews', 'fp-experiences'); ?></span>
-                        <h2 class="fp-exp-section__title"><?php esc_html_e('Traveler reviews', 'fp-experiences'); ?></h2>
+                        <div class="fp-exp-section__heading">
+                            <span class="fp-exp-section__icon" aria-hidden="true"><?php echo $get_section_icon('reviews'); ?></span>
+                            <h2 class="fp-exp-section__title"><?php esc_html_e('Traveler reviews', 'fp-experiences'); ?></h2>
+                        </div>
                     </header>
                     <ul class="fp-exp-reviews" role="list">
                         <?php foreach ($reviews as $review) : ?>

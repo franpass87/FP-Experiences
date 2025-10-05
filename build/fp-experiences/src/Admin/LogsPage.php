@@ -73,7 +73,16 @@ final class LogsPage
         echo '<div class="wrap">';
         echo '<div class="fp-exp-admin" data-fp-exp-admin>';
         echo '<div class="fp-exp-admin__body">';
-        echo '<h1>' . esc_html__('FP Experiences Logs', 'fp-experiences') . '</h1>';
+        echo '<div class="fp-exp-admin__layout">';
+        echo '<header class="fp-exp-admin__header">';
+        echo '<nav class="fp-exp-admin__breadcrumb" aria-label="' . esc_attr__('Percorso di navigazione', 'fp-experiences') . '">';
+        echo '<a href="' . esc_url(admin_url('admin.php?page=fp_exp_dashboard')) . '">' . esc_html__('FP Experiences', 'fp-experiences') . '</a>';
+        echo ' <span aria-hidden="true">›</span> ';
+        echo '<span>' . esc_html__('Logs', 'fp-experiences') . '</span>';
+        echo '</nav>';
+        echo '<h1 class="fp-exp-admin__title">' . esc_html__('FP Experiences Logs', 'fp-experiences') . '</h1>';
+        echo '<p class="fp-exp-admin__intro">' . esc_html__('Monitora gli eventi applicativi, esporta diagnosi e ripulisci i registri di sistema.', 'fp-experiences') . '</p>';
+        echo '</header>';
 
         if ($notice_html) {
             echo $notice_html; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
@@ -119,6 +128,7 @@ final class LogsPage
         }
         echo '</table>';
 
+        echo '</div>';
         echo '</div>';
         echo '</div>';
         echo '</div>';

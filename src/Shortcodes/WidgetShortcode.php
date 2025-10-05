@@ -105,7 +105,16 @@ final class WidgetShortcode extends BaseShortcode
         $highlights = Helpers::get_meta_array($experience_id, '_fp_highlights');
         $meeting_point = Repository::get_primary_summary_for_experience($experience_id);
         $duration = absint((string) get_post_meta($experience_id, '_fp_duration_minutes', true));
+        $taxonomy_languages = wp_get_post_terms($experience_id, 'fp_exp_language', ['fields' => 'names']);
+        $language_term_names = is_array($taxonomy_languages)
+            ? array_values(array_filter(array_map('sanitize_text_field', $taxonomy_languages)))
+            : [];
+
         $languages = Helpers::get_meta_array($experience_id, '_fp_languages');
+        if (empty($languages)) {
+            $languages = $language_term_names;
+        }
+
         $language_badges = LanguageHelper::build_language_badges($languages);
 
         $slots = $this->get_upcoming_slots($experience_id, $tickets, 60);

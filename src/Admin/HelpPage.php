@@ -21,8 +21,16 @@ final class HelpPage
         echo '<div class="wrap fp-exp-help">';
         echo '<div class="fp-exp-admin" data-fp-exp-admin>';
         echo '<div class="fp-exp-admin__body">';
-        echo '<h1>' . esc_html__('Guida & Shortcode', 'fp-experiences') . '</h1>';
-        echo '<p>' . esc_html__('Consulta i componenti disponibili e copia rapidamente gli shortcode nelle pagine del sito.', 'fp-experiences') . '</p>';
+        echo '<div class="fp-exp-admin__layout">';
+        echo '<header class="fp-exp-admin__header">';
+        echo '<nav class="fp-exp-admin__breadcrumb" aria-label="' . esc_attr__('Percorso di navigazione', 'fp-experiences') . '">';
+        echo '<a href="' . esc_url(admin_url('admin.php?page=fp_exp_dashboard')) . '">' . esc_html__('FP Experiences', 'fp-experiences') . '</a>';
+        echo ' <span aria-hidden="true">›</span> ';
+        echo '<span>' . esc_html__('Guida', 'fp-experiences') . '</span>';
+        echo '</nav>';
+        echo '<h1 class="fp-exp-admin__title">' . esc_html__('Guida & Shortcode', 'fp-experiences') . '</h1>';
+        echo '<p class="fp-exp-admin__intro">' . esc_html__('Consulta i componenti disponibili e copia rapidamente gli shortcode nelle pagine del sito.', 'fp-experiences') . '</p>';
+        echo '</header>';
 
         echo '<section class="fp-exp-help__section">';
         echo '<h2>' . esc_html__('Shortcode disponibili', 'fp-experiences') . '</h2>';
@@ -39,6 +47,7 @@ final class HelpPage
         echo '<p>' . esc_html__('Tutte le pagine dell\'amministrazione FP Experiences rispettano i ruoli guida, operatore e manager. Per supporto aggiuntivo consulta la documentazione interna.', 'fp-experiences') . '</p>';
         echo '</section>';
 
+        echo '</div>';
         echo '</div>';
         echo '</div>';
         echo '</div>';

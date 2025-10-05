@@ -459,10 +459,84 @@
         });
     }
 
+    function setupExperienceWidgetPlacement(page) {
+        const widget = page.querySelector('#fp-exp-widget');
+        const overview = page.querySelector('#fp-exp-section-overview');
+
+        if (!widget || !overview) {
+            return;
+        }
+
+        const mobileQuery = window.matchMedia('(max-width: 1023px)');
+        const placeholder = document.createElement('div');
+        placeholder.setAttribute('data-fp-widget-placeholder', '');
+        placeholder.hidden = true;
+
+        const parent = widget.parentNode;
+        if (!parent) {
+            return;
+        }
+
+        if (widget.nextSibling) {
+            parent.insertBefore(placeholder, widget.nextSibling);
+        } else {
+            parent.appendChild(placeholder);
+        }
+
+        const moveToOverview = () => {
+            const container = overview.parentNode;
+            if (!container) {
+                return;
+            }
+
+            const next = overview.nextSibling;
+            if (next === widget) {
+                return;
+            }
+
+            container.insertBefore(widget, next);
+            widget.classList.add('is-mobile-inline');
+        };
+
+        const restoreToSidebar = () => {
+            widget.classList.remove('is-mobile-inline');
+
+            const placeholderParent = placeholder.parentNode;
+            if (!placeholderParent) {
+                return;
+            }
+
+            if (widget.previousSibling === placeholder) {
+                return;
+            }
+
+            placeholderParent.insertBefore(widget, placeholder);
+        };
+
+        const applyPlacement = (event) => {
+            const matches = event && typeof event.matches === 'boolean' ? event.matches : mobileQuery.matches;
+
+            if (matches) {
+                moveToOverview();
+            } else {
+                restoreToSidebar();
+            }
+        };
+
+        applyPlacement(mobileQuery);
+
+        if (typeof mobileQuery.addEventListener === 'function') {
+            mobileQuery.addEventListener('change', applyPlacement);
+        } else if (typeof mobileQuery.addListener === 'function') {
+            mobileQuery.addListener(applyPlacement);
+        }
+    }
+
     function setupExperiencePages() {
         document.querySelectorAll('[data-fp-shortcode="experience"]').forEach((page) => {
             setupExperienceScroll(page);
             setupExperienceAccordion(page);
+            setupExperienceWidgetPlacement(page);
             setupExperienceSticky(page);
             setupGiftForm(page);
         });
@@ -656,6 +730,20 @@
         const success = giftSection.querySelector('[data-fp-gift-success]');
 
         const toggleButtons = page.querySelectorAll('[data-fp-gift-toggle]');
+        const closeButtons = giftSection.querySelectorAll('[data-fp-gift-close]');
+        const backdrop = giftSection.querySelector('[data-fp-gift-backdrop]');
+        const dialog = giftSection.querySelector('[data-fp-gift-dialog]');
+        const focusableSelector = [
+            'a[href]:not([tabindex="-1"])',
+            'button:not([disabled])',
+            'textarea:not([disabled])',
+            'input:not([disabled])',
+            'select:not([disabled])',
+            '[tabindex]:not([tabindex="-1"])',
+        ].join(',');
+        let focusableElements = [];
+        let lastFocusedElement = null;
+
         const setToggleExpanded = (expanded) => {
             toggleButtons.forEach((button) => {
                 button.setAttribute('aria-expanded', expanded ? 'true' : 'false');
@@ -665,22 +753,126 @@
         const isGiftHidden = () =>
             giftSection.hasAttribute('hidden') || giftSection.hidden || giftSection.getAttribute('aria-hidden') === 'true';
 
+        const isElementVisible = (element) => {
+            if (!(element instanceof HTMLElement)) {
+                return false;
+            }
+
+            if (element.hasAttribute('hidden') || element.getAttribute('aria-hidden') === 'true') {
+                return false;
+            }
+
+            const rects = element.getClientRects();
+            if (rects.length === 0) {
+                return false;
+            }
+
+            return Array.from(rects).some((rect) => rect.width > 0 && rect.height > 0);
+        };
+
+        const updateFocusableElements = () => {
+            focusableElements = Array.from(giftSection.querySelectorAll(focusableSelector)).filter((element) =>
+                isElementVisible(element)
+            );
+        };
+
+        const handleKeydown = (event) => {
+            if (isGiftHidden()) {
+                return;
+            }
+
+            if (event.key === 'Escape') {
+                event.preventDefault();
+                hideGiftSection();
+                return;
+            }
+
+            if (event.key !== 'Tab') {
+                return;
+            }
+
+            updateFocusableElements();
+
+            if (!focusableElements.length) {
+                return;
+            }
+
+            const first = focusableElements[0];
+            const last = focusableElements[focusableElements.length - 1];
+            const activeElement = document.activeElement;
+
+            if (event.shiftKey) {
+                if (activeElement === first || !giftSection.contains(activeElement)) {
+                    event.preventDefault();
+                    last.focus();
+                }
+            } else if (activeElement === last) {
+                event.preventDefault();
+                first.focus();
+            }
+        };
+
         const setGiftExpanded = (expanded) => {
             if (expanded) {
                 giftSection.hidden = false;
                 giftSection.removeAttribute('hidden');
                 giftSection.setAttribute('aria-hidden', 'false');
+                giftSection.classList.add('is-open');
+                if (document.body && document.body.classList) {
+                    document.body.classList.add('fp-modal-open');
+                }
+                updateFocusableElements();
+                document.addEventListener('keydown', handleKeydown);
             } else {
+                giftSection.classList.remove('is-open');
+                giftSection.setAttribute('aria-hidden', 'true');
+                if (document.body && document.body.classList) {
+                    document.body.classList.remove('fp-modal-open');
+                }
+                document.removeEventListener('keydown', handleKeydown);
                 giftSection.hidden = true;
                 giftSection.setAttribute('hidden', '');
-                giftSection.setAttribute('aria-hidden', 'true');
+                focusableElements = [];
             }
 
             setToggleExpanded(expanded);
         };
 
-        const showGiftSection = ({ focusFirstField = false, scroll = true } = {}) => {
+        const focusGiftElement = (element) => {
+            if (!(element instanceof HTMLElement)) {
+                return;
+            }
+
+            window.setTimeout(() => {
+                element.focus();
+            }, 80);
+        };
+
+        const hideGiftSection = ({ restoreFocus = true } = {}) => {
+            setGiftExpanded(false);
+
+            if (giftSection.id && window.location.hash === `#${giftSection.id}`) {
+                try {
+                    window.history.replaceState(null, '', window.location.href.split('#')[0]);
+                } catch (_error) {
+                    window.location.hash = '';
+                }
+            }
+
+            const focusTarget = restoreFocus ? lastFocusedElement : null;
+            lastFocusedElement = null;
+
+            if (focusTarget instanceof HTMLElement) {
+                window.setTimeout(() => {
+                    focusTarget.focus();
+                }, 80);
+            }
+        };
+
+        const showGiftSection = ({ focusFirstField = false } = {}) => {
             const wasHidden = isGiftHidden();
+            lastFocusedElement = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+
             setGiftExpanded(true);
 
             if (giftSection.id) {
@@ -694,18 +886,17 @@
                 }
             }
 
-            if (scroll) {
-                giftSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }
+            let focusTarget = null;
 
             if (focusFirstField && form && wasHidden) {
-                const firstField = form.querySelector('input, textarea, select');
-                if (firstField instanceof HTMLElement) {
-                    window.setTimeout(() => {
-                        firstField.focus();
-                    }, 280);
-                }
+                focusTarget = form.querySelector('input, textarea, select');
             }
+
+            if (!(focusTarget instanceof HTMLElement)) {
+                focusTarget = dialog instanceof HTMLElement ? dialog : giftSection;
+            }
+
+            focusGiftElement(focusTarget);
         };
 
         toggleButtons.forEach((button) => {
@@ -715,6 +906,22 @@
             });
         });
 
+        closeButtons.forEach((button) => {
+            button.addEventListener('click', (event) => {
+                event.preventDefault();
+                hideGiftSection();
+            });
+        });
+
+        if (backdrop) {
+            backdrop.addEventListener('click', (event) => {
+                event.preventDefault();
+                hideGiftSection();
+            });
+        }
+
+        giftSection.addEventListener('focusin', updateFocusableElements);
+
         if (isGiftHidden()) {
             giftSection.setAttribute('aria-hidden', 'true');
             setToggleExpanded(false);
@@ -723,7 +930,7 @@
         }
 
         if (giftSection.id && window.location.hash === `#${giftSection.id}`) {
-            showGiftSection({ scroll: false });
+            showGiftSection({ focusFirstField: true });
         }
 
         if (!form) {
@@ -1541,6 +1748,85 @@
         const slotLookup = new Map((config.slots || []).map((slot) => [String(slot.id), slot]));
         const quoteCache = new Map();
 
+        const getQuantityBounds = (input) => {
+            if (!(input instanceof HTMLInputElement)) {
+                return { min: 0, max: null };
+            }
+
+            const rawMin = parseInt(input.getAttribute('min') || '', 10);
+            const rawMax = parseInt(input.getAttribute('max') || '', 10);
+
+            return {
+                min: Number.isNaN(rawMin) ? 0 : rawMin,
+                max: Number.isNaN(rawMax) ? null : rawMax,
+            };
+        };
+
+        const clampQuantityValue = (input, value) => {
+            const bounds = getQuantityBounds(input);
+            const numeric = Number.isFinite(value) ? value : parseInt(String(value || '0'), 10);
+            let nextValue = Number.isNaN(numeric) ? bounds.min : numeric;
+
+            if (Number.isFinite(bounds.min)) {
+                nextValue = Math.max(nextValue, bounds.min);
+            }
+
+            if (typeof bounds.max === 'number') {
+                nextValue = Math.min(nextValue, bounds.max);
+            }
+
+            return nextValue;
+        };
+
+        const syncQuantityControlState = (input) => {
+            if (!(input instanceof HTMLInputElement)) {
+                return;
+            }
+
+            const bounds = getQuantityBounds(input);
+            const value = parseInt(input.value || '0', 10);
+            const normalized = Number.isNaN(value) ? bounds.min : value;
+
+            const decreaseButton = input.parentElement
+                ? input.parentElement.querySelector('.fp-exp-quantity__control[data-action="decrease"]')
+                : null;
+            const increaseButton = input.parentElement
+                ? input.parentElement.querySelector('.fp-exp-quantity__control[data-action="increase"]')
+                : null;
+
+            if (decreaseButton) {
+                decreaseButton.disabled = normalized <= bounds.min;
+            }
+
+            if (increaseButton) {
+                increaseButton.disabled = typeof bounds.max === 'number' ? normalized >= bounds.max : false;
+            }
+        };
+
+        const syncAllQuantityControls = () => {
+            container.querySelectorAll('.fp-exp-quantity__input').forEach((input) => {
+                syncQuantityControlState(input);
+            });
+        };
+
+        const updateTicketQuantityState = (input, nextValue) => {
+            if (!(input instanceof HTMLInputElement)) {
+                return;
+            }
+
+            const ticketRow = input.closest('tr[data-ticket]');
+            if (!ticketRow) {
+                return;
+            }
+
+            const slug = ticketRow.getAttribute('data-ticket');
+            if (!slug) {
+                return;
+            }
+
+            state.tickets[slug] = nextValue;
+        };
+
         const fetchBreakdown = (detail) => {
             if (!detail || !detail.slotId) {
                 return Promise.resolve(null);
@@ -1602,6 +1888,16 @@
         ));
 
         refreshSummary();
+        syncAllQuantityControls();
+
+        if (typeof window !== 'undefined' && 'MutationObserver' in window) {
+            const ticketsTable = container.querySelector('.fp-exp-party-table');
+            if (ticketsTable) {
+                const quantityObserver = new MutationObserver(() => syncAllQuantityControls());
+                quantityObserver.observe(ticketsTable, { childList: true, subtree: true });
+                window.addEventListener('beforeunload', () => quantityObserver.disconnect(), { once: true });
+            }
+        }
 
         const addonElements = Array.from(container.querySelectorAll('.fp-exp-addon'));
         if (addonElements.length) {
@@ -1759,32 +2055,21 @@
 
             if (target.classList.contains('fp-exp-quantity__control')) {
                 const action = target.getAttribute('data-action');
-                const input = target.parentElement.querySelector('.fp-exp-quantity__input');
-                if (!input) {
+                const input = target.parentElement
+                    ? target.parentElement.querySelector('.fp-exp-quantity__input')
+                    : null;
+                if (!(input instanceof HTMLInputElement)) {
                     return;
                 }
 
-                const currentValue = parseInt(input.value || '0', 10);
-                let nextValue = currentValue;
-
-                if (action === 'increase') {
-                    nextValue = currentValue + 1;
-                    const max = parseInt(input.getAttribute('max') || '99', 10);
-                    if (!Number.isNaN(max)) {
-                        nextValue = Math.min(nextValue, max || nextValue);
-                    }
-                } else {
-                    nextValue = Math.max(0, currentValue - 1);
-                }
+                const delta = action === 'increase' ? 1 : -1;
+                const currentValue = parseInt(input.value || '0', 10) || 0;
+                const proposedValue = currentValue + delta;
+                const nextValue = clampQuantityValue(input, proposedValue);
 
                 input.value = String(nextValue);
-                const ticketRow = target.closest('tr[data-ticket]');
-                if (ticketRow) {
-                    const slug = ticketRow.getAttribute('data-ticket');
-                    if (slug) {
-                        state.tickets[slug] = nextValue;
-                    }
-                }
+                syncQuantityControlState(input);
+                updateTicketQuantityState(input, nextValue);
                 refreshSummary();
             }
 
@@ -1804,6 +2089,24 @@
                 state.addons[slug] = checkbox.checked;
                 refreshSummary();
             }
+        });
+
+        container.addEventListener('input', (event) => {
+            const target = event.target;
+            if (!(target instanceof HTMLInputElement) || !target.classList.contains('fp-exp-quantity__input')) {
+                return;
+            }
+
+            const rawValue = parseInt(target.value || '0', 10);
+            const nextValue = clampQuantityValue(target, rawValue);
+
+            if (String(nextValue) !== target.value) {
+                target.value = String(nextValue);
+            }
+
+            syncQuantityControlState(target);
+            updateTicketQuantityState(target, nextValue);
+            refreshSummary();
         });
 
         if (!rtbEnabled && summaryButton) {

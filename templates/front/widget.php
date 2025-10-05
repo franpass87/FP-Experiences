@@ -304,9 +304,24 @@ $price_from_display = null !== $price_from_value && $price_from_value > 0
                                     </td>
                                     <td>
                                         <div class="fp-exp-quantity">
-                                            <button type="button" class="fp-exp-quantity__control" data-action="decrease" aria-label="<?php echo esc_attr(sprintf(esc_html__('Decrease %s', 'fp-experiences'), $ticket['label'])); ?>">−</button>
+                                            <button type="button" class="fp-exp-quantity__control" data-action="decrease" aria-label="<?php echo esc_attr(sprintf(esc_html__('Decrease %s', 'fp-experiences'), $ticket['label'])); ?>">
+                                                <span class="screen-reader-text"><?php echo esc_html(sprintf(esc_html__('Decrease %s', 'fp-experiences'), $ticket['label'])); ?></span>
+                                                <span aria-hidden="true" class="fp-exp-quantity__icon">
+                                                    <svg viewBox="0 0 24 24" role="img" aria-hidden="true" focusable="false">
+                                                        <path d="M6 12h12" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.8" />
+                                                    </svg>
+                                                </span>
+                                            </button>
                                             <input type="number" class="fp-exp-quantity__input" min="0" max="<?php echo esc_attr((string) ($ticket['cap'] ?? '')); ?>" value="0" aria-label="<?php echo esc_attr(sprintf(esc_html__('%s quantity', 'fp-experiences'), $ticket['label'])); ?>">
-                                            <button type="button" class="fp-exp-quantity__control" data-action="increase" aria-label="<?php echo esc_attr(sprintf(esc_html__('Increase %s', 'fp-experiences'), $ticket['label'])); ?>">+</button>
+                                            <button type="button" class="fp-exp-quantity__control" data-action="increase" aria-label="<?php echo esc_attr(sprintf(esc_html__('Increase %s', 'fp-experiences'), $ticket['label'])); ?>">
+                                                <span class="screen-reader-text"><?php echo esc_html(sprintf(esc_html__('Increase %s', 'fp-experiences'), $ticket['label'])); ?></span>
+                                                <span aria-hidden="true" class="fp-exp-quantity__icon">
+                                                    <svg viewBox="0 0 24 24" role="img" aria-hidden="true" focusable="false">
+                                                        <path d="M12 6v12" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.8" />
+                                                        <path d="M6 12h12" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.8" />
+                                                    </svg>
+                                                </span>
+                                            </button>
                                         </div>
                                     </td>
                                 </tr>

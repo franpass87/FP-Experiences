@@ -41,13 +41,15 @@ final class Dashboard
         echo '<div class="wrap fp-exp-dashboard">';
         echo '<div class="fp-exp-admin" data-fp-exp-admin>';
         echo '<div class="fp-exp-admin__body">';
-        echo '<nav class="fp-exp-dashboard__breadcrumb" aria-label="' . esc_attr__('Percorso di navigazione', 'fp-experiences') . '">';
+        echo '<div class="fp-exp-dashboard fp-exp-admin__layout">';
+        echo '<header class="fp-exp-admin__header">';
+        echo '<nav class="fp-exp-admin__breadcrumb" aria-label="' . esc_attr__('Percorso di navigazione', 'fp-experiences') . '">';
         echo '<a href="' . esc_url(admin_url('admin.php?page=fp_exp_dashboard')) . '">' . esc_html__('FP Experiences', 'fp-experiences') . '</a>';
         echo ' <span aria-hidden="true">›</span> ';
         echo '<span>' . esc_html__('Dashboard', 'fp-experiences') . '</span>';
         echo '</nav>';
-
-        echo '<h1>' . esc_html__('FP Experiences — Dashboard', 'fp-experiences') . '</h1>';
+        echo '<h1 class="fp-exp-admin__title">' . esc_html__('FP Experiences — Dashboard', 'fp-experiences') . '</h1>';
+        echo '</header>';
 
         echo '<div class="fp-exp-dashboard__grid">';
         self::render_metric_card(
@@ -109,6 +111,7 @@ final class Dashboard
         echo '</ul>';
         echo '</section>';
 
+        echo '</div>';
         echo '</div>';
         echo '</div>';
         echo '</div>';

@@ -72,6 +72,16 @@ final class Helpers
      */
     private static ?array $cognitive_bias_icon_cache = null;
 
+    /**
+     * @var array<string, array{id: string, label: string, description: string, icon: string}>|null
+     */
+    private static ?array $experience_badge_choices_cache = null;
+
+    /**
+     * @var array<string, string>|null
+     */
+    private static ?array $experience_badge_icon_cache = null;
+
     public const COGNITIVE_BIAS_MAX_SELECTION = 6;
 
     public static function cognitive_bias_max_selection(): int
@@ -730,6 +740,203 @@ final class Helpers
 
         if (! isset($icons[$icon])) {
             $icon = 'shield';
+        }
+
+        return $icons[$icon];
+    }
+
+    /**
+     * @return array<string, array{id: string, label: string, description: string, icon: string}>
+     */
+    public static function experience_badge_choices(): array
+    {
+        if (null !== self::$experience_badge_choices_cache) {
+            return self::$experience_badge_choices_cache;
+        }
+
+        $defaults = [
+            [
+                'id' => 'family-friendly',
+                'label' => __('Family friendly', 'fp-experiences'),
+                'description' => __('Perfetta per bambini e genitori.', 'fp-experiences'),
+                'icon' => 'family',
+            ],
+            [
+                'id' => 'gastronomy',
+                'label' => __('Gastronomia', 'fp-experiences'),
+                'description' => __('Degustazioni e sapori del territorio.', 'fp-experiences'),
+                'icon' => 'taste',
+            ],
+            [
+                'id' => 'wine',
+                'label' => __('Vino', 'fp-experiences'),
+                'description' => __('Cantine, vigneti e calici selezionati.', 'fp-experiences'),
+                'icon' => 'wine',
+            ],
+            [
+                'id' => 'olive-oil',
+                'label' => __('Olio EVO', 'fp-experiences'),
+                'description' => __('Frantoi e degustazioni di olio extravergine.', 'fp-experiences'),
+                'icon' => 'olive',
+            ],
+            [
+                'id' => 'outdoor',
+                'label' => __('Outdoor', 'fp-experiences'),
+                'description' => __('Attività nella natura e all’aria aperta.', 'fp-experiences'),
+                'icon' => 'outdoor',
+            ],
+            [
+                'id' => 'craftsmanship',
+                'label' => __('Artigianato', 'fp-experiences'),
+                'description' => __('Laboratori e saper fare tradizionale.', 'fp-experiences'),
+                'icon' => 'craft',
+            ],
+        ];
+
+        $choices = apply_filters('fp_exp_experience_badges', $defaults);
+        $choices = is_array($choices) ? $choices : $defaults;
+
+        $normalized = [];
+
+        foreach ($choices as $choice) {
+            if (! is_array($choice)) {
+                continue;
+            }
+
+            $id = isset($choice['id']) ? sanitize_key((string) $choice['id']) : '';
+            if ('' === $id) {
+                continue;
+            }
+
+            $label = isset($choice['label']) ? sanitize_text_field((string) $choice['label']) : '';
+            if ('' === $label) {
+                continue;
+            }
+
+            $description = isset($choice['description'])
+                ? sanitize_text_field((string) $choice['description'])
+                : '';
+            $icon = isset($choice['icon']) ? sanitize_key((string) $choice['icon']) : '';
+
+            $normalized[$id] = [
+                'id' => $id,
+                'label' => $label,
+                'description' => $description,
+                'icon' => $icon,
+            ];
+        }
+
+        if (empty($normalized)) {
+            $normalized['family-friendly'] = [
+                'id' => 'family-friendly',
+                'label' => __('Family friendly', 'fp-experiences'),
+                'description' => __('Perfetta per bambini e genitori.', 'fp-experiences'),
+                'icon' => 'family',
+            ];
+        }
+
+        self::$experience_badge_choices_cache = $normalized;
+
+        return self::$experience_badge_choices_cache;
+    }
+
+    /**
+     * @param array<int, string> $slugs
+     *
+     * @return array<int, array{id: string, label: string, description: string, icon: string}>
+     */
+    public static function experience_badge_payload(array $slugs): array
+    {
+        $choices = self::experience_badge_choices();
+
+        $slugs = array_map(static fn ($slug): string => sanitize_key((string) $slug), $slugs);
+        $slugs = array_values(array_unique(array_filter($slugs)));
+
+        $payload = [];
+
+        foreach ($slugs as $slug) {
+            if (! isset($choices[$slug])) {
+                continue;
+            }
+
+            $payload[] = $choices[$slug];
+        }
+
+        return $payload;
+    }
+
+    /**
+     * @param array<int, string> $slugs
+     *
+     * @return array<int, string>
+     */
+    public static function experience_badge_labels(array $slugs): array
+    {
+        $payload = self::experience_badge_payload($slugs);
+
+        $labels = [];
+
+        foreach ($payload as $badge) {
+            $label = isset($badge['label']) ? (string) $badge['label'] : '';
+            if ('' === $label) {
+                continue;
+            }
+
+            $labels[] = $label;
+        }
+
+        return array_values(array_unique($labels));
+    }
+
+    public static function experience_badge_icon_svg(string $icon): string
+    {
+        $icon = sanitize_key($icon);
+
+        if (null === self::$experience_badge_icon_cache) {
+            $defaults = [
+                'family' => '<svg viewBox="0 0 24 24" role="img" aria-hidden="true"><path fill="currentColor" d="M12 12.88 9.17 10H5a3 3 0 0 0-3 3v7h6v-4h2v4h6v-7a3 3 0 0 0-3-3h-1.17ZM4 6a3 3 0 1 1 3 3 3 3 0 0 1-3-3Zm10 3a3 3 0 1 0-3-3 3 3 0 0 0 3 3Zm7 2h-2.17l-2.4 2.4a4.81 4.81 0 0 1 1.57.93A3 3 0 0 1 22 18v2h-3v2h5v-4a3 3 0 0 0-3-3ZM3 22v-6h3v6Zm10-6v6h3v-6Z"/></svg>',
+                'taste' => '<svg viewBox="0 0 24 24" role="img" aria-hidden="true"><path fill="currentColor" d="M7 2a3 3 0 0 0-3 3v6a5 5 0 0 0 4 4.9V22h2v-6.1a5 5 0 0 0 4-4.9V5a3 3 0 0 0-3-3Zm0 2h4a1 1 0 0 1 1 1v3H6V5a1 1 0 0 1 1-1Zm-1 6h6a3 3 0 0 1-6 0Zm12-4h-2v8a4 4 0 0 0 4 4v2h2V6a2 2 0 0 0-2-2Z"/></svg>',
+                'wine' => '<svg viewBox="0 0 24 24" role="img" aria-hidden="true"><path fill="currentColor" d="M8 2h8l1 9a5 5 0 0 1-3.5 5V20h2v2h-6v-2h2v-4A5 5 0 0 1 7 11Zm2.08 7a3 3 0 0 0 5.84 0Z"/></svg>',
+                'olive' => '<svg viewBox="0 0 24 24" role="img" aria-hidden="true"><path fill="currentColor" d="M19 3a5 5 0 0 0-5 5v1h-1a7 7 0 0 0-7 7 6 6 0 0 0 6 6 7 7 0 0 0 7-7v-1h1a5 5 0 0 0 0-10Zm-7 18a4 4 0 0 1-4-4 5 5 0 0 1 5-5h1v1a5 5 0 0 0 4 4 4 4 0 0 1-4 4Zm7-10h-3V8a3 3 0 0 1 6 0 3 3 0 0 1-3 3Z"/></svg>',
+                'outdoor' => '<svg viewBox="0 0 24 24" role="img" aria-hidden="true"><path fill="currentColor" d="M12 2 3 20h6l3-6 3 6h6Z"/></svg>',
+                'craft' => '<svg viewBox="0 0 24 24" role="img" aria-hidden="true"><path fill="currentColor" d="M21.71 6.29 17.71 2.3a1 1 0 0 0-1.41 0L14.59 4H10l-1 2H5a3 3 0 0 0-3 3v4h2v8h2v-8h2v8h2v-8h3.59l1.71 1.71a1 1 0 0 0 1.41 0l4-4a1 1 0 0 0 0-1.42ZM18 10.17 15.83 12 12 8.17 14.17 6ZM4 11a1 1 0 0 1 1-1h3v2H4Z"/></svg>',
+                'default' => '<svg viewBox="0 0 24 24" role="img" aria-hidden="true"><path fill="currentColor" d="M12 2a5 5 0 0 0-5 5v5a5 5 0 0 0 4 4.9V22h2v-5.1a5 5 0 0 0 4-4.9V7a5 5 0 0 0-5-5Zm0 2a3 3 0 0 1 3 3v5a3 3 0 0 1-6 0V7a3 3 0 0 1 3-3Z"/></svg>',
+            ];
+
+            $registry = apply_filters('fp_exp_experience_badge_icon_registry', $defaults);
+            $registry = is_array($registry) ? $registry : $defaults;
+
+            $normalized = [];
+
+            foreach ($registry as $key => $svg) {
+                $icon_key = sanitize_key((string) $key);
+                if ('' === $icon_key) {
+                    continue;
+                }
+
+                if (! is_string($svg)) {
+                    continue;
+                }
+
+                $markup = trim($svg);
+                if ('' === $markup) {
+                    continue;
+                }
+
+                $normalized[$icon_key] = $markup;
+            }
+
+            if (! isset($normalized['default'])) {
+                $normalized['default'] = $defaults['default'];
+            }
+
+            self::$experience_badge_icon_cache = $normalized;
+        }
+
+        $icons = self::$experience_badge_icon_cache;
+
+        if (! isset($icons[$icon])) {
+            $icon = 'default';
         }
 
         return $icons[$icon];

@@ -23,7 +23,6 @@ use function esc_attr;
 use function esc_html;
 use function esc_html__;
 use function esc_url;
-use function get_current_screen;
 use function get_option;
 use function get_posts;
 use function get_the_title;
@@ -61,8 +60,7 @@ final class CalendarAdmin
 
     public function enqueue_assets(string $hook): void
     {
-        $screen = get_current_screen();
-        if (! $screen || 'fp-exp-dashboard_page_fp_exp_calendar' !== $screen->id) {
+        if ('fp-exp-dashboard_page_fp_exp_calendar' !== $hook) {
             return;
         }
 
@@ -138,8 +136,17 @@ final class CalendarAdmin
         echo '<div class="wrap fp-exp-calendar-admin">';
         echo '<div class="fp-exp-admin" data-fp-exp-admin>';
         echo '<div class="fp-exp-admin__body">';
-        echo '<h1>' . esc_html__('FP Experiences — Operations', 'fp-experiences') . '</h1>';
-        echo '<h2 class="nav-tab-wrapper">';
+        echo '<div class="fp-exp-admin__layout">';
+        echo '<header class="fp-exp-admin__header">';
+        echo '<nav class="fp-exp-admin__breadcrumb" aria-label="' . esc_attr__('Percorso di navigazione', 'fp-experiences') . '">';
+        echo '<a href="' . esc_url(admin_url('admin.php?page=fp_exp_dashboard')) . '">' . esc_html__('FP Experiences', 'fp-experiences') . '</a>';
+        echo ' <span aria-hidden="true">›</span> ';
+        echo '<span>' . esc_html__('Operazioni', 'fp-experiences') . '</span>';
+        echo '</nav>';
+        echo '<h1 class="fp-exp-admin__title">' . esc_html__('FP Experiences — Operations', 'fp-experiences') . '</h1>';
+        echo '<p class="fp-exp-admin__intro">' . esc_html__('Gestisci calendario, disponibilità e prenotazioni manuali da un unico pannello.', 'fp-experiences') . '</p>';
+        echo '</header>';
+        echo '<div class="fp-exp-tabs nav-tab-wrapper">';
         $tabs = [
             'calendar' => esc_html__('Calendar', 'fp-experiences'),
             'manual' => esc_html__('Manual Booking', 'fp-experiences'),
@@ -152,7 +159,7 @@ final class CalendarAdmin
             $classes = 'nav-tab' . ($active_tab === $slug ? ' nav-tab-active' : '');
             echo '<a class="' . esc_attr($classes) . '" href="' . esc_attr($url) . '">' . esc_html($label) . '</a>';
         }
-        echo '</h2>';
+        echo '</div>';
 
         if ($message) {
             echo '<div class="notice notice-success"><p>' . wp_kses_post($message) . '</p></div>';
@@ -168,6 +175,7 @@ final class CalendarAdmin
             $this->render_calendar();
         }
 
+        echo '</div>';
         echo '</div>';
         echo '</div>';
         echo '</div>';

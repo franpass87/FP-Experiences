@@ -134,7 +134,7 @@ final class ListShortcode extends BaseShortcode
         $badge_flags = [
             'language' => $this->normalize_bool($attributes['badge_lang'] ?? '1', true),
             'duration' => $this->normalize_bool($attributes['badge_duration'] ?? '1', true),
-            'family' => $this->normalize_bool($attributes['badge_family'] ?? '1', true),
+            'experience' => $this->normalize_bool($attributes['badge_family'] ?? '1', true),
         ];
 
         $variant = $this->normalize_variant((string) $attributes['variant']);
@@ -352,6 +352,7 @@ final class ListShortcode extends BaseShortcode
         }
 
         $tax_query = [];
+        $meta_query = [];
 
         if (! empty($state['theme'])) {
             $tax_query[] = [
@@ -381,14 +382,19 @@ final class ListShortcode extends BaseShortcode
         }
 
         if (! empty($state['family'])) {
-            $tax_query[] = [
-                'taxonomy' => 'fp_exp_family_friendly',
-                'operator' => 'EXISTS',
+            $meta_query[] = [
+                'key' => '_fp_experience_badges',
+                'value' => '"family-friendly"',
+                'compare' => 'LIKE',
             ];
         }
 
         if (! empty($tax_query)) {
             $args['tax_query'] = $tax_query;
+        }
+
+        if (! empty($meta_query)) {
+            $args['meta_query'] = $meta_query;
         }
 
         return $args;
@@ -516,10 +522,28 @@ final class ListShortcode extends BaseShortcode
         $highlights = array_slice(Helpers::get_meta_array($id, '_fp_highlights'), 0, 3);
         $short_description = sanitize_text_field((string) get_post_meta($id, '_fp_short_desc', true));
         $duration_minutes = absint((string) get_post_meta($id, '_fp_duration_minutes', true));
+
+        $taxonomy_languages = wp_get_post_terms($id, 'fp_exp_language', ['fields' => 'names']);
+        $language_term_names = is_array($taxonomy_languages)
+            ? array_values(array_filter(array_map('sanitize_text_field', $taxonomy_languages)))
+            : [];
+
         $languages = Helpers::get_meta_array($id, '_fp_languages');
+        if (empty($languages)) {
+            $languages = $language_term_names;
+        }
+
         $language_badges = LanguageHelper::build_language_badges($languages);
-        $family_terms = get_the_terms($id, 'fp_exp_family_friendly');
-        $family_friendly = is_array($family_terms) && ! empty($family_terms);
+        $experience_badge_slugs = Helpers::get_meta_array($id, '_fp_experience_badges');
+
+        if (empty($experience_badge_slugs)) {
+            $legacy_family_terms = get_the_terms($id, 'fp_exp_family_friendly');
+            if (is_array($legacy_family_terms) && ! empty($legacy_family_terms)) {
+                $experience_badge_slugs[] = 'family-friendly';
+            }
+        }
+
+        $experience_badges = Helpers::experience_badge_payload($experience_badge_slugs);
         $duration_label = $this->format_duration($duration_minutes);
         $badges = [];
         $language_labels = [];
@@ -563,11 +587,25 @@ final class ListShortcode extends BaseShortcode
             }
         }
 
-        if ($badge_flags['family'] && $family_friendly) {
-            $badges[] = [
-                'label' => __('Family friendly', 'fp-experiences'),
-                'context' => 'family',
-            ];
+        if ($badge_flags['experience'] && ! empty($experience_badges)) {
+            foreach ($experience_badges as $experience_badge) {
+                if (! is_array($experience_badge)) {
+                    continue;
+                }
+
+                $label = isset($experience_badge['label']) ? (string) $experience_badge['label'] : '';
+                if ('' === $label) {
+                    continue;
+                }
+
+                $slug = isset($experience_badge['id']) ? (string) $experience_badge['id'] : '';
+
+                $badges[] = [
+                    'label' => $label,
+                    'context' => 'experience',
+                    'id' => $slug,
+                ];
+            }
         }
 
         $map_url = '';
@@ -602,7 +640,7 @@ final class ListShortcode extends BaseShortcode
             'price_from' => $show_price_from ? $price_from : null,
             'price_from_display' => $show_price_from && null !== $price_from ? number_format_i18n($price_from, 0) : '',
             'map_url' => $map_url,
-            'family_friendly' => $family_friendly,
+            'experience_badges' => $experience_badges,
             'languages' => $languages,
             'language_badges' => $language_badges,
             'duration_minutes' => $duration_minutes,
