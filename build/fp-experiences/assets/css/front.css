@@ -1560,8 +1560,8 @@
         'label'
         'price'
         'quantity';
-    gap: 0.75rem;
-    padding: clamp(16px, 2vw, 18px);
+    gap: 0.5rem;
+    padding: clamp(12px, 1.5vw, 14px);
 }
 
 .fp-exp-party-table tbody tr + tr {
@@ -1597,7 +1597,7 @@
 
 .fp-exp-ticket__description {
     display: block;
-    margin-top: 0.35rem;
+    margin-top: 0.25rem;
     color: var(--fp-color-muted);
     font-size: 0.85rem;
 }
@@ -1762,7 +1762,7 @@
 
     .fp-exp-party-table thead th {
         display: table-cell;
-        padding: clamp(16px, 2vw, 18px) clamp(16px, 3vw, 24px);
+        padding: clamp(12px, 1.5vw, 14px) clamp(12px, 2vw, 18px);
         font-size: 0.8rem;
         font-weight: 600;
         letter-spacing: 0.02em;
@@ -1795,7 +1795,7 @@
     .fp-exp-party-table th,
     .fp-exp-party-table td {
         display: table-cell;
-        padding: clamp(16px, 2vw, 18px) clamp(16px, 3vw, 24px);
+        padding: clamp(12px, 1.5vw, 14px) clamp(12px, 2vw, 18px);
         font-size: 0.95rem;
         vertical-align: middle;
     }
@@ -1852,7 +1852,7 @@
             'label'
             'price'
             'quantity';
-        padding: clamp(16px, 2vw, 18px);
+        padding: clamp(12px, 1.5vw, 14px);
     }
 
     .fp-exp-party-table th,
@@ -2291,6 +2291,13 @@
     margin-left: calc(50% - 50vw);
     padding-inline: clamp(16px, 4vw, 48px);
     max-width: none;
+}
+
+@media (max-width: 768px) {
+    .fp-layout,
+    .fp-layout.is-full {
+        padding-inline: 0;
+    }
 }
 
 
@@ -3322,6 +3329,7 @@ body.fp-modal-open {
 .fp-exp-section__title {
     margin: 0;
     font-size: clamp(1.35rem, 2.5vw, 1.75rem);
+    line-height: 1.2;
     color: var(--fp-color-text);
 }
 

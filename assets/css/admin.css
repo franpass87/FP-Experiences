@@ -1308,11 +1308,14 @@ body.fp-exp-admin-shell .wrap .page-title-action.button-secondary {
     background: rgba(15, 23, 42, 0.06);
     padding: 8px 16px;
     font-weight: 600;
+    color: #1f1f1f; /* garantisce contrasto su sfondo chiaro */
+    text-shadow: none;
 }
 
 body.fp-exp-admin-shell .wrap .button:hover,
 body.fp-exp-admin-shell .wrap .button-secondary:hover {
     background: rgba(15, 23, 42, 0.1);
+    color: #111827; /* leggermente più scuro in hover per accessibilità */
 }
 
 /* Barre filtri, campi e select nelle schermate lista */
@@ -1451,7 +1454,7 @@ html.fp-exp-dark body.fp-exp-admin-shell .tablenav .actions .button-primary {
 html.fp-exp-dark body.fp-exp-admin-shell .wrap .button,
 html.fp-exp-dark body.fp-exp-admin-shell .wrap .button-secondary {
     background: rgba(255, 255, 255, 0.08);
-    color: #d1d5db;
+    color: #e5e7eb; /* testo più chiaro per contrasto su sfondo scuro */
 }
 html.fp-exp-dark body.fp-exp-admin-shell .wrap .button:hover,
 html.fp-exp-dark body.fp-exp-admin-shell .wrap .button-secondary:hover {

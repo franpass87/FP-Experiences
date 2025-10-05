@@ -57,6 +57,7 @@ $dataset = [
     'rtb' => $rtb,
     'nonce' => $rtb_nonce,
     'displayContext' => $display_context,
+    'timezone' => (string) wp_timezone_string(),
     'version' => $config_version,
 ];
 
@@ -268,20 +269,6 @@ $price_from_display = null !== $price_from_value && $price_from_value > 0
                             <?php if ('' !== $max_date_attr) : ?> max="<?php echo esc_attr($max_date_attr); ?>"<?php endif; ?>
                             data-fp-date-input
                         />
-                    </div>
-                    <div class="fp-exp-date-dropdown" data-fp-date-dropdown>
-                        <label class="screen-reader-text" for="fp-exp-select-year"><?php echo esc_html__('Anno', 'fp-experiences'); ?></label>
-                        <select id="fp-exp-select-year" class="fp-exp-select fp-exp-select-year" aria-label="<?php echo esc_attr__('Anno', 'fp-experiences'); ?>">
-                            <option value="" selected disabled><?php echo esc_html__('Anno', 'fp-experiences'); ?></option>
-                        </select>
-                        <label class="screen-reader-text" for="fp-exp-select-month"><?php echo esc_html__('Mese', 'fp-experiences'); ?></label>
-                        <select id="fp-exp-select-month" class="fp-exp-select fp-exp-select-month" aria-label="<?php echo esc_attr__('Mese', 'fp-experiences'); ?>" disabled>
-                            <option value="" selected disabled><?php echo esc_html__('Mese', 'fp-experiences'); ?></option>
-                        </select>
-                        <label class="screen-reader-text" for="fp-exp-select-day"><?php echo esc_html__('Giorno', 'fp-experiences'); ?></label>
-                        <select id="fp-exp-select-day" class="fp-exp-select fp-exp-select-day" aria-label="<?php echo esc_attr__('Giorno', 'fp-experiences'); ?>" disabled>
-                            <option value="" selected disabled><?php echo esc_html__('Giorno', 'fp-experiences'); ?></option>
-                        </select>
                     </div>
                     <div class="fp-exp-calendar" data-show-calendar="<?php echo esc_attr($behavior['show_calendar'] ? '1' : '0'); ?>" hidden>
                         <?php foreach ($calendar as $month_key => $month_data) :

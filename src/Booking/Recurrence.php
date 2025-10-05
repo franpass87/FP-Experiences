@@ -180,6 +180,9 @@ final class Recurrence
             if (isset($set['buffer_after'])) {
                 $rule['buffer_after'] = absint((string) $set['buffer_after']);
             }
+            if (isset($set['duration']) && absint((string) $set['duration']) > 0) {
+                $rule['duration'] = absint((string) $set['duration']);
+            }
 
             if ('weekly' === $definition['frequency']) {
                 $set_days = [];

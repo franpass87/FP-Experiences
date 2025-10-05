@@ -277,6 +277,7 @@
         }
 
         const locale = document.documentElement.lang || 'en';
+        const tz = (window.fpExpConfig && window.fpExpConfig.timezone) || null;
 
         if (slot.start_iso) {
             const date = new Date(slot.start_iso);
@@ -286,10 +287,12 @@
                         weekday: 'short',
                         month: 'short',
                         day: 'numeric',
+                        ...(tz ? { timeZone: tz } : {}),
                     }).format(date);
                     const timeLabel = new Intl.DateTimeFormat(locale, {
                         hour: '2-digit',
                         minute: '2-digit',
+                        ...(tz ? { timeZone: tz } : {}),
                     }).format(date);
                     return {
                         label: timeLabel,

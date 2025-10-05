@@ -698,24 +698,25 @@ final class ExperienceMetaBoxes
                         ?>
                         <div class="fp-exp-taxonomy-editor fp-exp-taxonomy-editor--compact" aria-describedby="fp-exp-experience-badges-help">
                             <div class="fp-exp-taxonomy-editor__list">
-                                <?php foreach ($details['experience_badges']['selected'] as $selected_badge_id) :
-                                    $selected_badge_id = sanitize_key((string) $selected_badge_id);
-                                    if ('' === $selected_badge_id) {
+                                <?php foreach ($experience_badge_choices as $badge_choice) :
+                                    // Mostra i campi di personalizzazione per TUTTI i badge disponibili
+                                    $badge_id = isset($badge_choice['id']) ? sanitize_key((string) $badge_choice['id']) : '';
+                                    if ('' === $badge_id) {
                                         continue;
                                     }
-                                    $current_label = isset($experience_badge_choices[$selected_badge_id]['label']) ? (string) $experience_badge_choices[$selected_badge_id]['label'] : '';
-                                    $current_desc = isset($experience_badge_choices[$selected_badge_id]['description']) ? (string) $experience_badge_choices[$selected_badge_id]['description'] : '';
-                                    $override_label = isset($badge_overrides[$selected_badge_id]['label']) ? (string) $badge_overrides[$selected_badge_id]['label'] : '';
-                                    $override_desc = isset($badge_overrides[$selected_badge_id]['description']) ? (string) $badge_overrides[$selected_badge_id]['description'] : '';
+                                    $current_label = isset($badge_choice['label']) ? (string) $badge_choice['label'] : '';
+                                    $current_desc = isset($badge_choice['description']) ? (string) $badge_choice['description'] : '';
+                                    $override_label = isset($badge_overrides[$badge_id]['label']) ? (string) $badge_overrides[$badge_id]['label'] : '';
+                                    $override_desc = isset($badge_overrides[$badge_id]['description']) ? (string) $badge_overrides[$badge_id]['description'] : '';
                                     ?>
                                     <div class="fp-exp-taxonomy-editor__item">
                                         <label class="fp-exp-taxonomy-editor__field">
                                             <span class="fp-exp-field__label"><?php esc_html_e('Titolo badge', 'fp-experiences'); ?></span>
-                                            <input type="text" name="fp_exp_details[experience_badges_overrides][<?php echo esc_attr($selected_badge_id); ?>][label]" value="<?php echo esc_attr($override_label ?: $current_label); ?>" />
+                                            <input type="text" name="fp_exp_details[experience_badges_overrides][<?php echo esc_attr($badge_id); ?>][label]" value="<?php echo esc_attr($override_label ?: $current_label); ?>" />
                                         </label>
                                         <label class="fp-exp-taxonomy-editor__field">
                                             <span class="fp-exp-field__label"><?php esc_html_e('Descrizione badge', 'fp-experiences'); ?></span>
-                                            <textarea rows="2" name="fp_exp_details[experience_badges_overrides][<?php echo esc_attr($selected_badge_id); ?>][description]"><?php echo esc_textarea($override_desc !== '' ? $override_desc : $current_desc); ?></textarea>
+                                            <textarea rows="2" name="fp_exp_details[experience_badges_overrides][<?php echo esc_attr($badge_id); ?>][description]"><?php echo esc_textarea($override_desc !== '' ? $override_desc : $current_desc); ?></textarea>
                                         </label>
                                     </div>
                                 <?php endforeach; ?>
@@ -729,6 +730,7 @@ final class ExperienceMetaBoxes
                         ?>
                         <div class="fp-exp-taxonomy-editor fp-exp-taxonomy-editor--compact">
                             <span class="fp-exp-field__label"><?php esc_html_e('Badge personalizzati', 'fp-experiences'); ?></span>
+                            <p class="fp-exp-field__description"><?php echo esc_html__("Aggiungi badge personalizzati per questa esperienza. L'ID è un identificatore tecnico unico (solo lettere minuscole, numeri e trattini) usato come slug; es.: 'dog-friendly'. Una volta usato nelle liste/filtri, evita di cambiarlo.", 'fp-experiences'); ?></p>
                             <div class="fp-exp-taxonomy-editor__list">
                                 <?php foreach ($custom_badges_existing as $entry) :
                                     $cid = sanitize_key((string) ($entry['id'] ?? ''));
@@ -738,7 +740,8 @@ final class ExperienceMetaBoxes
                                     <div class="fp-exp-taxonomy-editor__item">
                                         <label class="fp-exp-taxonomy-editor__field">
                                             <span class="fp-exp-field__label"><?php esc_html_e('ID badge', 'fp-experiences'); ?></span>
-                                            <input type="text" name="fp_exp_details[experience_badges_custom][][id]" value="<?php echo esc_attr($cid); ?>" />
+                                            <input type="text" name="fp_exp_details[experience_badges_custom][][id]" value="<?php echo esc_attr($cid); ?>" placeholder="es. dog-friendly" pattern="[a-z0-9\-]+" />
+                                            <span class="fp-exp-field__description"><?php esc_html_e('Univoco, minuscole/numeri/trattini soltanto', 'fp-experiences'); ?></span>
                                         </label>
                                         <label class="fp-exp-taxonomy-editor__field">
                                             <span class="fp-exp-field__label"><?php esc_html_e('Titolo', 'fp-experiences'); ?></span>
@@ -754,7 +757,8 @@ final class ExperienceMetaBoxes
                                     <div class="fp-exp-taxonomy-editor__item">
                                         <label class="fp-exp-taxonomy-editor__field">
                                             <span class="fp-exp-field__label"><?php esc_html_e('ID badge', 'fp-experiences'); ?></span>
-                                            <input type="text" name="fp_exp_details[experience_badges_custom][][id]" value="" />
+                                            <input type="text" name="fp_exp_details[experience_badges_custom][][id]" value="" placeholder="es. dog-friendly" pattern="[a-z0-9\-]+" />
+                                            <span class="fp-exp-field__description"><?php esc_html_e('Univoco, minuscole/numeri/trattini soltanto', 'fp-experiences'); ?></span>
                                         </label>
                                         <label class="fp-exp-taxonomy-editor__field">
                                             <span class="fp-exp-field__label"><?php esc_html_e('Titolo', 'fp-experiences'); ?></span>
@@ -1418,7 +1422,7 @@ final class ExperienceMetaBoxes
 
                     <div class="fp-exp-field fp-exp-field--columns">
                         <label>
-                            <span class="fp-exp-field__label"><?php esc_html_e('Durata slot (minuti)', 'fp-experiences'); ?></span>
+                            <span class="fp-exp-field__label"><?php esc_html_e('Durata predefinita slot (minuti)', 'fp-experiences'); ?></span>
                             <input type="number" min="15" step="5" name="fp_exp_availability[recurrence][duration]" value="<?php echo esc_attr((string) ($recurrence['duration'] ?? 60)); ?>" />
                         </label>
                         <div class="fp-exp-field__hint" data-recurrence-errors hidden></div>
@@ -1438,6 +1442,7 @@ final class ExperienceMetaBoxes
                                 'capacity' => 0,
                                 'buffer_before' => 0,
                                 'buffer_after' => 0,
+                                'duration' => 0,
                             ], true, $frequency); ?>
                         </template>
                         <p class="fp-exp-repeater__actions">
@@ -1933,6 +1938,32 @@ final class ExperienceMetaBoxes
                 </label>
                 <button type="button" class="button-link-delete" data-repeater-remove>&times;</button>
             </div>
+            <?php if ('weekly' === $frequency) : ?>
+                <div class="fp-exp-field fp-exp-recurrence-set__days">
+                    <span class="fp-exp-field__label"><?php esc_html_e('Giorni (override, opzionale)', 'fp-experiences'); ?></span>
+                    <div class="fp-exp-checkbox-grid">
+                        <?php foreach ($this->get_week_days() as $day_key => $day_label) : ?>
+                            <label>
+                                <input
+                                    type="checkbox"
+                                    <?php
+                                    $name = $is_template
+                                        ? 'fp_exp_availability[recurrence][time_sets][__INDEX__][days][]'
+                                        : 'fp_exp_availability[recurrence][time_sets][' . $index . '][days][]';
+                                    echo $this->field_name_attribute($name, $is_template);
+                                    ?>
+                                    value="<?php echo esc_attr($day_key); ?>"
+                                    <?php
+                                    $current_days = isset($set['days']) && is_array($set['days']) ? $set['days'] : [];
+                                    checked(in_array($this->map_weekday_for_ui($day_key), $current_days, true));
+                                    ?>
+                                />
+                                <span><?php echo esc_html($day_label); ?></span>
+                            </label>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+            <?php endif; ?>
             <div class="fp-exp-recurrence-set__chips" data-time-set-chips>
                 <?php foreach ($times as $time_index => $time_value) : ?>
                     <span class="fp-exp-chip" data-time-set-chip>

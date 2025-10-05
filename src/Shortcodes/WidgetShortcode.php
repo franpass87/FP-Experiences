@@ -214,6 +214,7 @@ final class WidgetShortcode extends BaseShortcode
             'behavior' => $behavior,
             'schema_json' => $schema,
             'locale' => get_locale(),
+            'timezone' => wp_timezone()->getName(),
             'rtb_settings' => $rtb_settings,
             'display_context' => $display_context,
             'config_version' => $modified ? (string) $modified : (string) time(),

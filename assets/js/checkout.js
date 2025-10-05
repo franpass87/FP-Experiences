@@ -172,6 +172,108 @@
                     },
                 }));
             });
+
+            // Handle the custom checkout submit event: create order and redirect to payment
+            form.addEventListener('fpExpCheckoutSubmit', async (event) => {
+                const detail = event && event.detail ? event.detail : {};
+                const submitButton = form.querySelector('.fp-exp-checkout__submit');
+
+                const setSubmitting = (submitting) => {
+                    if (submitButton) {
+                        submitButton.disabled = Boolean(submitting);
+                        if (submitting) {
+                            submitButton.setAttribute('aria-busy', 'true');
+                        } else {
+                            submitButton.removeAttribute('aria-busy');
+                        }
+                    }
+                };
+
+                const showGenericError = (message) => {
+                    const errors = [{ message: message || (translate ? translate('Impossibile generare l’ordine di pagamento. Riprova.') : 'Impossibile generare l’ordine di pagamento. Riprova.') }];
+                    showErrorSummary(errorSummary, errors);
+                };
+
+                try {
+                    hideErrorSummary(errorSummary);
+                    setSubmitting(true);
+
+                    const config = (typeof window !== 'undefined' && window.fpExpConfig) ? window.fpExpConfig : {};
+                    const restUrl = (config.restUrl || '').replace(/\/?$/, '/');
+                    const ajaxUrl = config.ajaxUrl || '';
+
+                    const payload = detail.payload || {};
+                    const body = {
+                        nonce: detail.nonce || '',
+                        contact: payload.contact || {},
+                        billing: payload.billing || {},
+                        consent: payload.consent || {},
+                    };
+
+                    let paymentUrl = '';
+
+                    // Try REST first
+                    if (restUrl) {
+                        try {
+                            const res = await fetch(restUrl + 'checkout', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-WP-Nonce': config.restNonce || '',
+                                },
+                                credentials: 'same-origin',
+                                body: JSON.stringify(body),
+                            });
+
+                            const data = await res.json().catch(() => ({}));
+                            if (res.ok && data && data.payment_url) {
+                                paymentUrl = String(data.payment_url);
+                            } else if (!res.ok && data && data.message) {
+                                showGenericError(String(data.message));
+                            }
+                        } catch (e) {
+                            // ignore and fallback to AJAX
+                        }
+                    }
+
+                    // Fallback to AJAX if needed
+                    if (!paymentUrl && ajaxUrl) {
+                        try {
+                            const fd = new FormData();
+                            fd.set('action', 'fp_exp_checkout');
+                            fd.set('nonce', body.nonce);
+                            fd.set('contact', JSON.stringify(body.contact));
+                            fd.set('billing', JSON.stringify(body.billing));
+                            fd.set('consent', JSON.stringify(body.consent));
+
+                            const res = await fetch(ajaxUrl, {
+                                method: 'POST',
+                                credentials: 'same-origin',
+                                body: fd,
+                            });
+
+                            const data = await res.json().catch(() => ({}));
+                            if (data && data.success && data.data && data.data.payment_url) {
+                                paymentUrl = String(data.data.payment_url);
+                            } else if (data && data.data && data.data.message) {
+                                showGenericError(String(data.data.message));
+                            }
+                        } catch (e) {
+                            // network error
+                        }
+                    }
+
+                    if (paymentUrl) {
+                        window.location.assign(paymentUrl);
+                        return;
+                    }
+
+                    // If we got here, no redirect happened
+                    showGenericError();
+                } finally {
+                    setSubmitting(false);
+                }
+            }, { once: false });
         });
     }
 
