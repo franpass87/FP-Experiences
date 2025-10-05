@@ -62,6 +62,43 @@
         return div.innerHTML;
     }
 
+    /**
+     * Esegue una chiamata fetch con retry automatico per errori temporanei
+     * @param {string} url URL da chiamare
+     * @param {Object} options Opzioni fetch
+     * @param {number} maxRetries Numero massimo di tentativi (default 3)
+     * @returns {Promise<Response>}
+     */
+    async function fetchWithRetry(url, options = {}, maxRetries = 3) {
+        let lastError;
+        
+        for (let attempt = 0; attempt < maxRetries; attempt++) {
+            try {
+                const response = await fetch(url, options);
+                
+                // Non ritentare per errori client (4xx) tranne 408 e 429
+                if (response.ok || (response.status >= 400 && response.status < 500 && response.status !== 408 && response.status !== 429)) {
+                    return response;
+                }
+                
+                // Per errori 5xx o 408/429, ritenta
+                lastError = new Error(`HTTP ${response.status}`);
+                
+            } catch (error) {
+                lastError = error;
+            }
+            
+            // Non ritentare sull'ultimo tentativo
+            if (attempt < maxRetries - 1) {
+                // Exponential backoff: 1s, 2s, 4s
+                const delay = Math.pow(2, attempt) * 1000;
+                await new Promise(resolve => setTimeout(resolve, delay));
+            }
+        }
+        
+        throw lastError || new Error('Fetch failed after retries');
+    }
+
     function formatCurrency(value, currency) {
         const amount = typeof value === 'number' ? value : parseFloat(String(value || '0'));
         const safeCurrency = currency || defaultCurrency;
@@ -2102,6 +2139,18 @@
                 dateInput.max = availableDates[availableDates.length - 1];
             }
 
+            // Attributi ARIA per accessibilità
+            dateInput.setAttribute('aria-label', localize('Seleziona data esperienza'));
+            dateInput.setAttribute('aria-describedby', 'fp-exp-date-help');
+            
+            // Aggiungi testo di aiuto nascosto visivamente ma accessibile agli screen reader
+            const helpText = document.createElement('span');
+            helpText.id = 'fp-exp-date-help';
+            helpText.className = 'screen-reader-text';
+            helpText.textContent = localize('Usa i tasti freccia per navigare tra le date disponibili');
+            helpText.style.cssText = 'position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border-width:0;';
+            dateInput.parentNode.insertBefore(helpText, dateInput.nextSibling);
+
             // Apri il selettore quando l'utente interagisce con l'input
             const openNativePicker = () => {
                 // showPicker è supportato da browser moderni
@@ -2486,10 +2535,24 @@
 
         const allDayItems = Array.from(container.querySelectorAll('.fp-exp-calendar-only__day'));
 
-        async function loadSlotsForDate(dateKey) {
+        // Cache locale per slot con TTL di 60 secondi
+        const slotsCache = new Map();
+        const CACHE_TTL = 60000; // 1 minuto
+
+        async function loadSlotsForDate(dateKey, useCache = true) {
             const slotsContainer = container.querySelector('.fp-exp-slots');
             if (!slotsContainer) {
                 return;
+            }
+
+            // Verifica cache
+            const cacheKey = `${experienceId}-${dateKey}`;
+            if (useCache) {
+                const cached = slotsCache.get(cacheKey);
+                if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+                    renderSlots(slotsContainer, cached.data, { selectedSlot: null });
+                    return;
+                }
             }
 
             // placeholder loading
@@ -2504,10 +2567,12 @@
                 url.searchParams.set('experience', String(experienceId));
                 url.searchParams.set('start', dateKey);
                 url.searchParams.set('end', dateKey);
-                const response = await fetch(url.toString(), {
+                
+                // Usa fetchWithRetry per gestire errori temporanei
+                const response = await fetchWithRetry(url.toString(), {
                     credentials: 'same-origin',
                     headers: buildRestHeaders(),
-                });
+                }, 3);
                 
                 // Gestione errori HTTP specifica
                 if (!response.ok) {
@@ -2552,11 +2617,18 @@
                         end_iso: end.replace(' ', 'T') + 'Z',
                     };
                 });
+                
+                // Salva in cache
+                slotsCache.set(cacheKey, {
+                    data: mapped,
+                    timestamp: Date.now()
+                });
+                
                 renderSlots(slotsContainer, mapped, { selectedSlot: null });
             } catch (e) {
                 const error = document.createElement('p');
                 error.className = 'fp-exp-slots__placeholder';
-                error.textContent = container.getAttribute('data-error-label') || 'Impossibile caricare le fasce';
+                error.textContent = e.message || container.getAttribute('data-error-label') || 'Impossibile caricare le fasce';
                 slotsContainer.innerHTML = '';
                 slotsContainer.appendChild(error);
             }
@@ -2636,6 +2708,10 @@
             button.setAttribute('data-slot-id', slot.id);
             const parsedRemaining = parseInt(slot.remaining, 10);
             const remaining = Number.isNaN(parsedRemaining) ? 0 : parsedRemaining;
+            
+            // ARIA label descrittivo per slot
+            const ariaLabel = `${slot.time || ''}, ${remaining > 0 ? localizePlural('%d posto disponibile', '%d posti disponibili', remaining).replace('%d', String(remaining)) : localize('Esaurito')}`;
+            button.setAttribute('aria-label', ariaLabel);
             const template = localizePlural('%d posto', '%d posti', remaining);
             let countLabel = template;
             if (typeof i18n_sprintf === 'function') {

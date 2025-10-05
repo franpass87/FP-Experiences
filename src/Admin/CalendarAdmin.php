@@ -122,6 +122,10 @@ final class CalendarAdmin
                 'untitledExperience' => esc_html__('Untitled experience', 'fp-experiences'),
                 'loadError' => esc_html__('Impossibile caricare il calendario. Riprova.', 'fp-experiences'),
                 'selectExperience' => esc_html__('Select experience', 'fp-experiences'),
+                'selectExperienceFirst' => esc_html__('Seleziona un\'esperienza per visualizzare la disponibilità', 'fp-experiences'),
+                'accessDenied' => esc_html__('Accesso negato. Ricarica la pagina e riprova.', 'fp-experiences'),
+                'notFound' => esc_html__('Risorsa non trovata.', 'fp-experiences'),
+                'serverError' => esc_html__('Errore del server. Riprova tra qualche minuto.', 'fp-experiences'),
             ],
         ];
 

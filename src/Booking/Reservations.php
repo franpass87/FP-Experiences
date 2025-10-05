@@ -572,10 +572,17 @@ final class Reservations
 
         $placeholders = implode(',', array_fill(0, count($active_statuses), '%s'));
 
+        // Nota: usando COALESCE con valore di default se pax è NULL
+        // JSON_LENGTH è supportato da MySQL 5.7+ e MariaDB 10.2+
         $sql = $wpdb->prepare(
-            "SELECT COALESCE(SUM(JSON_LENGTH(COALESCE(r.pax, '[]'))), 0) as total " .
+            "SELECT COALESCE(SUM(
+                CASE 
+                    WHEN r.pax IS NULL OR r.pax = '' THEN 1
+                    ELSE JSON_LENGTH(r.pax)
+                END
+            ), 0) as total " .
             "FROM {$reservations_table} r " .
-            "LEFT JOIN {$slots_table} s ON r.slot_id = s.id " .
+            "INNER JOIN {$slots_table} s ON r.slot_id = s.id " .
             "WHERE r.experience_id = %d " .
             "AND r.status IN ({$placeholders}) " .
             "AND s.start_datetime >= %s " .
