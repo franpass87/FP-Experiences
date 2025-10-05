@@ -1402,7 +1402,7 @@
                             if (redeemButton) {
                                 redeemButton.disabled = true;
                             }
-                            showFeedback(detailFeedback, escapeHtml(localize('Nessuno slot futuro disponibile. Contatta l'operatore per pianificare manualmente.')), true);
+                            showFeedback(detailFeedback, escapeHtml(localize('Nessuno slot futuro disponibile. Contatta l\'operatore per pianificare manualmente.')), true);
                         }
                     }
                 } catch (error) {
@@ -1455,7 +1455,7 @@
                     const data = await response.json().catch(() => ({}));
 
                     if (!response.ok || (data && data.code)) {
-                        const message = data && data.message ? data.message : localize('Non è stato possibile riscattare il voucher. Prova un altro slot o contatta l'assistenza.');
+                        const message = data && data.message ? data.message : localize('Non è stato possibile riscattare il voucher. Prova un altro slot o contatta l\'assistenza.');
                         showFeedback(detailFeedback, escapeHtml(message), true);
                         if (slotSelect) {
                             slotSelect.disabled = false;
@@ -1530,7 +1530,7 @@
                         redeemButton.setAttribute('aria-disabled', 'true');
                     }
                 } catch (error) {
-                    showFeedback(detailFeedback, escapeHtml(localize('Non è stato possibile riscattare il voucher. Prova un altro slot o contatta l'assistenza.')), true);
+                    showFeedback(detailFeedback, escapeHtml(localize('Non è stato possibile riscattare il voucher. Prova un altro slot o contatta l\'assistenza.')), true);
                     if (slotSelect) {
                         slotSelect.disabled = false;
                     }
