@@ -1714,6 +1714,26 @@
         setupMeetingPoints();
         setupExperiencePages();
         setupGiftRedeem();
+
+        // Redirect automatico al checkout WooCommerce quando il widget emette l'evento di checkout
+        try {
+            const config = (typeof window !== 'undefined' && window.fpExpConfig) ? window.fpExpConfig : {};
+            const checkoutUrl = (config && typeof config.checkoutUrl === 'string') ? config.checkoutUrl : '';
+            if (checkoutUrl) {
+                document.addEventListener('fpExpWidgetCheckout', () => {
+                    // evita redirect se già in pagina checkout
+                    if (typeof window !== 'undefined' && window.location && typeof window.location.href === 'string') {
+                        const href = window.location.href;
+                        if (href && href.indexOf(checkoutUrl) !== -1) {
+                            return;
+                        }
+                    }
+                    window.location.href = checkoutUrl;
+                });
+            }
+        } catch (e) {
+            // non bloccare l'inizializzazione per errori qui
+        }
     }
 
     function setupListing(section) {
