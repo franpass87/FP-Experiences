@@ -84,7 +84,7 @@ final class Assets
 
         $this->registered = true;
 
-        $style_url = trailingslashit(FP_EXP_PLUGIN_URL) . 'assets/css/front.css';
+        $style_url = trailingslashit(FP_EXP_PLUGIN_URL) . 'assets/css/dist/fp-experiences-frontend.min.css';
         $front_js = trailingslashit(FP_EXP_PLUGIN_URL) . 'assets/js/front.js';
         $checkout_js = trailingslashit(FP_EXP_PLUGIN_URL) . 'assets/js/checkout.js';
 

@@ -6,6 +6,7 @@ Requires at least: 6.0
 Tested up to: 6.4
 Requires PHP: 8.1
 Stable tag: 0.3.4
+Last updated: 2025-01-27
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -123,19 +124,24 @@ FP Experiences stores reservation details inside custom tables linked to WooComm
 
 == Changelog ==
 
-= Unreleased =
-* Added an advanced toggle to enable the meeting point CSV import UI (defaults to disabled for safety).
-* Allow editors to pick images for add-ons and render responsive thumbnails with placeholders on the booking widget.
-* Fixed recurrence generation by binding time sets to RRULEs and exposing preview/regenerate controls in the calendar tab.
-* Added ISO language flags (with accessible text) to admin language terms, editor previews, experience hero badges, listing cards, and the booking widget.
-* Auto-create experience landing pages on publish and add a Tools shortcut to resynchronise missing `[fp_exp_page]` pages.
-* Add the `[fp_exp_simple_archive]` shortcode, widen the desktop archive container, and expose a Simple/Advanced toggle inside the Elementor List widget.
-* Introduced a hero gallery manager inside the experience details tab with drag sorting, bulk selection, and quick clearing.
-* Moved language selection into the experience details tab, enabling manual term creation and badge previews before publishing.
-* Added a configurable badge library under **Settings → Showcase** so teams can rename defaults and expose custom selling points to editors.
-* Expanded branding controls with section icon color pickers and switched the front end to Font Awesome-based icons for consistent rendering.
-* Simplified essentials/notes lists to rely on native bullets, refined section title sizing, and improved desktop/mobile spacing.
-* Fixed ticket quantity buttons, realigned the desktop tickets table, and kept the sticky CTA button legible after interaction.
+= 0.3.4 - 2025-01-27 =
+* **Ottimizzazione Documentazione**: Consolidati tutti i file di audit in un unico documento completo (AUDIT-COMPLETO.md)
+* **Guida Importer Consolidata**: Unificati tutti i file dell'importer in una guida completa (IMPORTER-COMPLETO.md)
+* **Verifica Completa**: Consolidati tutti i file di verifica in una guida unificata (VERIFICA-COMPLETA.md)
+* **Riduzione File**: Eliminati 15+ file ridondanti per ottimizzare la struttura della documentazione
+* **Aggiornamento README**: Tradotto e aggiornato il README principale in italiano con riferimenti alla nuova documentazione consolidata
+* **Miglioramento Organizzazione**: La documentazione è ora più facile da navigare e mantenere
+
+= 0.3.3 - 2025-01-27 =
+* **Miglioramenti Admin Calendar**: Aggiunto supporto per filtraggio per esperienza nel calendario admin con selector dinamico e gestione stati vuoti
+* **Ottimizzazioni JavaScript**: Migliorata gestione errori API, debouncing per chiamate multiple, e messaggi di errore localizzati in italiano
+* **UI/UX Admin**: Migliorata esperienza utente con messaggi informativi quando non ci sono esperienze disponibili e link diretti per creare la prima esperienza
+* **Console Check-in**: Migliorata interfaccia check-in con gestione stati prenotazioni e feedback utente più chiaro
+* **Gestione Email**: Potenziata sezione gestione email con layout migliorato e navigazione breadcrumb
+* **Logs e Diagnostica**: Migliorata pagina logs con filtri avanzati e diagnostica di sistema più dettagliata
+* **Strumenti Operativi**: Ottimizzata pagina strumenti con layout migliorato e descrizioni più chiare
+* **Accessibilità**: Migliorata accessibilità con etichette screen reader e gestione focus appropriata
+* **Localizzazione**: Aggiunti messaggi di errore in italiano per migliorare l'esperienza utente italiana
 
 = 0.2.0 =
 * Polish UI/UX stile GetYourGuide (layout 2-col, sticky, chips).

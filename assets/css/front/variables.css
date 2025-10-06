@@ -1,0 +1,131 @@
+/**
+ * Frontend CSS Variables and Base Styles
+ */
+:root {
+    --fp-spacing-xs: 4px;
+    --fp-spacing-sm: 8px;
+    --fp-spacing-md: 16px;
+    --fp-spacing-lg: 24px;
+    --fp-spacing-xl: 32px;
+    --fp-spacing-2xl: 48px;
+    --fp-spacing-3xl: 64px;
+    --fp-radius-sm: 4px;
+    --fp-radius-md: 8px;
+    --fp-radius-lg: 12px;
+    --fp-radius-xl: 16px;
+    --fp-radius-2xl: 20px;
+    --fp-radius-full: 999px;
+    --fp-shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+    --fp-shadow-md: 0 4px 6px rgba(0,0,0,0.07);
+    --fp-shadow-lg: 0 10px 15px rgba(0,0,0,0.1);
+    --fp-shadow-xl: 0 20px 25px rgba(0,0,0,0.1);
+    --fp-shadow-2xl: 0 25px 50px rgba(0,0,0,0.25);
+    --fp-color-primary: #2563eb;
+    --fp-color-primary-hover: #1d4ed8;
+    --fp-color-primary-light: #dbeafe;
+    --fp-color-primary-dark: #1e40af;
+    --fp-color-accent: #00A37A;
+    --fp-color-accent-hover: #059669;
+    --fp-color-accent-light: #d1fae5;
+    --fp-color-danger: #dc2626;
+    --fp-color-danger-hover: #b91c1c;
+    --fp-color-danger-light: #fecaca;
+    --fp-color-warning: #f59e0b;
+    --fp-color-warning-hover: #d97706;
+    --fp-color-warning-light: #fef3c7;
+    --fp-color-success: #10b981;
+    --fp-color-success-hover: #059669;
+    --fp-color-success-light: #d1fae5;
+    --fp-color-text: #1f2937;
+    --fp-color-text-muted: #6b7280;
+    --fp-color-text-light: #9ca3af;
+    --fp-color-text-inverse: #ffffff;
+    --fp-color-surface: #ffffff;
+    --fp-color-surface-secondary: #f9fafb;
+    --fp-color-surface-tertiary: #f3f4f6;
+    --fp-color-border: rgba(0,0,0,0.08);
+    --fp-color-border-light: rgba(0,0,0,0.05);
+    --fp-color-border-dark: rgba(0,0,0,0.12);
+    --fp-font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --fp-font-size-xs: 0.75rem;
+    --fp-font-size-sm: 0.875rem;
+    --fp-font-size-base: 1rem;
+    --fp-font-size-lg: 1.125rem;
+    --fp-font-size-xl: 1.25rem;
+    --fp-font-size-2xl: 1.5rem;
+    --fp-font-size-3xl: 1.875rem;
+    --fp-font-size-4xl: 2.25rem;
+    --fp-font-weight-normal: 400;
+    --fp-font-weight-medium: 500;
+    --fp-font-weight-semibold: 600;
+    --fp-font-weight-bold: 700;
+    --fp-line-height-tight: 1.25;
+    --fp-line-height-normal: 1.5;
+    --fp-line-height-relaxed: 1.75;
+    --fp-transition-fast: 0.15s ease;
+    --fp-transition-normal: 0.2s ease;
+    --fp-transition-slow: 0.3s ease;
+    --fp-z-dropdown: 1000;
+    --fp-z-sticky: 1020;
+    --fp-z-fixed: 1030;
+    --fp-z-modal-backdrop: 1040;
+    --fp-z-modal: 1050;
+    --fp-z-popover: 1060;
+    --fp-z-tooltip: 1070;
+    --fp-bp-sm: 640px;
+    --fp-bp-md: 768px;
+    --fp-bp-lg: 1024px;
+    --fp-bp-xl: 1280px;
+    --fp-bp-2xl: 1536px;
+}
+
+/* Dark mode variables */
+html.fp-exp-dark {
+    --fp-color-text: #e6e8eb;
+    --fp-color-text-muted: #a0a7b0;
+    --fp-color-text-light: #6b7280;
+    --fp-color-text-inverse: #1f2937;
+    --fp-color-surface: #1f2937;
+    --fp-color-surface-secondary: #111827;
+    --fp-color-surface-tertiary: #0f172a;
+    --fp-color-border: rgba(230,232,235,0.08);
+    --fp-color-border-light: rgba(230,232,235,0.05);
+    --fp-color-border-dark: rgba(230,232,235,0.12);
+    --fp-color-primary: #3b82f6;
+    --fp-color-primary-hover: #2563eb;
+    --fp-color-primary-light: rgba(59,130,246,0.1);
+    --fp-color-primary-dark: #1e40af;
+}
+
+/* Base styles */
+.fp-exp {
+    font-family: var(--fp-font-family);
+    color: var(--fp-color-text);
+    background-color: transparent;
+    line-height: var(--fp-line-height-normal);
+}
+
+.fp-exp:where(a,button,[role="button"]):focus-visible {
+    outline: 3px solid var(--fp-focus-ring,color-mix(in srgb,var(--fp-color-primary) 70%,#fff));
+    outline-offset: 3px;
+}
+
+.fp-exp-sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0,0,0,0);
+    white-space: nowrap;
+    border: 0;
+}
+
+.fp-exp-hidden {
+    display: none !important;
+}
+
+.fp-exp-visible {
+    display: block !important;
+}

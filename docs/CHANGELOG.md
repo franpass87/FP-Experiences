@@ -2,6 +2,16 @@
 
 ## [Unreleased]
 
+## [0.3.4] - 2025-01-27
+- **Ottimizzazione Documentazione**: Consolidati tutti i file di audit in un unico documento completo (AUDIT-COMPLETO.md)
+- **Guida Importer Consolidata**: Unificati tutti i file dell'importer in una guida completa (IMPORTER-COMPLETO.md)
+- **Verifica Completa**: Consolidati tutti i file di verifica in una guida unificata (VERIFICA-COMPLETA.md)
+- **Riduzione File**: Eliminati 15+ file ridondanti per ottimizzare la struttura della documentazione
+- **Aggiornamento README**: Tradotto e aggiornato il README principale in italiano con riferimenti alla nuova documentazione consolidata
+- **Miglioramento Organizzazione**: La documentazione è ora più facile da navigare e mantenere
+
+## [0.3.3] - 2025-01-27
+
 ## [0.3.3] - 2025-01-27
 - **Miglioramenti Admin Calendar**: Aggiunto supporto per filtraggio per esperienza nel calendario admin con selector dinamico e gestione stati vuoti
 - **Ottimizzazioni JavaScript**: Migliorata gestione errori API, debouncing per chiamate multiple, e messaggi di errore localizzati in italiano

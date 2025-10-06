@@ -1,0 +1,133 @@
+/**
+ * Admin Layout Components
+ */
+.fp-exp-admin {
+    position: relative;
+    border: 1px solid var(--fp-exp-admin-border);
+    border-radius: var(--fp-exp-admin-radius);
+    background: #ffffff;
+    box-shadow: var(--fp-exp-admin-card-shadow);
+    font-family: inherit;
+}
+
+.fp-exp-admin__body {
+    display: grid;
+    gap: 20px;
+    padding: 24px;
+}
+
+.fp-exp-admin__layout {
+    display: grid;
+    gap: 24px;
+}
+
+.fp-exp-admin__header {
+    display: grid;
+    gap: 8px;
+}
+
+.fp-exp-admin__breadcrumb,
+.fp-exp-dashboard__breadcrumb {
+    font-size: 13px;
+    color: var(--fp-exp-color-muted, #666);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.fp-exp-admin__title {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 600;
+    color: var(--fp-exp-color-text);
+}
+
+.fp-exp-admin__intro {
+    margin: 0;
+    font-size: 14px;
+    color: var(--fp-exp-color-muted);
+}
+
+.fp-exp-admin__body > *:first-child {
+    margin-top: 0;
+}
+
+.fp-exp-admin__body > *:last-child {
+    margin-bottom: 0;
+}
+
+.fp-exp-admin__body .notice {
+    margin: 0;
+    border-radius: var(--fp-exp-admin-radius);
+}
+
+/* Dashboard layout */
+.fp-exp-dashboard {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.fp-exp-dashboard__grid {
+    display: grid;
+    gap: 16px;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.fp-exp-dashboard__card {
+    background: #fff;
+    border: 1px solid var(--fp-exp-admin-border);
+    border-radius: var(--fp-exp-admin-radius);
+    padding: 16px;
+}
+
+.fp-exp-dashboard__card-label {
+    margin: 0;
+    font-size: 13px;
+    color: var(--fp-exp-color-muted, #666);
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+}
+
+.fp-exp-dashboard__card-value {
+    margin: 8px 0 0;
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--fp-exp-color-text, #1f1f1f);
+}
+
+.fp-exp-dashboard__card-hint {
+    margin: 6px 0 0;
+    font-size: 13px;
+    color: var(--fp-exp-color-muted, #666);
+}
+
+.fp-exp-dashboard__columns {
+    display: grid;
+    gap: 24px;
+}
+
+.fp-exp-dashboard__section {
+    background: #fff;
+    border: 1px solid var(--fp-exp-admin-border);
+    border-radius: var(--fp-exp-admin-radius);
+    padding: 20px;
+}
+
+.fp-exp-dashboard__section h2 {
+    margin-top: 0;
+}
+
+.fp-exp-dashboard__table th,
+.fp-exp-dashboard__table td {
+    vertical-align: middle;
+}
+
+.fp-exp-dashboard__shortcuts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 0;
+    margin: 0;
+    list-style: none;
+}

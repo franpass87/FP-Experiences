@@ -2,7 +2,7 @@
 
 ## Introduzione
 
-L'Importer di Esperienze è uno strumento potente che permette di caricare velocemente multiple esperienze tramite un file CSV. Questa guida spiega in dettaglio come utilizzare l'importer e come strutturare i dati.
+L'Importer di Esperienze è uno strumento potente che permette di caricare velocemente multiple esperienze tramite un file CSV. Questa guida completa include tutto quello che serve per utilizzare l'importer, dalla configurazione iniziale alle best practices.
 
 ## Accesso all'Importer
 
@@ -10,18 +10,15 @@ L'Importer di Esperienze è uno strumento potente che permette di caricare veloc
 2. Nel menu laterale, vai su **FP Experiences** → **Importer Esperienze**
 3. La pagina dell'importer si aprirà con la guida integrata e il form di caricamento
 
-## Processo di Import
+## Quick Start
 
 ### Passo 1: Scarica il Template CSV
-
 Nella pagina dell'importer, clicca sul pulsante **"Scarica Template CSV"**. Questo scaricherà un file CSV pre-formattato con:
-
 - Tutte le colonne necessarie con i nomi corretti
 - Una riga di esempio con dati dimostrativi
 - La corretta codifica UTF-8
 
 ### Passo 2: Compila il File CSV
-
 Apri il file CSV scaricato con:
 - **Microsoft Excel**
 - **Google Sheets**
@@ -29,6 +26,11 @@ Apri il file CSV scaricato con:
 - Qualsiasi altro editor di fogli di calcolo
 
 **IMPORTANTE**: Mantieni la prima riga (intestazioni delle colonne) invariata!
+
+### Passo 3: Importa
+1. Carica il file CSV compilato
+2. Verifica i risultati nella pagina di anteprima
+3. Conferma l'import
 
 ## Struttura dei Campi
 
@@ -45,11 +47,6 @@ Apri il file CSV scaricato con:
 - **Valori permessi**: `publish`, `draft`, `pending`, `private`
 - **Default**: `draft`
 - **Descrizione**: Lo stato di pubblicazione dell'esperienza
-- **Esempi**:
-  - `publish` - Pubblica immediatamente
-  - `draft` - Salva come bozza
-  - `pending` - In attesa di revisione
-  - `private` - Privata (visibile solo agli amministratori)
 
 ### Campi di Contenuto
 
@@ -57,8 +54,7 @@ Apri il file CSV scaricato con:
 - **Tipo**: HTML/Testo lungo
 - **Descrizione**: Descrizione completa dell'esperienza
 - **Supporto HTML**: ✅ Sì (tag sicuri)
-- **Esempio**: `"Scopri i segreti della nostra bellissima città con una guida esperta. Visiteremo i monumenti più importanti e ti racconteremo storie affascinanti."`
-- **Note**: Puoi includere HTML base come `<p>`, `<strong>`, `<em>`, `<ul>`, `<li>`, ecc.
+- **Esempio**: `"Scopri i segreti della nostra bellissima città con una guida esperta."`
 
 #### `excerpt`
 - **Tipo**: Testo breve
@@ -70,7 +66,6 @@ Apri il file CSV scaricato con:
 - **Tipo**: Testo breve
 - **Descrizione**: Descrizione breve per overview
 - **Esempio**: `"Tour guidato di 2 ore nel centro storico"`
-- **Utilizzo**: Mostrato nelle card di anteprima
 
 ### Campi Numerici
 
@@ -82,34 +77,14 @@ Apri il file CSV scaricato con:
 
 #### `base_price`
 - **Tipo**: Numero decimale
-- **Descrizione**: Prezzo base dell'esperienza
 - **Formato**: Usa il punto come separatore decimale
 - **Esempi**: `35.00`, `49.99`, `150`
 - **Note**: Non includere simboli di valuta
 
-#### `min_party`
+#### `min_party`, `capacity_slot`, `age_min`, `age_max`
 - **Tipo**: Numero intero
-- **Descrizione**: Numero minimo di partecipanti richiesti
-- **Esempio**: `2`
-- **Default**: Nessuno
-
-#### `capacity_slot`
-- **Tipo**: Numero intero
-- **Descrizione**: Capacità massima per slot/turno
-- **Esempio**: `15`
-- **Note**: Utilizzato per gestire le disponibilità
-
-#### `age_min`
-- **Tipo**: Numero intero
-- **Descrizione**: Età minima consentita
-- **Esempio**: `8`
-- **Note**: Lascia vuoto se non ci sono restrizioni
-
-#### `age_max`
-- **Tipo**: Numero intero
-- **Descrizione**: Età massima consentita
-- **Esempio**: `99`
-- **Note**: Raramente utilizzato
+- **Descrizione**: Limiti di partecipanti, capacità, età
+- **Esempi**: `2`, `15`, `8`, `99`
 
 ### Campi di Testo Lungo
 
@@ -117,23 +92,15 @@ Apri il file CSV scaricato con:
 - **Tipo**: Testo
 - **Descrizione**: Descrizione del punto d'incontro
 - **Esempio**: `"Piazza del Duomo, davanti alla fontana centrale"`
-- **Note**: Puoi includere indicazioni dettagliate
 
 #### `what_to_bring`
 - **Tipo**: Testo
 - **Descrizione**: Cosa dovrebbero portare i partecipanti
 - **Esempio**: `"Scarpe comode, acqua, macchina fotografica"`
-- **Formato**: Puoi usare un elenco separato da virgole
 
-#### `notes`
+#### `notes`, `policy_cancel`
 - **Tipo**: Testo lungo
-- **Descrizione**: Note importanti per i partecipanti
-- **Esempio**: `"Il tour si tiene con qualsiasi condizione meteo. Si consiglia abbigliamento comodo."`
-
-#### `policy_cancel`
-- **Tipo**: Testo lungo
-- **Descrizione**: Politica di cancellazione
-- **Esempio**: `"Cancellazione gratuita fino a 24 ore prima. Rimborso completo."`
+- **Descrizione**: Note importanti e politiche di cancellazione
 
 ### Campi Lista (con separatore |)
 
@@ -142,34 +109,18 @@ I seguenti campi accettano più valori separati dal carattere **pipe** (`|`):
 #### `highlights`
 - **Tipo**: Lista di testi
 - **Separatore**: `|`
-- **Descrizione**: Punti salienti dell'esperienza
 - **Esempio**: `"Centro storico|Monumenti principali|Guida esperta|Storia affascinante"`
 - **Note**: NON aggiungere spazi prima o dopo il separatore
 
-#### `inclusions`
+#### `inclusions`, `exclusions`
 - **Tipo**: Lista di testi
 - **Separatore**: `|`
-- **Descrizione**: Cosa è incluso nel prezzo
 - **Esempio**: `"Guida turistica|Biglietti d'ingresso|Mappa della città"`
 
-#### `exclusions`
-- **Tipo**: Lista di testi
+#### `languages`, `themes`
+- **Tipo**: Lista di codici/nomi
 - **Separatore**: `|`
-- **Descrizione**: Cosa NON è incluso nel prezzo
-- **Esempio**: `"Trasporto|Cibo e bevande|Mance"`
-
-#### `languages`
-- **Tipo**: Lista di codici/nomi lingua
-- **Separatore**: `|`
-- **Descrizione**: Lingue in cui è disponibile l'esperienza
 - **Esempio**: `"Italiano|English|Español|Français"`
-- **Formati accettati**: Nome completo o codice ISO
-
-#### `themes`
-- **Tipo**: Lista di temi
-- **Separatore**: `|`
-- **Descrizione**: Temi/categorie dell'esperienza
-- **Esempio**: `"Cultura|Storia|Arte"`
 - **Note**: Se il tema non esiste, verrà creato automaticamente
 
 ### Campi Booleani
@@ -178,13 +129,11 @@ I seguenti campi accettano più valori separati dal carattere **pipe** (`|`):
 - **Tipo**: Sì/No
 - **Valori accettati**: `yes`, `si`, `sì`, `1`, `true`, `no`, `0`, `false`
 - **Descrizione**: Indica se l'esperienza è adatta alle famiglie
-- **Esempio**: `yes`
-- **Note**: Case-insensitive (puoi scrivere YES, Yes, yes)
+- **Note**: Case-insensitive
 
 ## Best Practices
 
 ### 1. Preparazione dei Dati
-
 - ✅ **Controlla** tutti i campi obbligatori prima dell'import
 - ✅ **Verifica** che i numeri usino il punto come separatore decimale
 - ✅ **Usa** il carattere pipe (`|`) per i campi lista
@@ -192,23 +141,19 @@ I seguenti campi accettano più valori separati dal carattere **pipe** (`|`):
 - ✅ **Salva** una copia di backup prima di modificare
 
 ### 2. Codifica e Formato
-
 - **Codifica**: UTF-8 (obbligatorio)
 - **Separatore**: Virgola (standard CSV)
 - **Separatore lista**: Pipe (`|`)
 - **Separatore decimale**: Punto (`.`)
 
 ### 3. Contenuto di Qualità
-
 - **Descrizioni**: Scrivi descrizioni dettagliate e coinvolgenti
 - **Highlights**: Massimo 5-7 punti salienti per esperienza
 - **Immagini**: L'importer non carica immagini - aggiungile manualmente dopo
 - **SEO**: Usa parole chiave rilevanti nelle descrizioni
 
 ### 4. Testing
-
 Prima di importare molte esperienze:
-
 1. **Test con una riga**: Prova con una singola esperienza
 2. **Verifica**: Controlla che tutti i campi siano importati correttamente
 3. **Correggi**: Se necessario, modifica il CSV e riprova
@@ -217,7 +162,6 @@ Prima di importare molte esperienze:
 ## Risoluzione Problemi
 
 ### Il file non viene caricato
-
 **Causa**: Formato file non corretto
 **Soluzione**: 
 - Assicurati che il file sia in formato CSV
@@ -225,7 +169,6 @@ Prima di importare molte esperienze:
 - Prova a salvare nuovamente da Excel con "CSV UTF-8"
 
 ### Alcuni campi non vengono importati
-
 **Causa**: Nomi colonne non corrispondono
 **Soluzione**:
 - Usa esattamente i nomi delle colonne del template
@@ -233,7 +176,6 @@ Prima di importare molte esperienze:
 - Controlla che non ci siano spazi extra
 
 ### Caratteri strani nel testo
-
 **Causa**: Problema di codifica
 **Soluzione**:
 - Assicurati che il file sia salvato in UTF-8
@@ -241,14 +183,12 @@ Prima di importare molte esperienze:
 - In Google Sheets: File → Scarica → CSV (UTF-8)
 
 ### Le liste non vengono separate correttamente
-
 **Causa**: Separatore errato
 **Soluzione**:
 - Usa solo il carattere pipe (`|`)
 - Non aggiungere spazi: `item1|item2` ✅ non `item1 | item2` ❌
 
 ### L'import è lento
-
 **Causa**: File molto grande
 **Soluzione**:
 - Dividi il file in batch più piccoli (50-100 righe)
@@ -258,9 +198,7 @@ Prima di importare molte esperienze:
 ## Limitazioni
 
 ### Cosa NON viene importato
-
 L'importer CSV ha alcune limitazioni intenzionali:
-
 - ❌ **Immagini**: Non supportate (aggiungi manualmente)
 - ❌ **Gallery**: Non supportate (aggiungi manualmente)
 - ❌ **Calendari/Schedule**: Non supportati (configura manualmente)
@@ -270,7 +208,6 @@ L'importer CSV ha alcune limitazioni intenzionali:
 - ❌ **Meeting points**: Solo descrizione testuale (configura ID manualmente)
 
 ### Cosa viene creato
-
 - ✅ **Post esperienza** con tutti i campi base
 - ✅ **Meta campi** (durata, prezzi, limiti, ecc.)
 - ✅ **Tassonomie** (temi, family-friendly)
@@ -279,7 +216,6 @@ L'importer CSV ha alcune limitazioni intenzionali:
 ## Workflow Consigliato
 
 ### Per nuove esperienze
-
 1. **Scarica** il template CSV
 2. **Compila** i campi base per tutte le esperienze
 3. **Importa** il CSV
@@ -292,7 +228,6 @@ L'importer CSV ha alcune limitazioni intenzionali:
    - FAQ se necessarie
 
 ### Per aggiornamenti
-
 L'importer **NON** aggiorna esperienze esistenti. Crea sempre nuove esperienze.
 
 Per aggiornamenti di massa:
@@ -302,7 +237,6 @@ Per aggiornamenti di massa:
 ## Supporto Tecnico
 
 ### File di Log
-
 Gli errori di import vengono registrati nei log del plugin:
 - Vai su **FP Experiences** → **Logs**
 - Filtra per categoria `experience_import`
@@ -366,3 +300,7 @@ L'Importer di Esperienze è progettato per velocizzare la creazione iniziale del
 4. Aggiungere FAQ e dettagli extra
 
 Per supporto o segnalazione bug, contatta l'amministratore del plugin.
+
+---
+
+**Ultimo aggiornamento**: 2025-01-27

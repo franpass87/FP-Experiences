@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Script rapido per sincronizzare le modifiche nel build senza bump versione
-set -euo pipefail
+set -eu
 
 ROOT_DIR="$(cd "$(dirname "$0")" && pwd)"
 BUILD_ROOT="$ROOT_DIR/build"
