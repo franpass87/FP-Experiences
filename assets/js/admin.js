@@ -1047,8 +1047,8 @@
         const errors = settings.querySelector('[data-recurrence-errors]');
         const previewWrapper = settings.querySelector('[data-recurrence-preview-list]');
         const previewList = previewWrapper ? previewWrapper.querySelector('ul') : null;
-        const previewButton = settings.querySelector('[data-recurrence-preview]');
-        const generateButton = settings.querySelector('[data-recurrence-generate]');
+        const previewButton = null;
+        const generateButton = null;
         const summary = settings.querySelector('[data-recurrence-frequency-summary]');
         const startDateInput = settings.querySelector('input[name="fp_exp_availability[recurrence][start_date]"]');
         const endDateInput = settings.querySelector('input[name="fp_exp_availability[recurrence][end_date]"]');
@@ -1086,7 +1086,7 @@
         }
 
         function updateDaysVisibility() {
-            const show = getFrequencyValue() === 'weekly';
+            const show = true;
 
             if (daysContainer) {
                 daysContainer.toggleAttribute('hidden', !show);
@@ -1382,57 +1382,9 @@
             endDateInput.addEventListener('input', renderFrequencySummary);
         }
 
-        if (previewButton) {
-            previewButton.addEventListener('click', async (event) => {
-                event.preventDefault();
-                clearStatus();
-                clearPreview();
-                const payload = collectPayload();
-                if (!payload) {
-                    return;
-                }
+        // preview button rimosso
 
-                setStatus(getString('recurrenceLoading') || '');
-
-                try {
-                    const result = await sendRequest(restConfig ? restConfig.preview : null, payload);
-                    renderPreview(result && Array.isArray(result.preview) ? result.preview : []);
-                    setStatus('', false);
-                } catch (error) {
-                    renderPreview([]);
-                    setStatus(getString('recurrencePreviewError') || '', true);
-                }
-            });
-        }
-
-        if (generateButton) {
-            generateButton.addEventListener('click', async (event) => {
-                event.preventDefault();
-                clearStatus();
-                clearPreview();
-                const payload = collectPayload();
-                if (!payload) {
-                    return;
-                }
-
-                if (!payload.experience_id) {
-                    showError(getString('recurrencePostMissing'));
-                    return;
-                }
-
-                setStatus(getString('recurrenceLoading') || '');
-
-                try {
-                    const result = await sendRequest(restConfig ? restConfig.generate : null, payload);
-                    const created = result && typeof result.created === 'number' ? result.created : 0;
-                    renderPreview(result && Array.isArray(result.preview) ? result.preview : []);
-                    const success = getString('recurrenceGenerateSuccess');
-                    setStatus(success ? success.replace('%d', String(created)) : '', false);
-                } catch (error) {
-                    setStatus(getString('recurrenceGenerateError') || '', true);
-                }
-            });
-        }
+        // generate button rimosso
     }
 
     function initTools() {
