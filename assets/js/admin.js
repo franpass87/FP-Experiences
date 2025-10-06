@@ -1868,9 +1868,19 @@
             url.searchParams.set('start', formatRequestDate(range.start));
             url.searchParams.set('end', formatRequestDate(range.end));
             const selectedExperience = experienceSelect && experienceSelect.value ? parseInt(String(experienceSelect.value), 10) || 0 : 0;
-            if (selectedExperience > 0) {
-                url.searchParams.set('experience', String(selectedExperience));
+            
+            // Validazione: esperienza deve essere selezionata
+            if (selectedExperience <= 0) {
+                const message = calendarConfig.i18n && calendarConfig.i18n.selectExperienceFirst
+                    ? calendarConfig.i18n.selectExperienceFirst
+                    : 'Seleziona un\'esperienza per visualizzare la disponibilità';
+                showError(message);
+                setLoading(false);
+                renderSlots([]);
+                return;
             }
+            
+            url.searchParams.set('experience', String(selectedExperience));
 
             try {
                 let payload;
@@ -1892,7 +1902,25 @@
 
                     if (!response.ok) {
                         const errorBody = await response.json().catch(() => ({}));
-                        const message = errorBody && errorBody.message ? String(errorBody.message) : response.statusText;
+                        let message = errorBody && errorBody.message ? String(errorBody.message) : response.statusText;
+                        
+                        // Messaggi di errore specifici per codice HTTP
+                        if (!message || message === 'Request failed') {
+                            if (response.status === 401 || response.status === 403) {
+                                message = calendarConfig.i18n && calendarConfig.i18n.accessDenied
+                                    ? calendarConfig.i18n.accessDenied
+                                    : 'Accesso negato. Ricarica la pagina e riprova.';
+                            } else if (response.status === 404) {
+                                message = calendarConfig.i18n && calendarConfig.i18n.notFound
+                                    ? calendarConfig.i18n.notFound
+                                    : 'Risorsa non trovata.';
+                            } else if (response.status >= 500) {
+                                message = calendarConfig.i18n && calendarConfig.i18n.serverError
+                                    ? calendarConfig.i18n.serverError
+                                    : 'Errore del server. Riprova tra qualche minuto.';
+                            }
+                        }
+                        
                         throw new Error(message || 'Request failed');
                     }
 
@@ -1924,8 +1952,18 @@
             loadMonth(currentMonth);
         });
 
+        // Debouncing per evitare chiamate API multiple
+        let loadTimeout = null;
         experienceSelect.addEventListener('change', () => {
-            loadMonth(currentMonth);
+            if (loadTimeout) {
+                clearTimeout(loadTimeout);
+            }
+            // Mostra immediatamente lo stato di loading
+            setLoading(true);
+            showError('');
+            loadTimeout = setTimeout(() => {
+                loadMonth(currentMonth);
+            }, 300);
         });
 
         loadMonth(currentMonth);

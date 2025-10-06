@@ -62,6 +62,43 @@
         return div.innerHTML;
     }
 
+    /**
+     * Esegue una chiamata fetch con retry automatico per errori temporanei
+     * @param {string} url URL da chiamare
+     * @param {Object} options Opzioni fetch
+     * @param {number} maxRetries Numero massimo di tentativi (default 3)
+     * @returns {Promise<Response>}
+     */
+    async function fetchWithRetry(url, options = {}, maxRetries = 3) {
+        let lastError;
+        
+        for (let attempt = 0; attempt < maxRetries; attempt++) {
+            try {
+                const response = await fetch(url, options);
+                
+                // Non ritentare per errori client (4xx) tranne 408 e 429
+                if (response.ok || (response.status >= 400 && response.status < 500 && response.status !== 408 && response.status !== 429)) {
+                    return response;
+                }
+                
+                // Per errori 5xx o 408/429, ritenta
+                lastError = new Error(`HTTP ${response.status}`);
+                
+            } catch (error) {
+                lastError = error;
+            }
+            
+            // Non ritentare sull'ultimo tentativo
+            if (attempt < maxRetries - 1) {
+                // Exponential backoff: 1s, 2s, 4s
+                const delay = Math.pow(2, attempt) * 1000;
+                await new Promise(resolve => setTimeout(resolve, delay));
+            }
+        }
+        
+        throw lastError || new Error('Fetch failed after retries');
+    }
+
     function formatCurrency(value, currency) {
         const amount = typeof value === 'number' ? value : parseFloat(String(value || '0'));
         const safeCurrency = currency || defaultCurrency;
@@ -1402,7 +1439,7 @@
                             if (redeemButton) {
                                 redeemButton.disabled = true;
                             }
-                            showFeedback(detailFeedback, escapeHtml(localize('Nessuno slot futuro disponibile. Contatta l'operatore per pianificare manualmente.')), true);
+                            showFeedback(detailFeedback, escapeHtml(localize('Nessuno slot futuro disponibile. Contatta l\'operatore per pianificare manualmente.')), true);
                         }
                     }
                 } catch (error) {
@@ -1455,7 +1492,7 @@
                     const data = await response.json().catch(() => ({}));
 
                     if (!response.ok || (data && data.code)) {
-                        const message = data && data.message ? data.message : localize('Non è stato possibile riscattare il voucher. Prova un altro slot o contatta l'assistenza.');
+                        const message = data && data.message ? data.message : localize('Non è stato possibile riscattare il voucher. Prova un altro slot o contatta l\'assistenza.');
                         showFeedback(detailFeedback, escapeHtml(message), true);
                         if (slotSelect) {
                             slotSelect.disabled = false;
@@ -1530,7 +1567,7 @@
                         redeemButton.setAttribute('aria-disabled', 'true');
                     }
                 } catch (error) {
-                    showFeedback(detailFeedback, escapeHtml(localize('Non è stato possibile riscattare il voucher. Prova un altro slot o contatta l'assistenza.')), true);
+                    showFeedback(detailFeedback, escapeHtml(localize('Non è stato possibile riscattare il voucher. Prova un altro slot o contatta l\'assistenza.')), true);
                     if (slotSelect) {
                         slotSelect.disabled = false;
                     }
@@ -2102,6 +2139,18 @@
                 dateInput.max = availableDates[availableDates.length - 1];
             }
 
+            // Attributi ARIA per accessibilità
+            dateInput.setAttribute('aria-label', localize('Seleziona data esperienza'));
+            dateInput.setAttribute('aria-describedby', 'fp-exp-date-help');
+            
+            // Aggiungi testo di aiuto nascosto visivamente ma accessibile agli screen reader
+            const helpText = document.createElement('span');
+            helpText.id = 'fp-exp-date-help';
+            helpText.className = 'screen-reader-text';
+            helpText.textContent = localize('Usa i tasti freccia per navigare tra le date disponibili');
+            helpText.style.cssText = 'position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border-width:0;';
+            dateInput.parentNode.insertBefore(helpText, dateInput.nextSibling);
+
             // Apri il selettore quando l'utente interagisce con l'input
             const openNativePicker = () => {
                 // showPicker è supportato da browser moderni
@@ -2486,10 +2535,24 @@
 
         const allDayItems = Array.from(container.querySelectorAll('.fp-exp-calendar-only__day'));
 
-        async function loadSlotsForDate(dateKey) {
+        // Cache locale per slot con TTL di 60 secondi
+        const slotsCache = new Map();
+        const CACHE_TTL = 60000; // 1 minuto
+
+        async function loadSlotsForDate(dateKey, useCache = true) {
             const slotsContainer = container.querySelector('.fp-exp-slots');
             if (!slotsContainer) {
                 return;
+            }
+
+            // Verifica cache
+            const cacheKey = `${experienceId}-${dateKey}`;
+            if (useCache) {
+                const cached = slotsCache.get(cacheKey);
+                if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+                    renderSlots(slotsContainer, cached.data, { selectedSlot: null });
+                    return;
+                }
             }
 
             // placeholder loading
@@ -2504,10 +2567,26 @@
                 url.searchParams.set('experience', String(experienceId));
                 url.searchParams.set('start', dateKey);
                 url.searchParams.set('end', dateKey);
-                const response = await fetch(url.toString(), {
+                
+                // Usa fetchWithRetry per gestire errori temporanei
+                const response = await fetchWithRetry(url.toString(), {
                     credentials: 'same-origin',
                     headers: buildRestHeaders(),
-                });
+                }, 3);
+                
+                // Gestione errori HTTP specifica
+                if (!response.ok) {
+                    let errorMessage = container.getAttribute('data-error-label') || 'Impossibile caricare le fasce';
+                    if (response.status === 404) {
+                        errorMessage = 'Esperienza non trovata';
+                    } else if (response.status === 401 || response.status === 403) {
+                        errorMessage = 'Accesso negato. Ricarica la pagina e riprova.';
+                    } else if (response.status >= 500) {
+                        errorMessage = 'Errore del server. Riprova tra qualche minuto.';
+                    }
+                    throw new Error(errorMessage);
+                }
+                
                 const data = await response.json().catch(() => ({}));
                 const rawSlots = Array.isArray(data.slots) ? data.slots : [];
                 const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
@@ -2518,7 +2597,12 @@
                         const d = new Date(String(sql).replace(' ', 'T') + 'Z');
                         if (Number.isNaN(d.getTime())) return '';
                         try {
-                            return new Intl.DateTimeFormat(undefined, { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' }).format(d);
+                            // Fix: usa il timezone locale invece di UTC
+                            return new Intl.DateTimeFormat(undefined, { 
+                                hour: '2-digit', 
+                                minute: '2-digit', 
+                                timeZone: tz 
+                            }).format(d);
                         } catch (e) {
                             const hh = String(d.getUTCHours()).padStart(2, '0');
                             const mm = String(d.getUTCMinutes()).padStart(2, '0');
@@ -2528,16 +2612,23 @@
                     return {
                         id: start, // synthetic id
                         time: toLocal(start),
-                        remaining: 0,
+                        remaining: parseInt(s.capacity_remaining || s.capacity_total || 0, 10),
                         start_iso: start.replace(' ', 'T') + 'Z',
                         end_iso: end.replace(' ', 'T') + 'Z',
                     };
                 });
+                
+                // Salva in cache
+                slotsCache.set(cacheKey, {
+                    data: mapped,
+                    timestamp: Date.now()
+                });
+                
                 renderSlots(slotsContainer, mapped, { selectedSlot: null });
             } catch (e) {
                 const error = document.createElement('p');
                 error.className = 'fp-exp-slots__placeholder';
-                error.textContent = container.getAttribute('data-error-label') || 'Impossibile caricare le fasce';
+                error.textContent = e.message || container.getAttribute('data-error-label') || 'Impossibile caricare le fasce';
                 slotsContainer.innerHTML = '';
                 slotsContainer.appendChild(error);
             }
@@ -2617,6 +2708,10 @@
             button.setAttribute('data-slot-id', slot.id);
             const parsedRemaining = parseInt(slot.remaining, 10);
             const remaining = Number.isNaN(parsedRemaining) ? 0 : parsedRemaining;
+            
+            // ARIA label descrittivo per slot
+            const ariaLabel = `${slot.time || ''}, ${remaining > 0 ? localizePlural('%d posto disponibile', '%d posti disponibili', remaining).replace('%d', String(remaining)) : localize('Esaurito')}`;
+            button.setAttribute('aria-label', ariaLabel);
             const template = localizePlural('%d posto', '%d posti', remaining);
             let countLabel = template;
             if (typeof i18n_sprintf === 'function') {
