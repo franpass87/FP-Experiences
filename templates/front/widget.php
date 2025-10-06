@@ -242,22 +242,8 @@ $price_from_display = null !== $price_from_value && $price_from_value > 0
                 </header>
                 <div class="fp-exp-step__content">
                     <?php
-                    // Calcolo limiti per l'input data in base agli slot disponibili
+                    // Limita solo la data minima all'oggi; nessun limite massimo
                     $min_date_attr = gmdate('Y-m-d');
-                    $max_date_attr = '';
-                    $all_days = [];
-                    foreach ($calendar as $m_key => $m_data) {
-                        if (isset($m_data['days']) && is_array($m_data['days'])) {
-                            $all_days = array_merge($all_days, array_keys($m_data['days']));
-                        }
-                    }
-                    if (! empty($all_days)) {
-                        sort($all_days);
-                        $last = end($all_days);
-                        if (is_string($last) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $last)) {
-                            $max_date_attr = $last;
-                        }
-                    }
                     ?>
                     <div class="fp-exp-date-picker">
                         <label class="fp-exp-label" for="fp-exp-date-input"><?php echo esc_html__('Data', 'fp-experiences'); ?></label>
@@ -266,7 +252,6 @@ $price_from_display = null !== $price_from_value && $price_from_value > 0
                             id="fp-exp-date-input"
                             class="fp-exp-input fp-exp-date-input"
                             min="<?php echo esc_attr($min_date_attr); ?>"
-                            <?php if ('' !== $max_date_attr) : ?> max="<?php echo esc_attr($max_date_attr); ?>"<?php endif; ?>
                             data-fp-date-input
                         />
                     </div>

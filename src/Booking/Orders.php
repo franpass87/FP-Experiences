@@ -43,6 +43,7 @@ final class Orders
         add_filter('woocommerce_order_item_types', [$this, 'register_order_item_type']);
         add_action('woocommerce_payment_complete', [$this, 'handle_payment_complete']);
         add_action('woocommerce_order_status_cancelled', [$this, 'handle_order_cancelled']);
+        add_action('woocommerce_order_status_failed', [$this, 'handle_order_failed']);
     }
 
     /**
@@ -324,6 +325,24 @@ final class Orders
                 do_action('fp_exp_reservation_cancelled', $reservation_id, $order_id);
             }
         }
+
+        $order = wc_get_order($order_id);
+
+        if (! $order instanceof WC_Order) {
+            return;
+        }
+
+        $session_id = (string) $order->get_meta('_fp_exp_session');
+
+        if ($session_id) {
+            $this->cart->purge_session($session_id);
+        }
+    }
+
+    public function handle_order_failed(int $order_id): void
+    {
+        // Trattiamo i failed come i cancelled per sbloccare il carrello e permettere un nuovo tentativo
+        $this->handle_order_cancelled($order_id);
     }
 
     /**

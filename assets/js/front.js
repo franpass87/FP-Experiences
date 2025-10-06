@@ -2261,12 +2261,9 @@
             const availableDates = Object.keys(slotsByDate).sort();
             const hasDate = (val) => availableDates.includes(val);
 
-            // Se min/max non sono nel markup, impostali dai dati disponibili
+            // Imposta solo il min se assente; non impostare un max per permettere selezioni future
             if (!dateInput.hasAttribute('min') && availableDates.length > 0) {
                 dateInput.min = availableDates[0];
-            }
-            if (!dateInput.hasAttribute('max') && availableDates.length > 0) {
-                dateInput.max = availableDates[availableDates.length - 1];
             }
 
             // Attributi ARIA per accessibilità
