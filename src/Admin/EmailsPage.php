@@ -6,16 +6,20 @@ namespace FP_Exp\Admin;
 
 use FP_Exp\Utils\Helpers;
 
+use function add_action;
 use function admin_url;
 use function esc_attr__;
 use function esc_html;
 use function esc_html__;
 use function esc_url;
+use function get_current_screen;
 use function settings_errors;
 use function settings_fields;
 use function do_settings_sections;
 use function submit_button;
 use function wp_die;
+use function wp_enqueue_script;
+use function wp_enqueue_style;
 
 final class EmailsPage
 {
@@ -24,6 +28,34 @@ final class EmailsPage
     public function __construct(SettingsPage $settings_page)
     {
         $this->settings_page = $settings_page;
+    }
+
+    public function register_hooks(): void
+    {
+        add_action('admin_enqueue_scripts', [$this, 'enqueue_assets']);
+    }
+
+    public function enqueue_assets(): void
+    {
+        $screen = get_current_screen();
+        if (! $screen || 'fp-exp-dashboard_page_fp_exp_emails' !== $screen->id) {
+            return;
+        }
+
+        wp_enqueue_style(
+            'fp-exp-admin',
+            FP_EXP_PLUGIN_URL . 'assets/css/admin.css',
+            [],
+            Helpers::asset_version('assets/css/admin.css')
+        );
+
+        wp_enqueue_script(
+            'fp-exp-admin',
+            FP_EXP_PLUGIN_URL . 'assets/js/admin.js',
+            ['wp-api-fetch', 'wp-i18n'],
+            Helpers::asset_version('assets/js/admin.js'),
+            true
+        );
     }
 
     public function render_page(): void

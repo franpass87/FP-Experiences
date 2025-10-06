@@ -262,7 +262,7 @@ final class CalendarAdmin
                     $experience_title ?: esc_html__('Untitled', 'fp-experiences'),
                     $start,
                     $total_guests,
-                    esc_html__('guests', 'fp-experiences')
+                    esc_html__('ospiti', 'fp-experiences')
                 );
 
                 echo '<li>' . esc_html($line) . '</li>';

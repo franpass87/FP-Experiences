@@ -295,6 +295,10 @@ final class Plugin
             $this->guard([$this->tools_page, 'register_hooks'], ToolsPage::class, 'register_hooks');
         }
 
+        if ($this->emails_page instanceof EmailsPage) {
+            $this->guard([$this->emails_page, 'register_hooks'], EmailsPage::class, 'register_hooks');
+        }
+
         if ($this->checkin_page instanceof CheckinPage) {
             $this->guard([$this->checkin_page, 'register_hooks'], CheckinPage::class, 'register_hooks');
         }

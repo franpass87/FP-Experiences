@@ -2,7 +2,7 @@
 /**
  * Plugin Name: FP Experiences
  * Description: Booking esperienze stile GetYourGuide — shortcode/Elementor only, carrello/checkout isolati, Brevo opzionale, Google Calendar opzionale, tracking marketing opzionale.
- * Version: 0.3.4
+ * Version: 0.3.5
  * Author: Francesco Passeri
  * Author URI: https://francescopasseri.com
  * Text Domain: fp-experiences
@@ -32,10 +32,13 @@ if (! defined('FP_EXP_PLUGIN_URL')) {
 }
 
 if (! defined('FP_EXP_VERSION')) {
-    define('FP_EXP_VERSION', '0.3.4');
+    define('FP_EXP_VERSION', '0.3.5');
 }
 
-$autoload_guard = (function () {
+// Early bootstrap guard: detect common issues and surface an admin notice instead of a fatal.
+// Stores last boot error in option 'fp_exp_boot_error' and shows an admin notice in wp‑admin.
+(function () {
+	// Helper to persist and render a meaningful admin notice.
 	$store_and_hook_notice = function (string $message, array $context = []): void {
 		$payload = [
 			'timestamp' => gmdate('Y-m-d H:i:s'),
@@ -48,6 +51,7 @@ $autoload_guard = (function () {
 
 		update_option('fp_exp_boot_error', $payload, false);
 
+		// Hook notice for admins only.
 		add_action('admin_notices', static function () use ($payload): void {
 			if (! current_user_can('activate_plugins')) {
 				return;
@@ -57,26 +61,26 @@ $autoload_guard = (function () {
 		});
 	};
 
+	// 1) PHP version check (plugin requires >= 8.0 per composer.json; recommend >= 8.1).
 	if (version_compare(PHP_VERSION, '8.0', '<')) {
-		$store_and_hook_notice('FP Experiences richiede PHP >= 8.0. Versione attuale: ' . PHP_VERSION);
-		return false;
+		$store_and_hook_notice('FP Experiences richiede PHP >= 8.0. Versione attuale: ' . PHP_VERSION);
+		return;
 	}
 
+	// 2) WordPress version check (soft guard to help on early fatals in very old sites).
 	global $wp_version;
 	if (is_string($wp_version) && $wp_version !== '' && version_compare($wp_version, '6.0', '<')) {
-		$store_and_hook_notice('FP Experiences richiede WordPress >= 6.0. Versione attuale: ' . $wp_version);
-		return false;
+		$store_and_hook_notice('FP Experiences richiede WordPress >= 6.0. Versione attuale: ' . $wp_version);
+		return;
 	}
 
+	// 3) Basic structure sanity checks before loading anything else.
 	if (! is_dir(__DIR__ . '/src')) {
-		$store_and_hook_notice("Struttura plugin non valida: cartella 'src' mancante. Verifica lo ZIP caricato.");
-		return false;
+		$store_and_hook_notice('Struttura plugin non valida: cartella \'src\' mancante. Verifica lo ZIP caricato.');
+		return;
 	}
-
-	return true;
 })();
 
-$autoload = __DIR__ . '/vendor/autoload.php';
 $autoload = __DIR__ . '/vendor/autoload.php';
 
 if (is_readable($autoload)) {
@@ -104,6 +108,7 @@ use FP_Exp\Plugin;
 register_activation_hook(__FILE__, [Activation::class, 'activate']);
 register_deactivation_hook(__FILE__, [Activation::class, 'deactivate']);
 
+// Final guard: if the main Plugin class is missing or boot throws, show a notice instead of a fatal.
 (function () {
 	$store_and_hook_notice = function (string $message, array $context = []): void {
 		$payload = [

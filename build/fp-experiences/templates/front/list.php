@@ -56,7 +56,7 @@ $current_orderby = isset($state['orderby']) ? (string) $state['orderby'] : 'menu
 $current_view = isset($state['view']) ? (string) $state['view'] : $view;
 $current_page = isset($state['page']) ? (int) $state['page'] : 1;
 $results_label = sprintf(
-    _n('%d experience found', '%d experiences found', (int) $total, 'fp-experiences'),
+    _n('%d esperienza trovata', '%d esperienze trovate', (int) $total, 'fp-experiences'),
     (int) $total
 );
 
@@ -87,14 +87,14 @@ $format_currency = static function (string $amount) use ($currency_symbol, $curr
 >
     <header class="fp-listing__header">
         <div class="fp-listing__intro">
-            <h2 class="fp-listing__title"><?php esc_html_e('Experiences', 'fp-experiences'); ?></h2>
+            <h2 class="fp-listing__title"><?php esc_html_e('Esperienze', 'fp-experiences'); ?></h2>
             <p class="fp-listing__count" aria-live="polite"><?php echo esc_html($results_label); ?></p>
         </div>
         <?php if (! $is_cards_variant) : ?>
             <div class="fp-listing__controls">
-                <div class="fp-listing__view" role="group" aria-label="<?php esc_attr_e('Change layout', 'fp-experiences'); ?>">
-                    <a class="fp-listing__view-toggle<?php echo 'grid' === $current_view ? ' is-active' : ''; ?>" href="<?php echo esc_url($grid_url); ?>"><?php esc_html_e('Grid', 'fp-experiences'); ?></a>
-                    <a class="fp-listing__view-toggle<?php echo 'list' === $current_view ? ' is-active' : ''; ?>" href="<?php echo esc_url($list_url); ?>"><?php esc_html_e('List', 'fp-experiences'); ?></a>
+                <div class="fp-listing__view" role="group" aria-label="<?php esc_attr_e('Cambia layout', 'fp-experiences'); ?>">
+                    <a class="fp-listing__view-toggle<?php echo 'grid' === $current_view ? ' is-active' : ''; ?>" href="<?php echo esc_url($grid_url); ?>"><?php esc_html_e('Griglia', 'fp-experiences'); ?></a>
+                    <a class="fp-listing__view-toggle<?php echo 'list' === $current_view ? ' is-active' : ''; ?>" href="<?php echo esc_url($list_url); ?>"><?php esc_html_e('Lista', 'fp-experiences'); ?></a>
                 </div>
             </div>
         <?php endif; ?>
@@ -181,11 +181,11 @@ $format_currency = static function (string $amount) use ($currency_symbol, $curr
                         <footer class="fp-listing__footer fp-listing__footer--gyg">
                             <?php if ('' !== $formatted_price_from_display) : ?>
                                 <div class="fp-listing__price">
-                                    <span class="fp-listing__price-value"><?php printf(esc_html__('From %s', 'fp-experiences'), esc_html($formatted_price_from_display)); ?></span>
-                                    <span class="fp-listing__price-note"><?php esc_html_e('per person', 'fp-experiences'); ?></span>
+                                    <span class="fp-listing__price-value"><?php printf(esc_html__('Da %s', 'fp-experiences'), esc_html($formatted_price_from_display)); ?></span>
+                                    <span class="fp-listing__price-note"><?php esc_html_e('a persona', 'fp-experiences'); ?></span>
                                 </div>
                             <?php endif; ?>
-                            <a class="fp-listing__cta" href="<?php echo esc_url($experience['permalink']); ?>"><?php esc_html_e('Details', 'fp-experiences'); ?></a>
+                            <a class="fp-listing__cta" href="<?php echo esc_url($experience['permalink']); ?>"><?php esc_html_e('Dettagli', 'fp-experiences'); ?></a>
                         </footer>
                     </article>
                 <?php else : ?>
@@ -207,7 +207,7 @@ $format_currency = static function (string $amount) use ($currency_symbol, $curr
                                 <span class="fp-listing__image fp-listing__image--placeholder" aria-hidden="true"></span>
                             <?php endif; ?>
                             <?php if ('' !== $formatted_price_from_display) : ?>
-                                <span class="fp-listing__price-tag"><?php printf(esc_html__('From %s', 'fp-experiences'), esc_html($formatted_price_from_display)); ?></span>
+                                <span class="fp-listing__price-tag"><?php printf(esc_html__('Da %s', 'fp-experiences'), esc_html($formatted_price_from_display)); ?></span>
                             <?php endif; ?>
                         </a>
                         <div class="fp-listing__body">
@@ -264,9 +264,9 @@ $format_currency = static function (string $amount) use ($currency_symbol, $curr
                             <?php endif; ?>
                         </div>
                         <footer class="fp-listing__footer">
-                            <a class="fp-listing__cta" href="<?php echo esc_url($experience['permalink']); ?>"><?php esc_html_e('Details', 'fp-experiences'); ?></a>
+                            <a class="fp-listing__cta" href="<?php echo esc_url($experience['permalink']); ?>"><?php esc_html_e('Dettagli', 'fp-experiences'); ?></a>
                             <?php if (! empty($experience['map_url'])) : ?>
-                                <a class="fp-listing__map" href="<?php echo esc_url($experience['map_url']); ?>" target="_blank" rel="noreferrer noopener"><?php esc_html_e('View on map', 'fp-experiences'); ?></a>
+                                <a class="fp-listing__map" href="<?php echo esc_url($experience['map_url']); ?>" target="_blank" rel="noreferrer noopener"><?php esc_html_e('Vedi sulla mappa', 'fp-experiences'); ?></a>
                             <?php endif; ?>
                         </footer>
                     </article>
@@ -276,7 +276,7 @@ $format_currency = static function (string $amount) use ($currency_symbol, $curr
     <?php endif; ?>
 
     <?php if (! empty($pagination_links)) : ?>
-        <nav class="fp-listing__pagination" role="navigation" aria-label="<?php esc_attr_e('Experiences navigation', 'fp-experiences'); ?>">
+        <nav class="fp-listing__pagination" role="navigation" aria-label="<?php esc_attr_e('Navigazione esperienze', 'fp-experiences'); ?>">
             <ul class="fp-listing__pagination-list">
                 <?php
                 $prev = $current_page > 1 ? $pagination_links[$current_page - 2] ?? null : null;
@@ -284,9 +284,9 @@ $format_currency = static function (string $amount) use ($currency_symbol, $curr
                 ?>
                 <li class="fp-listing__pagination-item fp-listing__pagination-item--prev<?php echo $prev ? '' : ' is-disabled'; ?>">
                     <?php if ($prev) : ?>
-                        <a href="<?php echo esc_url($prev['url']); ?>"><?php esc_html_e('Previous', 'fp-experiences'); ?></a>
+                        <a href="<?php echo esc_url($prev['url']); ?>"><?php esc_html_e('Precedente', 'fp-experiences'); ?></a>
                     <?php else : ?>
-                        <span><?php esc_html_e('Previous', 'fp-experiences'); ?></span>
+                        <span><?php esc_html_e('Precedente', 'fp-experiences'); ?></span>
                     <?php endif; ?>
                 </li>
                 <?php foreach ($pagination_links as $page) : ?>
@@ -300,9 +300,9 @@ $format_currency = static function (string $amount) use ($currency_symbol, $curr
                 <?php endforeach; ?>
                 <li class="fp-listing__pagination-item fp-listing__pagination-item--next<?php echo $next ? '' : ' is-disabled'; ?>">
                     <?php if ($next) : ?>
-                        <a href="<?php echo esc_url($next['url']); ?>"><?php esc_html_e('Next', 'fp-experiences'); ?></a>
+                        <a href="<?php echo esc_url($next['url']); ?>"><?php esc_html_e('Successivo', 'fp-experiences'); ?></a>
                     <?php else : ?>
-                        <span><?php esc_html_e('Next', 'fp-experiences'); ?></span>
+                        <span><?php esc_html_e('Successivo', 'fp-experiences'); ?></span>
                     <?php endif; ?>
                 </li>
             </ul>

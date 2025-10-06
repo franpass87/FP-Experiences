@@ -829,7 +829,7 @@ final class RequestToBook
         if (! empty($context['customer']['phone'])) {
             $lines[] = sprintf(__('Phone: %s', 'fp-experiences'), $context['customer']['phone']);
         }
-        $lines[] = sprintf(__('Guests: %d', 'fp-experiences'), (int) ($context['totals']['guests'] ?? 0));
+        $lines[] = sprintf(__('Ospiti: %d', 'fp-experiences'), (int) ($context['totals']['guests'] ?? 0));
         $lines[] = sprintf(__('Requested slot: %s', 'fp-experiences'), $context['slot']['start_label'] ?? $context['slot']['start_datetime'] ?? '');
         if (! empty($context['notes'])) {
             $lines[] = __('Notes:', 'fp-experiences');
