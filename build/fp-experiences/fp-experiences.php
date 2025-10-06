@@ -2,7 +2,7 @@
 /**
  * Plugin Name: FP Experiences
  * Description: Booking esperienze stile GetYourGuide — shortcode/Elementor only, carrello/checkout isolati, Brevo opzionale, Google Calendar opzionale, tracking marketing opzionale.
- * Version: 0.3.3
+ * Version: 0.3.4
  * Author: Francesco Passeri
  * Author URI: https://francescopasseri.com
  * Text Domain: fp-experiences
@@ -32,7 +32,7 @@ if (! defined('FP_EXP_PLUGIN_URL')) {
 }
 
 if (! defined('FP_EXP_VERSION')) {
-    define('FP_EXP_VERSION', '0.3.3');
+    define('FP_EXP_VERSION', '0.3.4');
 }
 
 $autoload = __DIR__ . '/vendor/autoload.php';
