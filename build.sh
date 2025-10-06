@@ -104,7 +104,7 @@ else
 fi
 
 composer install --no-dev --prefer-dist --no-interaction --optimize-autoloader
-composer dump-autoload -o --classmap-authoritative
+composer dump-autoload -o
 
 BUILD_ROOT="$ROOT_DIR/build"
 TARGET_DIR="$BUILD_ROOT/$PLUGIN_SLUG"
