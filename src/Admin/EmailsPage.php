@@ -8,7 +8,9 @@ use FP_Exp\Utils\Helpers;
 
 use function add_action;
 use function admin_url;
+use function add_query_arg;
 use function esc_attr__;
+use function esc_attr;
 use function esc_html;
 use function esc_html__;
 use function esc_url;
@@ -64,6 +66,9 @@ final class EmailsPage
             wp_die(esc_html__('You do not have permission to manage email settings.', 'fp-experiences'));
         }
 
+		$tabs = $this->get_tabs();
+		$active_tab = $this->get_active_tab($tabs);
+
         echo '<div class="wrap fp-exp-emails-page">';
         echo '<div class="fp-exp-admin" data-fp-exp-admin>';
         echo '<div class="fp-exp-admin__body">';
@@ -80,27 +85,63 @@ final class EmailsPage
 
         settings_errors('fp_exp_settings');
 
-        echo '<div class="fp-exp-settings__panel">';
-        echo '<h2>' . esc_html__('Mittenti e branding', 'fp-experiences') . '</h2>';
-        echo '<form action="options.php" method="post" class="fp-exp-settings__form">';
-        settings_fields('fp_exp_settings_emails');
-        do_settings_sections('fp_exp_settings_emails');
-        submit_button();
-        echo '</form>';
-        echo '</div>';
+		// Tabs navigation
+		echo '<div class="fp-exp-tabs nav-tab-wrapper">';
+		foreach ($tabs as $slug => $label) {
+			$url = add_query_arg([
+				'page' => 'fp_exp_emails',
+				'tab' => $slug,
+			], admin_url('admin.php'));
+			$classes = 'nav-tab' . ($active_tab === $slug ? ' nav-tab-active' : '');
+			echo '<a class="' . esc_attr($classes) . '" href="' . esc_attr($url) . '">' . esc_html($label) . '</a>';
+		}
+		echo '</div>';
 
-        echo '<div class="fp-exp-settings__panel">';
-        echo '<h2>' . esc_html__('Integrazione Brevo', 'fp-experiences') . '</h2>';
-        echo '<form action="options.php" method="post" class="fp-exp-settings__form">';
-        settings_fields('fp_exp_settings_brevo');
-        do_settings_sections('fp_exp_settings_brevo');
-        submit_button();
-        echo '</form>';
-        echo '</div>';
+		// Active tab panel
+		if ('brevo' === $active_tab) {
+			echo '<div class="fp-exp-settings__panel">';
+			echo '<h2>' . esc_html__('Integrazione Brevo', 'fp-experiences') . '</h2>';
+			echo '<form action="options.php" method="post" class="fp-exp-settings__form">';
+			settings_fields('fp_exp_settings_brevo');
+			do_settings_sections('fp_exp_settings_brevo');
+			submit_button();
+			echo '</form>';
+			echo '</div>';
+		} else {
+			echo '<div class="fp-exp-settings__panel">';
+			echo '<h2>' . esc_html__('Mittenti e branding', 'fp-experiences') . '</h2>';
+			echo '<form action="options.php" method="post" class="fp-exp-settings__form">';
+			settings_fields('fp_exp_settings_emails');
+			do_settings_sections('fp_exp_settings_emails');
+			submit_button();
+			echo '</form>';
+			echo '</div>';
+		}
 
         echo '</div>';
         echo '</div>';
         echo '</div>';
         echo '</div>';
     }
+
+	/**
+	 * @return array<string, string>
+	 */
+	private function get_tabs(): array
+	{
+		return [
+			'branding' => esc_html__('Branding', 'fp-experiences'),
+			'brevo' => esc_html__('Brevo', 'fp-experiences'),
+		];
+	}
+
+	/**
+	 * @param array<string, string> $tabs
+	 */
+	private function get_active_tab(array $tabs): string
+	{
+		$default = 'branding';
+		$requested = isset($_GET['tab']) ? sanitize_key((string) $_GET['tab']) : $default; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		return array_key_exists($requested, $tabs) ? $requested : $default;
+	}
 }

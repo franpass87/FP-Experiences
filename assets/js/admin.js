@@ -1510,9 +1510,13 @@
             return;
         }
 
-        const calendarConfig = window.fpExpCalendar || {};
+		// Debug: bootstrap init
+		try { console.debug('[FP-EXP] Calendar: init bootstrap'); } catch (e) {}
+
+		const calendarConfig = window.fpExpCalendar || {};
         const endpoints = calendarConfig.endpoints || {};
         const slotsEndpoint = endpoints.slots || endpoints.availability;
+		try { console.debug('[FP-EXP] Calendar config', { hasExperiences: calendarConfig.has_experiences, endpoints }); } catch (e) {}
         
         // Se non ci sono esperienze, non inizializzare il calendario
         if (!calendarConfig.has_experiences) {
@@ -1520,10 +1524,7 @@
             if (loadingNode) {
                 loadingNode.hidden = true;
             }
-            return;
-        }
-        
-        if (!slotsEndpoint) {
+			try { console.warn('[FP-EXP] Calendar: nessuna esperienza disponibile, interrompo init'); } catch (e) {}
             return;
         }
 
@@ -1531,9 +1532,22 @@
         const bodyNode = container.querySelector('[data-calendar-content]');
         const errorNode = container.querySelector('[data-calendar-error]');
 
-        if (!loadingNode || !bodyNode || !errorNode) {
-            return;
-        }
+		if (!loadingNode || !bodyNode || !errorNode) {
+			try { console.error('[FP-EXP] Calendar: nodi UI mancanti', { hasLoading: !!loadingNode, hasBody: !!bodyNode, hasError: !!errorNode }); } catch (e) {}
+			if (loadingNode) { loadingNode.hidden = true; }
+			return;
+		}
+
+		// Se mancano gli endpoints, mostra errore in UI invece di uscire silenziosamente
+		if (!slotsEndpoint) {
+			if (typeof container.dataset.loadingText === 'string') { loadingNode.textContent = container.dataset.loadingText; }
+			loadingNode.hidden = true;
+			errorNode.hidden = false;
+			errorNode.textContent = 'Configurazione calendario non valida: endpoint slots mancante.';
+			bodyNode.hidden = false;
+			try { console.error('[FP-EXP] Calendar: endpoint slots mancante', { endpoints }); } catch (e) {}
+			return;
+		}
 
         function createUTCDate(year, month, day) {
             return new Date(Date.UTC(year, month, day));
@@ -2134,6 +2148,7 @@
             titleNode.textContent = formatMonthTitle(range.start);
             setLoading(true);
             showError('');
+			try { console.debug('[FP-EXP] Calendar: loadMonth()', { start: formatRequestDate(range.start), end: formatRequestDate(range.end) }); } catch (e) {}
 
             const requestUrl = resolveEndpoint(slotsEndpoint);
             const url = new URL(requestUrl);
@@ -2167,7 +2182,7 @@
                     'X-WP-Nonce': calendarConfig.nonce || '',
                 };
 
-                if (window.wp && window.wp.apiFetch) {
+				if (window.wp && window.wp.apiFetch) {
                     payload = await window.wp.apiFetch({
                         url: url.toString(),
                         method: 'GET',
@@ -2206,10 +2221,11 @@
                     payload = await response.json().catch(() => ({}));
                 }
 
-                const slots = payload && Array.isArray(payload.slots) ? payload.slots : [];
+				const slots = payload && Array.isArray(payload.slots) ? payload.slots : [];
                 const filtered = applyClientFilter(slots);
                 renderSlots(filtered);
                 bodyNode.hidden = false;
+				try { console.debug('[FP-EXP] Calendar: loadMonth OK', { slots: Array.isArray(slots) ? slots.length : 0 }); } catch (e) {}
             } catch (error) {
                 const fallback = calendarConfig.i18n && calendarConfig.i18n.loadError
                     ? calendarConfig.i18n.loadError
@@ -2217,6 +2233,7 @@
                 renderSlots([]);
                 const message = error && error.message ? String(error.message) : fallback;
                 showError(message);
+				try { console.error('[FP-EXP] Calendar: loadMonth FAILED', error); } catch (e) {}
             } finally {
                 setLoading(false);
             }
@@ -2269,11 +2286,12 @@
             loadMonth(currentMonth);
         });
 
-        // Seleziona automaticamente la prima esperienza se presente
+		// Seleziona automaticamente la prima esperienza se presente
         if (experienceSelect && (!experienceSelect.value || experienceSelect.value === '')) {
             const firstOption = Array.from(experienceSelect.options).find((o) => o.value && o.value !== '');
             if (firstOption) {
                 experienceSelect.value = firstOption.value;
+				try { console.debug('[FP-EXP] Calendar: selezionata esperienza di default', { experienceId: firstOption.value }); } catch (e) {}
             }
         }
 

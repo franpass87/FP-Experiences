@@ -2612,22 +2612,88 @@
             return;
         }
 
-        // Ottieni la mappa degli slot dal data-attribute
-        let slotsMap = {};
+        // Cache per mese AAAA-MM -> { 'AAAA-MM-GG': [ {time, remaining, id} ] }
+        const monthlyCache = {};
+        // Precarica eventuale mappa dal markup come fallback iniziale
         try {
             const slotsData = container.getAttribute('data-slots');
             if (slotsData) {
-                slotsMap = JSON.parse(slotsData);
+                const initialMap = JSON.parse(slotsData);
+                if (initialMap && typeof initialMap === 'object') {
+                    Object.keys(initialMap).forEach((k) => {
+                        const monthKey = String(k).slice(0, 7);
+                        if (!monthlyCache[monthKey]) monthlyCache[monthKey] = {};
+                        monthlyCache[monthKey][k] = initialMap[k];
+                    });
+                }
             }
         } catch (e) {
             console.warn('Failed to parse slots data:', e);
         }
 
+        const config = (typeof window !== 'undefined' && window.fpExpConfig) ? window.fpExpConfig : {};
+        const restBase = (config.restUrl || '').replace(/\/?$/, '/');
+
+        function formatDate(d) {
+            const y = d.getFullYear();
+            const m = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return `${y}-${m}-${day}`;
+        }
+
+        async function ensureMonthLoaded(dateObj) {
+            const monthKey = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}`;
+            if (monthlyCache[monthKey]) {
+                return;
+            }
+            if (!restBase || !experienceId) {
+                monthlyCache[monthKey] = monthlyCache[monthKey] || {};
+                return;
+            }
+            const monthStart = new Date(dateObj.getFullYear(), dateObj.getMonth(), 1);
+            const monthEnd = new Date(dateObj.getFullYear(), dateObj.getMonth() + 1, 0);
+            const start = formatDate(monthStart);
+            const end = formatDate(monthEnd);
+            const url = `${restBase}availability?experience=${encodeURIComponent(String(experienceId))}&start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`;
+            try {
+                const res = await fetch(url, { credentials: 'same-origin' });
+                const data = await res.json().catch(() => ({}));
+                const byDay = {};
+                if (res.ok && data && Array.isArray(data.slots)) {
+                    data.slots.forEach((s, idx) => {
+                        const startIso = String(s.start || '');
+                        const dateKey = startIso.slice(0, 10);
+                        const time = startIso.slice(11, 16);
+                        const remaining = parseInt(s.capacity_remaining, 10) || 0;
+                        if (!byDay[dateKey]) byDay[dateKey] = [];
+                        byDay[dateKey].push({
+                            id: String(s.id || idx),
+                            time,
+                            remaining,
+                            start_iso: startIso,
+                        });
+                    });
+                }
+                monthlyCache[monthKey] = byDay;
+            } catch (e) {
+                monthlyCache[monthKey] = {};
+            }
+        }
+
         const allDayButtons = Array.from(container.querySelectorAll('.fp-exp-calendar__day'));
+
+        // Precarica il mese corrente per avere slot immediati al primo click
+        try {
+            ensureMonthLoaded(new Date());
+        } catch (e) {
+            // no-op
+        }
 
         // Funzione per renderizzare gli slot di un giorno specifico
         function showSlotsForDate(dateKey) {
-            const slots = slotsMap[dateKey] || [];
+            const monthKey = dateKey.slice(0, 7);
+            const monthMap = monthlyCache[monthKey] || {};
+            const slots = monthMap[dateKey] || [];
             
             if (!slots.length) {
                 const placeholder = document.createElement('p');
@@ -2694,8 +2760,11 @@
                 dayButton.classList.add('is-selected');
                 dayButton.setAttribute('aria-pressed', 'true');
 
-                // Mostra gli slot per questo giorno
-                showSlotsForDate(dateKey);
+                // Assicura che il mese sia caricato, poi mostra gli slot
+                const dt = new Date(dateKey + 'T00:00:00');
+                ensureMonthLoaded(dt).then(() => {
+                    showSlotsForDate(dateKey);
+                });
             });
         });
     }

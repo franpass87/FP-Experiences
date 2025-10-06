@@ -333,7 +333,7 @@ $sticky_price_display = '' !== $price_from_display ? $format_currency($price_fro
                                     <?php foreach ($hero_highlights as $highlight) : ?>
                                         <li class="fp-exp-hero__highlight">
                                             <span class="fp-exp-hero__highlight-icon" aria-hidden="true">
-                                                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                                                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" width="24" height="24">
                                                     <path fill="currentColor" d="M9.75 18.25 3.5 12l1.41-1.41 4.84 4.84 9.34-9.34L20.5 7.5Z" />
                                                 </svg>
                                             </span>
@@ -380,7 +380,7 @@ $sticky_price_display = '' !== $price_from_display ? $format_currency($price_fro
                                         <?php if (! empty($hero_language_badges)) : ?>
                                             <li class="fp-exp-hero__fact fp-exp-hero__fact--languages">
                                                 <span class="fp-exp-hero__fact-icon" aria-hidden="true">
-                                                    <svg viewBox="0 0 24 24" role="img" aria-hidden="true"><path fill="currentColor" d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Zm5.33 9h-1.83a19.46 19.46 0 0 0-.87-4 8 8 0 0 1 2.7 4ZM12 4a17.43 17.43 0 0 1 2.44 7H9.56A17.43 17.43 0 0 1 12 4ZM8.37 6.91a19.46 19.46 0 0 0-.87 4H5.67a8 8 0 0 1 2.7-4ZM4 12h3.5a19.43 19.43 0 0 0 .88 4H6.33A8 8 0 0 1 4 12Zm2.37 6h2.64a21.13 21.13 0 0 0 1.87 3.38A8 8 0 0 1 6.37 18Zm5.63 3a19.1 19.1 0 0 1-2.55-5h5.1A19.1 19.1 0 0 1 12 21Zm2.69.38A21.13 21.13 0 0 0 15 18h2.64a8 8 0 0 1-3 3.38ZM17.67 16H15.62a19.43 19.43 0 0 0 .88-4H20a8 8 0 0 1-2.33 4Z"/></svg>
+                                                    <svg viewBox="0 0 24 24" role="img" aria-hidden="true" width="24" height="24"><path fill="currentColor" d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Zm5.33 9h-1.83a19.46 19.46 0 0 0-.87-4 8 8 0 0 1 2.7 4ZM12 4a17.43 17.43 0 0 1 2.44 7H9.56A17.43 17.43 0 0 1 12 4ZM8.37 6.91a19.46 19.46 0 0 0-.87 4H5.67a8 8 0 0 1 2.7-4ZM4 12h3.5a19.43 19.43 0 0 0 .88 4H6.33A8 8 0 0 1 4 12Zm2.37 6h2.64a21.13 21.13 0 0 0 1.87 3.38A8 8 0 0 1 6.37 18Zm5.63 3a19.1 19.1 0 0 1-2.55-5h5.1A19.1 19.1 0 0 1 12 21Zm2.69.38A21.13 21.13 0 0 0 15 18h2.64a8 8 0 0 1-3 3.38ZM17.67 16H15.62a19.43 19.43 0 0 0 .88-4H20a8 8 0 0 1-2.33 4Z"/></svg>
                                                 </span>
                                                 <div class="fp-exp-hero__fact-content">
                                                     <span class="fp-exp-hero__fact-label"><?php esc_html_e('Lingue disponibili', 'fp-experiences'); ?></span>
@@ -388,7 +388,7 @@ $sticky_price_display = '' !== $price_from_display ? $format_currency($price_fro
                                                         <?php foreach ($hero_language_badges as $language) : ?>
                                                             <li class="fp-exp-hero__language">
                                                                 <span class="fp-exp-hero__language-flag" aria-hidden="true">
-                                                                    <svg viewBox="0 0 60 40" role="img" aria-hidden="true" focusable="false">
+                                                                    <svg viewBox="0 0 60 40" role="img" aria-hidden="true" focusable="false" width="30" height="20">
                                                                         <use xlink:href="<?php echo esc_attr($language_sprite . '#' . $language['sprite']); ?>" href="<?php echo esc_attr($language_sprite . '#' . $language['sprite']); ?>"></use>
                                                                     </svg>
                                                                 </span>
@@ -403,7 +403,7 @@ $sticky_price_display = '' !== $price_from_display ? $format_currency($price_fro
                                             <li class="fp-exp-hero__fact">
                                                 <span class="fp-exp-hero__fact-icon" aria-hidden="true">
                                                     <?php if ('clock' === ($badge['icon'] ?? '')) : ?>
-                                                        <svg viewBox="0 0 24 24" role="img" aria-hidden="true"><path fill="currentColor" d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Zm1 10.59 2.12 2.12-1.41 1.41-2.83-2.83V7h2.12Z"/></svg>
+                                                        <svg viewBox="0 0 24 24" role="img" aria-hidden="true" width="24" height="24"><path fill="currentColor" d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Zm1 10.59 2.12 2.12-1.41 1.41-2.83-2.83V7h2.12Z"/></svg>
                                                     <?php else : ?>
                                                         <?php echo \FP_Exp\Utils\Helpers::experience_badge_icon_svg((string) ($badge['icon'] ?? '')); ?>
                                                     <?php endif; ?>
@@ -600,7 +600,7 @@ $sticky_price_display = '' !== $price_from_display ? $format_currency($price_fro
                     >
                         <button type="button" class="fp-gift-modal__close" data-fp-gift-close>
                             <span class="screen-reader-text"><?php esc_html_e('Chiudi modulo regalo', 'fp-experiences'); ?></span>
-                            <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="m12 10.59 4.95-4.95 1.41 1.41L13.41 12l4.95 4.95-1.41 1.41L12 13.41l-4.95 4.95-1.41-1.41L10.59 12 5.64 7.05l1.41-1.41Z"/></svg>
+                            <svg viewBox="0 0 24 24" aria-hidden="true" width="24" height="24"><path fill="currentColor" d="m12 10.59 4.95-4.95 1.41 1.41L13.41 12l4.95 4.95-1.41 1.41L12 13.41l-4.95 4.95-1.41-1.41L10.59 12 5.64 7.05l1.41-1.41Z"/></svg>
                         </button>
                         <div class="fp-gift">
                             <div class="fp-gift__inner">
@@ -692,7 +692,7 @@ $sticky_price_display = '' !== $price_from_display ? $format_currency($price_fro
                             <?php foreach ($highlights as $highlight) : ?>
                                 <li class="fp-exp-highlights__item">
                                     <span class="fp-exp-highlights__icon" aria-hidden="true">
-                                        <svg viewBox="0 0 24 24"><path fill="currentColor" d="M9.75 18.25 3.5 12l1.41-1.41 4.84 4.84 9.34-9.34L20.5 7.5Z"/></svg>
+                                        <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M9.75 18.25 3.5 12l1.41-1.41 4.84 4.84 9.34-9.34L20.5 7.5Z"/></svg>
                                     </span>
                                     <span class="fp-exp-highlights__text"><?php echo esc_html($highlight); ?></span>
                                 </li>
@@ -722,7 +722,7 @@ $sticky_price_display = '' !== $price_from_display ? $format_currency($price_fro
                                         <?php foreach ($inclusions as $item) : ?>
                                             <li class="fp-exp-inclusions__item">
                                                 <span class="fp-exp-inclusions__icon fp-exp-inclusions__icon--check" aria-hidden="true">
-                                                    <svg viewBox="0 0 24 24"><path fill="currentColor" d="M9.75 18.25 3.5 12l1.41-1.41 4.84 4.84 9.34-9.34L20.5 7.5Z"/></svg>
+                                                    <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M9.75 18.25 3.5 12l1.41-1.41 4.84 4.84 9.34-9.34L20.5 7.5Z"/></svg>
                                                 </span>
                                                 <span class="fp-exp-inclusions__text"><?php echo esc_html($item); ?></span>
                                             </li>
@@ -737,7 +737,7 @@ $sticky_price_display = '' !== $price_from_display ? $format_currency($price_fro
                                         <?php foreach ($exclusions as $item) : ?>
                                             <li class="fp-exp-inclusions__item">
                                                 <span class="fp-exp-inclusions__icon fp-exp-inclusions__icon--cross" aria-hidden="true">
-                                                    <svg viewBox="0 0 24 24"><path fill="currentColor" d="m18.3 5.71 1.42 1.42-5.3 5.29 5.3 5.29-1.42 1.42-5.29-5.3-5.29 5.3-1.42-1.42 5.3-5.29-5.3-5.29 1.42-1.42 5.29 5.3Z"/></svg>
+                                                    <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="m18.3 5.71 1.42 1.42-5.3 5.29 5.3 5.29-1.42 1.42-5.29-5.3-5.29 5.3-1.42-1.42 5.3-5.29-5.3-5.29 1.42-1.42 5.29 5.3Z"/></svg>
                                                 </span>
                                                 <span class="fp-exp-inclusions__text"><?php echo esc_html($item); ?></span>
                                             </li>
@@ -850,7 +850,7 @@ $sticky_price_display = '' !== $price_from_display ? $format_currency($price_fro
                                     >
                                         <span class="fp-exp-accordion__label"><?php echo esc_html($item['question']); ?></span>
                                         <span class="fp-exp-accordion__icon" aria-hidden="true">
-                                            <svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 5v14m-7-7h14"/></svg>
+                                            <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M12 5v14m-7-7h14"/></svg>
                                         </span>
                                     </button>
                                 </h3>

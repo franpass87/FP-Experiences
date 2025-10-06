@@ -1578,11 +1578,10 @@
 
 .fp-exp-party-table tr {
     display: grid;
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) auto; /* label | price on same row */
     grid-template-areas:
-        'label'
-        'price'
-        'quantity';
+        'label price'
+        'quantity quantity';
     gap: 0.5rem;
     padding: clamp(12px, 1.5vw, 14px);
 }
@@ -1609,6 +1608,7 @@
 
 .fp-exp-party-table td:nth-of-type(1) {
     grid-area: price;
+    text-align: right; /* align price to the right */
 }
 
 .fp-exp-party-table td:nth-of-type(2) {
@@ -1871,11 +1871,10 @@
 
     .fp-exp-party-table tr {
         display: grid;
-        grid-template-columns: minmax(0, 1fr);
+        grid-template-columns: minmax(0, 1fr) auto; /* label | price on same row */
         grid-template-areas:
-            'label'
-            'price'
-            'quantity';
+            'label price'
+            'quantity quantity';
         padding: clamp(12px, 1.5vw, 14px);
     }
 
@@ -1886,9 +1885,11 @@
         vertical-align: baseline;
     }
 
-    .fp-exp-party-table tbody td:nth-of-type(1),
+    .fp-exp-party-table tbody td:nth-of-type(1) {
+        text-align: right; /* price */
+    }
     .fp-exp-party-table tbody td:nth-of-type(2) {
-        text-align: left;
+        text-align: left; /* quantity */
     }
 
     .fp-exp-party-table tbody td:nth-of-type(3) {
@@ -2457,7 +2458,7 @@
     padding: clamp(1.75rem, 4vw, 2.5rem);
     border-radius: clamp(1.25rem, 3vw, 1.75rem);
     border: 1px solid rgba(15, 23, 42, 0.08);
-    background: linear-gradient(135deg, rgba(139, 30, 63, 0.08), rgba(15, 23, 42, 0.02));
+    background: var(--fp-hero-card-gradient, linear-gradient(135deg, rgba(139, 30, 63, 0.08), rgba(15, 23, 42, 0.02)));
     box-shadow: 0 30px 70px -40px rgba(15, 23, 42, 0.45);
 }
 
@@ -2715,7 +2716,7 @@
     width: 40px;
     height: 40px;
     border-radius: 12px;
-    background: rgba(139, 30, 63, 0.12);
+	background: var(--fp-exp-chip-icon-bg, color-mix(in srgb, var(--fp-color-primary) 12%, #fff));
     color: var(--fp-color-primary);
     align-items: center;
     justify-content: center;

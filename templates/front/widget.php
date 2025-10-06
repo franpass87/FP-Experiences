@@ -199,7 +199,7 @@ $price_from_display = null !== $price_from_value && $price_from_value > 0
                     <?php if (! empty($language_badges)) : ?>
                         <li class="fp-exp-hero__fact fp-exp-hero__fact--languages">
                             <span class="fp-exp-hero__fact-icon" aria-hidden="true">
-                                <svg viewBox="0 0 24 24" role="img" aria-hidden="true"><path fill="currentColor" d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Zm5.33 9h-1.83a19.46 19.46 0 0 0-.87-4 8 8 0 0 1 2.7 4ZM12 4a17.43 17.43 0 0 1 2.44 7H9.56A17.43 17.43 0 0 1 12 4ZM8.37 6.91a19.46 19.46 0 0 0-.87 4H5.67a8 8 0 0 1 2.7-4ZM4 12h3.5a19.43 19.43 0 0 0 .88 4H6.33A8 8 0 0 1 4 12Zm2.37 6h2.64a21.13 21.13 0 0 0 1.87 3.38A8 8 0 0 1 6.37 18Zm5.63 3a19.1 19.1 0 0 1-2.55-5h5.1A19.1 19.1 0 0 1 12 21Zm2.69.38A21.13 21.13 0 0 0 15 18h2.64a8 8 0 0 1-3 3.38ZM17.67 16H15.62a19.43 19.43 0 0 0 .88-4H20a8 8 0 0 1-2.33 4Z"/></svg>
+                                <svg viewBox="0 0 24 24" role="img" aria-hidden="true" width="24" height="24"><path fill="currentColor" d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Zm5.33 9h-1.83a19.46 19.46 0 0 0-.87-4 8 8 0 0 1 2.7 4ZM12 4a17.43 17.43 0 0 1 2.44 7H9.56A17.43 17.43 0 0 1 12 4ZM8.37 6.91a19.46 19.46 0 0 0-.87 4H5.67a8 8 0 0 1 2.7-4ZM4 12h3.5a19.43 19.43 0 0 0 .88 4H6.33A8 8 0 0 1 4 12Zm2.37 6h2.64a21.13 21.13 0 0 0 1.87 3.38A8 8 0 0 1 6.37 18Zm5.63 3a19.1 19.1 0 0 1-2.55-5h5.1A19.1 19.1 0 0 1 12 21Zm2.69.38A21.13 21.13 0 0 0 15 18h2.64a8 8 0 0 1-3 3.38ZM17.67 16H15.62a19.43 19.43 0 0 0 .88-4H20a8 8 0 0 1-2.33 4Z"/></svg>
                             </span>
                             <div class="fp-exp-hero__fact-content">
                                 <span class="fp-exp-hero__fact-label"><?php esc_html_e('Lingue disponibili', 'fp-experiences'); ?></span>
@@ -207,7 +207,7 @@ $price_from_display = null !== $price_from_value && $price_from_value > 0
                                     <?php foreach ($language_badges as $language) : ?>
                                         <li class="fp-exp-hero__language">
                                             <span class="fp-exp-hero__language-flag" aria-hidden="true">
-                                                <svg viewBox="0 0 60 40" role="img" aria-hidden="true" focusable="false">
+                                                <svg viewBox="0 0 60 40" role="img" aria-hidden="true" focusable="false" width="30" height="20">
                                                     <use xlink:href="<?php echo esc_attr($language_sprite . '#' . $language['sprite']); ?>" href="<?php echo esc_attr($language_sprite . '#' . $language['sprite']); ?>"></use>
                                                 </svg>
                                             </span>
@@ -222,7 +222,7 @@ $price_from_display = null !== $price_from_value && $price_from_value > 0
                     <?php if ('' !== $duration_label) : ?>
                         <li class="fp-exp-hero__fact fp-exp-hero__fact--duration">
                             <span class="fp-exp-hero__fact-icon" aria-hidden="true">
-                                <svg viewBox="0 0 24 24" role="img" aria-hidden="true"><path fill="currentColor" d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Zm1 10.59 2.12 2.12-1.41 1.41-2.83-2.83V7h2.12Z"/></svg>
+                                <svg viewBox="0 0 24 24" role="img" aria-hidden="true" width="24" height="24"><path fill="currentColor" d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Zm1 10.59 2.12 2.12-1.41 1.41-2.83-2.83V7h2.12Z"/></svg>
                             </span>
                             <div class="fp-exp-hero__fact-content">
                                 <span class="fp-exp-hero__fact-label"><?php esc_html_e('Durata', 'fp-experiences'); ?></span>
@@ -367,7 +367,7 @@ $price_from_display = null !== $price_from_value && $price_from_value > 0
                                             <button type="button" class="fp-exp-quantity__control" data-action="decrease" aria-label="<?php echo esc_attr(sprintf(esc_html__('Riduci %s', 'fp-experiences'), $ticket['label'])); ?>">
                                                 <span class="screen-reader-text"><?php echo esc_html(sprintf(esc_html__('Riduci %s', 'fp-experiences'), $ticket['label'])); ?></span>
                                                 <span aria-hidden="true" class="fp-exp-quantity__icon">
-                                                    <svg viewBox="0 0 24 24" role="img" aria-hidden="true" focusable="false">
+                                                    <svg viewBox="0 0 24 24" role="img" aria-hidden="true" focusable="false" width="18" height="18">
                                                         <path d="M6 12h12" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.8" />
                                                     </svg>
                                                 </span>
@@ -376,7 +376,7 @@ $price_from_display = null !== $price_from_value && $price_from_value > 0
                                             <button type="button" class="fp-exp-quantity__control" data-action="increase" aria-label="<?php echo esc_attr(sprintf(esc_html__('Aumenta %s', 'fp-experiences'), $ticket['label'])); ?>">
                                                 <span class="screen-reader-text"><?php echo esc_html(sprintf(esc_html__('Aumenta %s', 'fp-experiences'), $ticket['label'])); ?></span>
                                                 <span aria-hidden="true" class="fp-exp-quantity__icon">
-                                                    <svg viewBox="0 0 24 24" role="img" aria-hidden="true" focusable="false">
+                                                    <svg viewBox="0 0 24 24" role="img" aria-hidden="true" focusable="false" width="18" height="18">
                                                         <path d="M12 6v12" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.8" />
                                                         <path d="M6 12h12" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.8" />
                                                     </svg>

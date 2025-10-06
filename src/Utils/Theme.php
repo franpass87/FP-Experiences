@@ -181,6 +181,10 @@ final class Theme
             'accent' => '#00A37A',
             'section_icon_background' => '#0B6EFD',
             'section_icon_color' => '#FFFFFF',
+            'hero_card_gradient_start' => '#8B1E3F',
+            'hero_card_gradient_end' => '#0F172A',
+            'hero_card_gradient_opacity_start' => '0.08',
+            'hero_card_gradient_opacity_end' => '0.02',
             'background' => '#F7F8FA',
             'surface' => '#FFFFFF',
             'text' => '#0F172A',
@@ -225,6 +229,10 @@ final class Theme
         $accent = $palette['accent'] ?? $defaults['accent'];
         $section_icon_background = $palette['section_icon_background'] ?? $defaults['section_icon_background'];
         $section_icon_color = $palette['section_icon_color'] ?? $defaults['section_icon_color'];
+        $hero_card_gradient_start = $palette['hero_card_gradient_start'] ?? $defaults['hero_card_gradient_start'];
+        $hero_card_gradient_end = $palette['hero_card_gradient_end'] ?? $defaults['hero_card_gradient_end'];
+        $hero_card_gradient_opacity_start = $palette['hero_card_gradient_opacity_start'] ?? $defaults['hero_card_gradient_opacity_start'];
+        $hero_card_gradient_opacity_end = $palette['hero_card_gradient_opacity_end'] ?? $defaults['hero_card_gradient_opacity_end'];
         $background = $palette['background'] ?? $defaults['background'];
         $surface = $palette['surface'] ?? $defaults['surface'];
         $text = $palette['text'] ?? $defaults['text'];
@@ -238,6 +246,11 @@ final class Theme
         $gap = $palette['gap'] ?? $defaults['gap'];
         $focus_ring = sprintf('color-mix(in srgb, %s 70%%, #ffffff)', $primary);
         $focus_ring_soft = sprintf('color-mix(in srgb, %s 32%%, #ffffff)', $primary);
+        
+        // Generate hero card gradient
+        $gradient_start_rgba = self::hex_to_rgba($hero_card_gradient_start, (float) $hero_card_gradient_opacity_start);
+        $gradient_end_rgba = self::hex_to_rgba($hero_card_gradient_end, (float) $hero_card_gradient_opacity_end);
+        $hero_card_gradient = sprintf('linear-gradient(135deg, %s, %s)', $gradient_start_rgba, $gradient_end_rgba);
 
         return [
             '--fp-exp-color-primary' => $primary,
@@ -245,6 +258,11 @@ final class Theme
             '--fp-exp-color-accent' => $accent,
             '--fp-exp-color-section-icon-background' => $section_icon_background,
             '--fp-exp-color-section-icon' => $section_icon_color,
+            '--fp-exp-hero-card-gradient-start' => $hero_card_gradient_start,
+            '--fp-exp-hero-card-gradient-end' => $hero_card_gradient_end,
+            '--fp-exp-hero-card-gradient-opacity-start' => $hero_card_gradient_opacity_start,
+            '--fp-exp-hero-card-gradient-opacity-end' => $hero_card_gradient_opacity_end,
+            '--fp-exp-hero-card-gradient' => $hero_card_gradient,
             '--fp-exp-color-background' => $background,
             '--fp-exp-color-surface' => $surface,
             '--fp-exp-color-text' => $text,
@@ -261,6 +279,11 @@ final class Theme
             '--fp-color-accent' => $accent,
             '--fp-color-section-icon-background' => $section_icon_background,
             '--fp-color-section-icon' => $section_icon_color,
+            '--fp-hero-card-gradient-start' => $hero_card_gradient_start,
+            '--fp-hero-card-gradient-end' => $hero_card_gradient_end,
+            '--fp-hero-card-gradient-opacity-start' => $hero_card_gradient_opacity_start,
+            '--fp-hero-card-gradient-opacity-end' => $hero_card_gradient_opacity_end,
+            '--fp-hero-card-gradient' => $hero_card_gradient,
             '--fp-color-bg' => $background,
             '--fp-color-surface' => $surface,
             '--fp-color-text' => $text,
@@ -312,6 +335,27 @@ final class Theme
         }
 
         return $css;
+    }
+
+    /**
+     * Convert hex color to rgba string
+     */
+    private static function hex_to_rgba(string $hex, float $alpha): string
+    {
+        // Remove # if present
+        $hex = ltrim($hex, '#');
+        
+        // Handle 3-digit hex
+        if (strlen($hex) === 3) {
+            $hex = $hex[0] . $hex[0] . $hex[1] . $hex[1] . $hex[2] . $hex[2];
+        }
+        
+        // Convert to RGB
+        $r = hexdec(substr($hex, 0, 2));
+        $g = hexdec(substr($hex, 2, 2));
+        $b = hexdec(substr($hex, 4, 2));
+        
+        return sprintf('rgba(%d, %d, %d, %.2f)', $r, $g, $b, $alpha);
     }
 
     /**

@@ -1835,6 +1835,40 @@ final class SettingsPage
                 'description' => esc_html__('Background fill used behind section icons.', 'fp-experiences'),
             ],
             [
+                'key' => 'hero_card_gradient_start',
+                'type' => 'color',
+                'label' => esc_html__('Hero card gradient start', 'fp-experiences'),
+                'default' => $defaults['hero_card_gradient_start'] ?? '#8B1E3F',
+                'description' => esc_html__('Starting color of the hero card background gradient.', 'fp-experiences'),
+            ],
+            [
+                'key' => 'hero_card_gradient_end',
+                'type' => 'color',
+                'label' => esc_html__('Hero card gradient end', 'fp-experiences'),
+                'default' => $defaults['hero_card_gradient_end'] ?? '#0F172A',
+                'description' => esc_html__('Ending color of the hero card background gradient.', 'fp-experiences'),
+            ],
+            [
+                'key' => 'hero_card_gradient_opacity_start',
+                'type' => 'number',
+                'label' => esc_html__('Hero card gradient start opacity', 'fp-experiences'),
+                'default' => $defaults['hero_card_gradient_opacity_start'] ?? 0.08,
+                'min' => 0,
+                'max' => 1,
+                'step' => 0.01,
+                'description' => esc_html__('Opacity of the starting color (0-1).', 'fp-experiences'),
+            ],
+            [
+                'key' => 'hero_card_gradient_opacity_end',
+                'type' => 'number',
+                'label' => esc_html__('Hero card gradient end opacity', 'fp-experiences'),
+                'default' => $defaults['hero_card_gradient_opacity_end'] ?? 0.02,
+                'min' => 0,
+                'max' => 1,
+                'step' => 0.01,
+                'description' => esc_html__('Opacity of the ending color (0-1).', 'fp-experiences'),
+            ],
+            [
                 'key' => 'section_icon_color',
                 'type' => 'color',
                 'label' => esc_html__('Section icon color', 'fp-experiences'),
@@ -2370,7 +2404,23 @@ final class SettingsPage
             $input_class = $field['input_class'] ?? $default_class;
             $placeholder = $field['placeholder'] ?? '';
             $default_value = isset($field['default']) ? ' data-default="' . esc_attr((string) $field['default']) . '"' : '';
-            echo '<input type="' . esc_attr($input_type) . '" class="' . esc_attr($input_class) . '" name="fp_exp_branding[' . esc_attr($key) . ']" value="' . esc_attr((string) $value) . '" placeholder="' . esc_attr((string) $placeholder) . '"' . $default_value . ' />';
+            
+            $attributes = 'type="' . esc_attr($input_type) . '" class="' . esc_attr($input_class) . '" name="fp_exp_branding[' . esc_attr($key) . ']" value="' . esc_attr((string) $value) . '" placeholder="' . esc_attr((string) $placeholder) . '"' . $default_value;
+            
+            // Add min, max, step attributes for number inputs
+            if ('number' === $input_type) {
+                if (isset($field['min'])) {
+                    $attributes .= ' min="' . esc_attr((string) $field['min']) . '"';
+                }
+                if (isset($field['max'])) {
+                    $attributes .= ' max="' . esc_attr((string) $field['max']) . '"';
+                }
+                if (isset($field['step'])) {
+                    $attributes .= ' step="' . esc_attr((string) $field['step']) . '"';
+                }
+            }
+            
+            echo '<input ' . $attributes . ' />';
         }
 
         if (! empty($field['description'])) {
@@ -2906,6 +2956,28 @@ final class SettingsPage
                 }
 
                 $sanitised[$key] = $color;
+
+                continue;
+            }
+
+            if ('number' === $type) {
+                $number = floatval($raw);
+                $min = $field['min'] ?? null;
+                $max = $field['max'] ?? null;
+
+                if ($min !== null && $number < $min) {
+                    $number = $min;
+                }
+
+                if ($max !== null && $number > $max) {
+                    $number = $max;
+                }
+
+                if (isset($field['default']) && $number === (float) $field['default']) {
+                    continue;
+                }
+
+                $sanitised[$key] = $number;
 
                 continue;
             }

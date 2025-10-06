@@ -105,6 +105,7 @@ final class ExperienceMetaBoxes
         remove_meta_box('fp_exp_themediv', 'fp_experience', 'side');
         remove_meta_box('tagsdiv-fp_exp_language', 'fp_experience', 'side');
         remove_meta_box('tagsdiv-fp_exp_duration', 'fp_experience', 'side');
+        remove_meta_box('tagsdiv-fp_exp_family_friendly', 'fp_experience', 'side');
         remove_meta_box('postimagediv', 'fp_experience', 'side');
     }
 
