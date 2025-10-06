@@ -21,6 +21,7 @@ use FP_Exp\Admin\CheckinPage;
 use FP_Exp\Admin\OrdersPage;
 use FP_Exp\Admin\HelpPage;
 use FP_Exp\Admin\ImporterPage;
+use FP_Exp\Admin\ImporterStats;
 use FP_Exp\Admin\ExperiencePageCreator;
 use FP_Exp\Admin\Onboarding;
 use FP_Exp\Localization\AutoTranslator;
@@ -301,6 +302,8 @@ final class Plugin
         if ($this->importer_page instanceof ImporterPage) {
             $this->guard([$this->importer_page, 'register_hooks'], ImporterPage::class, 'register_hooks');
         }
+
+        $this->guard([ImporterStats::class, 'register_hooks'], ImporterStats::class, 'register_hooks');
 
         if ($this->page_creator instanceof ExperiencePageCreator) {
             $this->guard([$this->page_creator, 'register_hooks'], ExperiencePageCreator::class, 'register_hooks');

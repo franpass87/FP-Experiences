@@ -80,13 +80,27 @@ final class ImporterPage
                 'error'
             );
         } else {
+            $message = sprintf(
+                __('Import completato con successo! %d esperienze importate.', 'fp-experiences'),
+                $result['imported']
+            );
+            
+            if (! empty($result['skipped'])) {
+                $message .= ' ' . sprintf(
+                    __('%d righe saltate per errori (vedi log).', 'fp-experiences'),
+                    $result['skipped']
+                );
+            }
+            
+            if (! empty($result['details'])) {
+                $message .= '<br><strong>' . __('Dettagli:', 'fp-experiences') . '</strong> ';
+                $message .= esc_html($result['details']);
+            }
+            
             add_settings_error(
                 'fp_exp_importer',
                 'import_success',
-                sprintf(
-                    __('Import completato con successo! %d esperienze importate.', 'fp-experiences'),
-                    $result['imported']
-                ),
+                $message,
                 'success'
             );
         }
@@ -127,7 +141,13 @@ final class ImporterPage
             return;
         }
 
-        // Could add custom CSS/JS here if needed
+        wp_enqueue_script(
+            'fp-exp-importer',
+            FP_EXP_PLUGIN_URL . 'assets/js/importer.js',
+            ['jquery'],
+            Helpers::asset_version('assets/js/importer.js'),
+            true
+        );
     }
 
     public function render_page(): void
@@ -181,15 +201,22 @@ final class ImporterPage
             'fp_exp_download_template'
         );
 
+        $example_csv_url = FP_EXP_PLUGIN_URL . 'templates/admin/csv-examples/esperienze-esempio.csv';
+
         echo '<div class="fp-exp-card" style="margin-bottom: 20px;">';
         echo '<h2>' . esc_html__('Come usare l\'importer', 'fp-experiences') . '</h2>';
         
         echo '<div class="fp-exp-guide-section">';
         echo '<h3>📋 ' . esc_html__('1. Scarica il Template', 'fp-experiences') . '</h3>';
         echo '<p>' . esc_html__('Inizia scaricando il file template CSV che contiene tutte le colonne necessarie con esempi.', 'fp-experiences') . '</p>';
+        echo '<div style="display: flex; gap: 12px; flex-wrap: wrap;">';
         echo '<a href="' . esc_url($download_url) . '" class="button button-secondary">';
         echo '⬇️ ' . esc_html__('Scarica Template CSV', 'fp-experiences');
         echo '</a>';
+        echo '<a href="' . esc_url($example_csv_url) . '" class="button button-secondary" download>';
+        echo '📋 ' . esc_html__('Scarica Esempi Completi', 'fp-experiences');
+        echo '</a>';
+        echo '</div>';
         echo '</div>';
 
         echo '<div class="fp-exp-guide-section" style="margin-top: 20px;">';
@@ -372,56 +399,95 @@ final class ImporterPage
         }
 
         $imported = 0;
+        $skipped = 0;
         $errors = [];
         $row_number = 1;
+        $empty_rows = 0;
+        $created_ids = [];
 
         while (($data = fgetcsv($handle)) !== false) {
             $row_number++;
 
             if (empty($data) || (count($data) === 1 && empty($data[0]))) {
+                $empty_rows++;
                 continue; // Skip empty rows
             }
 
             $row_data = array_combine($headers, $data);
             if ($row_data === false) {
                 $errors[] = sprintf(__('Riga %d: formato non valido', 'fp-experiences'), $row_number);
+                $skipped++;
                 continue;
             }
 
-            $result = $this->import_single_experience($row_data);
+            $result = $this->import_single_experience($row_data, $row_number);
             if (is_wp_error($result)) {
                 $errors[] = sprintf(
-                    __('Riga %d: %s', 'fp-experiences'),
+                    __('Riga %d (%s): %s', 'fp-experiences'),
                     $row_number,
+                    !empty($row_data['title']) ? sanitize_text_field($row_data['title']) : 'senza titolo',
                     $result->get_error_message()
                 );
+                $skipped++;
             } else {
                 $imported++;
+                $created_ids[] = $result;
             }
         }
 
         fclose($handle);
 
+        $total_rows = $row_number - 1; // Exclude header row
+        $processed_rows = $total_rows - $empty_rows;
+
+        // Generate details message
+        $details = sprintf(
+            __('Processate %d righe (%d vuote saltate). %d esperienze create, %d con errori.', 'fp-experiences'),
+            $total_rows,
+            $empty_rows,
+            $imported,
+            $skipped
+        );
+
+        $result = [
+            'imported' => $imported,
+            'skipped' => $skipped,
+            'errors' => $errors,
+            'details' => $details,
+            'created_ids' => $created_ids,
+        ];
+
         if (! empty($errors)) {
             Helpers::log_debug('experience_import', 'Import completed with errors', [
+                'total_rows' => $total_rows,
                 'imported' => $imported,
+                'skipped' => $skipped,
+                'empty_rows' => $empty_rows,
                 'errors' => $errors,
+                'created_ids' => $created_ids,
+            ]);
+        } else {
+            Helpers::log_debug('experience_import', 'Import completed successfully', [
+                'total_rows' => $total_rows,
+                'imported' => $imported,
+                'created_ids' => $created_ids,
             ]);
         }
 
-        return [
-            'imported' => $imported,
-            'errors' => $errors,
-        ];
+        // Record stats
+        ImporterStats::record_import($result);
+
+        return $result;
     }
 
     /**
      * Import a single experience from CSV row data.
      *
-     * @param array<string, string> $data Row data.
+     * @param array<string, string> $data       Row data.
+     * @param int                   $row_number Row number for error reporting.
      * @return int|WP_Error Post ID or error.
      */
-    private function import_single_experience(array $data)
+    private function import_single_experience(array $data, int $row_number = 0)
     {
         // Validate required fields
         if (empty($data['title'])) {
