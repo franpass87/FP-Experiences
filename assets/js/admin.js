@@ -1819,6 +1819,8 @@
         clear(bodyNode);
         bodyNode.appendChild(toolbar);
         bodyNode.appendChild(contentNode);
+        // Rendi subito visibile la toolbar anche prima del primo fetch
+        bodyNode.hidden = false;
 
         let currentMonth = parseBootstrapStart();
         if (!currentMonth) {
@@ -2201,6 +2203,7 @@
                 showError(message);
                 setLoading(false);
                 renderSlots([]);
+                bodyNode.hidden = false; // mostra la toolbar e l'errore
                 return;
             }
             
@@ -2313,6 +2316,14 @@
             showError('');
             loadMonth(currentMonth);
         });
+
+        // Seleziona automaticamente la prima esperienza se presente
+        if (experienceSelect && (!experienceSelect.value || experienceSelect.value === '')) {
+            const firstOption = Array.from(experienceSelect.options).find((o) => o.value && o.value !== '');
+            if (firstOption) {
+                experienceSelect.value = firstOption.value;
+            }
+        }
 
         loadMonth(currentMonth);
     }
