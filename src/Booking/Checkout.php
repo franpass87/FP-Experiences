@@ -56,6 +56,34 @@ final class Checkout
                 'permission_callback' => [$this, 'check_checkout_permission'],
             ]
         );
+
+        // Lightweight endpoint per verificare lo stato del carrello lato server
+        register_rest_route(
+            'fp-exp/v1',
+            '/cart/status',
+            [
+                'methods' => 'GET',
+                'permission_callback' => function (WP_REST_Request $request): bool {
+                    // Permettiamo richieste pubbliche ma con verifica base anti-abuso
+                    return Helpers::verify_public_rest_request($request);
+                },
+                'callback' => function (WP_REST_Request $request) {
+                    nocache_headers();
+
+                    $payload = [
+                        'has_items' => $this->cart->has_items(),
+                        'locked' => $this->cart->is_locked(),
+                    ];
+
+                    if (! $payload['has_items']) {
+                        $payload['code'] = 'fp_exp_cart_empty';
+                        $payload['message'] = __('Il carrello esperienze è vuoto.', 'fp-experiences');
+                    }
+
+                    return rest_ensure_response($payload);
+                },
+            ]
+        );
     }
 
     public function check_checkout_permission(WP_REST_Request $request): bool

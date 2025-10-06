@@ -33,6 +33,7 @@ use function sanitize_email;
 use function sanitize_key;
 use function sanitize_text_field;
 use function selected;
+use function strpos;
 use function submit_button;
 use function wp_create_nonce;
 use function wp_die;
@@ -60,7 +61,8 @@ final class CalendarAdmin
 
     public function enqueue_assets(string $hook): void
     {
-        if ('fp-exp-dashboard_page_fp_exp_calendar' !== $hook) {
+        // In alcuni ambienti lo screen id può variare leggermente: usiamo un controllo più permissivo
+        if (false === strpos($hook, 'fp_exp_calendar')) {
             return;
         }
 

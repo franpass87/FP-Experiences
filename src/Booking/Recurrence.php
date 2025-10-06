@@ -171,9 +171,13 @@ final class Recurrence
 
             $rule = $base_rule;
             $rule['times'] = $times;
-            if (isset($set['capacity'])) {
-                $rule['capacity_total'] = absint((string) $set['capacity']);
+            
+            // Usa la capienza del time set se specificata e > 0, altrimenti usa quella predefinita
+            $set_capacity = isset($set['capacity']) ? absint((string) $set['capacity']) : 0;
+            if ($set_capacity > 0) {
+                $rule['capacity_total'] = $set_capacity;
             }
+            // Se la capienza del time set è 0 o vuota, mantieni quella predefinita dal base_rule
             if (isset($set['buffer_before'])) {
                 $rule['buffer_before'] = absint((string) $set['buffer_before']);
             }

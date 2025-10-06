@@ -17,7 +17,9 @@
     const pluginConfig = window.fpExpConfig || {};
     const trackingConfig = pluginConfig.tracking || {};
     const browserLocale = ((navigator.languages && navigator.languages[0]) || navigator.language || '').toLowerCase();
-    const isEnglishBrowser = browserLocale.startsWith('en');
+    // Preferiamo la lingua del sito (attributo lang dell'HTML o config WP) a quella del browser
+    const siteLocale = (pluginConfig.locale || (document.documentElement && document.documentElement.lang) || '').toLowerCase();
+    const isEnglishSite = siteLocale ? siteLocale.startsWith('en') : browserLocale.startsWith('en');
     const autoLocale = pluginConfig.autoLocale || {};
     const autoLocaleStrings = autoLocale.strings || {};
     const autoLocalePlurals = autoLocale.plurals || {};
@@ -27,7 +29,7 @@
             return '';
         }
 
-        if (isEnglishBrowser && autoLocaleStrings[text]) {
+        if (isEnglishSite && autoLocaleStrings[text]) {
             return autoLocaleStrings[text];
         }
 
@@ -35,7 +37,7 @@
     }
 
     function localizePlural(single, plural, number) {
-        if (!isEnglishBrowser) {
+        if (!isEnglishSite) {
             return number === 1 ? single : plural;
         }
 
