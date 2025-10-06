@@ -1,12 +1,16 @@
 :root {
     --fp-exp-admin-spacing: 16px;
-    --fp-exp-admin-radius: 14px;
-    --fp-exp-admin-card-shadow: 0 22px 50px rgba(15, 23, 42, 0.12);
-    --fp-exp-admin-border: rgba(15, 23, 42, 0.08);
+    --fp-exp-admin-radius: 8px;
+    --fp-exp-admin-card-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    --fp-exp-admin-border: rgba(0, 0, 0, 0.08);
+    --fp-exp-color-text: #1f2937;
+    --fp-exp-color-muted: #6b7280;
+    --fp-exp-color-primary: #2563eb;
+    --fp-exp-color-danger: #dc2626;
 }
 
 body.fp-exp-admin-shell {
-    background: linear-gradient(160deg, #f9f6f2 0%, #efe7de 100%);
+    background: #f9fafb;
 }
 
 body.fp-exp-admin-shell #wpbody {
@@ -15,7 +19,7 @@ body.fp-exp-admin-shell #wpbody {
 
 body.fp-exp-admin-shell #wpbody-content {
     margin: 0;
-    padding: 32px clamp(16px, 4vw, 48px) 48px;
+    padding: 24px clamp(16px, 4vw, 32px) 48px;
     box-sizing: border-box;
 }
 
@@ -37,17 +41,17 @@ body.fp-exp-admin-shell #screen-meta-links {
 
 .fp-exp-admin {
     position: relative;
-    border: 0;
+    border: 1px solid var(--fp-exp-admin-border);
     border-radius: var(--fp-exp-admin-radius);
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(247, 244, 240, 0.96) 100%);
+    background: #ffffff;
     box-shadow: var(--fp-exp-admin-card-shadow);
     font-family: inherit;
 }
 
 .fp-exp-admin__body {
     display: grid;
-    gap: 24px;
-    padding: 28px;
+    gap: 20px;
+    padding: 24px;
 }
 
 .fp-exp-admin__layout {
@@ -71,15 +75,15 @@ body.fp-exp-admin-shell #screen-meta-links {
 
 .fp-exp-admin__title {
     margin: 0;
-    font-size: 28px;
-    font-weight: 700;
-    color: var(--fp-exp-color-text, #1f1f1f);
+    font-size: 24px;
+    font-weight: 600;
+    color: var(--fp-exp-color-text);
 }
 
 .fp-exp-admin__intro {
     margin: 0;
-    font-size: 15px;
-    color: var(--fp-exp-color-muted, #5f5f5f);
+    font-size: 14px;
+    color: var(--fp-exp-color-muted);
 }
 
 .fp-exp-admin__body > *:first-child {
@@ -93,7 +97,6 @@ body.fp-exp-admin-shell #screen-meta-links {
 .fp-exp-admin__body .notice {
     margin: 0;
     border-radius: var(--fp-exp-admin-radius);
-    box-shadow: 0 20px 40px rgba(15, 23, 42, 0.12);
 }
 
 .fp-exp-tabs {
@@ -102,42 +105,37 @@ body.fp-exp-admin-shell #screen-meta-links {
     z-index: 20;
     display: flex;
     flex-wrap: wrap;
-    gap: 8px;
-    padding: 18px 20px;
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.92) 0%, rgba(247, 244, 240, 0.92) 100%);
+    gap: 4px;
+    padding: 12px 16px;
+    background: #ffffff;
     border-bottom: 1px solid var(--fp-exp-admin-border);
-    box-shadow: 0 1px 0 rgba(15, 23, 42, 0.04);
-    backdrop-filter: blur(4px);
 }
 
 .fp-exp-tab {
-    background: rgba(255, 255, 255, 0.72);
+    background: transparent;
     border: 1px solid transparent;
-    border-radius: 999px;
-    padding: 10px 18px;
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--fp-exp-color-muted, #505050);
+    border-radius: 6px;
+    padding: 8px 16px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--fp-exp-color-muted);
     cursor: pointer;
-    transition: color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
+    transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
 }
 
 .fp-exp-tab:hover {
-    color: var(--fp-exp-color-text, #1f1f1f);
-    border-color: rgba(15, 23, 42, 0.1);
-    background: rgba(255, 255, 255, 0.9);
+    color: var(--fp-exp-color-text);
+    background: #f3f4f6;
 }
 
 .fp-exp-tab[aria-selected="true"] {
-    color: var(--fp-exp-color-text, #1f1f1f);
-    background: linear-gradient(135deg, #ffffff 0%, rgba(247, 244, 240, 0.94) 100%);
-    border-color: rgba(139, 30, 63, 0.35);
-    box-shadow: 0 14px 34px rgba(139, 30, 63, 0.22);
-    transform: translateY(-1px);
+    color: var(--fp-exp-color-primary);
+    background: #eff6ff;
+    border-color: #dbeafe;
 }
 
 .fp-exp-tab:focus-visible {
-    outline: 3px solid rgba(139, 30, 63, 0.35);
+    outline: 2px solid var(--fp-exp-color-primary);
     outline-offset: 2px;
 }
 
@@ -158,12 +156,11 @@ body.fp-exp-admin-shell #screen-meta-links {
 }
 
 .fp-exp-fieldset {
-    border: 0;
-    border-radius: calc(var(--fp-exp-admin-radius) - 2px);
-    padding: 24px;
-    margin: 0 0 24px;
-    background: linear-gradient(135deg, #ffffff 0%, rgba(249, 247, 243, 0.94) 100%);
-    box-shadow: 0 16px 34px rgba(15, 23, 42, 0.08);
+    border: 1px solid var(--fp-exp-admin-border);
+    border-radius: var(--fp-exp-admin-radius);
+    padding: 20px;
+    margin: 0 0 20px;
+    background: #ffffff;
 }
 
 .fp-exp-fieldset:last-of-type {
@@ -309,10 +306,12 @@ body.fp-exp-admin-shell #screen-meta-links {
     display: flex;
     gap: 8px;
 }
+
 .fp-exp-gallery-control {
     display: grid;
     gap: 12px;
 }
+
 .fp-exp-gallery-control__list {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
@@ -321,6 +320,7 @@ body.fp-exp-admin-shell #screen-meta-links {
     padding: 0;
     list-style: none;
 }
+
 .fp-exp-gallery-control__item {
     position: relative;
     border: 1px dashed rgba(15, 23, 42, 0.18);
@@ -329,11 +329,13 @@ body.fp-exp-admin-shell #screen-meta-links {
     background: #f6f7f7;
     min-height: 0;
 }
+
 .fp-exp-gallery-control__thumb {
     position: relative;
     padding-top: 66%;
     background: #f6f7f7;
 }
+
 .fp-exp-gallery-control__thumb img {
     position: absolute;
     inset: 0;
@@ -342,6 +344,7 @@ body.fp-exp-admin-shell #screen-meta-links {
     object-fit: cover;
     display: block;
 }
+
 .fp-exp-gallery-control__placeholder {
     position: absolute;
     inset: 0;
@@ -350,10 +353,12 @@ body.fp-exp-admin-shell #screen-meta-links {
     color: rgba(15, 23, 42, 0.35);
     background: rgba(15, 23, 42, 0.04);
 }
+
 .fp-exp-gallery-control__placeholder svg {
     width: 48px;
     height: auto;
 }
+
 .fp-exp-gallery-control__toolbar {
     position: absolute;
     left: 8px;
@@ -362,6 +367,7 @@ body.fp-exp-admin-shell #screen-meta-links {
     gap: 6px;
     z-index: 2;
 }
+
 .fp-exp-gallery-control__move {
     display: grid;
     place-items: center;
@@ -375,11 +381,13 @@ body.fp-exp-admin-shell #screen-meta-links {
     font-size: 14px;
     line-height: 1;
 }
+
 .fp-exp-gallery-control__move:hover,
 .fp-exp-gallery-control__move:focus {
     background: rgba(15, 23, 42, 0.9);
     color: #fff;
 }
+
 .fp-exp-gallery-control__remove {
     position: absolute;
     top: 8px;
@@ -396,16 +404,19 @@ body.fp-exp-admin-shell #screen-meta-links {
     font-size: 16px;
     line-height: 1;
 }
+
 .fp-exp-gallery-control__remove:hover,
 .fp-exp-gallery-control__remove:focus {
     background: rgba(218, 41, 28, 1);
     color: #fff;
 }
+
 .fp-exp-gallery-control__actions {
     display: flex;
     gap: 12px;
     align-items: center;
 }
+
 .fp-exp-gallery-control__empty {
     margin: 0;
     font-size: 12px;
@@ -421,7 +432,7 @@ body.fp-exp-admin-shell #screen-meta-links {
     font-size: 12px;
     color: var(--fp-exp-color-muted, #5f5f5f);
     margin: 0;
-    position: relative;
+    position: relative; /* evita che le card la sorvolino visivamente */
     z-index: 1;
 }
 
@@ -435,7 +446,7 @@ body.fp-exp-admin-shell #screen-meta-links {
     display: grid;
     gap: 12px;
     grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    margin-bottom: 8px;
+    margin-bottom: 8px; /* spazio extra per non sovrapporsi alla description */
 }
 
 .fp-exp-radio-card {
@@ -444,28 +455,27 @@ body.fp-exp-admin-shell #screen-meta-links {
     gap: 4px;
     align-content: start;
     padding: 14px 16px;
-    border: 1px solid rgba(15, 23, 42, 0.05);
+    border: 1px solid var(--fp-exp-admin-border);
     border-radius: var(--fp-exp-admin-radius);
-    background: linear-gradient(135deg, #ffffff 0%, rgba(249, 247, 243, 0.94) 100%);
-    box-shadow: 0 6px 16px rgba(15, 23, 42, 0.10);
+    background: #ffffff;
     cursor: pointer;
     min-height: 100%;
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    transition: border-color 0.15s ease, background-color 0.15s ease;
 }
 
 .fp-exp-radio-card:hover {
-    border-color: rgba(139, 30, 63, 0.35);
-    box-shadow: 0 10px 22px rgba(139, 30, 63, 0.16);
+    border-color: #d1d5db;
+    background: #f9fafb;
 }
 
 .fp-exp-radio-card:focus-within {
-    border-color: rgba(139, 30, 63, 0.45);
-    box-shadow: 0 0 0 1px rgba(139, 30, 63, 0.45), 0 12px 24px rgba(139, 30, 63, 0.16);
+    border-color: var(--fp-exp-color-primary);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
 
 .fp-exp-radio-card.is-selected {
-    border-color: rgba(139, 30, 63, 0.45);
-    box-shadow: 0 12px 24px rgba(139, 30, 63, 0.18);
+    border-color: var(--fp-exp-color-primary);
+    background: #eff6ff;
 }
 
 .fp-exp-radio-card input[type="radio"] {
@@ -517,14 +527,13 @@ body.fp-exp-admin-shell #screen-meta-links {
 }
 
 .fp-exp-tools__card {
-    background: linear-gradient(135deg, #ffffff 0%, rgba(249, 247, 243, 0.94) 100%);
-    border: 1px solid rgba(15, 23, 42, 0.05);
+    background: #ffffff;
+    border: 1px solid var(--fp-exp-admin-border);
     border-radius: var(--fp-exp-admin-radius);
-    box-shadow: 0 16px 34px rgba(15, 23, 42, 0.08);
     display: flex;
     flex-direction: column;
     gap: 8px;
-    padding: 18px;
+    padding: 16px;
 }
 
 .fp-exp-tools__card h3 {
@@ -609,10 +618,9 @@ body.fp-exp-admin-shell #screen-meta-links {
     align-items: flex-start;
     gap: 12px;
     padding: 16px;
-    border: 1px solid rgba(15, 23, 42, 0.05);
+    border: 1px solid var(--fp-exp-admin-border);
     border-radius: var(--fp-exp-admin-radius);
-    background: linear-gradient(135deg, #ffffff 0%, rgba(249, 247, 243, 0.94) 100%);
-    box-shadow: 0 16px 34px rgba(15, 23, 42, 0.08);
+    background: #ffffff;
 }
 
 .fp-exp-repeater-row[draggable="true"] {
@@ -1034,9 +1042,9 @@ body.fp-exp-admin-shell #screen-meta-links {
 
 .fp-exp-dashboard__card {
     background: #fff;
-    border-radius: 12px;
-    padding: 18px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    border: 1px solid var(--fp-exp-admin-border);
+    border-radius: var(--fp-exp-admin-radius);
+    padding: 16px;
 }
 
 .fp-exp-dashboard__card-label {
@@ -1067,9 +1075,9 @@ body.fp-exp-admin-shell #screen-meta-links {
 
 .fp-exp-dashboard__section {
     background: #fff;
-    border-radius: 12px;
+    border: 1px solid var(--fp-exp-admin-border);
+    border-radius: var(--fp-exp-admin-radius);
     padding: 20px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
 }
 
 .fp-exp-dashboard__section h2 {
@@ -1113,31 +1121,29 @@ body.fp-exp-admin-shell #screen-meta-links {
 
 .fp-exp-settings .nav-tab {
     border: 1px solid transparent;
-    border-radius: 999px;
-    padding: 9px 20px;
-    font-size: 13px;
-    font-weight: 600;
-    background: rgba(255, 255, 255, 0.75);
-    color: var(--fp-exp-color-muted, #505050);
-    transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+    border-radius: 6px;
+    padding: 8px 16px;
+    font-size: 14px;
+    font-weight: 500;
+    background: transparent;
+    color: var(--fp-exp-color-muted);
+    transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
 }
 
 .fp-exp-settings .nav-tab:hover {
-    color: var(--fp-exp-color-text, #1f1f1f);
-    border-color: rgba(15, 23, 42, 0.1);
+    color: var(--fp-exp-color-text);
+    background: #f3f4f6;
 }
 
 .fp-exp-settings .nav-tab:focus-visible {
-    outline: 3px solid rgba(139, 30, 63, 0.35);
+    outline: 2px solid var(--fp-exp-color-primary);
     outline-offset: 2px;
 }
 
 .fp-exp-settings .nav-tab.nav-tab-active {
-    color: var(--fp-exp-color-text, #1f1f1f);
-    background: linear-gradient(135deg, #ffffff 0%, rgba(247, 244, 240, 0.94) 100%);
-    border-color: rgba(139, 30, 63, 0.35);
-    box-shadow: 0 14px 34px rgba(139, 30, 63, 0.22);
-    transform: translateY(-1px);
+    color: var(--fp-exp-color-primary);
+    background: #eff6ff;
+    border-color: #dbeafe;
 }
 
 .fp-exp-settings__form {
@@ -1149,11 +1155,10 @@ body.fp-exp-admin-shell #screen-meta-links {
     margin: 0;
     width: 100%;
     border-spacing: 0;
-    background: linear-gradient(135deg, #ffffff 0%, rgba(249, 247, 243, 0.94) 100%);
+    background: #ffffff;
     border-radius: var(--fp-exp-admin-radius);
-    box-shadow: 0 16px 34px rgba(15, 23, 42, 0.08);
-    padding: 24px 28px;
-    border: 1px solid rgba(15, 23, 42, 0.05);
+    padding: 24px;
+    border: 1px solid var(--fp-exp-admin-border);
 }
 
 .fp-exp-settings__form .form-table tbody {
@@ -1209,24 +1214,23 @@ body.fp-exp-admin-shell #screen-meta-links {
 .fp-exp-admin__body table.wp-list-table {
     border-radius: var(--fp-exp-admin-radius);
     overflow: hidden;
-    border: 1px solid rgba(15, 23, 42, 0.06);
-    box-shadow: 0 18px 40px rgba(15, 23, 42, 0.12);
+    border: 1px solid var(--fp-exp-admin-border);
 }
 
 .fp-exp-admin__body table.widefat thead th,
 .fp-exp-admin__body table.wp-list-table thead th {
-    background: rgba(15, 23, 42, 0.04);
+    background: #f9fafb;
     font-weight: 600;
 }
 
 .fp-exp-admin__body table.widefat tbody tr:nth-child(even),
 .fp-exp-admin__body table.wp-list-table tbody tr:nth-child(even) {
-    background: rgba(15, 23, 42, 0.02);
+    background: #f9fafb;
 }
 
 .fp-exp-admin__body table.widefat tbody tr:hover,
 .fp-exp-admin__body table.wp-list-table tbody tr:hover {
-    background: rgba(139, 30, 63, 0.08);
+    background: #f3f4f6;
 }
 
 .fp-exp-admin__body table.widefat td,
@@ -1236,49 +1240,248 @@ body.fp-exp-admin-shell #screen-meta-links {
     padding: 14px 16px;
 }
 
-/* Bottoni secondari e link azione nelle schermate WP (replica da sorgente) */
-body.fp-exp-admin-shell .wrap .button,
-body.fp-exp-admin-shell .wrap .button-secondary,
-body.fp-exp-admin-shell .wrap .page-title-action.button-secondary {
-    border: 0;
-    border-radius: 999px;
-    background: rgba(15, 23, 42, 0.06);
-    padding: 8px 16px;
-    font-weight: 600;
-    color: #1f1f1f;
-    text-shadow: none;
-}
-body.fp-exp-admin-shell .wrap .button:hover,
-body.fp-exp-admin-shell .wrap .button-secondary:hover {
-    background: rgba(15, 23, 42, 0.1);
-    color: #111827;
-}
-
 .fp-exp-admin__body .button-primary {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 6px;
-    background: linear-gradient(135deg, #e0316c 0%, #a61e4d 100%);
-    border: 0;
-    border-radius: 999px;
-    box-shadow: 0 20px 42px rgba(226, 49, 108, 0.35);
-    padding: 10px 26px;
-    min-height: 38px;
-    font-weight: 600;
-    letter-spacing: 0.01em;
+    background: var(--fp-exp-color-primary);
+    border: 1px solid var(--fp-exp-color-primary);
+    border-radius: 6px;
+    padding: 8px 16px;
+    min-height: 36px;
+    font-weight: 500;
     color: #fff;
-    text-shadow: 0 1px 1px rgba(0, 0, 0, 0.18);
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    text-shadow: none;
+    transition: background-color 0.15s ease;
+}
+
+/* Estensione: stili coerenti su schermate CPT/tassonomie anche senza wrapper */
+body.fp-exp-admin-shell .wrap .button-primary,
+body.fp-exp-admin-shell .wrap .page-title-action,
+body.fp-exp-admin-shell .wrap .submit .button-primary,
+body.fp-exp-admin-shell .tablenav .actions .button-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    background: var(--fp-exp-color-primary);
+    border: 1px solid var(--fp-exp-color-primary);
+    border-radius: 6px;
+    padding: 6px 14px;
+    min-height: 32px;
+    font-weight: 500;
+    color: #fff;
+    text-shadow: none;
+}
+
+body.fp-exp-admin-shell .wrap .button-primary:hover,
+body.fp-exp-admin-shell .wrap .page-title-action:hover {
+    background: #1d4ed8;
+}
+
+/* Bottoni secondari e link azione */
+body.fp-exp-admin-shell .wrap .button,
+body.fp-exp-admin-shell .wrap .button-secondary,
+body.fp-exp-admin-shell .wrap .page-title-action.button-secondary {
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    background: #ffffff;
+    padding: 6px 14px;
+    font-weight: 500;
+    color: var(--fp-exp-color-text);
+    text-shadow: none;
+}
+
+body.fp-exp-admin-shell .wrap .button:hover,
+body.fp-exp-admin-shell .wrap .button-secondary:hover {
+    background: #f9fafb;
+    border-color: #9ca3af;
+}
+
+/* Barre filtri, campi e select nelle schermate lista */
+body.fp-exp-admin-shell .tablenav .actions select,
+body.fp-exp-admin-shell .tablenav .actions input[type="search"],
+body.fp-exp-admin-shell .tablenav .actions input[type="text"],
+body.fp-exp-admin-shell .search-box input[type="search"] {
+    min-height: 32px;
+    border-radius: 6px;
+    border: 1px solid #d1d5db;
+    background: #ffffff;
+    padding: 0 10px;
+}
+
+/* Avvisi core */
+body.fp-exp-admin-shell .wrap .notice {
+    border-radius: var(--fp-exp-admin-radius);
+}
+
+/* Tabelle liste WP */
+body.fp-exp-admin-shell .wrap .wp-list-table,
+body.fp-exp-admin-shell .wrap .widefat {
+    border-radius: var(--fp-exp-admin-radius);
+    overflow: hidden;
+    border: 1px solid var(--fp-exp-admin-border);
+    background: #fff;
+}
+
+body.fp-exp-admin-shell .wrap .wp-list-table thead th,
+body.fp-exp-admin-shell .wrap .widefat thead th {
+    background: #f9fafb;
+    font-weight: 600;
+}
+
+body.fp-exp-admin-shell .wrap .wp-list-table tbody tr:nth-child(even),
+body.fp-exp-admin-shell .wrap .widefat tbody tr:nth-child(even) {
+    background: #f9fafb;
+}
+
+body.fp-exp-admin-shell .wrap .wp-list-table tbody tr:hover,
+body.fp-exp-admin-shell .wrap .widefat tbody tr:hover {
+    background: #f3f4f6;
+}
+
+body.fp-exp-admin-shell .wrap .wp-list-table td,
+body.fp-exp-admin-shell .wrap .wp-list-table th,
+body.fp-exp-admin-shell .wrap .widefat td,
+body.fp-exp-admin-shell .wrap .widefat th {
+    padding: 12px 14px;
+}
+
+/* Dark neutral theme (opt-in via .fp-exp-dark su <html>) */
+html.fp-exp-dark body.fp-exp-admin-shell {
+    background: linear-gradient(160deg, #121417 0%, #0e1114 100%);
+}
+
+html.fp-exp-dark {
+    --fp-exp-color-text: #e6e8eb;
+    --fp-exp-color-muted: #a0a7b0;
+    --fp-exp-admin-border: rgba(230, 232, 235, 0.08);
+    --fp-exp-admin-card-shadow: 0 22px 50px rgba(0, 0, 0, 0.4);
+}
+
+html.fp-exp-dark .fp-exp-admin {
+    background: linear-gradient(180deg, rgba(22, 24, 29, 0.96) 0%, rgba(17, 19, 23, 0.96) 100%);
+    box-shadow: 0 22px 50px rgba(0, 0, 0, 0.55);
+}
+
+html.fp-exp-dark .fp-exp-admin__breadcrumb,
+html.fp-exp-dark .fp-exp-dashboard__breadcrumb {
+    color: var(--fp-exp-color-muted);
+}
+
+html.fp-exp-dark .fp-exp-tabs {
+    background: linear-gradient(180deg, rgba(24, 26, 31, 0.92) 0%, rgba(20, 22, 26, 0.92) 100%);
+    border-bottom-color: rgba(230, 232, 235, 0.08);
+    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.3);
+}
+
+html.fp-exp-dark .fp-exp-tab {
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--fp-exp-color-muted);
+}
+
+html.fp-exp-dark .fp-exp-tab:hover { color: var(--fp-exp-color-text); }
+
+html.fp-exp-dark .fp-exp-tab[aria-selected="true"] {
+    background: linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.06) 100%);
+    border-color: rgba(139, 30, 63, 0.45);
+    box-shadow: 0 14px 34px rgba(0, 0, 0, 0.4);
+}
+
+html.fp-exp-dark .fp-exp-tab-panels { background: #15181d; }
+
+html.fp-exp-dark .fp-exp-fieldset {
+    background: linear-gradient(135deg, #1a1e24 0%, rgba(18, 21, 25, 0.94) 100%);
+    box-shadow: 0 16px 34px rgba(0, 0, 0, 0.5);
+    border-color: rgba(230, 232, 235, 0.06);
+}
+
+html.fp-exp-dark .fp-exp-radio-card {
+    background: linear-gradient(135deg, #1a1e24 0%, rgba(18, 21, 25, 0.94) 100%);
+    border-color: rgba(230, 232, 235, 0.06);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+}
+
+html.fp-exp-dark .fp-exp-recurrence__summary {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(230, 232, 235, 0.08);
+    color: var(--fp-exp-color-muted);
+}
+
+html.fp-exp-dark .fp-exp-dashboard__card,
+html.fp-exp-dark .fp-exp-dashboard__section {
+    background: #14181d;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+html.fp-exp-dark .fp-exp-dashboard__card-value { color: var(--fp-exp-color-text); }
+html.fp-exp-dark .fp-exp-dashboard__card-label,
+html.fp-exp-dark .fp-exp-dashboard__card-hint { color: var(--fp-exp-color-muted); }
+
+/* Buttons */
+html.fp-exp-dark .fp-exp-admin__body .button-primary,
+html.fp-exp-dark body.fp-exp-admin-shell .wrap .button-primary,
+html.fp-exp-dark body.fp-exp-admin-shell .wrap .page-title-action,
+html.fp-exp-dark body.fp-exp-admin-shell .wrap .submit .button-primary,
+html.fp-exp-dark body.fp-exp-admin-shell .tablenav .actions .button-primary {
+    background: linear-gradient(135deg, #d33873 0%, #8b1e3f 100%);
+    box-shadow: 0 20px 42px rgba(211, 56, 115, 0.35);
+    color: #fff;
+}
+html.fp-exp-dark body.fp-exp-admin-shell .wrap .button,
+html.fp-exp-dark body.fp-exp-admin-shell .wrap .button-secondary {
+    background: rgba(255, 255, 255, 0.08);
+    color: #e5e7eb; /* testo più chiaro per contrasto su sfondo scuro */
+}
+html.fp-exp-dark body.fp-exp-admin-shell .wrap .button:hover,
+html.fp-exp-dark body.fp-exp-admin-shell .wrap .button-secondary:hover {
+    background: rgba(255, 255, 255, 0.12);
+}
+
+/* Tables */
+html.fp-exp-dark body.fp-exp-admin-shell .wrap .wp-list-table,
+html.fp-exp-dark body.fp-exp-admin-shell .wrap .widefat {
+    background: #14181d;
+    border-color: rgba(230, 232, 235, 0.08);
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.55);
+}
+html.fp-exp-dark body.fp-exp-admin-shell .wrap .wp-list-table thead th,
+html.fp-exp-dark body.fp-exp-admin-shell .wrap .widefat thead th {
+    background: rgba(255, 255, 255, 0.06);
+}
+html.fp-exp-dark body.fp-exp-admin-shell .wrap .wp-list-table tbody tr:nth-child(even),
+html.fp-exp-dark body.fp-exp-admin-shell .wrap .widefat tbody tr:nth-child(even) {
+    background: rgba(255, 255, 255, 0.02);
+}
+html.fp-exp-dark body.fp-exp-admin-shell .wrap .wp-list-table tbody tr:hover,
+html.fp-exp-dark body.fp-exp-admin-shell .wrap .widefat tbody tr:hover {
+    background: rgba(211, 56, 115, 0.12);
+}
+
+/* Inputs */
+html.fp-exp-dark body.fp-exp-admin-shell .tablenav .actions select,
+html.fp-exp-dark body.fp-exp-admin-shell .tablenav .actions input[type="search"],
+html.fp-exp-dark body.fp-exp-admin-shell .tablenav .actions input[type="text"],
+html.fp-exp-dark body.fp-exp-admin-shell .search-box input[type="search"] {
+    border-color: rgba(230, 232, 235, 0.12);
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--fp-exp-color-text);
+}
+
+/* Notices */
+html.fp-exp-dark body.fp-exp-admin-shell .wrap .notice {
+    background: #15191e;
+    color: var(--fp-exp-color-text);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.55);
 }
 
 .fp-exp-admin__body .button-primary:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 28px 52px rgba(226, 49, 108, 0.45);
+    background: #1d4ed8;
 }
 
 .fp-exp-admin__body .button-primary:focus-visible {
-    outline: 3px solid rgba(226, 49, 108, 0.45);
+    outline: 2px solid var(--fp-exp-color-primary);
     outline-offset: 2px;
 }
 
@@ -1304,10 +1507,10 @@ body.fp-exp-admin-shell .wrap .button-secondary:hover {
     gap: 12px;
     align-items: center;
     margin: 0;
-    padding: 16px 20px;
+    padding: 16px;
     border-radius: var(--fp-exp-admin-radius);
-    background: linear-gradient(135deg, #ffffff 0%, rgba(247, 244, 240, 0.92) 100%);
-    box-shadow: 0 16px 36px rgba(15, 23, 42, 0.12);
+    background: #f9fafb;
+    border: 1px solid var(--fp-exp-admin-border);
 }
 
 .fp-exp-requests__filters label,
@@ -1320,11 +1523,10 @@ body.fp-exp-admin-shell .wrap .button-secondary:hover {
 .fp-exp-log-filter select,
 .fp-exp-log-filter input[type="search"],
 .fp-exp-requests__action input[type="text"] {
-    min-height: 38px;
-    border-radius: 10px;
-    border: 1px solid rgba(15, 23, 42, 0.12);
-    background: rgba(255, 255, 255, 0.94);
-    box-shadow: inset 0 1px 1px rgba(15, 23, 42, 0.05);
+    min-height: 36px;
+    border-radius: 6px;
+    border: 1px solid #d1d5db;
+    background: #ffffff;
     padding: 0 12px;
 }
 
@@ -1344,21 +1546,19 @@ body.fp-exp-admin-shell .wrap .button-secondary:hover {
 }
 
 .fp-exp-requests__action .button-secondary {
-    background: rgba(15, 23, 42, 0.06);
-    border: 0;
-    border-radius: 999px;
-    padding: 8px 18px;
-    font-weight: 600;
-    color: #1f1f1f; /* contrasto testo su sfondo chiaro */
+    background: #ffffff;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    padding: 8px 16px;
+    font-weight: 500;
 }
 
 .fp-exp-settings__panel {
-    background: linear-gradient(135deg, #ffffff 0%, rgba(249, 247, 243, 0.94) 100%);
+    background: #ffffff;
     border-radius: var(--fp-exp-admin-radius);
-    padding: 28px;
-    box-shadow: var(--fp-exp-admin-card-shadow);
+    padding: 24px;
     margin-top: 16px;
-    border: 1px solid rgba(15, 23, 42, 0.05);
+    border: 1px solid var(--fp-exp-admin-border);
 }
 
 .fp-exp-settings__list {
@@ -1381,12 +1581,11 @@ body.fp-exp-admin-shell .wrap .button-secondary:hover {
 }
 
 .fp-exp-help__section {
-    background: linear-gradient(135deg, #ffffff 0%, rgba(249, 247, 243, 0.94) 100%);
+    background: #ffffff;
     padding: 24px;
     border-radius: var(--fp-exp-admin-radius);
-    box-shadow: var(--fp-exp-admin-card-shadow);
     margin-top: 16px;
-    border: 1px solid rgba(15, 23, 42, 0.05);
+    border: 1px solid var(--fp-exp-admin-border);
 }
 
 .fp-exp-help__section h2 {
@@ -1532,21 +1731,19 @@ body.fp-exp-admin-shell .wrap .button-secondary:hover {
 }
 
 .fp-exp-calendar__loading {
-    padding: 18px;
-    background: linear-gradient(135deg, #ffffff 0%, rgba(249, 247, 243, 0.94) 100%);
-    border: 1px solid rgba(15, 23, 42, 0.05);
+    padding: 16px;
+    background: #ffffff;
+    border: 1px solid var(--fp-exp-admin-border);
     border-radius: var(--fp-exp-admin-radius);
-    box-shadow: 0 16px 34px rgba(15, 23, 42, 0.08);
-    font-weight: 600;
+    font-weight: 500;
 }
 
 .fp-exp-calendar__feedback {
-    padding: 14px 18px;
+    padding: 14px 16px;
     border-radius: var(--fp-exp-admin-radius);
-    border: 1px solid rgba(214, 54, 56, 0.4);
-    background: linear-gradient(135deg, rgba(253, 236, 234, 0.95) 0%, rgba(255, 247, 246, 0.95) 100%);
-    color: #932122;
-    box-shadow: 0 16px 34px rgba(214, 54, 56, 0.12);
+    border: 1px solid #fca5a5;
+    background: #fef2f2;
+    color: #991b1b;
 }
 
 .fp-exp-calendar__body {
@@ -1577,16 +1774,103 @@ body.fp-exp-admin-shell .wrap .button-secondary:hover {
     gap: 6px;
 }
 
-.fp-exp-calendar__list {
+.fp-exp-calendar__content {
     display: grid;
     gap: 16px;
 }
 
+.fp-exp-calendar__views .button.is-active {
+    background: #eff6ff;
+    border-color: #dbeafe;
+    color: #1d4ed8;
+}
+
+/* Grid calendar (Bokun-like) */
+.fp-exp-calendar__grid {
+    display: grid;
+    gap: 8px;
+}
+
+.fp-exp-calendar__grid-head {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 6px;
+}
+
+.fp-exp-calendar__grid-head-cell {
+    font-size: 12px;
+    font-weight: 600;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+}
+
+.fp-exp-calendar__grid-body {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 6px;
+}
+
+.fp-exp-calendar__grid-cell {
+    display: grid;
+    align-content: start;
+    gap: 6px;
+    border: 1px solid var(--fp-exp-admin-border);
+    border-radius: 8px;
+    background: #ffffff;
+    padding: 8px;
+    text-align: left;
+    cursor: pointer;
+}
+
+.fp-exp-calendar__grid-cell.is-out {
+    background: #f8fafc;
+    color: #9ca3af;
+}
+
+.fp-exp-calendar__grid-cell.is-today {
+    box-shadow: inset 0 0 0 2px #2563eb;
+}
+
+.fp-exp-calendar__grid-day {
+    font-weight: 700;
+}
+
+.fp-exp-calendar__grid-count {
+    justify-self: end;
+    padding: 2px 6px;
+    font-size: 12px;
+    border-radius: 999px;
+    background: #eef2ff;
+    color: #3730a3;
+}
+
+.fp-exp-calendar__grid-capacity {
+    position: relative;
+    height: 6px;
+    border-radius: 4px;
+    background: #e5e7eb;
+    overflow: hidden;
+}
+
+.fp-exp-calendar__grid-capacity > span {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 0;
+    background: #86efac; /* green-300 */
+}
+
+.fp-exp-calendar__grid-empty {
+    color: #cbd5e1;
+    font-size: 12px;
+}
+
 .fp-exp-calendar__day {
-    border: 1px solid rgba(15, 23, 42, 0.05);
+    border: 1px solid var(--fp-exp-admin-border);
     border-radius: var(--fp-exp-admin-radius);
-    background: linear-gradient(135deg, #ffffff 0%, rgba(249, 247, 243, 0.94) 100%);
-    box-shadow: var(--fp-exp-admin-card-shadow);
+    background: #ffffff;
     overflow: hidden;
 }
 
@@ -1594,9 +1878,9 @@ body.fp-exp-admin-shell .wrap .button-secondary:hover {
     display: flex;
     align-items: baseline;
     justify-content: space-between;
-    padding: 16px 20px;
-    background: rgba(247, 244, 240, 0.75);
-    border-bottom: 1px solid rgba(15, 23, 42, 0.05);
+    padding: 14px 16px;
+    background: #f9fafb;
+    border-bottom: 1px solid var(--fp-exp-admin-border);
     font-weight: 600;
 }
 
@@ -1607,10 +1891,10 @@ body.fp-exp-admin-shell .wrap .button-secondary:hover {
 }
 
 .fp-exp-calendar__slot {
-    padding: 16px 20px;
+    padding: 14px 16px;
     display: grid;
     gap: 6px;
-    border-top: 1px solid rgba(15, 23, 42, 0.06);
+    border-top: 1px solid var(--fp-exp-admin-border);
 }
 
 .fp-exp-calendar__slot:first-child {
@@ -1641,15 +1925,14 @@ body.fp-exp-admin-shell .wrap .button-secondary:hover {
 }
 
 .fp-exp-email-previews__item {
-    border: 1px solid #e2e8f0;
-    border-radius: 16px;
+    border: 1px solid var(--fp-exp-admin-border);
+    border-radius: var(--fp-exp-admin-radius);
     background: #ffffff;
-    box-shadow: 0 12px 24px rgba(15, 23, 42, 0.08);
     padding: 0 0 16px;
 }
 
 .fp-exp-email-previews__item[open] {
-    box-shadow: 0 18px 32px rgba(15, 23, 42, 0.12);
+    border-color: #d1d5db;
 }
 
 .fp-exp-email-previews__summary {
@@ -1707,4 +1990,105 @@ body.fp-exp-admin-shell .wrap .button-secondary:hover {
     border-radius: 12px;
     padding: 16px;
     box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.25);
+}
+
+/* Importer Page Styles */
+.fp-exp-card {
+    background: #ffffff;
+    border: 1px solid var(--fp-exp-admin-border);
+    border-radius: var(--fp-exp-admin-radius);
+    padding: 24px;
+}
+
+.fp-exp-card h2 {
+    margin-top: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--fp-exp-color-text);
+}
+
+.fp-exp-guide-section {
+    margin-bottom: 20px;
+}
+
+.fp-exp-guide-section:last-child {
+    margin-bottom: 0;
+}
+
+.fp-exp-guide-section h3 {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--fp-exp-color-text, #1f1f1f);
+    margin: 0 0 12px 0;
+}
+
+.fp-exp-guide-section h4 {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--fp-exp-color-text, #1f1f1f);
+    margin: 16px 0 8px 0;
+}
+
+.fp-exp-guide-section p {
+    margin: 0 0 12px 0;
+    line-height: 1.6;
+    color: var(--fp-exp-color-muted, #5f5f5f);
+}
+
+.fp-exp-guide-list {
+    margin: 8px 0;
+    padding-left: 24px;
+    line-height: 1.8;
+}
+
+.fp-exp-guide-list li {
+    margin-bottom: 6px;
+    color: var(--fp-exp-color-muted, #5f5f5f);
+}
+
+.fp-exp-guide-list strong {
+    color: var(--fp-exp-color-text, #1f1f1f);
+    font-weight: 600;
+}
+
+.fp-exp-guide-tip {
+    margin: 12px 0;
+    padding: 12px 16px;
+    background: #fff3cd;
+    border-left: 4px solid #ffc107;
+    border-radius: 6px;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.fp-exp-import-form .form-table {
+    background: transparent;
+    box-shadow: none;
+    padding: 0;
+    border: 0;
+}
+
+.fp-exp-import-form .form-table th,
+.fp-exp-import-form .form-table td {
+    padding: 12px 0;
+}
+
+.fp-exp-import-form input[type="file"] {
+    padding: 8px 12px;
+    border: 2px dashed #d1d5db;
+    border-radius: 6px;
+    background: #f9fafb;
+    cursor: pointer;
+    transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.fp-exp-import-form input[type="file"]:hover {
+    border-color: var(--fp-exp-color-primary);
+    background: #eff6ff;
+}
+
+.fp-exp-import-form .description {
+    margin-top: 8px;
+    font-size: 13px;
+    color: var(--fp-exp-color-muted, #5f5f5f);
 }

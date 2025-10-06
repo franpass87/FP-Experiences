@@ -2574,157 +2574,97 @@
         }
 
         const experienceId = container.getAttribute('data-experience') || '';
-        const monthsRoot = container.querySelector('.fp-exp-calendar-only__months');
-        if (!monthsRoot) {
+        const calendarRoot = container.querySelector('.fp-exp-calendar');
+        const slotsContainer = container.querySelector('.fp-exp-slots');
+        
+        if (!calendarRoot || !slotsContainer) {
             return;
         }
 
-        const allDayItems = Array.from(container.querySelectorAll('.fp-exp-calendar-only__day'));
+        // Ottieni la mappa degli slot dal data-attribute
+        let slotsMap = {};
+        try {
+            const slotsData = container.getAttribute('data-slots');
+            if (slotsData) {
+                slotsMap = JSON.parse(slotsData);
+            }
+        } catch (e) {
+            console.warn('Failed to parse slots data:', e);
+        }
 
-        // Cache locale per slot con TTL di 60 secondi
-        const slotsCache = new Map();
-        const CACHE_TTL = 60000; // 1 minuto
+        const allDayButtons = Array.from(container.querySelectorAll('.fp-exp-calendar__day'));
 
-        async function loadSlotsForDate(dateKey, useCache = true) {
-            const slotsContainer = container.querySelector('.fp-exp-slots');
-            if (!slotsContainer) {
+        // Funzione per renderizzare gli slot di un giorno specifico
+        function showSlotsForDate(dateKey) {
+            const slots = slotsMap[dateKey] || [];
+            
+            if (!slots.length) {
+                const placeholder = document.createElement('p');
+                placeholder.className = 'fp-exp-slots__placeholder';
+                placeholder.textContent = slotsContainer.getAttribute('data-empty-label') || 'Nessuna fascia disponibile per questa data';
+                slotsContainer.innerHTML = '';
+                slotsContainer.appendChild(placeholder);
                 return;
             }
 
-            // Verifica cache
-            const cacheKey = `${experienceId}-${dateKey}`;
-            if (useCache) {
-                const cached = slotsCache.get(cacheKey);
-                if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
-                    renderSlots(slotsContainer, cached.data, { selectedSlot: null });
-                    return;
-                }
-            }
+            const list = document.createElement('div');
+            list.className = 'fp-exp-slots__list';
 
-            // placeholder loading
+            slots.forEach((slot) => {
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className = 'fp-exp-slot-option';
+                button.setAttribute('data-slot-id', String(slot.id));
+                
+                const remaining = parseInt(slot.remaining, 10) || 0;
+                const ariaLabel = `${slot.time || ''}, ${remaining > 0 ? localizePlural('%d posto disponibile', '%d posti disponibili', remaining).replace('%d', String(remaining)) : localize('Esaurito')}`;
+                button.setAttribute('aria-label', ariaLabel);
+                
+                if (remaining <= 0) {
+                    button.disabled = true;
+                    button.setAttribute('aria-disabled', 'true');
+                }
+
+                const timeEl = document.createElement('span');
+                timeEl.className = 'fp-exp-slot-option__time';
+                timeEl.textContent = slot.time || '';
+
+                const capacityEl = document.createElement('span');
+                capacityEl.className = 'fp-exp-slot-option__capacity';
+                const template = localizePlural('%d posto', '%d posti', remaining);
+                capacityEl.textContent = template.replace('%d', String(remaining));
+
+                button.appendChild(timeEl);
+                button.appendChild(capacityEl);
+                list.appendChild(button);
+            });
+
             slotsContainer.innerHTML = '';
-            const loading = document.createElement('p');
-            loading.className = 'fp-exp-slots__placeholder';
-            loading.textContent = container.getAttribute('data-loading-label') || 'Caricamento…';
-            slotsContainer.appendChild(loading);
-
-            try {
-                const url = new URL(`${pluginConfig.restUrl}availability`);
-                url.searchParams.set('experience', String(experienceId));
-                url.searchParams.set('start', dateKey);
-                url.searchParams.set('end', dateKey);
-                
-                // Usa fetchWithRetry per gestire errori temporanei
-                const response = await fetchWithRetry(url.toString(), {
-                    credentials: 'same-origin',
-                    headers: buildRestHeaders(),
-                }, 3);
-                
-                // Gestione errori HTTP specifica
-                if (!response.ok) {
-                    let errorMessage = container.getAttribute('data-error-label') || 'Impossibile caricare le fasce';
-                    if (response.status === 404) {
-                        errorMessage = 'Esperienza non trovata';
-                    } else if (response.status === 401 || response.status === 403) {
-                        errorMessage = 'Accesso negato. Ricarica la pagina e riprova.';
-                    } else if (response.status >= 500) {
-                        errorMessage = 'Errore del server. Riprova tra qualche minuto.';
-                    }
-                    throw new Error(errorMessage);
-                }
-                
-                const data = await response.json().catch(() => ({}));
-                const rawSlots = Array.isArray(data.slots) ? data.slots : [];
-                const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
-                const mapped = rawSlots.map((s) => {
-                    const start = String(s.start || '');
-                    const end = String(s.end || '');
-                    const toLocal = (sql) => {
-                        const d = new Date(String(sql).replace(' ', 'T') + 'Z');
-                        if (Number.isNaN(d.getTime())) return '';
-                        try {
-                            // Fix: usa il timezone locale invece di UTC
-                            return new Intl.DateTimeFormat(undefined, { 
-                                hour: '2-digit', 
-                                minute: '2-digit', 
-                                timeZone: tz 
-                            }).format(d);
-                        } catch (e) {
-                            const hh = String(d.getUTCHours()).padStart(2, '0');
-                            const mm = String(d.getUTCMinutes()).padStart(2, '0');
-                            return `${hh}:${mm}`;
-                        }
-                    };
-                    return {
-                        id: start, // synthetic id
-                        time: toLocal(start),
-                        remaining: parseInt(s.capacity_remaining || s.capacity_total || 0, 10),
-                        start_iso: start.replace(' ', 'T') + 'Z',
-                        end_iso: end.replace(' ', 'T') + 'Z',
-                    };
-                });
-                
-                // Salva in cache
-                slotsCache.set(cacheKey, {
-                    data: mapped,
-                    timestamp: Date.now()
-                });
-                
-                renderSlots(slotsContainer, mapped, { selectedSlot: null });
-            } catch (e) {
-                const error = document.createElement('p');
-                error.className = 'fp-exp-slots__placeholder';
-                error.textContent = e.message || container.getAttribute('data-error-label') || 'Impossibile caricare le fasce';
-                slotsContainer.innerHTML = '';
-                slotsContainer.appendChild(error);
-            }
+            slotsContainer.appendChild(list);
         }
 
-        // Evidenziazione giorno e gestione espansione slot + fetch availability
-        allDayItems.forEach((dayItem) => {
-            dayItem.addEventListener('click', (event) => {
-                const target = event.target;
-                if (!(target instanceof Element)) {
+        // Gestione click sui giorni del calendario
+        allDayButtons.forEach((dayButton) => {
+            dayButton.addEventListener('click', () => {
+                const dateKey = dayButton.getAttribute('data-date');
+                const isAvailable = dayButton.getAttribute('data-available') === '1';
+                
+                if (!isAvailable || !dateKey) {
                     return;
                 }
 
-                const isSlot = Boolean(target.closest('.fp-exp-calendar-only__slot'));
-                if (isSlot) {
-                    return; // i click sugli slot hanno il loro comportamento nativo
-                }
+                // Rimuovi selezione da tutti i giorni
+                allDayButtons.forEach((btn) => {
+                    btn.classList.remove('is-selected');
+                    btn.setAttribute('aria-pressed', 'false');
+                });
 
-                const date = dayItem.getAttribute('data-date') || '';
-                if (!date) {
-                    return;
-                }
+                // Seleziona il giorno corrente
+                dayButton.classList.add('is-selected');
+                dayButton.setAttribute('aria-pressed', 'true');
 
-                // Toggle selezione visiva
-                allDayItems.forEach((li) => li.classList.toggle('is-selected', li === dayItem));
-
-                // Assicurati che la lista slot sia visibile se esiste
-                const slots = dayItem.querySelector('.fp-exp-calendar-only__slots');
-                if (slots) {
-                    // Collassa le altre
-                    container.querySelectorAll('.fp-exp-calendar-only__slots').forEach((ul) => {
-                        if (ul !== slots) {
-                            ul.hidden = true;
-                        }
-                    });
-                    slots.hidden = false;
-                    // Carica gli slot del giorno via availability
-                    loadSlotsForDate(date);
-                }
-            });
-        });
-
-        // Accessibilità: tasti invio/spazio sul giorno
-        allDayItems.forEach((dayItem) => {
-            dayItem.setAttribute('tabindex', '0');
-            dayItem.addEventListener('keydown', (ev) => {
-                if (ev.key === 'Enter' || ev.key === ' ') {
-                    ev.preventDefault();
-                    dayItem.click();
-                }
+                // Mostra gli slot per questo giorno
+                showSlotsForDate(dateKey);
             });
         });
     }
