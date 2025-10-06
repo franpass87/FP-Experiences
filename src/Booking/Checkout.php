@@ -44,6 +44,8 @@ final class Checkout
         add_action('rest_api_init', [$this, 'register_rest_routes']);
         add_action('wp_ajax_fp_exp_checkout', [$this, 'handle_ajax']);
         add_action('wp_ajax_nopriv_fp_exp_checkout', [$this, 'handle_ajax']);
+        add_action('wp_ajax_fp_exp_unlock_cart', [$this, 'ajax_unlock_cart']);
+        add_action('wp_ajax_nopriv_fp_exp_unlock_cart', [$this, 'ajax_unlock_cart']);
     }
 
     public function register_rest_routes(): void
@@ -154,6 +156,21 @@ final class Checkout
         );
     }
 
+    public function ajax_unlock_cart(): void
+    {
+        nocache_headers();
+
+        $nonce = isset($_POST['nonce']) ? sanitize_text_field(wp_unslash((string) $_POST['nonce'])) : '';
+
+        if (! wp_verify_nonce($nonce, 'fp-exp-checkout')) {
+            wp_send_json_error(['message' => __('Nonce non valido.', 'fp-experiences')], 403);
+        }
+
+        $this->cart->unlock();
+
+        wp_send_json_success(['locked' => $this->cart->is_locked()]);
+    }
+
     public function check_checkout_permission(WP_REST_Request $request): bool
     {
         // Consenti accesso se presente nonce specifico di checkout
@@ -236,6 +253,9 @@ final class Checkout
                 'status' => 403,
             ]);
         }
+
+        // Reset: sblocca sempre il carrello prima di continuare, per evitare stati appesi
+        $this->cart->unlock();
 
         if (Helpers::hit_rate_limit('checkout_' . Helpers::client_fingerprint(), 5, MINUTE_IN_SECONDS)) {
             return new WP_Error('fp_exp_checkout_rate_limited', __('Attendi prima di inviare un nuovo tentativo di checkout.', 'fp-experiences'), [

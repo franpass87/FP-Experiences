@@ -293,9 +293,21 @@
                         if (restUrl) {
                             const headers = { 'Content-Type': 'application/json' };
                             if (config.restNonce) headers['X-WP-Nonce'] = config.restNonce;
-                            await fetch(restUrl + 'cart/unlock', { method: 'POST', headers, credentials: 'same-origin' });
+                            const res = await fetch(restUrl + 'cart/unlock', { method: 'POST', headers, credentials: 'same-origin' });
+                            if (!res.ok) throw new Error('rest_unlock_failed');
                         }
-                    } catch (e) {}
+                    } catch (e) {
+                        // Fallback AJAX
+                        try {
+                            const fd = new FormData();
+                            fd.set('action', 'fp_exp_unlock_cart');
+                            fd.set('nonce', config.checkoutNonce || '');
+                            await fetch(config.ajaxUrl, { method: 'POST', credentials: 'same-origin', body: fd });
+                        } catch (e2) {
+                            // Ultimo fallback: reset cookie sessione
+                            document.cookie = 'fp_exp_sid=; Max-Age=0; path=/';
+                        }
+                    }
                     location.reload();
                 });
             }
