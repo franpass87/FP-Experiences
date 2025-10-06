@@ -184,11 +184,36 @@ final class SettingsPage
             return;
         }
 
+        // Carica sempre gli stili admin per tutte le pagine settings
+        wp_enqueue_style(
+            'fp-exp-admin',
+            FP_EXP_PLUGIN_URL . 'assets/css/admin.css',
+            [],
+            Helpers::asset_version('assets/css/admin.css')
+        );
+
+        wp_enqueue_script(
+            'fp-exp-admin',
+            FP_EXP_PLUGIN_URL . 'assets/js/admin.js',
+            ['wp-api-fetch', 'wp-i18n'],
+            Helpers::asset_version('assets/js/admin.js'),
+            true
+        );
+
         $tabs = $this->get_tabs();
         $active_tab = $this->get_active_tab($tabs);
 
+        // Carica assets specifici per tools
         if ('tools' === $active_tab) {
-            $this->enqueue_tools_assets();
+            wp_localize_script('fp-exp-admin', 'fpExpTools', [
+                'nonce' => wp_create_nonce('wp_rest'),
+                'actions' => $this->get_tool_actions_localised(),
+                'i18n' => [
+                    'running' => esc_html__('Running action…', 'fp-experiences'),
+                    'success' => esc_html__('Action completed successfully.', 'fp-experiences'),
+                    'error' => esc_html__('Action failed. Check the logs for details.', 'fp-experiences'),
+                ],
+            ]);
         }
     }
 

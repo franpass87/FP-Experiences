@@ -2325,6 +2325,7 @@
             }
         }
 
+        // Carica il calendario solo DOPO aver selezionato l'esperienza
         loadMonth(currentMonth);
     }
 

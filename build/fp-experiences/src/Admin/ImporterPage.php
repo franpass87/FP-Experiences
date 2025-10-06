@@ -141,6 +141,21 @@ final class ImporterPage
             return;
         }
 
+        wp_enqueue_style(
+            'fp-exp-admin',
+            FP_EXP_PLUGIN_URL . 'assets/css/admin.css',
+            [],
+            Helpers::asset_version('assets/css/admin.css')
+        );
+
+        wp_enqueue_script(
+            'fp-exp-admin',
+            FP_EXP_PLUGIN_URL . 'assets/js/admin.js',
+            ['wp-api-fetch', 'wp-i18n'],
+            Helpers::asset_version('assets/js/admin.js'),
+            true
+        );
+
         wp_enqueue_script(
             'fp-exp-importer',
             FP_EXP_PLUGIN_URL . 'assets/js/importer.js',
