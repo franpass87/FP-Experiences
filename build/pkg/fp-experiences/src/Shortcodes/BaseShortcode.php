@@ -44,7 +44,9 @@ abstract class BaseShortcode
         $atts = is_array($atts) ? $atts : [];
         $attributes = shortcode_atts($this->defaults, $atts, $shortcode_tag ?: $this->tag);
 
-        $this->send_no_store_header();
+        if ($this->should_disable_cache()) {
+            $this->send_no_store_header();
+        }
 
         $context = $this->get_context($attributes, $content);
 
@@ -78,6 +80,11 @@ abstract class BaseShortcode
     protected function get_asset_handle(): string
     {
         return 'front';
+    }
+
+    protected function should_disable_cache(): bool
+    {
+        return false;
     }
 
     private function send_no_store_header(): void

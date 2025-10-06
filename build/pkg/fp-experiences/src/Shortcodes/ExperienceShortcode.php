@@ -261,6 +261,47 @@ final class ExperienceShortcode extends BaseShortcode
         }
 
         $experience_badges = Helpers::experience_badge_payload($experience_badge_slugs);
+        // Applica override titolo/descrizione specifici dell'esperienza e unisci badge personalizzati
+        $badge_overrides = get_post_meta($post->ID, '_fp_experience_badge_overrides', true);
+        $badge_overrides = is_array($badge_overrides) ? $badge_overrides : [];
+        foreach ($experience_badges as &$badge_ref) {
+            if (! is_array($badge_ref)) {
+                continue;
+            }
+            $bid = isset($badge_ref['id']) ? sanitize_key((string) $badge_ref['id']) : '';
+            if ('' === $bid || ! isset($badge_overrides[$bid]) || ! is_array($badge_overrides[$bid])) {
+                continue;
+            }
+            $ovr = $badge_overrides[$bid];
+            if (isset($ovr['label']) && '' !== trim((string) $ovr['label'])) {
+                $badge_ref['label'] = sanitize_text_field((string) $ovr['label']);
+            }
+            if (array_key_exists('description', $ovr)) {
+                $badge_ref['description'] = sanitize_text_field((string) $ovr['description']);
+            }
+        }
+        unset($badge_ref);
+
+        $custom_badges = get_post_meta($post->ID, '_fp_experience_badge_custom', true);
+        if (is_array($custom_badges)) {
+            foreach ($custom_badges as $entry) {
+                if (! is_array($entry)) {
+                    continue;
+                }
+                $cid = isset($entry['id']) ? sanitize_key((string) $entry['id']) : '';
+                $clabel = isset($entry['label']) ? sanitize_text_field((string) $entry['label']) : '';
+                if ('' === $cid || '' === $clabel) {
+                    continue;
+                }
+                $cdesc = isset($entry['description']) ? sanitize_text_field((string) $entry['description']) : '';
+                $experience_badges[] = [
+                    'id' => $cid,
+                    'label' => $clabel,
+                    'description' => $cdesc,
+                    'icon' => 'default',
+                ];
+            }
+        }
         $cognitive_bias_meta = get_post_meta($post->ID, '_fp_cognitive_biases', true);
         $cognitive_bias_slugs = is_array($cognitive_bias_meta)
             ? array_values(array_filter(array_map('sanitize_key', $cognitive_bias_meta)))

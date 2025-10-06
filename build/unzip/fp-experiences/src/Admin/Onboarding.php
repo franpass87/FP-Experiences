@@ -82,7 +82,15 @@ final class Onboarding
         echo '<div class="wrap fp-exp-onboarding">';
         echo '<div class="fp-exp-admin" data-fp-exp-admin>';
         echo '<div class="fp-exp-admin__body">';
-        echo '<h1>' . esc_html__('FP Experiences — Onboarding', 'fp-experiences') . '</h1>';
+        echo '<div class="fp-exp-admin__layout">';
+        echo '<header class="fp-exp-admin__header">';
+        echo '<nav class="fp-exp-admin__breadcrumb" aria-label="' . esc_attr__('Percorso di navigazione', 'fp-experiences') . '">';
+        echo '<a href="' . esc_url(admin_url('admin.php?page=fp_exp_dashboard')) . '">' . esc_html__('FP Experiences', 'fp-experiences') . '</a>';
+        echo ' <span aria-hidden="true">›</span> ';
+        echo '<span>' . esc_html__('Onboarding', 'fp-experiences') . '</span>';
+        echo '</nav>';
+        echo '<h1 class="fp-exp-admin__title">' . esc_html__('FP Experiences — Onboarding', 'fp-experiences') . '</h1>';
+        echo '</header>';
 
         if ($completed) {
             $completed_at = isset($status['completed_at']) ? absint($status['completed_at']) : 0;
@@ -130,6 +138,7 @@ final class Onboarding
         echo '<button type="submit" class="button button-primary">' . esc_html__('Segna onboarding come completato', 'fp-experiences') . '</button>';
         echo '</form>';
 
+        echo '</div>';
         echo '</div>';
         echo '</div>';
         echo '</div>';

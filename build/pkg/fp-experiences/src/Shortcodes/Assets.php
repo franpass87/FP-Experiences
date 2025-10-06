@@ -9,11 +9,13 @@ use FP_Exp\Utils\Helpers;
 use FP_Exp\Utils\Theme;
 
 use function admin_url;
+use function home_url;
 use function function_exists;
 use function get_woocommerce_currency;
 use function get_option;
 use function is_string;
 use function trailingslashit;
+use function wc_get_checkout_url;
 use function wp_add_inline_style;
 use function wp_enqueue_script;
 use function wp_enqueue_style;
@@ -137,7 +139,10 @@ final class Assets
             [
                 'restUrl' => rest_url('fp-exp/v1/'),
                 'restNonce' => Helpers::rest_nonce(),
+                // Nonce specifico per il checkout esperienze via REST
+                'checkoutNonce' => wp_create_nonce('fp-exp-checkout'),
                 'ajaxUrl' => admin_url('admin-ajax.php'),
+                'checkoutUrl' => function_exists('wc_get_checkout_url') ? (string) wc_get_checkout_url() : trailingslashit(home_url('/checkout')),
                 'currency' => $currency,
                 'tracking' => Helpers::tracking_config(),
                 'autoLocale' => [

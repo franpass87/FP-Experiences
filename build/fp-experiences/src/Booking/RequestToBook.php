@@ -109,11 +109,23 @@ final class RequestToBook
 
         $experience_id = absint($request->get_param('experience_id'));
         $slot_id = absint($request->get_param('slot_id'));
+        $start = sanitize_text_field((string) $request->get_param('start'));
+        $end = sanitize_text_field((string) $request->get_param('end'));
         $tickets = $this->normalize_array($request->get_param('tickets'));
         $addons = $this->normalize_array($request->get_param('addons'));
 
-        if ($experience_id <= 0 || $slot_id <= 0) {
+        if ($experience_id <= 0) {
             return new WP_Error('fp_exp_rtb_invalid', __('Seleziona data e ora prima di inviare la richiesta.', 'fp-experiences'), ['status' => 400]);
+        }
+
+        if ($slot_id <= 0) {
+            if (! $start || ! $end) {
+                return new WP_Error('fp_exp_rtb_invalid', __('Seleziona data e ora prima di inviare la richiesta.', 'fp-experiences'), ['status' => 400]);
+            }
+            $slot_id = Slots::ensure_slot_for_occurrence($experience_id, $start, $end);
+            if ($slot_id <= 0) {
+                return new WP_Error('fp_exp_rtb_slot', __('Lo slot selezionato non è più disponibile.', 'fp-experiences'), ['status' => 404]);
+            }
         }
 
         $slot = Slots::get_slot($slot_id);
@@ -222,11 +234,23 @@ final class RequestToBook
 
         $experience_id = absint($request->get_param('experience_id'));
         $slot_id = absint($request->get_param('slot_id'));
+        $start = sanitize_text_field((string) $request->get_param('start'));
+        $end = sanitize_text_field((string) $request->get_param('end'));
         $tickets = $this->normalize_array($request->get_param('tickets'));
         $addons = $this->normalize_array($request->get_param('addons'));
 
-        if ($experience_id <= 0 || $slot_id <= 0) {
+        if ($experience_id <= 0) {
             return new WP_Error('fp_exp_rtb_invalid', __('Seleziona data e ora prima di proseguire.', 'fp-experiences'), ['status' => 400]);
+        }
+
+        if ($slot_id <= 0) {
+            if (! $start || ! $end) {
+                return new WP_Error('fp_exp_rtb_invalid', __('Seleziona data e ora prima di proseguire.', 'fp-experiences'), ['status' => 400]);
+            }
+            $slot_id = Slots::ensure_slot_for_occurrence($experience_id, $start, $end);
+            if ($slot_id <= 0) {
+                return new WP_Error('fp_exp_rtb_slot', __('Lo slot selezionato non è più disponibile.', 'fp-experiences'), ['status' => 404]);
+            }
         }
 
         $slot = Slots::get_slot($slot_id);
@@ -771,8 +795,22 @@ final class RequestToBook
      */
     private function notify_staff(array $context): void
     {
-        $structure = sanitize_email((string) get_option('fp_exp_structure_email', ''));
-        $webmaster = sanitize_email((string) get_option('fp_exp_webmaster_email', ''));
+        $emails = get_option('fp_exp_emails', []);
+        $emails = is_array($emails) ? $emails : [];
+        $structure = '';
+        $webmaster = '';
+        if (! empty($emails['sender']['structure'])) {
+            $structure = sanitize_email((string) $emails['sender']['structure']);
+        }
+        if (! empty($emails['sender']['webmaster'])) {
+            $webmaster = sanitize_email((string) $emails['sender']['webmaster']);
+        }
+        if (! $structure) {
+            $structure = sanitize_email((string) get_option('fp_exp_structure_email', ''));
+        }
+        if (! $webmaster) {
+            $webmaster = sanitize_email((string) get_option('fp_exp_webmaster_email', ''));
+        }
 
         $recipients = array_filter(apply_filters('fp_exp_email_recipients', [$structure, $webmaster], $context['reservation_id'], 0));
 

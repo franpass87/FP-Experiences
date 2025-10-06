@@ -79,13 +79,34 @@ final class CalendarAdmin
             true
         );
 
+        // Prepara elenco esperienze per filtro calendario
+        $experiences = get_posts([
+            'post_type' => 'fp_experience',
+            'posts_per_page' => 200,
+            'orderby' => 'title',
+    		'order' => 'ASC',
+            'post_status' => ['publish','private'],
+            'suppress_filters' => true,
+        ]);
+
+        $experience_options = [];
+        foreach ($experiences as $post) {
+            $experience_options[] = [
+                'id' => (int) $post->ID,
+                'title' => get_the_title((int) $post->ID),
+            ];
+        }
+
         $bootstrap = [
             'endpoints' => [
+                'availability' => rest_url('fp-exp/v1/availability'),
                 'slots' => rest_url('fp-exp/v1/calendar/slots'),
                 'move' => rest_url('fp-exp/v1/calendar/slot'),
                 'capacity' => rest_url('fp-exp/v1/calendar/slot/capacity'),
             ],
             'nonce' => wp_create_nonce('wp_rest'),
+            'experiences' => $experience_options,
+            'has_experiences' => !empty($experience_options),
             'i18n' => [
                 'month' => esc_html__('Month', 'fp-experiences'),
                 'week' => esc_html__('Week', 'fp-experiences'),
@@ -102,6 +123,13 @@ final class CalendarAdmin
                 'bookedLabel' => esc_html__('booked', 'fp-experiences'),
                 'untitledExperience' => esc_html__('Untitled experience', 'fp-experiences'),
                 'loadError' => esc_html__('Impossibile caricare il calendario. Riprova.', 'fp-experiences'),
+                'selectExperience' => esc_html__('Select experience', 'fp-experiences'),
+                'selectExperienceFirst' => esc_html__('Seleziona un\'esperienza per visualizzare la disponibilità', 'fp-experiences'),
+                'accessDenied' => esc_html__('Accesso negato. Ricarica la pagina e riprova.', 'fp-experiences'),
+                'notFound' => esc_html__('Risorsa non trovata.', 'fp-experiences'),
+                'serverError' => esc_html__('Errore del server. Riprova tra qualche minuto.', 'fp-experiences'),
+                'listView' => esc_html__('List', 'fp-experiences'),
+                'calendarView' => esc_html__('Calendar', 'fp-experiences'),
             ],
         ];
 
@@ -136,7 +164,7 @@ final class CalendarAdmin
         echo '<div class="wrap fp-exp-calendar-admin">';
         echo '<div class="fp-exp-admin" data-fp-exp-admin>';
         echo '<div class="fp-exp-admin__body">';
-        echo '<div class="fp-exp-admin__layout">';
+        echo '<div class="fp-exp-admin__layout fp-exp-calendar">';
         echo '<header class="fp-exp-admin__header">';
         echo '<nav class="fp-exp-admin__breadcrumb" aria-label="' . esc_attr__('Percorso di navigazione', 'fp-experiences') . '">';
         echo '<a href="' . esc_url(admin_url('admin.php?page=fp_exp_dashboard')) . '">' . esc_html__('FP Experiences', 'fp-experiences') . '</a>';
@@ -153,7 +181,7 @@ final class CalendarAdmin
         ];
         foreach ($tabs as $slug => $label) {
             $url = add_query_arg([
-                'page' => 'fp-exp-calendar',
+                'page' => 'fp_exp_calendar',
                 'view' => $slug,
             ], admin_url('admin.php'));
             $classes = 'nav-tab' . ($active_tab === $slug ? ' nav-tab-active' : '');
@@ -195,10 +223,12 @@ final class CalendarAdmin
         $experiences = get_posts([
             'post_type' => 'fp_experience',
             'posts_per_page' => 1,
-            'post_status' => 'publish',
+            'post_status' => ['publish','private'],
+            'suppress_filters' => true,
             'fields' => 'ids',
         ]);
-        if (empty($experiences)) {
+        $has_experiences = ! empty($experiences);
+        if (! $has_experiences) {
             echo '<div class="fp-exp-calendar__no-experiences">';
             echo '<div class="notice notice-info">';
             echo '<p><strong>' . esc_html__('Nessuna esperienza disponibile', 'fp-experiences') . '</strong></p>';
@@ -207,7 +237,7 @@ final class CalendarAdmin
             echo '</div>';
             echo '</div>';
         }
-
+        
         echo '<div class="fp-exp-calendar__loading" role="status">' . esc_html__('Loading calendar…', 'fp-experiences') . '</div>';
         echo '<div class="fp-exp-calendar__body" data-calendar-content hidden></div>';
         echo '<div class="fp-exp-calendar__feedback" data-calendar-error hidden></div>';

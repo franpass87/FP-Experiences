@@ -22,6 +22,7 @@ use function update_post_meta;
 use function wp_is_post_autosave;
 use function wp_is_post_revision;
 use function wp_nonce_field;
+use function wp_unslash;
 use function wp_verify_nonce;
 use function wp_kses_post;
 
@@ -116,6 +117,8 @@ final class MeetingPointMetaBoxes
         if (! is_array($data)) {
             return;
         }
+
+        $data = wp_unslash($data);
 
         $address = sanitize_text_field((string) ($data['address'] ?? ''));
         $lat = sanitize_text_field((string) ($data['lat'] ?? ''));

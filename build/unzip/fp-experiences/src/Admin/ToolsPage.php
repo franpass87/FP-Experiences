@@ -45,7 +45,7 @@ final class ToolsPage
         echo '<div class="wrap fp-exp-tools-page">';
         echo '<div class="fp-exp-admin" data-fp-exp-admin>';
         echo '<div class="fp-exp-admin__body">';
-        echo '<div class="fp-exp-admin__layout">';
+        echo '<div class="fp-exp-admin__layout fp-exp-tools">';
         echo '<header class="fp-exp-admin__header">';
         echo '<nav class="fp-exp-admin__breadcrumb" aria-label="' . esc_attr__('Percorso di navigazione', 'fp-experiences') . '">';
         echo '<a href="' . esc_url(admin_url('admin.php?page=fp_exp_dashboard')) . '">' . esc_html__('FP Experiences', 'fp-experiences') . '</a>';

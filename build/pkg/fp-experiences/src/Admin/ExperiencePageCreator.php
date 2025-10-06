@@ -81,14 +81,27 @@ final class ExperiencePageCreator
         }
 
         $content = sprintf('[fp_exp_page id="%d"]', $experience_id);
-        $result = wp_insert_post([
+        $template = $this->locate_full_width_template();
+
+        $page_args = [
             'post_title' => $title,
             'post_content' => $content,
             'post_status' => 'publish',
             'post_type' => 'page',
-        ]);
+            'meta_input' => [
+                '_fp_experience_id' => $experience_id,
+            ],
+        ];
+
+        if ($template) {
+            $page_args['meta_input']['_wp_page_template'] = $template;
+        }
+
+        $result = wp_insert_post($page_args);
 
         if ($result && ! is_wp_error($result)) {
+            update_post_meta($experience_id, '_fp_exp_page_id', (int) $result);
+
             set_transient(self::NOTICE_KEY, [
                 'message' => esc_html__('Pagina esperienza creata con successo.', 'fp-experiences'),
                 'type' => 'success',
@@ -126,10 +139,20 @@ final class ExperiencePageCreator
         ]);
 
         echo '<div class="wrap fp-exp-page-creator">';
-        echo '<h1>' . esc_html__('Crea pagina esperienza', 'fp-experiences') . '</h1>';
-        echo '<p>' . esc_html__('Genera una pagina WordPress con shortcode preconfigurato per un\'esperienza.', 'fp-experiences') . '</p>';
+        echo '<div class="fp-exp-admin" data-fp-exp-admin>';
+        echo '<div class="fp-exp-admin__body">';
+        echo '<div class="fp-exp-admin__layout">';
+        echo '<header class="fp-exp-admin__header">';
+        echo '<nav class="fp-exp-admin__breadcrumb" aria-label="' . esc_attr__('Percorso di navigazione', 'fp-experiences') . '">';
+        echo '<a href="' . esc_url(admin_url('admin.php?page=fp_exp_dashboard')) . '">' . esc_html__('FP Experiences', 'fp-experiences') . '</a>';
+        echo ' <span aria-hidden="true">›</span> ';
+        echo '<span>' . esc_html__('Crea pagina esperienza', 'fp-experiences') . '</span>';
+        echo '</nav>';
+        echo '<h1 class="fp-exp-admin__title">' . esc_html__('Crea pagina esperienza', 'fp-experiences') . '</h1>';
+        echo '<p class="fp-exp-admin__intro">' . esc_html__('Genera una pagina WordPress con shortcode preconfigurato per un\'esperienza.', 'fp-experiences') . '</p>';
+        echo '</header>';
 
-        echo '<form method="post">';
+        echo '<form method="post" class="fp-exp-settings__form">';
         wp_nonce_field('fp_exp_create_page', 'fp_exp_create_page_nonce');
         echo '<input type="hidden" name="fp_exp_page_creator" value="1" />';
 
@@ -150,6 +173,9 @@ final class ExperiencePageCreator
 
         submit_button(esc_html__('Crea pagina', 'fp-experiences'));
         echo '</form>';
+        echo '</div>';
+        echo '</div>';
+        echo '</div>';
         echo '</div>';
     }
 
@@ -271,7 +297,7 @@ final class ExperiencePageCreator
         ];
 
         if ($template) {
-            $page_args['page_template'] = $template;
+            $page_args['meta_input']['_wp_page_template'] = $template;
         }
 
         $page_id = wp_insert_post($page_args, true);
