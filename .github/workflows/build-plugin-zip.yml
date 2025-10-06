@@ -25,7 +25,7 @@ jobs:
       - name: Install composer deps (no dev)
         run: |
           composer install --no-dev --prefer-dist --no-interaction --optimize-autoloader
-          composer dump-autoload -o --classmap-authoritative
+          composer dump-autoload -o
 
       - name: Ensure tools present
         run: |

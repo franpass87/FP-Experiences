@@ -30,5 +30,11 @@ cp "$ROOT_DIR/fp-experiences.php" "$TARGET_DIR/" 2>/dev/null || true
 cp "$ROOT_DIR/readme.txt" "$TARGET_DIR/" 2>/dev/null || true
 cp "$ROOT_DIR/uninstall.php" "$TARGET_DIR/" 2>/dev/null || true
 
+# Rigenera l'autoloader per assicurare che le modifiche vengano caricate
+if [[ -d "$TARGET_DIR/vendor" ]]; then
+    echo "  🔄 Rigenerando autoloader..."
+    (cd "$TARGET_DIR" && composer dump-autoload -o 2>/dev/null) || echo "  ⚠️  Impossibile rigenerare autoloader (opzionale)"
+fi
+
 echo "✅ Build sincronizzato con successo!"
 echo "📁 Modifiche applicate in: $TARGET_DIR"
