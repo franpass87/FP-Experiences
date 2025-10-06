@@ -143,13 +143,27 @@ final class Checkout
 
         $cart = $this->cart->get_data();
 
-        foreach ($cart['items'] as $item) {
+        foreach ($cart['items'] as &$item) { // phpcs:ignore WordPress.CodeAnalysis.AssignmentInCondition.Found
             $slot_id = (int) ($item['slot_id'] ?? 0);
 
             if ($slot_id <= 0) {
-                return new WP_Error('fp_exp_slot_invalid', __('Lo slot selezionato non è più disponibile.', 'fp-experiences'), [
-                    'status' => 400,
-                ]);
+                $experience_id = (int) ($item['experience_id'] ?? 0);
+                $start = is_string($item['slot_start'] ?? null) ? (string) $item['slot_start'] : '';
+                $end = is_string($item['slot_end'] ?? null) ? (string) $item['slot_end'] : '';
+
+                if ($experience_id > 0 && $start && $end) {
+                    $ensured = Slots::ensure_slot_for_occurrence($experience_id, $start, $end);
+                    if ($ensured > 0) {
+                        $slot_id = $ensured;
+                        $item['slot_id'] = $slot_id;
+                    }
+                }
+
+                if ($slot_id <= 0) {
+                    return new WP_Error('fp_exp_slot_invalid', __('Lo slot selezionato non è più disponibile.', 'fp-experiences'), [
+                        'status' => 400,
+                    ]);
+                }
             }
 
             $requested = is_array($item['tickets'] ?? null) ? $item['tickets'] : [];

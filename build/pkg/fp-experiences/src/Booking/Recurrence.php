@@ -96,10 +96,7 @@ final class Recurrence
             return false;
         }
 
-        if (('weekly' === ($definition['frequency'] ?? '')) && empty($definition['days'])) {
-            return false;
-        }
-
+        // Removed check for empty 'days' for weekly recurrences to align with admin UI changes.
         return true;
     }
 
@@ -182,6 +179,9 @@ final class Recurrence
             }
             if (isset($set['buffer_after'])) {
                 $rule['buffer_after'] = absint((string) $set['buffer_after']);
+            }
+            if (isset($set['duration']) && absint((string) $set['duration']) > 0) {
+                $rule['duration'] = absint((string) $set['duration']);
             }
 
             if ('weekly' === $definition['frequency']) {

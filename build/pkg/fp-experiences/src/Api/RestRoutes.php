@@ -4,27 +4,41 @@ declare(strict_types=1);
 
 namespace FP_Exp\Api;
 
+use FP_Exp\Activation;
+use FP_Exp\Booking\AvailabilityService;
 use FP_Exp\Booking\Recurrence;
 use FP_Exp\Booking\Slots;
 use FP_Exp\Gift\VoucherManager;
 use FP_Exp\Utils\Helpers;
 use FP_Exp\Utils\Logger;
+use Throwable;
 use WP_Error;
 use WP_REST_Request;
 use WP_REST_Response;
 
 use function __;
+use function array_diff;
+use function array_filter;
+use function array_keys;
+use function array_merge;
+use function array_values;
 use function absint;
 use function add_action;
 use function apply_filters;
 use function do_action;
 use function home_url;
+use function implode;
 use function is_array;
 use function is_wp_error;
 use function get_current_user_id;
+use function get_role;
 use function rest_ensure_response;
 use function sanitize_key;
 use function sanitize_text_field;
+use function sprintf;
+use function sort;
+use function strtoupper;
+use function update_option;
 use function wp_strip_all_tags;
 use function wp_remote_get;
 use function wp_remote_retrieve_body;
@@ -49,6 +63,33 @@ final class RestRoutes
 
     public function register_routes(): void
     {
+        register_rest_route(
+            'fp-exp/v1',
+            '/availability',
+            [
+                'methods' => 'GET',
+                'permission_callback' => function (WP_REST_Request $request): bool {
+                    // Public, ma con verifica leggera standard plugin (anti-abuso)
+                    return Helpers::verify_public_rest_request($request);
+                },
+                'callback' => [$this, 'get_virtual_availability'],
+                'args' => [
+                    'experience' => [
+                        'required' => true,
+                        'sanitize_callback' => 'absint',
+                    ],
+                    'start' => [
+                        'required' => true,
+                        'sanitize_callback' => 'sanitize_text_field',
+                    ],
+                    'end' => [
+                        'required' => true,
+                        'sanitize_callback' => 'sanitize_text_field',
+                    ],
+                ],
+            ]
+        );
+
         register_rest_route(
             'fp-exp/v1',
             '/calendar/slots',
@@ -163,6 +204,18 @@ final class RestRoutes
 
         register_rest_route(
             'fp-exp/v1',
+            '/tools/resync-roles',
+            [
+                'methods' => 'POST',
+                'permission_callback' => static function (): bool {
+                    return Helpers::can_manage_fp();
+                },
+                'callback' => [$this, 'tool_resync_roles'],
+            ]
+        );
+
+        register_rest_route(
+            'fp-exp/v1',
             '/tools/ping',
             [
                 'methods' => 'POST',
@@ -260,6 +313,21 @@ final class RestRoutes
             return $result;
         }
 
+        if (! $request instanceof WP_REST_Request) {
+            return $result;
+        }
+
+        $route = $request->get_route();
+
+        if (strpos($route, '/fp-exp/') !== 0) {
+            return $result;
+        }
+
+        $method = strtoupper($request->get_method());
+        if ('GET' === $method) {
+            return $result;
+        }
+
         $result->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
         $result->header('Pragma', 'no-cache');
         $result->header('Expires', 'Wed, 11 Jan 1984 05:00:00 GMT');
@@ -336,6 +404,74 @@ final class RestRoutes
         }
 
         return rest_ensure_response($result);
+    }
+
+    public function get_virtual_availability(WP_REST_Request $request)
+    {
+        $experience_id = absint((string) $request->get_param('experience'));
+        $start = sanitize_text_field((string) $request->get_param('start'));
+        $end = sanitize_text_field((string) $request->get_param('end'));
+
+        if ($experience_id <= 0 || ! $start || ! $end) {
+            return new WP_Error('fp_exp_availability_params', __('Parametri non validi.', 'fp-experiences'), ['status' => 400]);
+        }
+
+        // Validazione formato date
+        if (! preg_match('/^\d{4}-\d{2}-\d{2}$/', $start) || ! preg_match('/^\d{4}-\d{2}-\d{2}$/', $end)) {
+            return new WP_Error(
+                'fp_exp_invalid_date_format',
+                __('Formato data non valido. Usa YYYY-MM-DD.', 'fp-experiences'),
+                ['status' => 400]
+            );
+        }
+
+        // Validazione range temporale
+        $start_ts = strtotime($start);
+        $end_ts = strtotime($end);
+        
+        if (false === $start_ts || false === $end_ts) {
+            return new WP_Error(
+                'fp_exp_invalid_date',
+                __('Le date fornite non sono valide.', 'fp-experiences'),
+                ['status' => 400]
+            );
+        }
+        
+        if ($end_ts < $start_ts) {
+            return new WP_Error(
+                'fp_exp_invalid_range',
+                __('La data di fine deve essere successiva alla data di inizio.', 'fp-experiences'),
+                ['status' => 400]
+            );
+        }
+
+        // Limita il range a max 1 anno per evitare query pesanti
+        $one_year = 365 * 24 * 60 * 60;
+        if (($end_ts - $start_ts) > $one_year) {
+            return new WP_Error(
+                'fp_exp_range_too_large',
+                __('Il range di date non può superare 1 anno.', 'fp-experiences'),
+                ['status' => 400]
+            );
+        }
+
+        $slots = AvailabilityService::get_virtual_slots($experience_id, $start, $end);
+
+        return rest_ensure_response([
+            'slots' => array_map(
+                static function (array $slot): array {
+                    return [
+                        'experience_id' => (int) ($slot['experience_id'] ?? 0),
+                        'start' => sanitize_text_field((string) ($slot['start'] ?? '')),
+                        'end' => sanitize_text_field((string) ($slot['end'] ?? '')),
+                        'capacity_total' => (int) ($slot['capacity_total'] ?? 0),
+                        'capacity_remaining' => (int) ($slot['capacity_remaining'] ?? 0),
+                        'duration' => (int) ($slot['duration'] ?? 0),
+                    ];
+                },
+                $slots
+            ),
+        ]);
     }
 
     public function get_calendar_slots(WP_REST_Request $request)
@@ -612,6 +748,89 @@ final class RestRoutes
         ]);
     }
 
+    public function tool_resync_roles(): WP_REST_Response
+    {
+        if (Helpers::hit_rate_limit('tools_roles_' . get_current_user_id(), 3, MINUTE_IN_SECONDS)) {
+            return rest_ensure_response([
+                'success' => false,
+                'message' => __('Role synchronisation already executed. Try again in a moment.', 'fp-experiences'),
+            ]);
+        }
+
+        $roles_blueprint = Activation::roles_blueprint();
+        $snapshot_roles = array_keys($roles_blueprint);
+        $snapshot_roles[] = 'administrator';
+
+        $before = $this->snapshot_role_capabilities($snapshot_roles);
+
+        try {
+            Activation::register_roles();
+            $version = Activation::roles_version();
+            update_option('fp_exp_roles_version', $version);
+
+            Logger::log('tools', 'Role capabilities resynchronised', [
+                'version' => $version,
+            ]);
+
+            $after = $this->snapshot_role_capabilities($snapshot_roles);
+
+            $details = [
+                sprintf(
+                    /* translators: %s: roles version hash. */
+                    __('Roles version updated to %s.', 'fp-experiences'),
+                    $version
+                ),
+            ];
+
+            $overall_success = true;
+
+            foreach ($roles_blueprint as $role_name => $definition) {
+                $expected = array_keys(array_filter($definition['capabilities']));
+                [$role_success, $role_details] = $this->summarise_role_capabilities(
+                    $role_name,
+                    $definition['label'],
+                    $expected,
+                    $before[$role_name] ?? ['exists' => false, 'caps' => []],
+                    $after[$role_name] ?? ['exists' => false, 'caps' => []]
+                );
+
+                $overall_success = $overall_success && $role_success;
+                $details = array_merge($details, $role_details);
+            }
+
+            $manager_caps = array_keys(array_filter(Activation::manager_capabilities()));
+            [$admin_success, $admin_details] = $this->summarise_role_capabilities(
+                'administrator',
+                __('Administrator', 'fp-experiences'),
+                $manager_caps,
+                $before['administrator'] ?? ['exists' => false, 'caps' => []],
+                $after['administrator'] ?? ['exists' => false, 'caps' => []]
+            );
+
+            $overall_success = $overall_success && $admin_success;
+            $details = array_merge($details, $admin_details);
+
+            $message = $overall_success
+                ? __('FP Experiences roles resynchronised.', 'fp-experiences')
+                : __('Role synchronisation completed with warnings.', 'fp-experiences');
+
+            return rest_ensure_response([
+                'success' => $overall_success,
+                'message' => $message,
+                'details' => $details,
+            ]);
+        } catch (Throwable $error) {
+            Logger::log('tools', 'Role capability resync failed', [
+                'error' => $error->getMessage(),
+            ]);
+
+            return rest_ensure_response([
+                'success' => false,
+                'message' => __('Unable to resynchronise roles. Check logs for more details.', 'fp-experiences'),
+            ]);
+        }
+    }
+
     public function tool_ping(): WP_REST_Response
     {
         $response = wp_remote_get(home_url('/wp-json'));
@@ -705,5 +924,108 @@ final class RestRoutes
             'checked' => $checked,
             'created' => $created,
         ]);
+    }
+
+    /**
+     * @param array<int, string> $role_names
+     *
+     * @return array<string, array{exists: bool, caps: array<int, string>}>
+     */
+    private function snapshot_role_capabilities(array $role_names): array
+    {
+        $snapshot = [];
+
+        foreach ($role_names as $role_name) {
+            $role = get_role($role_name);
+
+            if (! $role) {
+                $snapshot[$role_name] = [
+                    'exists' => false,
+                    'caps' => [],
+                ];
+
+                continue;
+            }
+
+            $capabilities = is_array($role->capabilities) ? $role->capabilities : [];
+            $caps = array_keys(array_filter($capabilities));
+            sort($caps);
+
+            $snapshot[$role_name] = [
+                'exists' => true,
+                'caps' => $caps,
+            ];
+        }
+
+        return $snapshot;
+    }
+
+    /**
+     * @param array{exists: bool, caps: array<int, string>} $before
+     * @param array{exists: bool, caps: array<int, string>} $after
+     * @param array<int, string> $expected
+     *
+     * @return array{0: bool, 1: array<int, string>}
+     */
+    private function summarise_role_capabilities(
+        string $role_name,
+        string $label,
+        array $expected,
+        array $before,
+        array $after
+    ): array {
+        $details = [];
+
+        if (! ($after['exists'] ?? false)) {
+            $details[] = sprintf(
+                /* translators: %s: user-friendly role name. */
+                __('Role %s is not registered.', 'fp-experiences'),
+                $label
+            );
+
+            return [false, $details];
+        }
+
+        if (! ($before['exists'] ?? false)) {
+            $details[] = sprintf(
+                /* translators: %s: user-friendly role name. */
+                __('Role %s has been created.', 'fp-experiences'),
+                $label
+            );
+        }
+
+        $before_caps = isset($before['caps']) && is_array($before['caps']) ? $before['caps'] : [];
+        $after_caps = isset($after['caps']) && is_array($after['caps']) ? $after['caps'] : [];
+
+        $missing = array_values(array_diff($expected, $after_caps));
+        $added = array_values(array_diff($after_caps, $before_caps));
+
+        if ($missing) {
+            $details[] = sprintf(
+                /* translators: 1: user-friendly role name, 2: comma-separated capability list. */
+                __('Role %1$s is missing capabilities: %2$s', 'fp-experiences'),
+                $label,
+                implode(', ', $missing)
+            );
+        }
+
+        if ($added) {
+            $details[] = sprintf(
+                /* translators: 1: user-friendly role name, 2: comma-separated capability list. */
+                __('Role %1$s gained capabilities: %2$s', 'fp-experiences'),
+                $label,
+                implode(', ', $added)
+            );
+        }
+
+        if (! $missing && ! $added && ($before['exists'] ?? false)) {
+            $details[] = sprintf(
+                /* translators: %s: user-friendly role name. */
+                __('Role %s was already up to date.', 'fp-experiences'),
+                $label
+            );
+        }
+
+        return [! $missing, $details];
     }
 }

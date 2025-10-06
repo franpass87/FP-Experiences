@@ -8,6 +8,7 @@ use FP_Exp\Utils\Helpers;
 use WP_Admin_Bar;
 
 use function add_action;
+use function add_filter;
 use function add_menu_page;
 use function add_submenu_page;
 use function admin_url;
@@ -44,6 +45,8 @@ final class AdminMenu
 
     private ?ExperiencePageCreator $page_creator;
 
+    private ImporterPage $importer_page;
+
     public function __construct(
         SettingsPage $settings_page,
         CalendarAdmin $calendar_admin,
@@ -54,6 +57,7 @@ final class AdminMenu
         CheckinPage $checkin_page,
         OrdersPage $orders_page,
         HelpPage $help_page,
+        ImporterPage $importer_page,
         ?ExperiencePageCreator $page_creator = null
     ) {
         $this->settings_page = $settings_page;
@@ -65,6 +69,7 @@ final class AdminMenu
         $this->checkin_page = $checkin_page;
         $this->orders_page = $orders_page;
         $this->help_page = $help_page;
+        $this->importer_page = $importer_page;
         $this->page_creator = $page_creator;
     }
 
@@ -74,6 +79,7 @@ final class AdminMenu
         add_action('admin_menu', [$this, 'remove_duplicate_cpt_menus'], 99);
         add_action('admin_bar_menu', [$this, 'register_admin_bar_links'], 80);
         add_action('admin_enqueue_scripts', [$this, 'enqueue_shared_assets']);
+        add_filter('admin_body_class', [$this, 'add_admin_body_class']);
     }
 
     public function register_menu(): void
@@ -105,6 +111,15 @@ final class AdminMenu
             esc_html__('Nuova esperienza', 'fp-experiences'),
             'edit_fp_experiences',
             'post-new.php?post_type=fp_experience'
+        );
+
+        add_submenu_page(
+            'fp_exp_dashboard',
+            esc_html__('Importer Esperienze', 'fp-experiences'),
+            esc_html__('Importer Esperienze', 'fp-experiences'),
+            Helpers::management_capability(),
+            'fp_exp_importer',
+            [$this->importer_page, 'render_page']
         );
 
         if (Helpers::meeting_points_enabled()) {
@@ -357,5 +372,29 @@ final class AdminMenu
             'window.fpExpAdmin.strings = Object.assign({}, window.fpExpAdmin.strings || {}, ' . wp_json_encode($strings) . ');';
 
         wp_add_inline_script('fp-exp-admin', $inline, 'before');
+    }
+
+    public function add_admin_body_class(string $classes): string
+    {
+        $screen = get_current_screen();
+        if (! $screen) {
+            return $classes;
+        }
+
+        $screen_id = $screen->id ?? '';
+        $managed_screens = [
+            'toplevel_page_fp_exp_dashboard',
+            'edit-fp_experience',
+            'fp_experience',
+            'edit-fp_meeting_point',
+            'fp_meeting_point',
+        ];
+
+        $is_managed = in_array($screen_id, $managed_screens, true) || 0 === strpos($screen_id, 'fp-exp-dashboard_page_fp_exp_');
+        if ($is_managed && false === strpos($classes, 'fp-exp-admin-shell')) {
+            $classes .= ' fp-exp-admin-shell';
+        }
+
+        return $classes;
     }
 }

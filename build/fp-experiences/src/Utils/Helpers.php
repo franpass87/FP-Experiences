@@ -241,7 +241,8 @@ final class Helpers
     public static function listing_settings(): array
     {
         $defaults = [
-            'filters' => ['search', 'theme', 'language', 'duration', 'price', 'family', 'date'],
+            // Rimuoviamo il filtro "theme" di default per eliminare i temi esperienza dall'interfaccia pubblica
+            'filters' => ['search', 'language', 'duration', 'price', 'family', 'date'],
             'per_page' => 9,
             'order' => 'ASC',
             'orderby' => 'menu_order',

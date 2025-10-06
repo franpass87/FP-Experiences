@@ -59,6 +59,7 @@ use function wp_clear_scheduled_hook;
 use function wp_schedule_single_event;
 use const DAY_IN_SECONDS;
 use const MINUTE_IN_SECONDS;
+use const HOUR_IN_SECONDS;
 
 final class Emails
 {
@@ -88,8 +89,18 @@ final class Emails
             return;
         }
 
-        $this->send_customer_confirmation($context);
-        $this->send_staff_notification($context, false);
+        $emails_settings = get_option('fp_exp_emails', []);
+        $emails_settings = is_array($emails_settings) ? $emails_settings : [];
+        $types = isset($emails_settings['types']) && is_array($emails_settings['types']) ? $emails_settings['types'] : [];
+
+        if ('no' !== ($types['customer_confirmation'] ?? 'yes')) {
+            $this->send_customer_confirmation($context);
+        }
+
+        if ('no' !== ($types['staff_notification'] ?? 'yes')) {
+            $this->send_staff_notification($context, false);
+        }
+
         $this->queue_automations($context);
     }
 
@@ -105,7 +116,13 @@ final class Emails
         $context['language'] = $language;
         $context['status_label'] = EmailTranslator::text('common.status_cancelled', $language);
 
-        $this->send_staff_notification($context, true);
+        $emails_settings = get_option('fp_exp_emails', []);
+        $emails_settings = is_array($emails_settings) ? $emails_settings : [];
+        $types = isset($emails_settings['types']) && is_array($emails_settings['types']) ? $emails_settings['types'] : [];
+
+        if ('no' !== ($types['staff_notification'] ?? 'yes')) {
+            $this->send_staff_notification($context, true);
+        }
         $this->cancel_internal_notifications($reservation_id, $order_id);
     }
 
@@ -144,9 +161,7 @@ final class Emails
             return;
         }
 
-        $subject = EmailTranslator::text('customer_confirmation.subject', $language, [
-            (string) ($context['experience']['title'] ?? ''),
-        ]);
+        $subject = $this->resolve_subject_override('customer_confirmation', $context, $language);
 
         $message = $this->render_template('customer-confirmation', $context, $language);
 
@@ -175,13 +190,9 @@ final class Emails
         $language = $this->resolve_language($context);
 
         if ($is_cancelled) {
-            $subject = EmailTranslator::text('staff_notification.subject_cancelled', $language, [
-                (string) ($context['experience']['title'] ?? ''),
-            ]);
+            $subject = $this->resolve_subject_override('staff_notification_cancelled', $context, $language);
         } else {
-            $subject = EmailTranslator::text('staff_notification.subject_new', $language, [
-                (string) ($context['experience']['title'] ?? ''),
-            ]);
+            $subject = $this->resolve_subject_override('staff_notification_new', $context, $language);
         }
 
         $message = $this->render_template('staff-notification', $context + [
@@ -225,7 +236,17 @@ final class Emails
         $timers = isset($context['timers']) && is_array($context['timers']) ? $context['timers'] : [];
         $now = time();
 
-        $reminder_at = isset($timers['reminder_timestamp']) ? (int) $timers['reminder_timestamp'] : 0;
+        // Applica offset personalizzati da impostazioni se presenti
+        $emails_settings = get_option('fp_exp_emails', []);
+        $emails_settings = is_array($emails_settings) ? $emails_settings : [];
+        $schedule = isset($emails_settings['schedule']) && is_array($emails_settings['schedule']) ? $emails_settings['schedule'] : [];
+        $reminder_offset_hours = isset($schedule['reminder_offset_hours']) ? max(0, (int) $schedule['reminder_offset_hours']) : 24;
+        $followup_offset_hours = isset($schedule['followup_offset_hours']) ? max(0, (int) $schedule['followup_offset_hours']) : 24;
+
+        $start_timestamp = isset($context['slot']['start_timestamp']) ? (int) $context['slot']['start_timestamp'] : 0;
+        $end_timestamp = isset($context['slot']['end_timestamp']) ? (int) $context['slot']['end_timestamp'] : $start_timestamp;
+
+        $reminder_at = $start_timestamp > 0 ? max(0, $start_timestamp - ($reminder_offset_hours * HOUR_IN_SECONDS)) : 0;
         if ($reminder_at > 0) {
             if ($reminder_at <= $now) {
                 $reminder_at = $now + (5 * MINUTE_IN_SECONDS);
@@ -235,7 +256,7 @@ final class Emails
             wp_schedule_single_event($reminder_at, self::REMINDER_HOOK, [$reservation_id, $order_id]);
         }
 
-        $followup_at = isset($timers['followup_timestamp']) ? (int) $timers['followup_timestamp'] : 0;
+        $followup_at = $end_timestamp > 0 ? max(0, $end_timestamp + ($followup_offset_hours * HOUR_IN_SECONDS)) : 0;
         if ($followup_at > 0) {
             if ($followup_at <= $now) {
                 $followup_at = $now + (10 * MINUTE_IN_SECONDS);
@@ -262,9 +283,7 @@ final class Emails
 
         $language = $this->resolve_language($context);
 
-        $subject = EmailTranslator::text('customer_reminder.subject', $language, [
-            (string) ($context['experience']['title'] ?? ''),
-        ]);
+        $subject = $this->resolve_subject_override('customer_reminder', $context, $language);
 
         $this->send_customer_template($context, 'customer-reminder', $subject, true, $language);
     }
@@ -279,9 +298,7 @@ final class Emails
 
         $language = $this->resolve_language($context);
 
-        $subject = EmailTranslator::text('customer_post_experience.subject', $language, [
-            (string) ($context['experience']['title'] ?? ''),
-        ]);
+        $subject = $this->resolve_subject_override('customer_post_experience', $context, $language);
 
         $this->send_customer_template($context, 'customer-post-experience', $subject, false, $language);
     }
@@ -649,6 +666,13 @@ final class Emails
             $webmaster,
         ]);
 
+        // Aggiungi destinatari extra da impostazioni
+        $emails_settings = get_option('fp_exp_emails', []);
+        if (is_array($emails_settings) && ! empty($emails_settings['recipients']['staff_extra']) && is_array($emails_settings['recipients']['staff_extra'])) {
+            $extra = array_values(array_filter(array_map('sanitize_email', $emails_settings['recipients']['staff_extra'])));
+            $recipients = array_merge($recipients, $extra);
+        }
+
         /** @var array<int, string> $filtered */
         $filtered = apply_filters('fp_exp_email_recipients', $recipients, $context, 'staff');
 
@@ -659,6 +683,14 @@ final class Emails
 
     private function get_structure_email(): string
     {
+        $emails = get_option('fp_exp_emails', []);
+        if (is_array($emails) && ! empty($emails['sender']['structure'])) {
+            $candidate = sanitize_email((string) $emails['sender']['structure']);
+            if ($candidate) {
+                return $candidate;
+            }
+        }
+
         $option = (string) get_option('fp_exp_structure_email', '');
 
         if ($option) {
@@ -670,6 +702,14 @@ final class Emails
 
     private function get_webmaster_email(): string
     {
+        $emails = get_option('fp_exp_emails', []);
+        if (is_array($emails) && ! empty($emails['sender']['webmaster'])) {
+            $candidate = sanitize_email((string) $emails['sender']['webmaster']);
+            if ($candidate) {
+                return $candidate;
+            }
+        }
+
         $option = (string) get_option('fp_exp_webmaster_email', '');
 
         if ($option) {
@@ -936,8 +976,13 @@ final class Emails
             return '';
         }
 
-        $branding = get_option('fp_exp_email_branding', []);
-        $branding = is_array($branding) ? $branding : [];
+        $emails = get_option('fp_exp_emails', []);
+        $emails = is_array($emails) ? $emails : [];
+        $branding = isset($emails['branding']) && is_array($emails['branding']) ? $emails['branding'] : [];
+        if (! $branding) {
+            $branding = get_option('fp_exp_email_branding', []);
+            $branding = is_array($branding) ? $branding : [];
+        }
 
         $logo = isset($branding['logo']) ? esc_url((string) $branding['logo']) : '';
         $header_text = isset($branding['header_text']) ? trim((string) $branding['header_text']) : '';
@@ -980,5 +1025,45 @@ final class Emails
         <?php
 
         return trim((string) ob_get_clean());
+    }
+
+    /**
+     * @param array<string, mixed> $context
+     */
+    private function resolve_subject_override(string $key, array $context, string $language): string
+    {
+        $emails_settings = get_option('fp_exp_emails', []);
+        $emails_settings = is_array($emails_settings) ? $emails_settings : [];
+        $subjects = isset($emails_settings['subjects']) && is_array($emails_settings['subjects']) ? $emails_settings['subjects'] : [];
+
+        $experience_title = (string) ($context['experience']['title'] ?? '');
+        $date_label = (string) ($context['slot']['start_local_date'] ?? '');
+        $time_label = (string) ($context['slot']['start_local_time'] ?? '');
+        $order_number = (string) ($context['order']['number'] ?? $context['order']['id'] ?? '');
+
+        $override = isset($subjects[$key]) ? (string) $subjects[$key] : '';
+        if ('' !== trim($override)) {
+            return str_replace(
+                ['{experience_title}', '{date}', '{time}', '{order_number}'],
+                [$experience_title, $date_label, $time_label, $order_number],
+                $override
+            );
+        }
+
+        // fallback a traduzioni esistenti
+        switch ($key) {
+            case 'customer_confirmation':
+                return EmailTranslator::text('customer_confirmation.subject', $language, [$experience_title]);
+            case 'customer_reminder':
+                return EmailTranslator::text('customer_reminder.subject', $language, [$experience_title]);
+            case 'customer_post_experience':
+                return EmailTranslator::text('customer_post_experience.subject', $language, [$experience_title]);
+            case 'staff_notification_new':
+                return EmailTranslator::text('staff_notification.subject_new', $language, [$experience_title]);
+            case 'staff_notification_cancelled':
+                return EmailTranslator::text('staff_notification.subject_cancelled', $language, [$experience_title]);
+        }
+
+        return '';
     }
 }

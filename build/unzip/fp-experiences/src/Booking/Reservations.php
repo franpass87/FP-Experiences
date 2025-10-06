@@ -538,4 +538,64 @@ final class Reservations
             $rows
         );
     }
+
+    /**
+     * Conta il numero di posti prenotati per uno slot virtuale specifico.
+     * Utile per calcolare la capacità rimanente.
+     *
+     * @param int    $experience_id ID esperienza
+     * @param string $start_utc     Data/ora inizio in formato SQL UTC
+     * @param string $end_utc       Data/ora fine in formato SQL UTC
+     *
+     * @return int Numero totale di posti prenotati
+     */
+    public static function count_bookings_for_virtual_slot(int $experience_id, string $start_utc, string $end_utc): int
+    {
+        global $wpdb;
+
+        if ($experience_id <= 0 || ! $start_utc || ! $end_utc) {
+            return 0;
+        }
+
+        $reservations_table = self::table_name();
+        $slots_table = Slots::table_name();
+
+        // Stati che contano come prenotazioni attive
+        $active_statuses = [
+            self::STATUS_PENDING,
+            self::STATUS_PENDING_REQUEST,
+            self::STATUS_APPROVED_CONFIRMED,
+            self::STATUS_APPROVED_PENDING_PAYMENT,
+            self::STATUS_PAID,
+            self::STATUS_CHECKED_IN,
+        ];
+
+        $placeholders = implode(',', array_fill(0, count($active_statuses), '%s'));
+
+        // Nota: usando COALESCE con valore di default se pax è NULL
+        // JSON_LENGTH è supportato da MySQL 5.7+ e MariaDB 10.2+
+        $sql = $wpdb->prepare(
+            "SELECT COALESCE(SUM(
+                CASE 
+                    WHEN r.pax IS NULL OR r.pax = '' THEN 1
+                    ELSE JSON_LENGTH(r.pax)
+                END
+            ), 0) as total " .
+            "FROM {$reservations_table} r " .
+            "INNER JOIN {$slots_table} s ON r.slot_id = s.id " .
+            "WHERE r.experience_id = %d " .
+            "AND r.status IN ({$placeholders}) " .
+            "AND s.start_datetime >= %s " .
+            "AND s.start_datetime < %s",
+            array_merge(
+                [$experience_id],
+                $active_statuses,
+                [$start_utc, $end_utc]
+            )
+        );
+
+        $result = $wpdb->get_var($sql);
+
+        return (int) ($result ?? 0);
+    }
 }

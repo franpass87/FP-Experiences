@@ -148,7 +148,7 @@ final class AutoTranslator
             return $translation;
         }
 
-        if ($this->is_english_browser()) {
+		if ($this->should_translate_to_english()) {
             if (isset(self::STRINGS[$text])) {
                 return self::STRINGS[$text];
             }
@@ -191,7 +191,7 @@ final class AutoTranslator
         $plural = (string) $plural;
         $number = (int) $number;
 
-        if ($this->is_english_browser()) {
+		if ($this->should_translate_to_english()) {
             $key = $single . '||' . $plural;
             if (isset(self::PLURALS[$key])) {
                 $pair = self::PLURALS[$key];
@@ -265,4 +265,26 @@ final class AutoTranslator
 
         return false;
     }
+
+	private function is_site_locale_english(): bool
+	{
+		$locale = '';
+		if (\function_exists('determine_locale')) {
+			$locale = (string) \determine_locale();
+		} elseif (\function_exists('get_locale')) {
+			$locale = (string) \get_locale();
+		}
+
+		if ('' === $locale) {
+			return false;
+		}
+
+		$locale = strtolower($locale);
+		return 0 === strpos($locale, 'en');
+	}
+
+	private function should_translate_to_english(): bool
+	{
+		return $this->is_english_browser() && $this->is_site_locale_english();
+	}
 }
