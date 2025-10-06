@@ -57,6 +57,7 @@ $dataset = [
     'rtb' => $rtb,
     'nonce' => $rtb_nonce,
     'displayContext' => $display_context,
+    'timezone' => (string) wp_timezone_string(),
     'version' => $config_version,
 ];
 
@@ -121,7 +122,7 @@ if ($duration_minutes > 0) {
     $minutes = $duration_minutes % 60;
     $duration_label = $hours > 0
         ? sprintf(esc_html__('%dh %02dm', 'fp-experiences'), $hours, $minutes)
-        : sprintf(esc_html__('%d minutes', 'fp-experiences'), $minutes);
+        : sprintf(esc_html__('%d minuti', 'fp-experiences'), $minutes);
 }
 
 $price_from_value = null;
@@ -240,30 +241,89 @@ $price_from_display = null !== $price_from_value && $price_from_value > 0
                     <h3 class="fp-exp-step__title"><?php echo esc_html__('Scegli una data', 'fp-experiences'); ?></h3>
                 </header>
                 <div class="fp-exp-step__content">
-                    <div class="fp-exp-calendar" data-show-calendar="<?php echo esc_attr($behavior['show_calendar'] ? '1' : '0'); ?>">
+                    <?php
+                    // Calcolo limiti per l'input data in base agli slot disponibili
+                    $min_date_attr = gmdate('Y-m-d');
+                    $max_date_attr = '';
+                    $all_days = [];
+                    foreach ($calendar as $m_key => $m_data) {
+                        if (isset($m_data['days']) && is_array($m_data['days'])) {
+                            $all_days = array_merge($all_days, array_keys($m_data['days']));
+                        }
+                    }
+                    if (! empty($all_days)) {
+                        sort($all_days);
+                        $last = end($all_days);
+                        if (is_string($last) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $last)) {
+                            $max_date_attr = $last;
+                        }
+                    }
+                    ?>
+                    <div class="fp-exp-date-picker">
+                        <label class="fp-exp-label" for="fp-exp-date-input"><?php echo esc_html__('Data', 'fp-experiences'); ?></label>
+                        <input
+                            type="date"
+                            id="fp-exp-date-input"
+                            class="fp-exp-input fp-exp-date-input"
+                            min="<?php echo esc_attr($min_date_attr); ?>"
+                            <?php if ('' !== $max_date_attr) : ?> max="<?php echo esc_attr($max_date_attr); ?>"<?php endif; ?>
+                            data-fp-date-input
+                        />
+                    </div>
+                    <div class="fp-exp-calendar" data-show-calendar="<?php echo esc_attr($behavior['show_calendar'] ? '1' : '0'); ?>" hidden>
                         <?php foreach ($calendar as $month_key => $month_data) :
                             $month_label = isset($month_data['month_label']) ? (string) $month_data['month_label'] : '';
                             $month_days = isset($month_data['days']) && is_array($month_data['days']) ? $month_data['days'] : [];
                             ?>
                             <section class="fp-exp-calendar__month" data-month="<?php echo esc_attr($month_key); ?>">
                                 <header class="fp-exp-calendar__month-header"><?php echo esc_html($month_label); ?></header>
+                                <?php
+                                // Calcolo intestazioni giorni e riempimento griglia 7xN
+                                try {
+                                    $first_of_month = new \DateTimeImmutable($month_key . '-01');
+                                    $days_in_month = (int) $first_of_month->format('t');
+                                    $leading = max(0, (int) $first_of_month->format('N') - 1); // Lun=1..Dom=7
+                                } catch (\Exception $e) {
+                                    $first_of_month = null;
+                                    $days_in_month = 31;
+                                    $leading = 0;
+                                }
+
+                                // Etichette giorni (Lun..Dom) basate su locale breve
+                                $week_ref = $first_of_month ?: new \DateTimeImmutable('monday this week');
+                                $weekdays = [];
+                                for ($i = 0; $i < 7; $i++) {
+                                    $weekdays[] = $week_ref->modify('+' . $i . ' days')->format('D');
+                                }
+                                ?>
+                                <div class="fp-exp-calendar__weekdays" aria-hidden="true">
+                                    <?php foreach ($weekdays as $wd) : ?>
+                                        <div class="fp-exp-calendar__weekday"><?php echo esc_html($wd); ?></div>
+                                    <?php endforeach; ?>
+                                </div>
                                 <div class="fp-exp-calendar__grid">
-                                    <?php foreach ($month_days as $day => $day_slots) :
-                                        $day_slots = is_array($day_slots) ? $day_slots : [];
+                                    <?php for ($i = 0; $i < $leading; $i++) : ?>
+                                        <div class="fp-exp-calendar__empty" aria-hidden="true"></div>
+                                    <?php endfor; ?>
+                                    <?php for ($day_num = 1; $day_num <= $days_in_month; $day_num++) :
+                                        $date_key = $month_key . '-' . str_pad((string) $day_num, 2, '0', STR_PAD_LEFT);
+                                        $day_slots = isset($month_days[$date_key]) && is_array($month_days[$date_key]) ? $month_days[$date_key] : [];
                                         $slot_count = count($day_slots);
                                         $is_available = $slot_count > 0;
                                         ?>
                                         <button
                                             type="button"
                                             class="fp-exp-calendar__day"
-                                            data-date="<?php echo esc_attr($day); ?>"
+                                            data-date="<?php echo esc_attr($date_key); ?>"
                                             data-available="<?php echo esc_attr($is_available ? '1' : '0'); ?>"
                                             <?php if (! $is_available) : ?>disabled aria-disabled="true"<?php else : ?>aria-pressed="false"<?php endif; ?>
                                         >
-                                            <span class="fp-exp-calendar__day-label"><?php echo esc_html($day); ?></span>
-                                            <span class="fp-exp-calendar__day-count"><?php echo esc_html(sprintf(esc_html__('%d fasce', 'fp-experiences'), $slot_count)); ?></span>
+                                            <span class="fp-exp-calendar__day-label"><?php echo esc_html((string) $day_num); ?></span>
+                                            <?php if ($is_available) : ?>
+                                                <span class="fp-exp-calendar__day-count"><?php echo esc_html(sprintf(esc_html__('%d fasce', 'fp-experiences'), $slot_count)); ?></span>
+                                            <?php endif; ?>
                                         </button>
-                                    <?php endforeach; ?>
+                                    <?php endfor; ?>
                                 </div>
                             </section>
                         <?php endforeach; ?>
@@ -428,7 +488,7 @@ $price_from_display = null !== $price_from_value && $price_from_value > 0
                             data-error-name="<?php echo esc_attr__('Inserisci il tuo nome.', 'fp-experiences'); ?>"
                             data-error-email="<?php echo esc_attr__('Inserisci il tuo indirizzo email.', 'fp-experiences'); ?>"
                             data-error-email-format="<?php echo esc_attr__('Inserisci un indirizzo email valido.', 'fp-experiences'); ?>"
-                            data-error-privacy="<?php echo esc_attr__('Accept the privacy policy to continue.', 'fp-experiences'); ?>"
+                            data-error-privacy="<?php echo esc_attr__('Accetta l\'informativa privacy per continuare.', 'fp-experiences'); ?>"
                         >
                             <input type="hidden" name="experience_id" value="<?php echo esc_attr((string) $experience['id']); ?>">
                             <input type="hidden" name="slot_id" value="">
@@ -436,6 +496,8 @@ $price_from_display = null !== $price_from_value && $price_from_value > 0
                             <input type="hidden" name="addons" value="">
                             <input type="hidden" name="mode" value="<?php echo esc_attr($rtb_mode); ?>">
                             <input type="hidden" name="forced" value="<?php echo esc_attr($rtb_forced ? '1' : '0'); ?>">
+                            <input type="hidden" name="start" value="" />
+                            <input type="hidden" name="end" value="" />
                             <div
                                 class="fp-exp-error-summary"
                                 data-fp-error-summary

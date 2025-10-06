@@ -17,6 +17,7 @@ FP Experiences brings GetYourGuide-style booking flows to WooCommerce without to
 * Experience discovery widgets with availability calendars, ticket types, add-ons (now with thumbnails), and schema-ready markup.
 * “Gift Your Experience” vouchers with configurable validity, reminder cadence, transactional emails, and front-end purchase/redemption flows.
 * Language badges with local SVG flags on experience cards, widgets, and admin taxonomy pages (text labels included for a11y).
+* Experience editor enhancements with hero gallery management, inline language selection/creation, and streamlined essentials lists that lean on native bullets.
 * Simple archive shortcode with grid/list cards, CTA buttons, and a wider desktop container for the advanced showcase.
 * Automatic landing page creation for each published experience, with a Tools resync command to regenerate missing `[fp_exp_page]` destinations.
 * Reusable meeting points with optional CSV import (advanced toggle), experience linking, shortcode, and Elementor widget.
@@ -68,8 +69,8 @@ La voce di menu viene replicata anche nella toolbar con collegamenti rapidi (Nuo
 == Settings & Tools ==
 
 * **General** – Structure and webmaster emails, locale preferences, VAT class filters, meeting points toggle, advanced meeting point import toggle, Experience Page layout defaults (container, max-width, gutter, sidebar).
-* **Branding** – Color palette, button radius, shadows, presets, contrast checker, optional Google Font.
-* **Showcase** – Default filters, ordering, and price badge toggle for the experiences listing/Elementor widget.
+* **Branding** – Color palette, section icon background/foreground colours, button radius, shadows, presets, contrast checker, optional Google Font.
+* **Showcase** – Default filters, ordering, price badge toggle, and the shared badge library (edit preset labels/descriptions or add new entries for editors).
 * **Gift** – Enable vouchers, set default validity (days), configure reminder offsets/time, and define the redemption landing page.
 * **Tracking** – Enable/disable GA4, Google Ads, Meta Pixel, Clarity, enhanced conversions, and consent defaults.
 * **Brevo** – API key, webhook secret (required for webhook callbacks), list ID, attribute mappings, transactional template IDs, webhook diagnostics.
@@ -78,7 +79,7 @@ La voce di menu viene replicata anche nella toolbar con collegamenti rapidi (Nuo
 
 == Admin UX ==
 
-The Experience edit screen now groups meta fields into accessible tabs (“Dettagli”, “Biglietti & Prezzi”, “Calendario & Slot”, “Meeting Point”, “Extra”, “Policy/FAQ”, “SEO/Schema”) with a sticky navigation bar. Ticket types and add-ons use drag-and-drop repeaters with inline validation, tooltips, and non-blocking warnings when no ticket is configured. The tabs support deep linking, focus management, and keyboard navigation while keeping the original `_fp_*` meta keys untouched.
+The Experience edit screen now groups meta fields into accessible tabs (“Dettagli”, “Biglietti & Prezzi”, “Calendario & Slot”, “Meeting Point”, “Extra”, “Policy/FAQ”, “SEO/Schema”) with a sticky navigation bar. Ticket types and add-ons use drag-and-drop repeaters with inline validation, tooltips, and non-blocking warnings when no ticket is configured. The tabs support deep linking, focus management, and keyboard navigation while keeping the original `_fp_*` meta keys untouched. Editors can also curate the hero gallery (multi-select + drag reorder), choose/display languages with live badge previews, and rely on reusable badge presets to highlight selling points across the template.
 
 == Hooks ==
 
@@ -129,6 +130,12 @@ FP Experiences stores reservation details inside custom tables linked to WooComm
 * Added ISO language flags (with accessible text) to admin language terms, editor previews, experience hero badges, listing cards, and the booking widget.
 * Auto-create experience landing pages on publish and add a Tools shortcut to resynchronise missing `[fp_exp_page]` pages.
 * Add the `[fp_exp_simple_archive]` shortcode, widen the desktop archive container, and expose a Simple/Advanced toggle inside the Elementor List widget.
+* Introduced a hero gallery manager inside the experience details tab with drag sorting, bulk selection, and quick clearing.
+* Moved language selection into the experience details tab, enabling manual term creation and badge previews before publishing.
+* Added a configurable badge library under **Settings → Showcase** so teams can rename defaults and expose custom selling points to editors.
+* Expanded branding controls with section icon color pickers and switched the front end to Font Awesome-based icons for consistent rendering.
+* Simplified essentials/notes lists to rely on native bullets, refined section title sizing, and improved desktop/mobile spacing.
+* Fixed ticket quantity buttons, realigned the desktop tickets table, and kept the sticky CTA button legible after interaction.
 
 = 0.2.0 =
 * Polish UI/UX stile GetYourGuide (layout 2-col, sticky, chips).
