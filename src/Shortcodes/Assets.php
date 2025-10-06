@@ -139,6 +139,8 @@ final class Assets
             [
                 'restUrl' => rest_url('fp-exp/v1/'),
                 'restNonce' => Helpers::rest_nonce(),
+                // Nonce specifico per il checkout esperienze via REST
+                'checkoutNonce' => wp_create_nonce('fp-exp-checkout'),
                 'ajaxUrl' => admin_url('admin-ajax.php'),
                 'checkoutUrl' => function_exists('wc_get_checkout_url') ? (string) wc_get_checkout_url() : trailingslashit(home_url('/checkout')),
                 'currency' => $currency,

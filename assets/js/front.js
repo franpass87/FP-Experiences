@@ -1715,22 +1715,48 @@
         setupExperiencePages();
         setupGiftRedeem();
 
-        // Redirect automatico al checkout WooCommerce quando il widget emette l'evento di checkout
+        // Avvio diretto del pre-checkout: crea ordine e reindirizza alla pagina pagamento WooCommerce
         try {
             const config = (typeof window !== 'undefined' && window.fpExpConfig) ? window.fpExpConfig : {};
-            const checkoutUrl = (config && typeof config.checkoutUrl === 'string') ? config.checkoutUrl : '';
-            if (checkoutUrl) {
-                document.addEventListener('fpExpWidgetCheckout', () => {
-                    // evita redirect se già in pagina checkout
-                    if (typeof window !== 'undefined' && window.location && typeof window.location.href === 'string') {
-                        const href = window.location.href;
-                        if (href && href.indexOf(checkoutUrl) !== -1) {
-                            return;
-                        }
+            const restUrl = (config && typeof config.restUrl === 'string') ? config.restUrl : '';
+            const restNonce = (config && typeof config.restNonce === 'string') ? config.restNonce : '';
+            const checkoutNonce = (config && typeof config.checkoutNonce === 'string') ? config.checkoutNonce : '';
+
+            async function startPrecheckout() {
+                if (!restUrl) {
+                    return;
+                }
+
+                const url = restUrl.replace(/\/?$/, '/') + 'checkout';
+                const headers = {
+                    'Content-Type': 'application/json',
+                };
+                if (restNonce) {
+                    headers['X-WP-Nonce'] = restNonce;
+                }
+
+                const body = { nonce: checkoutNonce, contact: {}, billing: {}, consent: {} };
+
+                let paymentUrl = '';
+                try {
+                    const res = await fetch(url, { method: 'POST', headers, body: JSON.stringify(body), credentials: 'same-origin' });
+                    const data = await res.json().catch(() => ({}));
+                    if (res.ok && data && data.payment_url) {
+                        paymentUrl = String(data.payment_url);
                     }
-                    window.location.href = checkoutUrl;
-                });
+                } catch (e) {
+                    // ignora errori rete
+                }
+
+                if (paymentUrl) {
+                    window.location.assign(paymentUrl);
+                    return;
+                }
             }
+
+            document.addEventListener('fpExpWidgetCheckout', () => {
+                startPrecheckout();
+            });
         } catch (e) {
             // non bloccare l'inizializzazione per errori qui
         }

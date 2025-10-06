@@ -127,6 +127,8 @@ final class CalendarAdmin
                 'accessDenied' => esc_html__('Accesso negato. Ricarica la pagina e riprova.', 'fp-experiences'),
                 'notFound' => esc_html__('Risorsa non trovata.', 'fp-experiences'),
                 'serverError' => esc_html__('Errore del server. Riprova tra qualche minuto.', 'fp-experiences'),
+                'listView' => esc_html__('List', 'fp-experiences'),
+                'calendarView' => esc_html__('Calendar', 'fp-experiences'),
             ],
         ];
 
@@ -215,9 +217,16 @@ final class CalendarAdmin
         ];
 
         echo '<div id="fp-exp-calendar-app" class="fp-exp-calendar" data-loading-text="' . esc_attr__('Loading…', 'fp-experiences') . '" data-bootstrap="' . esc_attr(wp_json_encode($bootstrap)) . '">';
-        
-        // Mostra messaggio informativo se non ci sono esperienze
-        if (empty($experience_options)) {
+
+        // Mostra messaggio informativo se non ci sono esperienze pubblicate
+        $experiences = get_posts([
+            'post_type' => 'fp_experience',
+            'posts_per_page' => 1,
+            'post_status' => 'publish',
+            'fields' => 'ids',
+        ]);
+        $has_experiences = ! empty($experiences);
+        if (! $has_experiences) {
             echo '<div class="fp-exp-calendar__no-experiences">';
             echo '<div class="notice notice-info">';
             echo '<p><strong>' . esc_html__('Nessuna esperienza disponibile', 'fp-experiences') . '</strong></p>';
