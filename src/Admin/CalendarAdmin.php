@@ -85,7 +85,8 @@ final class CalendarAdmin
             'posts_per_page' => 200,
             'orderby' => 'title',
     		'order' => 'ASC',
-            'post_status' => 'publish',
+            'post_status' => ['publish','private'],
+            'suppress_filters' => true,
         ]);
 
         $experience_options = [];
@@ -222,7 +223,8 @@ final class CalendarAdmin
         $experiences = get_posts([
             'post_type' => 'fp_experience',
             'posts_per_page' => 1,
-            'post_status' => 'publish',
+            'post_status' => ['publish','private'],
+            'suppress_filters' => true,
             'fields' => 'ids',
         ]);
         $has_experiences = ! empty($experiences);

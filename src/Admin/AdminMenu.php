@@ -8,6 +8,7 @@ use FP_Exp\Utils\Helpers;
 use WP_Admin_Bar;
 
 use function add_action;
+use function add_filter;
 use function add_menu_page;
 use function add_submenu_page;
 use function admin_url;
@@ -78,6 +79,7 @@ final class AdminMenu
         add_action('admin_menu', [$this, 'remove_duplicate_cpt_menus'], 99);
         add_action('admin_bar_menu', [$this, 'register_admin_bar_links'], 80);
         add_action('admin_enqueue_scripts', [$this, 'enqueue_shared_assets']);
+        add_filter('admin_body_class', [$this, 'add_admin_body_class']);
     }
 
     public function register_menu(): void
@@ -370,5 +372,29 @@ final class AdminMenu
             'window.fpExpAdmin.strings = Object.assign({}, window.fpExpAdmin.strings || {}, ' . wp_json_encode($strings) . ');';
 
         wp_add_inline_script('fp-exp-admin', $inline, 'before');
+    }
+
+    public function add_admin_body_class(string $classes): string
+    {
+        $screen = get_current_screen();
+        if (! $screen) {
+            return $classes;
+        }
+
+        $screen_id = $screen->id ?? '';
+        $managed_screens = [
+            'toplevel_page_fp_exp_dashboard',
+            'edit-fp_experience',
+            'fp_experience',
+            'edit-fp_meeting_point',
+            'fp_meeting_point',
+        ];
+
+        $is_managed = in_array($screen_id, $managed_screens, true) || 0 === strpos($screen_id, 'fp-exp-dashboard_page_fp_exp_');
+        if ($is_managed && false === strpos($classes, 'fp-exp-admin-shell')) {
+            $classes .= ' fp-exp-admin-shell';
+        }
+
+        return $classes;
     }
 }
