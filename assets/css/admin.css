@@ -1,16 +1,16 @@
 :root {
     --fp-exp-admin-spacing: 16px;
-    --fp-exp-admin-radius: 14px;
-    --fp-exp-admin-card-shadow: 0 22px 50px rgba(15, 23, 42, 0.12);
-    --fp-exp-admin-border: rgba(15, 23, 42, 0.08);
-    --fp-exp-color-text: #1f1f1f;
-    --fp-exp-color-muted: #5f5f5f;
-    --fp-exp-color-primary: #8b1e3f;
-    --fp-exp-color-danger: #c44536;
+    --fp-exp-admin-radius: 8px;
+    --fp-exp-admin-card-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    --fp-exp-admin-border: rgba(0, 0, 0, 0.08);
+    --fp-exp-color-text: #1f2937;
+    --fp-exp-color-muted: #6b7280;
+    --fp-exp-color-primary: #2563eb;
+    --fp-exp-color-danger: #dc2626;
 }
 
 body.fp-exp-admin-shell {
-    background: linear-gradient(160deg, #f9f6f2 0%, #efe7de 100%);
+    background: #f9fafb;
 }
 
 body.fp-exp-admin-shell #wpbody {
@@ -19,7 +19,7 @@ body.fp-exp-admin-shell #wpbody {
 
 body.fp-exp-admin-shell #wpbody-content {
     margin: 0;
-    padding: 32px clamp(16px, 4vw, 48px) 48px;
+    padding: 24px clamp(16px, 4vw, 32px) 48px;
     box-sizing: border-box;
 }
 
@@ -41,17 +41,17 @@ body.fp-exp-admin-shell #screen-meta-links {
 
 .fp-exp-admin {
     position: relative;
-    border: 0;
+    border: 1px solid var(--fp-exp-admin-border);
     border-radius: var(--fp-exp-admin-radius);
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(247, 244, 240, 0.96) 100%);
+    background: #ffffff;
     box-shadow: var(--fp-exp-admin-card-shadow);
     font-family: inherit;
 }
 
 .fp-exp-admin__body {
     display: grid;
-    gap: 24px;
-    padding: 28px;
+    gap: 20px;
+    padding: 24px;
 }
 
 .fp-exp-admin__layout {
@@ -75,15 +75,15 @@ body.fp-exp-admin-shell #screen-meta-links {
 
 .fp-exp-admin__title {
     margin: 0;
-    font-size: 28px;
-    font-weight: 700;
-    color: var(--fp-exp-color-text, #1f1f1f);
+    font-size: 24px;
+    font-weight: 600;
+    color: var(--fp-exp-color-text);
 }
 
 .fp-exp-admin__intro {
     margin: 0;
-    font-size: 15px;
-    color: var(--fp-exp-color-muted, #5f5f5f);
+    font-size: 14px;
+    color: var(--fp-exp-color-muted);
 }
 
 .fp-exp-admin__body > *:first-child {
@@ -97,7 +97,6 @@ body.fp-exp-admin-shell #screen-meta-links {
 .fp-exp-admin__body .notice {
     margin: 0;
     border-radius: var(--fp-exp-admin-radius);
-    box-shadow: 0 20px 40px rgba(15, 23, 42, 0.12);
 }
 
 .fp-exp-tabs {
@@ -106,42 +105,37 @@ body.fp-exp-admin-shell #screen-meta-links {
     z-index: 20;
     display: flex;
     flex-wrap: wrap;
-    gap: 8px;
-    padding: 18px 20px;
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.92) 0%, rgba(247, 244, 240, 0.92) 100%);
+    gap: 4px;
+    padding: 12px 16px;
+    background: #ffffff;
     border-bottom: 1px solid var(--fp-exp-admin-border);
-    box-shadow: 0 1px 0 rgba(15, 23, 42, 0.04);
-    backdrop-filter: blur(4px);
 }
 
 .fp-exp-tab {
-    background: rgba(255, 255, 255, 0.72);
+    background: transparent;
     border: 1px solid transparent;
-    border-radius: 999px;
-    padding: 10px 18px;
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--fp-exp-color-muted, #505050);
+    border-radius: 6px;
+    padding: 8px 16px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--fp-exp-color-muted);
     cursor: pointer;
-    transition: color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
+    transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
 }
 
 .fp-exp-tab:hover {
-    color: var(--fp-exp-color-text, #1f1f1f);
-    border-color: rgba(15, 23, 42, 0.1);
-    background: rgba(255, 255, 255, 0.9);
+    color: var(--fp-exp-color-text);
+    background: #f3f4f6;
 }
 
 .fp-exp-tab[aria-selected="true"] {
-    color: var(--fp-exp-color-text, #1f1f1f);
-    background: linear-gradient(135deg, #ffffff 0%, rgba(247, 244, 240, 0.94) 100%);
-    border-color: rgba(139, 30, 63, 0.35);
-    box-shadow: 0 14px 34px rgba(139, 30, 63, 0.22);
-    transform: translateY(-1px);
+    color: var(--fp-exp-color-primary);
+    background: #eff6ff;
+    border-color: #dbeafe;
 }
 
 .fp-exp-tab:focus-visible {
-    outline: 3px solid rgba(139, 30, 63, 0.35);
+    outline: 2px solid var(--fp-exp-color-primary);
     outline-offset: 2px;
 }
 
@@ -162,12 +156,11 @@ body.fp-exp-admin-shell #screen-meta-links {
 }
 
 .fp-exp-fieldset {
-    border: 0;
-    border-radius: calc(var(--fp-exp-admin-radius) - 2px);
-    padding: 24px;
-    margin: 0 0 24px;
-    background: linear-gradient(135deg, #ffffff 0%, rgba(249, 247, 243, 0.94) 100%);
-    box-shadow: 0 16px 34px rgba(15, 23, 42, 0.08);
+    border: 1px solid var(--fp-exp-admin-border);
+    border-radius: var(--fp-exp-admin-radius);
+    padding: 20px;
+    margin: 0 0 20px;
+    background: #ffffff;
 }
 
 .fp-exp-fieldset:last-of-type {
@@ -462,28 +455,27 @@ body.fp-exp-admin-shell #screen-meta-links {
     gap: 4px;
     align-content: start;
     padding: 14px 16px;
-    border: 1px solid rgba(15, 23, 42, 0.05);
+    border: 1px solid var(--fp-exp-admin-border);
     border-radius: var(--fp-exp-admin-radius);
-    background: linear-gradient(135deg, #ffffff 0%, rgba(249, 247, 243, 0.94) 100%);
-    box-shadow: 0 6px 16px rgba(15, 23, 42, 0.10); /* ombra più contenuta */
+    background: #ffffff;
     cursor: pointer;
     min-height: 100%;
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    transition: border-color 0.15s ease, background-color 0.15s ease;
 }
 
 .fp-exp-radio-card:hover {
-    border-color: rgba(139, 30, 63, 0.35);
-    box-shadow: 0 10px 22px rgba(139, 30, 63, 0.16); /* riduce l'elevazione in hover */
+    border-color: #d1d5db;
+    background: #f9fafb;
 }
 
 .fp-exp-radio-card:focus-within {
-    border-color: rgba(139, 30, 63, 0.45);
-    box-shadow: 0 0 0 1px rgba(139, 30, 63, 0.45), 0 12px 24px rgba(139, 30, 63, 0.16);
+    border-color: var(--fp-exp-color-primary);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
 
 .fp-exp-radio-card.is-selected {
-    border-color: rgba(139, 30, 63, 0.45);
-    box-shadow: 0 12px 24px rgba(139, 30, 63, 0.18);
+    border-color: var(--fp-exp-color-primary);
+    background: #eff6ff;
 }
 
 .fp-exp-radio-card input[type="radio"] {
@@ -535,14 +527,13 @@ body.fp-exp-admin-shell #screen-meta-links {
 }
 
 .fp-exp-tools__card {
-    background: linear-gradient(135deg, #ffffff 0%, rgba(249, 247, 243, 0.94) 100%);
-    border: 1px solid rgba(15, 23, 42, 0.05);
+    background: #ffffff;
+    border: 1px solid var(--fp-exp-admin-border);
     border-radius: var(--fp-exp-admin-radius);
-    box-shadow: 0 16px 34px rgba(15, 23, 42, 0.08);
     display: flex;
     flex-direction: column;
     gap: 8px;
-    padding: 18px;
+    padding: 16px;
 }
 
 .fp-exp-tools__card h3 {
@@ -627,10 +618,9 @@ body.fp-exp-admin-shell #screen-meta-links {
     align-items: flex-start;
     gap: 12px;
     padding: 16px;
-    border: 1px solid rgba(15, 23, 42, 0.05);
+    border: 1px solid var(--fp-exp-admin-border);
     border-radius: var(--fp-exp-admin-radius);
-    background: linear-gradient(135deg, #ffffff 0%, rgba(249, 247, 243, 0.94) 100%);
-    box-shadow: 0 16px 34px rgba(15, 23, 42, 0.08);
+    background: #ffffff;
 }
 
 .fp-exp-repeater-row[draggable="true"] {
@@ -1052,9 +1042,9 @@ body.fp-exp-admin-shell #screen-meta-links {
 
 .fp-exp-dashboard__card {
     background: #fff;
-    border-radius: 12px;
-    padding: 18px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    border: 1px solid var(--fp-exp-admin-border);
+    border-radius: var(--fp-exp-admin-radius);
+    padding: 16px;
 }
 
 .fp-exp-dashboard__card-label {
@@ -1085,9 +1075,9 @@ body.fp-exp-admin-shell #screen-meta-links {
 
 .fp-exp-dashboard__section {
     background: #fff;
-    border-radius: 12px;
+    border: 1px solid var(--fp-exp-admin-border);
+    border-radius: var(--fp-exp-admin-radius);
     padding: 20px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
 }
 
 .fp-exp-dashboard__section h2 {
