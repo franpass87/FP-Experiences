@@ -8,6 +8,7 @@ use DateTimeImmutable;
 use DateTimeInterface;
 use DateTimeZone;
 use Exception;
+use FP_Exp\Booking\AvailabilityService;
 use FP_Exp\Booking\Slots;
 use FP_Exp\MeetingPoints\Repository;
 use FP_Exp\Utils\Helpers;
@@ -121,6 +122,11 @@ final class WidgetShortcode extends BaseShortcode
         $language_badges = LanguageHelper::build_language_badges($languages);
 
         $slots = $this->get_upcoming_slots($experience_id, $tickets, 60);
+
+        // Fallback: se non ci sono slot persistiti, genera slot virtuali basati sulle meta di disponibilità
+        if (empty($slots)) {
+            $slots = $this->generate_virtual_slots($experience_id, $tickets, 6, 300);
+        }
         $calendar = $this->group_slots_by_day($slots);
 
         $display_context = apply_filters('fp_exp_widget_display_context', (string) $attributes['display_context'], $experience_id, $attributes);
@@ -240,6 +246,79 @@ final class WidgetShortcode extends BaseShortcode
         }
 
         return $context;
+    }
+
+    /**
+     * Genera slot virtuali per i prossimi N mesi usando le meta di disponibilità.
+     *
+     * @param array<int, array<string, mixed>> $tickets
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function generate_virtual_slots(int $experience_id, array $tickets, int $monthsAhead = 6, int $limit = 300): array
+    {
+        $monthsAhead = max(1, $monthsAhead);
+        $limit = max(1, $limit);
+
+        $nowUtc = new DateTimeImmutable('now', new DateTimeZone('UTC'));
+
+        try {
+            $endUtc = $nowUtc->add(new \DateInterval('P' . $monthsAhead . 'M'));
+        } catch (Exception $exception) {
+            $endUtc = $nowUtc->add(new \DateInterval('P6M'));
+        }
+
+        $virtual = AvailabilityService::get_virtual_slots(
+            $experience_id,
+            $nowUtc->setTime(0, 0)->format('Y-m-d H:i:s'),
+            $endUtc->setTime(23, 59, 59)->format('Y-m-d H:i:s')
+        );
+
+        if (empty($virtual)) {
+            return [];
+        }
+
+        $timezone = wp_timezone();
+        $currency = get_option('woocommerce_currency', 'EUR');
+        $price_from = $this->determine_price(null, $tickets);
+
+        $mapped = [];
+        foreach ($virtual as $row) {
+            $startSql = isset($row['start']) ? (string) $row['start'] : '';
+            $endSql = isset($row['end']) ? (string) $row['end'] : '';
+
+            if ('' === $startSql || '' === $endSql) {
+                continue;
+            }
+
+            try {
+                $start = new DateTimeImmutable($startSql, new DateTimeZone('UTC'));
+                $end = new DateTimeImmutable($endSql, new DateTimeZone('UTC'));
+            } catch (Exception $exception) {
+                continue;
+            }
+
+            $remaining = isset($row['capacity_remaining']) ? (int) $row['capacity_remaining'] : 0;
+
+            $mapped[] = [
+                // Nessun ID persistito per slot virtuali
+                'id' => 0,
+                'start' => $start->setTimezone($timezone)->format('Y-m-d'),
+                'time' => $start->setTimezone($timezone)->format('H:i'),
+                'start_iso' => $start->setTimezone($timezone)->format(DateTimeInterface::ATOM),
+                'end_iso' => $end->setTimezone($timezone)->format(DateTimeInterface::ATOM),
+                'remaining' => $remaining,
+                'availability' => $remaining > 0 ? 'https://schema.org/InStock' : 'https://schema.org/SoldOut',
+                'currency' => $currency,
+                'price_from' => $price_from,
+            ];
+
+            if (count($mapped) >= $limit) {
+                break;
+            }
+        }
+
+        return $mapped;
     }
 
     /**

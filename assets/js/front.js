@@ -1721,6 +1721,7 @@
             const restUrl = (config && typeof config.restUrl === 'string') ? config.restUrl : '';
             const restNonce = (config && typeof config.restNonce === 'string') ? config.restNonce : '';
             const checkoutNonce = (config && typeof config.checkoutNonce === 'string') ? config.checkoutNonce : '';
+            const ajaxUrl = (config && typeof config.ajaxUrl === 'string') ? config.ajaxUrl : '';
 
             async function startPrecheckout() {
                 if (!restUrl) {
@@ -1746,6 +1747,36 @@
                     }
                 } catch (e) {
                     // ignora errori rete
+                }
+
+                if (paymentUrl) {
+                    window.location.assign(paymentUrl);
+                    return;
+                }
+
+                // Fallback via admin-ajax.php se la REST fallisce o non fornisce payment_url
+                if (!paymentUrl && ajaxUrl) {
+                    try {
+                        const fd = new FormData();
+                        fd.set('action', 'fp_exp_checkout');
+                        fd.set('nonce', checkoutNonce);
+                        fd.set('contact', JSON.stringify({}));
+                        fd.set('billing', JSON.stringify({}));
+                        fd.set('consent', JSON.stringify({}));
+
+                        const resAjax = await fetch(ajaxUrl, {
+                            method: 'POST',
+                            credentials: 'same-origin',
+                            body: fd,
+                        });
+
+                        const ajaxData = await resAjax.json().catch(() => ({}));
+                        if (ajaxData && ajaxData.success && ajaxData.data && ajaxData.data.payment_url) {
+                            paymentUrl = String(ajaxData.data.payment_url);
+                        }
+                    } catch (e) {
+                        // ignora errori rete
+                    }
                 }
 
                 if (paymentUrl) {

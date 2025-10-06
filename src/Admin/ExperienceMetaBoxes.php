@@ -218,7 +218,7 @@ final class ExperienceMetaBoxes
             </div>
 
             <div class="fp-exp-tab-panels">
-                <?php $this->render_details_tab($details); ?>
+                <?php $this->render_details_tab($details, (int) $post->ID); ?>
                 <?php $this->render_pricing_tab($pricing); ?>
                 <?php $this->render_calendar_tab($availability); ?>
                 <?php $this->render_meeting_point_tab($meeting, $meeting_choices); ?>
@@ -301,7 +301,7 @@ final class ExperienceMetaBoxes
             echo '<div class="notice notice-warning"><p>' . esc_html__('Questa esperienza è pubblicata senza prezzi configurati. Aggiungi almeno un prezzo prima di accettare prenotazioni.', 'fp-experiences') . '</p></div>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
         }
     }
-    private function render_details_tab(array $details): void
+    private function render_details_tab(array $details, int $post_id): void
     {
         $panel_id = 'fp-exp-tab-details-panel';
         ?>
@@ -1314,6 +1314,25 @@ final class ExperienceMetaBoxes
             </fieldset>
 
             <fieldset class="fp-exp-fieldset">
+                <legend><?php esc_html_e('Date extra', 'fp-experiences'); ?></legend>
+                <p class="fp-exp-field__description"><?php esc_html_e('Aggiungi date specifiche oltre alla ricorrenza settimanale.', 'fp-experiences'); ?></p>
+                <div class="fp-exp-repeater" data-repeater="custom_slots" data-repeater-next-index="<?php echo esc_attr((string) count($custom_slots)); ?>">
+                    <div class="fp-exp-repeater__items">
+                        <?php foreach ($custom_slots as $index => $slot) : ?>
+                            <?php $this->render_custom_slot_row((string) $index, $slot); ?>
+                        <?php endforeach; ?>
+                    </div>
+                    <template data-repeater-template>
+                        <?php $this->render_custom_slot_row('__INDEX__', ['date' => '', 'time' => ''], true); ?>
+                    </template>
+                    <p class="fp-exp-repeater__actions">
+                        <button type="button" class="button button-secondary" data-repeater-add><?php esc_html_e('Aggiungi data extra', 'fp-experiences'); ?></button>
+                    </p>
+                </div>
+                <p class="fp-exp-field__description fp-exp-field__description--muted"><?php esc_html_e('Se lasci tutti i campi vuoti non verrà creata alcuna data extra.', 'fp-experiences'); ?></p>
+            </fieldset>
+
+            <fieldset class="fp-exp-fieldset">
                 <legend><?php esc_html_e('Ricorrenza slot', 'fp-experiences'); ?></legend>
                 <div class="fp-exp-field">
                     <p class="fp-exp-field__description"><?php esc_html_e('Configura regole ricorrenti per popolare automaticamente il calendario senza toccare gli slot già esistenti.', 'fp-experiences'); ?></p>
@@ -1336,21 +1355,7 @@ final class ExperienceMetaBoxes
                         <span class="fp-exp-field__label"><?php esc_html_e('Tipo di disponibilità ricorrente', 'fp-experiences'); ?></span>
                         <div class="fp-exp-radio-cards" role="radiogroup">
                             <label
-                                class="fp-exp-radio-card<?php echo 'daily' === $frequency ? ' is-selected' : ''; ?>"
-                                data-recurrence-frequency-card
-                                data-frequency-summary-template="<?php echo esc_attr($this->get_recurrence_frequency_summary_template('daily')); ?>"
-                            >
-                                <input
-                                    type="radio"
-                                    name="fp_exp_availability[recurrence][frequency]"
-                                    value="daily"
-                                    data-recurrence-frequency
-                                    <?php checked($frequency, 'daily'); ?>
-                                />
-                                <span class="fp-exp-radio-card__title"><?php esc_html_e('Giornaliera', 'fp-experiences'); ?></span>
-                            </label>
-                            <label
-                                class="fp-exp-radio-card<?php echo 'weekly' === $frequency ? ' is-selected' : ''; ?>"
+                                class="fp-exp-radio-card is-selected"
                                 data-recurrence-frequency-card
                                 data-frequency-summary-template="<?php echo esc_attr($this->get_recurrence_frequency_summary_template('weekly')); ?>"
                             >
@@ -1359,33 +1364,13 @@ final class ExperienceMetaBoxes
                                     name="fp_exp_availability[recurrence][frequency]"
                                     value="weekly"
                                     data-recurrence-frequency
-                                    <?php checked($frequency, 'weekly'); ?>
+                                    checked
                                 />
                                 <span class="fp-exp-radio-card__title"><?php esc_html_e('Settimanale', 'fp-experiences'); ?></span>
                             </label>
-                            <label
-                                class="fp-exp-radio-card<?php echo 'specific' === $frequency ? ' is-selected' : ''; ?>"
-                                data-recurrence-frequency-card
-                                data-frequency-summary-template="<?php echo esc_attr($this->get_recurrence_frequency_summary_template('specific')); ?>"
-                            >
-                                <input
-                                    type="radio"
-                                    name="fp_exp_availability[recurrence][frequency]"
-                                    value="specific"
-                                    data-recurrence-frequency
-                                    <?php checked($frequency, 'specific'); ?>
-                                />
-                                <span class="fp-exp-radio-card__title"><?php esc_html_e('Date specifiche', 'fp-experiences'); ?></span>
-                            </label>
                         </div>
-                        <p class="fp-exp-field__description" data-recurrence-frequency-help data-frequency="daily" <?php echo 'daily' === $frequency ? '' : 'hidden'; ?>>
-                            <?php esc_html_e('Gli stessi orari sono attivi ogni giorno tra la data di inizio e fine. Gli orari selezionati verranno generati per ogni giorno del periodo indicato.', 'fp-experiences'); ?>
-                        </p>
-                        <p class="fp-exp-field__description" data-recurrence-frequency-help data-frequency="weekly" <?php echo 'weekly' === $frequency ? '' : 'hidden'; ?>>
+                        <p class="fp-exp-field__description" data-recurrence-frequency-help data-frequency="weekly">
                             <?php esc_html_e('Scegli i giorni della settimana in cui ripetere gli orari. Seleziona i giorni attivi della settimana in cui generare gli orari ricorrenti.', 'fp-experiences'); ?>
-                        </p>
-                        <p class="fp-exp-field__description" data-recurrence-frequency-help data-frequency="specific" <?php echo 'specific' === $frequency ? '' : 'hidden'; ?>>
-                            <?php esc_html_e('Usa la data di inizio/fine per delimitare il periodo e aggiungi solo gli slot speciali richiesti. Questa opzione è ideale per stagionalità limitate o weekend particolari: genera slot solo nelle date indicate manualmente.', 'fp-experiences'); ?>
                         </p>
                         <p
                             class="fp-exp-field__description fp-exp-recurrence__summary"
@@ -1463,24 +1448,7 @@ final class ExperienceMetaBoxes
                 </div>
             </fieldset>
 
-            <fieldset class="fp-exp-fieldset">
-                <legend><?php esc_html_e('Slot manuali una tantum', 'fp-experiences'); ?></legend>
-                <p class="fp-exp-field__description"><?php esc_html_e('Inserisci qui le eccezioni al calendario standard, ad esempio eventi speciali o date extra.', 'fp-experiences'); ?></p>
-                <div class="fp-exp-repeater" data-repeater="custom_slots" data-repeater-next-index="<?php echo esc_attr((string) count($custom_slots)); ?>">
-                    <div class="fp-exp-repeater__items">
-                        <?php foreach ($custom_slots as $index => $slot) : ?>
-                            <?php $this->render_custom_slot_row((string) $index, $slot); ?>
-                        <?php endforeach; ?>
-                    </div>
-                    <template data-repeater-template>
-                        <?php $this->render_custom_slot_row('__INDEX__', ['date' => '', 'time' => ''], true); ?>
-                    </template>
-                    <p class="fp-exp-repeater__actions">
-                        <button type="button" class="button button-secondary" data-repeater-add><?php esc_html_e('Aggiungi slot manuale', 'fp-experiences'); ?></button>
-                    </p>
-                </div>
-                <p class="fp-exp-field__description fp-exp-field__description--muted"><?php esc_html_e('Se lasci tutti i campi vuoti non verrà creato alcuno slot extra.', 'fp-experiences'); ?></p>
-            </fieldset>
+            
         </section>
         <?php
     }
