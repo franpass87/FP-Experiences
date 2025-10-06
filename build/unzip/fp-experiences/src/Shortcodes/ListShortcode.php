@@ -152,7 +152,7 @@ final class ListShortcode extends BaseShortcode
 
         if ('cards' === $variant) {
             if (0 === $layout['desktop']) {
-                $layout['desktop'] = 4;
+                $layout['desktop'] = 2;
             }
 
             if (0 === $layout['tablet']) {
