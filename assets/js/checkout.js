@@ -142,6 +142,7 @@
     function init() {
         document.querySelectorAll('[data-fp-shortcode="checkout"] form.fp-exp-checkout__form').forEach((form) => {
             const errorSummary = form.querySelector('[data-fp-error-summary]');
+            const container = form.closest('[data-fp-shortcode="checkout"]');
 
             form.querySelectorAll('input, select, textarea').forEach((field) => {
                 const eventName = field.type === 'checkbox' ? 'change' : 'input';
@@ -215,12 +216,17 @@
                     // Try REST first
                     if (restUrl) {
                         try {
+                            const headers = { 'Content-Type': 'application/json' };
+                            // Prova a inviare il nonce specifico di checkout anche come header
+                            if (config.checkoutNonce) {
+                                headers['X-WP-Nonce'] = config.checkoutNonce;
+                            } else if (config.restNonce) {
+                                headers['X-WP-Nonce'] = config.restNonce;
+                            }
+
                             const res = await fetch(restUrl + 'checkout', {
                                 method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json',
-                                    'X-WP-Nonce': config.restNonce || '',
-                                },
+                                headers,
                                 credentials: 'same-origin',
                                 body: JSON.stringify(body),
                             });
@@ -228,6 +234,8 @@
                             const data = await res.json().catch(() => ({}));
                             if (res.ok && data && data.payment_url) {
                                 paymentUrl = String(data.payment_url);
+                            } else if ((res.status === 401 || res.status === 403)) {
+                                // Permesso negato: ricadi immediatamente su AJAX
                             } else if (!res.ok && data && data.message) {
                                 showGenericError(String(data.message));
                             }
@@ -274,6 +282,23 @@
                     setSubmitting(false);
                 }
             }, { once: false });
+
+            // Pulsante sblocco carrello
+            const unlockBtn = container && container.querySelector('.fp-exp-checkout__unlock');
+            if (unlockBtn) {
+                unlockBtn.addEventListener('click', async () => {
+                    const config = (typeof window !== 'undefined' && window.fpExpConfig) ? window.fpExpConfig : {};
+                    const restUrl = (config.restUrl || '').replace(/\/?$/, '/');
+                    try {
+                        if (restUrl) {
+                            const headers = { 'Content-Type': 'application/json' };
+                            if (config.restNonce) headers['X-WP-Nonce'] = config.restNonce;
+                            await fetch(restUrl + 'cart/unlock', { method: 'POST', headers, credentials: 'same-origin' });
+                        }
+                    } catch (e) {}
+                    location.reload();
+                });
+            }
         });
     }
 

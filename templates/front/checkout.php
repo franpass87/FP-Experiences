@@ -137,6 +137,9 @@ $container_class = 'fp-exp fp-exp-checkout ' . esc_attr($scope_class);
                     <p class="fp-exp-checkout__locked-notice">
                         <?php esc_html_e('Payment is currently being processed. If you have completed checkout, you can close this page.', 'fp-experiences'); ?>
                     </p>
+                    <button type="button" class="fp-exp-checkout__unlock">
+                        <?php echo esc_html__('Annulla e riprova', 'fp-experiences'); ?>
+                    </button>
                 <?php endif; ?>
             </section>
         </div>

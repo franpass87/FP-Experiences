@@ -39,6 +39,8 @@ final class Cart
 
     private const COOKIE_TTL = WEEK_IN_SECONDS;
 
+    private const LOCK_TTL = 900; // 15 minuti
+
     private static ?Cart $instance = null;
 
     private ?string $session_id = null;
@@ -133,7 +135,19 @@ final class Cart
     {
         $data = $this->get_data();
 
-        return ! empty($data['locked']);
+        if (empty($data['locked'])) {
+            return false;
+        }
+
+        // Sblocca automaticamente se il lock è più vecchio del TTL
+        $locked_at = isset($data['locked_at']) ? (string) $data['locked_at'] : '';
+        $timestamp = $locked_at ? strtotime($locked_at) : 0;
+        if ($timestamp && (time() - $timestamp) > self::LOCK_TTL) {
+            $this->unlock();
+            return false;
+        }
+
+        return true;
     }
 
     /**
@@ -244,7 +258,13 @@ final class Cart
     public function ensure_can_modify(): ?WP_Error
     {
         if ($this->is_locked()) {
-            return new WP_Error('fp_exp_cart_locked', __('The experience cart is locked while payment is in progress.', 'fp-experiences'));
+            return new WP_Error(
+                'fp_exp_cart_locked',
+                __('The experience cart is locked while payment is in progress.', 'fp-experiences'),
+                [
+                    'status' => 423, // Locked
+                ]
+            );
         }
 
         return $this->check_woocommerce_cart_state();
@@ -273,7 +293,13 @@ final class Cart
         }
 
         if ((int) $wc_cart->get_cart_contents_count() > 0) {
-            return new WP_Error('fp_exp_cart_conflict', __('Svuota il carrello di WooCommerce prima di prenotare un’esperienza.', 'fp-experiences'));
+            return new WP_Error(
+                'fp_exp_cart_conflict',
+                __('Svuota il carrello di WooCommerce prima di prenotare un’esperienza.', 'fp-experiences'),
+                [
+                    'status' => 409, // Conflict
+                ]
+            );
         }
 
         return null;

@@ -131,11 +131,38 @@ final class Checkout
                 },
             ]
         );
+
+        // Endpoint per sbloccare manualmente il carrello se rimasto bloccato
+        register_rest_route(
+            'fp-exp/v1',
+            '/cart/unlock',
+            [
+                'methods' => 'POST',
+                'permission_callback' => function (WP_REST_Request $request): bool {
+                    // Permettiamo solo stessa origine o nonce REST standard
+                    return Helpers::verify_public_rest_request($request);
+                },
+                'callback' => function () {
+                    $this->cart->unlock();
+
+                    return rest_ensure_response([
+                        'ok' => true,
+                        'locked' => $this->cart->is_locked(),
+                    ]);
+                },
+            ]
+        );
     }
 
     public function check_checkout_permission(WP_REST_Request $request): bool
     {
-        return Helpers::verify_rest_nonce($request, 'fp-exp-checkout');
+        // Consenti accesso se presente nonce specifico di checkout
+        if (Helpers::verify_rest_nonce($request, 'fp-exp-checkout')) {
+            return true;
+        }
+
+        // In alternativa accetta il nonce REST standard o stessa origine (anti-abuso di base)
+        return Helpers::verify_public_rest_request($request);
     }
 
     public function handle_ajax(): void
@@ -144,10 +171,22 @@ final class Checkout
 
         $nonce = isset($_POST['nonce']) ? sanitize_text_field(wp_unslash((string) $_POST['nonce'])) : '';
         $payload = [
-            'contact' => isset($_POST['contact']) && is_array($_POST['contact']) ? $_POST['contact'] : [],
-            'billing' => isset($_POST['billing']) && is_array($_POST['billing']) ? $_POST['billing'] : [],
-            'consent' => isset($_POST['consent']) && is_array($_POST['consent']) ? $_POST['consent'] : [],
+            'contact' => isset($_POST['contact']) ? $_POST['contact'] : [],
+            'billing' => isset($_POST['billing']) ? $_POST['billing'] : [],
+            'consent' => isset($_POST['consent']) ? $_POST['consent'] : [],
         ];
+
+        // Supporta payload JSON serializzati come stringa
+        foreach (['contact', 'billing', 'consent'] as $key) {
+            if (is_string($payload[$key] ?? null)) {
+                $decoded = json_decode((string) $payload[$key], true);
+                if (is_array($decoded)) {
+                    $payload[$key] = $decoded;
+                } else {
+                    $payload[$key] = [];
+                }
+            }
+        }
 
         $result = $this->process_checkout($nonce, $payload);
 
