@@ -1725,12 +1725,30 @@
             const checkoutNonce = (config && typeof config.checkoutNonce === 'string') ? config.checkoutNonce : '';
             const ajaxUrl = (config && typeof config.ajaxUrl === 'string') ? config.ajaxUrl : '';
 
+            // Warmup: forziamo la creazione del cookie fp_exp_sid prima del checkout
+            if (restUrl) {
+                try {
+                    const base = restUrl.replace(/\/?$/, '/');
+                    const warmHeaders = {};
+                    if (restNonce) { warmHeaders['X-WP-Nonce'] = restNonce; }
+                    fetch(base + 'cart/status', {
+                        method: 'GET',
+                        credentials: 'same-origin',
+                        headers: warmHeaders,
+                    }).catch(() => {});
+                } catch (e) {
+                    // ignora errori warmup
+                }
+            }
+
             async function startPrecheckout() {
                 if (!restUrl) {
                     return;
                 }
 
-                const url = restUrl.replace(/\/?$/, '/') + 'checkout';
+                const base = restUrl.replace(/\/?$/, '/');
+                const setUrl = base + 'cart/set';
+                const url = base + 'checkout';
                 const headers = {
                     'Content-Type': 'application/json',
                 };
@@ -1741,11 +1759,33 @@
                 const body = { nonce: checkoutNonce, contact: {}, billing: {}, consent: {} };
 
                 let paymentUrl = '';
+                let lastErrorMessage = '';
+
+                try {
+                    const detail = (window && window.__fpLastWidgetDetail) ? window.__fpLastWidgetDetail : null;
+                    if (detail && typeof detail === 'object') {
+                        const setRes = await fetch(setUrl, {
+                            method: 'POST',
+                            headers,
+                            credentials: 'same-origin',
+                            body: JSON.stringify({
+                                experience_id: detail.experienceId,
+                                slot_id: detail.slotId || 0,
+                                tickets: detail.tickets || {},
+                                addons: detail.addons || {},
+                            }),
+                        });
+                        await setRes.json().catch(() => ({}));
+                    }
+                } catch (e) {}
+
                 try {
                     const res = await fetch(url, { method: 'POST', headers, body: JSON.stringify(body), credentials: 'same-origin' });
                     const data = await res.json().catch(() => ({}));
                     if (res.ok && data && data.payment_url) {
                         paymentUrl = String(data.payment_url);
+                    } else if (!res.ok && data && data.message) {
+                        lastErrorMessage = String(data.message);
                     }
                 } catch (e) {
                     // ignora errori rete
@@ -1754,6 +1794,10 @@
                 if (paymentUrl) {
                     window.location.assign(paymentUrl);
                     return;
+                }
+
+                if (lastErrorMessage) {
+                    try { window.alert(lastErrorMessage); } catch (_) {}
                 }
 
                 // Fallback via admin-ajax.php se la REST fallisce o non fornisce payment_url
@@ -1775,6 +1819,8 @@
                         const ajaxData = await resAjax.json().catch(() => ({}));
                         if (ajaxData && ajaxData.success && ajaxData.data && ajaxData.data.payment_url) {
                             paymentUrl = String(ajaxData.data.payment_url);
+                        } else if (ajaxData && ajaxData.data && ajaxData.data.message) {
+                            lastErrorMessage = String(ajaxData.data.message);
                         }
                     } catch (e) {
                         // ignora errori rete
@@ -1785,9 +1831,14 @@
                     window.location.assign(paymentUrl);
                     return;
                 }
+
+                if (lastErrorMessage) {
+                    try { window.alert(lastErrorMessage); } catch (_) {}
+                }
             }
 
-            document.addEventListener('fpExpWidgetCheckout', () => {
+            document.addEventListener('fpExpWidgetCheckout', (evt) => {
+                try { window.__fpLastWidgetDetail = evt && evt.detail ? evt.detail : null; } catch (_) {}
                 startPrecheckout();
             });
         } catch (e) {

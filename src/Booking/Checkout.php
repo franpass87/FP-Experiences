@@ -14,6 +14,7 @@ use WP_REST_Response;
 
 use function __;
 use function add_action;
+use function get_option;
 use function is_array;
 use function nocache_headers;
 use function register_rest_route;
@@ -81,6 +82,52 @@ final class Checkout
                     }
 
                     return rest_ensure_response($payload);
+                },
+            ]
+        );
+
+        // Endpoint per popolare il carrello prima del checkout (chiamato dal widget)
+        register_rest_route(
+            'fp-exp/v1',
+            '/cart/set',
+            [
+                'methods' => 'POST',
+                'permission_callback' => function (WP_REST_Request $request): bool {
+                    // Richiede stessa origine o nonce REST standard
+                    return Helpers::verify_public_rest_request($request);
+                },
+                'callback' => function (WP_REST_Request $request) {
+                    nocache_headers();
+
+                    $experience_id = (int) $request->get_param('experience_id');
+                    $slot_id = (int) $request->get_param('slot_id');
+
+                    // tickets e addons possono essere mappe o array
+                    $tickets = $request->get_param('tickets');
+                    $addons = $request->get_param('addons');
+                    $tickets = is_array($tickets) ? $tickets : [];
+                    $addons = is_array($addons) ? $addons : [];
+
+                    if ($experience_id <= 0) {
+                        return new WP_Error('fp_exp_set_cart_invalid', __('Experience ID non valido.', 'fp-experiences'), ['status' => 400]);
+                    }
+
+                    $items = [[
+                        'experience_id' => $experience_id,
+                        'slot_id' => max(0, $slot_id),
+                        'tickets' => $tickets,
+                        'addons' => $addons,
+                        'totals' => [],
+                    ]];
+
+                    $this->cart->set_items($items, [
+                        'currency' => get_option('woocommerce_currency', 'EUR'),
+                    ]);
+
+                    return rest_ensure_response([
+                        'ok' => true,
+                        'has_items' => $this->cart->has_items(),
+                    ]);
                 },
             ]
         );
