@@ -44,6 +44,8 @@ final class AdminMenu
 
     private ?ExperiencePageCreator $page_creator;
 
+    private ImporterPage $importer_page;
+
     public function __construct(
         SettingsPage $settings_page,
         CalendarAdmin $calendar_admin,
@@ -54,6 +56,7 @@ final class AdminMenu
         CheckinPage $checkin_page,
         OrdersPage $orders_page,
         HelpPage $help_page,
+        ImporterPage $importer_page,
         ?ExperiencePageCreator $page_creator = null
     ) {
         $this->settings_page = $settings_page;
@@ -65,6 +68,7 @@ final class AdminMenu
         $this->checkin_page = $checkin_page;
         $this->orders_page = $orders_page;
         $this->help_page = $help_page;
+        $this->importer_page = $importer_page;
         $this->page_creator = $page_creator;
     }
 
@@ -105,6 +109,15 @@ final class AdminMenu
             esc_html__('Nuova esperienza', 'fp-experiences'),
             'edit_fp_experiences',
             'post-new.php?post_type=fp_experience'
+        );
+
+        add_submenu_page(
+            'fp_exp_dashboard',
+            esc_html__('Importer Esperienze', 'fp-experiences'),
+            esc_html__('Importer Esperienze', 'fp-experiences'),
+            Helpers::management_capability(),
+            'fp_exp_importer',
+            [$this->importer_page, 'render_page']
         );
 
         if (Helpers::meeting_points_enabled()) {

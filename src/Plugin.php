@@ -20,6 +20,7 @@ use FP_Exp\Admin\EmailsPage;
 use FP_Exp\Admin\CheckinPage;
 use FP_Exp\Admin\OrdersPage;
 use FP_Exp\Admin\HelpPage;
+use FP_Exp\Admin\ImporterPage;
 use FP_Exp\Admin\ExperiencePageCreator;
 use FP_Exp\Admin\Onboarding;
 use FP_Exp\Localization\AutoTranslator;
@@ -116,6 +117,8 @@ final class Plugin
 
     private ?HelpPage $help_page = null;
 
+    private ?ImporterPage $importer_page = null;
+
     private ?ExperiencePageCreator $page_creator = null;
 
     private ?AdminMenu $admin_menu = null;
@@ -196,6 +199,7 @@ final class Plugin
             $this->checkin_page = new CheckinPage();
             $this->orders_page = new OrdersPage();
             $this->help_page = new HelpPage();
+            $this->importer_page = new ImporterPage();
             $this->page_creator = new ExperiencePageCreator();
             $this->onboarding = new Onboarding();
             $this->language_admin = new LanguageAdmin();
@@ -209,6 +213,7 @@ final class Plugin
                 $this->checkin_page,
                 $this->orders_page,
                 $this->help_page,
+                $this->importer_page,
                 $this->page_creator
             );
         }
@@ -291,6 +296,10 @@ final class Plugin
 
         if ($this->checkin_page instanceof CheckinPage) {
             $this->guard([$this->checkin_page, 'register_hooks'], CheckinPage::class, 'register_hooks');
+        }
+
+        if ($this->importer_page instanceof ImporterPage) {
+            $this->guard([$this->importer_page, 'register_hooks'], ImporterPage::class, 'register_hooks');
         }
 
         if ($this->page_creator instanceof ExperiencePageCreator) {
