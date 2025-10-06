@@ -62,6 +62,43 @@
         return div.innerHTML;
     }
 
+    /**
+     * Esegue una chiamata fetch con retry automatico per errori temporanei
+     * @param {string} url URL da chiamare
+     * @param {Object} options Opzioni fetch
+     * @param {number} maxRetries Numero massimo di tentativi (default 3)
+     * @returns {Promise<Response>}
+     */
+    async function fetchWithRetry(url, options = {}, maxRetries = 3) {
+        let lastError;
+        
+        for (let attempt = 0; attempt < maxRetries; attempt++) {
+            try {
+                const response = await fetch(url, options);
+                
+                // Non ritentare per errori client (4xx) tranne 408 e 429
+                if (response.ok || (response.status >= 400 && response.status < 500 && response.status !== 408 && response.status !== 429)) {
+                    return response;
+                }
+                
+                // Per errori 5xx o 408/429, ritenta
+                lastError = new Error(`HTTP ${response.status}`);
+                
+            } catch (error) {
+                lastError = error;
+            }
+            
+            // Non ritentare sull'ultimo tentativo
+            if (attempt < maxRetries - 1) {
+                // Exponential backoff: 1s, 2s, 4s
+                const delay = Math.pow(2, attempt) * 1000;
+                await new Promise(resolve => setTimeout(resolve, delay));
+            }
+        }
+        
+        throw lastError || new Error('Fetch failed after retries');
+    }
+
     function formatCurrency(value, currency) {
         const amount = typeof value === 'number' ? value : parseFloat(String(value || '0'));
         const safeCurrency = currency || defaultCurrency;
@@ -277,6 +314,7 @@
         }
 
         const locale = document.documentElement.lang || 'en';
+        const tz = (window.fpExpConfig && window.fpExpConfig.timezone) || null;
 
         if (slot.start_iso) {
             const date = new Date(slot.start_iso);
@@ -286,10 +324,12 @@
                         weekday: 'short',
                         month: 'short',
                         day: 'numeric',
+                        ...(tz ? { timeZone: tz } : {}),
                     }).format(date);
                     const timeLabel = new Intl.DateTimeFormat(locale, {
                         hour: '2-digit',
                         minute: '2-digit',
+                        ...(tz ? { timeZone: tz } : {}),
                     }).format(date);
                     return {
                         label: timeLabel,
@@ -317,10 +357,10 @@
         }
 
         const messages = {
-            name: form.getAttribute('data-error-name') || 'Inserisci il tuo nome.',
-            email: form.getAttribute('data-error-email') || 'Inserisci il tuo indirizzo email.',
-            emailFormat: form.getAttribute('data-error-email-format') || 'Inserisci un indirizzo email valido.',
-            privacy: form.getAttribute('data-error-privacy') || 'Accetta l\'informativa privacy per continuare.',
+            name: form.getAttribute('data-error-name') || 'Enter your name.',
+            email: form.getAttribute('data-error-email') || 'Enter your email address.',
+            emailFormat: form.getAttribute('data-error-email-format') || 'Enter a valid email address.',
+            privacy: form.getAttribute('data-error-privacy') || 'Accept the privacy policy to continue.',
         };
 
         const nameField = form.querySelector('input[name="name"]');
@@ -1399,7 +1439,7 @@
                             if (redeemButton) {
                                 redeemButton.disabled = true;
                             }
-                            showFeedback(detailFeedback, escapeHtml(localize('Nessuno slot futuro disponibile. Contatta l’operatore per pianificare manualmente.')), true);
+                            showFeedback(detailFeedback, escapeHtml(localize('Nessuno slot futuro disponibile. Contatta l\'operatore per pianificare manualmente.')), true);
                         }
                     }
                 } catch (error) {
@@ -1452,7 +1492,7 @@
                     const data = await response.json().catch(() => ({}));
 
                     if (!response.ok || (data && data.code)) {
-                        const message = data && data.message ? data.message : localize('Non è stato possibile riscattare il voucher. Prova un altro slot o contatta l’assistenza.');
+                        const message = data && data.message ? data.message : localize('Non è stato possibile riscattare il voucher. Prova un altro slot o contatta l\'assistenza.');
                         showFeedback(detailFeedback, escapeHtml(message), true);
                         if (slotSelect) {
                             slotSelect.disabled = false;
@@ -1527,7 +1567,7 @@
                         redeemButton.setAttribute('aria-disabled', 'true');
                     }
                 } catch (error) {
-                    showFeedback(detailFeedback, escapeHtml(localize('Non è stato possibile riscattare il voucher. Prova un altro slot o contatta l’assistenza.')), true);
+                    showFeedback(detailFeedback, escapeHtml(localize('Non è stato possibile riscattare il voucher. Prova un altro slot o contatta l\'assistenza.')), true);
                     if (slotSelect) {
                         slotSelect.disabled = false;
                     }
@@ -1674,6 +1714,52 @@
         setupMeetingPoints();
         setupExperiencePages();
         setupGiftRedeem();
+
+        // Avvio diretto del pre-checkout: crea ordine e reindirizza alla pagina pagamento WooCommerce
+        try {
+            const config = (typeof window !== 'undefined' && window.fpExpConfig) ? window.fpExpConfig : {};
+            const restUrl = (config && typeof config.restUrl === 'string') ? config.restUrl : '';
+            const restNonce = (config && typeof config.restNonce === 'string') ? config.restNonce : '';
+            const checkoutNonce = (config && typeof config.checkoutNonce === 'string') ? config.checkoutNonce : '';
+
+            async function startPrecheckout() {
+                if (!restUrl) {
+                    return;
+                }
+
+                const url = restUrl.replace(/\/?$/, '/') + 'checkout';
+                const headers = {
+                    'Content-Type': 'application/json',
+                };
+                if (restNonce) {
+                    headers['X-WP-Nonce'] = restNonce;
+                }
+
+                const body = { nonce: checkoutNonce, contact: {}, billing: {}, consent: {} };
+
+                let paymentUrl = '';
+                try {
+                    const res = await fetch(url, { method: 'POST', headers, body: JSON.stringify(body), credentials: 'same-origin' });
+                    const data = await res.json().catch(() => ({}));
+                    if (res.ok && data && data.payment_url) {
+                        paymentUrl = String(data.payment_url);
+                    }
+                } catch (e) {
+                    // ignora errori rete
+                }
+
+                if (paymentUrl) {
+                    window.location.assign(paymentUrl);
+                    return;
+                }
+            }
+
+            document.addEventListener('fpExpWidgetCheckout', () => {
+                startPrecheckout();
+            });
+        } catch (e) {
+            // non bloccare l'inizializzazione per errori qui
+        }
     }
 
     function setupListing(section) {
@@ -1781,6 +1867,10 @@
 
         const slotsByDate = groupSlotsByDate(config.slots || []);
         const slotsContainer = container.querySelector('.fp-exp-slots');
+        const dropdown = container.querySelector('[data-fp-date-dropdown]');
+        const yearSelect = dropdown ? dropdown.querySelector('.fp-exp-select-year') : null;
+        const monthSelect = dropdown ? dropdown.querySelector('.fp-exp-select-month') : null;
+        const daySelect = dropdown ? dropdown.querySelector('.fp-exp-select-day') : null;
         const summaryContainer = container.querySelector('.fp-exp-summary');
         const summaryButton = container.querySelector('.fp-exp-summary__cta');
         const rtbConfig = config.rtb || {};
@@ -2049,6 +2139,7 @@
         });
 
         const dayButtons = Array.from(container.querySelectorAll('.fp-exp-calendar__day'));
+        const dateInput = container.querySelector('[data-fp-date-input]');
 
         dayButtons.forEach((button) => {
             if (!button.disabled && !button.hasAttribute('aria-pressed')) {
@@ -2080,6 +2171,169 @@
                 refreshSummary();
             });
         });
+
+        // Input nativo data (YYYY-MM-DD)
+        if (dateInput && dateInput instanceof HTMLInputElement) {
+            const availableDates = Object.keys(slotsByDate).sort();
+            const hasDate = (val) => availableDates.includes(val);
+
+            // Se min/max non sono nel markup, impostali dai dati disponibili
+            if (!dateInput.hasAttribute('min') && availableDates.length > 0) {
+                dateInput.min = availableDates[0];
+            }
+            if (!dateInput.hasAttribute('max') && availableDates.length > 0) {
+                dateInput.max = availableDates[availableDates.length - 1];
+            }
+
+            // Attributi ARIA per accessibilità
+            dateInput.setAttribute('aria-label', localize('Seleziona data esperienza'));
+            dateInput.setAttribute('aria-describedby', 'fp-exp-date-help');
+            
+            // Aggiungi testo di aiuto nascosto visivamente ma accessibile agli screen reader
+            const helpText = document.createElement('span');
+            helpText.id = 'fp-exp-date-help';
+            helpText.className = 'screen-reader-text';
+            helpText.textContent = localize('Usa i tasti freccia per navigare tra le date disponibili');
+            helpText.style.cssText = 'position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border-width:0;';
+            dateInput.parentNode.insertBefore(helpText, dateInput.nextSibling);
+
+            // Apri il selettore quando l'utente interagisce con l'input
+            const openNativePicker = () => {
+                // showPicker è supportato da browser moderni
+                if (typeof dateInput.showPicker === 'function') {
+                    try { dateInput.showPicker(); } catch (e) { /* ignore */ }
+                } else {
+                    // fallback: porta il focus, su alcuni browser apre il widget
+                    dateInput.focus();
+                }
+            };
+            dateInput.addEventListener('focus', openNativePicker);
+            dateInput.addEventListener('click', openNativePicker);
+            dateInput.addEventListener('keydown', (ev) => {
+                if (ev.key === 'Enter' || ev.key === ' ') {
+                    ev.preventDefault();
+                    openNativePicker();
+                }
+            });
+
+            dateInput.addEventListener('change', () => {
+                const value = (dateInput.value || '').trim();
+                if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+                    renderSlots(slotsContainer, [], state);
+                    return;
+                }
+                // accetta qualsiasi giorno ma se non ha slot, mostra lista vuota
+                state.selectedDate = value;
+                state.selectedSlot = null;
+                renderSlots(slotsContainer, slotsByDate[value] || [], state);
+                refreshSummary();
+            });
+        }
+
+        // Dropdown date selection (YYYY-MM-DD keys from slotsByDate)
+        if (dropdown && yearSelect && monthSelect && daySelect) {
+            const availableDates = Object.keys(slotsByDate).sort();
+            const years = Array.from(new Set(availableDates.map((d) => d.slice(0, 4))));
+
+            // Populate years
+            years.forEach((y) => {
+                const opt = document.createElement('option');
+                opt.value = y;
+                opt.textContent = y;
+                yearSelect.appendChild(opt);
+            });
+
+            const toMonthLabel = (y, m) => {
+                const monthIndex = parseInt(m, 10) - 1;
+                const date = new Date(Number(y), monthIndex, 1);
+                try {
+                    return date.toLocaleString(undefined, { month: 'long' });
+                } catch (e) {
+                    return String(m);
+                }
+            };
+
+            const populateMonths = (y) => {
+                monthSelect.innerHTML = '<option value="" selected disabled>Mese</option>';
+                daySelect.innerHTML = '<option value="" selected disabled>Giorno</option>';
+                daySelect.disabled = true;
+                if (!y) {
+                    monthSelect.disabled = true;
+                    return;
+                }
+                const months = Array.from(new Set(availableDates
+                    .filter((d) => d.startsWith(y + '-'))
+                    .map((d) => d.slice(5, 7))));
+                months.forEach((m) => {
+                    const opt = document.createElement('option');
+                    opt.value = m;
+                    opt.textContent = toMonthLabel(y, m);
+                    monthSelect.appendChild(opt);
+                });
+                monthSelect.disabled = months.length === 0;
+            };
+
+            const populateDays = (y, m) => {
+                daySelect.innerHTML = '<option value="" selected disabled>Giorno</option>';
+                if (!y || !m) {
+                    daySelect.disabled = true;
+                    return;
+                }
+                const monthIndex = parseInt(m, 10) - 1;
+                const totalDays = new Date(Number(y), monthIndex + 1, 0).getDate();
+                const availableSet = new Set(
+                    availableDates
+                        .filter((d) => d.startsWith(y + '-' + m + '-'))
+                        .map((d) => d.slice(8, 10))
+                );
+
+                for (let day = 1; day <= totalDays; day++) {
+                    const dd = String(day).padStart(2, '0');
+                    const isAvailable = availableSet.has(dd);
+                    const opt = document.createElement('option');
+                    opt.value = dd;
+                    opt.textContent = String(day);
+                    if (!isAvailable) {
+                        opt.disabled = true;
+                        opt.className = 'is-unavailable';
+                    }
+                    daySelect.appendChild(opt);
+                }
+
+                daySelect.disabled = totalDays === 0;
+            };
+
+            const onDateChange = () => {
+                const y = yearSelect.value;
+                const m = monthSelect.value;
+                const d = daySelect.value;
+                const hasFull = y && m && d;
+                if (!hasFull) {
+                    renderSlots(slotsContainer, [], state);
+                    return;
+                }
+                const dateKey = `${y}-${m}-${d}`;
+                state.selectedDate = dateKey;
+                state.selectedSlot = null;
+                renderSlots(slotsContainer, slotsByDate[dateKey] || [], state);
+                refreshSummary();
+            };
+
+            yearSelect.addEventListener('change', () => {
+                populateMonths(yearSelect.value);
+                onDateChange();
+            });
+            monthSelect.addEventListener('change', () => {
+                populateDays(yearSelect.value, monthSelect.value);
+                onDateChange();
+            });
+            daySelect.addEventListener('change', onDateChange);
+
+            // Initial state
+            yearSelect.disabled = years.length === 0;
+            monthSelect.disabled = true;
+            daySelect.disabled = true;
+        }
 
         container.addEventListener('click', (event) => {
             const rawTarget = event.target;
@@ -2164,28 +2418,6 @@
             updateTicketQuantityState(target, nextValue);
             refreshSummary();
         });
-
-        // Supporta apertura del selettore data cliccando/focus sull'input
-        (function() {
-            const di = container.querySelector('[data-fp-date-input]');
-            if (di && di instanceof HTMLInputElement) {
-                const openPicker = () => {
-                    if (typeof di.showPicker === 'function') {
-                        try { di.showPicker(); } catch (e) {}
-                    } else {
-                        di.focus();
-                    }
-                };
-                di.addEventListener('focus', openPicker);
-                di.addEventListener('click', openPicker);
-                di.addEventListener('keydown', function(ev){
-                    if (ev.key === 'Enter' || ev.key === ' ') {
-                        ev.preventDefault();
-                        openPicker();
-                    }
-                });
-            }
-        })();
 
         if (!rtbEnabled && summaryButton) {
             summaryButton.addEventListener('click', () => {
@@ -2280,6 +2512,8 @@
                     nonce: rtbNonce,
                     experience_id: parseInt(payload.experience_id || '0', 10) || 0,
                     slot_id: parseInt(payload.slot_id || '0', 10) || 0,
+                    start: payload.start || '',
+                    end: payload.end || '',
                     tickets,
                     addons,
                     mode: requestedMode,
@@ -2347,6 +2581,106 @@
 
         const allDayItems = Array.from(container.querySelectorAll('.fp-exp-calendar-only__day'));
 
+        // Cache locale per slot con TTL di 60 secondi
+        const slotsCache = new Map();
+        const CACHE_TTL = 60000; // 1 minuto
+
+        async function loadSlotsForDate(dateKey, useCache = true) {
+            const slotsContainer = container.querySelector('.fp-exp-slots');
+            if (!slotsContainer) {
+                return;
+            }
+
+            // Verifica cache
+            const cacheKey = `${experienceId}-${dateKey}`;
+            if (useCache) {
+                const cached = slotsCache.get(cacheKey);
+                if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+                    renderSlots(slotsContainer, cached.data, { selectedSlot: null });
+                    return;
+                }
+            }
+
+            // placeholder loading
+            slotsContainer.innerHTML = '';
+            const loading = document.createElement('p');
+            loading.className = 'fp-exp-slots__placeholder';
+            loading.textContent = container.getAttribute('data-loading-label') || 'Caricamento…';
+            slotsContainer.appendChild(loading);
+
+            try {
+                const url = new URL(`${pluginConfig.restUrl}availability`);
+                url.searchParams.set('experience', String(experienceId));
+                url.searchParams.set('start', dateKey);
+                url.searchParams.set('end', dateKey);
+                
+                // Usa fetchWithRetry per gestire errori temporanei
+                const response = await fetchWithRetry(url.toString(), {
+                    credentials: 'same-origin',
+                    headers: buildRestHeaders(),
+                }, 3);
+                
+                // Gestione errori HTTP specifica
+                if (!response.ok) {
+                    let errorMessage = container.getAttribute('data-error-label') || 'Impossibile caricare le fasce';
+                    if (response.status === 404) {
+                        errorMessage = 'Esperienza non trovata';
+                    } else if (response.status === 401 || response.status === 403) {
+                        errorMessage = 'Accesso negato. Ricarica la pagina e riprova.';
+                    } else if (response.status >= 500) {
+                        errorMessage = 'Errore del server. Riprova tra qualche minuto.';
+                    }
+                    throw new Error(errorMessage);
+                }
+                
+                const data = await response.json().catch(() => ({}));
+                const rawSlots = Array.isArray(data.slots) ? data.slots : [];
+                const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+                const mapped = rawSlots.map((s) => {
+                    const start = String(s.start || '');
+                    const end = String(s.end || '');
+                    const toLocal = (sql) => {
+                        const d = new Date(String(sql).replace(' ', 'T') + 'Z');
+                        if (Number.isNaN(d.getTime())) return '';
+                        try {
+                            // Fix: usa il timezone locale invece di UTC
+                            return new Intl.DateTimeFormat(undefined, { 
+                                hour: '2-digit', 
+                                minute: '2-digit', 
+                                timeZone: tz 
+                            }).format(d);
+                        } catch (e) {
+                            const hh = String(d.getUTCHours()).padStart(2, '0');
+                            const mm = String(d.getUTCMinutes()).padStart(2, '0');
+                            return `${hh}:${mm}`;
+                        }
+                    };
+                    return {
+                        id: start, // synthetic id
+                        time: toLocal(start),
+                        remaining: parseInt(s.capacity_remaining || s.capacity_total || 0, 10),
+                        start_iso: start.replace(' ', 'T') + 'Z',
+                        end_iso: end.replace(' ', 'T') + 'Z',
+                    };
+                });
+                
+                // Salva in cache
+                slotsCache.set(cacheKey, {
+                    data: mapped,
+                    timestamp: Date.now()
+                });
+                
+                renderSlots(slotsContainer, mapped, { selectedSlot: null });
+            } catch (e) {
+                const error = document.createElement('p');
+                error.className = 'fp-exp-slots__placeholder';
+                error.textContent = e.message || container.getAttribute('data-error-label') || 'Impossibile caricare le fasce';
+                slotsContainer.innerHTML = '';
+                slotsContainer.appendChild(error);
+            }
+        }
+
+        // Evidenziazione giorno e gestione espansione slot + fetch availability
         allDayItems.forEach((dayItem) => {
             dayItem.addEventListener('click', (event) => {
                 const target = event.target;
@@ -2356,7 +2690,7 @@
 
                 const isSlot = Boolean(target.closest('.fp-exp-calendar-only__slot'));
                 if (isSlot) {
-                    return;
+                    return; // i click sugli slot hanno il loro comportamento nativo
                 }
 
                 const date = dayItem.getAttribute('data-date') || '';
@@ -2364,20 +2698,26 @@
                     return;
                 }
 
+                // Toggle selezione visiva
                 allDayItems.forEach((li) => li.classList.toggle('is-selected', li === dayItem));
 
+                // Assicurati che la lista slot sia visibile se esiste
                 const slots = dayItem.querySelector('.fp-exp-calendar-only__slots');
                 if (slots) {
+                    // Collassa le altre
                     container.querySelectorAll('.fp-exp-calendar-only__slots').forEach((ul) => {
                         if (ul !== slots) {
                             ul.hidden = true;
                         }
                     });
                     slots.hidden = false;
+                    // Carica gli slot del giorno via availability
+                    loadSlotsForDate(date);
                 }
             });
         });
 
+        // Accessibilità: tasti invio/spazio sul giorno
         allDayItems.forEach((dayItem) => {
             dayItem.setAttribute('tabindex', '0');
             dayItem.addEventListener('keydown', (ev) => {
@@ -2414,6 +2754,10 @@
             button.setAttribute('data-slot-id', slot.id);
             const parsedRemaining = parseInt(slot.remaining, 10);
             const remaining = Number.isNaN(parsedRemaining) ? 0 : parsedRemaining;
+            
+            // ARIA label descrittivo per slot
+            const ariaLabel = `${slot.time || ''}, ${remaining > 0 ? localizePlural('%d posto disponibile', '%d posti disponibili', remaining).replace('%d', String(remaining)) : localize('Esaurito')}`;
+            button.setAttribute('aria-label', ariaLabel);
             const template = localizePlural('%d posto', '%d posti', remaining);
             let countLabel = template;
             if (typeof i18n_sprintf === 'function') {
@@ -2618,12 +2962,20 @@
         }
 
         const slotInput = ui.rtbForm.querySelector('input[name="slot_id"]');
+        const startInput = ui.rtbForm.querySelector('input[name="start"]');
+        const endInput = ui.rtbForm.querySelector('input[name="end"]');
         const ticketsInput = ui.rtbForm.querySelector('input[name="tickets"]');
         const addonsInput = ui.rtbForm.querySelector('input[name="addons"]');
         const submit = ui.rtbForm.querySelector('.fp-exp-summary__cta');
 
         if (slotInput) {
             slotInput.value = detail.slotId ? String(detail.slotId) : '';
+        }
+        if (startInput) {
+            startInput.value = detail.slot_start || '';
+        }
+        if (endInput) {
+            endInput.value = detail.slot_end || '';
         }
         if (ticketsInput) {
             ticketsInput.value = JSON.stringify(detail.tickets || {});
@@ -2632,7 +2984,8 @@
             addonsInput.value = JSON.stringify(detail.addons || {});
         }
         if (submit) {
-            submit.disabled = !detail.slotId || !detail.quantity || detail.pricingPending;
+            const hasWhen = Boolean(detail.slotId) || (Boolean(detail.slot_start) && Boolean(detail.slot_end));
+            submit.disabled = !hasWhen || !detail.quantity || detail.pricingPending;
         }
     }
 
@@ -2712,6 +3065,21 @@
             pricingPending: !slot,
         };
 
+        // Provide start/end UTC if available from slot data
+        if (slot && slot.start_iso && slot.end_iso) {
+            try {
+                const toUtcSql = (isoLike) => {
+                    const d = new Date(String(isoLike));
+                    if (Number.isNaN(d.getTime())) return '';
+                    const pad = (n) => String(n).padStart(2, '0');
+                    return `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())} ${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}:00`;
+                };
+                detail.slot_start = toUtcSql(slot.start_iso);
+                detail.slot_end = toUtcSql(slot.end_iso);
+            } catch (e) {
+            }
+        }
+        
         updateRtbFormFields(ui, detail);
         resetRtbStatus(ui);
 
