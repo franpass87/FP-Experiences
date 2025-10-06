@@ -317,10 +317,10 @@
         }
 
         const messages = {
-            name: form.getAttribute('data-error-name') || 'Enter your name.',
-            email: form.getAttribute('data-error-email') || 'Enter your email address.',
-            emailFormat: form.getAttribute('data-error-email-format') || 'Enter a valid email address.',
-            privacy: form.getAttribute('data-error-privacy') || 'Accept the privacy policy to continue.',
+            name: form.getAttribute('data-error-name') || 'Inserisci il tuo nome.',
+            email: form.getAttribute('data-error-email') || 'Inserisci il tuo indirizzo email.',
+            emailFormat: form.getAttribute('data-error-email-format') || 'Inserisci un indirizzo email valido.',
+            privacy: form.getAttribute('data-error-privacy') || 'Accetta l\'informativa privacy per continuare.',
         };
 
         const nameField = form.querySelector('input[name="name"]');
