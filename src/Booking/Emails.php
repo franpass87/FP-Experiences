@@ -659,6 +659,14 @@ final class Emails
 
     private function get_structure_email(): string
     {
+        $emails = get_option('fp_exp_emails', []);
+        if (is_array($emails) && ! empty($emails['sender']['structure'])) {
+            $candidate = sanitize_email((string) $emails['sender']['structure']);
+            if ($candidate) {
+                return $candidate;
+            }
+        }
+
         $option = (string) get_option('fp_exp_structure_email', '');
 
         if ($option) {
@@ -670,6 +678,14 @@ final class Emails
 
     private function get_webmaster_email(): string
     {
+        $emails = get_option('fp_exp_emails', []);
+        if (is_array($emails) && ! empty($emails['sender']['webmaster'])) {
+            $candidate = sanitize_email((string) $emails['sender']['webmaster']);
+            if ($candidate) {
+                return $candidate;
+            }
+        }
+
         $option = (string) get_option('fp_exp_webmaster_email', '');
 
         if ($option) {
@@ -936,8 +952,13 @@ final class Emails
             return '';
         }
 
-        $branding = get_option('fp_exp_email_branding', []);
-        $branding = is_array($branding) ? $branding : [];
+        $emails = get_option('fp_exp_emails', []);
+        $emails = is_array($emails) ? $emails : [];
+        $branding = isset($emails['branding']) && is_array($emails['branding']) ? $emails['branding'] : [];
+        if (! $branding) {
+            $branding = get_option('fp_exp_email_branding', []);
+            $branding = is_array($branding) ? $branding : [];
+        }
 
         $logo = isset($branding['logo']) ? esc_url((string) $branding['logo']) : '';
         $header_text = isset($branding['header_text']) ? trim((string) $branding['header_text']) : '';

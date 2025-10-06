@@ -222,21 +222,9 @@ final class SettingsPage
 
     private function register_email_settings(): void
     {
-        register_setting('fp_exp_settings_emails', 'fp_exp_structure_email', [
-            'type' => 'string',
-            'sanitize_callback' => static fn ($value) => sanitize_email((string) $value),
-            'default' => '',
-        ]);
-
-        register_setting('fp_exp_settings_emails', 'fp_exp_webmaster_email', [
-            'type' => 'string',
-            'sanitize_callback' => static fn ($value) => sanitize_email((string) $value),
-            'default' => '',
-        ]);
-
-        register_setting('fp_exp_settings_emails', 'fp_exp_email_branding', [
+        register_setting('fp_exp_settings_emails', 'fp_exp_emails', [
             'type' => 'array',
-            'sanitize_callback' => [$this, 'sanitize_email_branding'],
+            'sanitize_callback' => [$this, 'sanitize_emails_settings'],
             'default' => [],
         ]);
 
@@ -248,25 +236,25 @@ final class SettingsPage
         );
 
         add_settings_field(
-            'fp_exp_structure_email',
+            'fp_exp_emails_sender_structure',
             esc_html__('Structure email', 'fp-experiences'),
-            [$this, 'render_email_field'],
+            [$this, 'render_email_nested_field'],
             'fp_exp_settings_emails',
             'fp_exp_section_emails_addresses',
             [
-                'option' => 'fp_exp_structure_email',
+                'path' => ['sender', 'structure'],
                 'description' => esc_html__('Primary address for booking confirmations and staff alerts.', 'fp-experiences'),
             ]
         );
 
         add_settings_field(
-            'fp_exp_webmaster_email',
+            'fp_exp_emails_sender_webmaster',
             esc_html__('Webmaster email', 'fp-experiences'),
-            [$this, 'render_email_field'],
+            [$this, 'render_email_nested_field'],
             'fp_exp_settings_emails',
             'fp_exp_section_emails_addresses',
             [
-                'option' => 'fp_exp_webmaster_email',
+                'path' => ['sender', 'webmaster'],
                 'description' => esc_html__('Secondary address to receive staff notifications.', 'fp-experiences'),
             ]
         );
@@ -279,9 +267,9 @@ final class SettingsPage
         );
 
         add_settings_field(
-            'fp_exp_email_branding_logo',
+            'fp_exp_emails_branding_logo',
             esc_html__('Logo URL', 'fp-experiences'),
-            [$this, 'render_email_branding_field'],
+            [$this, 'render_emails_branding_field'],
             'fp_exp_settings_emails',
             'fp_exp_section_email_branding',
             [
@@ -293,9 +281,9 @@ final class SettingsPage
         );
 
         add_settings_field(
-            'fp_exp_email_branding_header',
+            'fp_exp_emails_branding_header',
             esc_html__('Header title', 'fp-experiences'),
-            [$this, 'render_email_branding_field'],
+            [$this, 'render_emails_branding_field'],
             'fp_exp_settings_emails',
             'fp_exp_section_email_branding',
             [
@@ -307,9 +295,9 @@ final class SettingsPage
         );
 
         add_settings_field(
-            'fp_exp_email_branding_footer',
+            'fp_exp_emails_branding_footer',
             esc_html__('Footer note', 'fp-experiences'),
-            [$this, 'render_email_branding_field'],
+            [$this, 'render_emails_branding_field'],
             'fp_exp_settings_emails',
             'fp_exp_section_email_branding',
             [
@@ -793,6 +781,35 @@ final class SettingsPage
         ];
     }
 
+    /**
+     * @param mixed $value
+     * @return array{
+     *   sender: array{structure:string,webmaster:string},
+     *   branding: array{logo:string,header_text:string,footer_text:string}
+     * }
+     */
+    public function sanitize_emails_settings($value): array
+    {
+        $value = is_array($value) ? $value : [];
+
+        // mittenti
+        $sender = isset($value['sender']) && is_array($value['sender']) ? $value['sender'] : [];
+        $structure = sanitize_email((string) ($sender['structure'] ?? get_option('fp_exp_structure_email', '')));
+        $webmaster = sanitize_email((string) ($sender['webmaster'] ?? get_option('fp_exp_webmaster_email', '')));
+
+        // branding
+        $branding = isset($value['branding']) && is_array($value['branding']) ? $value['branding'] : [];
+        $branding = $this->sanitize_email_branding($branding);
+
+        return [
+            'sender' => [
+                'structure' => $structure,
+                'webmaster' => $webmaster,
+            ],
+            'branding' => $branding,
+        ];
+    }
+
     private function register_tracking_settings(): void
     {
         register_setting('fp_exp_settings_tracking', 'fp_exp_tracking', [
@@ -1196,6 +1213,63 @@ final class SettingsPage
         }
     }
 
+    public function render_email_nested_field(array $args): void
+    {
+        $path = isset($args['path']) && is_array($args['path']) ? $args['path'] : [];
+        if (! $path) {
+            return;
+        }
+
+        $settings = get_option('fp_exp_emails', []);
+        $settings = is_array($settings) ? $settings : [];
+
+        // retrocompat: fallback a opzioni legacy
+        if (! isset($settings['sender']['structure'])) {
+            $legacy = sanitize_email((string) get_option('fp_exp_structure_email', ''));
+            if ($legacy) {
+                $settings['sender']['structure'] = $legacy;
+            }
+        }
+        if (! isset($settings['sender']['webmaster'])) {
+            $legacy = sanitize_email((string) get_option('fp_exp_webmaster_email', ''));
+            if ($legacy) {
+                $settings['sender']['webmaster'] = $legacy;
+            }
+        }
+
+        $ref = $settings;
+        foreach ($path as $segment) {
+            if (! isset($ref[$segment]) || ! is_array($ref[$segment])) {
+                $ref[$segment] = [];
+            }
+            $ref = $ref[$segment];
+        }
+
+        $value = '';
+        // recupero valore finale se path punta a chiave scalare
+        $cursor = $settings;
+        foreach ($path as $segment) {
+            if (! isset($cursor[$segment])) {
+                $cursor = null;
+                break;
+            }
+            $cursor = $cursor[$segment];
+        }
+        if (is_string($cursor)) {
+            $value = $cursor;
+        }
+
+        $name = 'fp_exp_emails';
+        foreach ($path as $segment) {
+            $name .= '[' . esc_attr($segment) . ']';
+        }
+
+        echo '<input type="email" class="regular-text" name="' . $name . '" value="' . esc_attr((string) $value) . '" />';
+        if (! empty($args['description'])) {
+            echo '<p class="description">' . esc_html((string) $args['description']) . '</p>';
+        }
+    }
+
     public function render_email_addresses_help(): void
     {
         echo '<p>' . esc_html__('Define the default sender and additional recipients for transactional emails.', 'fp-experiences') . '</p>';
@@ -1248,6 +1322,7 @@ final class SettingsPage
 
     public function render_email_branding_field(array $args): void
     {
+        // legacy accessor per opzione separata
         $settings = get_option('fp_exp_email_branding', []);
         $settings = is_array($settings) ? $settings : [];
         $key = $args['key'] ?? '';
@@ -1264,6 +1339,41 @@ final class SettingsPage
             echo '<textarea name="fp_exp_email_branding[' . esc_attr($key) . ']" rows="4" class="large-text" placeholder="' . esc_attr($placeholder) . '">' . esc_textarea((string) $value) . '</textarea>';
         } else {
             echo '<input type="text" class="regular-text" name="fp_exp_email_branding[' . esc_attr($key) . ']" value="' . esc_attr((string) $value) . '" placeholder="' . esc_attr($placeholder) . '" />';
+        }
+
+        if (! empty($args['description'])) {
+            echo '<p class="description">' . esc_html((string) $args['description']) . '</p>';
+        }
+    }
+
+    public function render_emails_branding_field(array $args): void
+    {
+        $emails = get_option('fp_exp_emails', []);
+        $emails = is_array($emails) ? $emails : [];
+        $branding = isset($emails['branding']) && is_array($emails['branding']) ? $emails['branding'] : [];
+
+        // retrocompat: pre-popolare da opzione legacy
+        if (! $branding) {
+            $legacy = get_option('fp_exp_email_branding', []);
+            $legacy = is_array($legacy) ? $legacy : [];
+            $branding = $legacy;
+        }
+
+        $key = $args['key'] ?? '';
+        if (! $key) {
+            return;
+        }
+
+        $value = $branding[$key] ?? '';
+        $placeholder = isset($args['placeholder']) ? (string) $args['placeholder'] : '';
+        $type = $args['type'] ?? 'text';
+
+        $name = 'fp_exp_emails[branding][' . esc_attr($key) . ']';
+
+        if ('textarea' === $type) {
+            echo '<textarea name="' . $name . '" rows="4" class="large-text" placeholder="' . esc_attr($placeholder) . '">' . esc_textarea((string) $value) . '</textarea>';
+        } else {
+            echo '<input type="text" class="regular-text" name="' . $name . '" value="' . esc_attr((string) $value) . '" placeholder="' . esc_attr($placeholder) . '" />';
         }
 
         if (! empty($args['description'])) {

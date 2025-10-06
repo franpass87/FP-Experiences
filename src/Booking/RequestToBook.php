@@ -795,8 +795,22 @@ final class RequestToBook
      */
     private function notify_staff(array $context): void
     {
-        $structure = sanitize_email((string) get_option('fp_exp_structure_email', ''));
-        $webmaster = sanitize_email((string) get_option('fp_exp_webmaster_email', ''));
+        $emails = get_option('fp_exp_emails', []);
+        $emails = is_array($emails) ? $emails : [];
+        $structure = '';
+        $webmaster = '';
+        if (! empty($emails['sender']['structure'])) {
+            $structure = sanitize_email((string) $emails['sender']['structure']);
+        }
+        if (! empty($emails['sender']['webmaster'])) {
+            $webmaster = sanitize_email((string) $emails['sender']['webmaster']);
+        }
+        if (! $structure) {
+            $structure = sanitize_email((string) get_option('fp_exp_structure_email', ''));
+        }
+        if (! $webmaster) {
+            $webmaster = sanitize_email((string) get_option('fp_exp_webmaster_email', ''));
+        }
 
         $recipients = array_filter(apply_filters('fp_exp_email_recipients', [$structure, $webmaster], $context['reservation_id'], 0));
 

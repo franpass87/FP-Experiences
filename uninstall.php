@@ -37,6 +37,7 @@ $options = [
     'fp_exp_logs',
     'fp_exp_google_calendar',
     'fp_exp_brevo',
+    'fp_exp_emails',
     'fp_exp_email_branding',
     'fp_exp_structure_email',
     'fp_exp_webmaster_email',
