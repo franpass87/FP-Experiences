@@ -105,6 +105,7 @@ final class CalendarAdmin
             ],
             'nonce' => wp_create_nonce('wp_rest'),
             'experiences' => $experience_options,
+            'has_experiences' => !empty($experience_options),
             'i18n' => [
                 'month' => esc_html__('Month', 'fp-experiences'),
                 'week' => esc_html__('Week', 'fp-experiences'),
@@ -160,7 +161,7 @@ final class CalendarAdmin
         echo '<div class="wrap fp-exp-calendar-admin">';
         echo '<div class="fp-exp-admin" data-fp-exp-admin>';
         echo '<div class="fp-exp-admin__body">';
-        echo '<div class="fp-exp-admin__layout">';
+        echo '<div class="fp-exp-admin__layout fp-exp-calendar">';
         echo '<header class="fp-exp-admin__header">';
         echo '<nav class="fp-exp-admin__breadcrumb" aria-label="' . esc_attr__('Percorso di navigazione', 'fp-experiences') . '">';
         echo '<a href="' . esc_url(admin_url('admin.php?page=fp_exp_dashboard')) . '">' . esc_html__('FP Experiences', 'fp-experiences') . '</a>';
@@ -177,7 +178,7 @@ final class CalendarAdmin
         ];
         foreach ($tabs as $slug => $label) {
             $url = add_query_arg([
-                'page' => 'fp-exp-calendar',
+                'page' => 'fp_exp_calendar',
                 'view' => $slug,
             ], admin_url('admin.php'));
             $classes = 'nav-tab' . ($active_tab === $slug ? ' nav-tab-active' : '');
@@ -214,6 +215,18 @@ final class CalendarAdmin
         ];
 
         echo '<div id="fp-exp-calendar-app" class="fp-exp-calendar" data-loading-text="' . esc_attr__('Loading…', 'fp-experiences') . '" data-bootstrap="' . esc_attr(wp_json_encode($bootstrap)) . '">';
+        
+        // Mostra messaggio informativo se non ci sono esperienze
+        if (empty($experience_options)) {
+            echo '<div class="fp-exp-calendar__no-experiences">';
+            echo '<div class="notice notice-info">';
+            echo '<p><strong>' . esc_html__('Nessuna esperienza disponibile', 'fp-experiences') . '</strong></p>';
+            echo '<p>' . esc_html__('Per utilizzare il calendario, devi prima creare almeno un\'esperienza.', 'fp-experiences') . '</p>';
+            echo '<p><a href="' . esc_url(admin_url('post-new.php?post_type=fp_experience')) . '" class="button button-primary">' . esc_html__('Crea la prima esperienza', 'fp-experiences') . '</a></p>';
+            echo '</div>';
+            echo '</div>';
+        }
+        
         echo '<div class="fp-exp-calendar__loading" role="status">' . esc_html__('Loading calendar…', 'fp-experiences') . '</div>';
         echo '<div class="fp-exp-calendar__body" data-calendar-content hidden></div>';
         echo '<div class="fp-exp-calendar__feedback" data-calendar-error hidden></div>';

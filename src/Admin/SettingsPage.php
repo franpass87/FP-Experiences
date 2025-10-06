@@ -259,6 +259,19 @@ final class SettingsPage
             ]
         );
 
+        add_settings_field(
+            'fp_exp_emails_recipients_staff_extra',
+            esc_html__('Destinatari staff aggiuntivi', 'fp-experiences'),
+            [$this, 'render_email_recipients_field'],
+            'fp_exp_settings_emails',
+            'fp_exp_section_emails_addresses',
+            [
+                'path' => ['recipients', 'staff_extra'],
+                'placeholder' => 'staff1@example.com, staff2@example.com',
+                'description' => esc_html__('Inserisci una o più email separate da virgola. Verranno aggiunte alle notifiche staff.', 'fp-experiences'),
+            ]
+        );
+
         add_settings_section(
             'fp_exp_section_email_branding',
             esc_html__('Email branding', 'fp-experiences'),
@@ -307,6 +320,100 @@ final class SettingsPage
                 'description' => esc_html__('Closing message displayed in the email footer. Supports multiple lines.', 'fp-experiences'),
             ]
         );
+
+        // Sezione: Tipi di email (toggle)
+        add_settings_section(
+            'fp_exp_section_email_types',
+            esc_html__('Tipi di email', 'fp-experiences'),
+            [$this, 'render_email_types_help'],
+            'fp_exp_settings_emails'
+        );
+
+        $email_types = [
+            ['key' => 'customer_confirmation', 'label' => esc_html__('Conferma cliente', 'fp-experiences')],
+            ['key' => 'staff_notification', 'label' => esc_html__('Notifica staff', 'fp-experiences')],
+            ['key' => 'customer_reminder', 'label' => esc_html__('Promemoria cliente (pre-esperienza)', 'fp-experiences')],
+            ['key' => 'customer_post_experience', 'label' => esc_html__('Follow-up cliente (post-esperienza)', 'fp-experiences')],
+        ];
+        foreach ($email_types as $type) {
+            add_settings_field(
+                'fp_exp_emails_type_' . $type['key'],
+                $type['label'],
+                [$this, 'render_email_toggle_field'],
+                'fp_exp_settings_emails',
+                'fp_exp_section_email_types',
+                [
+                    'path' => ['types', $type['key']],
+                ]
+            );
+        }
+
+        // Sezione: Pianificazione (offset)
+        add_settings_section(
+            'fp_exp_section_email_schedule',
+            esc_html__('Pianificazione', 'fp-experiences'),
+            [$this, 'render_email_schedule_help'],
+            'fp_exp_settings_emails'
+        );
+
+        add_settings_field(
+            'fp_exp_emails_schedule_reminder_offset_hours',
+            esc_html__('Offset promemoria (ore prima dell\'inizio)', 'fp-experiences'),
+            [$this, 'render_email_number_field'],
+            'fp_exp_settings_emails',
+            'fp_exp_section_email_schedule',
+            [
+                'path' => ['schedule', 'reminder_offset_hours'],
+                'min' => 0,
+                'max' => 240,
+                'step' => 1,
+                'placeholder' => '24',
+            ]
+        );
+
+        add_settings_field(
+            'fp_exp_emails_schedule_followup_offset_hours',
+            esc_html__('Offset follow-up (ore dopo la fine)', 'fp-experiences'),
+            [$this, 'render_email_number_field'],
+            'fp_exp_settings_emails',
+            'fp_exp_section_email_schedule',
+            [
+                'path' => ['schedule', 'followup_offset_hours'],
+                'min' => 0,
+                'max' => 240,
+                'step' => 1,
+                'placeholder' => '24',
+            ]
+        );
+
+        // Sezione: Soggetti personalizzati
+        add_settings_section(
+            'fp_exp_section_email_subjects',
+            esc_html__('Soggetti email', 'fp-experiences'),
+            [$this, 'render_email_subjects_help'],
+            'fp_exp_settings_emails'
+        );
+
+        $subjects = [
+            ['key' => 'customer_confirmation', 'label' => esc_html__('Conferma cliente', 'fp-experiences')],
+            ['key' => 'customer_reminder', 'label' => esc_html__('Promemoria cliente', 'fp-experiences')],
+            ['key' => 'customer_post_experience', 'label' => esc_html__('Follow-up cliente', 'fp-experiences')],
+            ['key' => 'staff_notification_new', 'label' => esc_html__('Notifica staff (nuova prenotazione)', 'fp-experiences')],
+            ['key' => 'staff_notification_cancelled', 'label' => esc_html__('Notifica staff (prenotazione annullata)', 'fp-experiences')],
+        ];
+        foreach ($subjects as $subject) {
+            add_settings_field(
+                'fp_exp_emails_subject_' . $subject['key'],
+                $subject['label'],
+                [$this, 'render_email_subject_field'],
+                'fp_exp_settings_emails',
+                'fp_exp_section_email_subjects',
+                [
+                    'path' => ['subjects', $subject['key']],
+                    'placeholder' => '',
+                ]
+            );
+        }
     }
 
     private function register_general_settings(): void
@@ -801,13 +908,61 @@ final class SettingsPage
         $branding = isset($value['branding']) && is_array($value['branding']) ? $value['branding'] : [];
         $branding = $this->sanitize_email_branding($branding);
 
+        // destinatari aggiuntivi staff
+        $recipients = isset($value['recipients']) && is_array($value['recipients']) ? $value['recipients'] : [];
+        $staff_extra_raw = (string) ($recipients['staff_extra'] ?? '');
+        $staff_extra = array_values(array_filter(array_map('sanitize_email', array_map('trim', preg_split('/[,;]+/', $staff_extra_raw) ?: []))));
+
+        // tipi (toggle)
+        $types = isset($value['types']) && is_array($value['types']) ? $value['types'] : [];
+        $types_sanitized = [];
+        foreach (['customer_confirmation', 'staff_notification', 'customer_reminder', 'customer_post_experience'] as $key) {
+            $raw = $types[$key] ?? '';
+            $types_sanitized[$key] = $this->sanitize_yes_no($raw);
+        }
+
+        // schedule (offset ore)
+        $schedule = isset($value['schedule']) && is_array($value['schedule']) ? $value['schedule'] : [];
+        $reminder_hours = isset($schedule['reminder_offset_hours']) ? (int) $schedule['reminder_offset_hours'] : 24;
+        $followup_hours = isset($schedule['followup_offset_hours']) ? (int) $schedule['followup_offset_hours'] : 24;
+        $reminder_hours = max(0, min(240, $reminder_hours));
+        $followup_hours = max(0, min(240, $followup_hours));
+
+        $schedule_sanitized = [
+            'reminder_offset_hours' => $reminder_hours,
+            'followup_offset_hours' => $followup_hours,
+        ];
+
+        // subjects (override opzionali)
+        $subjects = isset($value['subjects']) && is_array($value['subjects']) ? $value['subjects'] : [];
+        $subjects_sanitized = [];
+        foreach (['customer_confirmation', 'customer_reminder', 'customer_post_experience', 'staff_notification_new', 'staff_notification_cancelled'] as $key) {
+            $subjects_sanitized[$key] = sanitize_text_field((string) ($subjects[$key] ?? ''));
+        }
+
         return [
             'sender' => [
                 'structure' => $structure,
                 'webmaster' => $webmaster,
             ],
             'branding' => $branding,
+            'recipients' => [
+                'staff_extra' => $staff_extra,
+            ],
+            'types' => $types_sanitized,
+            'schedule' => $schedule_sanitized,
+            'subjects' => $subjects_sanitized,
         ];
+    }
+
+    private function sanitize_yes_no($value): string
+    {
+        if (is_string($value)) {
+            $normalized = strtolower(trim($value));
+            return in_array($normalized, ['1', 'yes', 'true', 'on'], true) ? 'yes' : 'no';
+        }
+
+        return $value ? 'yes' : 'no';
     }
 
     private function register_tracking_settings(): void
@@ -1379,6 +1534,146 @@ final class SettingsPage
         if (! empty($args['description'])) {
             echo '<p class="description">' . esc_html((string) $args['description']) . '</p>';
         }
+    }
+
+    public function render_email_recipients_field(array $args): void
+    {
+        $path = isset($args['path']) && is_array($args['path']) ? $args['path'] : [];
+        if (! $path) {
+            return;
+        }
+
+        $emails = get_option('fp_exp_emails', []);
+        $emails = is_array($emails) ? $emails : [];
+        $cursor = $emails;
+        foreach ($path as $segment) {
+            if (! isset($cursor[$segment])) {
+                $cursor[$segment] = [];
+            }
+            $cursor = $cursor[$segment];
+        }
+
+        $value = '';
+        if (is_array($cursor)) {
+            $value = implode(', ', array_filter(array_map('sanitize_email', $cursor)));
+        } elseif (is_string($cursor)) {
+            $value = $cursor;
+        }
+
+        $name = 'fp_exp_emails';
+        foreach ($path as $segment) {
+            $name .= '[' . esc_attr($segment) . ']';
+        }
+
+        $placeholder = isset($args['placeholder']) ? (string) $args['placeholder'] : '';
+        echo '<input type="text" class="regular-text" name="' . $name . '" value="' . esc_attr($value) . '" placeholder="' . esc_attr($placeholder) . '" />';
+        if (! empty($args['description'])) {
+            echo '<p class="description">' . esc_html((string) $args['description']) . '</p>';
+        }
+    }
+
+    public function render_email_types_help(): void
+    {
+        echo '<p>' . esc_html__('Abilita o disabilita i singoli invii automatici.', 'fp-experiences') . '</p>';
+    }
+
+    public function render_email_schedule_help(): void
+    {
+        echo '<p>' . esc_html__('Configura gli orari di invio di promemoria e follow-up rispetto all\'esperienza.', 'fp-experiences') . '</p>';
+    }
+
+    public function render_email_subjects_help(): void
+    {
+        echo '<p>' . esc_html__('Imposta soggetti personalizzati. Lascia vuoto per usare i testi predefiniti.', 'fp-experiences') . '</p>';
+    }
+
+    public function render_email_toggle_field(array $args): void
+    {
+        $path = isset($args['path']) && is_array($args['path']) ? $args['path'] : [];
+        if (! $path) {
+            return;
+        }
+
+        $settings = get_option('fp_exp_emails', []);
+        $settings = is_array($settings) ? $settings : [];
+        $cursor = $settings;
+        foreach ($path as $segment) {
+            if (! isset($cursor[$segment])) {
+                $cursor[$segment] = [];
+            }
+            $cursor = $cursor[$segment];
+        }
+
+        $value = 'yes' === ($cursor ?? '');
+
+        $name = 'fp_exp_emails';
+        foreach ($path as $segment) {
+            $name .= '[' . esc_attr($segment) . ']';
+        }
+
+        echo '<label><input type="checkbox" name="' . $name . '" value="yes" ' . checked($value, true, false) . ' /> ' . esc_html__('Abilitato', 'fp-experiences') . '</label>';
+    }
+
+    public function render_email_number_field(array $args): void
+    {
+        $path = isset($args['path']) && is_array($args['path']) ? $args['path'] : [];
+        if (! $path) {
+            return;
+        }
+
+        $min = isset($args['min']) ? (int) $args['min'] : 0;
+        $max = isset($args['max']) ? (int) $args['max'] : 240;
+        $step = isset($args['step']) ? (int) $args['step'] : 1;
+        $placeholder = isset($args['placeholder']) ? (string) $args['placeholder'] : '';
+
+        $settings = get_option('fp_exp_emails', []);
+        $settings = is_array($settings) ? $settings : [];
+
+        $cursor = $settings;
+        foreach ($path as $segment) {
+            if (! isset($cursor[$segment])) {
+                $cursor[$segment] = [];
+            }
+            $cursor = $cursor[$segment];
+        }
+
+        $value = is_numeric($cursor ?? null) ? (int) $cursor : '';
+
+        $name = 'fp_exp_emails';
+        foreach ($path as $segment) {
+            $name .= '[' . esc_attr($segment) . ']';
+        }
+
+        echo '<input type="number" class="small-text" min="' . esc_attr((string) $min) . '" max="' . esc_attr((string) $max) . '" step="' . esc_attr((string) $step) . '" name="' . $name . '" value="' . esc_attr((string) $value) . '" placeholder="' . esc_attr($placeholder) . '" />';
+    }
+
+    public function render_email_subject_field(array $args): void
+    {
+        $path = isset($args['path']) && is_array($args['path']) ? $args['path'] : [];
+        if (! $path) {
+            return;
+        }
+
+        $settings = get_option('fp_exp_emails', []);
+        $settings = is_array($settings) ? $settings : [];
+
+        $cursor = $settings;
+        foreach ($path as $segment) {
+            if (! isset($cursor[$segment])) {
+                $cursor[$segment] = [];
+            }
+            $cursor = $cursor[$segment];
+        }
+
+        $value = is_string($cursor ?? null) ? (string) $cursor : '';
+
+        $name = 'fp_exp_emails';
+        foreach ($path as $segment) {
+            $name .= '[' . esc_attr($segment) . ']';
+        }
+
+        echo '<input type="text" class="regular-text" name="' . $name . '" value="' . esc_attr($value) . '" />';
+        echo '<p class="description">' . esc_html__('Puoi usare segnaposto come {experience_title}.', 'fp-experiences') . '</p>';
     }
 
     public function render_branding_help(): void

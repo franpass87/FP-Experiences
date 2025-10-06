@@ -1,6 +1,19 @@
 # Changelog
 
 ## [Unreleased]
+
+## [0.3.3] - 2025-01-27
+- **Miglioramenti Admin Calendar**: Aggiunto supporto per filtraggio per esperienza nel calendario admin con selector dinamico e gestione stati vuoti
+- **Ottimizzazioni JavaScript**: Migliorata gestione errori API, debouncing per chiamate multiple, e messaggi di errore localizzati in italiano
+- **UI/UX Admin**: Migliorata esperienza utente con messaggi informativi quando non ci sono esperienze disponibili e link diretti per creare la prima esperienza
+- **Console Check-in**: Migliorata interfaccia check-in con gestione stati prenotazioni e feedback utente più chiaro
+- **Gestione Email**: Potenziata sezione gestione email con layout migliorato e navigazione breadcrumb
+- **Logs e Diagnostica**: Migliorata pagina logs con filtri avanzati e diagnostica di sistema più dettagliata
+- **Strumenti Operativi**: Ottimizzata pagina strumenti con layout migliorato e descrizioni più chiare
+- **Accessibilità**: Migliorata accessibilità con etichette screen reader e gestione focus appropriata
+- **Localizzazione**: Aggiunti messaggi di errore in italiano per migliorare l'esperienza utente italiana
+
+## [0.3.2] - 2025-01-26
 - Added a hero gallery manager to the experience details tab with drag ordering, multi-select uploads, and quick clearing.
 - Moved language selection into the details tab, allowing manual term creation and badge previews prior to saving.
 - Introduced a configurable badge library under **Settings → Showcase** so presets can be renamed or extended for editors.

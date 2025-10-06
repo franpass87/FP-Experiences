@@ -21,6 +21,47 @@
         return translateAdmin(value || '');
     }
 
+    function initEmailSubjectPreview(root) {
+        const container = root.closest('.fp-exp-admin');
+        if (!container) {
+            return;
+        }
+        // Trova i campi soggetto nella pagina impostazioni email
+        const fields = Array.from(document.querySelectorAll('input[name^="fp_exp_emails[subjects]"]'));
+        if (!fields.length) {
+            return;
+        }
+
+        fields.forEach((input) => {
+            const wrapper = document.createElement('p');
+            wrapper.className = 'description';
+            const preview = document.createElement('span');
+            preview.setAttribute('data-email-subject-preview', '');
+            wrapper.appendChild(document.createTextNode('Anteprima: '));
+            wrapper.appendChild(preview);
+            input.parentNode && input.parentNode.appendChild(wrapper);
+
+            const placeholders = {
+                '{experience_title}': 'Esperienza di esempio',
+                '{date}': '01/01/2026',
+                '{time}': '10:00',
+                '{order_number}': '12345',
+            };
+
+            const render = () => {
+                const raw = String(input.value || '');
+                let output = raw;
+                Object.entries(placeholders).forEach(([token, value]) => {
+                    output = output.split(token).join(value);
+                });
+                preview.textContent = output || '(vuoto)';
+            };
+
+            input.addEventListener('input', render);
+            render();
+        });
+    }
+
     function resolveAttachmentSource(data) {
         if (!data) {
             return { url: '', width: 0, height: 0 };
@@ -1520,6 +1561,16 @@
         const calendarConfig = window.fpExpCalendar || {};
         const endpoints = calendarConfig.endpoints || {};
         const availabilityEndpoint = endpoints.availability;
+        
+        // Se non ci sono esperienze, non inizializzare il calendario
+        if (!calendarConfig.has_experiences) {
+            const loadingNode = container.querySelector('.fp-exp-calendar__loading');
+            if (loadingNode) {
+                loadingNode.hidden = true;
+            }
+            return;
+        }
+        
         if (!availabilityEndpoint) {
             return;
         }
@@ -1699,11 +1750,13 @@
         const experienceSelect = document.createElement('select');
         experienceSelect.className = 'fp-exp-calendar__experience';
         const expOptions = Array.isArray(calendarConfig.experiences) ? calendarConfig.experiences : [];
+        
+        const placeholder = document.createElement('option');
+        placeholder.value = '';
+        placeholder.textContent = (calendarConfig.i18n && calendarConfig.i18n.selectExperience) ? calendarConfig.i18n.selectExperience : 'Select experience';
+        experienceSelect.appendChild(placeholder);
+        
         if (expOptions.length) {
-            const placeholder = document.createElement('option');
-            placeholder.value = '';
-            placeholder.textContent = (calendarConfig.i18n && calendarConfig.i18n.selectExperience) ? calendarConfig.i18n.selectExperience : 'Select experience';
-            experienceSelect.appendChild(placeholder);
             expOptions.forEach((opt) => {
                 if (!opt || typeof opt.id !== 'number') {
                     return;
@@ -1713,6 +1766,14 @@
                 option.textContent = String(opt.title || opt.id);
                 experienceSelect.appendChild(option);
             });
+        } else {
+            // Nessuna esperienza disponibile
+            const noExpOption = document.createElement('option');
+            noExpOption.value = '';
+            noExpOption.textContent = 'Nessuna esperienza disponibile';
+            noExpOption.disabled = true;
+            noExpOption.selected = true;
+            experienceSelect.appendChild(noExpOption);
         }
 
         nav.appendChild(experienceSelect);
@@ -1871,9 +1932,15 @@
             
             // Validazione: esperienza deve essere selezionata
             if (selectedExperience <= 0) {
-                const message = calendarConfig.i18n && calendarConfig.i18n.selectExperienceFirst
-                    ? calendarConfig.i18n.selectExperienceFirst
-                    : 'Seleziona un\'esperienza per visualizzare la disponibilità';
+                const expOptions = Array.isArray(calendarConfig.experiences) ? calendarConfig.experiences : [];
+                let message;
+                if (expOptions.length === 0) {
+                    message = 'Nessuna esperienza disponibile. Crea prima un\'esperienza per visualizzare il calendario.';
+                } else {
+                    message = calendarConfig.i18n && calendarConfig.i18n.selectExperienceFirst
+                        ? calendarConfig.i18n.selectExperienceFirst
+                        : 'Seleziona un\'esperienza per visualizzare la disponibilità';
+                }
                 showError(message);
                 setLoading(false);
                 renderSlots([]);
@@ -1989,6 +2056,7 @@
             initRecurrence(root);
             initFormValidation(root);
             initCognitiveBiasLimiter(root);
+            initEmailSubjectPreview(root);
         }
 
         initCalendarApp();
