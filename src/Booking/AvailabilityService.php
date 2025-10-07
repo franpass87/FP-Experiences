@@ -31,53 +31,113 @@ final class AvailabilityService
             return [];
         }
 
-        $availability = get_post_meta($experience_id, '_fp_exp_availability', true);
-        if (! is_array($availability)) {
+        // NUOVA LOGICA: Leggi direttamente da _fp_exp_recurrence (formato unico)
+        $recurrence = get_post_meta($experience_id, '_fp_exp_recurrence', true);
+        
+        // Fallback al vecchio formato per retrocompatibilità
+        if (! is_array($recurrence) || empty($recurrence)) {
             if (defined('WP_DEBUG') && WP_DEBUG) {
                 error_log(sprintf(
-                    'FP_EXP AvailabilityService: Experience %d - No availability data found',
+                    'FP_EXP AvailabilityService: Experience %d - No recurrence data, trying legacy availability format',
                     $experience_id
                 ));
             }
-            return [];
+            return self::get_virtual_slots_legacy($experience_id, $start_utc, $end_utc);
         }
 
-        $frequency = isset($availability['frequency']) ? sanitize_key((string) $availability['frequency']) : 'weekly';
-        $times = isset($availability['times']) && is_array($availability['times']) ? $availability['times'] : [];
-        $days = isset($availability['days_of_week']) && is_array($availability['days_of_week']) ? $availability['days_of_week'] : [];
+        // Estrai dati dalla ricorrenza
+        $frequency = isset($recurrence['frequency']) ? sanitize_key((string) $recurrence['frequency']) : 'weekly';
+        $recurrence_start_date = isset($recurrence['start_date']) ? sanitize_text_field((string) $recurrence['start_date']) : '';
+        $recurrence_end_date = isset($recurrence['end_date']) ? sanitize_text_field((string) $recurrence['end_date']) : '';
+        
+        // Estrai times e days dai time_sets
+        $all_times = [];
+        $all_days = [];
+        $capacity = 0;
+        $buffer_before = 0;
+        $buffer_after = 0;
+        
+        if (isset($recurrence['time_sets']) && is_array($recurrence['time_sets'])) {
+            foreach ($recurrence['time_sets'] as $set) {
+                if (! is_array($set)) {
+                    continue;
+                }
+                
+                // Raccogli orari
+                if (isset($set['times']) && is_array($set['times'])) {
+                    foreach ($set['times'] as $time) {
+                        $time_str = trim((string) $time);
+                        if ($time_str !== '' && ! in_array($time_str, $all_times, true)) {
+                            $all_times[] = $time_str;
+                        }
+                    }
+                }
+                
+                // Raccogli giorni
+                if (isset($set['days']) && is_array($set['days'])) {
+                    foreach ($set['days'] as $day) {
+                        $day_str = trim((string) $day);
+                        if ($day_str !== '' && ! in_array($day_str, $all_days, true)) {
+                            $all_days[] = $day_str;
+                        }
+                    }
+                }
+                
+                // Usa la capienza più alta tra i set (o si potrebbe fare media/somma)
+                if (isset($set['capacity'])) {
+                    $set_capacity = absint((string) $set['capacity']);
+                    if ($set_capacity > $capacity) {
+                        $capacity = $set_capacity;
+                    }
+                }
+                
+                // Usa i buffer del primo set (o si potrebbe fare media)
+                if ($buffer_before === 0 && isset($set['buffer_before'])) {
+                    $buffer_before = absint((string) $set['buffer_before']);
+                }
+                if ($buffer_after === 0 && isset($set['buffer_after'])) {
+                    $buffer_after = absint((string) $set['buffer_after']);
+                }
+            }
+        }
+        
+        // Se non ci sono giorni nei time_sets, usa i giorni globali
+        if (empty($all_days) && isset($recurrence['days']) && is_array($recurrence['days'])) {
+            $all_days = $recurrence['days'];
+        }
+        
+        // Leggi lead_time dai meta separati (se presenti)
+        $lead_time = absint(get_post_meta($experience_id, '_fp_lead_time_hours', true));
         
         // Debug log
         if (defined('WP_DEBUG') && WP_DEBUG) {
             error_log(sprintf(
-                'FP_EXP AvailabilityService: Experience %d - Frequency: %s, Times: %d (%s), Days: %d (%s)',
+                'FP_EXP AvailabilityService: Experience %d - Reading from _fp_exp_recurrence. Frequency: %s, Times: %d (%s), Days: %d (%s), Capacity: %d',
                 $experience_id,
                 $frequency,
-                count($times),
-                implode(', ', $times),
-                count($days),
-                implode(', ', $days)
+                count($all_times),
+                implode(', ', $all_times),
+                count($all_days),
+                implode(', ', $all_days),
+                $capacity
             ));
         }
-        $custom = isset($availability['custom_slots']) && is_array($availability['custom_slots']) ? $availability['custom_slots'] : [];
-        $capacity = isset($availability['slot_capacity']) ? absint((string) $availability['slot_capacity']) : 0;
-        $lead_time = isset($availability['lead_time_hours']) ? absint((string) $availability['lead_time_hours']) : 0;
-        $buffer_before = isset($availability['buffer_before_minutes']) ? absint((string) $availability['buffer_before_minutes']) : 0;
-        $buffer_after = isset($availability['buffer_after_minutes']) ? absint((string) $availability['buffer_after_minutes']) : 0;
         
-        // Leggi le date di inizio e fine dalla ricorrenza
-        $recurrence_start_date = isset($availability['start_date']) ? sanitize_text_field((string) $availability['start_date']) : '';
-        $recurrence_end_date = isset($availability['end_date']) ? sanitize_text_field((string) $availability['end_date']) : '';
-
-        // Controllo early return se non ci sono times (per weekly/daily)
-        if ($frequency !== 'custom' && empty($times)) {
+        // Controllo early return se non ci sono times
+        if ($frequency !== 'custom' && empty($all_times)) {
             if (defined('WP_DEBUG') && WP_DEBUG) {
                 error_log(sprintf(
-                    'FP_EXP AvailabilityService: Experience %d - No times configured, cannot generate slots',
+                    'FP_EXP AvailabilityService: Experience %d - No times configured in time_sets, cannot generate slots',
                     $experience_id
                 ));
             }
             return [];
         }
+        
+        // Usa le variabili estratte
+        $times = $all_times;
+        $days = $all_days;
+        $custom = []; // Custom slots non più usati nel nuovo formato
 
         // Durata: se non specificata nelle meta, default 60m.
         $duration_minutes = 60;
@@ -221,6 +281,191 @@ final class AvailabilityService
             $end_sql = $end->format('Y-m-d H:i:s');
             
             // Calcola quanti posti sono già prenotati per questo slot virtuale
+            $booked = Reservations::count_bookings_for_virtual_slot(
+                $experience_id,
+                $start_sql,
+                $end_sql
+            );
+            
+            $capacity_remaining = max(0, $capacity - $booked);
+            
+            $slots[] = [
+                'experience_id' => $experience_id,
+                'start' => $start_sql,
+                'end' => $end_sql,
+                'capacity_total' => $capacity,
+                'capacity_remaining' => $capacity_remaining,
+                'buffer_before' => $buffer_before,
+                'buffer_after' => $buffer_after,
+                'duration' => (int) (($end->getTimestamp() - $start->getTimestamp()) / 60),
+            ];
+        }
+
+        return $slots;
+    }
+    
+    /**
+     * Metodo legacy per retrocompatibilità con il vecchio formato _fp_exp_availability.
+     * 
+     * @deprecated Usa get_virtual_slots() che legge da _fp_exp_recurrence
+     * @return array<int, array<string, string|int>>
+     */
+    private static function get_virtual_slots_legacy(int $experience_id, string $start_utc, string $end_utc): array
+    {
+        $availability = get_post_meta($experience_id, '_fp_exp_availability', true);
+        if (! is_array($availability)) {
+            return [];
+        }
+
+        $frequency = isset($availability['frequency']) ? sanitize_key((string) $availability['frequency']) : 'weekly';
+        $times = isset($availability['times']) && is_array($availability['times']) ? $availability['times'] : [];
+        $days = isset($availability['days_of_week']) && is_array($availability['days_of_week']) ? $availability['days_of_week'] : [];
+        $custom = isset($availability['custom_slots']) && is_array($availability['custom_slots']) ? $availability['custom_slots'] : [];
+        $capacity = isset($availability['slot_capacity']) ? absint((string) $availability['slot_capacity']) : 0;
+        $lead_time = isset($availability['lead_time_hours']) ? absint((string) $availability['lead_time_hours']) : 0;
+        $buffer_before = isset($availability['buffer_before_minutes']) ? absint((string) $availability['buffer_before_minutes']) : 0;
+        $buffer_after = isset($availability['buffer_after_minutes']) ? absint((string) $availability['buffer_after_minutes']) : 0;
+        $recurrence_start_date = isset($availability['start_date']) ? sanitize_text_field((string) $availability['start_date']) : '';
+        $recurrence_end_date = isset($availability['end_date']) ? sanitize_text_field((string) $availability['end_date']) : '';
+
+        if ($frequency !== 'custom' && empty($times)) {
+            return [];
+        }
+
+        $duration_minutes = 60;
+
+        try {
+            $range_start = new DateTimeImmutable($start_utc, new DateTimeZone('UTC'));
+        } catch (Exception $e) {
+            $range_start = new DateTimeImmutable('now', new DateTimeZone('UTC'));
+        }
+
+        try {
+            $range_end = new DateTimeImmutable($end_utc, new DateTimeZone('UTC'));
+        } catch (Exception $e) {
+            $range_end = $range_start;
+        }
+
+        if ($range_end < $range_start) {
+            $range_end = $range_start;
+        }
+        
+        $tz = new DateTimeZone(wp_timezone_string() ?: 'UTC');
+        
+        if ('' !== $recurrence_start_date) {
+            try {
+                $rec_start = new DateTimeImmutable($recurrence_start_date, $tz);
+                $rec_start_utc = $rec_start->setTimezone(new DateTimeZone('UTC'))->setTime(0, 0, 0);
+                if ($rec_start_utc > $range_start) {
+                    $range_start = $rec_start_utc;
+                }
+            } catch (Exception $e) {
+                // Ignora
+            }
+        }
+        
+        if ('' !== $recurrence_end_date) {
+            try {
+                $rec_end = new DateTimeImmutable($recurrence_end_date, $tz);
+                $rec_end_utc = $rec_end->setTimezone(new DateTimeZone('UTC'))->setTime(23, 59, 59);
+                if ($rec_end_utc < $range_end) {
+                    $range_end = $rec_end_utc;
+                }
+            } catch (Exception $e) {
+                // Ignora
+            }
+        }
+        
+        if ($range_end < $range_start) {
+            return [];
+        }
+
+        $occurrences = [];
+
+        if ('custom' === $frequency) {
+            foreach ($custom as $slot) {
+                if (! is_array($slot)) {
+                    continue;
+                }
+                $date = isset($slot['date']) ? sanitize_text_field((string) $slot['date']) : '';
+                $time = isset($slot['time']) ? sanitize_text_field((string) $slot['time']) : '';
+                if ('' === $date || '' === $time) {
+                    continue;
+                }
+                try {
+                    $start = new DateTimeImmutable($date . ' ' . $time, new DateTimeZone(wp_timezone_string() ?: 'UTC'));
+                    $start = $start->setTimezone(new DateTimeZone('UTC'));
+                } catch (Exception $e) {
+                    continue;
+                }
+                $end = $start->add(new DateInterval('PT' . max(1, $duration_minutes) . 'M'));
+                if ($end < $range_start || $start > $range_end) {
+                    continue;
+                }
+                $occurrences[] = [$start, $end];
+            }
+        } else {
+            $period = new DatePeriod(
+                $range_start->setTime(0, 0),
+                new DateInterval('P1D'),
+                $range_end->setTime(23, 59, 59)->add(new DateInterval('PT1S'))
+            );
+
+            foreach ($period as $day) {
+                if (! $day instanceof DateTimeImmutable) {
+                    $day = DateTimeImmutable::createFromMutable($day);
+                }
+
+                if ('weekly' === $frequency) {
+                    $weekday = strtolower($day->format('l'));
+                    if (! in_array($weekday, array_map('strtolower', $days), true)) {
+                        continue;
+                    }
+                }
+
+                foreach ($times as $time) {
+                    $time = trim((string) $time);
+                    if ('' === $time) {
+                        continue;
+                    }
+                    try {
+                        $local = new DateTimeImmutable($day->format('Y-m-d') . ' ' . $time, $tz);
+                        $start = $local->setTimezone(new DateTimeZone('UTC'));
+                    } catch (Exception $e) {
+                        continue;
+                    }
+                    $end = $start->add(new DateInterval('PT' . max(1, $duration_minutes) . 'M'));
+                    if ($end < $range_start || $start > $range_end) {
+                        continue;
+                    }
+                    $occurrences[] = [$start, $end];
+                }
+            }
+        }
+
+        usort(
+            $occurrences,
+            static function (array $a, array $b): int {
+                return $a[0] <=> $b[0];
+            }
+        );
+
+        if ($lead_time > 0) {
+            $now = new DateTimeImmutable('now', new DateTimeZone('UTC'));
+            $cutoff = $now->add(new DateInterval('PT' . $lead_time . 'H'));
+            $occurrences = array_values(array_filter(
+                $occurrences,
+                static function (array $occ) use ($cutoff): bool {
+                    return $occ[0] >= $cutoff;
+                }
+            ));
+        }
+
+        $slots = [];
+        foreach ($occurrences as [$start, $end]) {
+            $start_sql = $start->format('Y-m-d H:i:s');
+            $end_sql = $end->format('Y-m-d H:i:s');
+            
             $booked = Reservations::count_bookings_for_virtual_slot(
                 $experience_id,
                 $start_sql,
