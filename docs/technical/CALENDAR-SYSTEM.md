@@ -43,8 +43,7 @@ Script automatico di verifica che controlla:
 
 **Come usarlo:**
 ```bash
-chmod +x verify-calendar-system.sh
-./verify-calendar-system.sh
+bash tools/verification/verify-calendar-system.sh
 ```
 
 ### 2. `REPORT-VERIFICA-CALENDARIO.md`
@@ -69,6 +68,11 @@ Test funzionale che simula:
 - ✅ Generazione slot database
 - ✅ Risposta API JSON
 - ✅ Formattazione frontend
+
+**Come usarlo:**
+```bash
+php tools/verification/test-calendar-data-flow.php
+```
 
 **Output del test:**
 - Mostra trasformazione dati in ogni fase
