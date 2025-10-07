@@ -3234,6 +3234,32 @@ final class ExperienceMetaBoxes
             $stored['days'] = [];
         }
 
+        // Supporta sia il nuovo formato time_slots che il vecchio time_sets
+        $time_slots = [];
+        
+        // Nuovo formato: time_slots (semplificato)
+        if (isset($stored['time_slots']) && is_array($stored['time_slots'])) {
+            foreach ($stored['time_slots'] as $slot) {
+                if (! is_array($slot)) {
+                    continue;
+                }
+                
+                $time = isset($slot['time']) ? trim(sanitize_text_field((string) $slot['time'])) : '';
+                if ('' === $time) {
+                    continue;
+                }
+                
+                $time_slots[] = [
+                    'time' => $time,
+                    'capacity' => isset($slot['capacity']) ? absint((string) $slot['capacity']) : 0,
+                    'buffer_before' => isset($slot['buffer_before']) ? absint((string) $slot['buffer_before']) : 0,
+                    'buffer_after' => isset($slot['buffer_after']) ? absint((string) $slot['buffer_after']) : 0,
+                    'days' => isset($slot['days']) && is_array($slot['days']) ? $slot['days'] : [],
+                ];
+            }
+        }
+        
+        // Vecchio formato: time_sets (per retrocompatibilità)
         $time_sets = [];
         if (isset($stored['time_sets']) && is_array($stored['time_sets'])) {
             foreach ($stored['time_sets'] as $set) {
@@ -3280,6 +3306,7 @@ final class ExperienceMetaBoxes
             }
         }
 
+        $stored['time_slots'] = $time_slots;
         $stored['time_sets'] = $time_sets;
 
         return array_merge(Recurrence::defaults(), $stored);
