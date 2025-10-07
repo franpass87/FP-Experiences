@@ -1254,12 +1254,13 @@
             clearErrors();
 
             const recurrence = {
-                start_date: getInputValue(settings, 'input[name="fp_exp_availability[recurrence][start_date]"]'),
-                end_date: getInputValue(settings, 'input[name="fp_exp_availability[recurrence][end_date]"]'),
+                start_date: getInputValue(settings, 'input[name="fp_exp_availability[recurrence][start_date]"]') || '',
+                end_date: getInputValue(settings, 'input[name="fp_exp_availability[recurrence][end_date]"]') || '',
                 frequency: getFrequencyValue() || 'weekly',
                 days: [],
                 duration: parseInt(getInputValue(settings, 'input[name="fp_exp_availability[recurrence][duration]"]') || '0', 10) || 0,
-                time_sets: [],
+                time_slots: [], // Nuovo formato semplificato
+                time_sets: [], // Vecchio formato per retrocompatibilità
             };
 
             if (recurrence.frequency === 'weekly' && daysContainer) {
@@ -1267,6 +1268,34 @@
                 recurrence.days = checkedDays.map((input) => input.value);
             }
 
+            // Nuovo formato: time_slots semplificati (un solo orario per slot)
+            const timeSlotRepeater = settings.querySelector('[data-repeater="time_slots"]');
+            if (timeSlotRepeater) {
+                const slotRows = Array.from(timeSlotRepeater.querySelectorAll('[data-repeater-item]'));
+                slotRows.forEach((row) => {
+                    const timeInput = row.querySelector('input[type="time"]');
+                    const capacityInput = row.querySelector('input[name*="[capacity]"]');
+                    const bufferBeforeInput = row.querySelector('input[name*="[buffer_before]"]');
+                    const bufferAfterInput = row.querySelector('input[name*="[buffer_after]"]');
+                    
+                    const time = timeInput ? timeInput.value.trim() : '';
+                    if (!time) {
+                        return; // Salta slot vuoti
+                    }
+                    
+                    const slotData = {
+                        time: time,
+                        capacity: capacityInput ? (parseInt(capacityInput.value || '0', 10) || 0) : 0,
+                        buffer_before: bufferBeforeInput ? (parseInt(bufferBeforeInput.value || '0', 10) || 0) : 0,
+                        buffer_after: bufferAfterInput ? (parseInt(bufferAfterInput.value || '0', 10) || 0) : 0,
+                        days: [], // Può essere aggiunto in futuro se necessario
+                    };
+                    
+                    recurrence.time_slots.push(slotData);
+                });
+            }
+            
+            // Vecchio formato: time_sets (per retrocompatibilità)
             const timeSetContainers = Array.from(settings.querySelectorAll('[data-time-set]'));
             timeSetContainers.forEach((container) => {
                 const labelInput = container.querySelector('input[name*="[label]"]');
@@ -1301,8 +1330,15 @@
                 recurrence.time_sets.push(setData);
             });
 
-            if (!recurrence.time_sets.length) {
+            // Verifica che ci sia almeno un time slot (nuovo o vecchio formato)
+            if (!recurrence.time_slots.length && !recurrence.time_sets.length) {
                 showError(getString('recurrenceMissingTimes'));
+                return null;
+            }
+            
+            // Verifica che ci siano anche i giorni per la ricorrenza settimanale
+            if (recurrence.frequency === 'weekly' && !recurrence.days.length) {
+                showError(getString('recurrenceMissingDays'));
                 return null;
             }
 

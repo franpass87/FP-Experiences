@@ -122,10 +122,11 @@ final class CalendarShortcode extends BaseShortcode
             ));
         }
         
-        // Verifica che ci siano time_sets configurati
+        // Verifica che ci siano slot configurati (time_slots nuovo formato o time_sets vecchio formato)
+        $has_time_slots = is_array($recurrence) && isset($recurrence['time_slots']) && is_array($recurrence['time_slots']) && count($recurrence['time_slots']) > 0;
         $has_time_sets = is_array($recurrence) && isset($recurrence['time_sets']) && is_array($recurrence['time_sets']) && count($recurrence['time_sets']) > 0;
         
-        if (! $has_time_sets) {
+        if (! $has_time_slots && ! $has_time_sets) {
             // Fallback: prova con il vecchio formato per retrocompatibilità
             $availability = get_post_meta($experience_id, '_fp_exp_availability', true);
             $has_legacy = is_array($availability) && !empty($availability['times']);
@@ -133,7 +134,7 @@ final class CalendarShortcode extends BaseShortcode
             if (! $has_legacy) {
                 if (defined('WP_DEBUG') && WP_DEBUG) {
                     error_log(sprintf(
-                        'FP_EXP Calendar: Experience %d - No time_sets in recurrence and no legacy availability, returning empty calendar',
+                        'FP_EXP Calendar: Experience %d - No time_slots/time_sets in recurrence and no legacy availability, returning empty calendar',
                         $experience_id
                     ));
                 }

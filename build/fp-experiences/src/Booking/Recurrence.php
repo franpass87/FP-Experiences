@@ -16,12 +16,15 @@ use function sanitize_text_field;
 use function sort;
 use function trim;
 
+/**
+ * Simplified Recurrence system - only weekly days without start/end dates
+ */
 final class Recurrence
 {
     private const OPEN_ENDED_WINDOW_MONTHS = 12;
 
     /**
-     * Default recurrence configuration.
+     * Default recurrence configuration (simplified).
      *
      * @return array<string, mixed>
      */
@@ -29,16 +32,14 @@ final class Recurrence
     {
         return [
             'frequency' => 'weekly',
-            'start_date' => '',
-            'end_date' => '',
-            'days' => [],
             'duration' => 60,
-            'time_sets' => [],
+            'days' => [], // Giorni della settimana: monday, tuesday, etc.
+            'time_slots' => [], // Slot orari con override opzionali
         ];
     }
 
     /**
-     * Sanitize recurrence definition coming from the admin UI.
+     * Sanitize recurrence definition (simplified version).
      *
      * @param array<string, mixed> $raw
      *
@@ -48,22 +49,18 @@ final class Recurrence
     {
         $definition = self::defaults();
 
-        $frequency = isset($raw['frequency']) ? sanitize_key((string) $raw['frequency']) : 'weekly';
-        if (! in_array($frequency, ['daily', 'weekly', 'specific'], true)) {
-            $frequency = 'weekly';
-        }
-        $definition['frequency'] = $frequency;
+        // Frequency is always 'weekly' in simplified version
+        $definition['frequency'] = 'weekly';
 
-        $definition['start_date'] = isset($raw['start_date']) ? sanitize_text_field((string) $raw['start_date']) : '';
-        $definition['end_date'] = isset($raw['end_date']) ? sanitize_text_field((string) $raw['end_date']) : '';
-
+        // Durata predefinita slot
         $definition['duration'] = isset($raw['duration']) ? absint((string) $raw['duration']) : 0;
         if ($definition['duration'] <= 0) {
             $definition['duration'] = 60;
         }
 
+        // Giorni della settimana
         $definition['days'] = [];
-        if ('weekly' === $definition['frequency'] && isset($raw['days']) && is_array($raw['days'])) {
+        if (isset($raw['days']) && is_array($raw['days'])) {
             foreach ($raw['days'] as $day) {
                 $day_key = sanitize_key((string) $day);
                 $mapped = self::map_weekday_key($day_key);
@@ -73,11 +70,37 @@ final class Recurrence
             }
         }
 
-        $definition['time_sets'] = self::sanitize_time_sets($raw['time_sets'] ?? []);
-
-        if (! self::validate_dates($definition['start_date'], $definition['end_date'])) {
-            $definition['start_date'] = '';
-            $definition['end_date'] = '';
+        // Time slots con override opzionali
+        $definition['time_slots'] = self::sanitize_time_slots($raw['time_slots'] ?? []);
+        
+        // Fallback per retrocompatibilità: se non ci sono time_slots ma ci sono time_sets, converti
+        if (empty($definition['time_slots']) && isset($raw['time_sets']) && is_array($raw['time_sets'])) {
+            $converted = [];
+            foreach ($raw['time_sets'] as $set) {
+                if (!is_array($set) || empty($set['times']) || !is_array($set['times'])) {
+                    continue;
+                }
+                
+                // Converti ogni time del set in un time_slot
+                foreach ($set['times'] as $time) {
+                    $time_str = trim((string) $time);
+                    if ($time_str === '') {
+                        continue;
+                    }
+                    
+                    $converted[] = [
+                        'time' => $time_str,
+                        'capacity' => isset($set['capacity']) ? absint((string) $set['capacity']) : 0,
+                        'buffer_before' => isset($set['buffer_before']) ? absint((string) $set['buffer_before']) : 0,
+                        'buffer_after' => isset($set['buffer_after']) ? absint((string) $set['buffer_after']) : 0,
+                        'days' => isset($set['days']) && is_array($set['days']) ? $set['days'] : [],
+                    ];
+                }
+            }
+            
+            if (!empty($converted)) {
+                $definition['time_slots'] = self::sanitize_time_slots($converted);
+            }
         }
 
         return $definition;
@@ -90,18 +113,20 @@ final class Recurrence
      */
     public static function is_actionable(array $definition): bool
     {
-        $times = self::flatten_time_sets($definition['time_sets'] ?? []);
-
-        if (empty($times)) {
+        // Verifica che ci siano giorni e slot orari
+        if (empty($definition['days'])) {
             return false;
         }
 
-        // Removed check for empty 'days' for weekly recurrences to align with admin UI changes.
+        if (empty($definition['time_slots'])) {
+            return false;
+        }
+
         return true;
     }
 
     /**
-     * Convert a recurrence definition into slot generation rules.
+     * Convert a recurrence definition into slot generation rules (simplified).
      *
      * @param array<string, mixed> $definition
      * @param array<string, mixed> $availability
@@ -114,20 +139,13 @@ final class Recurrence
             return [];
         }
 
-        $times = self::flatten_time_sets($definition['time_sets']);
-
-        if (empty($times)) {
-            return [];
-        }
-
-        $start_date = $definition['start_date'] ?: 'now';
-        $open_ended = '' === $definition['end_date'] && 'specific' !== $definition['frequency'];
-        $end_date = $open_ended ? '' : ($definition['end_date'] ?: $start_date);
-
+        // Sistema semplificato: generiamo regole per i prossimi N mesi senza date fisse
         $base_rule = [
-            'type' => $definition['frequency'],
-            'start_date' => $start_date,
-            'end_date' => $end_date,
+            'type' => 'weekly',
+            'start_date' => 'now',
+            'end_date' => '', // Open ended
+            'open_ended' => true,
+            'open_ended_months' => self::OPEN_ENDED_WINDOW_MONTHS,
             'duration' => isset($definition['duration']) ? absint((string) $definition['duration']) : 60,
             'capacity_total' => isset($availability['slot_capacity']) ? absint((string) $availability['slot_capacity']) : 0,
             'capacity_per_type' => $availability['capacity_per_type'] ?? [],
@@ -135,82 +153,52 @@ final class Recurrence
             'price_rules' => $availability['price_rules'] ?? [],
             'buffer_before' => isset($availability['buffer_before_minutes']) ? absint((string) $availability['buffer_before_minutes']) : 0,
             'buffer_after' => isset($availability['buffer_after_minutes']) ? absint((string) $availability['buffer_after_minutes']) : 0,
+            'days' => $definition['days'],
         ];
-
-        if ($open_ended) {
-            $base_rule['open_ended'] = true;
-            $base_rule['open_ended_months'] = self::OPEN_ENDED_WINDOW_MONTHS;
-        }
-
-        if ($base_rule['duration'] <= 0) {
-            $base_rule['duration'] = 60;
-        }
 
         $rules = [];
 
-        foreach ($definition['time_sets'] as $set) {
-            if (! is_array($set) || empty($set['times']) || ! is_array($set['times'])) {
+        // Crea una regola per ogni time slot
+        foreach ($definition['time_slots'] as $slot) {
+            if (! is_array($slot) || empty($slot['time'])) {
                 continue;
             }
 
-            $times = [];
-            foreach ($set['times'] as $time) {
-                $time_string = trim((string) $time);
-                if ('' === $time_string) {
-                    continue;
-                }
-                $times[] = $time_string;
-            }
-
-            if (empty($times)) {
+            $time_string = trim((string) $slot['time']);
+            if ('' === $time_string) {
                 continue;
             }
-
-            $times = array_values(array_unique($times));
-            sort($times);
 
             $rule = $base_rule;
-            $rule['times'] = $times;
-            
-            // Usa la capienza del time set se specificata e > 0, altrimenti usa quella predefinita
-            $set_capacity = isset($set['capacity']) ? absint((string) $set['capacity']) : 0;
-            if ($set_capacity > 0) {
-                $rule['capacity_total'] = $set_capacity;
-            }
-            // Se la capienza del time set è 0 o vuota, mantieni quella predefinita dal base_rule
-            if (isset($set['buffer_before'])) {
-                $rule['buffer_before'] = absint((string) $set['buffer_before']);
-            }
-            if (isset($set['buffer_after'])) {
-                $rule['buffer_after'] = absint((string) $set['buffer_after']);
-            }
-            if (isset($set['duration']) && absint((string) $set['duration']) > 0) {
-                $rule['duration'] = absint((string) $set['duration']);
+            $rule['times'] = [$time_string];
+
+            // Override capacità se specificata per questo slot
+            if (isset($slot['capacity']) && absint((string) $slot['capacity']) > 0) {
+                $rule['capacity_total'] = absint((string) $slot['capacity']);
             }
 
-            if ('weekly' === $definition['frequency']) {
-                $set_days = [];
-                if (isset($set['days']) && is_array($set['days'])) {
-                    foreach ($set['days'] as $day) {
-                        $mapped = self::map_weekday_key((string) $day);
-                        if ($mapped && ! in_array($mapped, $set_days, true)) {
-                            $set_days[] = $mapped;
-                        }
+            // Override buffer se specificati per questo slot
+            if (isset($slot['buffer_before']) && absint((string) $slot['buffer_before']) > 0) {
+                $rule['buffer_before'] = absint((string) $slot['buffer_before']);
+            }
+
+            if (isset($slot['buffer_after']) && absint((string) $slot['buffer_after']) > 0) {
+                $rule['buffer_after'] = absint((string) $slot['buffer_after']);
+            }
+
+            // Override giorni se specificati per questo slot
+            if (isset($slot['days']) && is_array($slot['days']) && ! empty($slot['days'])) {
+                $slot_days = [];
+                foreach ($slot['days'] as $day) {
+                    $mapped = self::map_weekday_key((string) $day);
+                    if ($mapped && ! in_array($mapped, $slot_days, true)) {
+                        $slot_days[] = $mapped;
                     }
                 }
-
-                if (empty($set_days)) {
-                    $set_days = $definition['days'];
+                if (! empty($slot_days)) {
+                    sort($slot_days);
+                    $rule['days'] = $slot_days;
                 }
-
-                if (empty($set_days)) {
-                    continue;
-                }
-
-                sort($set_days);
-                $rule['days'] = $set_days;
-            } else {
-                $rule['days'] = [];
             }
 
             $rules[] = $rule;
@@ -220,71 +208,44 @@ final class Recurrence
     }
 
     /**
-     * Flatten a collection of time sets into a simple times array.
+     * Sanitize time slots array.
      *
-     * @param array<int, array<string, mixed>> $time_sets
+     * @param array<int, mixed> $time_slots
      *
-     * @return array<int, string>
+     * @return array<int, array{time:string,capacity:int,buffer_before:int,buffer_after:int,days:array<int,string>}>
      */
-    public static function flatten_time_sets(array $time_sets): array
+    private static function sanitize_time_slots($time_slots): array
     {
-        $times = [];
-        foreach ($time_sets as $set) {
-            if (! is_array($set) || empty($set['times']) || ! is_array($set['times'])) {
-                continue;
-            }
-
-            foreach ($set['times'] as $time) {
-                $time_string = trim((string) $time);
-                if ('' === $time_string) {
-                    continue;
-                }
-                $times[] = $time_string;
-            }
-        }
-
-        $times = array_values(array_unique($times));
-        sort($times);
-
-        return $times;
-    }
-
-    /**
-     * @param array<int, mixed> $time_sets
-     *
-     * @return array<int, array{label:string,times:array<int,string>,days:array<int,string>,capacity:int,buffer_before:int,buffer_after:int}>
-     */
-    private static function sanitize_time_sets($time_sets): array
-    {
-        if (! is_array($time_sets)) {
+        if (! is_array($time_slots)) {
             return [];
         }
 
         $sanitized = [];
-        foreach ($time_sets as $set) {
-            if (! is_array($set)) {
+        $seen_times = []; // Previene duplicati
+        
+        foreach ($time_slots as $slot) {
+            if (! is_array($slot)) {
                 continue;
             }
 
-            $label = isset($set['label']) ? sanitize_text_field((string) $set['label']) : '';
-            $times = [];
-            $days = [];
-            $capacity = isset($set['capacity']) ? absint((string) $set['capacity']) : 0;
-            $buffer_before = isset($set['buffer_before']) ? absint((string) $set['buffer_before']) : 0;
-            $buffer_after = isset($set['buffer_after']) ? absint((string) $set['buffer_after']) : 0;
-
-            if (isset($set['times']) && is_array($set['times'])) {
-                foreach ($set['times'] as $time) {
-                    $time_string = trim(sanitize_text_field((string) $time));
-                    if ('' === $time_string) {
-                        continue;
-                    }
-                    $times[] = $time_string;
-                }
+            $time = isset($slot['time']) ? trim(sanitize_text_field((string) $slot['time'])) : '';
+            if ('' === $time) {
+                continue;
             }
+            
+            // Previeni duplicati: se questo orario esiste già, salta
+            if (in_array($time, $seen_times, true)) {
+                continue;
+            }
+            $seen_times[] = $time;
 
-            if (isset($set['days']) && is_array($set['days'])) {
-                foreach ($set['days'] as $day) {
+            $capacity = isset($slot['capacity']) ? absint((string) $slot['capacity']) : 0;
+            $buffer_before = isset($slot['buffer_before']) ? absint((string) $slot['buffer_before']) : 0;
+            $buffer_after = isset($slot['buffer_after']) ? absint((string) $slot['buffer_after']) : 0;
+
+            $days = [];
+            if (isset($slot['days']) && is_array($slot['days'])) {
+                foreach ($slot['days'] as $day) {
                     $day_key = sanitize_key((string) $day);
                     $mapped = self::map_weekday_key($day_key);
                     if ($mapped && ! in_array($mapped, $days, true)) {
@@ -293,26 +254,21 @@ final class Recurrence
                 }
             }
 
-            if (empty($times)) {
-                continue;
-            }
-
-            $times = array_values(array_unique($times));
-            sort($times);
-
             $sanitized[] = [
-                'label' => $label,
-                'times' => $times,
-                'days' => $days,
+                'time' => $time,
                 'capacity' => $capacity,
                 'buffer_before' => $buffer_before,
                 'buffer_after' => $buffer_after,
+                'days' => $days,
             ];
         }
 
         return $sanitized;
     }
 
+    /**
+     * Map weekday key to full name.
+     */
     private static function map_weekday_key(string $day): ?string
     {
         $map = [
@@ -335,21 +291,5 @@ final class Recurrence
         }
 
         return null;
-    }
-
-    private static function validate_dates(string $start, string $end): bool
-    {
-        if ('' === $start && '' === $end) {
-            return true;
-        }
-
-        try {
-            $start_dt = new DateTimeImmutable($start ?: 'now');
-            $end_dt = new DateTimeImmutable($end ?: $start ?: 'now');
-        } catch (Exception $exception) {
-            return false;
-        }
-
-        return $start_dt <= $end_dt;
     }
 }
