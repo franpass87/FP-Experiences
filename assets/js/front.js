@@ -77,6 +77,8 @@
         try {
             const raw = widget.getAttribute('data-config') || '{}';
             config = JSON.parse(raw);
+            // Popola window.FPFront.config per i moduli
+            window.FPFront.config = config;
         } catch (e) {
             console.warn('[FP-EXP] Config frontend non valida', e);
         }
@@ -238,62 +240,8 @@
         }
 
         // 3) Click su giorno del calendario con navigazione
-        const calendarNav = document.querySelector('.fp-exp-calendar-nav');
-        if (calendarNav) {
-            // Click sui giorni
-            calendarNav.addEventListener('click', (ev) => {
-                const target = ev.target.closest('.fp-exp-calendar-nav__day');
-                if (!target || target.disabled) return;
-                
-                const date = target.getAttribute('data-date');
-                if (!date) return;
-                
-                // Rimuovi selezione precedente
-                calendarNav.querySelectorAll('.fp-exp-calendar-nav__day.is-selected').forEach(day => {
-                    day.classList.remove('is-selected');
-                });
-                
-                // Seleziona il giorno corrente
-                target.classList.add('is-selected');
-                
-                // Imposta la data nell'input nascosto
-                if (dateInput) {
-                    dateInput.value = date;
-                    dateInput.dispatchEvent(new Event('change', { bubbles: true }));
-                }
-            });
-            
-            // Navigazione mesi e anni
-            calendarNav.addEventListener('click', (ev) => {
-                const button = ev.target.closest('[data-action]');
-                if (!button) return;
-                
-                const action = button.getAttribute('data-action');
-                const content = calendarNav.querySelector('.fp-exp-calendar-nav__content');
-                const monthEl = calendarNav.querySelector('.fp-exp-calendar-nav__month');
-                const yearEl = calendarNav.querySelector('.fp-exp-calendar-nav__year');
-                
-                if (!content || !monthEl || !yearEl) return;
-                
-                const currentMonth = content.getAttribute('data-current-month') || '2025-01';
-                const currentDate = new Date(currentMonth + '-01');
-                
-                let newDate;
-                switch (action) {
-                    case 'prev-month':
-                        newDate = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1);
-                        break;
-                    case 'next-month':
-                        newDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1);
-                        break;
-                    default:
-                        return;
-                }
-                
-                // Aggiorna il calendario
-                updateCalendarMonth(calendarNav, newDate);
-            });
-        }
+        // Nota: calendarNav viene dichiarato e inizializzato più avanti
+        // Questo codice sarà eseguito dopo l'inizializzazione
         
         // Funzione per aggiornare il mese del calendario
         const updateCalendarMonth = async (calendarNav, date) => {
@@ -409,36 +357,95 @@
             }
         };
 
-        // Inizializza il calendario al caricamento della pagina
-        document.addEventListener('DOMContentLoaded', function() {
-            const calendarNav = document.querySelector('.fp-exp-calendar-nav');
-            if (calendarNav) {
-                // Inizializza calendarMap con i dati del backend
-                if (window.FPFront && window.FPFront.config && window.FPFront.config.calendar) {
-                    const calendarData = window.FPFront.config.calendar;
-                    console.log('[FP-EXP] Initializing calendarMap with backend data');
+        // Inizializza il modulo availability prima di usare il calendario
+        if (window.FPFront.availability && window.FPFront.availability.init) {
+            window.FPFront.availability.init({ config, widget });
+            console.log('[FP-EXP] Availability module initialized');
+        }
+        
+        // Inizializza il calendario immediatamente (non aspettare DOMContentLoaded che potrebbe non triggerare)
+        const calendarNav = document.querySelector('.fp-exp-calendar-nav');
+        if (calendarNav) {
+            // Inizializza calendarMap con i dati del backend
+            if (window.FPFront && window.FPFront.config && window.FPFront.config.calendar) {
+                const calendarData = window.FPFront.config.calendar;
+                console.log('[FP-EXP] Initializing calendarMap with backend data:', calendarData);
+                
+                // Popola calendarMap con tutti i dati del calendario
+                Object.keys(calendarData).forEach(monthKey => {
+                    const monthData = calendarData[monthKey];
                     
-                    // Popola calendarMap con tutti i dati del calendario
-                    Object.keys(calendarData).forEach(monthKey => {
-                        const monthData = calendarData[monthKey];
-                        
-                        if (monthData.days) {
-                            Object.keys(monthData.days).forEach(dateKey => {
-                                const daySlots = monthData.days[dateKey];
-                                calendarMap.set(dateKey, daySlots);
-                            });
-                        }
-                    });
-                    
-                    console.log('[FP-EXP] CalendarMap initialized with', calendarMap.size, 'dates');
-                } else {
-                    console.log('[FP-EXP] No calendar data found in config');
+                    if (monthData.days) {
+                        Object.keys(monthData.days).forEach(dateKey => {
+                            const daySlots = monthData.days[dateKey];
+                            calendarMap.set(dateKey, daySlots);
+                        });
+                    }
+                });
+                
+                console.log('[FP-EXP] CalendarMap initialized with', calendarMap.size, 'dates');
+            } else {
+                console.log('[FP-EXP] No calendar data found in config');
+            }
+            
+            // Click sui giorni del calendario
+            calendarNav.addEventListener('click', (ev) => {
+                const target = ev.target.closest('.fp-exp-calendar-nav__day');
+                if (!target || target.disabled) return;
+                
+                const date = target.getAttribute('data-date');
+                if (!date) return;
+                
+                // Rimuovi selezione precedente
+                calendarNav.querySelectorAll('.fp-exp-calendar-nav__day.is-selected').forEach(day => {
+                    day.classList.remove('is-selected');
+                });
+                
+                // Seleziona il giorno corrente
+                target.classList.add('is-selected');
+                
+                // Imposta la data nell'input nascosto
+                if (dateInput) {
+                    dateInput.value = date;
+                    dateInput.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+            });
+            
+            // Navigazione mesi
+            calendarNav.addEventListener('click', (ev) => {
+                const button = ev.target.closest('[data-action]');
+                if (!button) return;
+                
+                const action = button.getAttribute('data-action');
+                const content = calendarNav.querySelector('.fp-exp-calendar-nav__content');
+                const monthEl = calendarNav.querySelector('.fp-exp-calendar-nav__month');
+                const yearEl = calendarNav.querySelector('.fp-exp-calendar-nav__year');
+                
+                if (!content || !monthEl || !yearEl) return;
+                
+                const currentMonth = content.getAttribute('data-current-month') || '2025-01';
+                const currentDate = new Date(currentMonth + '-01');
+                
+                let newDate;
+                switch (action) {
+                    case 'prev-month':
+                        newDate = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1);
+                        break;
+                    case 'next-month':
+                        newDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1);
+                        break;
+                    default:
+                        return;
                 }
                 
-                const currentDate = new Date();
-                updateCalendarMonth(calendarNav, currentDate);
-            }
-        });
+                // Aggiorna il calendario
+                updateCalendarMonth(calendarNav, newDate);
+            });
+            
+            // Inizializza il calendario con il mese corrente
+            const currentDate = new Date();
+            updateCalendarMonth(calendarNav, currentDate);
+        }
 
         // 3.b) Gestisci CTA con data-fp-scroll (hero e sticky): mostra sezione date e scrolla
         (function setupCtaScrollHandlers() {
@@ -1131,11 +1138,6 @@
                 window.FPFront.summaryRtb.init({ widget, slotsEl, config });
             }
         })();
-
-        // Inizializza il modulo availability con il contesto corrente
-        if (window.FPFront.availability && window.FPFront.availability.init) {
-            window.FPFront.availability.init({ config, widget });
-        }
     });
     
 })();

@@ -97,6 +97,7 @@ final class Assets
 
         $css_rel = is_readable(trailingslashit(FP_EXP_PLUGIN_DIR) . $css_min_rel) ? $css_min_rel : $css_non_rel;
         $js_rel = is_readable(trailingslashit(FP_EXP_PLUGIN_DIR) . $js_min_rel) ? $js_min_rel : $js_non_rel;
+        $use_minified = is_readable(trailingslashit(FP_EXP_PLUGIN_DIR) . $js_min_rel);
 
         $style_url = trailingslashit(FP_EXP_PLUGIN_URL) . $css_rel;
         $front_js = trailingslashit(FP_EXP_PLUGIN_URL) . $js_rel;
@@ -116,10 +117,34 @@ final class Assets
             Helpers::asset_version($css_rel)
         );
 
+        // Se non usiamo il file minificato, registra i moduli separati
+        $front_deps = ['wp-i18n'];
+        if (! $use_minified) {
+            $modules = [
+                'fp-exp-availability' => 'assets/js/front/availability.js',
+                'fp-exp-slots' => 'assets/js/front/slots.js',
+                'fp-exp-quantity' => 'assets/js/front/quantity.js',
+                'fp-exp-summary-rtb' => 'assets/js/front/summary-rtb.js',
+                'fp-exp-summary-woo' => 'assets/js/front/summary-woo.js',
+                'fp-exp-calendar' => 'assets/js/front/calendar.js',
+            ];
+            
+            foreach ($modules as $handle => $path) {
+                wp_register_script(
+                    $handle,
+                    trailingslashit(FP_EXP_PLUGIN_URL) . $path,
+                    ['wp-i18n'],
+                    Helpers::asset_version($path),
+                    true
+                );
+                $front_deps[] = $handle;
+            }
+        }
+
         wp_register_script(
             'fp-exp-front',
             $front_js,
-            ['wp-i18n'],
+            $front_deps,
             Helpers::asset_version($js_rel),
             true
         );
