@@ -84,8 +84,17 @@ final class Assets
 
         $this->registered = true;
 
-        $style_url = trailingslashit(FP_EXP_PLUGIN_URL) . 'assets/css/dist/fp-experiences-frontend.min.css';
-        $front_js = trailingslashit(FP_EXP_PLUGIN_URL) . 'assets/js/dist/fp-experiences-frontend.min.js';
+        // Scegli in modo resiliente: usa i file minificati se presenti, altrimenti fallback ai non minificati
+        $css_min_rel = 'assets/css/dist/fp-experiences-frontend.min.css';
+        $css_non_rel = 'assets/css/front.css';
+        $js_min_rel = 'assets/js/dist/fp-experiences-frontend.min.js';
+        $js_non_rel = 'assets/js/front.js';
+
+        $css_rel = is_readable(trailingslashit(FP_EXP_PLUGIN_DIR) . $css_min_rel) ? $css_min_rel : $css_non_rel;
+        $js_rel = is_readable(trailingslashit(FP_EXP_PLUGIN_DIR) . $js_min_rel) ? $js_min_rel : $js_non_rel;
+
+        $style_url = trailingslashit(FP_EXP_PLUGIN_URL) . $css_rel;
+        $front_js = trailingslashit(FP_EXP_PLUGIN_URL) . $js_rel;
         $checkout_js = trailingslashit(FP_EXP_PLUGIN_URL) . 'assets/js/checkout.js';
 
         wp_register_style(
@@ -99,14 +108,14 @@ final class Assets
             'fp-exp-front',
             $style_url,
             ['fp-exp-fontawesome'],
-            Helpers::asset_version('assets/css/dist/fp-experiences-frontend.min.css')
+            Helpers::asset_version($css_rel)
         );
 
         wp_register_script(
             'fp-exp-front',
             $front_js,
             ['wp-i18n'],
-            Helpers::asset_version('assets/js/dist/fp-experiences-frontend.min.js'),
+            Helpers::asset_version($js_rel),
             true
         );
 

@@ -76,11 +76,15 @@ final class LanguageAdmin
             return;
         }
 
+        $admin_css = Helpers::resolve_asset_rel([
+            'assets/css/dist/fp-experiences-admin.min.css',
+            'assets/css/admin.css',
+        ]);
         wp_enqueue_style(
             'fp-exp-admin',
-            FP_EXP_PLUGIN_URL . 'assets/css/dist/fp-experiences-admin.min.css',
+            FP_EXP_PLUGIN_URL . $admin_css,
             [],
-            Helpers::asset_version('assets/css/dist/fp-experiences-admin.min.css')
+            Helpers::asset_version($admin_css)
         );
     }
 }
