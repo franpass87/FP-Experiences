@@ -286,36 +286,14 @@
                         let slotCount = 0;
                         let isAvailable = false;
                         
-                        // Prova prima dai dati del calendario passati dal backend
-                        if (window.FPFront && window.FPFront.config && window.FPFront.config.calendar) {
-                            const calendarData = window.FPFront.config.calendar;
-                            
-                            if (calendarData[monthKey] && calendarData[monthKey].days && calendarData[monthKey].days[dateKey]) {
-                                const daySlots = calendarData[monthKey].days[dateKey];
-                                slotCount = daySlots.length;
-                                isAvailable = slotCount > 0;
-                                
-                                // Aggiungi il campo 'label' e salva in cache per future navigazioni
-                                const slotsWithLabels = daySlots.map(slot => {
-                                    if (!slot.label && slot.start_iso && slot.end_iso) {
-                                        slot.label = formatTimeRange(slot.start_iso, slot.end_iso);
-                                    }
-                                    return slot;
-                                });
-                                calendarMap.set(dateKey, slotsWithLabels);
-                            }
+                        // Prova prima dalla cache della calendarMap
+                        const cachedSlots = calendarMap.get(dateKey);
+                        if (cachedSlots && cachedSlots.length > 0) {
+                            slotCount = cachedSlots.length;
+                            isAvailable = true;
                         }
                         
-                        // Se non trovato nei dati del calendario, prova la cache
-                        if (!isAvailable) {
-                            const cachedSlots = calendarMap.get(dateKey);
-                            if (cachedSlots && cachedSlots.length > 0) {
-                                slotCount = cachedSlots.length;
-                                isAvailable = true;
-                            }
-                        }
-                        
-                        // Se ancora non disponibile, chiama l'API come fallback
+                        // Se non trovato, chiama l'API come fallback
                         if (!isAvailable) {
                             try {
                                 const apiSlots = await fetchAvailability(dateKey);
@@ -369,37 +347,25 @@
             console.log('[FP-EXP] Availability module initialized');
         }
         
+        // Aggiungi il campo 'label' agli slot nella calendarMap per la visualizzazione
+        if (calendarMap && calendarMap.size > 0) {
+            console.log('[FP-EXP] Adding labels to', calendarMap.size, 'dates in calendarMap');
+            calendarMap.forEach((slots, dateKey) => {
+                const slotsWithLabels = slots.map(slot => {
+                    if (!slot.label && slot.start_iso && slot.end_iso) {
+                        slot.label = formatTimeRange(slot.start_iso, slot.end_iso);
+                    }
+                    return slot;
+                });
+                calendarMap.set(dateKey, slotsWithLabels);
+            });
+        } else {
+            console.log('[FP-EXP] CalendarMap is empty or not initialized');
+        }
+        
         // Inizializza il calendario immediatamente (non aspettare DOMContentLoaded che potrebbe non triggerare)
         const calendarNav = document.querySelector('.fp-exp-calendar-nav');
         if (calendarNav) {
-            // Inizializza calendarMap con i dati del backend
-            if (window.FPFront && window.FPFront.config && window.FPFront.config.calendar) {
-                const calendarData = window.FPFront.config.calendar;
-                console.log('[FP-EXP] Initializing calendarMap with backend data:', calendarData);
-                
-                // Popola calendarMap con tutti i dati del calendario
-                Object.keys(calendarData).forEach(monthKey => {
-                    const monthData = calendarData[monthKey];
-                    
-                    if (monthData.days) {
-                        Object.keys(monthData.days).forEach(dateKey => {
-                            const daySlots = monthData.days[dateKey];
-                            // Aggiungi il campo 'label' a ogni slot per la visualizzazione
-                            const slotsWithLabels = daySlots.map(slot => {
-                                if (!slot.label && slot.start_iso && slot.end_iso) {
-                                    slot.label = formatTimeRange(slot.start_iso, slot.end_iso);
-                                }
-                                return slot;
-                            });
-                            calendarMap.set(dateKey, slotsWithLabels);
-                        });
-                    }
-                });
-                
-                console.log('[FP-EXP] CalendarMap initialized with', calendarMap.size, 'dates');
-            } else {
-                console.log('[FP-EXP] No calendar data found in config');
-            }
             
             // Click sui giorni del calendario
             calendarNav.addEventListener('click', (ev) => {
