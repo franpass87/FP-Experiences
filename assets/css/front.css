@@ -1452,29 +1452,109 @@
 
 /* Layout mobile invariato: già a colonna */
 
-/* Calendario semplificato */
-.fp-exp-calendar-simple {
+/* Calendario con navigazione mesi */
+.fp-exp-calendar-nav {
     margin-bottom: 1.5rem;
+    border: 1px solid rgba(15, 23, 42, 0.1);
+    border-radius: 12px;
+    padding: 1rem;
 }
 
-.fp-exp-calendar-simple__header {
-    margin-bottom: 1rem;
+.fp-exp-calendar-nav__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid var(--fp-color-primary);
 }
 
-.fp-exp-calendar-simple__header h4 {
-    font-size: 1.1rem;
+.fp-exp-calendar-nav__controls {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.fp-exp-calendar-nav__prev-month,
+.fp-exp-calendar-nav__next-month {
+    background: var(--fp-color-primary);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 2.5rem;
+    height: 2.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 1.2rem;
+    font-weight: bold;
+    transition: all 0.2s ease;
+}
+
+.fp-exp-calendar-nav__prev-year,
+.fp-exp-calendar-nav__next-year {
+    background: color-mix(in srgb, var(--fp-color-primary) 70%, #fff);
+    color: var(--fp-color-primary);
+    border: none;
+    border-radius: 50%;
+    width: 2.5rem;
+    height: 2.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: bold;
+    transition: all 0.2s ease;
+}
+
+.fp-exp-calendar-nav__prev-month:hover,
+.fp-exp-calendar-nav__next-month:hover {
+    background: color-mix(in srgb, var(--fp-color-primary) 85%, #000);
+    transform: scale(1.05);
+}
+
+.fp-exp-calendar-nav__prev-year:hover,
+.fp-exp-calendar-nav__next-year:hover {
+    background: color-mix(in srgb, var(--fp-color-primary) 50%, #fff);
+    transform: scale(1.05);
+}
+
+.fp-exp-calendar-nav__prev-month:disabled,
+.fp-exp-calendar-nav__next-month:disabled,
+.fp-exp-calendar-nav__prev-year:disabled,
+.fp-exp-calendar-nav__next-year:disabled {
+    background: rgba(15, 23, 42, 0.3);
+    color: rgba(15, 23, 42, 0.5);
+    cursor: not-allowed;
+    transform: none;
+}
+
+.fp-exp-calendar-nav__title-container {
+    text-align: center;
+}
+
+.fp-exp-calendar-nav__month {
+    font-size: 1.2rem;
     font-weight: 600;
     color: var(--fp-color-text);
+    margin: 0 0 0.25rem 0;
+}
+
+.fp-exp-calendar-nav__year {
+    font-size: 1rem;
+    font-weight: 500;
+    color: var(--fp-color-primary);
     margin: 0;
 }
 
-.fp-exp-calendar-simple__grid {
+.fp-exp-calendar-nav__grid {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
     gap: 0.5rem;
 }
 
-.fp-exp-calendar-simple__day {
+.fp-exp-calendar-nav__day {
     border: 1px solid rgba(15, 23, 42, 0.1);
     border-radius: 8px;
     padding: 0.75rem 0.5rem;
@@ -1491,35 +1571,35 @@
     align-items: center;
 }
 
-.fp-exp-calendar-simple__day:hover:not(:disabled) {
+.fp-exp-calendar-nav__day:hover:not(:disabled) {
     border-color: var(--fp-color-primary);
     box-shadow: 0 0 0 2px rgba(11, 110, 253, 0.15);
     transform: translateY(-1px);
 }
 
-.fp-exp-calendar-simple__day.is-selected {
+.fp-exp-calendar-nav__day.is-selected {
     border-color: var(--fp-color-primary);
     background: color-mix(in srgb, var(--fp-color-primary) 12%, #fff);
     box-shadow: 0 0 0 2px rgba(11, 110, 253, 0.25);
 }
 
-.fp-exp-calendar-simple__day:disabled {
+.fp-exp-calendar-nav__day:disabled {
     opacity: 0.4;
     cursor: not-allowed;
     background: rgba(15, 23, 42, 0.02);
 }
 
-.fp-exp-calendar-simple__day.is-past {
+.fp-exp-calendar-nav__day.is-past {
     opacity: 0.3;
 }
 
-.fp-exp-calendar-simple__day-number {
+.fp-exp-calendar-nav__day-number {
     font-size: 0.9rem;
     font-weight: 600;
     line-height: 1;
 }
 
-.fp-exp-calendar-simple__day-slots {
+.fp-exp-calendar-nav__day-slots {
     font-size: 0.7rem;
     color: var(--fp-color-primary);
     font-weight: 500;
@@ -1528,21 +1608,43 @@
 
 /* Responsive */
 @media (max-width: 768px) {
-    .fp-exp-calendar-simple__grid {
+    .fp-exp-calendar-nav {
+        padding: 0.75rem;
+    }
+    
+    .fp-exp-calendar-nav__grid {
         gap: 0.25rem;
     }
     
-    .fp-exp-calendar-simple__day {
+    .fp-exp-calendar-nav__day {
         padding: 0.5rem 0.25rem;
         min-height: 2.5rem;
     }
     
-    .fp-exp-calendar-simple__day-number {
+    .fp-exp-calendar-nav__day-number {
         font-size: 0.8rem;
     }
     
-    .fp-exp-calendar-simple__day-slots {
+    .fp-exp-calendar-nav__day-slots {
         font-size: 0.65rem;
+    }
+    
+    .fp-exp-calendar-nav__prev-month,
+    .fp-exp-calendar-nav__next-month {
+        width: 2rem;
+        height: 2rem;
+        font-size: 1rem;
+    }
+    
+    .fp-exp-calendar-nav__prev-year,
+    .fp-exp-calendar-nav__next-year {
+        width: 1.75rem;
+        height: 1.75rem;
+        font-size: 0.9rem;
+    }
+    
+    .fp-exp-calendar-nav__controls {
+        gap: 0.25rem;
     }
 }
 
