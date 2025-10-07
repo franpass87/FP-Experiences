@@ -1452,67 +1452,98 @@
 
 /* Layout mobile invariato: già a colonna */
 
-.fp-exp-calendar__grid,
-.fp-exp-calendar-only__days {
-    display: grid;
-    gap: 0.65rem;
+/* Calendario semplificato */
+.fp-exp-calendar-simple {
+    margin-bottom: 1.5rem;
 }
 
-/* Griglia 7 colonne e intestazioni per vista calendario */
-.fp-exp-calendar[data-show-calendar="1"] .fp-exp-calendar__weekdays,
-.fp-exp-calendar[data-show-calendar="1"] .fp-exp-calendar__grid {
+.fp-exp-calendar-simple__header {
+    margin-bottom: 1rem;
+}
+
+.fp-exp-calendar-simple__header h4 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--fp-color-text);
+    margin: 0;
+}
+
+.fp-exp-calendar-simple__grid {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
     gap: 0.5rem;
 }
 
-.fp-exp-calendar__weekdays {
-    margin-bottom: 0.35rem;
-}
-
-.fp-exp-calendar__weekday {
-    font-size: .85rem;
-    font-weight: 600;
-    color: var(--fp-color-muted);
-    text-align: center;
-}
-
-.fp-exp-calendar__empty {
-    min-height: 2.75rem;
-}
-
-.fp-exp-calendar__day,
-.fp-exp-calendar-only__day {
+.fp-exp-calendar-simple__day {
     border: 1px solid rgba(15, 23, 42, 0.1);
-    border-radius: var(--fp-exp-radius-base, 12px);
-    padding: 0.85rem;
+    border-radius: 8px;
+    padding: 0.75rem 0.5rem;
     background: var(--fp-color-surface);
     cursor: pointer;
-    transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
-    font-weight: 600;
+    transition: all 0.2s ease;
+    font-weight: 500;
     color: var(--fp-color-text);
+    text-align: center;
+    min-height: 3rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
 }
 
-.fp-exp-calendar__day[data-available="1"]:hover,
-.fp-exp-calendar__day[data-available="1"]:focus-visible {
+.fp-exp-calendar-simple__day:hover:not(:disabled) {
     border-color: var(--fp-color-primary);
-    box-shadow: 0 0 0 3px rgba(11, 110, 253, 0.15);
-    transform: translateY(-2px);
+    box-shadow: 0 0 0 2px rgba(11, 110, 253, 0.15);
+    transform: translateY(-1px);
 }
 
-.fp-exp-calendar__day.is-selected,
-.fp-exp-calendar-only__day.is-selected {
+.fp-exp-calendar-simple__day.is-selected {
     border-color: var(--fp-color-primary);
     background: color-mix(in srgb, var(--fp-color-primary) 12%, #fff);
-    box-shadow: 0 0 0 3px rgba(11, 110, 253, 0.15);
+    box-shadow: 0 0 0 2px rgba(11, 110, 253, 0.25);
 }
 
-.fp-exp-calendar__day:disabled,
-.fp-exp-calendar-only__day:disabled {
+.fp-exp-calendar-simple__day:disabled {
+    opacity: 0.4;
     cursor: not-allowed;
-    opacity: 0.5;
-    box-shadow: none;
-    transform: none;
+    background: rgba(15, 23, 42, 0.02);
+}
+
+.fp-exp-calendar-simple__day.is-past {
+    opacity: 0.3;
+}
+
+.fp-exp-calendar-simple__day-number {
+    font-size: 0.9rem;
+    font-weight: 600;
+    line-height: 1;
+}
+
+.fp-exp-calendar-simple__day-slots {
+    font-size: 0.7rem;
+    color: var(--fp-color-primary);
+    font-weight: 500;
+    margin-top: 0.25rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .fp-exp-calendar-simple__grid {
+        gap: 0.25rem;
+    }
+    
+    .fp-exp-calendar-simple__day {
+        padding: 0.5rem 0.25rem;
+        min-height: 2.5rem;
+    }
+    
+    .fp-exp-calendar-simple__day-number {
+        font-size: 0.8rem;
+    }
+    
+    .fp-exp-calendar-simple__day-slots {
+        font-size: 0.65rem;
+    }
 }
 
 .fp-exp-slots {
@@ -1551,7 +1582,7 @@
     outline: none;
 }
 
-/* Slot inline nel calendario */
+/* Slot inline semplificati */
 .fp-exp-slots-inline {
     margin-top: 0.5rem;
     padding: 0.75rem;
@@ -2224,30 +2255,7 @@
     color: #b91c1c;
 }
 
-/* Calendar shortcode */
-.fp-exp-calendar-only {
-    background: #fff;
-    border-radius: var(--fp-exp-radius-base, 12px);
-    padding: 1.5rem;
-    box-shadow: var(--fp-exp-shadow-base, 0 10px 30px rgba(0,0,0,0.08));
-}
-
-.fp-exp-calendar-only__months {
-    display: grid;
-    gap: 1.5rem;
-}
-
-.fp-exp-calendar-only__day {
-    list-style: none;
-}
-
-.fp-exp-calendar-only__slot {
-    display: flex;
-    justify-content: space-between;
-    padding: 0.35rem 0;
-    border-bottom: 1px solid rgba(0,0,0,0.05);
-    font-size: 0.9rem;
-}
+/* CSS semplificato - input date nativo */
 
 /* Checkout */
 .fp-exp-checkout {
@@ -2389,7 +2397,6 @@
     }
 
     .fp-exp-widget,
-    .fp-exp-calendar-only,
     .fp-exp-checkout {
         padding: 1.25rem;
     }

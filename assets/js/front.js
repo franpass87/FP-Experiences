@@ -22,8 +22,51 @@
         // Selettori base
         const widget = document.querySelector('.fp-exp.fp-exp-widget');
         const dateInput = document.getElementById('fp-exp-date-input');
-        const calendarEl = document.querySelector('.fp-exp-calendar');
         const slotsEl = document.querySelector('.fp-exp-slots');
+
+        // Gestione posizionamento widget in mobile (dopo gallery)
+        const widgetAside = document.querySelector('.fp-exp-page__aside');
+        const gallerySection = document.querySelector('.fp-exp-section.fp-exp-gallery');
+        
+        const repositionWidgetForMobile = () => {
+            const isMobile = window.innerWidth < 1024;
+            
+            if (isMobile && widgetAside && gallerySection) {
+                // In mobile, sposta il widget dopo la gallery
+                if (!widgetAside.classList.contains('is-mobile-inline')) {
+                    widgetAside.classList.add('is-mobile-inline');
+                    // Inserisci il widget dopo la gallery
+                    if (gallerySection.nextSibling) {
+                        gallerySection.parentNode.insertBefore(widgetAside, gallerySection.nextSibling);
+                    } else {
+                        gallerySection.parentNode.appendChild(widgetAside);
+                    }
+                }
+            } else if (!isMobile && widgetAside) {
+                // In desktop, rimuovi la classe e ripristina la posizione originale
+                if (widgetAside.classList.contains('is-mobile-inline')) {
+                    widgetAside.classList.remove('is-mobile-inline');
+                    // Ripristina il widget nella sua posizione originale (dopo il main)
+                    const fpGrid = document.querySelector('.fp-grid.fp-exp-page__layout');
+                    const mainElement = document.querySelector('.fp-main.fp-exp-page__main');
+                    if (fpGrid && mainElement && mainElement.nextSibling) {
+                        fpGrid.insertBefore(widgetAside, mainElement.nextSibling);
+                    } else if (fpGrid && mainElement) {
+                        fpGrid.appendChild(widgetAside);
+                    }
+                }
+            }
+        };
+        
+        // Esegui al caricamento
+        repositionWidgetForMobile();
+        
+        // Esegui al resize (con debounce)
+        let resizeTimeout;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(repositionWidgetForMobile, 150);
+        });
 
         if (!widget) {
             return; // nessun widget in pagina
@@ -65,95 +108,15 @@
             if (isLoading) {
                 const loadingLabel = (slotsEl.getAttribute('data-loading-label') || 'Caricamento…');
                 slotsEl.innerHTML = '<p class="fp-exp-slots__placeholder">' + loadingLabel + '</p>';
+            } else {
+                // Rimuovi il loading state - il contenuto verrà sostituito dal renderSlots o dal fallback
+                slotsEl.innerHTML = '';
             }
         };
 
-        // Funzione per mostrare slot inline sotto il giorno cliccato
+        // Funzione semplificata - non più necessaria con input date nativo
         const showSlotsInline = async (dayElement, date) => {
-            // Rimuovi slot inline esistenti
-            calendarEl.querySelectorAll('.fp-exp-slots-inline').forEach(el => el.remove());
-            
-            // Crea contenitore per gli slot inline
-            const inlineContainer = document.createElement('div');
-            inlineContainer.className = 'fp-exp-slots-inline';
-            
-            // Aggiungi loading state con timeout
-            inlineContainer.innerHTML = '<div class="fp-exp-slots-inline__loading">Caricamento slot...</div>';
-            
-            // Inserisci il contenitore dopo il giorno cliccato
-            dayElement.parentNode.insertBefore(inlineContainer, dayElement.nextSibling);
-            
-            // Timeout di sicurezza per evitare caricamento infinito
-            const loadingTimeout = setTimeout(() => {
-                if (inlineContainer.querySelector('.fp-exp-slots-inline__loading')) {
-                    inlineContainer.innerHTML = '<div class="fp-exp-slots-inline__empty">Nessuna fascia disponibile per questa data</div>';
-                }
-            }, 3000);
-            
-            try {
-                // Carica gli slot per la data selezionata
-                let items = calendarMap.get(date) || [];
-                if (!items || items.length === 0) {
-                    // Fallback a chiamata API se non in cache
-                    try {
-                        items = await fetchAvailability(date);
-                    } catch (apiError) {
-                        console.warn('[FP-EXP] API fetch fallita, usando dati locali:', apiError);
-                        items = [];
-                    }
-                }
-                
-                // Cancella il timeout
-                clearTimeout(loadingTimeout);
-                
-                // Renderizza gli slot
-                if (items && items.length > 0) {
-                    const slotsList = document.createElement('div');
-                    slotsList.className = 'fp-exp-slots-inline__list';
-                    
-                    items.forEach(slot => {
-                        const slotElement = document.createElement('div');
-                        slotElement.className = 'fp-exp-slots-inline__item';
-                        slotElement.textContent = slot.time || slot.label || 'Slot';
-                        slotElement.setAttribute('data-start', slot.start || slot.start_iso || '');
-                        slotElement.setAttribute('data-end', slot.end || slot.end_iso || '');
-                        
-                        // Aggiungi click handler per selezione slot
-                        slotElement.addEventListener('click', (ev) => {
-                            ev.stopPropagation();
-                            // Rimuovi selezione precedente
-                            inlineContainer.querySelectorAll('.fp-exp-slots-inline__item.is-selected').forEach(el => {
-                                el.classList.remove('is-selected');
-                            });
-                            // Seleziona slot corrente
-                            slotElement.classList.add('is-selected');
-                            
-                            // Aggiorna anche la sezione slot principale se esiste
-                            if (slotsEl && window.FPFront.slots && window.FPFront.slots.renderSlots) {
-                                window.FPFront.slots.renderSlots(items);
-                                // Seleziona lo slot corrispondente nella sezione principale
-                                const mainSlot = slotsEl.querySelector(`[data-start="${slot.start || slot.start_iso}"]`);
-                                if (mainSlot) {
-                                    mainSlot.classList.add('is-selected');
-                                }
-                            }
-                        });
-                        
-                        slotsList.appendChild(slotElement);
-                    });
-                    
-                    inlineContainer.innerHTML = '';
-                    inlineContainer.appendChild(slotsList);
-                } else {
-                    // Nessun slot disponibile per questa data
-                    inlineContainer.innerHTML = '<div class="fp-exp-slots-inline__empty">Nessuna fascia disponibile per questa data</div>';
-                }
-            } catch (error) {
-                // Cancella il timeout
-                clearTimeout(loadingTimeout);
-                console.error('[FP-EXP] Errore caricamento slot inline:', error);
-                inlineContainer.innerHTML = '<div class="fp-exp-slots-inline__error">Errore caricamento slot</div>';
-            }
+            console.log('[FP-EXP] showSlotsInline non più necessaria - sistema semplificato');
         };
 
         const showSlotsError = (message) => {
@@ -174,20 +137,10 @@
         const monthKeyOf = (dateStr) => (window.FPFront.availability ? window.FPFront.availability.monthKeyOf(dateStr) : (dateStr || '').slice(0,7));
         const prefetchMonth = async (yyyyMm) => window.FPFront.availability && window.FPFront.availability.prefetchMonth(yyyyMm);
 
-        // Mappa YYYY-MM-DD → array di slot dal dataset calendar
+        // Mappa YYYY-MM-DD → array di slot dal dataset
         const calendarMap = (window.FPFront.availability && window.FPFront.availability.getCalendarMap && window.FPFront.availability.getCalendarMap()) || new Map();
 
-        const showCalendarIfConfigured = () => {
-            if (!calendarEl) return;
-            const shouldShow = (widget.getAttribute('data-config') || '').includes('"show_calendar":true') || calendarEl.getAttribute('data-show-calendar') === '1';
-            if (shouldShow) {
-                calendarEl.hidden = false;
-            }
-        };
-        // Inizializza modulo calendario (visibilità, toolbar, prefetch iniziale)
-        if (window.FPFront.calendar && window.FPFront.calendar.init) {
-            window.FPFront.calendar.init({ calendarEl, widget });
-        }
+        // Sistema semplificato - input date nativo
 
         // 2) Alla modifica della data, mostra gli slot del giorno
         if (dateInput) {
@@ -278,12 +231,7 @@
                     }
                 }
                 
-                // evidenzia nel calendario inline
-                if (calendarEl) {
-                    calendarEl.querySelectorAll('.fp-exp-calendar__day').forEach((btn) => btn.classList.remove('is-selected'));
-                    const btn = calendarEl.querySelector('.fp-exp-calendar__day[data-date="' + date + '"]');
-                    if (btn) btn.classList.add('is-selected');
-                }
+                // Sistema semplificato - evidenziazione non necessaria
                 // prefetch del mese della data selezionata
                 if (window.FPFront.availability && window.FPFront.availability.prefetchMonth && window.FPFront.availability.monthKeyOf) {
                     window.FPFront.availability.prefetchMonth(window.FPFront.availability.monthKeyOf(date));
@@ -296,53 +244,53 @@
             });
         }
 
-        // 3) Click su giorno del calendario → imposta input e renderizza slot inline
-        if (calendarEl) {
-            calendarEl.addEventListener('click', (ev) => {
-                const target = ev.target.closest('.fp-exp-calendar__day');
+        // 3) Click su giorno del calendario semplificato
+        const calendarSimple = document.querySelector('.fp-exp-calendar-simple');
+        if (calendarSimple) {
+            calendarSimple.addEventListener('click', (ev) => {
+                const target = ev.target.closest('.fp-exp-calendar-simple__day');
                 if (!target || target.disabled) return;
+                
                 const date = target.getAttribute('data-date');
                 if (!date) return;
                 
                 // Rimuovi selezione precedente
-                calendarEl.querySelectorAll('.fp-exp-calendar__day.is-selected').forEach(day => {
+                calendarSimple.querySelectorAll('.fp-exp-calendar-simple__day.is-selected').forEach(day => {
                     day.classList.remove('is-selected');
                 });
                 
                 // Seleziona il giorno corrente
                 target.classList.add('is-selected');
                 
-                // Carica e mostra gli slot direttamente sotto il giorno cliccato
-                showSlotsInline(target, date);
-                
+                // Imposta la data nell'input nascosto
                 if (dateInput) {
                     dateInput.value = date;
                     dateInput.dispatchEvent(new Event('change', { bubbles: true }));
                 }
             });
-            // già gestito nel modulo calendar
         }
 
-        // 3.b) Gestisci CTA con data-fp-scroll (hero e sticky): mostra calendario e scrolla
+        // 3.b) Gestisci CTA con data-fp-scroll (hero e sticky): mostra sezione date e scrolla
         (function setupCtaScrollHandlers() {
             // Delega a tutto il documento per coprire sia il bottone in hero sia quello sticky
             document.addEventListener('click', function(ev) {
                 var btn = ev.target && (ev.target.closest('[data-fp-scroll]'));
                 if (!btn) return;
+                // Evita qualunque navigazione predefinita (es. <a href="…">)
+                try { ev.preventDefault(); ev.stopPropagation(); } catch (e) {}
                 var targetKey = btn.getAttribute('data-fp-scroll') || '';
                 if (!targetKey) return;
 
                 // Mappa dei target noti
                 var targetEl = null;
-                if (targetKey === 'calendar') {
-                    targetEl = calendarEl || document.querySelector('[data-fp-scroll-target="calendar"], .fp-exp-calendar');
+                if (targetKey === 'calendar' || targetKey === 'dates') {
+                    targetEl = calendarSimple || document.querySelector('[data-fp-scroll-target="dates"], .fp-exp-calendar-simple');
                 } else if (targetKey === 'gallery') {
                     targetEl = document.querySelector('[data-fp-scroll-target="gallery"], .fp-exp-gallery');
                 }
 
-                // Se calendar è nascosto per configurazione, mostralo
-                if (targetKey === 'calendar') {
-                    if (calendarEl) { calendarEl.hidden = false; }
+                // Se sezione date è nascosta per configurazione, mostrala
+                if (targetKey === 'calendar' || targetKey === 'dates') {
                     // Se disponibile input data, mettilo a fuoco per invogliare la selezione
                     if (dateInput) {
                         try { dateInput.focus(); } catch (e) {}
@@ -1016,7 +964,7 @@
 
         // Inizializza il modulo availability con il contesto corrente
         if (window.FPFront.availability && window.FPFront.availability.init) {
-            window.FPFront.availability.init({ config, calendarEl, widget });
+            window.FPFront.availability.init({ config, widget });
         }
     });
     

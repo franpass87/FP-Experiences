@@ -23,6 +23,50 @@
         const calendarEl = document.querySelector('.fp-exp-calendar');
         const slotsEl = document.querySelector('.fp-exp-slots');
 
+        // Gestione posizionamento widget in mobile (dopo gallery)
+        const widgetAside = document.querySelector('.fp-exp-page__aside');
+        const gallerySection = document.querySelector('.fp-exp-section.fp-exp-gallery');
+        
+        const repositionWidgetForMobile = () => {
+            const isMobile = window.innerWidth < 1024;
+            
+            if (isMobile && widgetAside && gallerySection) {
+                // In mobile, sposta il widget dopo la gallery
+                if (!widgetAside.classList.contains('is-mobile-inline')) {
+                    widgetAside.classList.add('is-mobile-inline');
+                    // Inserisci il widget dopo la gallery
+                    if (gallerySection.nextSibling) {
+                        gallerySection.parentNode.insertBefore(widgetAside, gallerySection.nextSibling);
+                    } else {
+                        gallerySection.parentNode.appendChild(widgetAside);
+                    }
+                }
+            } else if (!isMobile && widgetAside) {
+                // In desktop, rimuovi la classe e ripristina la posizione originale
+                if (widgetAside.classList.contains('is-mobile-inline')) {
+                    widgetAside.classList.remove('is-mobile-inline');
+                    // Ripristina il widget nella sua posizione originale (dopo il main)
+                    const fpGrid = document.querySelector('.fp-grid.fp-exp-page__layout');
+                    const mainElement = document.querySelector('.fp-main.fp-exp-page__main');
+                    if (fpGrid && mainElement && mainElement.nextSibling) {
+                        fpGrid.insertBefore(widgetAside, mainElement.nextSibling);
+                    } else if (fpGrid && mainElement) {
+                        fpGrid.appendChild(widgetAside);
+                    }
+                }
+            }
+        };
+        
+        // Esegui al caricamento
+        repositionWidgetForMobile();
+        
+        // Esegui al resize (con debounce)
+        let resizeTimeout;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(repositionWidgetForMobile, 150);
+        });
+
         if (!widget) {
             return; // nessun widget in pagina
         }
@@ -304,6 +348,30 @@
                 if (d) prefetchMonth(monthKeyOf(d));
             }
         }
+
+        // 3.b) Gestisci CTA con data-fp-scroll (hero e sticky): mostra calendario e scrolla
+        (function setupCtaScrollHandlers() {
+            document.addEventListener('click', function(ev) {
+                const btn = ev.target && (ev.target.closest('[data-fp-scroll]'));
+                if (!btn) return;
+                try { ev.preventDefault(); ev.stopPropagation(); } catch (e) {}
+                const targetKey = btn.getAttribute('data-fp-scroll') || '';
+                if (!targetKey) return;
+                let targetEl = null;
+                if (targetKey === 'calendar') {
+                    targetEl = calendarEl || document.querySelector('[data-fp-scroll-target="calendar"], .fp-exp-calendar');
+                } else if (targetKey === 'gallery') {
+                    targetEl = document.querySelector('[data-fp-scroll-target="gallery"], .fp-exp-gallery');
+                }
+                if (targetKey === 'calendar') {
+                    if (calendarEl) { calendarEl.hidden = false; }
+                    if (dateInput) { try { dateInput.focus(); } catch (e) {} }
+                }
+                if (targetEl && typeof targetEl.scrollIntoView === 'function') {
+                    targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+        })();
 
         // 4) Click sugli slot → selezione e aggiornamento form RTB
         (function setupSlotSelection() {
