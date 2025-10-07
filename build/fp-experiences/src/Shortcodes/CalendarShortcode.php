@@ -56,7 +56,6 @@ final class CalendarShortcode extends BaseShortcode
             return new WP_Error('fp_exp_calendar_not_found', esc_html__('Experience not found.', 'fp-experiences'));
         }
 
-        // Non pre-carichiamo slot: il front-end li recupera via REST on-the-fly
         $theme = Theme::resolve_palette([
             'preset' => (string) $attributes['preset'],
             'mode' => (string) $attributes['mode'],
@@ -75,6 +74,13 @@ final class CalendarShortcode extends BaseShortcode
             'font' => (string) $attributes['font'],
         ]);
 
+        // Genera la struttura dei mesi per il calendario
+        $months_count = absint($attributes['months']);
+        if ($months_count <= 0) {
+            $months_count = 2;
+        }
+        $months = $this->generate_calendar_months($experience_id, $months_count);
+
         // Schema disabilitato per il calendario on-the-fly
         $schema = [];
 
@@ -84,7 +90,7 @@ final class CalendarShortcode extends BaseShortcode
                 'id' => $experience_id,
                 'title' => $post->post_title,
             ],
-            'months' => [],
+            'months' => $months,
             'schema_json' => $schema ? wp_json_encode([
                 '@context' => 'https://schema.org',
                 '@type' => 'TouristTrip',
@@ -92,5 +98,74 @@ final class CalendarShortcode extends BaseShortcode
                 'offers' => $schema,
             ]) : '',
         ];
+    }
+
+    /**
+     * Generate calendar months structure with availability data.
+     *
+     * @param int $experience_id
+     * @param int $count
+     *
+     * @return array<string, array<string, mixed>>
+     */
+    private function generate_calendar_months(int $experience_id, int $count = 2): array
+    {
+        $months = [];
+        $timezone = wp_timezone();
+        $now = new \DateTimeImmutable('now', $timezone);
+
+        for ($i = 0; $i < $count; $i++) {
+            $date = $now->modify("+{$i} months");
+            $month_key = $date->format('Y-m');
+            $month_label = $date->format('F Y');
+
+            // Ottieni gli slot per questo mese
+            $start_of_month = $date->modify('first day of this month')->setTime(0, 0, 0);
+            $end_of_month = $date->modify('last day of this month')->setTime(23, 59, 59);
+
+            $start_utc = $start_of_month->setTimezone(new \DateTimeZone('UTC'))->format('Y-m-d');
+            $end_utc = $end_of_month->setTimezone(new \DateTimeZone('UTC'))->format('Y-m-d');
+
+            // Usa AvailabilityService per ottenere gli slot virtuali
+            $slots = \FP_Exp\Booking\AvailabilityService::get_virtual_slots($experience_id, $start_utc, $end_utc);
+
+            // Raggruppa gli slot per giorno
+            $days = [];
+            foreach ($slots as $slot) {
+                if (empty($slot['start'])) {
+                    continue;
+                }
+
+                try {
+                    $slot_start = new \DateTimeImmutable($slot['start'], new \DateTimeZone('UTC'));
+                    $slot_start_local = $slot_start->setTimezone($timezone);
+                    $day_key = $slot_start_local->format('Y-m-d');
+
+                    if (! isset($days[$day_key])) {
+                        $days[$day_key] = [];
+                    }
+
+                    $slot_end = new \DateTimeImmutable($slot['end'], new \DateTimeZone('UTC'));
+                    $slot_end_local = $slot_end->setTimezone($timezone);
+
+                    $days[$day_key][] = [
+                        'id' => 0, // Virtual slot
+                        'time' => $slot_start_local->format('H:i'),
+                        'remaining' => (int) ($slot['capacity_remaining'] ?? 0),
+                        'start_iso' => $slot_start->format('c'),
+                        'end_iso' => $slot_end->format('c'),
+                    ];
+                } catch (\Exception $e) {
+                    continue;
+                }
+            }
+
+            $months[$month_key] = [
+                'month_label' => $month_label,
+                'days' => $days,
+            ];
+        }
+
+        return $months;
     }
 }

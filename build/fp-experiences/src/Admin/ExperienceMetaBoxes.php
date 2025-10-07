@@ -2633,6 +2633,10 @@ final class ExperienceMetaBoxes
 
         if ($recurrence_meta !== Recurrence::defaults()) {
             update_post_meta($post_id, '_fp_exp_recurrence', $recurrence_meta);
+            
+            // Trasforma i dati di ricorrenza nel formato compatibile con AvailabilityService
+            // per permettere la visualizzazione nel calendario frontend
+            $this->sync_recurrence_to_availability($post_id, $recurrence_meta, $slot_capacity, $lead_time, $buffer_before, $buffer_after);
         } else {
             delete_post_meta($post_id, '_fp_exp_recurrence');
         }
@@ -2645,6 +2649,93 @@ final class ExperienceMetaBoxes
             'availability' => $availability,
             'recurrence' => $recurrence_meta,
         ];
+    }
+
+    /**
+     * Sincronizza i dati di ricorrenza nel formato legacy per AvailabilityService.
+     *
+     * @param int   $post_id
+     * @param array $recurrence
+     * @param int   $slot_capacity
+     * @param int   $lead_time
+     * @param int   $buffer_before
+     * @param int   $buffer_after
+     */
+    private function sync_recurrence_to_availability(int $post_id, array $recurrence, int $slot_capacity, int $lead_time, int $buffer_before, int $buffer_after): void
+    {
+        // Estrai tutti gli orari dai time_sets
+        $all_times = [];
+        $all_days = [];
+        
+        if (isset($recurrence['time_sets']) && is_array($recurrence['time_sets'])) {
+            foreach ($recurrence['time_sets'] as $set) {
+                if (!is_array($set)) {
+                    continue;
+                }
+                
+                // Raccogli gli orari
+                if (isset($set['times']) && is_array($set['times'])) {
+                    foreach ($set['times'] as $time) {
+                        $time_str = trim((string) $time);
+                        if ($time_str !== '' && !in_array($time_str, $all_times, true)) {
+                            $all_times[] = $time_str;
+                        }
+                    }
+                }
+                
+                // Raccogli i giorni (per ricorrenze settimanali)
+                if (isset($set['days']) && is_array($set['days'])) {
+                    foreach ($set['days'] as $day) {
+                        $day_str = trim((string) $day);
+                        if ($day_str !== '' && !in_array($day_str, $all_days, true)) {
+                            $all_days[] = $day_str;
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Se non ci sono giorni specificati nei time_sets, usa i giorni globali
+        if (empty($all_days) && isset($recurrence['days']) && is_array($recurrence['days'])) {
+            $all_days = $recurrence['days'];
+        }
+        
+        // Determina la frequenza
+        $frequency = isset($recurrence['frequency']) ? (string) $recurrence['frequency'] : 'weekly';
+        if (!in_array($frequency, ['daily', 'weekly', 'custom'], true)) {
+            $frequency = 'weekly';
+        }
+        
+        // Se la frequenza è 'specific', convertila in 'custom' per compatibilità
+        if ($frequency === 'specific') {
+            $frequency = 'custom';
+        }
+        
+        // Costruisci l'array di availability in formato legacy
+        $availability = [
+            'frequency' => $frequency,
+            'times' => $all_times,
+            'days_of_week' => $all_days,
+            'custom_slots' => [],
+            'slot_capacity' => $slot_capacity,
+            'lead_time_hours' => $lead_time,
+            'buffer_before_minutes' => $buffer_before,
+            'buffer_after_minutes' => $buffer_after,
+        ];
+        
+        // Pulisci i campi non necessari in base alla frequenza
+        if ($frequency !== 'weekly') {
+            $availability['days_of_week'] = [];
+        }
+        
+        if ($frequency === 'custom') {
+            $availability['times'] = [];
+        }
+        
+        // Salva solo se ci sono dati validi
+        if (!empty($availability['times']) || !empty($availability['custom_slots']) || $slot_capacity > 0) {
+            update_post_meta($post_id, '_fp_exp_availability', $availability);
+        }
     }
 
     private function maybe_generate_recurrence_slots(int $post_id, array $data): void
