@@ -275,6 +275,9 @@
                 grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 2rem; color: var(--fp-color-muted);">Caricamento...</div>';
                 
                 try {
+                    // Prefetch dell'intero mese in una sola chiamata API
+                    await prefetchMonth(monthKey);
+                    
                     // Genera tutti i giorni del mese
                     const dayButtons = [];
                     
@@ -282,32 +285,10 @@
                         const dateKey = monthKey + '-' + String(day).padStart(2, '0');
                         const isPast = new Date(dateKey) < new Date(new Date().setHours(0, 0, 0, 0));
                         
-                        // Controlla se ci sono slot per questa data usando i dati del calendario
-                        let slotCount = 0;
-                        let isAvailable = false;
-                        
-                        // Prova prima dalla cache della calendarMap
+                        // Controlla se ci sono slot per questa data dalla calendarMap (ora popolata dal prefetch)
                         const cachedSlots = calendarMap.get(dateKey);
-                        if (cachedSlots && cachedSlots.length > 0) {
-                            slotCount = cachedSlots.length;
-                            isAvailable = true;
-                        }
-                        
-                        // Se non trovato, chiama l'API come fallback
-                        if (!isAvailable) {
-                            try {
-                                const apiSlots = await fetchAvailability(dateKey);
-                                if (apiSlots && apiSlots.length > 0) {
-                                    slotCount = apiSlots.length;
-                                    isAvailable = true;
-                                    // Salva in cache per future navigazioni
-                                    calendarMap.set(dateKey, apiSlots);
-                                }
-                            } catch (error) {
-                                console.warn('[FP-EXP] Errore caricamento slot per', dateKey, ':', error);
-                                // Continua anche se c'è un errore
-                            }
-                        }
+                        const slotCount = (cachedSlots && cachedSlots.length) || 0;
+                        const isAvailable = slotCount > 0;
                         
                         const dayButton = document.createElement('button');
                         dayButton.type = 'button';

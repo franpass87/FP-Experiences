@@ -44,6 +44,10 @@ final class AvailabilityService
         $lead_time = isset($availability['lead_time_hours']) ? absint((string) $availability['lead_time_hours']) : 0;
         $buffer_before = isset($availability['buffer_before_minutes']) ? absint((string) $availability['buffer_before_minutes']) : 0;
         $buffer_after = isset($availability['buffer_after_minutes']) ? absint((string) $availability['buffer_after_minutes']) : 0;
+        
+        // Leggi le date di inizio e fine dalla ricorrenza
+        $recurrence_start_date = isset($availability['start_date']) ? sanitize_text_field((string) $availability['start_date']) : '';
+        $recurrence_end_date = isset($availability['end_date']) ? sanitize_text_field((string) $availability['end_date']) : '';
 
         // Durata: se non specificata nelle meta, default 60m.
         $duration_minutes = 60;
@@ -62,6 +66,38 @@ final class AvailabilityService
 
         if ($range_end < $range_start) {
             $range_end = $range_start;
+        }
+        
+        // Applica i limiti di data dalla ricorrenza se presenti
+        $tz = new DateTimeZone(wp_timezone_string() ?: 'UTC');
+        
+        if ('' !== $recurrence_start_date) {
+            try {
+                $rec_start = new DateTimeImmutable($recurrence_start_date, $tz);
+                $rec_start_utc = $rec_start->setTimezone(new DateTimeZone('UTC'))->setTime(0, 0, 0);
+                if ($rec_start_utc > $range_start) {
+                    $range_start = $rec_start_utc;
+                }
+            } catch (Exception $e) {
+                // Ignora se la data non è valida
+            }
+        }
+        
+        if ('' !== $recurrence_end_date) {
+            try {
+                $rec_end = new DateTimeImmutable($recurrence_end_date, $tz);
+                $rec_end_utc = $rec_end->setTimezone(new DateTimeZone('UTC'))->setTime(23, 59, 59);
+                if ($rec_end_utc < $range_end) {
+                    $range_end = $rec_end_utc;
+                }
+            } catch (Exception $e) {
+                // Ignora se la data non è valida
+            }
+        }
+        
+        // Se la data di fine è prima della data di inizio dopo i limiti, non ci sono slot
+        if ($range_end < $range_start) {
+            return [];
         }
 
         $occurrences = [];
@@ -95,8 +131,6 @@ final class AvailabilityService
                 new DateInterval('P1D'),
                 $range_end->setTime(23, 59, 59)->add(new DateInterval('PT1S'))
             );
-
-            $tz = new DateTimeZone(wp_timezone_string() ?: 'UTC');
 
             foreach ($period as $day) {
                 if (! $day instanceof DateTimeImmutable) {

@@ -30,7 +30,10 @@ foreach ($months as $m_key => $m_data) {
                 'id' => (int) ($slot['id'] ?? 0),
                 'time' => (string) ($slot['time'] ?? ''),
                 'remaining' => (int) ($slot['remaining'] ?? 0),
+                'start' => (string) ($slot['start_iso'] ?? ''),
+                'end' => (string) ($slot['end_iso'] ?? ''),
                 'start_iso' => (string) ($slot['start_iso'] ?? ''),
+                'end_iso' => (string) ($slot['end_iso'] ?? ''),
             ];
         }
     }

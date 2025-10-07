@@ -21,7 +21,7 @@ final class CalendarShortcode extends BaseShortcode
 
     protected array $defaults = [
         'id' => '',
-        'months' => '2',
+        'months' => '1',
         'preset' => '',
         'mode' => '',
         'primary' => '',
@@ -76,8 +76,8 @@ final class CalendarShortcode extends BaseShortcode
 
         // Genera la struttura dei mesi per il calendario
         $months_count = absint($attributes['months']);
-        if ($months_count <= 0) {
-            $months_count = 2;
+        if ($months_count <= 0 || $months_count > 3) {
+            $months_count = 1; // Default a 1 mese per performance
         }
         $months = $this->generate_calendar_months($experience_id, $months_count);
 
@@ -108,8 +108,14 @@ final class CalendarShortcode extends BaseShortcode
      *
      * @return array<string, array<string, mixed>>
      */
-    private function generate_calendar_months(int $experience_id, int $count = 2): array
+    private function generate_calendar_months(int $experience_id, int $count = 1): array
     {
+        // Verifica veloce se ci sono dati di disponibilità configurati
+        $availability = get_post_meta($experience_id, '_fp_exp_availability', true);
+        if (! is_array($availability) || empty($availability['times'])) {
+            return []; // Non ci sono slot configurati, ritorna vuoto
+        }
+        
         $months = [];
         $timezone = wp_timezone();
         $now = new \DateTimeImmutable('now', $timezone);

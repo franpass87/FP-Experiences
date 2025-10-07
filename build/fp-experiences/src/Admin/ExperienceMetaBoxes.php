@@ -2721,6 +2721,8 @@ final class ExperienceMetaBoxes
             'lead_time_hours' => $lead_time,
             'buffer_before_minutes' => $buffer_before,
             'buffer_after_minutes' => $buffer_after,
+            'start_date' => isset($recurrence['start_date']) ? sanitize_text_field((string) $recurrence['start_date']) : '',
+            'end_date' => isset($recurrence['end_date']) ? sanitize_text_field((string) $recurrence['end_date']) : '',
         ];
         
         // Pulisci i campi non necessari in base alla frequenza

@@ -127,6 +127,7 @@ final class Assets
                 'fp-exp-summary-rtb' => 'assets/js/front/summary-rtb.js',
                 'fp-exp-summary-woo' => 'assets/js/front/summary-woo.js',
                 'fp-exp-calendar' => 'assets/js/front/calendar.js',
+                'fp-exp-calendar-standalone' => 'assets/js/front/calendar-standalone.js',
             ];
             
             foreach ($modules as $handle => $path) {
