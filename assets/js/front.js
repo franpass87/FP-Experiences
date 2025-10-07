@@ -295,12 +295,6 @@
                     case 'next-month':
                         newDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1);
                         break;
-                    case 'prev-year':
-                        newDate = new Date(currentDate.getFullYear() - 1, currentDate.getMonth(), 1);
-                        break;
-                    case 'next-year':
-                        newDate = new Date(currentDate.getFullYear() + 1, currentDate.getMonth(), 1);
-                        break;
                     default:
                         return;
                 }
@@ -311,7 +305,7 @@
         }
         
         // Funzione per aggiornare il mese del calendario
-        const updateCalendarMonth = (calendarNav, date) => {
+        const updateCalendarMonth = async (calendarNav, date) => {
             const monthKey = date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0');
             const monthName = date.toLocaleString('it-IT', { month: 'long' });
             const year = date.getFullYear();
@@ -330,23 +324,52 @@
             const grid = calendarNav.querySelector('.fp-exp-calendar-nav__grid');
             
             if (grid) {
-                grid.innerHTML = '';
+                grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 2rem; color: var(--fp-color-muted);">Caricamento...</div>';
                 
                 for (let day = 1; day <= daysInMonth; day++) {
                     const dateKey = monthKey + '-' + String(day).padStart(2, '0');
                     const isPast = new Date(dateKey) < new Date(new Date().setHours(0, 0, 0, 0));
                     
+                    // Controlla se ci sono slot per questa data
+                    let slotCount = 0;
+                    let isAvailable = false;
+                    
+                    try {
+                        // Prova prima dalla cache
+                        const cachedSlots = calendarMap.get(dateKey);
+                        if (cachedSlots && cachedSlots.length > 0) {
+                            slotCount = cachedSlots.length;
+                            isAvailable = true;
+                        } else {
+                            // Se non in cache, chiama l'API
+                            const apiSlots = await fetchAvailability(dateKey);
+                            if (apiSlots && apiSlots.length > 0) {
+                                slotCount = apiSlots.length;
+                                isAvailable = true;
+                                // Salva in cache per future navigazioni
+                                calendarMap.set(dateKey, apiSlots);
+                            }
+                        }
+                    } catch (error) {
+                        console.warn('[FP-EXP] Errore caricamento slot per', dateKey, ':', error);
+                    }
+                    
                     const dayButton = document.createElement('button');
                     dayButton.type = 'button';
                     dayButton.className = 'fp-exp-calendar-nav__day' + (isPast ? ' is-past' : '');
                     dayButton.setAttribute('data-date', dateKey);
-                    dayButton.setAttribute('data-available', '1'); // Per ora tutti disponibili
+                    dayButton.setAttribute('data-available', isAvailable ? '1' : '0');
                     dayButton.setAttribute('data-month', monthKey);
-                    if (isPast) dayButton.disabled = true;
+                    if (isPast || !isAvailable) dayButton.disabled = true;
+                    
+                    let slotsHtml = '';
+                    if (slotCount > 0) {
+                        slotsHtml = `<span class="fp-exp-calendar-nav__day-slots">${slotCount} slot</span>`;
+                    }
                     
                     dayButton.innerHTML = `
                         <span class="fp-exp-calendar-nav__day-number">${day}</span>
-                        <span class="fp-exp-calendar-nav__day-slots">4 slot</span>
+                        ${slotsHtml}
                     `;
                     
                     grid.appendChild(dayButton);

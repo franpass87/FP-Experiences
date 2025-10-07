@@ -251,14 +251,9 @@ $price_from_display = null !== $price_from_value && $price_from_value > 0
                     <!-- Calendario con navigazione mesi -->
                     <div class="fp-exp-calendar-nav">
                         <div class="fp-exp-calendar-nav__header">
-                            <div class="fp-exp-calendar-nav__controls">
-                                <button type="button" class="fp-exp-calendar-nav__prev-month" data-action="prev-month">
-                                    ←
-                                </button>
-                                <button type="button" class="fp-exp-calendar-nav__prev-year" data-action="prev-year">
-                                    «
-                                </button>
-                            </div>
+                            <button type="button" class="fp-exp-calendar-nav__prev-month" data-action="prev-month">
+                                ←
+                            </button>
                             
                             <div class="fp-exp-calendar-nav__title-container">
                                 <h4 class="fp-exp-calendar-nav__month">
@@ -269,14 +264,9 @@ $price_from_display = null !== $price_from_value && $price_from_value > 0
                                 </h5>
                             </div>
                             
-                            <div class="fp-exp-calendar-nav__controls">
-                                <button type="button" class="fp-exp-calendar-nav__next-year" data-action="next-year">
-                                    »
-                                </button>
-                                <button type="button" class="fp-exp-calendar-nav__next-month" data-action="next-month">
-                                    →
-                                </button>
-                            </div>
+                            <button type="button" class="fp-exp-calendar-nav__next-month" data-action="next-month">
+                                →
+                            </button>
                         </div>
                         
                         <div class="fp-exp-calendar-nav__content" data-current-month="<?php echo esc_attr(gmdate('Y-m')); ?>">
