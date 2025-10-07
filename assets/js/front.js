@@ -295,8 +295,14 @@
                                 slotCount = daySlots.length;
                                 isAvailable = slotCount > 0;
                                 
-                                // Salva anche in cache per future navigazioni
-                                calendarMap.set(dateKey, daySlots);
+                                // Aggiungi il campo 'label' e salva in cache per future navigazioni
+                                const slotsWithLabels = daySlots.map(slot => {
+                                    if (!slot.label && slot.start_iso && slot.end_iso) {
+                                        slot.label = formatTimeRange(slot.start_iso, slot.end_iso);
+                                    }
+                                    return slot;
+                                });
+                                calendarMap.set(dateKey, slotsWithLabels);
                             }
                         }
                         
@@ -378,7 +384,14 @@
                     if (monthData.days) {
                         Object.keys(monthData.days).forEach(dateKey => {
                             const daySlots = monthData.days[dateKey];
-                            calendarMap.set(dateKey, daySlots);
+                            // Aggiungi il campo 'label' a ogni slot per la visualizzazione
+                            const slotsWithLabels = daySlots.map(slot => {
+                                if (!slot.label && slot.start_iso && slot.end_iso) {
+                                    slot.label = formatTimeRange(slot.start_iso, slot.end_iso);
+                                }
+                                return slot;
+                            });
+                            calendarMap.set(dateKey, slotsWithLabels);
                         });
                     }
                 });
@@ -671,6 +684,10 @@
                 // Aggiorna riepilogo su cambi
                 widget.addEventListener('change', (ev) => {
                     if (ev.target && ev.target.closest('.fp-exp-quantity__input')) {
+                        updatePriceSummary();
+                    }
+                    // Aggiorna anche quando si selezionano/deselezionano gli addon
+                    if (ev.target && ev.target.matches('.fp-exp-addons input[type="checkbox"]')) {
                         updatePriceSummary();
                     }
                 });
