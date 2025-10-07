@@ -661,7 +661,7 @@ final class RestRoutes
         $recurrence = Recurrence::sanitize($recurrence_raw);
 
         if (! Recurrence::is_actionable($recurrence)) {
-            return new WP_Error('fp_exp_recurrence_invalid', __('Configure at least one valid time set for the recurrence.', 'fp-experiences'), ['status' => 422]);
+            return new WP_Error('fp_exp_recurrence_invalid', __('Configure at least one valid time slot for the recurrence.', 'fp-experiences'), ['status' => 422]);
         }
 
         $rules = Recurrence::build_rules($recurrence, [

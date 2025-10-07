@@ -2629,19 +2629,31 @@ final class ExperienceMetaBoxes
             ));
         }
         
-        // Estrai tutti gli orari dai time_sets
+        // Estrai tutti gli orari dai time_slots (nuovo formato) o time_sets (vecchio formato)
         $all_times = [];
         $all_days = [];
         
-        if (isset($recurrence['time_sets']) && is_array($recurrence['time_sets'])) {
-            foreach ($recurrence['time_sets'] as $set) {
-                if (!is_array($set)) {
+        // Supporta sia il nuovo formato time_slots che il vecchio time_sets
+        $slots_data = isset($recurrence['time_slots']) && is_array($recurrence['time_slots']) 
+            ? $recurrence['time_slots'] 
+            : (isset($recurrence['time_sets']) && is_array($recurrence['time_sets']) ? $recurrence['time_sets'] : []);
+        
+        if (!empty($slots_data)) {
+            foreach ($slots_data as $slot) {
+                if (!is_array($slot)) {
                     continue;
                 }
                 
-                // Raccogli gli orari
-                if (isset($set['times']) && is_array($set['times'])) {
-                    foreach ($set['times'] as $time) {
+                // Nuovo formato time_slots: singolo campo 'time'
+                if (isset($slot['time'])) {
+                    $time_str = trim((string) $slot['time']);
+                    if ($time_str !== '' && !in_array($time_str, $all_times, true)) {
+                        $all_times[] = $time_str;
+                    }
+                }
+                // Vecchio formato time_sets: array 'times'
+                elseif (isset($slot['times']) && is_array($slot['times'])) {
+                    foreach ($slot['times'] as $time) {
                         $time_str = trim((string) $time);
                         if ($time_str !== '' && !in_array($time_str, $all_times, true)) {
                             $all_times[] = $time_str;
@@ -2650,8 +2662,8 @@ final class ExperienceMetaBoxes
                 }
                 
                 // Raccogli i giorni (per ricorrenze settimanali)
-                if (isset($set['days']) && is_array($set['days'])) {
-                    foreach ($set['days'] as $day) {
+                if (isset($slot['days']) && is_array($slot['days'])) {
+                    foreach ($slot['days'] as $day) {
                         $day_str = trim((string) $day);
                         if ($day_str !== '' && !in_array($day_str, $all_days, true)) {
                             $all_days[] = $day_str;
@@ -2661,7 +2673,7 @@ final class ExperienceMetaBoxes
             }
         }
         
-        // Se non ci sono giorni specificati nei time_sets, usa i giorni globali
+        // Se non ci sono giorni specificati negli slot, usa i giorni globali
         if (empty($all_days) && isset($recurrence['days']) && is_array($recurrence['days'])) {
             $all_days = $recurrence['days'];
         }
@@ -2669,7 +2681,7 @@ final class ExperienceMetaBoxes
         // Log per debug (può essere rimosso in produzione)
         if (defined('WP_DEBUG') && WP_DEBUG) {
             error_log(sprintf(
-                'FP_EXP: Extracted %d times and %d days from time_sets. Times: [%s], Days: [%s]',
+                'FP_EXP: Extracted %d times and %d days from slots. Times: [%s], Days: [%s]',
                 count($all_times),
                 count($all_days),
                 implode(', ', $all_times),

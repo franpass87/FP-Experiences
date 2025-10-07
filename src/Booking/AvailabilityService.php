@@ -50,22 +50,34 @@ final class AvailabilityService
         $recurrence_start_date = isset($recurrence['start_date']) ? sanitize_text_field((string) $recurrence['start_date']) : '';
         $recurrence_end_date = isset($recurrence['end_date']) ? sanitize_text_field((string) $recurrence['end_date']) : '';
         
-        // Estrai times e days dai time_sets
+        // Estrai times e days dai time_slots (nuovo formato semplificato)
         $all_times = [];
         $all_days = [];
         $capacity = 0;
         $buffer_before = 0;
         $buffer_after = 0;
         
-        if (isset($recurrence['time_sets']) && is_array($recurrence['time_sets'])) {
-            foreach ($recurrence['time_sets'] as $set) {
-                if (! is_array($set)) {
+        // Supporta sia il nuovo formato time_slots che il vecchio time_sets per retrocompatibilità
+        $slots_data = isset($recurrence['time_slots']) && is_array($recurrence['time_slots']) 
+            ? $recurrence['time_slots'] 
+            : (isset($recurrence['time_sets']) && is_array($recurrence['time_sets']) ? $recurrence['time_sets'] : []);
+        
+        if (!empty($slots_data)) {
+            foreach ($slots_data as $slot) {
+                if (! is_array($slot)) {
                     continue;
                 }
                 
-                // Raccogli orari
-                if (isset($set['times']) && is_array($set['times'])) {
-                    foreach ($set['times'] as $time) {
+                // Nuovo formato time_slots: singolo campo 'time'
+                if (isset($slot['time'])) {
+                    $time_str = trim((string) $slot['time']);
+                    if ($time_str !== '' && ! in_array($time_str, $all_times, true)) {
+                        $all_times[] = $time_str;
+                    }
+                }
+                // Vecchio formato time_sets: array 'times'
+                elseif (isset($slot['times']) && is_array($slot['times'])) {
+                    foreach ($slot['times'] as $time) {
                         $time_str = trim((string) $time);
                         if ($time_str !== '' && ! in_array($time_str, $all_times, true)) {
                             $all_times[] = $time_str;
@@ -73,9 +85,9 @@ final class AvailabilityService
                     }
                 }
                 
-                // Raccogli giorni
-                if (isset($set['days']) && is_array($set['days'])) {
-                    foreach ($set['days'] as $day) {
+                // Raccogli giorni (per override specifici del singolo slot)
+                if (isset($slot['days']) && is_array($slot['days'])) {
+                    foreach ($slot['days'] as $day) {
                         $day_str = trim((string) $day);
                         if ($day_str !== '' && ! in_array($day_str, $all_days, true)) {
                             $all_days[] = $day_str;
@@ -83,25 +95,25 @@ final class AvailabilityService
                     }
                 }
                 
-                // Usa la capienza più alta tra i set (o si potrebbe fare media/somma)
-                if (isset($set['capacity'])) {
-                    $set_capacity = absint((string) $set['capacity']);
-                    if ($set_capacity > $capacity) {
-                        $capacity = $set_capacity;
+                // Usa la capienza più alta tra gli slot
+                if (isset($slot['capacity'])) {
+                    $slot_capacity = absint((string) $slot['capacity']);
+                    if ($slot_capacity > $capacity) {
+                        $capacity = $slot_capacity;
                     }
                 }
                 
-                // Usa i buffer del primo set (o si potrebbe fare media)
-                if ($buffer_before === 0 && isset($set['buffer_before'])) {
-                    $buffer_before = absint((string) $set['buffer_before']);
+                // Usa i buffer del primo slot che li ha definiti
+                if ($buffer_before === 0 && isset($slot['buffer_before'])) {
+                    $buffer_before = absint((string) $slot['buffer_before']);
                 }
-                if ($buffer_after === 0 && isset($set['buffer_after'])) {
-                    $buffer_after = absint((string) $set['buffer_after']);
+                if ($buffer_after === 0 && isset($slot['buffer_after'])) {
+                    $buffer_after = absint((string) $slot['buffer_after']);
                 }
             }
         }
         
-        // Se non ci sono giorni nei time_sets, usa i giorni globali
+        // Se non ci sono giorni negli slot, usa i giorni globali
         if (empty($all_days) && isset($recurrence['days']) && is_array($recurrence['days'])) {
             $all_days = $recurrence['days'];
         }
@@ -127,7 +139,7 @@ final class AvailabilityService
         if ($frequency !== 'custom' && empty($all_times)) {
             if (defined('WP_DEBUG') && WP_DEBUG) {
                 error_log(sprintf(
-                    'FP_EXP AvailabilityService: Experience %d - No times configured in time_sets, cannot generate slots',
+                    'FP_EXP AvailabilityService: Experience %d - No times configured in time_slots, cannot generate slots',
                     $experience_id
                 ));
             }
