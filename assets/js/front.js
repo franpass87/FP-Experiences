@@ -307,8 +307,16 @@
         // Funzione per aggiornare il mese del calendario
         const updateCalendarMonth = async (calendarNav, date) => {
             const monthKey = date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0');
-            const monthName = date.toLocaleString('it-IT', { month: 'long' });
+            
+            // Nomi mesi in italiano
+            const monthNames = [
+                'Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno',
+                'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre'
+            ];
+            
+            const monthName = monthNames[date.getMonth()];
             const year = date.getFullYear();
+            
             
             // Aggiorna i titoli
             const monthEl = calendarNav.querySelector('.fp-exp-calendar-nav__month');
@@ -324,58 +332,100 @@
             const grid = calendarNav.querySelector('.fp-exp-calendar-nav__grid');
             
             if (grid) {
+                // Pulisce il grid e mostra caricamento
                 grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 2rem; color: var(--fp-color-muted);">Caricamento...</div>';
                 
-                for (let day = 1; day <= daysInMonth; day++) {
-                    const dateKey = monthKey + '-' + String(day).padStart(2, '0');
-                    const isPast = new Date(dateKey) < new Date(new Date().setHours(0, 0, 0, 0));
+                try {
+                    // Genera tutti i giorni del mese
+                    const dayButtons = [];
                     
-                    // Controlla se ci sono slot per questa data
-                    let slotCount = 0;
-                    let isAvailable = false;
-                    
-                    try {
-                        // Prova prima dalla cache
-                        const cachedSlots = calendarMap.get(dateKey);
-                        if (cachedSlots && cachedSlots.length > 0) {
-                            slotCount = cachedSlots.length;
-                            isAvailable = true;
-                        } else {
-                            // Se non in cache, chiama l'API
-                            const apiSlots = await fetchAvailability(dateKey);
-                            if (apiSlots && apiSlots.length > 0) {
-                                slotCount = apiSlots.length;
-                                isAvailable = true;
-                                // Salva in cache per future navigazioni
-                                calendarMap.set(dateKey, apiSlots);
+                    for (let day = 1; day <= daysInMonth; day++) {
+                        const dateKey = monthKey + '-' + String(day).padStart(2, '0');
+                        const isPast = new Date(dateKey) < new Date(new Date().setHours(0, 0, 0, 0));
+                        
+                        // Controlla se ci sono slot per questa data usando i dati del calendario
+                        let slotCount = 0;
+                        let isAvailable = false;
+                        
+                        // Prova prima dai dati del calendario passati dal backend
+                        if (window.FPFront && window.FPFront.config && window.FPFront.config.calendar) {
+                            const calendarData = window.FPFront.config.calendar;
+                            
+                            if (calendarData[monthKey] && calendarData[monthKey].days && calendarData[monthKey].days[dateKey]) {
+                                const daySlots = calendarData[monthKey].days[dateKey];
+                                slotCount = daySlots.length;
+                                isAvailable = slotCount > 0;
+                                
+                                // Salva anche in cache per future navigazioni
+                                calendarMap.set(dateKey, daySlots);
                             }
                         }
-                    } catch (error) {
-                        console.warn('[FP-EXP] Errore caricamento slot per', dateKey, ':', error);
+                        
+                        // Se non trovato nei dati del calendario, prova la cache
+                        if (!isAvailable) {
+                            const cachedSlots = calendarMap.get(dateKey);
+                            if (cachedSlots && cachedSlots.length > 0) {
+                                slotCount = cachedSlots.length;
+                                isAvailable = true;
+                            }
+                        }
+                        
+                        // Se ancora non disponibile, chiama l'API come fallback
+                        if (!isAvailable) {
+                            try {
+                                const apiSlots = await fetchAvailability(dateKey);
+                                if (apiSlots && apiSlots.length > 0) {
+                                    slotCount = apiSlots.length;
+                                    isAvailable = true;
+                                    // Salva in cache per future navigazioni
+                                    calendarMap.set(dateKey, apiSlots);
+                                }
+                            } catch (error) {
+                                console.warn('[FP-EXP] Errore caricamento slot per', dateKey, ':', error);
+                                // Continua anche se c'è un errore
+                            }
+                        }
+                        
+                        const dayButton = document.createElement('button');
+                        dayButton.type = 'button';
+                        dayButton.className = 'fp-exp-calendar-nav__day' + (isPast ? ' is-past' : '');
+                        dayButton.setAttribute('data-date', dateKey);
+                        dayButton.setAttribute('data-available', isAvailable ? '1' : '0');
+                        dayButton.setAttribute('data-month', monthKey);
+                        if (isPast || !isAvailable) dayButton.disabled = true;
+                        
+                        let slotsHtml = '';
+                        if (slotCount > 0) {
+                            slotsHtml = `<span class="fp-exp-calendar-nav__day-slots">${slotCount} slot</span>`;
+                        }
+                        
+                        dayButton.innerHTML = `
+                            <span class="fp-exp-calendar-nav__day-number">${day}</span>
+                            ${slotsHtml}
+                        `;
+                        
+                        dayButtons.push(dayButton);
                     }
                     
-                    const dayButton = document.createElement('button');
-                    dayButton.type = 'button';
-                    dayButton.className = 'fp-exp-calendar-nav__day' + (isPast ? ' is-past' : '');
-                    dayButton.setAttribute('data-date', dateKey);
-                    dayButton.setAttribute('data-available', isAvailable ? '1' : '0');
-                    dayButton.setAttribute('data-month', monthKey);
-                    if (isPast || !isAvailable) dayButton.disabled = true;
+                    // Sostituisce il contenuto di caricamento con tutti i giorni
+                    grid.innerHTML = '';
+                    dayButtons.forEach(button => grid.appendChild(button));
                     
-                    let slotsHtml = '';
-                    if (slotCount > 0) {
-                        slotsHtml = `<span class="fp-exp-calendar-nav__day-slots">${slotCount} slot</span>`;
-                    }
-                    
-                    dayButton.innerHTML = `
-                        <span class="fp-exp-calendar-nav__day-number">${day}</span>
-                        ${slotsHtml}
-                    `;
-                    
-                    grid.appendChild(dayButton);
+                } catch (error) {
+                    console.error('[FP-EXP] Errore generazione calendario:', error);
+                    grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 2rem; color: var(--fp-color-error);">Errore caricamento calendario</div>';
                 }
             }
         };
+
+        // Inizializza il calendario al caricamento della pagina
+        document.addEventListener('DOMContentLoaded', function() {
+            const calendarNav = document.querySelector('.fp-exp-calendar-nav');
+            if (calendarNav) {
+                const currentDate = new Date();
+                updateCalendarMonth(calendarNav, currentDate);
+            }
+        });
 
         // 3.b) Gestisci CTA con data-fp-scroll (hero e sticky): mostra sezione date e scrolla
         (function setupCtaScrollHandlers() {

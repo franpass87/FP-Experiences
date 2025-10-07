@@ -257,10 +257,18 @@ $price_from_display = null !== $price_from_value && $price_from_value > 0
                             
                             <div class="fp-exp-calendar-nav__title-container">
                                 <h4 class="fp-exp-calendar-nav__month">
-                                    <?php echo esc_html(date('F', strtotime(gmdate('Y-m') . '-01'))); ?>
+                                    <?php 
+                                    $month_names = [
+                                        1 => 'Gennaio', 2 => 'Febbraio', 3 => 'Marzo', 4 => 'Aprile',
+                                        5 => 'Maggio', 6 => 'Giugno', 7 => 'Luglio', 8 => 'Agosto',
+                                        9 => 'Settembre', 10 => 'Ottobre', 11 => 'Novembre', 12 => 'Dicembre'
+                                    ];
+                                    $current_month_num = (int) date('n');
+                                    echo esc_html($month_names[$current_month_num]);
+                                    ?>
                                 </h4>
                                 <h5 class="fp-exp-calendar-nav__year">
-                                    <?php echo esc_html(date('Y', strtotime(gmdate('Y-m') . '-01'))); ?>
+                                    <?php echo esc_html(date('Y')); ?>
                                 </h5>
                             </div>
                             
@@ -270,43 +278,10 @@ $price_from_display = null !== $price_from_value && $price_from_value > 0
                         </div>
                         
                         <div class="fp-exp-calendar-nav__content" data-current-month="<?php echo esc_attr(gmdate('Y-m')); ?>">
-                            <?php 
-                            $current_year = gmdate('Y');
-                            $current_month = gmdate('Y-m');
-                            
-                            // Genera solo il mese corrente inizialmente
-                            $month_key = $current_month;
-                            $month_date = new DateTime($month_key . '-01');
-                            $month_name = $month_date->format('F');
-                            $days_in_month = (int) $month_date->format('t');
-                            
-                            // Prendi i dati del calendario per questo mese
-                            $month_calendar_data = isset($calendar[$month_key]) ? $calendar[$month_key] : [];
-                            $month_days = isset($month_calendar_data['days']) ? $month_calendar_data['days'] : [];
-                            ?>
-                            
                             <div class="fp-exp-calendar-nav__grid">
-                                <?php for ($day = 1; $day <= $days_in_month; $day++) :
-                                    $date_key = $month_key . '-' . str_pad($day, 2, '0', STR_PAD_LEFT);
-                                    $day_slots = isset($month_days[$date_key]) ? $month_days[$date_key] : [];
-                                    $slot_count = count($day_slots);
-                                    $is_available = $slot_count > 0;
-                                    $is_past = strtotime($date_key) < strtotime(gmdate('Y-m-d'));
-                                    ?>
-                                    <button
-                                        type="button"
-                                        class="fp-exp-calendar-nav__day <?php echo $is_past ? 'is-past' : ''; ?>"
-                                        data-date="<?php echo esc_attr($date_key); ?>"
-                                        data-available="<?php echo esc_attr($is_available ? '1' : '0'); ?>"
-                                        data-month="<?php echo esc_attr($month_key); ?>"
-                                        <?php if ($is_past || !$is_available) : ?>disabled<?php endif; ?>
-                                    >
-                                        <span class="fp-exp-calendar-nav__day-number"><?php echo esc_html($day); ?></span>
-                                        <?php if ($is_available) : ?>
-                                            <span class="fp-exp-calendar-nav__day-slots"><?php echo esc_html($slot_count); ?> slot</span>
-                                        <?php endif; ?>
-                                    </button>
-                                <?php endfor; ?>
+                                <div style="grid-column: 1/-1; text-align: center; padding: 2rem; color: var(--fp-color-muted);">
+                                    Caricamento...
+                                </div>
                             </div>
                         </div>
                     </div>
