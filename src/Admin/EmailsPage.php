@@ -46,16 +46,16 @@ final class EmailsPage
 
         wp_enqueue_style(
             'fp-exp-admin',
-            FP_EXP_PLUGIN_URL . 'assets/css/admin.css',
+            FP_EXP_PLUGIN_URL . 'assets/css/dist/fp-experiences-admin.min.css',
             [],
-            Helpers::asset_version('assets/css/admin.css')
+            Helpers::asset_version('assets/css/dist/fp-experiences-admin.min.css')
         );
 
         wp_enqueue_script(
             'fp-exp-admin',
-            FP_EXP_PLUGIN_URL . 'assets/js/admin.js',
+            FP_EXP_PLUGIN_URL . 'assets/js/dist/fp-experiences-admin.min.js',
             ['wp-api-fetch', 'wp-i18n'],
-            Helpers::asset_version('assets/js/admin.js'),
+            Helpers::asset_version('assets/js/dist/fp-experiences-admin.min.js'),
             true
         );
     }

@@ -85,7 +85,7 @@ final class Assets
         $this->registered = true;
 
         $style_url = trailingslashit(FP_EXP_PLUGIN_URL) . 'assets/css/dist/fp-experiences-frontend.min.css';
-        $front_js = trailingslashit(FP_EXP_PLUGIN_URL) . 'assets/js/front.js';
+        $front_js = trailingslashit(FP_EXP_PLUGIN_URL) . 'assets/js/dist/fp-experiences-frontend.min.js';
         $checkout_js = trailingslashit(FP_EXP_PLUGIN_URL) . 'assets/js/checkout.js';
 
         wp_register_style(
@@ -99,14 +99,14 @@ final class Assets
             'fp-exp-front',
             $style_url,
             ['fp-exp-fontawesome'],
-            Helpers::asset_version('assets/css/front.css')
+            Helpers::asset_version('assets/css/dist/fp-experiences-frontend.min.css')
         );
 
         wp_register_script(
             'fp-exp-front',
             $front_js,
             ['wp-i18n'],
-            Helpers::asset_version('assets/js/front.js'),
+            Helpers::asset_version('assets/js/dist/fp-experiences-frontend.min.js'),
             true
         );
 

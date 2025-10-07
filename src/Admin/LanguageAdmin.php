@@ -78,9 +78,9 @@ final class LanguageAdmin
 
         wp_enqueue_style(
             'fp-exp-admin',
-            FP_EXP_PLUGIN_URL . 'assets/css/admin.css',
+            FP_EXP_PLUGIN_URL . 'assets/css/dist/fp-experiences-admin.min.css',
             [],
-            Helpers::asset_version('assets/css/admin.css')
+            Helpers::asset_version('assets/css/dist/fp-experiences-admin.min.css')
         );
     }
 }
