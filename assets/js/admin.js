@@ -1335,6 +1335,12 @@
                 showError(getString('recurrenceMissingTimes'));
                 return null;
             }
+            
+            // Verifica che ci siano anche i giorni per la ricorrenza settimanale
+            if (recurrence.frequency === 'weekly' && !recurrence.days.length) {
+                showError('Seleziona almeno un giorno della settimana per la ricorrenza.');
+                return null;
+            }
 
             let experienceId = 0;
             if (typeof adminConfig.experienceId === 'number') {

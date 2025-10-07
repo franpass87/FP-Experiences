@@ -2589,7 +2589,10 @@ final class ExperienceMetaBoxes
         $recurrence_raw = isset($raw['recurrence']) && is_array($raw['recurrence']) ? $raw['recurrence'] : [];
         $recurrence_meta = Recurrence::sanitize($recurrence_raw);
 
-        if ($recurrence_meta !== Recurrence::defaults()) {
+        // Salva solo se ci sono dati significativi (giorni e time_slots)
+        $has_data = !empty($recurrence_meta['days']) && !empty($recurrence_meta['time_slots']);
+        
+        if ($has_data) {
             update_post_meta($post_id, '_fp_exp_recurrence', $recurrence_meta);
         } else {
             delete_post_meta($post_id, '_fp_exp_recurrence');
@@ -3308,6 +3311,28 @@ final class ExperienceMetaBoxes
 
         $stored['time_slots'] = $time_slots;
         $stored['time_sets'] = $time_sets;
+        
+        // Migrazione automatica: se ci sono time_sets ma non time_slots, converti per l'interfaccia
+        if (empty($time_slots) && !empty($time_sets)) {
+            $converted_slots = [];
+            foreach ($time_sets as $set) {
+                if (!isset($set['times']) || !is_array($set['times'])) {
+                    continue;
+                }
+                
+                // Converti ogni time del set in un time_slot separato
+                foreach ($set['times'] as $time) {
+                    $converted_slots[] = [
+                        'time' => $time,
+                        'capacity' => $set['capacity'] ?? 0,
+                        'buffer_before' => $set['buffer_before'] ?? 0,
+                        'buffer_after' => $set['buffer_after'] ?? 0,
+                        'days' => $set['days'] ?? [],
+                    ];
+                }
+            }
+            $stored['time_slots'] = $converted_slots;
+        }
 
         return array_merge(Recurrence::defaults(), $stored);
     }

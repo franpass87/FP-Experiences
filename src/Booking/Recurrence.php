@@ -72,6 +72,36 @@ final class Recurrence
 
         // Time slots con override opzionali
         $definition['time_slots'] = self::sanitize_time_slots($raw['time_slots'] ?? []);
+        
+        // Fallback per retrocompatibilità: se non ci sono time_slots ma ci sono time_sets, converti
+        if (empty($definition['time_slots']) && isset($raw['time_sets']) && is_array($raw['time_sets'])) {
+            $converted = [];
+            foreach ($raw['time_sets'] as $set) {
+                if (!is_array($set) || empty($set['times']) || !is_array($set['times'])) {
+                    continue;
+                }
+                
+                // Converti ogni time del set in un time_slot
+                foreach ($set['times'] as $time) {
+                    $time_str = trim((string) $time);
+                    if ($time_str === '') {
+                        continue;
+                    }
+                    
+                    $converted[] = [
+                        'time' => $time_str,
+                        'capacity' => isset($set['capacity']) ? absint((string) $set['capacity']) : 0,
+                        'buffer_before' => isset($set['buffer_before']) ? absint((string) $set['buffer_before']) : 0,
+                        'buffer_after' => isset($set['buffer_after']) ? absint((string) $set['buffer_after']) : 0,
+                        'days' => isset($set['days']) && is_array($set['days']) ? $set['days'] : [],
+                    ];
+                }
+            }
+            
+            if (!empty($converted)) {
+                $definition['time_slots'] = self::sanitize_time_slots($converted);
+            }
+        }
 
         return $definition;
     }
