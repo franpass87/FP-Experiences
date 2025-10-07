@@ -44,3 +44,4 @@ La documentazione è stata ottimizzata e consolidata:
 - **Audit Completo**: [docs/AUDIT-COMPLETO.md](docs/AUDIT-COMPLETO.md) - Tutti gli audit di sicurezza, performance, accessibilità e integrazioni
 - **Importer Completo**: [docs/IMPORTER-COMPLETO.md](docs/IMPORTER-COMPLETO.md) - Guida completa all'importer di esperienze
 - **Verifica Completa**: [docs/VERIFICA-COMPLETA.md](docs/VERIFICA-COMPLETA.md) - Guida di verifica completa per tutti i componenti
+ - **Frontend Modulare**: [docs/FRONTEND-MODULAR-GUIDE.md](docs/FRONTEND-MODULAR-GUIDE.md) - API dei moduli `FPFront.*`, ordine di inizializzazione, esempi di override e come aggiungere nuovi moduli

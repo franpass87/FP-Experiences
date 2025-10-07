@@ -15,6 +15,8 @@
     
     // Inizializza quando il documento è pronto
     jQuery(document).ready(function($) {
+        // Namespace globale leggero per futura modularizzazione
+        if (!window.FPFront) window.FPFront = {};
         console.log('FP Experiences Frontend: Inizializzato');
         
         // Selettori base
@@ -72,167 +74,20 @@
             slotsEl.innerHTML = '<p class="fp-exp-slots__placeholder">' + text + '</p>';
         };
 
-        const formatTimeRange = (startIso, endIso) => {
-            try {
-                // Gestione più robusta dei formati di data
-                let startDate, endDate;
-                
-                // Prova diversi formati di data
-                if (startIso.includes('T')) {
-                    startDate = new Date(startIso);
-                } else if (startIso.includes(' ')) {
-                    startDate = new Date(startIso.replace(' ', 'T'));
-                } else {
-                    // Se è solo una data, aggiungi un orario di default
-                    startDate = new Date(startIso + 'T00:00:00');
-                }
-                
-                if (endIso.includes('T')) {
-                    endDate = new Date(endIso);
-                } else if (endIso.includes(' ')) {
-                    endDate = new Date(endIso.replace(' ', 'T'));
-                } else {
-                    endDate = new Date(endIso + 'T00:00:00');
-                }
-                
-                // Verifica che le date siano valide
-                if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
-                    throw new Error('Invalid date format');
-                }
-                
-                const tz = (config && config.timezone) || undefined;
-                const opts = { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: tz };
-                const fmt = new Intl.DateTimeFormat(undefined, opts);
-                
-                return fmt.format(startDate) + ' - ' + fmt.format(endDate);
-            } catch (e) {
-                console.warn('[FP-EXP] Errore formatTimeRange:', e, { startIso, endIso });
-                // Fallback più robusto
-                if (startIso && endIso) {
-                    // Estrai l'orario da stringhe ISO o datetime
-                    const startTime = startIso.includes(' ') ? startIso.substring(11, 16) : 
-                                     startIso.includes('T') ? startIso.substring(11, 16) : 
-                                     '00:00';
-                    const endTime = endIso.includes(' ') ? endIso.substring(11, 16) : 
-                                   endIso.includes('T') ? endIso.substring(11, 16) : 
-                                   '00:00';
-                    return startTime + ' - ' + endTime;
-                }
-                return 'Slot';
-            }
-        };
+        const formatTimeRange = (startIso, endIso) => window.FPFront.availability ? window.FPFront.availability.formatTimeRange(startIso, endIso) : 'Slot';
 
-        const renderSlots = (items) => {
-            if (!slotsEl) return;
-            const emptyLabel = slotsEl.getAttribute('data-empty-label') || '';
-            if (!items || items.length === 0) {
-                slotsEl.innerHTML = '<p class="fp-exp-slots__placeholder">' + (emptyLabel || 'Nessuna fascia disponibile') + '</p>';
-                return;
-            }
-            const list = document.createElement('ul');
-            list.className = 'fp-exp-slots__list';
-            items.forEach((slot) => {
-                const li = document.createElement('li');
-                li.className = 'fp-exp-slots__item';
-                // Supporta sia {start,end} (REST) che {start_iso,end_iso} (dataset calendario)
-                const startVal = (slot && (slot.start || slot.start_iso)) || '';
-                const endVal = (slot && (slot.end || slot.end_iso)) || '';
-                const label = (slot && slot.label)
-                    || (startVal && endVal ? formatTimeRange(String(startVal), String(endVal)) : 'Slot');
-                li.textContent = label;
-                li.dataset.start = String(startVal);
-                li.dataset.end = String(endVal);
-                list.appendChild(li);
-            });
-            slotsEl.innerHTML = '';
-            slotsEl.appendChild(list);
-        };
+        // Inizializza modulo slots una volta
+        if (window.FPFront.slots) window.FPFront.slots.init({ slotsEl });
 
         // Fetch dinamico dagli endpoint REST del plugin
-        const fetchAvailability = async (date) => {
-            const experienceId = (config && config.experienceId) || 0;
-            if (!experienceId || !date) return [];
-            try {
-                const base = (window.fpExpApiBase && typeof window.fpExpApiBase === 'string')
-                    ? window.fpExpApiBase
-                    : (window.wpApiSettings && wpApiSettings.root) || (location.origin + '/wp-json/');
-                // assicurati della barra finale
-                const root = base.endsWith('/') ? base : base + '/';
-                const url = new URL(root + 'fp-exp/v1/availability');
-                url.searchParams.set('experience', String(experienceId));
-                // per il giorno singolo usiamo start=end=YYYY-MM-DD
-                url.searchParams.set('start', date);
-                url.searchParams.set('end', date);
-                const res = await fetch(url.toString(), { credentials: 'same-origin' });
-                if (!res.ok) throw new Error('HTTP ' + res.status);
-                const data = await res.json();
-                const slots = Array.isArray(data && data.slots) ? data.slots : [];
-                return slots.map((s) => ({
-                    start: s.start || '',
-                    end: s.end || '',
-                    label: (s.start && s.end) ? formatTimeRange(s.start, s.end) : undefined
-                }));
-            } catch (e) {
-                console.warn('[FP-EXP] Errore fetch availability', e);
-                throw e;
-            }
-        };
+        const fetchAvailability = async (date) => window.FPFront.availability ? window.FPFront.availability.fetchAvailability(date) : [];
 
         // Cache mensile: { 'YYYY-MM': Set('YYYY-MM-DD'→count) }
-        const monthCache = new Map();
-        const monthKeyOf = (dateStr) => dateStr.slice(0, 7);
-        const prefetchMonth = async (yyyyMm) => {
-            const experienceId = (config && config.experienceId) || 0;
-            if (!experienceId || !yyyyMm) return;
-            if (monthCache.has(yyyyMm)) return;
-            try {
-                const base = (window.fpExpApiBase && typeof window.fpExpApiBase === 'string')
-                    ? window.fpExpApiBase
-                    : (window.wpApiSettings && wpApiSettings.root) || (location.origin + '/wp-json/');
-                const root = base.endsWith('/') ? base : base + '/';
-                const start = yyyyMm + '-01';
-                const endDate = new Date(start + 'T00:00:00');
-                endDate.setMonth(endDate.getMonth() + 1); endDate.setDate(0);
-                const end = endDate.toISOString().slice(0,10);
-                const url = new URL(root + 'fp-exp/v1/availability');
-                url.searchParams.set('experience', String(experienceId));
-                url.searchParams.set('start', start);
-                url.searchParams.set('end', end);
-                const res = await fetch(url.toString(), { credentials: 'same-origin' });
-                if (!res.ok) throw new Error('HTTP ' + res.status);
-                const data = await res.json();
-                const slots = Array.isArray(data && data.slots) ? data.slots : [];
-                const dayCount = new Map();
-                slots.forEach((s) => {
-                    const d = (s.start || '').slice(0,10);
-                    dayCount.set(d, (dayCount.get(d) || 0) + 1);
-                });
-                monthCache.set(yyyyMm, dayCount);
-                // aggiorna badge conteggi nel calendario inline
-                if (calendarEl) {
-                    calendarEl.querySelectorAll('.fp-exp-calendar__day[data-date^="' + yyyyMm + '"]').forEach((btn) => {
-                        const d = btn.getAttribute('data-date');
-                        const count = (d && dayCount.get(d)) || 0;
-                        btn.dataset.available = count > 0 ? '1' : '0';
-                    });
-                }
-            } catch (e) {
-                console.warn('[FP-EXP] Prefetch mese fallito', e);
-            }
-        };
+        const monthKeyOf = (dateStr) => (window.FPFront.availability ? window.FPFront.availability.monthKeyOf(dateStr) : (dateStr || '').slice(0,7));
+        const prefetchMonth = async (yyyyMm) => window.FPFront.availability && window.FPFront.availability.prefetchMonth(yyyyMm);
 
         // Mappa YYYY-MM-DD → array di slot dal dataset calendar
-        const calendarMap = (() => {
-            const map = new Map();
-            const calendar = (config && config.calendar) || {};
-            Object.keys(calendar).forEach((monthKey) => {
-                const days = calendar[monthKey] && calendar[monthKey].days ? calendar[monthKey].days : {};
-                Object.keys(days).forEach((dateKey) => {
-                    map.set(dateKey, days[dateKey] || []);
-                });
-            });
-            return map;
-        })();
+        const calendarMap = (window.FPFront.availability && window.FPFront.availability.getCalendarMap && window.FPFront.availability.getCalendarMap()) || new Map();
 
         const showCalendarIfConfigured = () => {
             if (!calendarEl) return;
@@ -241,54 +96,10 @@
                 calendarEl.hidden = false;
             }
         };
-        showCalendarIfConfigured();
-
-        // Navigazione mesi semplice (prev/next) se presente calendario inline
-        const setupMonthNavigation = () => {
-            if (!calendarEl) return;
-            // Crea toolbar se non esiste
-            if (!calendarEl.querySelector('.fp-exp-calendar__weekdays')) return; // usa calendario già renderizzato dal template
-            let toolbar = calendarEl.querySelector('.fp-exp-calendar__toolbar');
-            if (!toolbar) {
-                toolbar = document.createElement('div');
-                toolbar.className = 'fp-exp-calendar__toolbar';
-                const prev = document.createElement('button');
-                prev.type = 'button';
-                prev.className = 'fp-exp-calendar__nav-prev';
-                prev.setAttribute('aria-label', 'Mese precedente');
-                prev.textContent = '‹';
-                const next = document.createElement('button');
-                next.type = 'button';
-                next.className = 'fp-exp-calendar__nav-next';
-                next.setAttribute('aria-label', 'Mese successivo');
-                next.textContent = '›';
-                toolbar.appendChild(prev);
-                toolbar.appendChild(next);
-                calendarEl.insertBefore(toolbar, calendarEl.firstChild);
-
-                const navigate = async (delta) => {
-                    // Trova il primo giorno visibile e calcola il mese target
-                    const firstBtn = calendarEl.querySelector('.fp-exp-calendar__day');
-                    if (!firstBtn) return;
-                    const anyDate = firstBtn.getAttribute('data-date');
-                    if (!anyDate) return;
-                    const dt = new Date(anyDate + 'T00:00:00');
-                    dt.setMonth(dt.getMonth() + delta);
-                    const yyyyMm = dt.toISOString().slice(0,7);
-                    await prefetchMonth(yyyyMm);
-                    // Scorri alla prima sezione mese corrispondente se presente
-                    const monthSection = calendarEl.querySelector('.fp-exp-calendar__month[data-month="' + yyyyMm + '"]');
-                    // Rimosso scroll automatico per evitare il salto verso il basso
-                    // if (monthSection && typeof monthSection.scrollIntoView === 'function') {
-                    //     monthSection.scrollIntoView({ behavior: 'auto', block: 'start' });
-                    // }
-                };
-
-                prev.addEventListener('click', () => navigate(-1));
-                next.addEventListener('click', () => navigate(1));
-            }
-        };
-        setupMonthNavigation();
+        // Inizializza modulo calendario (visibilità, toolbar, prefetch iniziale)
+        if (window.FPFront.calendar && window.FPFront.calendar.init) {
+            window.FPFront.calendar.init({ calendarEl, widget });
+        }
 
         // 2) Alla modifica della data, mostra gli slot del giorno
         if (dateInput) {
@@ -305,7 +116,9 @@
                         items = [];
                     }
                 }
-                renderSlots(items);
+                if (window.FPFront.slots && window.FPFront.slots.renderSlots) {
+                    window.FPFront.slots.renderSlots(items);
+                }
                 // evidenzia nel calendario inline
                 if (calendarEl) {
                     calendarEl.querySelectorAll('.fp-exp-calendar__day').forEach((btn) => btn.classList.remove('is-selected'));
@@ -313,7 +126,9 @@
                     if (btn) btn.classList.add('is-selected');
                 }
                 // prefetch del mese della data selezionata
-                prefetchMonth(monthKeyOf(date));
+                if (window.FPFront.availability && window.FPFront.availability.prefetchMonth && window.FPFront.availability.monthKeyOf) {
+                    window.FPFront.availability.prefetchMonth(window.FPFront.availability.monthKeyOf(date));
+                }
 
                 // Rimosso scroll automatico per evitare il salto verso il basso
                 // if (slotsEl && typeof slotsEl.scrollIntoView === 'function') {
@@ -334,12 +149,7 @@
                     dateInput.dispatchEvent(new Event('change', { bubbles: true }));
                 }
             });
-            // prefetch del mese visibile iniziale
-            const firstVisible = calendarEl.querySelector('.fp-exp-calendar__day');
-            if (firstVisible) {
-                const d = firstVisible.getAttribute('data-date');
-                if (d) prefetchMonth(monthKeyOf(d));
-            }
+            // già gestito nel modulo calendar
         }
 
         // 4) Click sugli slot → selezione e aggiornamento form RTB o WooCommerce
@@ -353,10 +163,7 @@
             const endInput = rtbForm ? rtbForm.querySelector('input[name="end"]') : null;
             const submitBtn = document.querySelector('.fp-exp-summary__cta'); // Sempre disponibile
 
-            const clearSelection = () => {
-                const prev = slotsEl.querySelectorAll('.fp-exp-slots__item.is-selected');
-                prev.forEach((el) => el.classList.remove('is-selected'));
-            };
+            const clearSelection = () => { if (window.FPFront.slots) { window.FPFront.slots.init({ slotsEl }); window.FPFront.slots.clearSelection(); } };
 
             slotsEl.addEventListener('click', (ev) => {
                 const li = ev.target && ev.target.closest('.fp-exp-slots__item');
@@ -377,44 +184,14 @@
                     ctaButton.disabled = false;
                 }
             });
+            if (window.FPFront.slots) window.FPFront.slots.init({ slotsEl });
         })();
 
         // 5) Controlli quantità biglietti (+ / -)
-        (function setupQuantityControls() {
-            // Controlla se RTB è abilitato
-            const rtbEnabled = (config && config.rtb && config.rtb.enabled === true);
-            
-            // Delegazione sul container del widget per gestire bottoni dinamici
-            widget.addEventListener('click', (ev) => {
-                const btn = ev.target && ev.target.closest('.fp-exp-quantity__control');
-                if (!btn) return;
-                const container = btn.closest('.fp-exp-quantity');
-                if (!container) return;
-                const input = container.querySelector('.fp-exp-quantity__input');
-                if (!input) return;
-
-                const action = btn.getAttribute('data-action');
-                const rawMin = (input.getAttribute('min') || '').trim();
-                const rawMax = (input.getAttribute('max') || '').trim();
-                const min = rawMin === '' ? 0 : parseInt(rawMin, 10);
-                const max = rawMax === '' ? Number.POSITIVE_INFINITY : parseInt(rawMax, 10);
-                const current = Number.isFinite(parseInt(input.value, 10)) ? parseInt(input.value, 10) : 0;
-
-                let next = current;
-                if (action === 'increase') {
-                    next = Math.min(max, current + 1);
-                } else if (action === 'decrease') {
-                    next = Math.max(min, current - 1);
-                }
-
-                if (next !== current) {
-                    input.value = String(next);
-                    // Propaga eventi per eventuali listener (sia RTB che WooCommerce)
-                    input.dispatchEvent(new Event('input', { bubbles: true }));
-                    input.dispatchEvent(new Event('change', { bubbles: true }));
-                }
-            });
-        })();
+        // Inizializza modulo quantità
+        if (window.FPFront.quantity && window.FPFront.quantity.init) {
+            window.FPFront.quantity.init({ widget });
+        }
 
         // Funzione per gestire il flusso WooCommerce quando RTB è disabilitato
         function setupWooCommerceFlow() {
@@ -435,6 +212,158 @@
                     ctaBtn.textContent = 'Procedi al pagamento';
                 }
             };
+
+            // Sistema di riepilogo prezzi per WooCommerce
+            const setupWooCommercePriceSummary = () => {
+                const summary = document.querySelector('.fp-exp-summary');
+                if (!summary) return;
+
+                const statusEl = summary.querySelector('[data-fp-summary-status]');
+                const bodyEl = summary.querySelector('[data-fp-summary-body]');
+                const linesEl = summary.querySelector('[data-fp-summary-lines]');
+                const adjustmentsEl = summary.querySelector('[data-fp-summary-adjustments]');
+                const totalRowEl = summary.querySelector('[data-fp-summary-total-row]');
+                const totalEl = summary.querySelector('[data-fp-summary-total]');
+
+                const loadingLabel = summary.getAttribute('data-loading-label') || 'Aggiornamento prezzo…';
+                const errorLabel = summary.getAttribute('data-error-label') || 'Impossibile aggiornare il prezzo. Riprova.';
+                const emptyLabel = summary.getAttribute('data-empty-label') || 'Seleziona i biglietti per vedere il riepilogo';
+
+                const formatCurrency = (amount, currency) => {
+                    try {
+                        const fmt = new Intl.NumberFormat(undefined, { style: 'currency', currency: currency || 'EUR' });
+                        return fmt.format(Number(amount || 0));
+                    } catch (e) {
+                        return String(amount || 0);
+                    }
+                };
+
+                const setStatus = (text) => {
+                    if (statusEl) {
+                        statusEl.hidden = false;
+                        const p = statusEl.querySelector('.fp-exp-summary__message');
+                        if (p) p.textContent = text || emptyLabel;
+                    }
+                    if (bodyEl) bodyEl.hidden = true;
+                };
+
+                const showBody = () => {
+                    if (statusEl) statusEl.hidden = true;
+                    if (bodyEl) bodyEl.hidden = false;
+                };
+
+                const updatePriceSummary = () => {
+                    const tickets = collectTickets();
+                    const addons = collectAddons();
+                    const selectedSlot = slotsEl && slotsEl.querySelector('.fp-exp-slots__item.is-selected');
+
+                    if (!tickets || Object.keys(tickets).length === 0) {
+                        setStatus(emptyLabel);
+                        return;
+                    }
+
+                    if (!selectedSlot) {
+                        setStatus('Seleziona data e orario per vedere il prezzo');
+                        return;
+                    }
+
+                    // Calcolo semplificato per WooCommerce (senza chiamate API)
+                    let total = 0;
+                    // Prendi la valuta dalla config o usa EUR come default
+                    const currency = (config && config.currency) || 'EUR';
+                    
+                    // Calcola totale biglietti usando i prezzi reali dal DOM
+                    Object.entries(tickets).forEach(([slug, qty]) => {
+                        const priceEl = document.querySelector(`tr[data-ticket="${slug}"] .fp-exp-ticket__price[data-price]`);
+                        const price = priceEl ? parseFloat(priceEl.getAttribute('data-price') || '0') : 0;
+                        total += price * qty;
+                    });
+
+                    // Calcola totale addon
+                    Object.entries(addons).forEach(([slug, qty]) => {
+                        const priceEl = document.querySelector(`li[data-addon="${slug}"] .fp-exp-addon__price[data-price]`);
+                        const price = priceEl ? parseFloat(priceEl.getAttribute('data-price') || '0') : 0;
+                        total += price * qty;
+                    });
+
+                    // Render linee
+                    if (linesEl) {
+                        linesEl.innerHTML = '';
+                        Object.entries(tickets).forEach(([slug, qty]) => {
+                            if (qty > 0) {
+                                const priceEl = document.querySelector(`tr[data-ticket="${slug}"] .fp-exp-ticket__price[data-price]`);
+                                const price = priceEl ? parseFloat(priceEl.getAttribute('data-price') || '0') : 0;
+                                const labelEl = document.querySelector(`tr[data-ticket="${slug}"] .fp-exp-ticket__label`);
+                                const ticketLabel = labelEl ? labelEl.textContent.trim() : `Biglietto ${slug}`;
+                                
+                                const li = document.createElement('li');
+                                li.className = 'fp-exp-summary__line';
+                                const label = document.createElement('span');
+                                label.className = 'fp-exp-summary__line-label';
+                                label.textContent = `${ticketLabel} × ${qty}`;
+                                const amount = document.createElement('span');
+                                amount.className = 'fp-exp-summary__line-amount';
+                                amount.textContent = formatCurrency(price * qty, currency);
+                                li.appendChild(label);
+                                li.appendChild(amount);
+                                linesEl.appendChild(li);
+                            }
+                        });
+
+                        // Render addon
+                        Object.entries(addons).forEach(([slug, qty]) => {
+                            if (qty > 0) {
+                                const priceEl = document.querySelector(`li[data-addon="${slug}"] .fp-exp-addon__price[data-price]`);
+                                const price = priceEl ? parseFloat(priceEl.getAttribute('data-price') || '0') : 0;
+                                const labelEl = document.querySelector(`li[data-addon="${slug}"] .fp-exp-addon__label`);
+                                const addonLabel = labelEl ? labelEl.textContent.trim() : `Extra ${slug}`;
+                                
+                                const li = document.createElement('li');
+                                li.className = 'fp-exp-summary__line';
+                                const label = document.createElement('span');
+                                label.className = 'fp-exp-summary__line-label';
+                                label.textContent = `${addonLabel} × ${qty}`;
+                                const amount = document.createElement('span');
+                                amount.className = 'fp-exp-summary__line-amount';
+                                amount.textContent = formatCurrency(price * qty, currency);
+                                li.appendChild(label);
+                                li.appendChild(amount);
+                                linesEl.appendChild(li);
+                            }
+                        });
+                    }
+
+                    // Totale
+                    if (totalEl) totalEl.textContent = formatCurrency(total, currency);
+                    if (totalRowEl) totalRowEl.hidden = false;
+
+                    showBody();
+                };
+
+                // Aggiorna riepilogo su cambi
+                widget.addEventListener('change', (ev) => {
+                    if (ev.target && ev.target.closest('.fp-exp-quantity__input')) {
+                        updatePriceSummary();
+                    }
+                });
+                widget.addEventListener('input', (ev) => {
+                    if (ev.target && ev.target.closest('.fp-exp-quantity__input')) {
+                        updatePriceSummary();
+                    }
+                });
+                if (slotsEl) {
+                    slotsEl.addEventListener('click', (ev) => {
+                        if (ev.target && ev.target.closest('.fp-exp-slots__item')) {
+                            updatePriceSummary();
+                        }
+                    });
+                }
+
+                // Stato iniziale
+                updatePriceSummary();
+            };
+
+            setupWooCommercePriceSummary();
 
             const collectTickets = () => {
                 const map = {};
@@ -598,6 +527,9 @@
             const rtbEnabled = (config && config.rtb && config.rtb.enabled === true);
             if (!rtbEnabled) {
                 console.log('[FP-EXP] RTB disabilitato, configurando flusso WooCommerce');
+                if (window.FPFront.summaryWoo && window.FPFront.summaryWoo.init) {
+                    window.FPFront.summaryWoo.init({ widget, slotsEl, config });
+                }
                 setupWooCommerceFlow();
                 return;
             }
@@ -873,7 +805,16 @@
                 });
             }
             updateCtaState();
+            // Inizializza modulo RTB Summary
+            if (window.FPFront.summaryRtb && window.FPFront.summaryRtb.init) {
+                window.FPFront.summaryRtb.init({ widget, slotsEl, config });
+            }
         })();
+
+        // Inizializza il modulo availability con il contesto corrente
+        if (window.FPFront.availability && window.FPFront.availability.init) {
+            window.FPFront.availability.init({ config, calendarEl, widget });
+        }
     });
     
 })();

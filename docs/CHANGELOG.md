@@ -1,6 +1,8 @@
 # Changelog
 
 ## [Unreleased]
+### Modifiche
+- Frontend: modularizzazione `assets/js/front.js` in moduli `FPFront.*` (`availability`, `slots`, `calendar`, `quantity`, `summaryRtb`, `summaryWoo`) con bootstrap leggero e guida dedicata in `docs/FRONTEND-MODULAR-GUIDE.md`.
 
 ## [0.3.4] - 2025-01-27
 - **Ottimizzazione Documentazione**: Consolidati tutti i file di audit in un unico documento completo (AUDIT-COMPLETO.md)

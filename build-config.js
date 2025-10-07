@@ -21,6 +21,12 @@ const buildConfig = {
         },
         // Moduli frontend
         frontend: {
+            frontAvailability: 'assets/js/front/availability.js',
+            frontSlots: 'assets/js/front/slots.js',
+            frontSummaryRtb: 'assets/js/front/summary-rtb.js',
+            frontSummaryWoo: 'assets/js/front/summary-woo.js',
+            frontCalendar: 'assets/js/front/calendar.js',
+            frontQuantity: 'assets/js/front/quantity.js',
             front: 'assets/js/front.js',
             checkout: 'assets/js/checkout.js',
             importer: 'assets/js/importer.js'
