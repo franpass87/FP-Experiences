@@ -80,7 +80,7 @@ final class WidgetWidget extends Widget_Base
                 'label_on' => esc_html__('Show', 'fp-experiences'),
                 'label_off' => esc_html__('Hide', 'fp-experiences'),
                 'return_value' => 'yes',
-                'default' => 'yes',
+                'default' => 'no',
             ]
         );
 
@@ -106,7 +106,7 @@ final class WidgetWidget extends Widget_Base
         $atts = [
             'id' => (string) ($settings['experience_id'] ?? ''),
             'sticky' => ('yes' === ($settings['sticky'] ?? '')) ? '1' : '0',
-            'show_calendar' => ('yes' === ($settings['show_calendar'] ?? 'yes')) ? '1' : '0',
+            'show_calendar' => ('yes' === ($settings['show_calendar'] ?? 'no')) ? '1' : '0',
         ];
 
         $atts = array_merge($atts, $this->collect_theme_atts($settings));
