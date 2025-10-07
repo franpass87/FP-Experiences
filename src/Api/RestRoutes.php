@@ -180,6 +180,18 @@ final class RestRoutes
 
         register_rest_route(
             'fp-exp/v1',
+            '/tools/sync-availability',
+            [
+                'methods' => 'POST',
+                'permission_callback' => static function (): bool {
+                    return Helpers::can_manage_fp();
+                },
+                'callback' => [$this, 'tool_sync_availability'],
+            ]
+        );
+
+        register_rest_route(
+            'fp-exp/v1',
             '/tools/resync-brevo',
             [
                 'methods' => 'POST',
@@ -710,6 +722,151 @@ final class RestRoutes
             'created' => $created,
             'preview' => $preview,
         ]);
+    }
+
+    public function tool_sync_availability(): WP_REST_Response
+    {
+        if (Helpers::hit_rate_limit('tools_sync_availability_' . get_current_user_id(), 3, MINUTE_IN_SECONDS)) {
+            return rest_ensure_response([
+                'success' => false,
+                'message' => __('Sync already executed. Try again in a moment.', 'fp-experiences'),
+            ]);
+        }
+
+        // Query tutte le esperienze
+        $experiences = get_posts([
+            'post_type' => 'fp_experience',
+            'posts_per_page' => -1,
+            'post_status' => ['publish', 'draft', 'private'],
+            'fields' => 'ids',
+        ]);
+
+        if (empty($experiences)) {
+            return rest_ensure_response([
+                'success' => true,
+                'message' => __('No experiences found.', 'fp-experiences'),
+                'details' => [],
+            ]);
+        }
+
+        $stats = [
+            'total' => count($experiences),
+            'already_unified' => 0,
+            'migrated' => 0,
+            'has_legacy_only' => 0,
+            'no_config' => 0,
+            'errors' => [],
+        ];
+
+        foreach ($experiences as $exp_id) {
+            // Controlla formato unificato
+            $recurrence = get_post_meta($exp_id, '_fp_exp_recurrence', true);
+            $has_unified = is_array($recurrence) && !empty($recurrence);
+            
+            // Controlla formato legacy
+            $availability = get_post_meta($exp_id, '_fp_exp_availability', true);
+            $has_legacy = is_array($availability) && !empty($availability);
+            
+            if ($has_unified) {
+                // Verifica che ci siano time_sets configurati
+                $time_sets = isset($recurrence['time_sets']) && is_array($recurrence['time_sets']) ? $recurrence['time_sets'] : [];
+                
+                if (empty($time_sets) && $has_legacy) {
+                    // Migra dal legacy
+                    if ($this->migrate_to_unified($exp_id, $availability)) {
+                        $stats['migrated']++;
+                    } else {
+                        $stats['errors'][] = sprintf('Experience %d: migration failed', $exp_id);
+                    }
+                } else {
+                    $stats['already_unified']++;
+                }
+            } elseif ($has_legacy) {
+                // Migra dal legacy
+                if ($this->migrate_to_unified($exp_id, $availability)) {
+                    $stats['migrated']++;
+                    $stats['has_legacy_only']++;
+                } else {
+                    $stats['errors'][] = sprintf('Experience %d: migration failed', $exp_id);
+                }
+            } else {
+                $stats['no_config']++;
+            }
+        }
+
+        Logger::log('tools', 'Availability data synchronized', $stats);
+
+        $details = [
+            sprintf(__('Total experiences: %d', 'fp-experiences'), $stats['total']),
+            sprintf(__('Already unified: %d', 'fp-experiences'), $stats['already_unified']),
+            sprintf(__('Migrated: %d', 'fp-experiences'), $stats['migrated']),
+            sprintf(__('Had legacy only: %d', 'fp-experiences'), $stats['has_legacy_only']),
+            sprintf(__('No config: %d', 'fp-experiences'), $stats['no_config']),
+        ];
+
+        if (!empty($stats['errors'])) {
+            $details[] = __('Errors:', 'fp-experiences') . ' ' . implode(', ', $stats['errors']);
+        }
+
+        $message = $stats['migrated'] > 0
+            ? sprintf(__('Sync completed. %d experience(s) migrated.', 'fp-experiences'), $stats['migrated'])
+            : __('Sync completed. All experiences already have unified format.', 'fp-experiences');
+
+        return rest_ensure_response([
+            'success' => empty($stats['errors']),
+            'message' => $message,
+            'details' => $details,
+        ]);
+    }
+
+    /**
+     * Migra dal vecchio formato al nuovo formato unificato.
+     */
+    private function migrate_to_unified(int $exp_id, array $legacy): bool
+    {
+        // Estrai campi dal legacy format
+        $frequency = isset($legacy['frequency']) ? sanitize_key((string) $legacy['frequency']) : 'weekly';
+        $times = isset($legacy['times']) && is_array($legacy['times']) ? $legacy['times'] : [];
+        $days = isset($legacy['days_of_week']) && is_array($legacy['days_of_week']) ? $legacy['days_of_week'] : [];
+        $capacity = isset($legacy['slot_capacity']) ? absint((string) $legacy['slot_capacity']) : 0;
+        $lead_time = isset($legacy['lead_time_hours']) ? absint((string) $legacy['lead_time_hours']) : 0;
+        $buffer_before = isset($legacy['buffer_before_minutes']) ? absint((string) $legacy['buffer_before_minutes']) : 0;
+        $buffer_after = isset($legacy['buffer_after_minutes']) ? absint((string) $legacy['buffer_after_minutes']) : 0;
+        $start_date = isset($legacy['start_date']) ? sanitize_text_field((string) $legacy['start_date']) : '';
+        $end_date = isset($legacy['end_date']) ? sanitize_text_field((string) $legacy['end_date']) : '';
+        
+        // Normalizza giorni (lowercase)
+        $days = array_map('strtolower', array_map('trim', $days));
+        
+        // Crea struttura unificata
+        $unified = [
+            'frequency' => $frequency,
+            'start_date' => $start_date,
+            'end_date' => $end_date,
+            'days' => $days,
+            'time_sets' => [],
+        ];
+        
+        // Converti times in time_sets
+        if (!empty($times)) {
+            $unified['time_sets'][] = [
+                'times' => $times,
+                'days' => $days,
+                'capacity' => $capacity,
+                'buffer_before' => $buffer_before,
+                'buffer_after' => $buffer_after,
+            ];
+        }
+        
+        // Salva nel nuovo formato
+        $saved = update_post_meta($exp_id, '_fp_exp_recurrence', $unified);
+        
+        // Salva anche lead_time separato
+        if ($lead_time > 0) {
+            update_post_meta($exp_id, '_fp_lead_time_hours', $lead_time);
+        }
+        
+        return $saved !== false;
     }
 
     public function tool_resync_brevo(): WP_REST_Response

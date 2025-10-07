@@ -1331,6 +1331,12 @@ final class SettingsPage
     {
         return [
             [
+                'slug' => 'sync-availability',
+                'label' => esc_html__('Sync availability data', 'fp-experiences'),
+                'description' => esc_html__('Migrate and verify availability configuration for all experiences. Converts legacy format to unified format.', 'fp-experiences'),
+                'button' => esc_html__('Run sync', 'fp-experiences'),
+            ],
+            [
                 'slug' => 'resync-brevo',
                 'label' => esc_html__('Resynchronise Brevo', 'fp-experiences'),
                 'description' => esc_html__('Push pending reservations, marketing attributes, and tags to Brevo.', 'fp-experiences'),
