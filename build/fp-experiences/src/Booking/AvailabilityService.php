@@ -53,9 +53,6 @@ final class AvailabilityService
         // Estrai times e days dai time_slots (nuovo formato semplificato)
         $all_times = [];
         $all_days = [];
-        $capacity = 0;
-        $buffer_before = 0;
-        $buffer_after = 0;
         
         // Supporta sia il nuovo formato time_slots che il vecchio time_sets per retrocompatibilità
         $slots_data = isset($recurrence['time_slots']) && is_array($recurrence['time_slots']) 
@@ -94,22 +91,6 @@ final class AvailabilityService
                         }
                     }
                 }
-                
-                // Usa la capienza più alta tra gli slot
-                if (isset($slot['capacity'])) {
-                    $slot_capacity = absint((string) $slot['capacity']);
-                    if ($slot_capacity > $capacity) {
-                        $capacity = $slot_capacity;
-                    }
-                }
-                
-                // Usa i buffer del primo slot che li ha definiti
-                if ($buffer_before === 0 && isset($slot['buffer_before'])) {
-                    $buffer_before = absint((string) $slot['buffer_before']);
-                }
-                if ($buffer_after === 0 && isset($slot['buffer_after'])) {
-                    $buffer_after = absint((string) $slot['buffer_after']);
-                }
             }
         }
         
@@ -117,6 +98,19 @@ final class AvailabilityService
         if (empty($all_days) && isset($recurrence['days']) && is_array($recurrence['days'])) {
             $all_days = $recurrence['days'];
         }
+        
+        // Leggi capacità e buffer dai meta generali (NON dalla ricorrenza)
+        // Questo assicura che gli slot virtuali usino i valori corretti
+        $availability_meta = get_post_meta($experience_id, '_fp_exp_availability', true);
+        $capacity = is_array($availability_meta) && isset($availability_meta['slot_capacity']) 
+            ? absint((string) $availability_meta['slot_capacity']) 
+            : 0;
+        $buffer_before = is_array($availability_meta) && isset($availability_meta['buffer_before_minutes']) 
+            ? absint((string) $availability_meta['buffer_before_minutes']) 
+            : 0;
+        $buffer_after = is_array($availability_meta) && isset($availability_meta['buffer_after_minutes']) 
+            ? absint((string) $availability_meta['buffer_after_minutes']) 
+            : 0;
         
         // Leggi lead_time dai meta separati (se presenti)
         $lead_time = absint(get_post_meta($experience_id, '_fp_lead_time_hours', true));

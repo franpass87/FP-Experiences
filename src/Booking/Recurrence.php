@@ -221,6 +221,8 @@ final class Recurrence
         }
 
         $sanitized = [];
+        $seen_times = []; // Previene duplicati
+        
         foreach ($time_slots as $slot) {
             if (! is_array($slot)) {
                 continue;
@@ -230,6 +232,12 @@ final class Recurrence
             if ('' === $time) {
                 continue;
             }
+            
+            // Previeni duplicati: se questo orario esiste già, salta
+            if (in_array($time, $seen_times, true)) {
+                continue;
+            }
+            $seen_times[] = $time;
 
             $capacity = isset($slot['capacity']) ? absint((string) $slot['capacity']) : 0;
             $buffer_before = isset($slot['buffer_before']) ? absint((string) $slot['buffer_before']) : 0;

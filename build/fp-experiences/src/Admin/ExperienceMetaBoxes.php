@@ -173,6 +173,7 @@ final class ExperienceMetaBoxes
                     'changeImage' => esc_html__('Modifica immagine', 'fp-experiences'),
                     'removeImage' => esc_html__('Rimuovi immagine', 'fp-experiences'),
                     'recurrenceMissingTimes' => esc_html__('Aggiungi almeno un orario alla ricorrenza prima di procedere.', 'fp-experiences'),
+                    'recurrenceMissingDays' => esc_html__('Seleziona almeno un giorno della settimana per la ricorrenza.', 'fp-experiences'),
                     'recurrencePreviewError' => esc_html__('Impossibile calcolare la ricorrenza: verifica date e orari.', 'fp-experiences'),
                     'recurrencePreviewEmpty' => esc_html__('Nessuno slot futuro trovato per la regola indicata.', 'fp-experiences'),
                     'recurrenceGenerateSuccess' => esc_html__('Slot rigenerati: %d creati/aggiornati.', 'fp-experiences'),
@@ -1357,7 +1358,7 @@ final class ExperienceMetaBoxes
 
                 <input type="hidden" name="fp_exp_availability[recurrence][frequency]" value="weekly" />
 
-                <div class="fp-exp-repeater" data-repeater="time_slots">
+                <div class="fp-exp-repeater" data-repeater="time_slots" data-repeater-next-index="<?php echo esc_attr((string) count($time_slots)); ?>">
                     <div class="fp-exp-repeater__items">
                         <?php foreach ($time_slots as $index => $slot) : ?>
                             <?php $this->render_simple_time_slot_row((string) $index, $slot, false); ?>

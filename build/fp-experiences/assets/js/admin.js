@@ -1338,7 +1338,7 @@
             
             // Verifica che ci siano anche i giorni per la ricorrenza settimanale
             if (recurrence.frequency === 'weekly' && !recurrence.days.length) {
-                showError('Seleziona almeno un giorno della settimana per la ricorrenza.');
+                showError(getString('recurrenceMissingDays'));
                 return null;
             }
 
