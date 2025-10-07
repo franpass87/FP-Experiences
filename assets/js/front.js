@@ -152,6 +152,38 @@
             // già gestito nel modulo calendar
         }
 
+        // 3.b) Gestisci CTA con data-fp-scroll (hero e sticky): mostra calendario e scrolla
+        (function setupCtaScrollHandlers() {
+            // Delega a tutto il documento per coprire sia il bottone in hero sia quello sticky
+            document.addEventListener('click', function(ev) {
+                var btn = ev.target && (ev.target.closest('[data-fp-scroll]'));
+                if (!btn) return;
+                var targetKey = btn.getAttribute('data-fp-scroll') || '';
+                if (!targetKey) return;
+
+                // Mappa dei target noti
+                var targetEl = null;
+                if (targetKey === 'calendar') {
+                    targetEl = calendarEl || document.querySelector('[data-fp-scroll-target="calendar"], .fp-exp-calendar');
+                } else if (targetKey === 'gallery') {
+                    targetEl = document.querySelector('[data-fp-scroll-target="gallery"], .fp-exp-gallery');
+                }
+
+                // Se calendar è nascosto per configurazione, mostralo
+                if (targetKey === 'calendar') {
+                    if (calendarEl) { calendarEl.hidden = false; }
+                    // Se disponibile input data, mettilo a fuoco per invogliare la selezione
+                    if (dateInput) {
+                        try { dateInput.focus(); } catch (e) {}
+                    }
+                }
+
+                if (targetEl && typeof targetEl.scrollIntoView === 'function') {
+                    targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+        })();
+
         // 4) Click sugli slot → selezione e aggiornamento form RTB o WooCommerce
         (function setupSlotSelection() {
             if (!slotsEl) return;
@@ -365,7 +397,7 @@
 
             setupWooCommercePriceSummary();
 
-            const collectTickets = () => {
+            function collectTickets() {
                 const map = {};
                 document.querySelectorAll('.fp-exp-party-table tbody tr[data-ticket]').forEach((row) => {
                     const slug = row.getAttribute('data-ticket') || '';
@@ -375,13 +407,13 @@
                     if (qty > 0) map[slug] = qty;
                 });
                 return map;
-            };
+            }
 
-            const hasSelectedSlot = () => {
+            function hasSelectedSlot() {
                 return !!(slotsEl && slotsEl.querySelector('.fp-exp-slots__item.is-selected'));
-            };
+            }
 
-            const collectAddons = () => {
+            function collectAddons() {
                 const map = {};
                 document.querySelectorAll('.fp-exp-addons li[data-addon]').forEach((li) => {
                     const slug = li.getAttribute('data-addon') || '';
@@ -393,7 +425,7 @@
                     }
                 });
                 return map;
-            };
+            }
 
             // Gestisci click sul pulsante "Procedi al pagamento"
             ctaBtn.addEventListener('click', async () => {
