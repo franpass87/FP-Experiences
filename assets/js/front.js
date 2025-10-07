@@ -147,22 +147,16 @@
             dateInput.addEventListener('change', async () => {
                 const date = dateInput.value; // formato YYYY-MM-DD
                 console.log('[FP-EXP] Date changed to:', date);
-                console.log('[FP-EXP] calendarMap size:', calendarMap.size);
-                console.log('[FP-EXP] calendarMap keys:', Array.from(calendarMap.keys()));
                 
                 let items = calendarMap.get(date) || [];
                 let isLoading = false;
                 
-                console.log('[FP-EXP] Items from calendarMap for', date, ':', items);
-                
                 if (!items || items.length === 0) {
                     // fallback a chiamata API
-                    console.log('[FP-EXP] No items in cache, fetching from API...');
                     setSlotsLoading(true);
                     isLoading = true;
                     try {
                         items = await fetchAvailability(date);
-                        console.log('[FP-EXP] Items from API:', items);
                     } catch (e) {
                         console.error('[FP-EXP] API fetch failed:', e);
                         showSlotsError('Impossibile caricare gli slot. Riprova.');
@@ -172,12 +166,9 @@
                 }
                 
                 // Renderizza gli slot (rimuove automaticamente il loading state)
-                console.log('[FP-EXP] Rendering slots:', items);
                 if (window.FPFront.slots && window.FPFront.slots.renderSlots) {
-                    console.log('[FP-EXP] Using FPFront.slots.renderSlots');
                     window.FPFront.slots.renderSlots(items);
                 } else if (isLoading) {
-                    console.log('[FP-EXP] Fallback: manual slot rendering');
                     // Fallback: se il modulo slots non è disponibile, rimuovi manualmente il loading
                     setSlotsLoading(false);
                     if (items && items.length > 0) {
@@ -422,6 +413,28 @@
         document.addEventListener('DOMContentLoaded', function() {
             const calendarNav = document.querySelector('.fp-exp-calendar-nav');
             if (calendarNav) {
+                // Inizializza calendarMap con i dati del backend
+                if (window.FPFront && window.FPFront.config && window.FPFront.config.calendar) {
+                    const calendarData = window.FPFront.config.calendar;
+                    console.log('[FP-EXP] Initializing calendarMap with backend data');
+                    
+                    // Popola calendarMap con tutti i dati del calendario
+                    Object.keys(calendarData).forEach(monthKey => {
+                        const monthData = calendarData[monthKey];
+                        
+                        if (monthData.days) {
+                            Object.keys(monthData.days).forEach(dateKey => {
+                                const daySlots = monthData.days[dateKey];
+                                calendarMap.set(dateKey, daySlots);
+                            });
+                        }
+                    });
+                    
+                    console.log('[FP-EXP] CalendarMap initialized with', calendarMap.size, 'dates');
+                } else {
+                    console.log('[FP-EXP] No calendar data found in config');
+                }
+                
                 const currentDate = new Date();
                 updateCalendarMonth(calendarNav, currentDate);
             }
