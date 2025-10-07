@@ -14,6 +14,7 @@ use function function_exists;
 use function get_woocommerce_currency;
 use function get_option;
 use function is_string;
+use function is_singular;
 use function trailingslashit;
 use function wc_get_checkout_url;
 use function wp_add_inline_style;
@@ -64,6 +65,10 @@ final class Assets
         if (! empty($theme)) {
             wp_add_inline_style('fp-exp-front', Theme::build_scope_css($theme, $scope_class));
         }
+
+        if (is_singular('fp_experience')) {
+            wp_add_inline_style('fp-exp-front', 'body.single-fp_experience .nectar-social.fixed.visible{display:none!important;}');
+        }
     }
 
     /**
@@ -84,8 +89,17 @@ final class Assets
 
         $this->registered = true;
 
-        $style_url = trailingslashit(FP_EXP_PLUGIN_URL) . 'assets/css/dist/fp-experiences-frontend.min.css';
-        $front_js = trailingslashit(FP_EXP_PLUGIN_URL) . 'assets/js/front.js';
+        // Scegli in modo resiliente: usa i file minificati se presenti, altrimenti fallback ai non minificati
+        $css_min_rel = 'assets/css/dist/fp-experiences-frontend.min.css';
+        $css_non_rel = 'assets/css/front.css';
+        $js_min_rel = 'assets/js/dist/fp-experiences-frontend.min.js';
+        $js_non_rel = 'assets/js/front.js';
+
+        $css_rel = is_readable(trailingslashit(FP_EXP_PLUGIN_DIR) . $css_min_rel) ? $css_min_rel : $css_non_rel;
+        $js_rel = is_readable(trailingslashit(FP_EXP_PLUGIN_DIR) . $js_min_rel) ? $js_min_rel : $js_non_rel;
+
+        $style_url = trailingslashit(FP_EXP_PLUGIN_URL) . $css_rel;
+        $front_js = trailingslashit(FP_EXP_PLUGIN_URL) . $js_rel;
         $checkout_js = trailingslashit(FP_EXP_PLUGIN_URL) . 'assets/js/checkout.js';
 
         wp_register_style(
@@ -99,14 +113,14 @@ final class Assets
             'fp-exp-front',
             $style_url,
             ['fp-exp-fontawesome'],
-            Helpers::asset_version('assets/css/front.css')
+            Helpers::asset_version($css_rel)
         );
 
         wp_register_script(
             'fp-exp-front',
             $front_js,
             ['wp-i18n'],
-            Helpers::asset_version('assets/js/front.js'),
+            Helpers::asset_version($js_rel),
             true
         );
 
@@ -141,6 +155,8 @@ final class Assets
                 'restNonce' => Helpers::rest_nonce(),
                 // Nonce specifico per il checkout esperienze via REST
                 'checkoutNonce' => wp_create_nonce('fp-exp-checkout'),
+                // Nonce specifico per il request-to-book via REST
+                'rtbNonce' => wp_create_nonce('fp-exp-rtb'),
                 'ajaxUrl' => admin_url('admin-ajax.php'),
                 'checkoutUrl' => function_exists('wc_get_checkout_url') ? (string) wc_get_checkout_url() : trailingslashit(home_url('/checkout')),
                 'currency' => $currency,

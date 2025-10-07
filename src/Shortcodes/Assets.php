@@ -155,6 +155,8 @@ final class Assets
                 'restNonce' => Helpers::rest_nonce(),
                 // Nonce specifico per il checkout esperienze via REST
                 'checkoutNonce' => wp_create_nonce('fp-exp-checkout'),
+                // Nonce specifico per il request-to-book via REST
+                'rtbNonce' => wp_create_nonce('fp-exp-rtb'),
                 'ajaxUrl' => admin_url('admin-ajax.php'),
                 'checkoutUrl' => function_exists('wc_get_checkout_url') ? (string) wc_get_checkout_url() : trailingslashit(home_url('/checkout')),
                 'currency' => $currency,

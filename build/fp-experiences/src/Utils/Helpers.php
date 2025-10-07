@@ -199,6 +199,30 @@ final class Helpers
     }
 
     /**
+     * Resolve the first existing readable asset path (relative to plugin dir), falling back to the last candidate.
+     *
+     * @param array<int, string> $candidates relative paths ordered by preference (minified first)
+     */
+    public static function resolve_asset_rel(array $candidates): string
+    {
+        $chosen = '';
+
+        if (! empty($candidates)) {
+            $chosen = (string) end($candidates);
+            foreach ($candidates as $rel) {
+                $rel = ltrim((string) $rel, '/');
+                $abs = trailingslashit(FP_EXP_PLUGIN_DIR) . $rel;
+                if (is_readable($abs)) {
+                    $chosen = $rel;
+                    break;
+                }
+            }
+        }
+
+        return $chosen;
+    }
+
+    /**
      * Build a serialisable config array for front-end scripts.
      *
      * @return array<string, mixed>

@@ -44,18 +44,26 @@ final class EmailsPage
             return;
         }
 
+        $admin_css = Helpers::resolve_asset_rel([
+            'assets/css/dist/fp-experiences-admin.min.css',
+            'assets/css/admin.css',
+        ]);
         wp_enqueue_style(
             'fp-exp-admin',
-            FP_EXP_PLUGIN_URL . 'assets/css/admin.css',
+            FP_EXP_PLUGIN_URL . $admin_css,
             [],
-            Helpers::asset_version('assets/css/admin.css')
+            Helpers::asset_version($admin_css)
         );
 
+        $admin_js = Helpers::resolve_asset_rel([
+            'assets/js/dist/fp-experiences-admin.min.js',
+            'assets/js/admin.js',
+        ]);
         wp_enqueue_script(
             'fp-exp-admin',
-            FP_EXP_PLUGIN_URL . 'assets/js/admin.js',
+            FP_EXP_PLUGIN_URL . $admin_js,
             ['wp-api-fetch', 'wp-i18n'],
-            Helpers::asset_version('assets/js/admin.js'),
+            Helpers::asset_version($admin_js),
             true
         );
     }

@@ -59,7 +59,7 @@ final class WidgetShortcode extends BaseShortcode
     protected array $defaults = [
         'id' => '',
         'sticky' => '0',
-        'show_calendar' => '1',
+        'show_calendar' => '0',
         'display_context' => '',
         'preset' => '',
         'mode' => '',

@@ -1,0 +1,60 @@
+/**
+ * Admin Main CSS - Importa tutti i moduli
+ */
+
+/* Core variables and base styles */
+@import url('./variables.css');
+
+/* Layout components */
+@import url('./layout.css');
+
+/* Tab components */
+@import url('./tabs.css');
+
+/* Form components */
+@import url('./forms.css');
+
+/* Media control components */
+@import url('./media.css');
+
+/* Taxonomy editor components */
+@import url('./taxonomy.css');
+
+/* Repeater components */
+@import url('./repeaters.css');
+
+/* Calendar components */
+@import url('./calendar.css');
+
+/* Settings components */
+@import url('./settings.css');
+
+/* Button and action components */
+@import url('./buttons.css');
+
+/* Responsive adjustments */
+@media (max-width: 960px) {
+    .fp-exp-admin__body {
+        padding: 24px;
+    }
+}
+
+@media (max-width: 782px) {
+    .fp-exp-admin__body {
+        padding: 20px;
+        gap: 20px;
+    }
+
+    .fp-exp-tabs {
+        padding: 16px;
+    }
+
+    .fp-exp-tab {
+        padding: 9px 16px;
+    }
+
+    .fp-exp-tab-panels {
+        padding: 20px;
+        gap: 20px;
+    }
+}

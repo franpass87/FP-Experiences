@@ -1,0 +1,141 @@
+/**
+ * Admin Buttons and Actions Components
+ */
+.fp-exp-admin__body .button-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    background: var(--fp-exp-color-primary);
+    border: 1px solid var(--fp-exp-color-primary);
+    border-radius: 6px;
+    padding: 8px 16px;
+    min-height: 36px;
+    font-weight: 500;
+    color: #fff;
+    text-shadow: none;
+    transition: background-color 0.15s ease;
+}
+
+.fp-exp-admin__body .button-primary:hover {
+    background: #1d4ed8;
+}
+
+.fp-exp-admin__body .button-primary:focus-visible {
+    outline: 2px solid var(--fp-exp-color-primary);
+    outline-offset: 2px;
+}
+
+/* Estensione: stili coerenti su schermate CPT/tassonomie anche senza wrapper */
+body.fp-exp-admin-shell .wrap .button-primary,
+body.fp-exp-admin-shell .wrap .page-title-action,
+body.fp-exp-admin-shell .wrap .submit .button-primary,
+body.fp-exp-admin-shell .tablenav .actions .button-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    background: var(--fp-exp-color-primary);
+    border: 1px solid var(--fp-exp-color-primary);
+    border-radius: 6px;
+    padding: 6px 14px;
+    min-height: 32px;
+    font-weight: 500;
+    color: #fff;
+    text-shadow: none;
+}
+
+body.fp-exp-admin-shell .wrap .button-primary:hover,
+body.fp-exp-admin-shell .wrap .page-title-action:hover {
+    background: #1d4ed8;
+}
+
+/* Bottoni secondari e link azione */
+body.fp-exp-admin-shell .wrap .button,
+body.fp-exp-admin-shell .wrap .button-secondary,
+body.fp-exp-admin-shell .wrap .page-title-action.button-secondary {
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    background: #ffffff;
+    padding: 6px 14px;
+    font-weight: 500;
+    color: var(--fp-exp-color-text);
+    text-shadow: none;
+}
+
+body.fp-exp-admin-shell .wrap .button:hover,
+body.fp-exp-admin-shell .wrap .button-secondary:hover {
+    background: #f9fafb;
+    border-color: #9ca3af;
+}
+
+/* Barre filtri, campi e select nelle schermate lista */
+body.fp-exp-admin-shell .tablenav .actions select,
+body.fp-exp-admin-shell .tablenav .actions input[type="search"],
+body.fp-exp-admin-shell .tablenav .actions input[type="text"],
+body.fp-exp-admin-shell .search-box input[type="search"] {
+    min-height: 32px;
+    border-radius: 6px;
+    border: 1px solid #d1d5db;
+    background: #ffffff;
+    padding: 0 10px;
+}
+
+/* Avvisi core */
+body.fp-exp-admin-shell .wrap .notice {
+    border-radius: var(--fp-exp-admin-radius);
+}
+
+/* Tabelle liste WP */
+body.fp-exp-admin-shell .wrap .wp-list-table,
+body.fp-exp-admin-shell .wrap .widefat {
+    border-radius: var(--fp-exp-admin-radius);
+    overflow: hidden;
+    border: 1px solid var(--fp-exp-admin-border);
+    background: #fff;
+}
+
+body.fp-exp-admin-shell .wrap .wp-list-table thead th,
+body.fp-exp-admin-shell .wrap .widefat thead th {
+    background: #f9fafb;
+    font-weight: 600;
+}
+
+body.fp-exp-admin-shell .wrap .wp-list-table tbody tr:nth-child(even),
+body.fp-exp-admin-shell .wrap .widefat tbody tr:nth-child(even) {
+    background: #f9fafb;
+}
+
+body.fp-exp-admin-shell .wrap .wp-list-table tbody tr:hover,
+body.fp-exp-admin-shell .wrap .widefat tbody tr:hover {
+    background: #f3f4f6;
+}
+
+body.fp-exp-admin-shell .wrap .wp-list-table td,
+body.fp-exp-admin-shell .wrap .wp-list-table th,
+body.fp-exp-admin-shell .wrap .widefat td,
+body.fp-exp-admin-shell .wrap .widefat th {
+    padding: 12px 14px;
+}
+
+/* Dark mode buttons */
+html.fp-exp-dark .fp-exp-admin__body .button-primary,
+html.fp-exp-dark body.fp-exp-admin-shell .wrap .button-primary,
+html.fp-exp-dark body.fp-exp-admin-shell .wrap .page-title-action,
+html.fp-exp-dark body.fp-exp-admin-shell .wrap .submit .button-primary,
+html.fp-exp-dark body.fp-exp-admin-shell .tablenav .actions .button-primary {
+    background: linear-gradient(135deg, #d33873 0%, #8b1e3f 100%);
+    box-shadow: 0 20px 42px rgba(211, 56, 115, 0.35);
+    color: #fff;
+}
+
+html.fp-exp-dark body.fp-exp-admin-shell .wrap .button,
+html.fp-exp-dark body.fp-exp-admin-shell .wrap .button-secondary {
+    background: rgba(255, 255, 255, 0.08);
+    color: #e5e7eb;
+}
+
+html.fp-exp-dark body.fp-exp-admin-shell .wrap .button:hover,
+html.fp-exp-dark body.fp-exp-admin-shell .wrap .button-secondary:hover {
+    background: rgba(255, 255, 255, 0.12);
+}

@@ -1,0 +1,23 @@
+/**
+ * Frontend Main CSS - Importa tutti i moduli
+ */
+
+/* Core variables and base styles */
+@import url('./variables.css');
+
+/* Button components */
+@import url('./buttons.css');
+
+/* Card components */
+@import url('./cards.css');
+
+/* Listing components */
+@import url('./listing.css');
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .fp-layout,
+    .fp-layout.is-full {
+        padding-inline: 0;
+    }
+}
