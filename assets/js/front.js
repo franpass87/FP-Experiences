@@ -74,14 +74,51 @@
 
         const formatTimeRange = (startIso, endIso) => {
             try {
+                // Gestione più robusta dei formati di data
+                let startDate, endDate;
+                
+                // Prova diversi formati di data
+                if (startIso.includes('T')) {
+                    startDate = new Date(startIso);
+                } else if (startIso.includes(' ')) {
+                    startDate = new Date(startIso.replace(' ', 'T'));
+                } else {
+                    // Se è solo una data, aggiungi un orario di default
+                    startDate = new Date(startIso + 'T00:00:00');
+                }
+                
+                if (endIso.includes('T')) {
+                    endDate = new Date(endIso);
+                } else if (endIso.includes(' ')) {
+                    endDate = new Date(endIso.replace(' ', 'T'));
+                } else {
+                    endDate = new Date(endIso + 'T00:00:00');
+                }
+                
+                // Verifica che le date siano valide
+                if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+                    throw new Error('Invalid date format');
+                }
+                
                 const tz = (config && config.timezone) || undefined;
                 const opts = { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: tz };
                 const fmt = new Intl.DateTimeFormat(undefined, opts);
-                const start = new Date(startIso.replace(' ', 'T'));
-                const end = new Date(endIso.replace(' ', 'T'));
-                return fmt.format(start) + ' - ' + fmt.format(end);
+                
+                return fmt.format(startDate) + ' - ' + fmt.format(endDate);
             } catch (e) {
-                return (startIso && endIso) ? (startIso.substring(11,16) + ' - ' + endIso.substring(11,16)) : 'Slot';
+                console.warn('[FP-EXP] Errore formatTimeRange:', e, { startIso, endIso });
+                // Fallback più robusto
+                if (startIso && endIso) {
+                    // Estrai l'orario da stringhe ISO o datetime
+                    const startTime = startIso.includes(' ') ? startIso.substring(11, 16) : 
+                                     startIso.includes('T') ? startIso.substring(11, 16) : 
+                                     '00:00';
+                    const endTime = endIso.includes(' ') ? endIso.substring(11, 16) : 
+                                   endIso.includes('T') ? endIso.substring(11, 16) : 
+                                   '00:00';
+                    return startTime + ' - ' + endTime;
+                }
+                return 'Slot';
             }
         };
 
@@ -241,10 +278,10 @@
                     await prefetchMonth(yyyyMm);
                     // Scorri alla prima sezione mese corrispondente se presente
                     const monthSection = calendarEl.querySelector('.fp-exp-calendar__month[data-month="' + yyyyMm + '"]');
-                    // niente smooth scroll: evitare movimento automatico della pagina
-                    if (monthSection && typeof monthSection.scrollIntoView === 'function') {
-                        monthSection.scrollIntoView({ behavior: 'auto', block: 'start' });
-                    }
+                    // Rimosso scroll automatico per evitare il salto verso il basso
+                    // if (monthSection && typeof monthSection.scrollIntoView === 'function') {
+                    //     monthSection.scrollIntoView({ behavior: 'auto', block: 'start' });
+                    // }
                 };
 
                 prev.addEventListener('click', () => navigate(-1));
@@ -278,10 +315,10 @@
                 // prefetch del mese della data selezionata
                 prefetchMonth(monthKeyOf(date));
 
-                // niente smooth scroll
-                if (slotsEl && typeof slotsEl.scrollIntoView === 'function') {
-                    slotsEl.scrollIntoView({ behavior: 'auto', block: 'start' });
-                }
+                // Rimosso scroll automatico per evitare il salto verso il basso
+                // if (slotsEl && typeof slotsEl.scrollIntoView === 'function') {
+                //     slotsEl.scrollIntoView({ behavior: 'auto', block: 'start' });
+                // }
             });
         }
 
@@ -305,13 +342,16 @@
             }
         }
 
-        // 4) Click sugli slot → selezione e aggiornamento form RTB
+        // 4) Click sugli slot → selezione e aggiornamento form RTB o WooCommerce
         (function setupSlotSelection() {
             if (!slotsEl) return;
-            const rtbForm = document.querySelector('form.fp-exp-rtb-form');
+            
+            // Controlla se RTB è abilitato
+            const rtbEnabled = (config && config.rtb && config.rtb.enabled === true);
+            const rtbForm = rtbEnabled ? document.querySelector('form.fp-exp-rtb-form') : null;
             const startInput = rtbForm ? rtbForm.querySelector('input[name="start"]') : null;
             const endInput = rtbForm ? rtbForm.querySelector('input[name="end"]') : null;
-            const submitBtn = rtbForm ? rtbForm.querySelector('.fp-exp-summary__cta') : null;
+            const submitBtn = document.querySelector('.fp-exp-summary__cta'); // Sempre disponibile
 
             const clearSelection = () => {
                 const prev = slotsEl.querySelectorAll('.fp-exp-slots__item.is-selected');
@@ -327,17 +367,23 @@
                 clearSelection();
                 li.classList.add('is-selected');
 
-                if (startInput) startInput.value = start;
-                if (endInput) endInput.value = end;
+                // Aggiorna campi RTB solo se RTB è abilitato
+                if (rtbEnabled && startInput) startInput.value = start;
+                if (rtbEnabled && endInput) endInput.value = end;
 
-                if (submitBtn) {
-                    submitBtn.disabled = false;
+                // Aggiorna sempre il pulsante (sia RTB che WooCommerce)
+                const ctaButton = document.querySelector('.fp-exp-summary__cta');
+                if (ctaButton) {
+                    ctaButton.disabled = false;
                 }
             });
         })();
 
         // 5) Controlli quantità biglietti (+ / -)
         (function setupQuantityControls() {
+            // Controlla se RTB è abilitato
+            const rtbEnabled = (config && config.rtb && config.rtb.enabled === true);
+            
             // Delegazione sul container del widget per gestire bottoni dinamici
             widget.addEventListener('click', (ev) => {
                 const btn = ev.target && ev.target.closest('.fp-exp-quantity__control');
@@ -363,17 +409,198 @@
 
                 if (next !== current) {
                     input.value = String(next);
-                    // Propaga eventi per eventuali listener di riepilogo/prezzi
+                    // Propaga eventi per eventuali listener (sia RTB che WooCommerce)
                     input.dispatchEvent(new Event('input', { bubbles: true }));
                     input.dispatchEvent(new Event('change', { bubbles: true }));
                 }
             });
         })();
 
+        // Funzione per gestire il flusso WooCommerce quando RTB è disabilitato
+        function setupWooCommerceFlow() {
+            const ctaBtn = document.querySelector('.fp-exp-summary__cta');
+            if (!ctaBtn) return;
+
+            const updateWooCommerceCtaState = () => {
+                const tickets = collectTickets();
+                const anyTicket = tickets && Object.keys(tickets).length > 0;
+                const slotOk = hasSelectedSlot();
+                ctaBtn.disabled = !(anyTicket && slotOk);
+                
+                if (!anyTicket) {
+                    ctaBtn.textContent = 'Seleziona almeno 1 biglietto';
+                } else if (!slotOk) {
+                    ctaBtn.textContent = 'Seleziona data e orario';
+                } else {
+                    ctaBtn.textContent = 'Procedi al pagamento';
+                }
+            };
+
+            const collectTickets = () => {
+                const map = {};
+                document.querySelectorAll('.fp-exp-party-table tbody tr[data-ticket]').forEach((row) => {
+                    const slug = row.getAttribute('data-ticket') || '';
+                    const input = row.querySelector('.fp-exp-quantity__input');
+                    if (!slug || !input) return;
+                    const qty = parseInt(input.value, 10) || 0;
+                    if (qty > 0) map[slug] = qty;
+                });
+                return map;
+            };
+
+            const hasSelectedSlot = () => {
+                return !!(slotsEl && slotsEl.querySelector('.fp-exp-slots__item.is-selected'));
+            };
+
+            const collectAddons = () => {
+                const map = {};
+                document.querySelectorAll('.fp-exp-addons li[data-addon]').forEach((li) => {
+                    const slug = li.getAttribute('data-addon') || '';
+                    const checkbox = li.querySelector('input[type="checkbox"]');
+                    if (!slug || !checkbox) return;
+                    // Aggiungi solo gli addon selezionati
+                    if (checkbox.checked) {
+                        map[slug] = 1;
+                    }
+                });
+                return map;
+            };
+
+            // Gestisci click sul pulsante "Procedi al pagamento"
+            ctaBtn.addEventListener('click', async () => {
+                if (ctaBtn.disabled) return;
+
+                const tickets = collectTickets();
+                const selectedSlot = slotsEl && slotsEl.querySelector('.fp-exp-slots__item.is-selected');
+                
+                if (!selectedSlot || !tickets || Object.keys(tickets).length === 0) {
+                    return;
+                }
+
+                const start = selectedSlot.getAttribute('data-start') || '';
+                const end = selectedSlot.getAttribute('data-end') || '';
+                const experienceId = (config && config.experienceId) || 0;
+
+                if (!start || !end || !experienceId) {
+                    console.error('[FP-EXP] Dati slot mancanti per checkout WooCommerce');
+                    return;
+                }
+
+                // Usa il sistema di checkout integrato del plugin
+                try {
+                    ctaBtn.disabled = true;
+                    ctaBtn.textContent = 'Aggiunta al carrello...';
+
+                    // Aggiungi al carrello interno del plugin
+                    const setCartUrl = new URL('/wp-json/fp-exp/v1/cart/set', window.location.origin);
+                    
+                    const setCartResponse = await fetch(setCartUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-WP-Nonce': (typeof fpExpConfig !== 'undefined' && fpExpConfig.restNonce) || ''
+                        },
+                        credentials: 'same-origin',
+                        body: JSON.stringify({
+                            experience_id: experienceId,
+                            slot_id: 0, // Il plugin creerà lo slot automaticamente
+                            slot_start: start,
+                            slot_end: end,
+                            tickets: tickets,
+                            addons: collectAddons()
+                        })
+                    });
+
+                    if (!setCartResponse.ok) {
+                        const errorData = await setCartResponse.json();
+                        throw new Error(errorData.message || 'Errore aggiunta al carrello');
+                    }
+
+                    ctaBtn.textContent = 'Creazione ordine...';
+
+                    // Ora crea l'ordine direttamente usando l'endpoint di checkout
+                    const checkoutUrl = new URL('/wp-json/fp-exp/v1/checkout', window.location.origin);
+                    
+                    const checkoutResponse = await fetch(checkoutUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-WP-Nonce': (typeof fpExpConfig !== 'undefined' && fpExpConfig.checkoutNonce) || 
+                                         (typeof fpExpConfig !== 'undefined' && fpExpConfig.restNonce) || ''
+                        },
+                        credentials: 'same-origin',
+                        body: JSON.stringify({
+                            nonce: (typeof fpExpConfig !== 'undefined' && fpExpConfig.checkoutNonce) || '',
+                            contact: {
+                                first_name: 'Cliente',
+                                last_name: 'Temporaneo', 
+                                email: 'temp@example.com',
+                                phone: ''
+                            },
+                            billing: {
+                                first_name: 'Cliente',
+                                last_name: 'Temporaneo',
+                                email: 'temp@example.com', 
+                                phone: ''
+                            },
+                            consent: {
+                                privacy: true,
+                                marketing: false
+                            }
+                        })
+                    });
+
+                    if (!checkoutResponse.ok) {
+                        const errorData = await checkoutResponse.json();
+                        throw new Error(errorData.message || 'Errore creazione ordine');
+                    }
+
+                    const result = await checkoutResponse.json();
+                    
+                    if (result.payment_url) {
+                        // Reindirizza alla pagina di pagamento dell'ordine
+                        window.location.href = result.payment_url;
+                    } else {
+                        throw new Error('URL di pagamento non ricevuto');
+                    }
+
+                } catch (error) {
+                    console.error('[FP-EXP] Errore checkout WooCommerce:', error);
+                    ctaBtn.disabled = false;
+                    ctaBtn.textContent = 'Errore - Riprova';
+                    
+                    // Reset dopo 3 secondi
+                    setTimeout(() => {
+                        ctaBtn.textContent = 'Procedi al pagamento';
+                        updateWooCommerceCtaState();
+                    }, 3000);
+                }
+            });
+
+            // Aggiorna stato del pulsante quando cambiano le quantità o gli slot
+            widget.addEventListener('change', updateWooCommerceCtaState);
+            widget.addEventListener('input', updateWooCommerceCtaState);
+            
+            if (slotsEl) {
+                slotsEl.addEventListener('click', updateWooCommerceCtaState);
+            }
+
+            // Stato iniziale
+            updateWooCommerceCtaState();
+        }
+
         // 6) Aggiornamento riepilogo prezzi (preventivo) al cambio quantità
         (function setupPriceSummary() {
             const summary = document.querySelector('.fp-exp-summary');
             if (!summary) return;
+
+            // Controlla se RTB è abilitato
+            const rtbEnabled = (config && config.rtb && config.rtb.enabled === true);
+            if (!rtbEnabled) {
+                console.log('[FP-EXP] RTB disabilitato, configurando flusso WooCommerce');
+                setupWooCommerceFlow();
+                return;
+            }
 
             const rtbForm = document.querySelector('form.fp-exp-rtb-form');
             const startInput = rtbForm ? rtbForm.querySelector('input[name="start"]') : null;
@@ -449,7 +676,10 @@
                     const slug = li.getAttribute('data-addon') || '';
                     const checkbox = li.querySelector('input[type="checkbox"]');
                     if (!slug || !checkbox) return;
-                    map[slug] = checkbox.checked ? 1 : 0;
+                    // Aggiungi solo gli addon selezionati
+                    if (checkbox.checked) {
+                        map[slug] = 1;
+                    }
                 });
                 return map;
             };
@@ -474,7 +704,7 @@
             const updateCtaState = () => {
                 if (!ctaBtn) return;
                 const tickets = collectTickets();
-                const anyTicket = Object.keys(tickets).length > 0;
+                const anyTicket = tickets && Object.keys(tickets).length > 0;
                 const slotOk = hasSelectedSlot();
                 ctaBtn.disabled = !(anyTicket && slotOk);
                 if (ctaHint) {
@@ -505,7 +735,7 @@
                 if (addonsHidden) addonsHidden.value = JSON.stringify(addons);
 
                 // Se nessun biglietto selezionato mostra stato vuoto
-                if (Object.keys(tickets).length === 0) {
+                if (!tickets || Object.keys(tickets).length === 0) {
                     setStatus(emptyLabel);
                     updateCtaState();
                     return;
@@ -529,9 +759,15 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload),
                 })
-                .then((res) => res.json())
+                .then((res) => {
+                    if (!res.ok) {
+                        throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+                    }
+                    return res.json();
+                })
                 .then((data) => {
                     if (!data || data.success !== true || !data.breakdown) {
+                        console.warn('[FP-EXP] Quote response invalid:', data);
                         setStatus(errorLabel);
                         return;
                     }
@@ -598,7 +834,8 @@
                     showBody();
                     updateCtaState();
                 })
-                .catch(() => {
+                .catch((error) => {
+                    console.error('[FP-EXP] Quote request failed:', error);
                     setStatus(errorLabel);
                     updateCtaState();
                 });
@@ -627,7 +864,7 @@
             });
 
             // Aggiorna anche quando si seleziona uno slot (per regole prezzo legate all'orario)
-            if (slotsEl) {
+            if (slotsEl && rtbEnabled) {
                 slotsEl.addEventListener('click', (ev) => {
                     if (ev.target && ev.target.closest('.fp-exp-slots__item')) {
                         debounceQuote();

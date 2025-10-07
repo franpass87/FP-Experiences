@@ -6,6 +6,7 @@ namespace FP_Exp\Booking;
 
 use Exception;
 use FP_Exp\Integrations\Brevo;
+use Throwable;
 use FP_Exp\MeetingPoints\Repository;
 use FP_Exp\Utils\Helpers;
 use FP_Exp\Utils\Logger;
@@ -225,6 +226,8 @@ final class RequestToBook
         $nonce = (string) $request->get_param('nonce');
 
         if (! wp_verify_nonce($nonce, 'fp-exp-rtb')) {
+            // Log per debug
+            error_log('[FP-EXP] Quote nonce verification failed: ' . $nonce);
             return new WP_Error('fp_exp_rtb_nonce', __('La sessione è scaduta. Aggiorna la pagina e riprova.', 'fp-experiences'), ['status' => 403]);
         }
 
@@ -238,6 +241,16 @@ final class RequestToBook
         $end = sanitize_text_field((string) $request->get_param('end'));
         $tickets = $this->normalize_array($request->get_param('tickets'));
         $addons = $this->normalize_array($request->get_param('addons'));
+
+        // Log per debug
+        error_log('[FP-EXP] Quote request params: ' . json_encode([
+            'experience_id' => $experience_id,
+            'slot_id' => $slot_id,
+            'start' => $start,
+            'end' => $end,
+            'tickets' => $tickets,
+            'addons' => $addons
+        ]));
 
         if ($experience_id <= 0) {
             return new WP_Error('fp_exp_rtb_invalid', __('Seleziona data e ora prima di proseguire.', 'fp-experiences'), ['status' => 400]);
@@ -258,17 +271,27 @@ final class RequestToBook
             return new WP_Error('fp_exp_rtb_slot', __('Lo slot selezionato non è più disponibile.', 'fp-experiences'), ['status' => 404]);
         }
 
-        $breakdown = Pricing::calculate_breakdown(
-            $experience_id,
-            (string) ($slot['start_datetime'] ?? ''),
-            $tickets,
-            $addons
-        );
+        try {
+            $breakdown = Pricing::calculate_breakdown(
+                $experience_id,
+                (string) ($slot['start_datetime'] ?? ''),
+                $tickets,
+                $addons
+            );
 
-        return rest_ensure_response([
-            'success' => true,
-            'breakdown' => $breakdown,
-        ]);
+            if (! is_array($breakdown)) {
+                error_log('[FP-EXP] Pricing calculation returned invalid result: ' . json_encode($breakdown));
+                return new WP_Error('fp_exp_pricing_error', __('Errore nel calcolo del prezzo. Riprova.', 'fp-experiences'), ['status' => 500]);
+            }
+
+            return rest_ensure_response([
+                'success' => true,
+                'breakdown' => $breakdown,
+            ]);
+        } catch (Throwable $e) {
+            error_log('[FP-EXP] Pricing calculation exception: ' . $e->getMessage());
+            return new WP_Error('fp_exp_pricing_error', __('Errore nel calcolo del prezzo. Riprova.', 'fp-experiences'), ['status' => 500]);
+        }
     }
 
     /**

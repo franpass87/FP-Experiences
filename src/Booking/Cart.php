@@ -339,6 +339,14 @@ final class Cart
         $item['tickets'] = is_array($item['tickets'] ?? null) ? $item['tickets'] : [];
         $item['addons'] = is_array($item['addons'] ?? null) ? $item['addons'] : [];
 
+        // Gestisci slot_start e slot_end per slot dinamici
+        if (isset($item['slot_start'])) {
+            $item['slot_start'] = sanitize_text_field((string) $item['slot_start']);
+        }
+        if (isset($item['slot_end'])) {
+            $item['slot_end'] = sanitize_text_field((string) $item['slot_end']);
+        }
+
         if (! isset($item['totals']) || ! is_array($item['totals'])) {
             $item['totals'] = [];
         }
