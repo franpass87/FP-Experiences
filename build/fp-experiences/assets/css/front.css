@@ -17,6 +17,10 @@
     display: none !important;
 }
 
+.single .heading-title {
+    display: none;
+}
+
 .fp-exp a {
     color: inherit;
     text-decoration: none;
@@ -1464,6 +1468,14 @@
     display: grid;
     grid-template-columns: repeat(7, 1fr);
     gap: 0.5rem;
+}
+
+/* Fix per desktop: riduci gap per evitare overflow */
+@media (min-width: 768px) {
+    .fp-exp-calendar[data-show-calendar="1"] .fp-exp-calendar__weekdays,
+    .fp-exp-calendar[data-show-calendar="1"] .fp-exp-calendar__grid {
+        gap: 0.1rem;
+    }
 }
 
 .fp-exp-calendar__weekdays {
