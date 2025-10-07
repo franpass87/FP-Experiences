@@ -2633,13 +2633,13 @@ final class ExperienceMetaBoxes
 
         if ($recurrence_meta !== Recurrence::defaults()) {
             update_post_meta($post_id, '_fp_exp_recurrence', $recurrence_meta);
-            
-            // Trasforma i dati di ricorrenza nel formato compatibile con AvailabilityService
-            // per permettere la visualizzazione nel calendario frontend
-            $this->sync_recurrence_to_availability($post_id, $recurrence_meta, $slot_capacity, $lead_time, $buffer_before, $buffer_after);
         } else {
             delete_post_meta($post_id, '_fp_exp_recurrence');
         }
+        
+        // Sincronizza SEMPRE, anche se la ricorrenza è vuota/default
+        // Questo assicura che i dati legacy siano sempre aggiornati e il calendario frontend funzioni
+        $this->sync_recurrence_to_availability($post_id, $recurrence_meta, $slot_capacity, $lead_time, $buffer_before, $buffer_after);
 
         $this->update_or_delete_meta($post_id, '_fp_lead_time_hours', $lead_time);
         $this->update_or_delete_meta($post_id, '_fp_buffer_before_minutes', $buffer_before);
@@ -2663,6 +2663,15 @@ final class ExperienceMetaBoxes
      */
     private function sync_recurrence_to_availability(int $post_id, array $recurrence, int $slot_capacity, int $lead_time, int $buffer_before, int $buffer_after): void
     {
+        // Log per debug (può essere rimosso in produzione)
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log(sprintf(
+                'FP_EXP: Syncing recurrence to availability for post %d. Slot capacity: %d',
+                $post_id,
+                $slot_capacity
+            ));
+        }
+        
         // Estrai tutti gli orari dai time_sets
         $all_times = [];
         $all_days = [];
@@ -2700,6 +2709,17 @@ final class ExperienceMetaBoxes
             $all_days = $recurrence['days'];
         }
         
+        // Log per debug (può essere rimosso in produzione)
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log(sprintf(
+                'FP_EXP: Extracted %d times and %d days from time_sets. Times: [%s], Days: [%s]',
+                count($all_times),
+                count($all_days),
+                implode(', ', $all_times),
+                implode(', ', $all_days)
+            ));
+        }
+        
         // Determina la frequenza
         $frequency = isset($recurrence['frequency']) ? (string) $recurrence['frequency'] : 'weekly';
         if (!in_array($frequency, ['daily', 'weekly', 'custom'], true)) {
@@ -2734,9 +2754,14 @@ final class ExperienceMetaBoxes
             $availability['times'] = [];
         }
         
-        // Salva solo se ci sono dati validi
+        // Salva sempre per mantenere la sincronizzazione
+        // Se ci sono dati validi, li salviamo
         if (!empty($availability['times']) || !empty($availability['custom_slots']) || $slot_capacity > 0) {
             update_post_meta($post_id, '_fp_exp_availability', $availability);
+        } else {
+            // Se non ci sono dati, cancella il meta per evitare confusione
+            // Il calendario capirà che non ci sono slot disponibili
+            delete_post_meta($post_id, '_fp_exp_availability');
         }
     }
 

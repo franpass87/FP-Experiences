@@ -110,10 +110,42 @@ final class CalendarShortcode extends BaseShortcode
      */
     private function generate_calendar_months(int $experience_id, int $count = 1): array
     {
-        // Verifica veloce se ci sono dati di disponibilità configurati
-        $availability = get_post_meta($experience_id, '_fp_exp_availability', true);
-        if (! is_array($availability) || empty($availability['times'])) {
-            return []; // Non ci sono slot configurati, ritorna vuoto
+        // NUOVA LOGICA: Verifica veloce se ci sono dati di ricorrenza configurati
+        $recurrence = get_post_meta($experience_id, '_fp_exp_recurrence', true);
+        
+        // Debug log
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log(sprintf(
+                'FP_EXP Calendar: Experience %d - Recurrence check: %s',
+                $experience_id,
+                is_array($recurrence) ? 'array with ' . count($recurrence) . ' fields' : 'not array'
+            ));
+        }
+        
+        // Verifica che ci siano time_sets configurati
+        $has_time_sets = is_array($recurrence) && isset($recurrence['time_sets']) && is_array($recurrence['time_sets']) && count($recurrence['time_sets']) > 0;
+        
+        if (! $has_time_sets) {
+            // Fallback: prova con il vecchio formato per retrocompatibilità
+            $availability = get_post_meta($experience_id, '_fp_exp_availability', true);
+            $has_legacy = is_array($availability) && !empty($availability['times']);
+            
+            if (! $has_legacy) {
+                if (defined('WP_DEBUG') && WP_DEBUG) {
+                    error_log(sprintf(
+                        'FP_EXP Calendar: Experience %d - No time_sets in recurrence and no legacy availability, returning empty calendar',
+                        $experience_id
+                    ));
+                }
+                return []; // Non ci sono slot configurati in nessun formato
+            }
+            
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log(sprintf(
+                    'FP_EXP Calendar: Experience %d - Using legacy availability format',
+                    $experience_id
+                ));
+            }
         }
         
         $months = [];
@@ -134,6 +166,18 @@ final class CalendarShortcode extends BaseShortcode
 
             // Usa AvailabilityService per ottenere gli slot virtuali
             $slots = \FP_Exp\Booking\AvailabilityService::get_virtual_slots($experience_id, $start_utc, $end_utc);
+
+            // Debug log
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log(sprintf(
+                    'FP_EXP Calendar: Experience %d, Month %s - Generated %d virtual slots (range: %s to %s)',
+                    $experience_id,
+                    $month_key,
+                    count($slots),
+                    $start_utc,
+                    $end_utc
+                ));
+            }
 
             // Raggruppa gli slot per giorno
             $days = [];
