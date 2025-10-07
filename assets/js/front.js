@@ -97,10 +97,14 @@
             items.forEach((slot) => {
                 const li = document.createElement('li');
                 li.className = 'fp-exp-slots__item';
-                const label = (slot && slot.label) || (slot.start && slot.end ? formatTimeRange(slot.start, slot.end) : 'Slot');
+                // Supporta sia {start,end} (REST) che {start_iso,end_iso} (dataset calendario)
+                const startVal = (slot && (slot.start || slot.start_iso)) || '';
+                const endVal = (slot && (slot.end || slot.end_iso)) || '';
+                const label = (slot && slot.label)
+                    || (startVal && endVal ? formatTimeRange(String(startVal), String(endVal)) : 'Slot');
                 li.textContent = label;
-                li.dataset.start = slot.start || '';
-                li.dataset.end = slot.end || '';
+                li.dataset.start = String(startVal);
+                li.dataset.end = String(endVal);
                 list.appendChild(li);
             });
             slotsEl.innerHTML = '';
@@ -330,6 +334,308 @@
                     submitBtn.disabled = false;
                 }
             });
+        })();
+
+        // 5) Controlli quantità biglietti (+ / -)
+        (function setupQuantityControls() {
+            // Delegazione sul container del widget per gestire bottoni dinamici
+            widget.addEventListener('click', (ev) => {
+                const btn = ev.target && ev.target.closest('.fp-exp-quantity__control');
+                if (!btn) return;
+                const container = btn.closest('.fp-exp-quantity');
+                if (!container) return;
+                const input = container.querySelector('.fp-exp-quantity__input');
+                if (!input) return;
+
+                const action = btn.getAttribute('data-action');
+                const rawMin = (input.getAttribute('min') || '').trim();
+                const rawMax = (input.getAttribute('max') || '').trim();
+                const min = rawMin === '' ? 0 : parseInt(rawMin, 10);
+                const max = rawMax === '' ? Number.POSITIVE_INFINITY : parseInt(rawMax, 10);
+                const current = Number.isFinite(parseInt(input.value, 10)) ? parseInt(input.value, 10) : 0;
+
+                let next = current;
+                if (action === 'increase') {
+                    next = Math.min(max, current + 1);
+                } else if (action === 'decrease') {
+                    next = Math.max(min, current - 1);
+                }
+
+                if (next !== current) {
+                    input.value = String(next);
+                    // Propaga eventi per eventuali listener di riepilogo/prezzi
+                    input.dispatchEvent(new Event('input', { bubbles: true }));
+                    input.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+            });
+        })();
+
+        // 6) Aggiornamento riepilogo prezzi (preventivo) al cambio quantità
+        (function setupPriceSummary() {
+            const summary = document.querySelector('.fp-exp-summary');
+            if (!summary) return;
+
+            const rtbForm = document.querySelector('form.fp-exp-rtb-form');
+            const startInput = rtbForm ? rtbForm.querySelector('input[name="start"]') : null;
+            const endInput = rtbForm ? rtbForm.querySelector('input[name="end"]') : null;
+            const ticketsHidden = rtbForm ? rtbForm.querySelector('input[name="tickets"]') : null;
+            const addonsHidden = rtbForm ? rtbForm.querySelector('input[name="addons"]') : null;
+            const ctaBtn = document.querySelector('.fp-exp-summary__cta');
+            // Crea hint dinamico sotto la CTA se non esiste
+            let ctaHint = null;
+            if (ctaBtn && !ctaHint) {
+                ctaHint = document.createElement('p');
+                ctaHint.className = 'fp-exp-summary__cta-hint';
+                ctaHint.setAttribute('aria-live', 'polite');
+                ctaHint.style.marginTop = '6px';
+                ctaHint.style.fontSize = '0.92em';
+                ctaHint.style.color = 'var(--fp-exp-text-muted, #666)';
+                ctaHint.hidden = true;
+                if (ctaBtn.parentNode) {
+                    ctaBtn.parentNode.insertBefore(ctaHint, ctaBtn.nextSibling);
+                }
+            }
+
+            const statusEl = summary.querySelector('[data-fp-summary-status]');
+            const bodyEl = summary.querySelector('[data-fp-summary-body]');
+            const linesEl = summary.querySelector('[data-fp-summary-lines]');
+            const adjustmentsEl = summary.querySelector('[data-fp-summary-adjustments]');
+            const totalRowEl = summary.querySelector('[data-fp-summary-total-row]');
+            const totalEl = summary.querySelector('[data-fp-summary-total]');
+            const disclaimerEl = summary.querySelector('.fp-exp-summary__disclaimer');
+
+            const loadingLabel = summary.getAttribute('data-loading-label') || 'Aggiornamento prezzo…';
+            const errorLabel = summary.getAttribute('data-error-label') || 'Impossibile aggiornare il prezzo. Riprova.';
+            const emptyLabel = summary.getAttribute('data-empty-label') || 'Seleziona i biglietti per vedere il riepilogo';
+
+            const formatCurrency = (amount, currency) => {
+                try {
+                    const fmt = new Intl.NumberFormat(undefined, { style: 'currency', currency: currency || 'EUR' });
+                    return fmt.format(Number(amount || 0));
+                } catch (e) {
+                    return String(amount || 0);
+                }
+            };
+
+            const setStatus = (text) => {
+                if (statusEl) {
+                    statusEl.hidden = false;
+                    const p = statusEl.querySelector('.fp-exp-summary__message');
+                    if (p) p.textContent = text || emptyLabel;
+                }
+                if (bodyEl) bodyEl.hidden = true;
+            };
+
+            const showBody = () => {
+                if (statusEl) statusEl.hidden = true;
+                if (bodyEl) bodyEl.hidden = false;
+            };
+
+            const collectTickets = () => {
+                const map = {};
+                document.querySelectorAll('.fp-exp-party-table tbody tr[data-ticket]').forEach((row) => {
+                    const slug = row.getAttribute('data-ticket') || '';
+                    const input = row.querySelector('.fp-exp-quantity__input');
+                    if (!slug || !input) return;
+                    const qty = parseInt(input.value, 10) || 0;
+                    if (qty > 0) map[slug] = qty;
+                });
+                return map;
+            };
+
+            const collectAddons = () => {
+                const map = {};
+                document.querySelectorAll('.fp-exp-addons li[data-addon]').forEach((li) => {
+                    const slug = li.getAttribute('data-addon') || '';
+                    const checkbox = li.querySelector('input[type="checkbox"]');
+                    if (!slug || !checkbox) return;
+                    map[slug] = checkbox.checked ? 1 : 0;
+                });
+                return map;
+            };
+
+            const experienceId = (config && config.experienceId) || 0;
+            const quoteUrl = (() => {
+                const base = (window.fpExpApiBase && typeof window.fpExpApiBase === 'string')
+                    ? window.fpExpApiBase
+                    : (window.wpApiSettings && wpApiSettings.root) || (location.origin + '/wp-json/');
+                const root = base.endsWith('/') ? base : base + '/';
+                return root + 'fp-exp/v1/rtb/quote';
+            })();
+
+            let debounceTimer = null;
+            const hasSelectedSlot = () => {
+                if (startInput && endInput) {
+                    return Boolean((startInput.value || '').trim() && (endInput.value || '').trim());
+                }
+                return !!(slotsEl && slotsEl.querySelector('.fp-exp-slots__item.is-selected'));
+            };
+
+            const updateCtaState = () => {
+                if (!ctaBtn) return;
+                const tickets = collectTickets();
+                const anyTicket = Object.keys(tickets).length > 0;
+                const slotOk = hasSelectedSlot();
+                ctaBtn.disabled = !(anyTicket && slotOk);
+                if (ctaHint) {
+                    if (!anyTicket) {
+                        ctaHint.textContent = 'Seleziona almeno 1 biglietto.';
+                        ctaHint.hidden = false;
+                    } else if (!slotOk) {
+                        ctaHint.textContent = 'Seleziona data e orario.';
+                        ctaHint.hidden = false;
+                    } else {
+                        ctaHint.textContent = '';
+                        ctaHint.hidden = true;
+                    }
+                }
+            };
+
+            const requestQuote = () => {
+                if (!experienceId) {
+                    setStatus(emptyLabel);
+                    updateCtaState();
+                    return;
+                }
+                const tickets = collectTickets();
+                const addons = collectAddons();
+
+                // Aggiorna hidden inputs per invio form
+                if (ticketsHidden) ticketsHidden.value = JSON.stringify(tickets);
+                if (addonsHidden) addonsHidden.value = JSON.stringify(addons);
+
+                // Se nessun biglietto selezionato mostra stato vuoto
+                if (Object.keys(tickets).length === 0) {
+                    setStatus(emptyLabel);
+                    updateCtaState();
+                    return;
+                }
+
+                setStatus(loadingLabel);
+
+                const payload = {
+                    nonce: (config && config.nonce) || (rtbForm ? rtbForm.getAttribute('data-nonce') : ''),
+                    experience_id: experienceId,
+                    slot_id: 0,
+                    start: startInput ? startInput.value : '',
+                    end: endInput ? endInput.value : '',
+                    tickets: tickets,
+                    addons: addons,
+                };
+
+                fetch(quoteUrl, {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload),
+                })
+                .then((res) => res.json())
+                .then((data) => {
+                    if (!data || data.success !== true || !data.breakdown) {
+                        setStatus(errorLabel);
+                        return;
+                    }
+
+                    const breakdown = data.breakdown;
+                    // Render linee
+                    if (linesEl) {
+                        linesEl.innerHTML = '';
+                        const renderLine = (line) => {
+                            const li = document.createElement('li');
+                            li.className = 'fp-exp-summary__line';
+                            const label = document.createElement('span');
+                            label.className = 'fp-exp-summary__line-label';
+                            label.textContent = `${line.label} × ${line.quantity}`;
+                            const amount = document.createElement('span');
+                            amount.className = 'fp-exp-summary__line-amount';
+                            amount.textContent = formatCurrency(line.line_total, breakdown.currency);
+                            li.appendChild(label);
+                            li.appendChild(amount);
+                            return li;
+                        };
+                        (Array.isArray(breakdown.tickets) ? breakdown.tickets : []).forEach((l) => linesEl.appendChild(renderLine(l)));
+                        (Array.isArray(breakdown.addons) ? breakdown.addons : []).forEach((l) => linesEl.appendChild(renderLine(l)));
+                    }
+
+                    // Render adjustments
+                    if (adjustmentsEl) {
+                        const list = Array.isArray(breakdown.adjustments) ? breakdown.adjustments : [];
+                        if (list.length === 0) {
+                            adjustmentsEl.hidden = true;
+                            adjustmentsEl.innerHTML = '';
+                        } else {
+                            adjustmentsEl.hidden = false;
+                            adjustmentsEl.innerHTML = '';
+                            list.forEach((adj) => {
+                                const li = document.createElement('li');
+                                li.className = 'fp-exp-summary__adjustment';
+                                const label = document.createElement('span');
+                                label.className = 'fp-exp-summary__adjustment-label';
+                                label.textContent = adj.label || '';
+                                const amount = document.createElement('span');
+                                amount.className = 'fp-exp-summary__adjustment-amount';
+                                amount.textContent = formatCurrency(adj.amount, breakdown.currency);
+                                li.appendChild(label);
+                                li.appendChild(amount);
+                                adjustmentsEl.appendChild(li);
+                            });
+                        }
+                    }
+
+                    // Totale
+                    if (totalEl) totalEl.textContent = formatCurrency(breakdown.total, breakdown.currency);
+                    if (totalRowEl) totalRowEl.hidden = false;
+
+                    // Disclaimer tasse (semplice toggle se presente etichetta)
+                    if (disclaimerEl) {
+                        const taxLabel = summary.getAttribute('data-tax-label') || '';
+                        if (taxLabel) {
+                            disclaimerEl.textContent = taxLabel;
+                            disclaimerEl.hidden = false;
+                        }
+                    }
+
+                    showBody();
+                    updateCtaState();
+                })
+                .catch(() => {
+                    setStatus(errorLabel);
+                    updateCtaState();
+                });
+            };
+
+            const debounceQuote = () => {
+                if (debounceTimer) clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(requestQuote, 300);
+            };
+
+            // Trigger su cambi quantità biglietti e extra
+            widget.addEventListener('change', (ev) => {
+                if (ev.target && ev.target.closest('.fp-exp-quantity__input')) {
+                    debounceQuote();
+                    updateCtaState();
+                }
+                if (ev.target && ev.target.matches('.fp-exp-addons input[type="checkbox"]')) {
+                    debounceQuote();
+                }
+            });
+            widget.addEventListener('input', (ev) => {
+                if (ev.target && ev.target.closest('.fp-exp-quantity__input')) {
+                    debounceQuote();
+                    updateCtaState();
+                }
+            });
+
+            // Aggiorna anche quando si seleziona uno slot (per regole prezzo legate all'orario)
+            if (slotsEl) {
+                slotsEl.addEventListener('click', (ev) => {
+                    if (ev.target && ev.target.closest('.fp-exp-slots__item')) {
+                        debounceQuote();
+                        updateCtaState();
+                    }
+                });
+            }
+            updateCtaState();
         })();
     });
     

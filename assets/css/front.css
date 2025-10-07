@@ -2096,6 +2096,31 @@
     transform: none;
 }
 
+/* Hint CTA: messaggio guida sotto al pulsante */
+.fp-exp-summary__cta-hint {
+    margin: 0.35rem 0 0;
+    font-size: 0.9rem;
+    color: var(--fp-color-muted);
+}
+
+/* Stato evidenziato quando la CTA è disabilitata */
+.fp-exp-summary__cta[disabled] + .fp-exp-summary__cta-hint {
+    color: color-mix(in srgb, var(--fp-color-primary) 75%, #0f172a);
+    font-weight: 600;
+}
+
+.fp-exp-summary__cta[disabled] + .fp-exp-summary__cta-hint::before {
+    content: "";
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    margin-right: 6px;
+    vertical-align: -2px;
+    background-repeat: no-repeat;
+    background-size: 14px 14px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cline x1='12' y1='16' x2='12' y2='12'/%3E%3Cline x1='12' y1='8' x2='12.01' y2='8'/%3E%3C/svg%3E");
+}
+
 .fp-exp-summary.is-error {
     border-color: rgba(220, 38, 38, 0.2);
     background: rgba(248, 113, 113, 0.08);
