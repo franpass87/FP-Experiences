@@ -237,8 +237,9 @@
                     await prefetchMonth(yyyyMm);
                     // Scorri alla prima sezione mese corrispondente se presente
                     const monthSection = calendarEl.querySelector('.fp-exp-calendar__month[data-month="' + yyyyMm + '"]');
+                    // niente smooth scroll: evitare movimento automatico della pagina
                     if (monthSection && typeof monthSection.scrollIntoView === 'function') {
-                        monthSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        monthSection.scrollIntoView({ behavior: 'auto', block: 'start' });
                     }
                 };
 
@@ -273,9 +274,9 @@
                 // prefetch del mese della data selezionata
                 prefetchMonth(monthKeyOf(date));
 
-                // smooth scroll verso gli slot
+                // niente smooth scroll
                 if (slotsEl && typeof slotsEl.scrollIntoView === 'function') {
-                    slotsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    slotsEl.scrollIntoView({ behavior: 'auto', block: 'start' });
                 }
             });
         }
@@ -299,6 +300,37 @@
                 if (d) prefetchMonth(monthKeyOf(d));
             }
         }
+
+        // 4) Click sugli slot → selezione e aggiornamento form RTB
+        (function setupSlotSelection() {
+            if (!slotsEl) return;
+            const rtbForm = document.querySelector('form.fp-exp-rtb-form');
+            const startInput = rtbForm ? rtbForm.querySelector('input[name="start"]') : null;
+            const endInput = rtbForm ? rtbForm.querySelector('input[name="end"]') : null;
+            const submitBtn = rtbForm ? rtbForm.querySelector('.fp-exp-summary__cta') : null;
+
+            const clearSelection = () => {
+                const prev = slotsEl.querySelectorAll('.fp-exp-slots__item.is-selected');
+                prev.forEach((el) => el.classList.remove('is-selected'));
+            };
+
+            slotsEl.addEventListener('click', (ev) => {
+                const li = ev.target && ev.target.closest('.fp-exp-slots__item');
+                if (!li) return;
+                const start = li.getAttribute('data-start') || '';
+                const end = li.getAttribute('data-end') || '';
+
+                clearSelection();
+                li.classList.add('is-selected');
+
+                if (startInput) startInput.value = start;
+                if (endInput) endInput.value = end;
+
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                }
+            });
+        })();
     });
     
 })();
