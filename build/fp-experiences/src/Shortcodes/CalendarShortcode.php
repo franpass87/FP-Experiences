@@ -112,7 +112,24 @@ final class CalendarShortcode extends BaseShortcode
     {
         // Verifica veloce se ci sono dati di disponibilità configurati
         $availability = get_post_meta($experience_id, '_fp_exp_availability', true);
+        
+        // Debug log
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log(sprintf(
+                'FP_EXP Calendar: Experience %d - Availability check: %s, Times: %s',
+                $experience_id,
+                is_array($availability) ? 'array' : 'not array',
+                isset($availability['times']) ? json_encode($availability['times']) : 'not set'
+            ));
+        }
+        
         if (! is_array($availability) || empty($availability['times'])) {
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log(sprintf(
+                    'FP_EXP Calendar: Experience %d - No availability times configured, returning empty calendar',
+                    $experience_id
+                ));
+            }
             return []; // Non ci sono slot configurati, ritorna vuoto
         }
         
@@ -134,6 +151,18 @@ final class CalendarShortcode extends BaseShortcode
 
             // Usa AvailabilityService per ottenere gli slot virtuali
             $slots = \FP_Exp\Booking\AvailabilityService::get_virtual_slots($experience_id, $start_utc, $end_utc);
+
+            // Debug log
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log(sprintf(
+                    'FP_EXP Calendar: Experience %d, Month %s - Generated %d virtual slots (range: %s to %s)',
+                    $experience_id,
+                    $month_key,
+                    count($slots),
+                    $start_utc,
+                    $end_utc
+                ));
+            }
 
             // Raggruppa gli slot per giorno
             $days = [];

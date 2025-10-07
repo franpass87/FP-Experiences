@@ -33,12 +33,31 @@ final class AvailabilityService
 
         $availability = get_post_meta($experience_id, '_fp_exp_availability', true);
         if (! is_array($availability)) {
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log(sprintf(
+                    'FP_EXP AvailabilityService: Experience %d - No availability data found',
+                    $experience_id
+                ));
+            }
             return [];
         }
 
         $frequency = isset($availability['frequency']) ? sanitize_key((string) $availability['frequency']) : 'weekly';
         $times = isset($availability['times']) && is_array($availability['times']) ? $availability['times'] : [];
         $days = isset($availability['days_of_week']) && is_array($availability['days_of_week']) ? $availability['days_of_week'] : [];
+        
+        // Debug log
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log(sprintf(
+                'FP_EXP AvailabilityService: Experience %d - Frequency: %s, Times: %d (%s), Days: %d (%s)',
+                $experience_id,
+                $frequency,
+                count($times),
+                implode(', ', $times),
+                count($days),
+                implode(', ', $days)
+            ));
+        }
         $custom = isset($availability['custom_slots']) && is_array($availability['custom_slots']) ? $availability['custom_slots'] : [];
         $capacity = isset($availability['slot_capacity']) ? absint((string) $availability['slot_capacity']) : 0;
         $lead_time = isset($availability['lead_time_hours']) ? absint((string) $availability['lead_time_hours']) : 0;
@@ -48,6 +67,17 @@ final class AvailabilityService
         // Leggi le date di inizio e fine dalla ricorrenza
         $recurrence_start_date = isset($availability['start_date']) ? sanitize_text_field((string) $availability['start_date']) : '';
         $recurrence_end_date = isset($availability['end_date']) ? sanitize_text_field((string) $availability['end_date']) : '';
+
+        // Controllo early return se non ci sono times (per weekly/daily)
+        if ($frequency !== 'custom' && empty($times)) {
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log(sprintf(
+                    'FP_EXP AvailabilityService: Experience %d - No times configured, cannot generate slots',
+                    $experience_id
+                ));
+            }
+            return [];
+        }
 
         // Durata: se non specificata nelle meta, default 60m.
         $duration_minutes = 60;
