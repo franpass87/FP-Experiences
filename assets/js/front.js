@@ -68,6 +68,94 @@
             }
         };
 
+        // Funzione per mostrare slot inline sotto il giorno cliccato
+        const showSlotsInline = async (dayElement, date) => {
+            // Rimuovi slot inline esistenti
+            calendarEl.querySelectorAll('.fp-exp-slots-inline').forEach(el => el.remove());
+            
+            // Crea contenitore per gli slot inline
+            const inlineContainer = document.createElement('div');
+            inlineContainer.className = 'fp-exp-slots-inline';
+            
+            // Aggiungi loading state con timeout
+            inlineContainer.innerHTML = '<div class="fp-exp-slots-inline__loading">Caricamento slot...</div>';
+            
+            // Inserisci il contenitore dopo il giorno cliccato
+            dayElement.parentNode.insertBefore(inlineContainer, dayElement.nextSibling);
+            
+            // Timeout di sicurezza per evitare caricamento infinito
+            const loadingTimeout = setTimeout(() => {
+                if (inlineContainer.querySelector('.fp-exp-slots-inline__loading')) {
+                    inlineContainer.innerHTML = '<div class="fp-exp-slots-inline__empty">Nessuna fascia disponibile per questa data</div>';
+                }
+            }, 3000);
+            
+            try {
+                // Carica gli slot per la data selezionata
+                let items = calendarMap.get(date) || [];
+                if (!items || items.length === 0) {
+                    // Fallback a chiamata API se non in cache
+                    try {
+                        items = await fetchAvailability(date);
+                    } catch (apiError) {
+                        console.warn('[FP-EXP] API fetch fallita, usando dati locali:', apiError);
+                        items = [];
+                    }
+                }
+                
+                // Cancella il timeout
+                clearTimeout(loadingTimeout);
+                
+                // Renderizza gli slot
+                if (items && items.length > 0) {
+                    const slotsList = document.createElement('div');
+                    slotsList.className = 'fp-exp-slots-inline__list';
+                    
+                    items.forEach(slot => {
+                        const slotElement = document.createElement('div');
+                        slotElement.className = 'fp-exp-slots-inline__item';
+                        slotElement.textContent = slot.time || slot.label || 'Slot';
+                        slotElement.setAttribute('data-start', slot.start || slot.start_iso || '');
+                        slotElement.setAttribute('data-end', slot.end || slot.end_iso || '');
+                        
+                        // Aggiungi click handler per selezione slot
+                        slotElement.addEventListener('click', (ev) => {
+                            ev.stopPropagation();
+                            // Rimuovi selezione precedente
+                            inlineContainer.querySelectorAll('.fp-exp-slots-inline__item.is-selected').forEach(el => {
+                                el.classList.remove('is-selected');
+                            });
+                            // Seleziona slot corrente
+                            slotElement.classList.add('is-selected');
+                            
+                            // Aggiorna anche la sezione slot principale se esiste
+                            if (slotsEl && window.FPFront.slots && window.FPFront.slots.renderSlots) {
+                                window.FPFront.slots.renderSlots(items);
+                                // Seleziona lo slot corrispondente nella sezione principale
+                                const mainSlot = slotsEl.querySelector(`[data-start="${slot.start || slot.start_iso}"]`);
+                                if (mainSlot) {
+                                    mainSlot.classList.add('is-selected');
+                                }
+                            }
+                        });
+                        
+                        slotsList.appendChild(slotElement);
+                    });
+                    
+                    inlineContainer.innerHTML = '';
+                    inlineContainer.appendChild(slotsList);
+                } else {
+                    // Nessun slot disponibile per questa data
+                    inlineContainer.innerHTML = '<div class="fp-exp-slots-inline__empty">Nessuna fascia disponibile per questa data</div>';
+                }
+            } catch (error) {
+                // Cancella il timeout
+                clearTimeout(loadingTimeout);
+                console.error('[FP-EXP] Errore caricamento slot inline:', error);
+                inlineContainer.innerHTML = '<div class="fp-exp-slots-inline__error">Errore caricamento slot</div>';
+            }
+        };
+
         const showSlotsError = (message) => {
             if (!slotsEl) return;
             const text = message || 'Impossibile caricare gli slot. Riprova.';
@@ -137,13 +225,25 @@
             });
         }
 
-        // 3) Click su giorno del calendario → imposta input e renderizza
+        // 3) Click su giorno del calendario → imposta input e renderizza slot inline
         if (calendarEl) {
             calendarEl.addEventListener('click', (ev) => {
                 const target = ev.target.closest('.fp-exp-calendar__day');
                 if (!target || target.disabled) return;
                 const date = target.getAttribute('data-date');
                 if (!date) return;
+                
+                // Rimuovi selezione precedente
+                calendarEl.querySelectorAll('.fp-exp-calendar__day.is-selected').forEach(day => {
+                    day.classList.remove('is-selected');
+                });
+                
+                // Seleziona il giorno corrente
+                target.classList.add('is-selected');
+                
+                // Carica e mostra gli slot direttamente sotto il giorno cliccato
+                showSlotsInline(target, date);
+                
                 if (dateInput) {
                     dateInput.value = date;
                     dateInput.dispatchEvent(new Event('change', { bubbles: true }));

@@ -1551,6 +1551,75 @@
     outline: none;
 }
 
+/* Slot inline nel calendario */
+.fp-exp-slots-inline {
+    margin-top: 0.5rem;
+    padding: 0.75rem;
+    background: rgba(15, 23, 42, 0.02);
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    border-radius: var(--fp-exp-radius-base, 12px);
+    animation: fp-exp-slots-inline-fade-in 0.3s ease-out;
+}
+
+.fp-exp-slots-inline__loading,
+.fp-exp-slots-inline__empty,
+.fp-exp-slots-inline__error {
+    text-align: center;
+    padding: 0.5rem;
+    font-size: 0.9rem;
+    color: var(--fp-color-muted);
+    font-style: italic;
+}
+
+.fp-exp-slots-inline__error {
+    color: #dc2626;
+}
+
+.fp-exp-slots-inline__list {
+    display: grid;
+    gap: 0.5rem;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+}
+
+.fp-exp-slots-inline__item {
+    padding: 0.6rem 0.8rem;
+    border: 1px solid rgba(15, 23, 42, 0.12);
+    border-radius: calc(var(--fp-exp-radius-base, 12px) / 1.5);
+    background: var(--fp-color-surface, #fff);
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--fp-color-text);
+    cursor: pointer;
+    text-align: center;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease, background-color 0.2s ease;
+}
+
+.fp-exp-slots-inline__item:hover,
+.fp-exp-slots-inline__item:focus-visible {
+    border-color: var(--fp-color-primary);
+    box-shadow: 0 0 0 2px rgba(11, 110, 253, 0.15);
+    transform: translateY(-1px);
+    outline: none;
+}
+
+.fp-exp-slots-inline__item.is-selected {
+    border-color: var(--fp-color-primary);
+    background: color-mix(in srgb, var(--fp-color-primary) 12%, #fff);
+    box-shadow: 0 0 0 2px rgba(11, 110, 253, 0.25);
+    color: color-mix(in srgb, var(--fp-color-primary) 80%, #0f172a);
+}
+
+@keyframes fp-exp-slots-inline-fade-in {
+    from {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
 .fp-exp-slot-option {
     width: 100%;
     border: 1px solid rgba(15, 23, 42, 0.12);
