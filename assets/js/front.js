@@ -194,19 +194,46 @@
             dateInput.addEventListener('change', async () => {
                 const date = dateInput.value; // formato YYYY-MM-DD
                 let items = calendarMap.get(date) || [];
+                let isLoading = false;
+                
                 if (!items || items.length === 0) {
                     // fallback a chiamata API
                     setSlotsLoading(true);
+                    isLoading = true;
                     try {
                         items = await fetchAvailability(date);
                     } catch (e) {
                         showSlotsError('Impossibile caricare gli slot. Riprova.');
                         items = [];
+                        return; // Esci qui per evitare di chiamare renderSlots con errori
                     }
                 }
+                
+                // Renderizza gli slot (rimuove automaticamente il loading state)
                 if (window.FPFront.slots && window.FPFront.slots.renderSlots) {
                     window.FPFront.slots.renderSlots(items);
+                } else if (isLoading) {
+                    // Fallback: se il modulo slots non è disponibile, rimuovi manualmente il loading
+                    setSlotsLoading(false);
+                    if (items && items.length > 0) {
+                        // Mostra gli slot manualmente se non c'è il modulo
+                        const list = document.createElement('ul');
+                        list.className = 'fp-exp-slots__list';
+                        items.forEach(slot => {
+                            const li = document.createElement('li');
+                            li.className = 'fp-exp-slots__item';
+                            li.textContent = slot.time || slot.label || 'Slot';
+                            li.setAttribute('data-start', slot.start || slot.start_iso || '');
+                            li.setAttribute('data-end', slot.end || slot.end_iso || '');
+                            list.appendChild(li);
+                        });
+                        if (slotsEl) {
+                            slotsEl.innerHTML = '';
+                            slotsEl.appendChild(list);
+                        }
+                    }
                 }
+                
                 // evidenzia nel calendario inline
                 if (calendarEl) {
                     calendarEl.querySelectorAll('.fp-exp-calendar__day').forEach((btn) => btn.classList.remove('is-selected'));
