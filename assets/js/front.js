@@ -193,16 +193,23 @@
         if (dateInput) {
             dateInput.addEventListener('change', async () => {
                 const date = dateInput.value; // formato YYYY-MM-DD
+                console.log('[FP-EXP] Date changed to:', date);
+                
                 let items = calendarMap.get(date) || [];
                 let isLoading = false;
                 
+                console.log('[FP-EXP] Items from calendarMap:', items);
+                
                 if (!items || items.length === 0) {
                     // fallback a chiamata API
+                    console.log('[FP-EXP] No items in cache, fetching from API...');
                     setSlotsLoading(true);
                     isLoading = true;
                     try {
                         items = await fetchAvailability(date);
+                        console.log('[FP-EXP] Items from API:', items);
                     } catch (e) {
+                        console.error('[FP-EXP] API fetch failed:', e);
                         showSlotsError('Impossibile caricare gli slot. Riprova.');
                         items = [];
                         return; // Esci qui per evitare di chiamare renderSlots con errori
@@ -210,9 +217,12 @@
                 }
                 
                 // Renderizza gli slot (rimuove automaticamente il loading state)
+                console.log('[FP-EXP] Rendering slots:', items);
                 if (window.FPFront.slots && window.FPFront.slots.renderSlots) {
+                    console.log('[FP-EXP] Using FPFront.slots.renderSlots');
                     window.FPFront.slots.renderSlots(items);
                 } else if (isLoading) {
+                    console.log('[FP-EXP] Fallback: manual slot rendering');
                     // Fallback: se il modulo slots non è disponibile, rimuovi manualmente il loading
                     setSlotsLoading(false);
                     if (items && items.length > 0) {
@@ -230,6 +240,40 @@
                         if (slotsEl) {
                             slotsEl.innerHTML = '';
                             slotsEl.appendChild(list);
+                        }
+                    } else {
+                        // Nessun slot disponibile
+                        if (slotsEl) {
+                            slotsEl.innerHTML = '<p class="fp-exp-slots__placeholder">Nessuna fascia disponibile per questa data</p>';
+                        }
+                    }
+                } else {
+                    console.log('[FP-EXP] No loading, items available:', items);
+                    // Se non stiamo caricando e abbiamo items, renderizza direttamente
+                    if (items && items.length > 0) {
+                        if (window.FPFront.slots && window.FPFront.slots.renderSlots) {
+                            window.FPFront.slots.renderSlots(items);
+                        } else {
+                            // Fallback manuale
+                            const list = document.createElement('ul');
+                            list.className = 'fp-exp-slots__list';
+                            items.forEach(slot => {
+                                const li = document.createElement('li');
+                                li.className = 'fp-exp-slots__item';
+                                li.textContent = slot.time || slot.label || 'Slot';
+                                li.setAttribute('data-start', slot.start || slot.start_iso || '');
+                                li.setAttribute('data-end', slot.end || slot.end_iso || '');
+                                list.appendChild(li);
+                            });
+                            if (slotsEl) {
+                                slotsEl.innerHTML = '';
+                                slotsEl.appendChild(list);
+                            }
+                        }
+                    } else {
+                        // Nessun slot disponibile
+                        if (slotsEl) {
+                            slotsEl.innerHTML = '<p class="fp-exp-slots__placeholder">Nessuna fascia disponibile per questa data</p>';
                         }
                     }
                 }
