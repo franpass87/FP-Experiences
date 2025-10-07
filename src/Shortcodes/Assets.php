@@ -14,6 +14,7 @@ use function function_exists;
 use function get_woocommerce_currency;
 use function get_option;
 use function is_string;
+use function is_singular;
 use function trailingslashit;
 use function wc_get_checkout_url;
 use function wp_add_inline_style;
@@ -63,6 +64,10 @@ final class Assets
 
         if (! empty($theme)) {
             wp_add_inline_style('fp-exp-front', Theme::build_scope_css($theme, $scope_class));
+        }
+
+        if (is_singular('fp_experience')) {
+            wp_add_inline_style('fp-exp-front', 'body.single-fp_experience .nectar-social.fixed.visible{display:none!important;}');
         }
     }
 
