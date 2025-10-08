@@ -188,21 +188,6 @@ final class ExperienceShortcode extends BaseShortcode
         $base_price = $this->resolve_price($experience_id, $tickets);
         $currency = $this->resolve_currency();
 
-        $theme_terms = get_the_terms($post, 'fp_exp_theme');
-        $theme_names = [];
-        $primary_category = '';
-        if (is_array($theme_terms) && ! empty($theme_terms)) {
-            $primary_category = sanitize_text_field((string) $theme_terms[0]->name);
-            $theme_names = array_values(array_filter(array_map(static function ($term) {
-                return isset($term->name) ? sanitize_text_field((string) $term->name) : '';
-            }, $theme_terms)));
-        }
-
-        $taxonomy_durations = wp_get_post_terms($experience_id, 'fp_exp_duration', ['fields' => 'names']);
-        $duration_term_names = is_array($taxonomy_durations)
-            ? array_values(array_filter(array_map('sanitize_text_field', $taxonomy_durations)))
-            : [];
-
         $schema = $this->build_schema([
             'post' => $post,
             'gallery' => $gallery,
@@ -223,7 +208,6 @@ final class ExperienceShortcode extends BaseShortcode
                     [
                         'item_id' => (string) $experience_id,
                         'item_name' => $post->post_title,
-                        'item_category' => $primary_category,
                     ],
                 ],
             ],
@@ -253,13 +237,6 @@ final class ExperienceShortcode extends BaseShortcode
             : '';
 
         $experience_badge_slugs = Helpers::get_meta_array($post->ID, '_fp_experience_badges');
-
-        if (empty($experience_badge_slugs)) {
-            $legacy_family_terms = get_the_terms($post, 'fp_exp_family_friendly');
-            if (is_array($legacy_family_terms) && ! empty($legacy_family_terms)) {
-                $experience_badge_slugs[] = 'family-friendly';
-            }
-        }
 
         $experience_badges = Helpers::experience_badge_payload($experience_badge_slugs);
         // Applica override titolo/descrizione specifici dell'esperienza e unisci badge personalizzati
@@ -330,9 +307,7 @@ final class ExperienceShortcode extends BaseShortcode
         }
 
         $overview = [
-            'themes' => $theme_names,
             'language_terms' => $language_term_names,
-            'duration_terms' => $duration_term_names,
             'language_badges' => $language_badges,
             'experience_badges' => $experience_badges,
             'short_description' => $short_desc,

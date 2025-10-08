@@ -772,19 +772,5 @@ final class ImporterPage
      */
     private function set_experience_taxonomies(int $post_id, array $data): void
     {
-        // Themes
-        if (! empty($data['themes'])) {
-            $themes = array_map('trim', explode('|', $data['themes']));
-            $themes = array_filter($themes);
-            wp_set_object_terms($post_id, $themes, 'fp_exp_theme');
-        }
-
-        // Family friendly
-        if (! empty($data['family_friendly'])) {
-            $is_family = strtolower(trim($data['family_friendly']));
-            if (in_array($is_family, ['yes', 'si', 'sì', '1', 'true'], true)) {
-                wp_set_object_terms($post_id, ['yes'], 'fp_exp_family_friendly');
-            }
-        }
     }
 }

@@ -94,57 +94,12 @@ final class ExperienceCPT
     public function register_taxonomies(): void
     {
         register_taxonomy(
-            'fp_exp_theme',
-            'fp_experience',
-            [
-                'labels' => [
-                    'name' => __('Experience Themes', 'fp-experiences'),
-                    'singular_name' => __('Experience Theme', 'fp-experiences'),
-                ],
-                'hierarchical' => true,
-                'show_in_rest' => true,
-                'show_admin_column' => true,
-                'public' => true,
-            ]
-        );
-
-        register_taxonomy(
             'fp_exp_language',
             'fp_experience',
             [
                 'labels' => [
                     'name' => __('Experience Languages', 'fp-experiences'),
                     'singular_name' => __('Experience Language', 'fp-experiences'),
-                ],
-                'hierarchical' => false,
-                'show_in_rest' => true,
-                'show_admin_column' => true,
-                'public' => true,
-            ]
-        );
-
-        register_taxonomy(
-            'fp_exp_duration',
-            'fp_experience',
-            [
-                'labels' => [
-                    'name' => __('Durations', 'fp-experiences'),
-                    'singular_name' => __('Duration', 'fp-experiences'),
-                ],
-                'hierarchical' => false,
-                'show_in_rest' => true,
-                'show_admin_column' => true,
-                'public' => true,
-            ]
-        );
-
-        register_taxonomy(
-            'fp_exp_family_friendly',
-            'fp_experience',
-            [
-                'labels' => [
-                    'name' => __('Family Friendly', 'fp-experiences'),
-                    'singular_name' => __('Family Friendly', 'fp-experiences'),
                 ],
                 'hierarchical' => false,
                 'show_in_rest' => true,
