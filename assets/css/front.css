@@ -2009,10 +2009,7 @@
     justify-content: flex-end;
     gap: 0.5rem;
     padding: 0.35rem;
-    border-radius: 999px;
-    background: color-mix(in srgb, var(--fp-color-primary) 6%, #fff);
     border: 1px solid color-mix(in srgb, var(--fp-color-primary) 18%, rgba(15, 23, 42, 0.12));
-    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
     flex-wrap: nowrap;
     min-width: 0;
 }
