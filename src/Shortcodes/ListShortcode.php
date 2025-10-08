@@ -355,29 +355,11 @@ final class ListShortcode extends BaseShortcode
         $tax_query = [];
         $meta_query = [];
 
-        if (! empty($state['theme'])) {
-            $tax_query[] = [
-                'taxonomy' => 'fp_exp_theme',
-                'field' => 'slug',
-                'terms' => $state['theme'],
-                'operator' => 'IN',
-            ];
-        }
-
         if (! empty($state['language'])) {
             $tax_query[] = [
                 'taxonomy' => 'fp_exp_language',
                 'field' => 'slug',
                 'terms' => $state['language'],
-                'operator' => 'IN',
-            ];
-        }
-
-        if (! empty($state['duration'])) {
-            $tax_query[] = [
-                'taxonomy' => 'fp_exp_duration',
-                'field' => 'slug',
-                'terms' => $state['duration'],
                 'operator' => 'IN',
             ];
         }
@@ -537,13 +519,6 @@ final class ListShortcode extends BaseShortcode
         $language_badges = LanguageHelper::build_language_badges($languages);
         $experience_badge_slugs = Helpers::get_meta_array($id, '_fp_experience_badges');
 
-        if (empty($experience_badge_slugs)) {
-            $legacy_family_terms = get_the_terms($id, 'fp_exp_family_friendly');
-            if (is_array($legacy_family_terms) && ! empty($legacy_family_terms)) {
-                $experience_badge_slugs[] = 'family-friendly';
-            }
-        }
-
         $experience_badges = Helpers::experience_badge_payload($experience_badge_slugs);
         $duration_label = $this->format_duration($duration_minutes);
         $badges = [];
@@ -615,10 +590,7 @@ final class ListShortcode extends BaseShortcode
         }
 
         $terms = [
-            // Rimuoviamo l'uso pubblico dei temi
-            'theme' => [],
             'language' => wp_list_pluck(wp_get_post_terms($id, 'fp_exp_language'), 'name'),
-            'duration' => wp_list_pluck(wp_get_post_terms($id, 'fp_exp_duration'), 'name'),
         ];
 
         $primary_theme = '';
