@@ -245,10 +245,26 @@ final class Checkout
         $result = $this->process_checkout($nonce, $payload);
 
         if ($result instanceof WP_Error) {
-            return $result;
+            $status = (int) ($result->get_error_data()['status'] ?? 400);
+            $response = new WP_REST_Response([
+                'code' => $result->get_error_code(),
+                'message' => $result->get_error_message(),
+                'data' => ['status' => $status],
+            ], $status);
+            $response->set_headers([
+                'Content-Type' => 'application/json; charset=utf-8',
+            ]);
+            
+            return $response;
         }
 
-        return rest_ensure_response($result);
+        // Assicurati che la risposta sia sempre un oggetto WP_REST_Response valido
+        $response = new WP_REST_Response($result, 200);
+        $response->set_headers([
+            'Content-Type' => 'application/json; charset=utf-8',
+        ]);
+        
+        return $response;
     }
 
     /**
@@ -332,9 +348,30 @@ final class Checkout
             return $order;
         }
 
+        // Verifica che l'ordine sia valido
+        if (! is_object($order) || ! method_exists($order, 'get_id') || ! method_exists($order, 'get_checkout_payment_url')) {
+            $this->cart->unlock();
+
+            return new WP_Error('fp_exp_checkout_invalid_order', __('Ordine non valido.', 'fp-experiences'), [
+                'status' => 500,
+            ]);
+        }
+
+        $order_id = $order->get_id();
+        $payment_url = $order->get_checkout_payment_url(true);
+
+        // Verifica che i dati siano validi prima di restituirli
+        if (! $order_id || ! $payment_url) {
+            $this->cart->unlock();
+
+            return new WP_Error('fp_exp_checkout_invalid_response', __('Impossibile generare URL di pagamento.', 'fp-experiences'), [
+                'status' => 500,
+            ]);
+        }
+
         return [
-            'order_id' => $order->get_id(),
-            'payment_url' => $order->get_checkout_payment_url(true),
+            'order_id' => $order_id,
+            'payment_url' => $payment_url,
         ];
     }
 }
