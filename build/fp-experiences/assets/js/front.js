@@ -139,8 +139,15 @@
         const monthKeyOf = (dateStr) => (window.FPFront.availability ? window.FPFront.availability.monthKeyOf(dateStr) : (dateStr || '').slice(0,7));
         const prefetchMonth = async (yyyyMm) => window.FPFront.availability && window.FPFront.availability.prefetchMonth(yyyyMm);
 
-        // Mappa YYYY-MM-DD → array di slot dal dataset
-        const calendarMap = (window.FPFront.availability && window.FPFront.availability.getCalendarMap && window.FPFront.availability.getCalendarMap()) || new Map();
+        // Inizializza il modulo availability prima di usare il calendario
+        if (window.FPFront.availability && window.FPFront.availability.init) {
+            window.FPFront.availability.init({ config, widget });
+            console.log('[FP-EXP] Availability module initialized');
+        }
+
+        // Mappa YYYY-MM-DD → array di slot dal dataset (dopo l'inizializzazione!)
+        const getCalendarMap = () => (window.FPFront.availability && window.FPFront.availability.getCalendarMap && window.FPFront.availability.getCalendarMap()) || new Map();
+        let calendarMap = getCalendarMap();
 
         // Sistema semplificato - input date nativo
 
@@ -150,6 +157,8 @@
                 const date = dateInput.value; // formato YYYY-MM-DD
                 console.log('[FP-EXP] Date changed to:', date);
                 
+                // Get fresh reference to calendarMap
+                calendarMap = getCalendarMap();
                 let items = calendarMap.get(date) || [];
                 let isLoading = false;
                 
@@ -278,6 +287,9 @@
                     // Prefetch dell'intero mese in una sola chiamata API
                     await prefetchMonth(monthKey);
                     
+                    // Get fresh reference to calendarMap after prefetch
+                    calendarMap = getCalendarMap();
+                    
                     // Genera tutti i giorni del mese
                     const dayButtons = [];
                     
@@ -321,14 +333,9 @@
                 }
             }
         };
-
-        // Inizializza il modulo availability prima di usare il calendario
-        if (window.FPFront.availability && window.FPFront.availability.init) {
-            window.FPFront.availability.init({ config, widget });
-            console.log('[FP-EXP] Availability module initialized');
-        }
         
         // Aggiungi il campo 'label' agli slot nella calendarMap per la visualizzazione
+        calendarMap = getCalendarMap(); // Refresh reference
         if (calendarMap && calendarMap.size > 0) {
             console.log('[FP-EXP] Adding labels to', calendarMap.size, 'dates in calendarMap');
             calendarMap.forEach((slots, dateKey) => {
