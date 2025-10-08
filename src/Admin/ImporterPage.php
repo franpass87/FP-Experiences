@@ -7,6 +7,7 @@ namespace FP_Exp\Admin;
 use FP_Exp\Utils\Helpers;
 use WP_Error;
 
+use function absint;
 use function add_action;
 use function add_settings_error;
 use function admin_url;
@@ -21,6 +22,8 @@ use function get_settings_errors;
 use function get_transient;
 use function header;
 use function is_wp_error;
+use function preg_match;
+use function sanitize_key;
 use function sanitize_text_field;
 use function sanitize_textarea_field;
 use function set_transient;
@@ -275,9 +278,26 @@ final class ImporterPage
         echo '<li><strong>family_friendly</strong>: ' . esc_html__('Adatto alle famiglie (yes/no)', 'fp-experiences') . '</li>';
         echo '</ul>';
 
+        echo '<h4>' . esc_html__('Campi Calendario e Slot:', 'fp-experiences') . '</h4>';
+        echo '<ul class="fp-exp-guide-list">';
+        echo '<li><strong>recurrence_frequency</strong>: ' . esc_html__('Frequenza ricorrenza (daily, weekly, custom)', 'fp-experiences') . '</li>';
+        echo '<li><strong>recurrence_times</strong>: ' . esc_html__('Orari degli slot, separati da pipe | (es: 09:00|14:00|16:00)', 'fp-experiences') . '</li>';
+        echo '<li><strong>recurrence_days</strong>: ' . esc_html__('Giorni della settimana (solo per weekly), separati da pipe | (es: monday|wednesday|friday)', 'fp-experiences') . '</li>';
+        echo '<li><strong>recurrence_start_date</strong>: ' . esc_html__('Data inizio ricorrenza nel formato YYYY-MM-DD (es: 2025-01-01)', 'fp-experiences') . '</li>';
+        echo '<li><strong>recurrence_end_date</strong>: ' . esc_html__('Data fine ricorrenza nel formato YYYY-MM-DD (es: 2025-12-31)', 'fp-experiences') . '</li>';
+        echo '<li><strong>buffer_before</strong>: ' . esc_html__('Buffer prima dello slot in minuti (es: 15)', 'fp-experiences') . '</li>';
+        echo '<li><strong>buffer_after</strong>: ' . esc_html__('Buffer dopo lo slot in minuti (es: 15)', 'fp-experiences') . '</li>';
+        echo '<li><strong>lead_time_hours</strong>: ' . esc_html__('Ore di preavviso minimo per prenotare (es: 24)', 'fp-experiences') . '</li>';
+        echo '</ul>';
+
         echo '<div class="fp-exp-guide-tip" style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 12px; margin-top: 15px;">';
         echo '<strong>💡 ' . esc_html__('Suggerimento:', 'fp-experiences') . '</strong> ';
-        echo esc_html__('Per campi multipli come highlights, inclusions, exclusions, themes e languages, usa il separatore pipe ( | ) senza spazi prima o dopo.', 'fp-experiences');
+        echo esc_html__('Per campi multipli come highlights, inclusions, exclusions, themes, languages, recurrence_times e recurrence_days, usa il separatore pipe ( | ) senza spazi prima o dopo.', 'fp-experiences');
+        echo '</div>';
+        
+        echo '<div class="fp-exp-guide-tip" style="background: #e7f3ff; border-left: 4px solid #2196F3; padding: 12px; margin-top: 15px;">';
+        echo '<strong>📅 ' . esc_html__('Calendario e Slot:', 'fp-experiences') . '</strong> ';
+        echo esc_html__('I campi di ricorrenza permettono di configurare quando l\'esperienza è disponibile. Se vuoi slot giornalieri, usa "daily". Per giorni specifici della settimana, usa "weekly" con recurrence_days. I buffer sono opzionali e utili per dare tempo di preparazione tra gli slot.', 'fp-experiences');
         echo '</div>';
         echo '</div>';
 
@@ -358,7 +378,15 @@ final class ImporterPage
             'policy_cancel',
             'themes',
             'languages',
-            'family_friendly'
+            'family_friendly',
+            'recurrence_frequency',
+            'recurrence_times',
+            'recurrence_days',
+            'recurrence_start_date',
+            'recurrence_end_date',
+            'buffer_before',
+            'buffer_after',
+            'lead_time_hours'
         ];
 
         $example_row = [
@@ -373,6 +401,7 @@ final class ImporterPage
             '15',
             '8',
             '99',
+            'Piazza Centrale, di fronte alla fontana',
             'Centro storico|Monumenti principali|Guida esperta|Storia affascinante',
             'Guida turistica|Biglietti d\'ingresso|Mappa della città',
             'Trasporto|Cibo e bevande|Mance',
@@ -381,7 +410,15 @@ final class ImporterPage
             'Cancellazione gratuita fino a 24 ore prima. Rimborso completo.',
             'Cultura|Storia|Arte',
             'Italiano|English|Español',
-            'yes'
+            'yes',
+            'weekly',
+            '09:00|14:00|16:00',
+            'monday|wednesday|friday',
+            '2025-01-01',
+            '2025-12-31',
+            '15',
+            '15',
+            '24'
         ];
 
         $rows = [$columns, $example_row];
@@ -605,6 +642,125 @@ final class ImporterPage
             $languages = array_map('trim', explode('|', $data['languages']));
             $languages = array_filter($languages);
             update_post_meta($post_id, '_fp_languages', array_values($languages));
+        }
+
+        // Recurrence configuration
+        $this->update_recurrence_meta($post_id, $data);
+
+        // Availability configuration (buffer, lead time, capacity)
+        $this->update_availability_meta($post_id, $data);
+    }
+
+    /**
+     * Update recurrence metadata from CSV data.
+     *
+     * @param int                   $post_id Post ID.
+     * @param array<string, string> $data    CSV row data.
+     */
+    private function update_recurrence_meta(int $post_id, array $data): void
+    {
+        $recurrence = [];
+
+        // Frequency
+        if (! empty($data['recurrence_frequency'])) {
+            $frequency = sanitize_key($data['recurrence_frequency']);
+            $valid_frequencies = ['daily', 'weekly', 'custom'];
+            if (in_array($frequency, $valid_frequencies, true)) {
+                $recurrence['frequency'] = $frequency;
+            } else {
+                $recurrence['frequency'] = 'weekly';
+            }
+        }
+
+        // Times (time_slots format)
+        if (! empty($data['recurrence_times'])) {
+            $times = array_map('trim', explode('|', $data['recurrence_times']));
+            $times = array_filter($times, function($time) {
+                return preg_match('/^\d{1,2}:\d{2}(:\d{2})?$/', $time);
+            });
+            
+            if (! empty($times)) {
+                $recurrence['time_slots'] = [];
+                foreach ($times as $time) {
+                    $recurrence['time_slots'][] = ['time' => $time];
+                }
+            }
+        }
+
+        // Days (for weekly frequency)
+        if (! empty($data['recurrence_days'])) {
+            $days = array_map(function($day) {
+                return strtolower(trim($day));
+            }, explode('|', $data['recurrence_days']));
+            
+            $valid_days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+            $days = array_filter($days, function($day) use ($valid_days) {
+                return in_array($day, $valid_days, true);
+            });
+            
+            if (! empty($days)) {
+                $recurrence['days'] = array_values($days);
+            }
+        }
+
+        // Start date
+        if (! empty($data['recurrence_start_date'])) {
+            $start_date = sanitize_text_field($data['recurrence_start_date']);
+            if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $start_date)) {
+                $recurrence['start_date'] = $start_date;
+            }
+        }
+
+        // End date
+        if (! empty($data['recurrence_end_date'])) {
+            $end_date = sanitize_text_field($data['recurrence_end_date']);
+            if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $end_date)) {
+                $recurrence['end_date'] = $end_date;
+            }
+        }
+
+        // Save recurrence only if we have meaningful data
+        if (! empty($recurrence)) {
+            update_post_meta($post_id, '_fp_exp_recurrence', $recurrence);
+        }
+    }
+
+    /**
+     * Update availability metadata from CSV data.
+     *
+     * @param int                   $post_id Post ID.
+     * @param array<string, string> $data    CSV row data.
+     */
+    private function update_availability_meta(int $post_id, array $data): void
+    {
+        $availability = [];
+
+        // Slot capacity (from capacity_slot field)
+        if (! empty($data['capacity_slot'])) {
+            $availability['slot_capacity'] = absint($data['capacity_slot']);
+        }
+
+        // Buffer before
+        if (! empty($data['buffer_before'])) {
+            $availability['buffer_before_minutes'] = absint($data['buffer_before']);
+        }
+
+        // Buffer after
+        if (! empty($data['buffer_after'])) {
+            $availability['buffer_after_minutes'] = absint($data['buffer_after']);
+        }
+
+        // Lead time hours
+        if (! empty($data['lead_time_hours'])) {
+            $lead_time = absint($data['lead_time_hours']);
+            $availability['lead_time_hours'] = $lead_time;
+            // Also save as separate meta for backward compatibility
+            update_post_meta($post_id, '_fp_lead_time_hours', $lead_time);
+        }
+
+        // Save availability only if we have meaningful data
+        if (! empty($availability)) {
+            update_post_meta($post_id, '_fp_exp_availability', $availability);
         }
     }
 
