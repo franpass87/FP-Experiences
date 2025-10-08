@@ -156,6 +156,7 @@ final class ExperienceShortcode extends BaseShortcode
         $hero_image_id = absint((string) get_post_meta($experience_id, '_fp_hero_image_id', true));
         $gallery_ids = get_post_meta($experience_id, '_fp_gallery_ids', true);
         $gallery = $this->prepare_gallery($experience_id, $gallery_ids, $hero_image_id);
+        $gallery_video_url = esc_url((string) get_post_meta($experience_id, '_fp_gallery_video_url', true));
 
         $highlights = Helpers::get_meta_array($experience_id, '_fp_highlights');
         $inclusions = Helpers::get_meta_array($experience_id, '_fp_inclusions');
@@ -413,6 +414,7 @@ final class ExperienceShortcode extends BaseShortcode
                 'price_from_display' => $price_from_display,
             ],
             'gallery' => $gallery,
+            'gallery_video_url' => $gallery_video_url,
             'badges' => $badges,
             'highlights' => $highlights,
             'inclusions' => $inclusions,
