@@ -4,6 +4,7 @@
  *
  * @var array<string, mixed> $experience
  * @var array<int, array<string, string>> $gallery
+ * @var string $gallery_video_url
  * @var array<int, array<string, string>> $badges
  * @var array<int, string> $highlights
  * @var array<int, string> $inclusions
@@ -108,7 +109,8 @@ if ($primary_image) {
         static fn ($image) => isset($image['url']) && $image['url'] !== $primary_image_url
     ));
 }
-$show_gallery = ! empty($sections['gallery']) && ! empty($gallery_items);
+$gallery_video_url = isset($gallery_video_url) ? trim((string) $gallery_video_url) : '';
+$show_gallery = ! empty($sections['gallery']) && (! empty($gallery_items) || '' !== $gallery_video_url);
 $hero_fact_badges = array_values(array_filter(
     $badges,
     static fn ($badge) => ! isset($badge['icon']) || 'language' !== $badge['icon']
@@ -173,6 +175,25 @@ $overview_biases = isset($overview['cognitive_biases']) && is_array($overview['c
     : [];
 $fontawesome_icon = static function (string $icon, string $style = 'fa-solid'): string {
     return sprintf('<span class="%s %s" aria-hidden="true"></span>', $style, $icon);
+};
+
+$get_youtube_video_id = static function (string $url): string {
+    if ('' === $url) {
+        return '';
+    }
+    
+    // Parse different YouTube URL formats
+    // https://www.youtube.com/watch?v=VIDEO_ID
+    // https://youtu.be/VIDEO_ID
+    // https://www.youtube.com/embed/VIDEO_ID
+    
+    $video_id = '';
+    
+    if (preg_match('/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/', $url, $matches)) {
+        $video_id = $matches[1];
+    }
+    
+    return $video_id;
 };
 
 $overview_term_icon = static function (string $term) use ($fontawesome_icon): string {
@@ -483,6 +504,24 @@ $sticky_price_display = '' !== $price_from_display ? $format_currency($price_fro
                         </div>
                     </header>
                     <div class="fp-exp-gallery__track" role="list">
+                        <?php
+                        $youtube_video_id = '' !== $gallery_video_url ? $get_youtube_video_id($gallery_video_url) : '';
+                        if ('' !== $youtube_video_id) :
+                            ?>
+                            <div class="fp-exp-gallery__item fp-exp-gallery__item--video" role="listitem">
+                                <div class="fp-exp-gallery__video-wrapper">
+                                    <iframe
+                                        class="fp-exp-gallery__video"
+                                        src="https://www.youtube.com/embed/<?php echo esc_attr($youtube_video_id); ?>?autoplay=1&mute=1&loop=1&playlist=<?php echo esc_attr($youtube_video_id); ?>&controls=1&modestbranding=1&rel=0"
+                                        title="<?php echo esc_attr($experience['title']); ?>"
+                                        frameborder="0"
+                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                        allowfullscreen
+                                        loading="lazy"
+                                    ></iframe>
+                                </div>
+                            </div>
+                        <?php endif; ?>
                         <?php foreach ($gallery_items as $index => $image) :
                             $url = isset($image['url']) ? (string) $image['url'] : '';
                             if ('' === $url) {

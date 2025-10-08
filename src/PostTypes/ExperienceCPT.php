@@ -363,6 +363,10 @@ final class ExperienceCPT
                 'items' => 'integer',
                 'default' => [],
             ],
+            '_fp_gallery_video_url' => [
+                'type' => 'string',
+                'default' => '',
+            ],
             '_fp_hero_image_id' => [
                 'type' => 'integer',
                 'default' => 0,

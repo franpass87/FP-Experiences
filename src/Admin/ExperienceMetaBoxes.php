@@ -585,6 +585,28 @@ final class ExperienceMetaBoxes
 					<p class="fp-exp-field__description" id="fp-exp-gallery-help"><?php esc_html_e("Le immagini vengono mostrate nella galleria pubblica seguendo l'ordine impostato qui sopra.", 'fp-experiences'); ?></p>
                 </div>
 
+                <?php
+                $gallery_video_url = isset($details['gallery_video_url']) ? (string) $details['gallery_video_url'] : '';
+                ?>
+                <div class="fp-exp-field">
+                    <label for="fp-exp-gallery-video-url" class="fp-exp-field__label">
+                        <?php esc_html_e('Video YouTube della galleria', 'fp-experiences'); ?>
+                        <?php $this->render_tooltip('fp-exp-gallery-video-help', esc_html__('Inserisci l\'URL di un video YouTube da mostrare nella sezione "Uno sguardo all\'esperienza". Il video partirà automaticamente. Es: https://www.youtube.com/watch?v=ABC123', 'fp-experiences')); ?>
+                    </label>
+                    <input
+                        type="url"
+                        id="fp-exp-gallery-video-url"
+                        name="fp_exp_details[gallery_video_url]"
+                        value="<?php echo esc_attr($gallery_video_url); ?>"
+                        placeholder="https://www.youtube.com/watch?v=..."
+                        class="regular-text"
+                        aria-describedby="fp-exp-gallery-video-help"
+                    />
+                    <p class="fp-exp-field__description" id="fp-exp-gallery-video-help">
+                        <?php esc_html_e('Il video YouTube verrà mostrato prima della galleria di immagini e partirà automaticamente con audio disattivato.', 'fp-experiences'); ?>
+                    </p>
+                </div>
+
                 <div class="fp-exp-field fp-exp-field--taxonomies">
                     <div class="fp-exp-field" style="display:none">
                         <span class="fp-exp-field__label">
@@ -2165,6 +2187,8 @@ final class ExperienceMetaBoxes
 
         $gallery_ids = array_values(array_unique($gallery_ids));
 
+        $gallery_video_url = isset($raw['gallery_video_url']) ? esc_url_raw((string) $raw['gallery_video_url']) : '';
+
         $this->update_or_delete_meta($post_id, '_fp_short_desc', $short_desc);
         $this->update_or_delete_meta($post_id, '_fp_duration_minutes', $duration);
         $this->update_or_delete_meta($post_id, '_fp_min_party', $min_party);
@@ -2177,6 +2201,7 @@ final class ExperienceMetaBoxes
         $this->update_or_delete_meta($post_id, '_fp_experience_badge_overrides', $badge_overrides);
         $this->update_or_delete_meta($post_id, '_fp_experience_badge_custom', $custom_badges);
         $this->update_or_delete_meta($post_id, '_fp_gallery_ids', $gallery_ids);
+        $this->update_or_delete_meta($post_id, '_fp_gallery_video_url', $gallery_video_url);
 
         $language_selected = isset($raw['languages']) && is_array($raw['languages'])
             ? array_values(array_filter(array_map('absint', $raw['languages'])))
@@ -2943,6 +2968,7 @@ final class ExperienceMetaBoxes
             'rules_children' => sanitize_text_field((string) get_post_meta($post_id, '_fp_rules_children', true)),
             'hero_image' => $this->get_hero_image($post_id),
             'gallery' => $this->get_gallery_for_editor($post_id),
+            'gallery_video_url' => esc_url((string) get_post_meta($post_id, '_fp_gallery_video_url', true)),
             'cognitive_biases' => [
                 'choices' => Helpers::cognitive_bias_choices(),
                 'selected' => $this->get_selected_cognitive_biases($post_id),
