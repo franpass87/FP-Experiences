@@ -797,14 +797,15 @@ $sticky_price_display = '' !== $price_from_display ? $format_currency($price_fro
                             <?php if (! empty($notes)) : ?>
                                 <article class="fp-exp-essentials__card">
                                     <h3 class="fp-exp-essentials__title"><?php esc_html_e('Note', 'fp-experiences'); ?></h3>
-                                    <?php if (is_array($notes)) : ?>
+                                    <?php
+                                    $notes_items = is_array($notes) ? $notes : array_filter(array_map('trim', explode("\n", $notes)));
+                                    if (! empty($notes_items)) :
+                                        ?>
                                         <ul class="fp-exp-essentials__list">
-                                            <?php foreach ($notes as $note) : ?>
+                                            <?php foreach ($notes_items as $note) : ?>
                                                 <li><?php echo esc_html($note); ?></li>
                                             <?php endforeach; ?>
                                         </ul>
-                                    <?php else : ?>
-                                        <p class="fp-exp-essentials__copy"><?php echo esc_html($notes); ?></p>
                                     <?php endif; ?>
                                 </article>
                             <?php endif; ?>
@@ -812,7 +813,18 @@ $sticky_price_display = '' !== $price_from_display ? $format_currency($price_fro
                             <?php if ('' !== $children_rules) : ?>
                                 <article class="fp-exp-essentials__card">
                                     <h3 class="fp-exp-essentials__title"><?php esc_html_e('Regole bambini', 'fp-experiences'); ?></h3>
-                                    <p class="fp-exp-essentials__copy"><?php echo esc_html($children_rules); ?></p>
+                                    <?php
+                                    $children_rules_items = array_filter(array_map('trim', explode("\n", $children_rules)));
+                                    if (count($children_rules_items) > 1) :
+                                        ?>
+                                        <ul class="fp-exp-essentials__list">
+                                            <?php foreach ($children_rules_items as $rule) : ?>
+                                                <li><?php echo esc_html($rule); ?></li>
+                                            <?php endforeach; ?>
+                                        </ul>
+                                    <?php else : ?>
+                                        <p class="fp-exp-essentials__copy"><?php echo esc_html($children_rules); ?></p>
+                                    <?php endif; ?>
                                 </article>
                             <?php endif; ?>
 
