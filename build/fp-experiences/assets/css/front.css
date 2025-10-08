@@ -2660,19 +2660,20 @@
         display: contents;
     }
     
-    /* Riordina le sezioni: widget dopo highlights */
+    /* Riordina le sezioni: widget prima di highlights */
     .fp-exp-section.fp-exp-hero { order: 1; }
     .fp-exp-section.fp-exp-overview { order: 2; }
     .fp-exp-section.fp-exp-gallery { order: 3; }
     .fp-exp-section.fp-exp-gift { order: 4; }
-    .fp-exp-section.fp-exp-highlights { order: 5; }
     
-    /* Widget dopo highlights */
+    /* Widget prima di highlights */
     .fp-exp-page__aside {
-        order: 6;
+        order: 5;
     }
     
-    /* Altre sezioni dopo il widget */
+    .fp-exp-section.fp-exp-highlights { order: 6; }
+    
+    /* Altre sezioni dopo highlights */
     .fp-exp-section.fp-exp-inclusions { order: 7; }
     .fp-exp-section.fp-exp-meeting { order: 8; }
     .fp-exp-section.fp-exp-essentials { order: 9; }
