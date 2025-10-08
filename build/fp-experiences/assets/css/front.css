@@ -2654,6 +2654,16 @@
     }
 }
 
+@media (max-width: 1023px) {
+    .fp-exp-page__aside {
+        order: 5;
+    }
+
+    .fp-exp-highlights {
+        order: 10;
+    }
+}
+
 .fp-layout {
     position: relative;
     display: block;
