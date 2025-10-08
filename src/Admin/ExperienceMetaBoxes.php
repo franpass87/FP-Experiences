@@ -2480,7 +2480,7 @@ final class ExperienceMetaBoxes
 
         $legacy_addons = [];
         if (isset($raw['addons']) && is_array($raw['addons'])) {
-            foreach ($raw['addons'] as $addon) {
+            foreach ($raw['addons'] as $index => $addon) {
                 if (! is_array($addon)) {
                     continue;
                 }
@@ -2494,10 +2494,21 @@ final class ExperienceMetaBoxes
                 if ($image_id > 0 && ! wp_attachment_is_image($image_id)) {
                     $image_id = 0;
                 }
+                
+                // Generate slug from name if empty
                 if ('' === $slug && '' !== $name) {
                     $slug = sanitize_key($name);
                 }
+                
+                // Ensure unique slug by appending index if needed
+                if ('' !== $slug) {
+                    $existing_slugs = array_column($legacy_addons, 'slug');
+                    if (in_array($slug, $existing_slugs, true)) {
+                        $slug = $slug . '-' . $index;
+                    }
+                }
 
+                // Skip only if both name and slug are empty
                 if ('' === $name || '' === $slug) {
                     continue;
                 }
