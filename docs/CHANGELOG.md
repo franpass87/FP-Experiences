@@ -17,6 +17,64 @@ e questo progetto aderisce al [Semantic Versioning](https://semver.org/lang/it/)
 
 ---
 
+## [0.3.5] - 2025-10-08
+
+### ✨ Importer CSV - Supporto Calendario e Slot
+
+#### Nuove Funzionalità
+- **8 nuovi campi CSV** per configurazione calendario:
+  - `recurrence_frequency` - daily/weekly/custom
+  - `recurrence_times` - orari slot (pipe-separated)
+  - `recurrence_days` - giorni settimana (pipe-separated)
+  - `recurrence_start_date` / `recurrence_end_date` - validità
+  - `buffer_before` / `buffer_after` - buffer in minuti
+  - `lead_time_hours` - ore preavviso minimo
+
+#### Metadata Generati
+- **_fp_exp_recurrence**: Configurazione ricorrenza completa
+  - Formato compatibile con `AvailabilityService`
+  - Struttura `time_slots` con array di oggetti `{time: "HH:MM"}`
+- **_fp_exp_availability**: Buffer, capacità e lead time
+  - Mappatura automatica `capacity_slot` → `slot_capacity`
+  - Retrocompatibilità con `_fp_lead_time_hours` separato
+
+#### File Modificati
+- `src/Admin/ImporterPage.php`:
+  - Nuovo metodo `update_recurrence_meta()`
+  - Nuovo metodo `update_availability_meta()`
+  - Template CSV esteso con 8 colonne
+  - Guida UI aggiornata con sezione calendario
+  - Validazione formati (orari, date, giorni)
+- `templates/admin/csv-examples/esperienze-esempio.csv`:
+  - Esempi realistici per ogni tipo esperienza
+  - Configurazioni daily, weekly, stagionali
+- `docs/admin/IMPORTER-COMPLETO.md`:
+  - Documentazione completa nuovi campi
+  - 3 esempi pratici (tour, cooking class, evento stagionale)
+  - 5 nuove FAQ su slot e calendario
+  - Checklist aggiornata
+- `docs/IMPORTER_CALENDAR_UPDATE.md`: Documento tecnico dettagliato
+
+#### Vantaggi
+- ✅ Esperienze importate **pronte per prenotazioni**
+- ✅ Slot virtuali generati automaticamente
+- ✅ Nessuna configurazione post-import necessaria per calendari standard
+- ✅ Retrocompatibilità totale (campi opzionali)
+
+#### Esempi d'Uso
+```csv
+# Tour giornaliero con 3 slot
+"Tour Colosseo",weekly,"09:00|14:00|16:00","monday|tuesday|wednesday|thursday|friday|saturday|sunday",2025-01-01,2025-12-31,15,15,24
+
+# Cooking class settimanale
+"Cooking Class",weekly,"18:00","tuesday|thursday|saturday",30,30,48
+
+# Evento stagionale
+"Tramonto",daily,"18:30",2025-04-01,2025-09-30,10,5,12
+```
+
+---
+
 ## [0.3.4] - 2025-10-07
 
 ### 🎨 Documentazione

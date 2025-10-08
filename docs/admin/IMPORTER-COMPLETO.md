@@ -131,6 +131,72 @@ I seguenti campi accettano più valori separati dal carattere **pipe** (`|`):
 - **Descrizione**: Indica se l'esperienza è adatta alle famiglie
 - **Note**: Case-insensitive
 
+### Campi Calendario e Slot
+
+#### `recurrence_frequency`
+- **Tipo**: Testo
+- **Valori permessi**: `daily`, `weekly`, `custom`
+- **Default**: `weekly`
+- **Descrizione**: Frequenza della ricorrenza degli slot
+- **Esempio**: `weekly`
+
+#### `recurrence_times`
+- **Tipo**: Lista di orari
+- **Separatore**: `|`
+- **Formato**: `HH:MM` o `HH:MM:SS`
+- **Esempio**: `09:00|14:00|16:00`
+- **Descrizione**: Orari in cui l'esperienza è disponibile ogni giorno
+- **Note**: Usa formato 24 ore
+
+#### `recurrence_days`
+- **Tipo**: Lista di giorni
+- **Separatore**: `|`
+- **Valori permessi**: `monday`, `tuesday`, `wednesday`, `thursday`, `friday`, `saturday`, `sunday`
+- **Esempio**: `monday|wednesday|friday`
+- **Descrizione**: Giorni della settimana (solo per frequency `weekly`)
+- **Note**: Nomi in inglese, minuscolo
+
+#### `recurrence_start_date`
+- **Tipo**: Data
+- **Formato**: `YYYY-MM-DD`
+- **Esempio**: `2025-01-01`
+- **Descrizione**: Data di inizio della validità della ricorrenza
+- **Note**: Formato ISO standard
+
+#### `recurrence_end_date`
+- **Tipo**: Data
+- **Formato**: `YYYY-MM-DD`
+- **Esempio**: `2025-12-31`
+- **Descrizione**: Data di fine della validità della ricorrenza
+- **Note**: Lascia vuoto per ricorrenza senza scadenza
+
+### Campi Disponibilità e Buffer
+
+#### `buffer_before`
+- **Tipo**: Numero intero
+- **Unità**: Minuti
+- **Esempio**: `15`
+- **Default**: `0`
+- **Descrizione**: Tempo di buffer prima dello slot (preparazione)
+- **Range tipico**: 0-60 minuti
+
+#### `buffer_after`
+- **Tipo**: Numero intero
+- **Unità**: Minuti
+- **Esempio**: `15`
+- **Default**: `0`
+- **Descrizione**: Tempo di buffer dopo lo slot (pulizia/preparazione successiva)
+- **Range tipico**: 0-60 minuti
+
+#### `lead_time_hours`
+- **Tipo**: Numero intero
+- **Unità**: Ore
+- **Esempio**: `24`
+- **Default**: `0`
+- **Descrizione**: Ore di preavviso minimo richieste per prenotare
+- **Note**: Impedisce prenotazioni dell'ultimo minuto
+- **Range tipico**: 0-72 ore
+
 ## Best Practices
 
 ### 1. Preparazione dei Dati
@@ -139,6 +205,7 @@ I seguenti campi accettano più valori separati dal carattere **pipe** (`|`):
 - ✅ **Usa** il carattere pipe (`|`) per i campi lista
 - ✅ **Mantieni** la codifica UTF-8 del file
 - ✅ **Salva** una copia di backup prima di modificare
+- ✅ **Configura** calendari e slot direttamente nell'import (nuova funzionalità!)
 
 ### 2. Codifica e Formato
 - **Codifica**: UTF-8 (obbligatorio)
@@ -201,31 +268,35 @@ Prima di importare molte esperienze:
 L'importer CSV ha alcune limitazioni intenzionali:
 - ❌ **Immagini**: Non supportate (aggiungi manualmente)
 - ❌ **Gallery**: Non supportate (aggiungi manualmente)
-- ❌ **Calendari/Schedule**: Non supportati (configura manualmente)
 - ❌ **Tipi di biglietto**: Non supportati (configura manualmente)
 - ❌ **Add-ons**: Non supportati (configura manualmente)
 - ❌ **FAQ**: Non supportate (aggiungi manualmente)
 - ❌ **Meeting points**: Solo descrizione testuale (configura ID manualmente)
+- ❌ **Slot persistiti**: L'importer configura solo slot virtuali, non crea slot nella tabella database
 
 ### Cosa viene creato
 - ✅ **Post esperienza** con tutti i campi base
 - ✅ **Meta campi** (durata, prezzi, limiti, ecc.)
 - ✅ **Tassonomie** (temi, family-friendly)
 - ✅ **Contenuti testuali** (descrizione, highlights, inclusions, ecc.)
+- ✅ **Configurazione calendario** (ricorrenza, orari, giorni) ⭐ NUOVO
+- ✅ **Disponibilità e buffer** (lead time, buffer prima/dopo) ⭐ NUOVO
+- ✅ **Slot virtuali** generati dinamicamente dal sistema
 
 ## Workflow Consigliato
 
 ### Per nuove esperienze
 1. **Scarica** il template CSV
 2. **Compila** i campi base per tutte le esperienze
-3. **Importa** il CSV
-4. **Verifica** le esperienze create
-5. **Completa** manualmente:
+3. **Configura** calendario e disponibilità direttamente nel CSV ⭐ NUOVO
+4. **Importa** il CSV
+5. **Verifica** le esperienze create e testa gli slot nel calendario
+6. **Completa** manualmente (opzionale):
    - Immagini in evidenza
    - Gallery
-   - Calendari e disponibilità
    - Tipi di biglietto e prezzi avanzati
    - FAQ se necessarie
+   - Slot persistiti personalizzati (se necessari oltre a quelli virtuali)
 
 ### Per aggiornamenti
 L'importer **NON** aggiorna esperienze esistenti. Crea sempre nuove esperienze.
@@ -258,6 +329,27 @@ title,status,description,duration_minutes,base_price,highlights,inclusions,theme
 "Tour della città storica",publish,"Scopri i segreti della nostra bellissima città con una guida esperta.",120,35.00,"Centro storico|Monumenti|Guida esperta","Guida turistica|Biglietti d'ingresso","Cultura|Storia","Italiano|English",yes
 ```
 
+#### Esempio con Calendario (Tour Giornaliero)
+```csv
+title,status,description,duration_minutes,base_price,capacity_slot,recurrence_frequency,recurrence_times,recurrence_days,recurrence_start_date,recurrence_end_date,buffer_before,buffer_after,lead_time_hours
+"Tour del Colosseo",publish,"Tour guidato del Colosseo e Foro Romano",180,45.00,25,weekly,"09:00|14:00|16:00","monday|tuesday|wednesday|thursday|friday|saturday|sunday",2025-01-01,2025-12-31,15,15,24
+```
+**Risultato**: 3 slot al giorno (9:00, 14:00, 16:00), 7 giorni su 7, con 15 minuti di buffer e prenotazione con 24h di preavviso.
+
+#### Esempio con Calendario (Cooking Class Settimanale)
+```csv
+title,status,description,duration_minutes,base_price,capacity_slot,recurrence_frequency,recurrence_times,recurrence_days,buffer_before,buffer_after,lead_time_hours
+"Cooking Class Italiana",publish,"Impara a cucinare la pasta fresca",240,85.00,12,weekly,"18:00","tuesday|thursday|saturday",30,30,48
+```
+**Risultato**: Un solo slot serale (18:00), solo martedì/giovedì/sabato, con 30 minuti di preparazione/pulizia e prenotazione con 48h di preavviso.
+
+#### Esempio con Calendario (Evento Stagionale)
+```csv
+title,status,description,duration_minutes,base_price,capacity_slot,recurrence_frequency,recurrence_times,recurrence_start_date,recurrence_end_date,lead_time_hours
+"Tramonto al Gianicolo",publish,"Aperitivo al tramonto con vista panoramica",90,28.00,30,daily,"18:30",2025-04-01,2025-09-30,12
+```
+**Risultato**: Un solo slot giornaliero (18:30), ogni giorno solo da aprile a settembre, prenotazione con 12h di preavviso.
+
 ## Domande Frequenti
 
 ### Posso importare immagini?
@@ -275,6 +367,26 @@ Non c'è un limite rigido, ma consigliamo batch di 50-100 esperienze per evitare
 ### Cosa succede se ci sono errori in alcune righe?
 Le righe con errori vengono saltate e registrate nei log. Le righe valide vengono comunque importate.
 
+### Come funzionano gli slot virtuali vs persistiti?
+Gli slot **virtuali** sono generati dinamicamente dalla configurazione di ricorrenza (frequenza, orari, giorni). 
+Gli slot **persistiti** sono salvati nel database e permettono personalizzazioni (prezzi specifici, capacità variabile, eccezioni).
+L'importer crea solo la configurazione per slot virtuali. Se hai bisogno di slot con prezzi o capacità diversi, creali manualmente dopo l'import.
+
+### Posso configurare slot con prezzi diversi per orario?
+No, l'importer imposta solo il prezzo base. Per prezzi dinamici (es. matinée più economica), devi:
+1. Importare l'esperienza con il prezzo standard
+2. Creare manualmente slot persistiti con price_rules specifiche
+
+### Come gestisco le eccezioni (festivi, giorni chiusi)?
+L'importer non supporta le eccezioni. Dopo l'import:
+1. Vai nel calendario dell'esperienza
+2. Usa gli strumenti di gestione eccezioni per blackout dates specifiche
+3. Oppure crea/elimina slot persistiti per date specifiche
+
+### I buffer si applicano tra tutti gli slot?
+Sì, il buffer_before e buffer_after impediscono sovrapposizioni. 
+**Esempio**: Slot dalle 10:00 alle 12:00 con buffer_after=15 → il prossimo slot può iniziare alle 12:15 o dopo.
+
 ## Checklist Pre-Import
 
 Prima di procedere con l'import, verifica:
@@ -287,20 +399,37 @@ Prima di procedere con l'import, verifica:
 - [ ] I numeri decimali usano il punto (`.`)
 - [ ] Le liste usano il separatore pipe (`|`)
 - [ ] Il campo `status` contiene valori validi
+- [ ] Gli orari in `recurrence_times` usano formato HH:MM (es: 09:00, 14:30)
+- [ ] I giorni in `recurrence_days` usano nomi inglesi minuscoli (monday, tuesday, ecc.)
+- [ ] Le date in `recurrence_start_date` e `recurrence_end_date` usano formato YYYY-MM-DD
+- [ ] I buffer e lead_time sono numeri interi (minuti e ore rispettivamente)
 - [ ] Hai fatto un backup del sito (consigliato)
 - [ ] Hai testato con 1-2 righe prima dell'import completo
 
 ## Conclusione
 
-L'Importer di Esperienze è progettato per velocizzare la creazione iniziale delle esperienze. Dopo l'import, potrai:
+L'Importer di Esperienze è progettato per velocizzare la creazione iniziale delle esperienze. Con il **nuovo supporto per calendario e slot** (⭐), puoi ora importare esperienze completamente configurate e pronte per le prenotazioni!
+
+Dopo l'import, potrai:
 
 1. Arricchire le esperienze con immagini e media
-2. Configurare calendari e disponibilità
-3. Impostare prezzi avanzati e biglietti
+2. ✅ **I calendari sono già configurati!** (slot virtuali pronti)
+3. Impostare prezzi avanzati e biglietti multipli (se necessario)
 4. Aggiungere FAQ e dettagli extra
+5. Creare slot persistiti personalizzati (solo se hai bisogno di eccezioni o prezzi specifici)
+
+### Novità Ottobre 2025 🎉
+
+L'importer supporta ora:
+- ✨ Configurazione completa ricorrenza (daily/weekly)
+- ✨ Orari multipli per slot
+- ✨ Giorni specifici della settimana
+- ✨ Date di validità (inizio/fine)
+- ✨ Buffer tra slot
+- ✨ Lead time per prenotazioni
 
 Per supporto o segnalazione bug, contatta l'amministratore del plugin.
 
 ---
 
-**Ultimo aggiornamento**: 2025-01-27
+**Ultimo aggiornamento**: 2025-10-08 (Aggiunto supporto calendario e slot)
