@@ -775,7 +775,7 @@ $sticky_price_display = '' !== $price_from_display ? $format_currency($price_fro
                             <span class="fp-exp-section__icon" aria-hidden="true"><?php echo $get_section_icon('extras'); ?></span>
                             <h2 class="fp-exp-section__title"><?php esc_html_e('Da sapere', 'fp-experiences'); ?></h2>
                         </div>
-                        <p class="fp-exp-section__summary"><?php esc_html_e('Handy tips to plan ahead, plus important notes and policies.', 'fp-experiences'); ?></p>
+                        <p class="fp-exp-section__summary"><?php esc_html_e('Suggerimenti utili per pianificare, oltre a note e politiche importanti.', 'fp-experiences'); ?></p>
                     </header>
                     <div class="fp-exp-section__body">
                         <div class="fp-exp-essentials__grid">
