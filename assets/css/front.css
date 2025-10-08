@@ -3458,6 +3458,18 @@ body.fp-modal-open {
     border: 1px solid rgba(227, 65, 65, 0.35);
 }
 
+.fp-gift__feedback--error {
+    background: rgba(227, 65, 65, 0.12);
+    color: #a32121;
+    border: 1px solid rgba(227, 65, 65, 0.35);
+}
+
+.fp-gift__feedback--success {
+    background: rgba(24, 161, 104, 0.12);
+    color: #167951;
+    border: 1px solid rgba(24, 161, 104, 0.35);
+}
+
 .fp-gift__success {
     background: rgba(24, 161, 104, 0.12);
     color: #167951;
