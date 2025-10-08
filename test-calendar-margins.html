@@ -79,15 +79,16 @@
             <ul>
                 <li><code>box-sizing: border-box</code> applicato a tutti gli elementi del calendario</li>
                 <li>Grid usa <code>minmax(0, 1fr)</code> invece di <code>1fr</code></li>
-                <li>Gap ridotti su desktop da 0.5rem a 0.4rem</li>
-                <li>Padding ottimizzati per evitare overflow</li>
-                <li><code>overflow: hidden</code> sui contenitori</li>
-                <li><code>min-width: 0</code> sui box dei giorni</li>
+                <li><strong>Mobile:</strong> min-height aumentato da 40px → 46.4px, padding H da 4px → 5.6px</li>
+                <li><strong>Desktop:</strong> min-height aumentato da 56px → 60px, gap ridotto da 0.4rem → 0.35rem</li>
+                <li><strong>Spazio verificato matematicamente:</strong> mobile +0.88px, desktop +6.16px di margine</li>
+                <li><code>overflow: hidden</code> sui contenitori per sicurezza</li>
+                <li><code>min-width: 0</code> sui box dei giorni per prevenire espansione forzata</li>
             </ul>
         </div>
         
         <div class="test-section">
-            <div class="test-label">Calendario Normale (Desktop: gap 0.4rem)</div>
+            <div class="test-label">Calendario Normale (Desktop: gap 0.35rem, min-height 60px)</div>
             
             <div class="fp-exp-calendar" data-show-calendar="1">
                 <section class="fp-exp-calendar__month" data-month="2025-01">
