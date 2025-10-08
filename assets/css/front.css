@@ -2657,20 +2657,19 @@
         display: contents;
     }
     
-    /* Riordina le sezioni: widget prima di highlights */
+    /* Riordina le sezioni: highlights prima di overview */
     .fp-exp-section.fp-exp-hero { order: 1; }
-    .fp-exp-section.fp-exp-overview { order: 2; }
-    .fp-exp-section.fp-exp-gallery { order: 3; }
-    .fp-exp-section.fp-exp-gift { order: 4; }
+    .fp-exp-section.fp-exp-highlights { order: 2; }
+    .fp-exp-section.fp-exp-overview { order: 3; }
+    .fp-exp-section.fp-exp-gallery { order: 4; }
+    .fp-exp-section.fp-exp-gift { order: 5; }
     
-    /* Widget prima di highlights */
+    /* Widget dopo gift */
     .fp-exp-page__aside {
-        order: 5;
+        order: 6;
     }
     
-    .fp-exp-section.fp-exp-highlights { order: 6; }
-    
-    /* Altre sezioni dopo highlights */
+    /* Altre sezioni dopo widget */
     .fp-exp-section.fp-exp-inclusions { order: 7; }
     .fp-exp-section.fp-exp-meeting { order: 8; }
     .fp-exp-section.fp-exp-essentials { order: 9; }
@@ -4175,7 +4174,20 @@ body.fp-modal-open {
 
     .fp-main {
         grid-column: 1;
+        display: flex;
+        flex-direction: column;
     }
+
+    /* Ordine sezioni desktop: highlights prima di overview */
+    .fp-exp-section.fp-exp-highlights { order: 1; }
+    .fp-exp-section.fp-exp-overview { order: 2; }
+    .fp-exp-section.fp-exp-gallery { order: 3; }
+    .fp-exp-section.fp-exp-gift { order: 4; }
+    .fp-exp-section.fp-exp-inclusions { order: 5; }
+    .fp-exp-section.fp-exp-meeting { order: 6; }
+    .fp-exp-section.fp-exp-essentials { order: 7; }
+    .fp-exp-section[data-fp-section="faq"] { order: 8; }
+    .fp-exp-section[data-fp-section="reviews"] { order: 9; }
 
     .fp-aside {
         grid-column: 2;
