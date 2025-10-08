@@ -76,6 +76,8 @@ use function wp_set_post_terms;
 use function remove_meta_box;
 use function term_exists;
 use function wp_insert_term;
+use function set_post_thumbnail;
+use function delete_post_thumbnail;
 
 final class ExperienceMetaBoxes
 {
@@ -2188,8 +2190,10 @@ final class ExperienceMetaBoxes
 
         if ($hero_id > 0) {
             update_post_meta($post_id, '_fp_hero_image_id', $hero_id);
+            set_post_thumbnail($post_id, $hero_id);
         } else {
             delete_post_meta($post_id, '_fp_hero_image_id');
+            delete_post_thumbnail($post_id);
         }
 
         wp_set_post_terms($post_id, $theme_terms, 'fp_exp_theme', false);

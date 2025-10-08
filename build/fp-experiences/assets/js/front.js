@@ -798,19 +798,28 @@
                     let result = {};
                     try {
                         const text = await checkoutResponse.text();
-                        if (!text) {
+                        console.log('[FP-EXP] Risposta checkout ricevuta:', text ? text.substring(0, 200) : '(vuota)');
+                        
+                        if (!text || text.trim() === '') {
                             throw new Error('Risposta vuota dal server');
                         }
+                        
                         result = JSON.parse(text);
+                        console.log('[FP-EXP] Risposta checkout parsata:', result);
                     } catch (e) {
                         console.error('[FP-EXP] Impossibile parsare risposta checkout:', e);
                         throw new Error('Risposta non valida dal server');
                     }
                     
-                    if (result.payment_url) {
+                    // Verifica se la risposta ha payment_url direttamente o dentro data
+                    const paymentUrl = result.payment_url || (result.data && result.data.payment_url);
+                    
+                    if (paymentUrl) {
+                        console.log('[FP-EXP] Reindirizzamento a:', paymentUrl);
                         // Reindirizza alla pagina di pagamento dell'ordine
-                        window.location.href = result.payment_url;
+                        window.location.href = paymentUrl;
                     } else {
+                        console.error('[FP-EXP] Risposta completa:', result);
                         throw new Error('URL di pagamento non ricevuto');
                     }
 
