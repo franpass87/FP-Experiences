@@ -2658,6 +2658,10 @@
     .fp-exp-page__aside {
         order: 5;
     }
+
+    .fp-exp-highlights {
+        order: 6;
+    }
 }
 
 .fp-layout {
