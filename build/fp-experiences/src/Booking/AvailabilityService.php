@@ -155,7 +155,10 @@ final class AvailabilityService
         }
 
         try {
+            // Estendi range_end di 1 giorno per catturare tutti gli slot del giorno finale
+            // quando convertiti dal timezone locale a UTC (evita problemi con timezone dietro UTC)
             $range_end = new DateTimeImmutable($end_utc . ' 23:59:59', new DateTimeZone('UTC'));
+            $range_end = $range_end->add(new DateInterval('P1D'));
         } catch (Exception $e) {
             $range_end = $range_start;
         }
@@ -169,8 +172,9 @@ final class AvailabilityService
         
         if ('' !== $recurrence_start_date) {
             try {
-                $rec_start = new DateTimeImmutable($recurrence_start_date, $tz);
-                $rec_start_utc = $rec_start->setTimezone(new DateTimeZone('UTC'))->setTime(0, 0, 0);
+                // IMPORTANTE: setTime PRIMA della conversione a UTC per evitare shift di giorno
+                $rec_start = new DateTimeImmutable($recurrence_start_date . ' 00:00:00', $tz);
+                $rec_start_utc = $rec_start->setTimezone(new DateTimeZone('UTC'));
                 if ($rec_start_utc > $range_start) {
                     $range_start = $rec_start_utc;
                 }
@@ -181,8 +185,9 @@ final class AvailabilityService
         
         if ('' !== $recurrence_end_date) {
             try {
-                $rec_end = new DateTimeImmutable($recurrence_end_date, $tz);
-                $rec_end_utc = $rec_end->setTimezone(new DateTimeZone('UTC'))->setTime(23, 59, 59);
+                // IMPORTANTE: setTime PRIMA della conversione a UTC per evitare shift di giorno
+                $rec_end = new DateTimeImmutable($recurrence_end_date . ' 23:59:59', $tz);
+                $rec_end_utc = $rec_end->setTimezone(new DateTimeZone('UTC'));
                 if ($rec_end_utc < $range_end) {
                     $range_end = $rec_end_utc;
                 }
@@ -281,8 +286,18 @@ final class AvailabilityService
         }
 
         // Converte in payload e calcola capacità rimanente
+        // Filtra gli slot per assicurarsi che appartengano al range originale nel timezone locale
         $slots = [];
         foreach ($occurrences as [$start, $end]) {
+            // Verifica che lo slot appartenga al range originale nel timezone locale
+            $start_local = $start->setTimezone($tz);
+            $start_date_local = $start_local->format('Y-m-d');
+            
+            // Salta gli slot che cadono dopo la data finale richiesta nel timezone locale
+            if ($start_date_local > $end_utc) {
+                continue;
+            }
+            
             $start_sql = $start->format('Y-m-d H:i:s');
             $end_sql = $end->format('Y-m-d H:i:s');
             
@@ -347,7 +362,10 @@ final class AvailabilityService
         }
 
         try {
+            // Estendi range_end di 1 giorno per catturare tutti gli slot del giorno finale
+            // quando convertiti dal timezone locale a UTC (evita problemi con timezone dietro UTC)
             $range_end = new DateTimeImmutable($end_utc . ' 23:59:59', new DateTimeZone('UTC'));
+            $range_end = $range_end->add(new DateInterval('P1D'));
         } catch (Exception $e) {
             $range_end = $range_start;
         }
@@ -360,8 +378,9 @@ final class AvailabilityService
         
         if ('' !== $recurrence_start_date) {
             try {
-                $rec_start = new DateTimeImmutable($recurrence_start_date, $tz);
-                $rec_start_utc = $rec_start->setTimezone(new DateTimeZone('UTC'))->setTime(0, 0, 0);
+                // IMPORTANTE: setTime PRIMA della conversione a UTC per evitare shift di giorno
+                $rec_start = new DateTimeImmutable($recurrence_start_date . ' 00:00:00', $tz);
+                $rec_start_utc = $rec_start->setTimezone(new DateTimeZone('UTC'));
                 if ($rec_start_utc > $range_start) {
                     $range_start = $rec_start_utc;
                 }
@@ -372,8 +391,9 @@ final class AvailabilityService
         
         if ('' !== $recurrence_end_date) {
             try {
-                $rec_end = new DateTimeImmutable($recurrence_end_date, $tz);
-                $rec_end_utc = $rec_end->setTimezone(new DateTimeZone('UTC'))->setTime(23, 59, 59);
+                // IMPORTANTE: setTime PRIMA della conversione a UTC per evitare shift di giorno
+                $rec_end = new DateTimeImmutable($recurrence_end_date . ' 23:59:59', $tz);
+                $rec_end_utc = $rec_end->setTimezone(new DateTimeZone('UTC'));
                 if ($rec_end_utc < $range_end) {
                     $range_end = $rec_end_utc;
                 }
@@ -467,8 +487,18 @@ final class AvailabilityService
             ));
         }
 
+        // Filtra gli slot per assicurarsi che appartengano al range originale nel timezone locale
         $slots = [];
         foreach ($occurrences as [$start, $end]) {
+            // Verifica che lo slot appartenga al range originale nel timezone locale
+            $start_local = $start->setTimezone($tz);
+            $start_date_local = $start_local->format('Y-m-d');
+            
+            // Salta gli slot che cadono dopo la data finale richiesta nel timezone locale
+            if ($start_date_local > $end_utc) {
+                continue;
+            }
+            
             $start_sql = $start->format('Y-m-d H:i:s');
             $end_sql = $end->format('Y-m-d H:i:s');
             

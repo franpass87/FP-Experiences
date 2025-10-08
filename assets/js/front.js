@@ -1145,6 +1145,203 @@
                 window.FPFront.summaryRtb.init({ widget, slotsEl, config });
             }
         })();
+
+        // 7) Gestione modale regalo
+        (function setupGiftModal() {
+            const giftToggleBtn = document.querySelector('[data-fp-gift-toggle]');
+            const giftModal = document.querySelector('[data-fp-gift]');
+            const giftBackdrop = giftModal ? giftModal.querySelector('[data-fp-gift-backdrop]') : null;
+            const giftCloseBtn = giftModal ? giftModal.querySelector('[data-fp-gift-close]') : null;
+            const giftDialog = giftModal ? giftModal.querySelector('[data-fp-gift-dialog]') : null;
+            const giftForm = giftModal ? giftModal.querySelector('[data-fp-gift-form]') : null;
+            const giftSubmitBtn = giftForm ? giftForm.querySelector('[data-fp-gift-submit]') : null;
+            const giftFeedback = giftModal ? giftModal.querySelector('[data-fp-gift-feedback]') : null;
+
+            if (!giftToggleBtn || !giftModal) {
+                return; // No gift functionality on this page
+            }
+
+            // Parse gift configuration
+            let giftConfig = {};
+            try {
+                const configAttr = giftModal.getAttribute('data-fp-gift-config');
+                giftConfig = configAttr ? JSON.parse(configAttr) : {};
+            } catch (e) {
+                console.warn('[FP-EXP] Invalid gift config:', e);
+            }
+
+            // Open modal
+            const openGiftModal = () => {
+                giftModal.hidden = false;
+                giftModal.setAttribute('aria-hidden', 'false');
+                giftToggleBtn.setAttribute('aria-expanded', 'true');
+                
+                // Add is-open class for CSS transition
+                setTimeout(() => {
+                    giftModal.classList.add('is-open');
+                }, 10);
+                
+                // Focus on dialog
+                if (giftDialog) {
+                    setTimeout(() => {
+                        giftDialog.focus();
+                    }, 100);
+                }
+                
+                // Prevent body scroll
+                document.body.style.overflow = 'hidden';
+            };
+
+            // Close modal
+            const closeGiftModal = () => {
+                // Remove is-open class first for transition
+                giftModal.classList.remove('is-open');
+                
+                // Wait for transition to complete before hiding
+                setTimeout(() => {
+                    giftModal.hidden = true;
+                    giftModal.setAttribute('aria-hidden', 'true');
+                    giftToggleBtn.setAttribute('aria-expanded', 'false');
+                    
+                    // Restore body scroll
+                    document.body.style.overflow = '';
+                    
+                    // Return focus to toggle button
+                    giftToggleBtn.focus();
+                }, 250); // Match CSS transition duration
+            };
+
+            // Toggle button click
+            giftToggleBtn.addEventListener('click', (ev) => {
+                ev.preventDefault();
+                openGiftModal();
+            });
+
+            // Close button click
+            if (giftCloseBtn) {
+                giftCloseBtn.addEventListener('click', (ev) => {
+                    ev.preventDefault();
+                    closeGiftModal();
+                });
+            }
+
+            // Backdrop click
+            if (giftBackdrop) {
+                giftBackdrop.addEventListener('click', (ev) => {
+                    ev.preventDefault();
+                    closeGiftModal();
+                });
+            }
+
+            // Escape key to close
+            document.addEventListener('keydown', (ev) => {
+                if (ev.key === 'Escape' && !giftModal.hidden) {
+                    closeGiftModal();
+                }
+            });
+
+            // Form submission
+            if (giftForm && giftSubmitBtn) {
+                giftForm.addEventListener('submit', async (ev) => {
+                    ev.preventDefault();
+
+                    // Basic validation
+                    if (!giftForm.checkValidity()) {
+                        giftForm.reportValidity();
+                        return;
+                    }
+
+                    // Collect form data
+                    const formData = new FormData(giftForm);
+                    const data = {
+                        experience_id: giftConfig.experienceId || 0,
+                        purchaser: {
+                            name: formData.get('purchaser[name]') || '',
+                            email: formData.get('purchaser[email]') || ''
+                        },
+                        recipient: {
+                            name: formData.get('recipient[name]') || '',
+                            email: formData.get('recipient[email]') || ''
+                        },
+                        delivery: {
+                            send_on: formData.get('delivery[send_on]') || ''
+                        },
+                        quantity: parseInt(formData.get('quantity'), 10) || 1,
+                        message: formData.get('message') || '',
+                        addons: formData.getAll('addons[]') || []
+                    };
+
+                    // Disable submit button
+                    giftSubmitBtn.disabled = true;
+                    giftSubmitBtn.textContent = 'Elaborazione...';
+
+                    try {
+                        // Call gift voucher endpoint
+                        const response = await fetch('/wp-json/fp-exp/v1/gift/create', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-WP-Nonce': (typeof fpExpConfig !== 'undefined' && fpExpConfig.restNonce) || ''
+                            },
+                            credentials: 'same-origin',
+                            body: JSON.stringify(data)
+                        });
+
+                        if (!response.ok) {
+                            let errorData = {};
+                            try {
+                                errorData = await response.json();
+                            } catch (e) {
+                                console.error('[FP-EXP] Error parsing gift response:', e);
+                            }
+                            throw new Error(errorData.message || 'Errore durante la creazione del voucher regalo');
+                        }
+
+                        const result = await response.json();
+
+                        // Check for payment_url or checkout_url
+                        const checkoutUrl = result.payment_url || result.checkout_url || (result.data && result.data.payment_url);
+
+                        if (checkoutUrl) {
+                            // Redirect to checkout
+                            window.location.href = checkoutUrl;
+                        } else {
+                            // Show success message
+                            if (giftFeedback) {
+                                giftFeedback.hidden = false;
+                                giftFeedback.className = 'fp-gift__feedback fp-gift__feedback--success';
+                                giftFeedback.textContent = 'Voucher regalo creato con successo!';
+                            }
+                            
+                            // Reset form
+                            giftForm.reset();
+                            
+                            // Close modal after 2 seconds
+                            setTimeout(() => {
+                                closeGiftModal();
+                                if (giftFeedback) {
+                                    giftFeedback.hidden = true;
+                                    giftFeedback.textContent = '';
+                                }
+                            }, 2000);
+                        }
+                    } catch (error) {
+                        console.error('[FP-EXP] Gift voucher error:', error);
+                        
+                        // Show error message
+                        if (giftFeedback) {
+                            giftFeedback.hidden = false;
+                            giftFeedback.className = 'fp-gift__feedback fp-gift__feedback--error';
+                            giftFeedback.textContent = error.message || 'Si è verificato un errore. Riprova.';
+                        }
+                    } finally {
+                        // Re-enable submit button
+                        giftSubmitBtn.disabled = false;
+                        giftSubmitBtn.textContent = 'Procedi al pagamento';
+                    }
+                });
+            }
+        })();
     });
     
 })();
