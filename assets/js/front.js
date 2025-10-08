@@ -755,13 +755,12 @@
                     // Ora crea l'ordine direttamente usando l'endpoint di checkout
                     const checkoutUrl = new URL('/wp-json/fp-exp/v1/checkout', window.location.origin);
                     
-                    // Inviamo il nonce wp_rest nell'header per soddisfare l'autenticazione WordPress,
-                    // e il nonce fp-exp-checkout nel body per la verifica specifica del checkout
+                    // Inviamo solo il nonce fp-exp-checkout nel body per la verifica specifica del checkout
+                    // NON inviamo X-WP-Nonce nell'header per evitare conflitti con la verifica del nonce
                     const checkoutResponse = await fetch(checkoutUrl, {
                         method: 'POST',
                         headers: {
-                            'Content-Type': 'application/json',
-                            'X-WP-Nonce': (typeof fpExpConfig !== 'undefined' && fpExpConfig.restNonce) || ''
+                            'Content-Type': 'application/json'
                         },
                         credentials: 'same-origin',
                         body: JSON.stringify({
