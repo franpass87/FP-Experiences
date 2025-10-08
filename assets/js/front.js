@@ -714,6 +714,25 @@
                     return;
                 }
 
+                // Verifica che i nonce siano disponibili
+                if (typeof fpExpConfig === 'undefined') {
+                    console.error('[FP-EXP] fpExpConfig non definito');
+                    alert('Errore di configurazione. Aggiorna la pagina e riprova.');
+                    return;
+                }
+
+                if (!fpExpConfig.restNonce) {
+                    console.error('[FP-EXP] restNonce mancante');
+                    alert('Sessione non valida. Aggiorna la pagina e riprova.');
+                    return;
+                }
+
+                if (!fpExpConfig.checkoutNonce) {
+                    console.error('[FP-EXP] checkoutNonce mancante');
+                    alert('Sessione non valida. Aggiorna la pagina e riprova.');
+                    return;
+                }
+
                 // Usa il sistema di checkout integrato del plugin
                 try {
                     ctaBtn.disabled = true;
@@ -826,7 +845,15 @@
                 } catch (error) {
                     console.error('[FP-EXP] Errore checkout WooCommerce:', error);
                     ctaBtn.disabled = false;
-                    ctaBtn.textContent = 'Errore - Riprova';
+                    
+                    // Messaggio specifico per errori di sessione
+                    const errorMessage = error.message || '';
+                    if (errorMessage.includes('sessione') || errorMessage.includes('scaduta') || errorMessage.includes('session')) {
+                        ctaBtn.textContent = 'Sessione scaduta - Ricarica';
+                        alert('La tua sessione è scaduta. Aggiorna la pagina (F5) e riprova.');
+                    } else {
+                        ctaBtn.textContent = 'Errore - Riprova';
+                    }
                     
                     // Reset dopo 3 secondi
                     setTimeout(() => {

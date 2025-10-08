@@ -274,6 +274,14 @@ final class Checkout
      */
     private function process_checkout(string $nonce, array $payload)
     {
+        // Verifica presenza del nonce
+        if (empty($nonce)) {
+            return new WP_Error('fp_exp_missing_nonce', __('Sessione non valida. Aggiorna la pagina e riprova.', 'fp-experiences'), [
+                'status' => 403,
+            ]);
+        }
+
+        // Verifica validità del nonce
         if (! wp_verify_nonce($nonce, 'fp-exp-checkout')) {
             return new WP_Error('fp_exp_invalid_nonce', __('La sessione è scaduta. Aggiorna la pagina e riprova.', 'fp-experiences'), [
                 'status' => 403,
