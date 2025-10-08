@@ -493,19 +493,34 @@ final class ExperienceShortcode extends BaseShortcode
             return null;
         }
 
-        // Use the price from the first valid ticket type instead of the minimum
+        // First, look for a ticket marked as "use_as_price_from"
+        foreach ($tickets as $ticket) {
+            if (! is_array($ticket) || ! isset($ticket['price'])) {
+                continue;
+            }
+
+            if (! empty($ticket['use_as_price_from'])) {
+                $price = (float) $ticket['price'];
+                if ($price > 0) {
+                    return $price;
+                }
+            }
+        }
+
+        // If no ticket is marked, fall back to the lowest price
+        $min_price = null;
         foreach ($tickets as $ticket) {
             if (! is_array($ticket) || ! isset($ticket['price'])) {
                 continue;
             }
 
             $price = (float) $ticket['price'];
-            if ($price > 0) {
-                return $price;
+            if ($price > 0 && (null === $min_price || $price < $min_price)) {
+                $min_price = $price;
             }
         }
 
-        return null;
+        return $min_price;
     }
 
     /**

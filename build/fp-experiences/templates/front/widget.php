@@ -141,18 +141,35 @@ foreach ($slots as $slot) {
     $price_from_value = null === $price_from_value ? $price : min($price_from_value, $price);
 }
 
-// Use the price from the first valid ticket type instead of the minimum
+// If no slot prices available, look for tickets
 if (null === $price_from_value) {
+    // First, check for a ticket marked as "use_as_price_from"
     foreach ($tickets as $ticket) {
         if (! is_array($ticket)) {
             continue;
         }
 
-        $price = isset($ticket['price']) ? (float) $ticket['price'] : 0.0;
+        if (! empty($ticket['use_as_price_from'])) {
+            $price = isset($ticket['price']) ? (float) $ticket['price'] : 0.0;
+            if ($price > 0) {
+                $price_from_value = $price;
+                break;
+            }
+        }
+    }
 
-        if ($price > 0) {
-            $price_from_value = $price;
-            break;
+    // If no ticket is marked, fall back to the lowest price
+    if (null === $price_from_value) {
+        foreach ($tickets as $ticket) {
+            if (! is_array($ticket)) {
+                continue;
+            }
+
+            $price = isset($ticket['price']) ? (float) $ticket['price'] : 0.0;
+
+            if ($price > 0 && (null === $price_from_value || $price < $price_from_value)) {
+                $price_from_value = $price;
+            }
         }
     }
 }

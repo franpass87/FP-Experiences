@@ -1609,6 +1609,8 @@ final class ExperienceMetaBoxes
         $price_name = $is_template ? 'fp_exp_pricing[tickets][__INDEX__][price]' : $name_prefix . '[price]';
         $capacity_name = $is_template ? 'fp_exp_pricing[tickets][__INDEX__][capacity]' : $name_prefix . '[capacity]';
         $slug_name = $is_template ? 'fp_exp_pricing[tickets][__INDEX__][slug]' : $name_prefix . '[slug]';
+        $use_as_price_from_name = $is_template ? 'fp_exp_pricing[tickets][__INDEX__][use_as_price_from]' : $name_prefix . '[use_as_price_from]';
+        $use_as_price_from_checked = ! empty($ticket['use_as_price_from']);
         ?>
         <div class="fp-exp-repeater-row" data-repeater-item draggable="true">
             <div class="fp-exp-repeater-row__fields">
@@ -1627,6 +1629,10 @@ final class ExperienceMetaBoxes
                 <label>
                     <span class="fp-exp-field__label"><?php esc_html_e('Capienza', 'fp-experiences'); ?></span>
                     <input type="number" min="0" step="1" <?php echo $this->field_name_attribute($capacity_name, $is_template); ?> value="<?php echo esc_attr((string) ($ticket['capacity'] ?? '')); ?>" />
+                </label>
+                <label style="display: flex; align-items: center; gap: 0.5rem;">
+                    <input type="checkbox" <?php echo $this->field_name_attribute($use_as_price_from_name, $is_template); ?> value="1" <?php checked($use_as_price_from_checked); ?> />
+                    <span class="fp-exp-field__label" style="margin: 0;"><?php esc_html_e('Prezzo "da..."', 'fp-experiences'); ?></span>
                 </label>
             </div>
             <p class="fp-exp-repeater-row__remove">
@@ -2439,6 +2445,7 @@ final class ExperienceMetaBoxes
                 $price = isset($ticket['price']) ? max(0.0, (float) $ticket['price']) : 0.0;
                 $capacity = isset($ticket['capacity']) ? absint((string) $ticket['capacity']) : 0;
                 $slug = isset($ticket['slug']) ? sanitize_key((string) $ticket['slug']) : '';
+                $use_as_price_from = ! empty($ticket['use_as_price_from']);
                 if ('' === $slug && '' !== $label) {
                     $slug = sanitize_key($label);
                 }
@@ -2452,6 +2459,7 @@ final class ExperienceMetaBoxes
                     'price' => $price,
                     'capacity' => $capacity,
                     'slug' => $slug,
+                    'use_as_price_from' => $use_as_price_from,
                 ];
 
                 $legacy_tickets[] = [
@@ -2462,6 +2470,7 @@ final class ExperienceMetaBoxes
                     'max' => $capacity,
                     'capacity' => $capacity,
                     'description' => '',
+                    'use_as_price_from' => $use_as_price_from,
                 ];
 
                 if ($price > 0) {
