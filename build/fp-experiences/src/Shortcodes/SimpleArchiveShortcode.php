@@ -243,25 +243,18 @@ final class SimpleArchiveShortcode extends BaseShortcode
             return null;
         }
 
-        $prices = [];
-
+        // Use the price from the first valid ticket type instead of the minimum
         foreach ($tickets as $ticket) {
             if (! is_array($ticket) || ! isset($ticket['price'])) {
                 continue;
             }
 
             $price = (float) $ticket['price'];
-            if ($price <= 0) {
-                continue;
+            if ($price > 0) {
+                return $price;
             }
-
-            $prices[] = $price;
         }
 
-        if (empty($prices)) {
-            return null;
-        }
-
-        return min($prices);
+        return null;
     }
 }

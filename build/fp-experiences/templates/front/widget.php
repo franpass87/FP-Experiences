@@ -141,6 +141,7 @@ foreach ($slots as $slot) {
     $price_from_value = null === $price_from_value ? $price : min($price_from_value, $price);
 }
 
+// Use the price from the first valid ticket type instead of the minimum
 if (null === $price_from_value) {
     foreach ($tickets as $ticket) {
         if (! is_array($ticket)) {
@@ -149,11 +150,10 @@ if (null === $price_from_value) {
 
         $price = isset($ticket['price']) ? (float) $ticket['price'] : 0.0;
 
-        if ($price <= 0) {
-            continue;
+        if ($price > 0) {
+            $price_from_value = $price;
+            break;
         }
-
-        $price_from_value = null === $price_from_value ? $price : min($price_from_value, $price);
     }
 }
 

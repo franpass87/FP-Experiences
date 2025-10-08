@@ -1101,22 +1101,18 @@ final class ListShortcode extends BaseShortcode
             return null;
         }
 
-        $min_price = null;
+        // Use the price from the first valid ticket type instead of the minimum
         foreach ($tickets as $ticket) {
             if (! is_array($ticket) || ! isset($ticket['price'])) {
                 continue;
             }
 
             $price = (float) $ticket['price'];
-            if ($price <= 0) {
-                continue;
-            }
-
-            if (null === $min_price || $price < $min_price) {
-                $min_price = $price;
+            if ($price > 0) {
+                return $price;
             }
         }
 
-        return $min_price;
+        return null;
     }
 }
