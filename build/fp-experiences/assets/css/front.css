@@ -1924,7 +1924,7 @@
     border-collapse: separate;
     border-spacing: 0;
     background: var(--fp-color-surface);
-    border: 1px solid rgba(15, 23, 42, 0.08);
+    border: none;
     border-radius: var(--fp-exp-radius-base, 12px);
     overflow: hidden;
 }
@@ -1957,7 +1957,7 @@
 }
 
 .fp-exp-party-table tbody tr + tr {
-    border-top: 1px solid rgba(15, 23, 42, 0.08);
+    border-top: none;
 }
 
 .fp-exp-party-table th,
@@ -2180,7 +2180,7 @@
     }
 
     .fp-exp-party-table tbody tr + tr {
-        border-top: 1px solid rgba(15, 23, 42, 0.08);
+        border-top: none;
     }
 
     .fp-exp-party-table th,
