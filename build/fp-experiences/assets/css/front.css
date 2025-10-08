@@ -3250,6 +3250,7 @@ body.fp-modal-open {
     position: absolute;
     inset: 0;
     background: rgba(19, 29, 56, 0.55);
+    backdrop-filter: blur(4px);
 }
 
 .fp-gift-modal__dialog {
@@ -3257,9 +3258,12 @@ body.fp-modal-open {
     z-index: 1;
     width: min(760px, 100%);
     max-height: calc(100vh - 6rem);
-    overflow: auto;
+    overflow-y: auto;
+    overflow-x: hidden;
     border-radius: var(--fp-exp-radius-large, 20px);
     outline: none;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
 }
 
 .fp-gift-modal__dialog:focus {
@@ -3267,11 +3271,16 @@ body.fp-modal-open {
 }
 
 .fp-gift-modal__close {
-    position: absolute;
+    position: sticky;
     top: 1rem;
     right: 1rem;
+    float: right;
+    margin-bottom: -2.5rem;
+    margin-right: 1rem;
+    z-index: 10;
     border: none;
-    background: rgba(255, 255, 255, 0.9);
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(8px);
     border-radius: 999px;
     width: 2.5rem;
     height: 2.5rem;
@@ -3298,16 +3307,20 @@ body.fp-modal-open {
 
 @media (max-width: 640px) {
     .fp-gift-modal {
-        padding: 1.5rem;
+        padding: 1rem;
     }
 
     .fp-gift-modal__dialog {
-        max-height: calc(100vh - 3rem);
+        max-height: calc(100vh - 2rem);
+        border-radius: var(--fp-exp-radius-base, 12px);
     }
 
     .fp-gift-modal__close {
-        top: 0.75rem;
-        right: 0.75rem;
+        top: 0.5rem;
+        right: 0.5rem;
+        margin-right: 0.5rem;
+        width: 2.25rem;
+        height: 2.25rem;
     }
 }
 
@@ -3320,7 +3333,10 @@ body.fp-modal-open {
     border-radius: var(--fp-exp-radius-large, 20px);
     border: 1px solid rgba(19, 29, 56, 0.08);
     padding: clamp(1.75rem, 3vw, 3rem);
+    padding-top: clamp(2.5rem, 4vw, 3.5rem);
     box-shadow: 0 20px 45px -20px rgba(19, 29, 56, 0.25);
+    overflow-wrap: break-word;
+    word-wrap: break-word;
 }
 
 .fp-gift__title {
@@ -3351,6 +3367,7 @@ body.fp-modal-open {
 .fp-gift__field input,
 .fp-gift__field textarea {
     width: 100%;
+    max-width: 100%;
     border-radius: 14px;
     border: 1px solid rgba(19, 29, 56, 0.16);
     padding: 0.75rem 0.9rem;
@@ -3359,6 +3376,7 @@ body.fp-modal-open {
     color: var(--fp-color-text, #131d38);
     background: #fff;
     transition: border 0.2s ease, box-shadow 0.2s ease;
+    box-sizing: border-box;
 }
 
 .fp-gift__field input:focus,
@@ -3479,9 +3497,14 @@ body.fp-modal-open {
 @media (max-width: 600px) {
     .fp-gift__inner {
         padding: 1.5rem;
+        padding-top: 2.5rem;
     }
 
     .fp-gift__addons-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .fp-gift__grid {
         grid-template-columns: 1fr;
     }
 }
