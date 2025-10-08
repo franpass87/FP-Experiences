@@ -2513,7 +2513,7 @@ final class ExperienceMetaBoxes
                 }
 
                 // Skip only if both name and slug are empty
-                if ('' === $name || '' === $slug) {
+                if ('' === $name && '' === $slug) {
                     continue;
                 }
 
