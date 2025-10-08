@@ -155,7 +155,10 @@ final class AvailabilityService
         }
 
         try {
+            // Estendi range_end di 1 giorno per catturare tutti gli slot del giorno finale
+            // quando convertiti dal timezone locale a UTC (evita problemi con timezone dietro UTC)
             $range_end = new DateTimeImmutable($end_utc . ' 23:59:59', new DateTimeZone('UTC'));
+            $range_end = $range_end->add(new DateInterval('P1D'));
         } catch (Exception $e) {
             $range_end = $range_start;
         }
@@ -281,8 +284,18 @@ final class AvailabilityService
         }
 
         // Converte in payload e calcola capacità rimanente
+        // Filtra gli slot per assicurarsi che appartengano al range originale nel timezone locale
         $slots = [];
         foreach ($occurrences as [$start, $end]) {
+            // Verifica che lo slot appartenga al range originale nel timezone locale
+            $start_local = $start->setTimezone($tz);
+            $start_date_local = $start_local->format('Y-m-d');
+            
+            // Salta gli slot che cadono dopo la data finale richiesta nel timezone locale
+            if ($start_date_local > $end_utc) {
+                continue;
+            }
+            
             $start_sql = $start->format('Y-m-d H:i:s');
             $end_sql = $end->format('Y-m-d H:i:s');
             
@@ -347,7 +360,10 @@ final class AvailabilityService
         }
 
         try {
+            // Estendi range_end di 1 giorno per catturare tutti gli slot del giorno finale
+            // quando convertiti dal timezone locale a UTC (evita problemi con timezone dietro UTC)
             $range_end = new DateTimeImmutable($end_utc . ' 23:59:59', new DateTimeZone('UTC'));
+            $range_end = $range_end->add(new DateInterval('P1D'));
         } catch (Exception $e) {
             $range_end = $range_start;
         }
@@ -467,8 +483,18 @@ final class AvailabilityService
             ));
         }
 
+        // Filtra gli slot per assicurarsi che appartengano al range originale nel timezone locale
         $slots = [];
         foreach ($occurrences as [$start, $end]) {
+            // Verifica che lo slot appartenga al range originale nel timezone locale
+            $start_local = $start->setTimezone($tz);
+            $start_date_local = $start_local->format('Y-m-d');
+            
+            // Salta gli slot che cadono dopo la data finale richiesta nel timezone locale
+            if ($start_date_local > $end_utc) {
+                continue;
+            }
+            
             $start_sql = $start->format('Y-m-d H:i:s');
             $end_sql = $end->format('Y-m-d H:i:s');
             
