@@ -9,6 +9,9 @@ e questo progetto aderisce al [Semantic Versioning](https://semver.org/lang/it/)
 
 ## [Unreleased]
 
+### Fixed
+- **Featured Image nella Lista Esperienze**: Aggiunto fallback intelligente per recuperare immagini nella lista esperienze. Se la featured image non è disponibile, ora viene utilizzata automaticamente la hero image o la prima immagine della gallery. Questo risolve il problema delle immagini non visibili nella lista. (`ListShortcode.php`)
+
 ### Planned
 - [ ] Multi-currency support
 - [ ] Advanced reporting dashboard

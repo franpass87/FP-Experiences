@@ -34,6 +34,7 @@ use function get_the_post_thumbnail_url;
 use function get_the_terms;
 use function get_the_title;
 use function get_transient;
+use function wp_get_attachment_image_url;
 use function home_url;
 use function implode;
 use function in_array;
@@ -518,7 +519,7 @@ final class ListShortcode extends BaseShortcode
         $id = $post->ID;
         $title = get_the_title($post);
         $permalink = $this->resolve_permalink($id, $cta_mode);
-        $thumbnail = get_the_post_thumbnail_url($id, 'large') ?: '';
+        $thumbnail = $this->get_experience_thumbnail($id);
         $highlights = array_slice(Helpers::get_meta_array($id, '_fp_highlights'), 0, 3);
         $short_description = sanitize_text_field((string) get_post_meta($id, '_fp_short_desc', true));
         $duration_minutes = absint((string) get_post_meta($id, '_fp_duration_minutes', true));
@@ -1114,5 +1115,40 @@ final class ListShortcode extends BaseShortcode
         }
 
         return null;
+    }
+
+    /**
+     * Get the thumbnail URL for an experience, falling back to hero image if needed.
+     */
+    private function get_experience_thumbnail(int $experience_id): string
+    {
+        // Try the WordPress featured image first
+        $thumbnail = get_the_post_thumbnail_url($experience_id, 'large');
+        if ($thumbnail) {
+            return (string) $thumbnail;
+        }
+
+        // Fall back to the hero image meta
+        $hero_image_id = absint((string) get_post_meta($experience_id, '_fp_hero_image_id', true));
+        if ($hero_image_id > 0) {
+            $hero_url = wp_get_attachment_image_url($hero_image_id, 'large');
+            if ($hero_url) {
+                return (string) $hero_url;
+            }
+        }
+
+        // Fall back to the first gallery image if available
+        $gallery_ids = get_post_meta($experience_id, '_fp_gallery_ids', true);
+        if (is_array($gallery_ids) && ! empty($gallery_ids)) {
+            $first_gallery_id = absint((string) reset($gallery_ids));
+            if ($first_gallery_id > 0) {
+                $gallery_url = wp_get_attachment_image_url($first_gallery_id, 'large');
+                if ($gallery_url) {
+                    return (string) $gallery_url;
+                }
+            }
+        }
+
+        return '';
     }
 }
