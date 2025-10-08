@@ -217,10 +217,9 @@
                     if (restUrl) {
                         try {
                             const headers = { 'Content-Type': 'application/json' };
-                            // Prova a inviare il nonce specifico di checkout anche come header
-                            if (config.checkoutNonce) {
-                                headers['X-WP-Nonce'] = config.checkoutNonce;
-                            } else if (config.restNonce) {
+                            // Usa il nonce wp_rest per l'autenticazione WordPress nell'header
+                            // Il nonce fp-exp-checkout viene inviato nel body
+                            if (config.restNonce) {
                                 headers['X-WP-Nonce'] = config.restNonce;
                             }
 

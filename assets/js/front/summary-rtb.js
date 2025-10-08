@@ -140,10 +140,15 @@
                 addons: addons
             };
 
+            var quoteHeaders = { 'Content-Type': 'application/json' };
+            if (typeof fpExpConfig !== 'undefined' && fpExpConfig.restNonce) {
+                quoteHeaders['X-WP-Nonce'] = fpExpConfig.restNonce;
+            }
+            
             fetch(quoteUrl, {
                 method: 'POST',
                 credentials: 'same-origin',
-                headers: { 'Content-Type': 'application/json' },
+                headers: quoteHeaders,
                 body: JSON.stringify(payload)
             })
             .then(function(res) { if (!res.ok) { throw new Error('HTTP ' + res.status + ': ' + res.statusText); } return res.json(); })

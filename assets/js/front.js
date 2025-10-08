@@ -749,12 +749,13 @@
                     // Ora crea l'ordine direttamente usando l'endpoint di checkout
                     const checkoutUrl = new URL('/wp-json/fp-exp/v1/checkout', window.location.origin);
                     
+                    // Inviamo il nonce wp_rest nell'header per soddisfare l'autenticazione WordPress,
+                    // e il nonce fp-exp-checkout nel body per la verifica specifica del checkout
                     const checkoutResponse = await fetch(checkoutUrl, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
-                            'X-WP-Nonce': (typeof fpExpConfig !== 'undefined' && fpExpConfig.checkoutNonce) || 
-                                         (typeof fpExpConfig !== 'undefined' && fpExpConfig.restNonce) || ''
+                            'X-WP-Nonce': (typeof fpExpConfig !== 'undefined' && fpExpConfig.restNonce) || ''
                         },
                         credentials: 'same-origin',
                         body: JSON.stringify({
@@ -984,10 +985,15 @@
                     addons: addons,
                 };
 
+                const quoteHeaders = { 'Content-Type': 'application/json' };
+                if (typeof fpExpConfig !== 'undefined' && fpExpConfig.restNonce) {
+                    quoteHeaders['X-WP-Nonce'] = fpExpConfig.restNonce;
+                }
+                
                 fetch(quoteUrl, {
                     method: 'POST',
                     credentials: 'same-origin',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: quoteHeaders,
                     body: JSON.stringify(payload),
                 })
                 .then((res) => {
