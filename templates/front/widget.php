@@ -372,19 +372,50 @@ $price_from_display = null !== $price_from_value && $price_from_value > 0
                         <h3 class="fp-exp-step__title"><?php echo esc_html__('Extra', 'fp-experiences'); ?></h3>
                     </header>
                     <div class="fp-exp-step__content">
-                        <ul class="fp-exp-addons">
-                            <?php foreach ($addons as $addon) : ?>
-                                <?php
-                                $addon_image = $addon['image'] ?? [];
-                                $image_url = isset($addon_image['url']) ? (string) $addon_image['url'] : '';
-                                $image_width = isset($addon_image['width']) ? (int) $addon_image['width'] : 0;
-                                $image_height = isset($addon_image['height']) ? (int) $addon_image['height'] : 0;
-                                ?>
-                                <li class="fp-exp-addon" data-addon="<?php echo esc_attr($addon['slug']); ?>">
-                                    <label class="fp-exp-addon__card">
-                                        <span class="fp-exp-addon__input">
-                                            <input type="checkbox" value="1">
-                                        </span>
+                        <?php
+                        // Raggruppa gli addon per gruppo
+                        $grouped_addons = [];
+                        foreach ($addons as $addon) {
+                            $group = isset($addon['selection_group']) && '' !== (string) $addon['selection_group']
+                                ? (string) $addon['selection_group']
+                                : '__default__';
+                            if (! isset($grouped_addons[$group])) {
+                                $grouped_addons[$group] = [];
+                            }
+                            $grouped_addons[$group][] = $addon;
+                        }
+                        ?>
+                        <?php foreach ($grouped_addons as $group_name => $group_addons) : ?>
+                            <?php
+                            $is_default_group = '__default__' === $group_name;
+                            $first_addon = $group_addons[0];
+                            $is_radio_group = isset($first_addon['selection_type']) && 'radio' === $first_addon['selection_type'];
+                            $group_id = $is_default_group ? 'addons-default' : 'addons-' . sanitize_title($group_name);
+                            ?>
+                            <?php if (! $is_default_group) : ?>
+                                <fieldset class="fp-exp-addons-group">
+                                    <legend class="fp-exp-addons-group__title"><?php echo esc_html($group_name); ?></legend>
+                            <?php endif; ?>
+                            <ul class="fp-exp-addons" <?php if (! $is_default_group) : ?>data-addon-group="<?php echo esc_attr($group_name); ?>"<?php endif; ?>>
+                                <?php foreach ($group_addons as $addon) : ?>
+                                    <?php
+                                    $addon_image = $addon['image'] ?? [];
+                                    $image_url = isset($addon_image['url']) ? (string) $addon_image['url'] : '';
+                                    $image_width = isset($addon_image['width']) ? (int) $addon_image['width'] : 0;
+                                    $image_height = isset($addon_image['height']) ? (int) $addon_image['height'] : 0;
+                                    $selection_type = isset($addon['selection_type']) ? (string) $addon['selection_type'] : 'checkbox';
+                                    $input_type = 'radio' === $selection_type ? 'radio' : 'checkbox';
+                                    $input_name = 'radio' === $selection_type ? 'addon_' . $group_id : '';
+                                    ?>
+                                    <li class="fp-exp-addon" data-addon="<?php echo esc_attr($addon['slug']); ?>" data-selection-type="<?php echo esc_attr($selection_type); ?>">
+                                        <label class="fp-exp-addon__card">
+                                            <span class="fp-exp-addon__input">
+                                                <input 
+                                                    type="<?php echo esc_attr($input_type); ?>" 
+                                                    <?php if ('' !== $input_name) : ?>name="<?php echo esc_attr($input_name); ?>"<?php endif; ?>
+                                                    value="1"
+                                                >
+                                            </span>
                                         <span class="fp-exp-addon__media">
                                             <?php if ($image_url) : ?>
                                                 <img
@@ -424,6 +455,10 @@ $price_from_display = null !== $price_from_value && $price_from_value > 0
                                 </li>
                             <?php endforeach; ?>
                         </ul>
+                        <?php if (! $is_default_group) : ?>
+                            </fieldset>
+                        <?php endif; ?>
+                    <?php endforeach; ?>
                     </div>
                 </li>
             <?php endif; ?>

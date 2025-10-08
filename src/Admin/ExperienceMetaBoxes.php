@@ -971,7 +971,7 @@ final class ExperienceMetaBoxes
 
         $addons = $pricing['addons'];
         if (empty($addons)) {
-            $addons = [['name' => '', 'price' => '', 'type' => 'person', 'slug' => '']];
+            $addons = [['name' => '', 'price' => '', 'type' => 'person', 'slug' => '', 'selection_type' => 'checkbox', 'selection_group' => '']];
         }
 
         $group = $pricing['group'];
@@ -1057,7 +1057,7 @@ final class ExperienceMetaBoxes
                         <?php endforeach; ?>
                     </div>
                     <template data-repeater-template>
-                        <?php $this->render_addon_row('__INDEX__', ['name' => '', 'price' => '', 'type' => 'person', 'slug' => ''], true); ?>
+                        <?php $this->render_addon_row('__INDEX__', ['name' => '', 'price' => '', 'type' => 'person', 'slug' => '', 'selection_type' => 'checkbox', 'selection_group' => ''], true); ?>
                     </template>
                     <p class="fp-exp-repeater__actions">
                         <button type="button" class="button button-secondary" data-repeater-add>
@@ -1512,7 +1512,11 @@ final class ExperienceMetaBoxes
         $slug_name = $is_template ? 'fp_exp_pricing[addons][__INDEX__][slug]' : $name_prefix . '[slug]';
         $image_name = $is_template ? 'fp_exp_pricing[addons][__INDEX__][image_id]' : $name_prefix . '[image_id]';
         $description_name = $is_template ? 'fp_exp_pricing[addons][__INDEX__][description]' : $name_prefix . '[description]';
+        $selection_type_name = $is_template ? 'fp_exp_pricing[addons][__INDEX__][selection_type]' : $name_prefix . '[selection_type]';
+        $selection_group_name = $is_template ? 'fp_exp_pricing[addons][__INDEX__][selection_group]' : $name_prefix . '[selection_group]';
         $type_value = isset($addon['type']) ? (string) $addon['type'] : 'person';
+        $selection_type_value = isset($addon['selection_type']) ? (string) $addon['selection_type'] : 'checkbox';
+        $selection_group_value = isset($addon['selection_group']) ? (string) $addon['selection_group'] : '';
         $image_id = isset($addon['image_id']) ? absint((string) $addon['image_id']) : 0;
         $image = $image_id > 0 ? wp_get_attachment_image_src($image_id, 'thumbnail') : false;
         $image_url = $image ? (string) $image[0] : '';
@@ -1595,6 +1599,18 @@ final class ExperienceMetaBoxes
                         <option value="person" <?php selected($type_value, 'person'); ?>><?php esc_html_e('Per persona', 'fp-experiences'); ?></option>
                         <option value="booking" <?php selected($type_value, 'booking'); ?>><?php esc_html_e('Per prenotazione', 'fp-experiences'); ?></option>
                     </select>
+                </label>
+                <label>
+                    <span class="fp-exp-field__label"><?php esc_html_e('Tipo selezione', 'fp-experiences'); ?></span>
+                    <select <?php echo $this->field_name_attribute($selection_type_name, $is_template); ?>>
+                        <option value="checkbox" <?php selected($selection_type_value, 'checkbox'); ?>><?php esc_html_e('Checkbox (multipla)', 'fp-experiences'); ?></option>
+                        <option value="radio" <?php selected($selection_type_value, 'radio'); ?>><?php esc_html_e('Radio (singola)', 'fp-experiences'); ?></option>
+                    </select>
+                </label>
+                <label>
+                    <span class="fp-exp-field__label"><?php esc_html_e('Gruppo selezione', 'fp-experiences'); ?></span>
+                    <input type="text" <?php echo $this->field_name_attribute($selection_group_name, $is_template); ?> value="<?php echo esc_attr($selection_group_value); ?>" placeholder="<?php echo esc_attr__('es: trasporto, pranzo', 'fp-experiences'); ?>" />
+                    <small style="display: block; margin-top: 4px; color: #666;"><?php esc_html_e('Per radio: raggruppa opzioni mutuamente esclusive. Per checkbox: raggruppa opzioni correlate visivamente.', 'fp-experiences'); ?></small>
                 </label>
             </div>
             <p class="fp-exp-repeater-row__remove">

@@ -644,32 +644,61 @@ $sticky_price_display = '' !== $price_from_display ? $format_currency($price_fro
                                         </div>
                                     </div>
                                     <?php if ($gift_addons) : ?>
-                                        <fieldset class="fp-gift__addons">
-                                            <legend><?php esc_html_e('Extra prepagati', 'fp-experiences'); ?></legend>
-                                            <div class="fp-gift__addons-grid">
-                                                <?php foreach ($gift_addons as $addon) :
-                                                    $addon_price = isset($addon['price']) ? (float) $addon['price'] : 0.0;
-                                                    if (function_exists('wc_price')) {
-                                                        $formatted_price = wc_price($addon_price);
-                                                    } else {
-                                                        $currency_code = get_option('woocommerce_currency', 'EUR');
-                                                        $symbol = function_exists('get_woocommerce_currency_symbol')
-                                                            ? get_woocommerce_currency_symbol($currency_code)
-                                                            : $currency_code;
-                                                        $formatted_price = esc_html(number_format_i18n($addon_price, 2) . ' ' . $symbol);
-                                                    }
-                                                    ?>
-                                                    <label class="fp-gift__addon">
-                                                        <input type="checkbox" name="addons[]" value="<?php echo esc_attr((string) ($addon['slug'] ?? '')); ?>" />
-                                                        <span class="fp-gift__addon-label"><?php echo esc_html((string) ($addon['label'] ?? '')); ?></span>
-                                                        <?php if (! empty($addon['description'])) : ?>
-                                                            <span class="fp-gift__addon-desc"><?php echo esc_html((string) $addon['description']); ?></span>
-                                                        <?php endif; ?>
-                                                        <span class="fp-gift__addon-price"><?php echo wp_kses_post($formatted_price); ?></span>
-                                                    </label>
-                                                <?php endforeach; ?>
-                                            </div>
-                                        </fieldset>
+                                        <?php
+                                        // Raggruppa gli addon per gruppo
+                                        $gift_grouped_addons = [];
+                                        foreach ($gift_addons as $addon) {
+                                            $group = isset($addon['selection_group']) && '' !== (string) $addon['selection_group']
+                                                ? (string) $addon['selection_group']
+                                                : '__default__';
+                                            if (! isset($gift_grouped_addons[$group])) {
+                                                $gift_grouped_addons[$group] = [];
+                                            }
+                                            $gift_grouped_addons[$group][] = $addon;
+                                        }
+                                        ?>
+                                        <?php foreach ($gift_grouped_addons as $group_name => $group_addons) : ?>
+                                            <?php
+                                            $is_default_group = '__default__' === $group_name;
+                                            $first_addon = $group_addons[0];
+                                            $is_radio_group = isset($first_addon['selection_type']) && 'radio' === $first_addon['selection_type'];
+                                            $group_id = $is_default_group ? 'gift-addons-default' : 'gift-addons-' . sanitize_title($group_name);
+                                            $fieldset_title = $is_default_group ? esc_html__('Extra prepagati', 'fp-experiences') : esc_html($group_name);
+                                            ?>
+                                            <fieldset class="fp-gift__addons">
+                                                <legend><?php echo $fieldset_title; ?></legend>
+                                                <div class="fp-gift__addons-grid">
+                                                    <?php foreach ($group_addons as $addon) :
+                                                        $addon_price = isset($addon['price']) ? (float) $addon['price'] : 0.0;
+                                                        if (function_exists('wc_price')) {
+                                                            $formatted_price = wc_price($addon_price);
+                                                        } else {
+                                                            $currency_code = get_option('woocommerce_currency', 'EUR');
+                                                            $symbol = function_exists('get_woocommerce_currency_symbol')
+                                                                ? get_woocommerce_currency_symbol($currency_code)
+                                                                : $currency_code;
+                                                            $formatted_price = esc_html(number_format_i18n($addon_price, 2) . ' ' . $symbol);
+                                                        }
+                                                        $selection_type = isset($addon['selection_type']) ? (string) $addon['selection_type'] : 'checkbox';
+                                                        $input_type = 'radio' === $selection_type ? 'radio' : 'checkbox';
+                                                        $input_name = 'radio' === $selection_type ? 'addon_' . $group_id : 'addons[]';
+                                                        ?>
+                                                        <label class="fp-gift__addon">
+                                                            <input 
+                                                                type="<?php echo esc_attr($input_type); ?>" 
+                                                                name="<?php echo esc_attr($input_name); ?>" 
+                                                                value="<?php echo esc_attr((string) ($addon['slug'] ?? '')); ?>" 
+                                                            />
+                                                            <span class="fp-gift__addon-label"><?php echo esc_html((string) ($addon['label'] ?? '')); ?></span>
+                                                            <?php if (! empty($addon['description'])) : ?>
+                                                                <span class="fp-gift__addon-desc"><?php echo esc_html((string) $addon['description']); ?></span>
+                                                            <?php endif; ?>
+                                                            <span class="fp-gift__addon-price"><?php echo wp_kses_post($formatted_price); ?></span>
+                                                        </label>
+                                                    <?php endforeach; ?>
+                                                </div>
+                                            </fieldset>
+                                        <?php endforeach; ?>
                                     <?php endif; ?>
                                     <p class="fp-gift__note"><?php esc_html_e('Potrai verificare il totale e completare il pagamento al checkout. Il destinatario riceverà il voucher la mattina programmata o immediatamente dopo il pagamento se non è stata selezionata una data.', 'fp-experiences'); ?></p>
                                     <button type="submit" class="fp-exp-button" data-fp-gift-submit>
