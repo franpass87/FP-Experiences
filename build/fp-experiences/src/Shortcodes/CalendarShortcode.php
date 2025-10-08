@@ -159,12 +159,13 @@ final class CalendarShortcode extends BaseShortcode
             $month_label = $date->format('F Y');
 
             // Ottieni gli slot per questo mese
-            $start_of_month = $date->modify('first day of this month')->setTime(0, 0, 0);
-            $end_of_month = $date->modify('last day of this month')->setTime(23, 59, 59);
+            // Usa il primo e ultimo giorno del mese nel timezone locale
+            $start_of_month = $date->modify('first day of this month');
+            $end_of_month = $date->modify('last day of this month');
 
-            $start_utc = $start_of_month->setTimezone(new \DateTimeZone('UTC'))->format('Y-m-d');
-            // Include l'intero ultimo giorno del mese passando la data completa con orario
-            $end_utc = $end_of_month->setTimezone(new \DateTimeZone('UTC'))->format('Y-m-d');
+            // Passa le date in formato Y-m-d senza conversione timezone per evitare shift di giorni
+            $start_utc = $start_of_month->format('Y-m-d');
+            $end_utc = $end_of_month->format('Y-m-d');
 
             // Usa AvailabilityService per ottenere gli slot virtuali
             $slots = \FP_Exp\Booking\AvailabilityService::get_virtual_slots($experience_id, $start_utc, $end_utc);
