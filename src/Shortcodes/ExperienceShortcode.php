@@ -493,23 +493,19 @@ final class ExperienceShortcode extends BaseShortcode
             return null;
         }
 
-        $min_price = null;
+        // Use the price from the first valid ticket type instead of the minimum
         foreach ($tickets as $ticket) {
             if (! is_array($ticket) || ! isset($ticket['price'])) {
                 continue;
             }
 
             $price = (float) $ticket['price'];
-            if ($price <= 0) {
-                continue;
-            }
-
-            if (null === $min_price || $price < $min_price) {
-                $min_price = $price;
+            if ($price > 0) {
+                return $price;
             }
         }
 
-        return $min_price;
+        return null;
     }
 
     /**
@@ -901,18 +897,17 @@ final class ExperienceShortcode extends BaseShortcode
      */
     private function resolve_price(int $experience_id, array $tickets): float
     {
-        $prices = array_filter(array_map(static function (array $ticket) {
+        // Use the price from the first valid ticket type instead of the minimum
+        foreach ($tickets as $ticket) {
             if (! isset($ticket['price'])) {
-                return null;
+                continue;
             }
 
             $price = $ticket['price'];
 
-            return is_numeric($price) ? (float) $price : null;
-        }, $tickets));
-
-        if (! empty($prices)) {
-            return (float) min($prices);
+            if (is_numeric($price) && (float) $price > 0) {
+                return (float) $price;
+            }
         }
 
         $base_price = get_post_meta($experience_id, '_fp_base_price', true);
