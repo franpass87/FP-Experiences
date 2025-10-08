@@ -9,29 +9,48 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * Test per verificare che l'ultimo giorno del calendario sia disponibile.
+ * Fix per bug timezone: setTime deve essere applicato PRIMA della conversione timezone.
  */
 final class AvailabilityServiceTest extends TestCase
 {
     /**
      * Test che verifica che gli slot dell'ultimo giorno del mese siano inclusi
-     * anche quando il timezone locale è dietro UTC (es. America/Los_Angeles).
+     * quando c'è una recurrence_end_date impostata e il timezone è avanti rispetto a UTC.
+     * 
+     * Questo era il bug principale: setTime applicato DOPO setTimezone causava
+     * lo shift della data al giorno precedente per timezone avanti UTC (Europa, Asia).
      */
-    public function test_last_day_of_month_is_available_with_timezone_behind_utc(): void
+    public function test_last_day_of_month_with_recurrence_end_date_europe_timezone(): void
     {
-        // Simula un experience con ricorrenza settimanale
-        $experience_id = $this->create_test_experience_with_weekly_slots();
+        // Simula timezone Europe/Rome (UTC+1 o UTC+2)
+        update_option('timezone_string', 'Europe/Rome');
+        
+        // Crea esperienza con ricorrenza che finisce il 31 ottobre
+        $experience_id = $this->create_test_experience([
+            'recurrence_end_date' => '2024-10-31',
+            'frequency' => 'weekly',
+            'days' => ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'],
+        ]);
         
         // Richiedi slot per ottobre 2024
         $slots = AvailabilityService::get_virtual_slots($experience_id, '2024-10-01', '2024-10-31');
         
         // Verifica che ci siano slot per il 31 ottobre
         $last_day_slots = array_filter($slots, function ($slot) {
-            return str_starts_with($slot['start'], '2024-10-31');
+            $date = substr($slot['start'], 0, 10);
+            return $date === '2024-10-31';
         });
         
         $this->assertNotEmpty(
             $last_day_slots,
-            'L\'ultimo giorno del mese (31 ottobre) dovrebbe avere slot disponibili'
+            'L\'ultimo giorno del mese (31 ottobre) dovrebbe avere slot disponibili quando recurrence_end_date è 2024-10-31'
+        );
+        
+        // Verifica che ci siano almeno 3 slot (10:00, 14:00, 18:00)
+        $this->assertGreaterThanOrEqual(
+            3,
+            count($last_day_slots),
+            'Dovrebbero esserci almeno 3 slot per l\'ultimo giorno'
         );
         
         // Cleanup
@@ -39,38 +58,101 @@ final class AvailabilityServiceTest extends TestCase
     }
     
     /**
-     * Test che verifica che non vengano inclusi slot del mese successivo.
+     * Test che verifica che il primo giorno del mese sia incluso
+     * quando c'è una recurrence_start_date impostata e il timezone è avanti rispetto a UTC.
      */
-    public function test_no_slots_from_next_month(): void
+    public function test_first_day_of_month_with_recurrence_start_date_europe_timezone(): void
     {
-        $experience_id = $this->create_test_experience_with_weekly_slots();
+        update_option('timezone_string', 'Europe/Rome');
         
-        // Richiedi slot per ottobre 2024
+        $experience_id = $this->create_test_experience([
+            'recurrence_start_date' => '2024-10-01',
+            'recurrence_end_date' => '2024-10-31',
+            'frequency' => 'weekly',
+            'days' => ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'],
+        ]);
+        
         $slots = AvailabilityService::get_virtual_slots($experience_id, '2024-10-01', '2024-10-31');
         
-        // Verifica che non ci siano slot per novembre
+        $first_day_slots = array_filter($slots, function ($slot) {
+            $date = substr($slot['start'], 0, 10);
+            return $date === '2024-10-01';
+        });
+        
+        $this->assertNotEmpty(
+            $first_day_slots,
+            'Il primo giorno del mese (1 ottobre) dovrebbe avere slot disponibili quando recurrence_start_date è 2024-10-01'
+        );
+        
+        $this->cleanup_test_experience($experience_id);
+    }
+    
+    /**
+     * Test che verifica che non vengano inclusi slot oltre la data di fine ricorrenza.
+     */
+    public function test_no_slots_after_recurrence_end_date(): void
+    {
+        update_option('timezone_string', 'Europe/Rome');
+        
+        $experience_id = $this->create_test_experience([
+            'recurrence_end_date' => '2024-10-31',
+            'frequency' => 'weekly',
+            'days' => ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'],
+        ]);
+        
+        // Richiedi slot per ottobre E novembre
+        $slots = AvailabilityService::get_virtual_slots($experience_id, '2024-10-01', '2024-11-30');
+        
+        // Verifica che NON ci siano slot per novembre
         $november_slots = array_filter($slots, function ($slot) {
-            return str_starts_with($slot['start'], '2024-11');
+            $date = substr($slot['start'], 0, 7);
+            return $date === '2024-11';
         });
         
         $this->assertEmpty(
             $november_slots,
-            'Non dovrebbero esserci slot di novembre quando si richiedono slot di ottobre'
+            'Non dovrebbero esserci slot per novembre quando recurrence_end_date è 2024-10-31'
         );
         
-        // Cleanup
         $this->cleanup_test_experience($experience_id);
     }
     
     /**
-     * Crea un'esperienza di test con slot settimanali.
+     * Test che verifica il funzionamento con timezone Asia (UTC+9).
      */
-    private function create_test_experience_with_weekly_slots(): int
+    public function test_last_day_with_asia_timezone(): void
     {
-        // Crea un post di tipo fp_experience
+        update_option('timezone_string', 'Asia/Tokyo');
+        
+        $experience_id = $this->create_test_experience([
+            'recurrence_end_date' => '2024-10-31',
+            'frequency' => 'daily',
+            'days' => [],
+        ]);
+        
+        $slots = AvailabilityService::get_virtual_slots($experience_id, '2024-10-01', '2024-10-31');
+        
+        $last_day_slots = array_filter($slots, function ($slot) {
+            $date = substr($slot['start'], 0, 10);
+            return $date === '2024-10-31';
+        });
+        
+        $this->assertNotEmpty(
+            $last_day_slots,
+            'L\'ultimo giorno dovrebbe essere incluso anche con timezone Asia/Tokyo (UTC+9)'
+        );
+        
+        $this->cleanup_test_experience($experience_id);
+    }
+    
+    /**
+     * Crea un'esperienza di test con ricorrenza configurabile.
+     */
+    private function create_test_experience(array $recurrence_config): int
+    {
         $post_id = wp_insert_post([
             'post_type' => 'fp_experience',
-            'post_title' => 'Test Experience for Last Day Bug',
+            'post_title' => 'Test Experience for Timezone Bug',
             'post_status' => 'publish',
         ]);
         
@@ -78,19 +160,18 @@ final class AvailabilityServiceTest extends TestCase
             throw new \RuntimeException('Impossibile creare l\'experience di test');
         }
         
-        // Configura ricorrenza settimanale con slot alle 10:00 e 14:00
-        update_post_meta($post_id, '_fp_exp_recurrence', [
+        // Configura ricorrenza
+        $recurrence = array_merge([
             'frequency' => 'weekly',
-            'days' => ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'],
+            'days' => ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'],
             'time_slots' => [
                 ['time' => '10:00'],
                 ['time' => '14:00'],
                 ['time' => '18:00'],
-                ['time' => '22:00'], // Slot serale per testare timezone shift
             ],
-            'start_date' => '2024-10-01',
-            'end_date' => '2024-12-31',
-        ]);
+        ], $recurrence_config);
+        
+        update_post_meta($post_id, '_fp_exp_recurrence', $recurrence);
         
         // Configura capacità
         update_post_meta($post_id, '_fp_exp_availability', [

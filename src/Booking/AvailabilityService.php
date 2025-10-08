@@ -172,8 +172,9 @@ final class AvailabilityService
         
         if ('' !== $recurrence_start_date) {
             try {
-                $rec_start = new DateTimeImmutable($recurrence_start_date, $tz);
-                $rec_start_utc = $rec_start->setTimezone(new DateTimeZone('UTC'))->setTime(0, 0, 0);
+                // IMPORTANTE: setTime PRIMA della conversione a UTC per evitare shift di giorno
+                $rec_start = new DateTimeImmutable($recurrence_start_date . ' 00:00:00', $tz);
+                $rec_start_utc = $rec_start->setTimezone(new DateTimeZone('UTC'));
                 if ($rec_start_utc > $range_start) {
                     $range_start = $rec_start_utc;
                 }
@@ -184,8 +185,9 @@ final class AvailabilityService
         
         if ('' !== $recurrence_end_date) {
             try {
-                $rec_end = new DateTimeImmutable($recurrence_end_date, $tz);
-                $rec_end_utc = $rec_end->setTimezone(new DateTimeZone('UTC'))->setTime(23, 59, 59);
+                // IMPORTANTE: setTime PRIMA della conversione a UTC per evitare shift di giorno
+                $rec_end = new DateTimeImmutable($recurrence_end_date . ' 23:59:59', $tz);
+                $rec_end_utc = $rec_end->setTimezone(new DateTimeZone('UTC'));
                 if ($rec_end_utc < $range_end) {
                     $range_end = $rec_end_utc;
                 }
@@ -376,8 +378,9 @@ final class AvailabilityService
         
         if ('' !== $recurrence_start_date) {
             try {
-                $rec_start = new DateTimeImmutable($recurrence_start_date, $tz);
-                $rec_start_utc = $rec_start->setTimezone(new DateTimeZone('UTC'))->setTime(0, 0, 0);
+                // IMPORTANTE: setTime PRIMA della conversione a UTC per evitare shift di giorno
+                $rec_start = new DateTimeImmutable($recurrence_start_date . ' 00:00:00', $tz);
+                $rec_start_utc = $rec_start->setTimezone(new DateTimeZone('UTC'));
                 if ($rec_start_utc > $range_start) {
                     $range_start = $rec_start_utc;
                 }
@@ -388,8 +391,9 @@ final class AvailabilityService
         
         if ('' !== $recurrence_end_date) {
             try {
-                $rec_end = new DateTimeImmutable($recurrence_end_date, $tz);
-                $rec_end_utc = $rec_end->setTimezone(new DateTimeZone('UTC'))->setTime(23, 59, 59);
+                // IMPORTANTE: setTime PRIMA della conversione a UTC per evitare shift di giorno
+                $rec_end = new DateTimeImmutable($recurrence_end_date . ' 23:59:59', $tz);
+                $rec_end_utc = $rec_end->setTimezone(new DateTimeZone('UTC'));
                 if ($rec_end_utc < $range_end) {
                     $range_end = $rec_end_utc;
                 }
