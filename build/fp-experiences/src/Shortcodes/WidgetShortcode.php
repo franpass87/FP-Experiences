@@ -567,6 +567,17 @@ final class WidgetShortcode extends BaseShortcode
             return (float) $rules['base_price'];
         }
 
+        // First, look for a ticket marked as "use_as_price_from"
+        foreach ($tickets as $ticket) {
+            if (! empty($ticket['use_as_price_from'])) {
+                $price = $ticket['price'] ?? 0;
+                if (is_numeric($price) && $price > 0) {
+                    return (float) $price;
+                }
+            }
+        }
+
+        // If no ticket is marked, fall back to the lowest price
         $price_from = null;
         foreach ($tickets as $ticket) {
             $price = $ticket['price'] ?? 0;
