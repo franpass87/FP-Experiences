@@ -163,6 +163,7 @@ final class CalendarShortcode extends BaseShortcode
             $end_of_month = $date->modify('last day of this month')->setTime(23, 59, 59);
 
             $start_utc = $start_of_month->setTimezone(new \DateTimeZone('UTC'))->format('Y-m-d');
+            // Include l'intero ultimo giorno del mese passando la data completa con orario
             $end_utc = $end_of_month->setTimezone(new \DateTimeZone('UTC'))->format('Y-m-d');
 
             // Usa AvailabilityService per ottenere gli slot virtuali
