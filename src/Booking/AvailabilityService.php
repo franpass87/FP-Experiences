@@ -225,7 +225,7 @@ final class AvailabilityService
             $period = new DatePeriod(
                 $range_start->setTime(0, 0),
                 new DateInterval('P1D'),
-                $range_end->setTime(23, 59, 59)->add(new DateInterval('PT1S'))
+                $range_end->setTime(0, 0)->add(new DateInterval('P1D'))
             );
 
             foreach ($period as $day) {
@@ -414,7 +414,7 @@ final class AvailabilityService
             $period = new DatePeriod(
                 $range_start->setTime(0, 0),
                 new DateInterval('P1D'),
-                $range_end->setTime(23, 59, 59)->add(new DateInterval('PT1S'))
+                $range_end->setTime(0, 0)->add(new DateInterval('P1D'))
             );
 
             foreach ($period as $day) {
