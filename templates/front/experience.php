@@ -471,41 +471,6 @@ $sticky_price_display = '' !== $price_from_display ? $format_currency($price_fro
                         </div>
                     <?php endif; ?>
 
-                    <?php if (! empty($overview_biases)) : ?>
-                        <ul class="fp-exp-overview__trust-list" role="list">
-                            <?php foreach ($overview_biases as $bias) :
-                                $label = isset($bias['label']) ? (string) $bias['label'] : '';
-                                if ('' === $label) {
-                                    continue;
-                                }
-
-                                $tagline = isset($bias['tagline']) ? (string) $bias['tagline'] : '';
-                                $description = isset($bias['description']) ? (string) $bias['description'] : '';
-                                $icon_name = isset($bias['icon']) ? (string) $bias['icon'] : '';
-                                $icon_svg = \FP_Exp\Utils\Helpers::cognitive_bias_icon_svg($icon_name);
-                                $chip_label_parts = array_values(array_filter([$label, $tagline, $description]));
-                                $chip_label_text = ! empty($chip_label_parts)
-                                    ? implode(' – ', array_unique($chip_label_parts))
-                                    : '';
-                                ?>
-                                <li
-                                    class="fp-exp-overview__chip"
-                                    <?php if ('' !== $chip_label_text) : ?>title="<?php echo esc_attr($chip_label_text); ?>" aria-label="<?php echo esc_attr($chip_label_text); ?>"<?php endif; ?>
-                                >
-                                    <span class="fp-exp-overview__chip-icon" aria-hidden="true"><?php echo $icon_svg; ?></span>
-                                    <span class="fp-exp-overview__chip-body">
-                                        <span class="fp-exp-overview__chip-label"><?php echo esc_html($label); ?></span>
-                                        <?php if ('' !== $tagline) : ?>
-                                            <span class="fp-exp-overview__chip-tagline"><?php echo esc_html($tagline); ?></span>
-                                        <?php endif; ?>
-                                        <?php if ('' !== $description) : ?>
-                                            <span class="fp-exp-overview__chip-description"><?php echo esc_html($description); ?></span>
-                                        <?php endif; ?>
-                                    </span>
-                                </li>
-                            <?php endforeach; ?>
-                        </ul>
-                    <?php endif; ?>
                 </section>
             <?php endif; ?>
 
