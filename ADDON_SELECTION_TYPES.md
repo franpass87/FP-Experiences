@@ -10,7 +10,38 @@ Gli addon possono anche essere organizzati in **gruppi** per raggruppare opzioni
 
 ## Caratteristiche Implementate
 
-### 1. Nuovi Campi nell'Admin
+### 1. Interfaccia Admin Migliorata
+
+L'interfaccia di configurazione degli addon è stata completamente riprogettata per essere **più chiara e intuitiva**. I campi sono ora organizzati in **sezioni logiche** con intestazioni e helper text esplicativi.
+
+#### **Struttura Visiva**
+
+Ogni addon è ora suddiviso in 4 sezioni ben definite:
+
+##### 📸 **Immagine** (colonna laterale)
+- Anteprima dell'immagine addon
+- Pulsanti per selezionare/modificare/rimuovere
+- Visivamente separata per facilitare il caricamento media
+
+##### 📝 **Informazioni Base**
+- **Nome extra**: Campo obbligatorio con esempi nel placeholder
+- **Codice**: Auto-generato se lasciato vuoto, con helper text esplicativo
+- **Descrizione breve**: Textarea con contatore caratteri e suggerimenti
+
+##### 💰 **Prezzo e Calcolo**
+- **Prezzo**: Input numerico con validazione
+- **Calcolo prezzo**: Dropdown con spiegazione chiara (per persona vs per prenotazione)
+- Layout inline per visualizzazione compatta
+
+##### ⚙️ **Comportamento Selezione** (sezione evidenziata)
+- Badge "Nuovo" per indicare la nuova funzionalità
+- Descrizione introduttiva del comportamento
+- **Tipo selezione**: Checkbox vs Radio con emoji visivi (☑ e ◉)
+- **Gruppo selezione**: Input con esempi e spiegazioni dettagliate
+- Helper text multilinea che spiega la differenza tra Radio e Checkbox
+- Background colorato per dare risalto alla nuova feature
+
+### 2. Nuovi Campi nell'Admin
 
 Nell'editor dell'esperienza, nella sezione "Biglietti & Prezzi" → "Extra", ogni addon ora ha due nuovi campi:
 
@@ -84,6 +115,43 @@ Configurazione nell'admin:
 
 Se lasci il campo "Gruppo selezione" vuoto, l'addon apparirà nella sezione predefinita "Extra" senza un raggruppamento particolare.
 
+## Miglioramenti UX dell'Admin
+
+### Visual Design Migliorato
+
+1. **Layout a Griglia Intelligente**
+   - Su desktop: Immagine a sinistra, campi a destra in layout a 2 colonne
+   - Su mobile: Layout verticale responsive che si adatta allo schermo
+   - Separazione visiva chiara tra le sezioni
+
+2. **Sezioni con Intestazioni**
+   - Ogni gruppo di campi correlati ha un'intestazione descrittiva
+   - Linee separatrici sottili per delimitare le sezioni
+   - Gerarchia visiva che guida l'occhio
+
+3. **Helper Text Contestuali**
+   - Testi di aiuto sotto ogni campo quando necessario
+   - Esempi concreti nei placeholder (es: "Transfer, Audio guida, Pranzo")
+   - Spiegazioni dettagliate per i nuovi campi di selezione
+
+4. **Indicatori Visivi**
+   - **Badge "Nuovo"**: Gradient colorato per la sezione Comportamento Selezione
+   - **Asterisco rosso (*)**: Per campi obbligatori
+   - **Emoji nei dropdown**: ☑ per checkbox, ◉ per radio
+   - **Background evidenziato**: La sezione nuova ha un background gradient leggero
+
+5. **Feedback Immediato**
+   - Validazione HTML5 su campi obbligatori
+   - Contatore caratteri per descrizione (max 160)
+   - Preview immediata dell'immagine selezionata
+
+### Accessibilità
+
+- **ARIA labels**: Pulsante rimuovi ha label descrittivo
+- **Semantic HTML**: Uso corretto di heading hierarchy (h4)
+- **Keyboard navigation**: Tutti i campi accessibili via tastiera
+- **Screen reader friendly**: Testi alternativi e label associati correttamente
+
 ## Come Configurare
 
 ### Passo 1: Accedi all'Admin di WordPress
@@ -153,8 +221,10 @@ Gli addon esistenti senza i nuovi campi:
 - `/workspace/build/fp-experiences/templates/front/experience.php`
 
 ### Stili
-- `/workspace/assets/css/front.css`
+- `/workspace/assets/css/front.css` (stili frontend per gruppi addon)
+- `/workspace/assets/css/admin.css` (stili admin per layout migliorato)
 - `/workspace/build/fp-experiences/assets/css/front.css`
+- `/workspace/build/fp-experiences/assets/css/admin.css`
 
 ## Note Tecniche
 

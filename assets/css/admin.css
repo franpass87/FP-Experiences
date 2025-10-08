@@ -663,6 +663,109 @@ body.fp-exp-admin-shell #screen-meta-links {
     gap: 2px;
 }
 
+/* Addon Row Styling */
+.fp-exp-addon-row .fp-exp-repeater-row__fields {
+    display: grid;
+    gap: 20px;
+    grid-template-columns: 180px 1fr;
+}
+
+@media (max-width: 782px) {
+    .fp-exp-addon-row .fp-exp-repeater-row__fields {
+        grid-template-columns: 1fr;
+    }
+}
+
+.fp-exp-addon-section {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.fp-exp-addon-section--media {
+    grid-row: 1 / -1;
+}
+
+@media (max-width: 782px) {
+    .fp-exp-addon-section--media {
+        grid-row: auto;
+    }
+}
+
+.fp-exp-addon-section__title {
+    margin: 0;
+    padding: 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--fp-exp-color-text);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    padding-bottom: 8px;
+}
+
+.fp-exp-addon-section__badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 600;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.fp-exp-addon-section__intro {
+    margin: 0;
+    padding: 10px 12px;
+    background: #f0f9ff;
+    border-left: 3px solid #0284c7;
+    border-radius: 4px;
+    font-size: 13px;
+    color: #0c4a6e;
+    line-height: 1.5;
+}
+
+.fp-exp-addon-section__fields {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.fp-exp-addon-section__fields--inline {
+    display: grid;
+    gap: 14px;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+
+.fp-exp-addon-section--highlight {
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.03) 0%, rgba(118, 75, 162, 0.03) 100%);
+    border: 1px solid rgba(102, 126, 234, 0.15);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.fp-exp-field__help {
+    display: block;
+    margin-top: 4px;
+    font-size: 12px;
+    color: #6b7280;
+    line-height: 1.5;
+}
+
+.fp-exp-field__help strong {
+    color: #374151;
+    font-weight: 600;
+}
+
+.fp-exp-required {
+    color: #dc2626;
+    font-weight: 600;
+}
+
 .fp-exp-addon-media {
     display: flex;
     flex-direction: column;
