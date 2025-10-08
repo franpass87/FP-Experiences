@@ -740,8 +740,14 @@
                     });
 
                     if (!setCartResponse.ok) {
-                        const errorData = await setCartResponse.json();
-                        throw new Error(errorData.message || 'Errore aggiunta al carrello');
+                        let errorData = {};
+                        try {
+                            const text = await setCartResponse.text();
+                            errorData = text ? JSON.parse(text) : {};
+                        } catch (e) {
+                            console.error('[FP-EXP] Impossibile parsare risposta errore cart/set:', e);
+                        }
+                        throw new Error(errorData.message || `Errore aggiunta al carrello (${setCartResponse.status})`);
                     }
 
                     ctaBtn.textContent = 'Creazione ordine...';
@@ -780,11 +786,27 @@
                     });
 
                     if (!checkoutResponse.ok) {
-                        const errorData = await checkoutResponse.json();
-                        throw new Error(errorData.message || 'Errore creazione ordine');
+                        let errorData = {};
+                        try {
+                            const text = await checkoutResponse.text();
+                            errorData = text ? JSON.parse(text) : {};
+                        } catch (e) {
+                            console.error('[FP-EXP] Impossibile parsare risposta errore:', e);
+                        }
+                        throw new Error(errorData.message || `Errore creazione ordine (${checkoutResponse.status})`);
                     }
 
-                    const result = await checkoutResponse.json();
+                    let result = {};
+                    try {
+                        const text = await checkoutResponse.text();
+                        if (!text) {
+                            throw new Error('Risposta vuota dal server');
+                        }
+                        result = JSON.parse(text);
+                    } catch (e) {
+                        console.error('[FP-EXP] Impossibile parsare risposta checkout:', e);
+                        throw new Error('Risposta non valida dal server');
+                    }
                     
                     if (result.payment_url) {
                         // Reindirizza alla pagina di pagamento dell'ordine
