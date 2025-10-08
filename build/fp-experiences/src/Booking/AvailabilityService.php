@@ -155,7 +155,7 @@ final class AvailabilityService
         }
 
         try {
-            $range_end = new DateTimeImmutable($end_utc, new DateTimeZone('UTC'));
+            $range_end = new DateTimeImmutable($end_utc . ' 23:59:59', new DateTimeZone('UTC'));
         } catch (Exception $e) {
             $range_end = $range_start;
         }
@@ -347,7 +347,7 @@ final class AvailabilityService
         }
 
         try {
-            $range_end = new DateTimeImmutable($end_utc, new DateTimeZone('UTC'));
+            $range_end = new DateTimeImmutable($end_utc . ' 23:59:59', new DateTimeZone('UTC'));
         } catch (Exception $e) {
             $range_end = $range_start;
         }
