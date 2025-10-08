@@ -2399,6 +2399,8 @@ final class ExperienceMetaBoxes
                 $slug = isset($addon['slug']) ? sanitize_key((string) $addon['slug']) : '';
                 $image_id = isset($addon['image_id']) ? absint((string) $addon['image_id']) : 0;
                 $description = isset($addon['description']) ? sanitize_text_field((string) $addon['description']) : '';
+                $selection_type = isset($addon['selection_type']) ? sanitize_key((string) $addon['selection_type']) : 'checkbox';
+                $selection_group = isset($addon['selection_group']) ? sanitize_text_field((string) $addon['selection_group']) : '';
                 if ($image_id > 0 && ! wp_attachment_is_image($image_id)) {
                     $image_id = 0;
                 }
@@ -2425,6 +2427,10 @@ final class ExperienceMetaBoxes
                     $type = 'person';
                 }
 
+                if (! in_array($selection_type, ['checkbox', 'radio'], true)) {
+                    $selection_type = 'checkbox';
+                }
+
                 $pricing['addons'][] = [
                     'name' => $name,
                     'price' => $price,
@@ -2432,6 +2438,8 @@ final class ExperienceMetaBoxes
                     'slug' => $slug,
                     'image_id' => $image_id,
                     'description' => $description,
+                    'selection_type' => $selection_type,
+                    'selection_group' => $selection_group,
                 ];
 
                 $legacy_addons[] = [
@@ -2442,6 +2450,8 @@ final class ExperienceMetaBoxes
                     'max' => 0,
                     'description' => $description,
                     'image_id' => $image_id,
+                    'selection_type' => $selection_type,
+                    'selection_group' => $selection_group,
                 ];
             }
         }
