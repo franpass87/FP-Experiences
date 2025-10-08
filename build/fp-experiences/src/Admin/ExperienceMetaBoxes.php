@@ -971,7 +971,7 @@ final class ExperienceMetaBoxes
 
         $addons = $pricing['addons'];
         if (empty($addons)) {
-            $addons = [['name' => '', 'price' => '', 'type' => 'person', 'slug' => '']];
+            $addons = [['name' => '', 'price' => '', 'type' => 'person', 'slug' => '', 'selection_type' => 'checkbox', 'selection_group' => '']];
         }
 
         $group = $pricing['group'];
@@ -1057,7 +1057,7 @@ final class ExperienceMetaBoxes
                         <?php endforeach; ?>
                     </div>
                     <template data-repeater-template>
-                        <?php $this->render_addon_row('__INDEX__', ['name' => '', 'price' => '', 'type' => 'person', 'slug' => ''], true); ?>
+                        <?php $this->render_addon_row('__INDEX__', ['name' => '', 'price' => '', 'type' => 'person', 'slug' => '', 'selection_type' => 'checkbox', 'selection_group' => ''], true); ?>
                     </template>
                     <p class="fp-exp-repeater__actions">
                         <button type="button" class="button button-secondary" data-repeater-add>
@@ -1512,7 +1512,11 @@ final class ExperienceMetaBoxes
         $slug_name = $is_template ? 'fp_exp_pricing[addons][__INDEX__][slug]' : $name_prefix . '[slug]';
         $image_name = $is_template ? 'fp_exp_pricing[addons][__INDEX__][image_id]' : $name_prefix . '[image_id]';
         $description_name = $is_template ? 'fp_exp_pricing[addons][__INDEX__][description]' : $name_prefix . '[description]';
+        $selection_type_name = $is_template ? 'fp_exp_pricing[addons][__INDEX__][selection_type]' : $name_prefix . '[selection_type]';
+        $selection_group_name = $is_template ? 'fp_exp_pricing[addons][__INDEX__][selection_group]' : $name_prefix . '[selection_group]';
         $type_value = isset($addon['type']) ? (string) $addon['type'] : 'person';
+        $selection_type_value = isset($addon['selection_type']) ? (string) $addon['selection_type'] : 'checkbox';
+        $selection_group_value = isset($addon['selection_group']) ? (string) $addon['selection_group'] : '';
         $image_id = isset($addon['image_id']) ? absint((string) $addon['image_id']) : 0;
         $image = $image_id > 0 ? wp_get_attachment_image_src($image_id, 'thumbnail') : false;
         $image_url = $image ? (string) $image[0] : '';
@@ -1520,85 +1524,138 @@ final class ExperienceMetaBoxes
         $image_height = $image ? absint((string) $image[2]) : 0;
         $image_alt = isset($addon['name']) ? (string) $addon['name'] : '';
         ?>
-        <div class="fp-exp-repeater-row" data-repeater-item draggable="true">
+        <div class="fp-exp-repeater-row fp-exp-addon-row" data-repeater-item draggable="true">
             <div class="fp-exp-repeater-row__fields">
-                <div class="fp-exp-addon-media" data-fp-media-control>
-                    <span class="fp-exp-field__label"><?php esc_html_e('Immagine', 'fp-experiences'); ?></span>
-                    <input
-                        type="hidden"
-                        <?php echo $this->field_name_attribute($image_name, $is_template); ?>
-                        value="<?php echo esc_attr((string) $image_id); ?>"
-                        data-fp-media-input
-                    />
-                    <div class="fp-exp-addon-media__preview" data-fp-media-preview>
-                        <div class="fp-exp-addon-media__placeholder" data-fp-media-placeholder <?php echo $image_url ? ' hidden' : ''; ?>>
-                            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                                <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5">
-                                    <rect x="3.75" y="8.25" width="16.5" height="12" rx="2" />
-                                    <path d="M3.75 11.25h16.5" />
-                                    <path d="M12 3.75c-1.657 0-3 1.231-3 2.75 0 1.519 1.343 2.75 3 2.75s3-1.231 3-2.75c0-1.519-1.343-2.75-3-2.75Zm0 0C12 3 11.25 2.25 10.5 2.25S9 3 9 3.75" />
-                                    <path d="M12 3.75c0-.75.75-1.5 1.5-1.5s1.5.75 1.5 1.5" />
-                                </g>
-                            </svg>
-                            <span class="screen-reader-text"><?php esc_html_e('Nessuna immagine selezionata', 'fp-experiences'); ?></span>
+                <!-- Sezione Immagine -->
+                <div class="fp-exp-addon-section fp-exp-addon-section--media">
+                    <div class="fp-exp-addon-media" data-fp-media-control>
+                        <span class="fp-exp-field__label"><?php esc_html_e('Immagine', 'fp-experiences'); ?></span>
+                        <input
+                            type="hidden"
+                            <?php echo $this->field_name_attribute($image_name, $is_template); ?>
+                            value="<?php echo esc_attr((string) $image_id); ?>"
+                            data-fp-media-input
+                        />
+                        <div class="fp-exp-addon-media__preview" data-fp-media-preview>
+                            <div class="fp-exp-addon-media__placeholder" data-fp-media-placeholder <?php echo $image_url ? ' hidden' : ''; ?>>
+                                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                                    <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5">
+                                        <rect x="3.75" y="8.25" width="16.5" height="12" rx="2" />
+                                        <path d="M3.75 11.25h16.5" />
+                                        <path d="M12 3.75c-1.657 0-3 1.231-3 2.75 0 1.519 1.343 2.75 3 2.75s3-1.231 3-2.75c0-1.519-1.343-2.75-3-2.75Zm0 0C12 3 11.25 2.25 10.5 2.25S9 3 9 3.75" />
+                                        <path d="M12 3.75c0-.75.75-1.5 1.5-1.5s1.5.75 1.5 1.5" />
+                                    </g>
+                                </svg>
+                                <span class="screen-reader-text"><?php esc_html_e('Nessuna immagine selezionata', 'fp-experiences'); ?></span>
+                            </div>
+                            <?php if ($image_url) : ?>
+                                <img
+                                    src="<?php echo esc_url($image_url); ?>"
+                                    alt="<?php echo esc_attr($image_alt); ?>"
+                                    <?php if ($image_width > 0) : ?> width="<?php echo esc_attr((string) $image_width); ?>"<?php endif; ?>
+                                    <?php if ($image_height > 0) : ?> height="<?php echo esc_attr((string) $image_height); ?>"<?php endif; ?>
+                                    loading="lazy"
+                                    data-fp-media-image
+                                />
+                            <?php endif; ?>
                         </div>
-                        <?php if ($image_url) : ?>
-                            <img
-                                src="<?php echo esc_url($image_url); ?>"
-                                alt="<?php echo esc_attr($image_alt); ?>"
-                                <?php if ($image_width > 0) : ?> width="<?php echo esc_attr((string) $image_width); ?>"<?php endif; ?>
-                                <?php if ($image_height > 0) : ?> height="<?php echo esc_attr((string) $image_height); ?>"<?php endif; ?>
-                                loading="lazy"
-                                data-fp-media-image
-                            />
-                        <?php endif; ?>
-                    </div>
-                    <div class="fp-exp-addon-media__actions">
-                        <button
-                            type="button"
-                            class="button button-secondary fp-exp-addon-media__choose"
-                            data-fp-media-choose
-                            data-label-select="<?php echo esc_attr__('Seleziona immagine', 'fp-experiences'); ?>"
-                            data-label-change="<?php echo esc_attr__('Modifica immagine', 'fp-experiences'); ?>"
-                        >
-                            <?php echo $image_url ? esc_html__('Modifica immagine', 'fp-experiences') : esc_html__('Seleziona immagine', 'fp-experiences'); ?>
-                        </button>
-                        <button
-                            type="button"
-                            class="button-link fp-exp-addon-media__remove"
-                            data-fp-media-remove
-                            <?php echo $image_url ? '' : ' hidden'; ?>
-                        >
-                            <?php esc_html_e('Rimuovi immagine', 'fp-experiences'); ?>
-                        </button>
+                        <div class="fp-exp-addon-media__actions">
+                            <button
+                                type="button"
+                                class="button button-secondary fp-exp-addon-media__choose"
+                                data-fp-media-choose
+                                data-label-select="<?php echo esc_attr__('Seleziona immagine', 'fp-experiences'); ?>"
+                                data-label-change="<?php echo esc_attr__('Modifica immagine', 'fp-experiences'); ?>"
+                            >
+                                <?php echo $image_url ? esc_html__('Modifica immagine', 'fp-experiences') : esc_html__('Seleziona immagine', 'fp-experiences'); ?>
+                            </button>
+                            <button
+                                type="button"
+                                class="button-link fp-exp-addon-media__remove"
+                                data-fp-media-remove
+                                <?php echo $image_url ? '' : ' hidden'; ?>
+                            >
+                                <?php esc_html_e('Rimuovi immagine', 'fp-experiences'); ?>
+                            </button>
+                        </div>
                     </div>
                 </div>
-                <label>
-                    <span class="fp-exp-field__label"><?php esc_html_e('Nome extra', 'fp-experiences'); ?></span>
-                    <input type="text" <?php echo $this->field_name_attribute($label_name, $is_template); ?> value="<?php echo esc_attr((string) ($addon['name'] ?? '')); ?>" placeholder="<?php echo esc_attr__('Transfer', 'fp-experiences'); ?>" />
-                </label>
-                <label>
-                    <span class="fp-exp-field__label"><?php esc_html_e('Codice', 'fp-experiences'); ?></span>
-                    <input type="text" <?php echo $this->field_name_attribute($slug_name, $is_template); ?> value="<?php echo esc_attr((string) ($addon['slug'] ?? '')); ?>" placeholder="<?php echo esc_attr__('transfer', 'fp-experiences'); ?>" />
-                </label>
-                <label>
-                    <span class="fp-exp-field__label"><?php esc_html_e('Descrizione breve', 'fp-experiences'); ?></span>
-                    <textarea rows="2" maxlength="160" <?php echo $this->field_name_attribute($description_name, $is_template); ?>><?php echo esc_textarea((string) ($addon['description'] ?? '')); ?></textarea>
-                </label>
-                <label>
-                    <span class="fp-exp-field__label"><?php esc_html_e('Prezzo (€)', 'fp-experiences'); ?></span>
-                    <input type="number" min="0" step="0.01" <?php echo $this->field_name_attribute($price_name, $is_template); ?> value="<?php echo esc_attr((string) ($addon['price'] ?? '')); ?>" />
-                </label>
-                <label>
-                    <span class="fp-exp-field__label"><?php esc_html_e('Calcolo', 'fp-experiences'); ?></span>
-                    <select <?php echo $this->field_name_attribute($type_name, $is_template); ?>>
-                        <option value="person" <?php selected($type_value, 'person'); ?>><?php esc_html_e('Per persona', 'fp-experiences'); ?></option>
-                        <option value="booking" <?php selected($type_value, 'booking'); ?>><?php esc_html_e('Per prenotazione', 'fp-experiences'); ?></option>
-                    </select>
-                </label>
+
+                <!-- Sezione Informazioni Base -->
+                <div class="fp-exp-addon-section">
+                    <h4 class="fp-exp-addon-section__title"><?php esc_html_e('Informazioni Base', 'fp-experiences'); ?></h4>
+                    <div class="fp-exp-addon-section__fields">
+                        <label>
+                            <span class="fp-exp-field__label"><?php esc_html_e('Nome extra', 'fp-experiences'); ?> <span class="fp-exp-required">*</span></span>
+                            <input type="text" <?php echo $this->field_name_attribute($label_name, $is_template); ?> value="<?php echo esc_attr((string) ($addon['name'] ?? '')); ?>" placeholder="<?php echo esc_attr__('Es: Transfer, Audio guida, Pranzo', 'fp-experiences'); ?>" required />
+                        </label>
+                        <label>
+                            <span class="fp-exp-field__label"><?php esc_html_e('Codice', 'fp-experiences'); ?></span>
+                            <input type="text" <?php echo $this->field_name_attribute($slug_name, $is_template); ?> value="<?php echo esc_attr((string) ($addon['slug'] ?? '')); ?>" placeholder="<?php echo esc_attr__('transfer, audio-guida, pranzo', 'fp-experiences'); ?>" />
+                            <small class="fp-exp-field__help"><?php esc_html_e('Lascia vuoto per generare automaticamente dal nome', 'fp-experiences'); ?></small>
+                        </label>
+                        <label>
+                            <span class="fp-exp-field__label"><?php esc_html_e('Descrizione breve', 'fp-experiences'); ?></span>
+                            <textarea rows="2" maxlength="160" <?php echo $this->field_name_attribute($description_name, $is_template); ?> placeholder="<?php echo esc_attr__('Breve descrizione che apparirà sotto il nome (max 160 caratteri)', 'fp-experiences'); ?>"><?php echo esc_textarea((string) ($addon['description'] ?? '')); ?></textarea>
+                            <small class="fp-exp-field__help"><?php esc_html_e('Opzionale. Aiuta l\'utente a capire cosa include l\'extra.', 'fp-experiences'); ?></small>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Sezione Prezzo -->
+                <div class="fp-exp-addon-section">
+                    <h4 class="fp-exp-addon-section__title"><?php esc_html_e('Prezzo e Calcolo', 'fp-experiences'); ?></h4>
+                    <div class="fp-exp-addon-section__fields fp-exp-addon-section__fields--inline">
+                        <label>
+                            <span class="fp-exp-field__label"><?php esc_html_e('Prezzo (€)', 'fp-experiences'); ?> <span class="fp-exp-required">*</span></span>
+                            <input type="number" min="0" step="0.01" <?php echo $this->field_name_attribute($price_name, $is_template); ?> value="<?php echo esc_attr((string) ($addon['price'] ?? '')); ?>" placeholder="0.00" required />
+                        </label>
+                        <label>
+                            <span class="fp-exp-field__label"><?php esc_html_e('Calcolo prezzo', 'fp-experiences'); ?></span>
+                            <select <?php echo $this->field_name_attribute($type_name, $is_template); ?>>
+                                <option value="person" <?php selected($type_value, 'person'); ?>><?php esc_html_e('Per persona', 'fp-experiences'); ?></option>
+                                <option value="booking" <?php selected($type_value, 'booking'); ?>><?php esc_html_e('Per prenotazione', 'fp-experiences'); ?></option>
+                            </select>
+                            <small class="fp-exp-field__help"><?php esc_html_e('Moltiplicato per numero ospiti o fisso', 'fp-experiences'); ?></small>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Sezione Comportamento Selezione -->
+                <div class="fp-exp-addon-section fp-exp-addon-section--highlight">
+                    <h4 class="fp-exp-addon-section__title">
+                        <?php esc_html_e('Comportamento Selezione', 'fp-experiences'); ?>
+                        <span class="fp-exp-addon-section__badge"><?php esc_html_e('Nuovo', 'fp-experiences'); ?></span>
+                    </h4>
+                    <p class="fp-exp-addon-section__intro">
+                        <?php esc_html_e('Configura come l\'utente può selezionare questo extra nel frontend.', 'fp-experiences'); ?>
+                    </p>
+                    <div class="fp-exp-addon-section__fields fp-exp-addon-section__fields--inline">
+                        <label>
+                            <span class="fp-exp-field__label"><?php esc_html_e('Tipo selezione', 'fp-experiences'); ?></span>
+                            <select <?php echo $this->field_name_attribute($selection_type_name, $is_template); ?>>
+                                <option value="checkbox" <?php selected($selection_type_value, 'checkbox'); ?>><?php esc_html_e('☑ Checkbox (multipla)', 'fp-experiences'); ?></option>
+                                <option value="radio" <?php selected($selection_type_value, 'radio'); ?>><?php esc_html_e('◉ Radio (una scelta)', 'fp-experiences'); ?></option>
+                            </select>
+                            <small class="fp-exp-field__help">
+                                <strong><?php esc_html_e('Checkbox:', 'fp-experiences'); ?></strong> <?php esc_html_e('L\'utente può selezionare più extra insieme', 'fp-experiences'); ?><br>
+                                <strong><?php esc_html_e('Radio:', 'fp-experiences'); ?></strong> <?php esc_html_e('L\'utente può scegliere solo un extra tra quelli del gruppo', 'fp-experiences'); ?>
+                            </small>
+                        </label>
+                        <label>
+                            <span class="fp-exp-field__label"><?php esc_html_e('Gruppo selezione', 'fp-experiences'); ?></span>
+                            <input type="text" <?php echo $this->field_name_attribute($selection_group_name, $is_template); ?> value="<?php echo esc_attr($selection_group_value); ?>" placeholder="<?php echo esc_attr__('Es: Trasporto, Pranzo, Servizi', 'fp-experiences'); ?>" />
+                            <small class="fp-exp-field__help">
+                                <?php esc_html_e('Raggruppa extra correlati. Gli extra con lo stesso gruppo appaiono insieme nel frontend.', 'fp-experiences'); ?><br>
+                                <strong><?php esc_html_e('Radio:', 'fp-experiences'); ?></strong> <?php esc_html_e('Solo un extra selezionabile per gruppo', 'fp-experiences'); ?><br>
+                                <strong><?php esc_html_e('Checkbox:', 'fp-experiences'); ?></strong> <?php esc_html_e('Tutti selezionabili, visualizzati insieme', 'fp-experiences'); ?>
+                            </small>
+                        </label>
+                    </div>
+                </div>
             </div>
             <p class="fp-exp-repeater-row__remove">
-                <button type="button" class="button-link-delete" data-repeater-remove>&times;</button>
+                <button type="button" class="button-link-delete" data-repeater-remove aria-label="<?php esc_attr_e('Rimuovi extra', 'fp-experiences'); ?>">&times;</button>
             </p>
         </div>
         <?php
@@ -2342,6 +2399,8 @@ final class ExperienceMetaBoxes
                 $slug = isset($addon['slug']) ? sanitize_key((string) $addon['slug']) : '';
                 $image_id = isset($addon['image_id']) ? absint((string) $addon['image_id']) : 0;
                 $description = isset($addon['description']) ? sanitize_text_field((string) $addon['description']) : '';
+                $selection_type = isset($addon['selection_type']) ? sanitize_key((string) $addon['selection_type']) : 'checkbox';
+                $selection_group = isset($addon['selection_group']) ? sanitize_text_field((string) $addon['selection_group']) : '';
                 if ($image_id > 0 && ! wp_attachment_is_image($image_id)) {
                     $image_id = 0;
                 }
@@ -2368,6 +2427,10 @@ final class ExperienceMetaBoxes
                     $type = 'person';
                 }
 
+                if (! in_array($selection_type, ['checkbox', 'radio'], true)) {
+                    $selection_type = 'checkbox';
+                }
+
                 $pricing['addons'][] = [
                     'name' => $name,
                     'price' => $price,
@@ -2375,6 +2438,8 @@ final class ExperienceMetaBoxes
                     'slug' => $slug,
                     'image_id' => $image_id,
                     'description' => $description,
+                    'selection_type' => $selection_type,
+                    'selection_group' => $selection_group,
                 ];
 
                 $legacy_addons[] = [
@@ -2385,6 +2450,8 @@ final class ExperienceMetaBoxes
                     'max' => 0,
                     'description' => $description,
                     'image_id' => $image_id,
+                    'selection_type' => $selection_type,
+                    'selection_group' => $selection_group,
                 ];
             }
         }

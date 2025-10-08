@@ -421,6 +421,11 @@ final class WidgetShortcode extends BaseShortcode
             $image_id = isset($addon['image_id']) ? absint($addon['image_id']) : 0;
             $image = $image_id > 0 ? wp_get_attachment_image_src($image_id, 'medium') : false;
 
+            $selection_type = isset($addon['selection_type']) ? sanitize_key((string) $addon['selection_type']) : 'checkbox';
+            if (! in_array($selection_type, ['checkbox', 'radio'], true)) {
+                $selection_type = 'checkbox';
+            }
+
             $addons[] = [
                 'slug' => $slug,
                 'label' => sanitize_text_field((string) ($addon['label'] ?? '')),
@@ -432,6 +437,8 @@ final class WidgetShortcode extends BaseShortcode
                     'width' => $image ? absint((string) $image[1]) : 0,
                     'height' => $image ? absint((string) $image[2]) : 0,
                 ],
+                'selection_type' => $selection_type,
+                'selection_group' => sanitize_text_field((string) ($addon['selection_group'] ?? '')),
             ];
         }
 
