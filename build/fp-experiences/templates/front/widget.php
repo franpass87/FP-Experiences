@@ -177,7 +177,7 @@ $price_from_display = null !== $price_from_value && $price_from_value > 0
     >
         <div class="fp-exp-hero__card fp-exp-widget__hero-card">
             <?php if ('' !== $price_from_display) : ?>
-                <div class="fp-exp-hero__price" data-fp-scroll-target="calendar">
+                <div class="fp-exp-hero__price" data-fp-scroll-target="dates">
                     <span class="fp-exp-hero__price-label"><?php esc_html_e('Da', 'fp-experiences'); ?></span>
                     <span class="fp-exp-hero__price-value"><?php echo esc_html($price_from_display); ?></span>
                 </div>
@@ -187,7 +187,7 @@ $price_from_display = null !== $price_from_value && $price_from_value > 0
                 <button
                     type="button"
                     class="fp-exp-button fp-exp-button--primary"
-                    data-fp-scroll="calendar"
+                    data-fp-scroll="dates"
                     data-fp-cta="hero"
                 >
                     <?php echo $cta_label; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
@@ -235,85 +235,58 @@ $price_from_display = null !== $price_from_value && $price_from_value > 0
         </div>
 
         <ol class="fp-exp-widget__steps">
-            <li class="fp-exp-step fp-exp-step--dates" data-fp-step="dates" data-fp-section="calendar">
+            <li class="fp-exp-step fp-exp-step--dates" data-fp-step="dates">
                 <header>
                     <span class="fp-exp-step__number">1</span>
                     <h3 class="fp-exp-step__title"><?php echo esc_html__('Scegli una data', 'fp-experiences'); ?></h3>
                 </header>
                 <div class="fp-exp-step__content">
-                    <?php
-                    // Limita solo la data minima all'oggi; nessun limite massimo
-                    $min_date_attr = gmdate('Y-m-d');
-                    ?>
-                    <div class="fp-exp-date-picker">
-                        <label class="fp-exp-label" for="fp-exp-date-input"><?php echo esc_html__('Data', 'fp-experiences'); ?></label>
-                        <input
-                            type="date"
-                            id="fp-exp-date-input"
-                            class="fp-exp-input fp-exp-date-input"
-                            min="<?php echo esc_attr($min_date_attr); ?>"
-                            data-fp-date-input
-                        />
-                    </div>
-                    <div class="fp-exp-calendar" data-show-calendar="<?php echo esc_attr($behavior['show_calendar'] ? '1' : '0'); ?>" hidden>
-                        <?php foreach ($calendar as $month_key => $month_data) :
-                            $month_label = isset($month_data['month_label']) ? (string) $month_data['month_label'] : '';
-                            $month_days = isset($month_data['days']) && is_array($month_data['days']) ? $month_data['days'] : [];
-                            ?>
-                            <section class="fp-exp-calendar__month" data-month="<?php echo esc_attr($month_key); ?>">
-                                <header class="fp-exp-calendar__month-header"><?php echo esc_html($month_label); ?></header>
-                                <?php
-                                // Calcolo intestazioni giorni e riempimento griglia 7xN
-                                try {
-                                    $first_of_month = new \DateTimeImmutable($month_key . '-01');
-                                    $days_in_month = (int) $first_of_month->format('t');
-                                    $leading = max(0, (int) $first_of_month->format('N') - 1); // Lun=1..Dom=7
-                                } catch (\Exception $e) {
-                                    $first_of_month = null;
-                                    $days_in_month = 31;
-                                    $leading = 0;
-                                }
-
-                                // Etichette giorni (Lun..Dom) basate su locale breve
-                                $week_ref = $first_of_month ?: new \DateTimeImmutable('monday this week');
-                                $weekdays = [];
-                                for ($i = 0; $i < 7; $i++) {
-                                    $weekdays[] = $week_ref->modify('+' . $i . ' days')->format('D');
-                                }
-                                ?>
-                                <div class="fp-exp-calendar__weekdays" aria-hidden="true">
-                                    <?php foreach ($weekdays as $wd) : ?>
-                                        <div class="fp-exp-calendar__weekday"><?php echo esc_html($wd); ?></div>
-                                    <?php endforeach; ?>
+                    <!-- Input nascosto per compatibilità -->
+                    <input
+                        type="hidden"
+                        id="fp-exp-date-input"
+                        data-fp-date-input
+                    />
+                    
+                    <!-- Calendario con navigazione mesi -->
+                    <div class="fp-exp-calendar-nav">
+                        <div class="fp-exp-calendar-nav__header">
+                            <button type="button" class="fp-exp-calendar-nav__prev-month" data-action="prev-month">
+                                ←
+                            </button>
+                            
+                            <div class="fp-exp-calendar-nav__title-container">
+                                <h4 class="fp-exp-calendar-nav__month">
+                                    <?php 
+                                    $month_names = [
+                                        1 => 'Gennaio', 2 => 'Febbraio', 3 => 'Marzo', 4 => 'Aprile',
+                                        5 => 'Maggio', 6 => 'Giugno', 7 => 'Luglio', 8 => 'Agosto',
+                                        9 => 'Settembre', 10 => 'Ottobre', 11 => 'Novembre', 12 => 'Dicembre'
+                                    ];
+                                    $current_month_num = (int) date('n');
+                                    echo esc_html($month_names[$current_month_num]);
+                                    ?>
+                                </h4>
+                                <h5 class="fp-exp-calendar-nav__year">
+                                    <?php echo esc_html(date('Y')); ?>
+                                </h5>
+                            </div>
+                            
+                            <button type="button" class="fp-exp-calendar-nav__next-month" data-action="next-month">
+                                →
+                            </button>
+                        </div>
+                        
+                        <div class="fp-exp-calendar-nav__content" data-current-month="<?php echo esc_attr(gmdate('Y-m')); ?>">
+                            <div class="fp-exp-calendar-nav__grid">
+                                <div style="grid-column: 1/-1; text-align: center; padding: 2rem; color: var(--fp-color-muted);">
+                                    Caricamento...
                                 </div>
-                                <div class="fp-exp-calendar__grid">
-                                    <?php for ($i = 0; $i < $leading; $i++) : ?>
-                                        <div class="fp-exp-calendar__empty" aria-hidden="true"></div>
-                                    <?php endfor; ?>
-                                    <?php for ($day_num = 1; $day_num <= $days_in_month; $day_num++) :
-                                        $date_key = $month_key . '-' . str_pad((string) $day_num, 2, '0', STR_PAD_LEFT);
-                                        $day_slots = isset($month_days[$date_key]) && is_array($month_days[$date_key]) ? $month_days[$date_key] : [];
-                                        $slot_count = count($day_slots);
-                                        $is_available = $slot_count > 0;
-                                        ?>
-                                        <button
-                                            type="button"
-                                            class="fp-exp-calendar__day"
-                                            data-date="<?php echo esc_attr($date_key); ?>"
-                                            data-available="<?php echo esc_attr($is_available ? '1' : '0'); ?>"
-                                            <?php if (! $is_available) : ?>disabled aria-disabled="true"<?php else : ?>aria-pressed="false"<?php endif; ?>
-                                        >
-                                            <span class="fp-exp-calendar__day-label"><?php echo esc_html((string) $day_num); ?></span>
-                                            <?php if ($is_available) : ?>
-                                                <span class="fp-exp-calendar__day-count"><?php echo esc_html(sprintf(esc_html__('%d fasce', 'fp-experiences'), $slot_count)); ?></span>
-                                            <?php endif; ?>
-                                        </button>
-                                    <?php endfor; ?>
-                                </div>
-                            </section>
-                        <?php endforeach; ?>
+                            </div>
+                        </div>
                     </div>
-                    <div class="fp-exp-slots" aria-live="polite" data-empty-label="<?php echo esc_attr__('Seleziona una data per vedere le fasce orarie', 'fp-experiences'); ?>">
+                    
+                    <div class="fp-exp-slots" aria-live="polite">
                         <p class="fp-exp-slots__placeholder"><?php echo esc_html__('Seleziona una data per vedere le fasce orarie', 'fp-experiences'); ?></p>
                     </div>
                 </div>

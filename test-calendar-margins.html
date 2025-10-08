@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Calendario - Margini Corretti</title>
+    <link rel="stylesheet" href="assets/css/front.css">
+    <style>
+        :root {
+            --fp-color-primary: #0B6EFD;
+            --fp-color-accent: #00A37A;
+            --fp-color-text: #0F172A;
+            --fp-color-muted: #64748B;
+            --fp-color-surface: #fff;
+            --fp-shadow: 0 10px 30px rgba(15, 23, 42, 0.1);
+            --fp-radius: 16px;
+            --fp-exp-radius-base: 12px;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            padding: 2rem;
+            background: #f8fafc;
+            margin: 0;
+        }
+        
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.1);
+        }
+        
+        h1 {
+            margin-top: 0;
+            color: var(--fp-color-text);
+        }
+        
+        .test-info {
+            background: #EEF2FF;
+            border-left: 4px solid var(--fp-color-primary);
+            padding: 1rem;
+            margin-bottom: 2rem;
+            border-radius: 8px;
+        }
+        
+        .test-info h2 {
+            margin-top: 0;
+            font-size: 1.1rem;
+            color: var(--fp-color-primary);
+        }
+        
+        .test-info ul {
+            margin-bottom: 0;
+        }
+        
+        .test-section {
+            margin-top: 2rem;
+            padding: 1rem;
+            border: 2px dashed #e2e8f0;
+            border-radius: 8px;
+        }
+        
+        .test-label {
+            font-weight: 600;
+            color: var(--fp-color-text);
+            margin-bottom: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🗓️ Test Calendario - Margini Corretti</h1>
+        
+        <div class="test-info">
+            <h2>✅ Correzioni Applicate</h2>
+            <ul>
+                <li><code>box-sizing: border-box</code> applicato a tutti gli elementi del calendario</li>
+                <li>Grid usa <code>minmax(0, 1fr)</code> invece di <code>1fr</code></li>
+                <li>Gap ridotti su desktop da 0.5rem a 0.4rem</li>
+                <li>Padding ottimizzati per evitare overflow</li>
+                <li><code>overflow: hidden</code> sui contenitori</li>
+                <li><code>min-width: 0</code> sui box dei giorni</li>
+            </ul>
+        </div>
+        
+        <div class="test-section">
+            <div class="test-label">Calendario Normale (Desktop: gap 0.4rem)</div>
+            
+            <div class="fp-exp-calendar" data-show-calendar="1">
+                <section class="fp-exp-calendar__month" data-month="2025-01">
+                    <header class="fp-exp-calendar__month-header">Gennaio 2025</header>
+                    
+                    <div class="fp-exp-calendar__weekdays" aria-hidden="true">
+                        <div class="fp-exp-calendar__weekday">Lun</div>
+                        <div class="fp-exp-calendar__weekday">Mar</div>
+                        <div class="fp-exp-calendar__weekday">Mer</div>
+                        <div class="fp-exp-calendar__weekday">Gio</div>
+                        <div class="fp-exp-calendar__weekday">Ven</div>
+                        <div class="fp-exp-calendar__weekday">Sab</div>
+                        <div class="fp-exp-calendar__weekday">Dom</div>
+                    </div>
+                    
+                    <div class="fp-exp-calendar__grid">
+                        <!-- Primi giorni vuoti (Gennaio 2025 inizia Mercoledì) -->
+                        <div class="fp-exp-calendar__empty" aria-hidden="true"></div>
+                        <div class="fp-exp-calendar__empty" aria-hidden="true"></div>
+                        
+                        <!-- Giorni del mese -->
+                        <button type="button" class="fp-exp-calendar__day" data-date="2025-01-01" data-available="1" aria-pressed="false">
+                            <span class="fp-exp-calendar__day-label">1</span>
+                            <span class="fp-exp-calendar__day-count">3 fasce</span>
+                        </button>
+                        <button type="button" class="fp-exp-calendar__day" data-date="2025-01-02" data-available="1" aria-pressed="false">
+                            <span class="fp-exp-calendar__day-label">2</span>
+                            <span class="fp-exp-calendar__day-count">5 fasce</span>
+                        </button>
+                        <button type="button" class="fp-exp-calendar__day" data-date="2025-01-03" data-available="0" disabled aria-disabled="true">
+                            <span class="fp-exp-calendar__day-label">3</span>
+                        </button>
+                        <button type="button" class="fp-exp-calendar__day" data-date="2025-01-04" data-available="1" aria-pressed="false">
+                            <span class="fp-exp-calendar__day-label">4</span>
+                            <span class="fp-exp-calendar__day-count">2 fasce</span>
+                        </button>
+                        <button type="button" class="fp-exp-calendar__day" data-date="2025-01-05" data-available="1" aria-pressed="false">
+                            <span class="fp-exp-calendar__day-label">5</span>
+                            <span class="fp-exp-calendar__day-count">4 fasce</span>
+                        </button>
+                        
+                        <!-- Seconda settimana -->
+                        <button type="button" class="fp-exp-calendar__day" data-date="2025-01-06" data-available="1" aria-pressed="false">
+                            <span class="fp-exp-calendar__day-label">6</span>
+                            <span class="fp-exp-calendar__day-count">3 fasce</span>
+                        </button>
+                        <button type="button" class="fp-exp-calendar__day" data-date="2025-01-07" data-available="1" aria-pressed="false">
+                            <span class="fp-exp-calendar__day-label">7</span>
+                            <span class="fp-exp-calendar__day-count">6 fasce</span>
+                        </button>
+                        <button type="button" class="fp-exp-calendar__day" data-date="2025-01-08" data-available="1" aria-pressed="false">
+                            <span class="fp-exp-calendar__day-label">8</span>
+                            <span class="fp-exp-calendar__day-count">2 fasce</span>
+                        </button>
+                        <button type="button" class="fp-exp-calendar__day" data-date="2025-01-09" data-available="1" aria-pressed="false">
+                            <span class="fp-exp-calendar__day-label">9</span>
+                            <span class="fp-exp-calendar__day-count">4 fasce</span>
+                        </button>
+                        <button type="button" class="fp-exp-calendar__day" data-date="2025-01-10" data-available="0" disabled aria-disabled="true">
+                            <span class="fp-exp-calendar__day-label">10</span>
+                        </button>
+                        <button type="button" class="fp-exp-calendar__day" data-date="2025-01-11" data-available="1" aria-pressed="false">
+                            <span class="fp-exp-calendar__day-label">11</span>
+                            <span class="fp-exp-calendar__day-count">5 fasce</span>
+                        </button>
+                        <button type="button" class="fp-exp-calendar__day" data-date="2025-01-12" data-available="1" aria-pressed="false">
+                            <span class="fp-exp-calendar__day-label">12</span>
+                            <span class="fp-exp-calendar__day-count">3 fasce</span>
+                        </button>
+                        
+                        <!-- Terza settimana -->
+                        <button type="button" class="fp-exp-calendar__day" data-date="2025-01-13" data-available="1" aria-pressed="false">
+                            <span class="fp-exp-calendar__day-label">13</span>
+                            <span class="fp-exp-calendar__day-count">2 fasce</span>
+                        </button>
+                        <button type="button" class="fp-exp-calendar__day" data-date="2025-01-14" data-available="1" aria-pressed="false">
+                            <span class="fp-exp-calendar__day-label">14</span>
+                            <span class="fp-exp-calendar__day-count">4 fasce</span>
+                        </button>
+                        <button type="button" class="fp-exp-calendar__day" data-date="2025-01-15" data-available="1" aria-pressed="true">
+                            <span class="fp-exp-calendar__day-label">15</span>
+                            <span class="fp-exp-calendar__day-count">3 fasce</span>
+                        </button>
+                        <button type="button" class="fp-exp-calendar__day" data-date="2025-01-16" data-available="1" aria-pressed="false">
+                            <span class="fp-exp-calendar__day-label">16</span>
+                            <span class="fp-exp-calendar__day-count">5 fasce</span>
+                        </button>
+                        <button type="button" class="fp-exp-calendar__day" data-date="2025-01-17" data-available="0" disabled aria-disabled="true">
+                            <span class="fp-exp-calendar__day-label">17</span>
+                        </button>
+                        <button type="button" class="fp-exp-calendar__day" data-date="2025-01-18" data-available="1" aria-pressed="false">
+                            <span class="fp-exp-calendar__day-label">18</span>
+                            <span class="fp-exp-calendar__day-count">4 fasce</span>
+                        </button>
+                        <button type="button" class="fp-exp-calendar__day" data-date="2025-01-19" data-available="1" aria-pressed="false">
+                            <span class="fp-exp-calendar__day-label">19</span>
+                            <span class="fp-exp-calendar__day-count">6 fasce</span>
+                        </button>
+                    </div>
+                </section>
+            </div>
+        </div>
+        
+        <div class="test-info" style="margin-top: 2rem; background: #F0FDF4; border-color: #16a34a;">
+            <h2 style="color: #16a34a;">📋 Come Testare</h2>
+            <ul>
+                <li>Ridimensiona la finestra del browser</li>
+                <li>Verifica che i box non escano mai dai margini del contenitore grigio</li>
+                <li>Controlla su mobile, tablet e desktop</li>
+                <li>Usa gli strumenti per sviluppatori per ispezionare gli elementi</li>
+                <li>Verifica che non ci sia scroll orizzontale</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>

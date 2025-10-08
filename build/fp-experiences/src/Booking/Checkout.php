@@ -103,6 +103,8 @@ final class Checkout
 
                     $experience_id = (int) $request->get_param('experience_id');
                     $slot_id = (int) $request->get_param('slot_id');
+                    $slot_start = sanitize_text_field((string) $request->get_param('slot_start'));
+                    $slot_end = sanitize_text_field((string) $request->get_param('slot_end'));
 
                     // tickets e addons possono essere mappe o array
                     $tickets = $request->get_param('tickets');
@@ -114,13 +116,21 @@ final class Checkout
                         return new WP_Error('fp_exp_set_cart_invalid', __('Experience ID non valido.', 'fp-experiences'), ['status' => 400]);
                     }
 
-                    $items = [[
+                    $item = [
                         'experience_id' => $experience_id,
                         'slot_id' => max(0, $slot_id),
                         'tickets' => $tickets,
                         'addons' => $addons,
                         'totals' => [],
-                    ]];
+                    ];
+
+                    // Aggiungi slot_start e slot_end se forniti (per slot dinamici)
+                    if ($slot_start && $slot_end) {
+                        $item['slot_start'] = $slot_start;
+                        $item['slot_end'] = $slot_end;
+                    }
+
+                    $items = [$item];
 
                     $this->cart->set_items($items, [
                         'currency' => get_option('woocommerce_currency', 'EUR'),
