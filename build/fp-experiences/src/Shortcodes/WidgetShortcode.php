@@ -196,6 +196,12 @@ final class WidgetShortcode extends BaseShortcode
             'show_calendar' => in_array((string) $attributes['show_calendar'], ['1', 'true'], true),
         ];
 
+        $cognitive_bias_meta = get_post_meta($experience_id, '_fp_cognitive_biases', true);
+        $cognitive_bias_slugs = is_array($cognitive_bias_meta)
+            ? array_values(array_filter(array_map('sanitize_key', $cognitive_bias_meta)))
+            : [];
+        $cognitive_bias_badges = Helpers::cognitive_bias_badges($cognitive_bias_slugs);
+
         $modified = get_post_modified_time('U', true, $post);
 
         $context = [
@@ -224,6 +230,9 @@ final class WidgetShortcode extends BaseShortcode
             'rtb_settings' => $rtb_settings,
             'display_context' => $display_context,
             'config_version' => $modified ? (string) $modified : (string) time(),
+            'overview' => [
+                'cognitive_biases' => $cognitive_bias_badges,
+            ],
         ];
 
         $missing_meta = [];
