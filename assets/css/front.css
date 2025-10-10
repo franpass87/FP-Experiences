@@ -4230,7 +4230,9 @@ body.fp-modal-open {
 
 /* Nasconde blast_button str1 e aio-contact-trigger-front nelle pagine esperienza */
 .fp-exp-page .blast_button.str1,
-.fp-exp-page .aio-contact-trigger-front {
+.fp-exp-page .aio-contact-trigger-front,
+.single-fp_experience .blast_button.str1,
+.single-fp_experience .aio-contact-trigger-front {
     display: none !important;
 }
 
