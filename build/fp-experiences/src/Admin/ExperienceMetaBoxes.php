@@ -619,10 +619,12 @@ final class ExperienceMetaBoxes
                         <div class="fp-exp-taxonomy-editor fp-exp-taxonomy-editor--compact" aria-describedby="fp-exp-experience-badges-help">
                             <div class="fp-exp-taxonomy-editor__list">
                                 <?php foreach ($custom_badges_existing as $entry) :
+                                    $cid = sanitize_key((string) ($entry['id'] ?? ''));
                                     $clabel = sanitize_text_field((string) ($entry['label'] ?? ''));
                                     $cdesc = sanitize_text_field((string) ($entry['description'] ?? ''));
                                     ?>
                                     <div class="fp-exp-taxonomy-editor__item">
+                                        <input type="hidden" name="fp_exp_details[experience_badges_custom][][id]" value="<?php echo esc_attr($cid); ?>" />
                                         <label class="fp-exp-taxonomy-editor__field">
                                             <span class="fp-exp-field__label"><?php esc_html_e('Titolo badge', 'fp-experiences'); ?></span>
                                             <input type="text" name="fp_exp_details[experience_badges_custom][][label]" value="<?php echo esc_attr($clabel); ?>" />
@@ -635,6 +637,7 @@ final class ExperienceMetaBoxes
                                 <?php endforeach; ?>
                                 <?php for ($i = 0; $i < 6; $i++) : ?>
                                     <div class="fp-exp-taxonomy-editor__item">
+                                        <input type="hidden" name="fp_exp_details[experience_badges_custom][][id]" value="" />
                                         <label class="fp-exp-taxonomy-editor__field">
                                             <span class="fp-exp-field__label"><?php esc_html_e('Titolo badge', 'fp-experiences'); ?></span>
                                             <input type="text" name="fp_exp_details[experience_badges_custom][][label]" value="" />
@@ -2019,9 +2022,16 @@ final class ExperienceMetaBoxes
             if (! is_array($entry)) {
                 continue;
             }
-            $cid = isset($entry['id']) ? sanitize_key((string) $entry['id']) : '';
             $clabel = isset($entry['label']) ? sanitize_text_field((string) $entry['label']) : '';
-            if ('' === $cid || '' === $clabel) {
+            if ('' === $clabel) {
+                continue;
+            }
+            $cid = isset($entry['id']) ? sanitize_key((string) $entry['id']) : '';
+            // Genera automaticamente un ID se non fornito
+            if ('' === $cid) {
+                $cid = sanitize_key($clabel);
+            }
+            if ('' === $cid) {
                 continue;
             }
             if (isset($seen_custom[$cid])) {
