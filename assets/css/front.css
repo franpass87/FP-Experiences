@@ -4240,11 +4240,25 @@ body.fp-modal-open {
     pointer-events: none;
 }
 
-/* Nasconde blast_button str1 e aio-contact-trigger-front nelle pagine esperienza */
+/* Nasconde blast_button str1 e aio-contact nelle pagine esperienza */
 .fp-exp-page .blast_button.str1,
 .fp-exp-page .aio-contact-trigger-front,
+.fp-exp-page .aio-contact-trigger,
+.fp-exp-page .aio-contact-show-dot-status,
+.fp-exp-page .aio-contact-box-shadow,
+.fp-exp-page .aio-contact-hide-not-available-agent,
+.fp-exp-page .aio-contact-rounded-avatar,
+.fp-exp-page .animate__animated,
+.fp-exp-page .animate__fadeInRight,
 .single-fp_experience .blast_button.str1,
-.single-fp_experience .aio-contact-trigger-front {
+.single-fp_experience .aio-contact-trigger-front,
+.single-fp_experience .aio-contact-trigger,
+.single-fp_experience .aio-contact-show-dot-status,
+.single-fp_experience .aio-contact-box-shadow,
+.single-fp_experience .aio-contact-hide-not-available-agent,
+.single-fp_experience .aio-contact-rounded-avatar,
+.single-fp_experience .animate__animated,
+.single-fp_experience .animate__fadeInRight {
     display: none !important;
 }
 
