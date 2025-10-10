@@ -493,6 +493,21 @@ $price_from_display = null !== $price_from_value && $price_from_value > 0
                     
                     <?php
                     $overview = isset($overview) && is_array($overview) ? $overview : [];
+                    
+                    // DEBUG: Temporaneo per verificare i dati
+                    if (current_user_can('manage_options')) {
+                        echo '<!-- DEBUG TRUST BADGES -->';
+                        echo '<!-- Overview isset: ' . (isset($overview) ? 'YES' : 'NO') . ' -->';
+                        echo '<!-- Overview is_array: ' . (is_array($overview) ? 'YES' : 'NO') . ' -->';
+                        if (isset($overview['cognitive_biases'])) {
+                            echo '<!-- cognitive_biases count: ' . count($overview['cognitive_biases']) . ' -->';
+                            echo '<!-- cognitive_biases data: ' . esc_html(print_r($overview['cognitive_biases'], true)) . ' -->';
+                        } else {
+                            echo '<!-- cognitive_biases: NOT SET -->';
+                        }
+                        echo '<!-- END DEBUG -->';
+                    }
+                    
                     $overview_biases = isset($overview['cognitive_biases']) && is_array($overview['cognitive_biases'])
                         ? array_values(array_filter(array_map(
                             static function ($bias) {
@@ -517,6 +532,14 @@ $price_from_display = null !== $price_from_value && $price_from_value > 0
                             $overview['cognitive_biases']
                         )))
                         : [];
+                    
+                    // DEBUG: Verifica badge processati
+                    if (current_user_can('manage_options')) {
+                        echo '<!-- overview_biases count: ' . count($overview_biases) . ' -->';
+                        if (!empty($overview_biases)) {
+                            echo '<!-- overview_biases: ' . esc_html(print_r($overview_biases, true)) . ' -->';
+                        }
+                    }
                     ?>
 
                     <?php if (! empty($overview_biases)) : ?>
@@ -536,6 +559,13 @@ $price_from_display = null !== $price_from_value && $price_from_value > 0
                                 </li>
                             <?php endforeach; ?>
                         </ul>
+                    <?php elseif (current_user_can('manage_options')) : ?>
+                        <!-- DEBUG: Nessun badge di fiducia da visualizzare -->
+                        <div style="padding: 1rem; background: #fff3cd; border: 2px solid #ffc107; border-radius: 8px; margin: 1rem 0;">
+                            <strong>⚠️ DEBUG (visibile solo agli admin):</strong> Nessun badge di fiducia configurato.
+                            <br>I badge dovrebbero essere qui, ma <code>$overview_biases</code> è vuoto.
+                            <br>Controlla i commenti HTML nel sorgente per maggiori dettagli.
+                        </div>
                     <?php endif; ?>
                     
                     <?php if ($rtb_enabled) : ?>
