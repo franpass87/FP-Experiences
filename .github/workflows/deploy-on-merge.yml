@@ -2,16 +2,15 @@ name: Deploy Plugin on Merge
 
 on:
   push:
-    branches:
-      - main
-      - master
-  workflow_dispatch:  # Permette esecuzione manuale
+    branches: [ main, master ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     
     steps:
       - name: Checkout repository
@@ -24,8 +23,10 @@ jobs:
         with:
           php-version: '8.2'
           coverage: none
+          tools: composer
 
       - name: Install Composer dependencies
+        if: hashFiles('composer.json') != ''
         run: |
           composer install --no-dev --prefer-dist --no-interaction --optimize-autoloader
           composer dump-autoload -o
@@ -56,40 +57,25 @@ jobs:
 
       - name: Create GitHub Release
         id: create_release
-        continue-on-error: true
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ steps.version.outputs.version }}
           name: FP Experiences v${{ steps.version.outputs.version }}
           body: |
             ## 🚀 Release automatica v${{ steps.version.outputs.version }}
-            
-            Questa release è stata creata automaticamente dopo il merge su ${{ github.ref_name }}.
-            
-            ### 📦 Download
-            Scarica il file ZIP allegato per installare o aggiornare il plugin.
-            
-            ### 🔄 Auto-aggiornamento WordPress
-            Se hai configurato GitHub Updater sul tuo sito WordPress, il plugin si aggiornerà automaticamente.
-            
+            Creata automaticamente dopo il merge su ${{ github.ref_name }}.
+            ### 📦 Allegati
+            Scarica lo ZIP per installare/aggiornare il plugin.
             ---
             **Commit:** ${{ github.sha }}
             **Branch:** ${{ github.ref_name }}
-            **Data:** ${{ github.event.head_commit.timestamp }}
           files: fp-experiences-${{ steps.version.outputs.version }}.zip
           draft: false
           prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Check GitHub Release status
-        if: steps.create_release.outcome == 'failure'
-        run: |
-          echo "⚠️  Skip retry — your GitHub token/PAT does not have the required permission to create a release"
-          echo "📦 L'artifact ZIP è stato comunque creato e caricato con successo"
-          echo "ℹ️  Per abilitare la creazione automatica delle release, configura i permessi del token:"
-          echo "    Settings → Actions → General → Workflow permissions → Read and write permissions"
-
+      # OPTIONAL: Deploy diretto via SSH al tuo WP (non serve per Git Updater)
       - name: Deploy to WordPress via WP-CLI (optional)
         if: ${{ vars.ENABLE_WP_DEPLOY == 'true' }}
         run: |
@@ -103,28 +89,11 @@ jobs:
             fp-experiences-${{ steps.version.outputs.version }}.zip \
             ${{ secrets.WP_SSH_USER }}@${{ secrets.WP_SSH_HOST }}:/tmp/
           
-          # Aggiorna il plugin via WP-CLI
+          # Installa il plugin via WP-CLI (--force sovrascrive la versione esistente)
           sshpass -p "${{ secrets.WP_SSH_PASSWORD }}" ssh -o StrictHostKeyChecking=no \
             ${{ secrets.WP_SSH_USER }}@${{ secrets.WP_SSH_HOST }} \
             "cd ${{ secrets.WP_INSTALL_PATH }} && \
-             wp plugin update fp-experiences --version=${{ steps.version.outputs.version }} --activate"
+             wp plugin install /tmp/fp-experiences-${{ steps.version.outputs.version }}.zip --force --activate"
           
           echo "✅ Plugin deployed successfully!"
 
-      - name: Notify deployment success
-        if: success()
-        run: |
-          echo "✅ Deployment completato con successo!"
-          echo "📦 Versione: ${{ steps.version.outputs.version }}"
-          if [ "${{ steps.create_release.outcome }}" == "success" ]; then
-            echo "🔗 Release URL: ${{ steps.create_release.outputs.url }}"
-          else
-            echo "⚠️  GitHub Release non creata (permessi insufficienti)"
-          fi
-
-      - name: Notify deployment failure
-        if: failure()
-        run: |
-          echo "❌ Deployment fallito!"
-          echo "Controlla i log per maggiori dettagli."
-          exit 1

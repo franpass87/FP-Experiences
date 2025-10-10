@@ -1,6 +1,7 @@
-#!/usr/bin/env sh
-set -eu
+#!/usr/bin/env bash
+set -euo pipefail
 
+SLUG="fp-experiences"
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 REPO_DIR=$(CDPATH= cd -- "$SCRIPT_DIR/../.." && pwd)
 PLUGIN_FILE="$REPO_DIR/fp-experiences.php"
@@ -20,44 +21,44 @@ fi
 ZIP_NAME="fp-experiences-$VERSION.zip"
 ZIP_PATH="$REPO_DIR/$ZIP_NAME"
 
-TMP_DIR=$(mktemp -d)
-trap 'rm -rf "$TMP_DIR"' EXIT INT TERM HUP
+# Pulizia dist
+rm -rf "$REPO_DIR/dist"
+mkdir -p "$REPO_DIR/dist/$SLUG"
 
-STAGE_DIR="$TMP_DIR/fp-experiences"
-mkdir -p "$STAGE_DIR"
-
-rsync -a "$REPO_DIR/" "$STAGE_DIR/" \
-  --exclude '.git/' \
+# Copia file plugin nella cartella slug
+# IMPORTANTE: Include vendor/ perché contiene le dipendenze necessarie dopo composer install
+rsync -a "$REPO_DIR/" "$REPO_DIR/dist/$SLUG/" \
+  --exclude '.git' \
+  --exclude '.github' \
+  --exclude '.vscode' \
+  --exclude '.idea' \
+  --exclude 'tests' \
+  --exclude 'docs' \
+  --exclude 'node_modules' \
+  --exclude 'dist' \
   --exclude '.gitignore' \
   --exclude '.gitattributes' \
-  --exclude '.github/' \
-  --exclude 'docs/' \
-  --exclude 'node_modules/' \
-  --exclude 'vendor/' \
-  --exclude 'composer.json' \
   --exclude 'composer.lock' \
-  --exclude 'package.json' \
-  --exclude 'package-lock.json' \
+  --exclude 'phpstan.neon' \
+  --exclude 'phpstan.neon.dist' \
   --exclude 'phpcs.xml' \
   --exclude 'phpcs.xml.dist' \
+  --exclude 'phpunit.xml' \
+  --exclude 'phpunit.xml.dist' \
+  --exclude '*.md' \
   --exclude '*.map' \
-  --exclude '*.min.*' \
-  --exclude '*.zip' \
   --exclude '*.log' \
-  --exclude '*.sh' \
-  --exclude '*.md'
+  --exclude '*.sh'
 
-rm -rf "$STAGE_DIR/docs"
-
-if [ -f "$ZIP_PATH" ]; then
-  rm -f "$ZIP_PATH"
-fi
-
-( cd "$TMP_DIR" && zip -rq "$ZIP_PATH" fp-experiences )
+# Crea lo ZIP
+cd "$REPO_DIR/dist"
+zip -rq "$ZIP_PATH" "$SLUG"
+cd "$REPO_DIR"
 
 if [ ! -f "$ZIP_PATH" ]; then
   echo "Error: ZIP archive was not created" >&2
   exit 1
 fi
 
-echo "Created $ZIP_PATH"
+echo "✅ Creato: $ZIP_NAME"
+echo "📦 Contenuto: cartella $SLUG/ con tutti i file del plugin (incluso vendor/)"
