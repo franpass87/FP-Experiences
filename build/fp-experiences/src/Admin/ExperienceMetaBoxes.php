@@ -2768,8 +2768,8 @@ final class ExperienceMetaBoxes
         $highlights = isset($raw['highlights']) ? $this->lines_to_array($raw['highlights']) : [];
         $inclusions = isset($raw['inclusions']) ? $this->lines_to_array($raw['inclusions']) : [];
         $exclusions = isset($raw['exclusions']) ? $this->lines_to_array($raw['exclusions']) : [];
-        $what_to_bring = isset($raw['what_to_bring']) ? sanitize_text_field((string) $raw['what_to_bring']) : '';
-        $notes = isset($raw['notes']) ? sanitize_text_field((string) $raw['notes']) : '';
+        $what_to_bring = isset($raw['what_to_bring']) ? $this->lines_to_array($raw['what_to_bring']) : [];
+        $notes = isset($raw['notes']) ? $this->lines_to_array($raw['notes']) : [];
 
         $this->update_or_delete_meta($post_id, '_fp_highlights', $highlights);
         $this->update_or_delete_meta($post_id, '_fp_inclusions', $inclusions);
@@ -3306,8 +3306,8 @@ final class ExperienceMetaBoxes
             'highlights' => $this->array_to_lines($highlights),
             'inclusions' => $this->array_to_lines($inclusions),
             'exclusions' => $this->array_to_lines($exclusions),
-            'what_to_bring' => sanitize_text_field((string) get_post_meta($post_id, '_fp_what_to_bring', true)),
-            'notes' => sanitize_text_field((string) get_post_meta($post_id, '_fp_notes', true)),
+            'what_to_bring' => $this->array_to_lines(Helpers::get_meta_array($post_id, '_fp_what_to_bring')),
+            'notes' => $this->array_to_lines(Helpers::get_meta_array($post_id, '_fp_notes')),
         ];
     }
     private function get_policy_meta(int $post_id): array
