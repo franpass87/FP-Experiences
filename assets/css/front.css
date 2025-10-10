@@ -4178,7 +4178,7 @@ body.fp-modal-open {
     justify-content: space-between;
     gap: 0.75rem;
     flex-wrap: wrap;
-    z-index: 999999;
+    z-index: 9999999;
     opacity: 1;
     transform: translateY(0);
     transition: transform 0.3s ease, opacity 0.3s ease;
