@@ -3311,13 +3311,15 @@ final class ExperienceMetaBoxes
         $highlights = get_post_meta($post_id, '_fp_highlights', true);
         $inclusions = get_post_meta($post_id, '_fp_inclusions', true);
         $exclusions = get_post_meta($post_id, '_fp_exclusions', true);
+        $what_to_bring = get_post_meta($post_id, '_fp_what_to_bring', true);
+        $notes = get_post_meta($post_id, '_fp_notes', true);
 
         return [
             'highlights' => $this->array_to_lines($highlights),
             'inclusions' => $this->array_to_lines($inclusions),
             'exclusions' => $this->array_to_lines($exclusions),
-            'what_to_bring' => $this->array_to_lines(Helpers::get_meta_array($post_id, '_fp_what_to_bring')),
-            'notes' => $this->array_to_lines(Helpers::get_meta_array($post_id, '_fp_notes')),
+            'what_to_bring' => $this->array_to_lines($what_to_bring),
+            'notes' => $this->array_to_lines($notes),
         ];
     }
     private function get_policy_meta(int $post_id): array
@@ -3410,12 +3412,20 @@ final class ExperienceMetaBoxes
 
     private function array_to_lines($value): string
     {
-        if (! is_array($value)) {
-            return '';
+        if (is_array($value)) {
+            $items = array_values(array_filter(array_map('sanitize_text_field', $value)));
+            return implode("\n", $items);
         }
 
-        $items = array_values(array_filter(array_map('sanitize_text_field', $value)));
-        return implode("\n", $items);
+        if (is_string($value)) {
+            // Gestisce il caso di dati corrotti dove è stata salvata la stringa "Array"
+            if (trim($value) === 'Array') {
+                return '';
+            }
+            return $value;
+        }
+
+        return '';
     }
     private function get_tax_class_options(): array
     {
