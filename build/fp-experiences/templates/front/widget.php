@@ -492,80 +492,38 @@ $price_from_display = null !== $price_from_value && $price_from_value > 0
                     </div>
                     
                     <?php
-                    $overview = isset($overview) && is_array($overview) ? $overview : [];
-                    
-                    // DEBUG: Temporaneo per verificare i dati
-                    if (current_user_can('manage_options')) {
-                        echo '<!-- DEBUG TRUST BADGES -->';
-                        echo '<!-- Overview isset: ' . (isset($overview) ? 'YES' : 'NO') . ' -->';
-                        echo '<!-- Overview is_array: ' . (is_array($overview) ? 'YES' : 'NO') . ' -->';
-                        if (isset($overview['cognitive_biases'])) {
-                            echo '<!-- cognitive_biases count: ' . count($overview['cognitive_biases']) . ' -->';
-                            echo '<!-- cognitive_biases data: ' . esc_html(print_r($overview['cognitive_biases'], true)) . ' -->';
-                        } else {
-                            echo '<!-- cognitive_biases: NOT SET -->';
-                        }
-                        echo '<!-- END DEBUG -->';
-                    }
-                    
-                    $overview_biases = isset($overview['cognitive_biases']) && is_array($overview['cognitive_biases'])
-                        ? array_values(array_filter(array_map(
-                            static function ($bias) {
-                                if (! is_array($bias)) {
-                                    $bias = [
-                                        'label' => (string) $bias,
-                                    ];
-                                }
-
-                                $label = isset($bias['label']) ? (string) $bias['label'] : '';
-                                if ('' === $label) {
-                                    return null;
-                                }
-
-                                $icon = isset($bias['icon']) ? (string) $bias['icon'] : '';
-
-                                return [
-                                    'label' => $label,
-                                    'icon' => $icon,
+                    // Trust badges - semplificato per garantire la visualizzazione
+                    $trust_badges = [];
+                    if (isset($overview['cognitive_biases']) && is_array($overview['cognitive_biases'])) {
+                        foreach ($overview['cognitive_biases'] as $bias) {
+                            if (is_array($bias) && !empty($bias['label'])) {
+                                $trust_badges[] = [
+                                    'label' => (string) $bias['label'],
+                                    'icon' => isset($bias['icon']) ? (string) $bias['icon'] : '',
+                                    'tagline' => isset($bias['tagline']) ? (string) $bias['tagline'] : '',
+                                    'description' => isset($bias['description']) ? (string) $bias['description'] : '',
                                 ];
-                            },
-                            $overview['cognitive_biases']
-                        )))
-                        : [];
-                    
-                    // DEBUG: Verifica badge processati
-                    if (current_user_can('manage_options')) {
-                        echo '<!-- overview_biases count: ' . count($overview_biases) . ' -->';
-                        if (!empty($overview_biases)) {
-                            echo '<!-- overview_biases: ' . esc_html(print_r($overview_biases, true)) . ' -->';
+                            }
                         }
                     }
                     ?>
 
-                    <?php if (! empty($overview_biases)) : ?>
+                    <?php if (!empty($trust_badges)) : ?>
                         <ul class="fp-exp-overview__trust-list" role="list">
-                            <?php foreach ($overview_biases as $bias) :
-                                $label = isset($bias['label']) ? (string) $bias['label'] : '';
-                                if ('' === $label) {
-                                    continue;
-                                }
-
-                                $icon_name = isset($bias['icon']) ? (string) $bias['icon'] : '';
-                                $icon_svg = \FP_Exp\Utils\Helpers::cognitive_bias_icon_svg($icon_name);
-                                ?>
-                                <li class="fp-exp-overview__chip" title="<?php echo esc_attr($label); ?>" aria-label="<?php echo esc_attr($label); ?>">
-                                    <span class="fp-exp-overview__chip-icon" aria-hidden="true"><?php echo $icon_svg; ?></span>
-                                    <span class="fp-exp-overview__chip-label"><?php echo esc_html($label); ?></span>
+                            <?php foreach ($trust_badges as $badge) : ?>
+                                <li class="fp-exp-overview__chip" title="<?php echo esc_attr($badge['label']); ?>">
+                                    <span class="fp-exp-overview__chip-icon" aria-hidden="true">
+                                        <?php echo \FP_Exp\Utils\Helpers::cognitive_bias_icon_svg($badge['icon']); ?>
+                                    </span>
+                                    <span class="fp-exp-overview__chip-body">
+                                        <span class="fp-exp-overview__chip-label"><?php echo esc_html($badge['label']); ?></span>
+                                        <?php if (!empty($badge['tagline'])) : ?>
+                                            <span class="fp-exp-overview__chip-tagline"><?php echo esc_html($badge['tagline']); ?></span>
+                                        <?php endif; ?>
+                                    </span>
                                 </li>
                             <?php endforeach; ?>
                         </ul>
-                    <?php elseif (current_user_can('manage_options')) : ?>
-                        <!-- DEBUG: Nessun badge di fiducia da visualizzare -->
-                        <div style="padding: 1rem; background: #fff3cd; border: 2px solid #ffc107; border-radius: 8px; margin: 1rem 0;">
-                            <strong>⚠️ DEBUG (visibile solo agli admin):</strong> Nessun badge di fiducia configurato.
-                            <br>I badge dovrebbero essere qui, ma <code>$overview_biases</code> è vuoto.
-                            <br>Controlla i commenti HTML nel sorgente per maggiori dettagli.
-                        </div>
                     <?php endif; ?>
                     
                     <?php if ($rtb_enabled) : ?>
