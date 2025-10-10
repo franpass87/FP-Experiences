@@ -4228,6 +4228,11 @@ body.fp-modal-open {
     pointer-events: none;
 }
 
+/* Nasconde blast_button str1 nelle pagine esperienza */
+.fp-exp-page .blast_button.str1 {
+    display: none !important;
+}
+
 @media (min-width: 1024px) {
     .fp-layout {
         --fp-max: var(--fp-exp-max, 1200px);
