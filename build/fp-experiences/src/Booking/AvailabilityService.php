@@ -145,8 +145,8 @@ final class AvailabilityService
         $days = $all_days;
         $custom = []; // Custom slots non più usati nel nuovo formato
 
-        // Durata: se non specificata nelle meta, default 60m.
-        $duration_minutes = 60;
+        // Durata: leggi dalla ricorrenza, default 60m se non specificata
+        $duration_minutes = isset($recurrence['duration']) ? absint((string) $recurrence['duration']) : 60;
 
         try {
             $range_start = new DateTimeImmutable($start_utc, new DateTimeZone('UTC'));
@@ -353,7 +353,8 @@ final class AvailabilityService
             return [];
         }
 
-        $duration_minutes = 60;
+        // Durata: leggi dalla availability, default 60m se non specificata
+        $duration_minutes = isset($availability['duration']) ? absint((string) $availability['duration']) : 60;
 
         try {
             $range_start = new DateTimeImmutable($start_utc, new DateTimeZone('UTC'));
