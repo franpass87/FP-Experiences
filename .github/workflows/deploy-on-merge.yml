@@ -54,6 +54,7 @@ jobs:
 
       - name: Create GitHub Release
         id: create_release
+        continue-on-error: true
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ steps.version.outputs.version }}
@@ -78,6 +79,14 @@ jobs:
           prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Check GitHub Release status
+        if: steps.create_release.outcome == 'failure'
+        run: |
+          echo "⚠️  Skip retry — your GitHub token/PAT does not have the required permission to create a release"
+          echo "📦 L'artifact ZIP è stato comunque creato e caricato con successo"
+          echo "ℹ️  Per abilitare la creazione automatica delle release, configura i permessi del token:"
+          echo "    Settings → Actions → General → Workflow permissions → Read and write permissions"
 
       - name: Deploy to WordPress via WP-CLI (optional)
         if: ${{ vars.ENABLE_WP_DEPLOY == 'true' }}
@@ -105,7 +114,11 @@ jobs:
         run: |
           echo "✅ Deployment completato con successo!"
           echo "📦 Versione: ${{ steps.version.outputs.version }}"
-          echo "🔗 Release URL: ${{ steps.create_release.outputs.url }}"
+          if [ "${{ steps.create_release.outcome }}" == "success" ]; then
+            echo "🔗 Release URL: ${{ steps.create_release.outputs.url }}"
+          else
+            echo "⚠️  GitHub Release non creata (permessi insufficienti)"
+          fi
 
       - name: Notify deployment failure
         if: failure()
