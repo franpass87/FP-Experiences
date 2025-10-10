@@ -618,36 +618,44 @@ final class ExperienceMetaBoxes
                         ?>
                         <div class="fp-exp-taxonomy-editor fp-exp-taxonomy-editor--compact" aria-describedby="fp-exp-experience-badges-help">
                             <div class="fp-exp-taxonomy-editor__list">
-                                <?php foreach ($custom_badges_existing as $entry) :
+                                <?php
+                                $badge_index = 0;
+                                foreach ($custom_badges_existing as $entry) :
                                     $cid = sanitize_key((string) ($entry['id'] ?? ''));
                                     $clabel = sanitize_text_field((string) ($entry['label'] ?? ''));
                                     $cdesc = sanitize_text_field((string) ($entry['description'] ?? ''));
                                     ?>
                                     <div class="fp-exp-taxonomy-editor__item">
-                                        <input type="hidden" name="fp_exp_details[experience_badges_custom][][id]" value="<?php echo esc_attr($cid); ?>" />
+                                        <input type="hidden" name="fp_exp_details[experience_badges_custom][<?php echo $badge_index; ?>][id]" value="<?php echo esc_attr($cid); ?>" />
                                         <label class="fp-exp-taxonomy-editor__field">
                                             <span class="fp-exp-field__label"><?php esc_html_e('Titolo badge', 'fp-experiences'); ?></span>
-                                            <input type="text" name="fp_exp_details[experience_badges_custom][][label]" value="<?php echo esc_attr($clabel); ?>" />
+                                            <input type="text" name="fp_exp_details[experience_badges_custom][<?php echo $badge_index; ?>][label]" value="<?php echo esc_attr($clabel); ?>" />
                                         </label>
                                         <label class="fp-exp-taxonomy-editor__field">
                                             <span class="fp-exp-field__label"><?php esc_html_e('Descrizione badge', 'fp-experiences'); ?></span>
-                                            <textarea rows="2" name="fp_exp_details[experience_badges_custom][][description]"><?php echo esc_textarea($cdesc); ?></textarea>
+                                            <textarea rows="2" name="fp_exp_details[experience_badges_custom][<?php echo $badge_index; ?>][description]"><?php echo esc_textarea($cdesc); ?></textarea>
                                         </label>
                                     </div>
-                                <?php endforeach; ?>
+                                <?php
+                                    $badge_index++;
+                                endforeach;
+                                ?>
                                 <?php for ($i = 0; $i < 6; $i++) : ?>
                                     <div class="fp-exp-taxonomy-editor__item">
-                                        <input type="hidden" name="fp_exp_details[experience_badges_custom][][id]" value="" />
+                                        <input type="hidden" name="fp_exp_details[experience_badges_custom][<?php echo $badge_index; ?>][id]" value="" />
                                         <label class="fp-exp-taxonomy-editor__field">
                                             <span class="fp-exp-field__label"><?php esc_html_e('Titolo badge', 'fp-experiences'); ?></span>
-                                            <input type="text" name="fp_exp_details[experience_badges_custom][][label]" value="" />
+                                            <input type="text" name="fp_exp_details[experience_badges_custom][<?php echo $badge_index; ?>][label]" value="" />
                                         </label>
                                         <label class="fp-exp-taxonomy-editor__field">
                                             <span class="fp-exp-field__label"><?php esc_html_e('Descrizione badge', 'fp-experiences'); ?></span>
-                                            <textarea rows="2" name="fp_exp_details[experience_badges_custom][][description]"></textarea>
+                                            <textarea rows="2" name="fp_exp_details[experience_badges_custom][<?php echo $badge_index; ?>][description]"></textarea>
                                         </label>
                                     </div>
-                                <?php endfor; ?>
+                                <?php
+                                    $badge_index++;
+                                endfor;
+                                ?>
                             </div>
                         </div>
                     </div>
