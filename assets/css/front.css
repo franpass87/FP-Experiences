@@ -4292,6 +4292,29 @@ body:has(.fp-listing) .animate__animated.animate__fadeInRight {
     pointer-events: none !important;
 }
 
+/* Nasconde i widget di contatto nelle pagine singole esperienze con body:has */
+body:has(.single-fp_experience) .blast_button.str1,
+body:has(.single-fp_experience) .aio-contact-trigger-front,
+body:has(.single-fp_experience) .aio-contact-trigger,
+body:has(.single-fp_experience) .aio-contact-show-dot-status,
+body:has(.single-fp_experience) .aio-contact-box-shadow,
+body:has(.single-fp_experience) .aio-contact-hide-not-available-agent,
+body:has(.single-fp_experience) .aio-contact-rounded-avatar,
+body:has(.single-fp_experience) .animate__animated.animate__fadeInRight,
+body.single-fp_experience .blast_button.str1,
+body.single-fp_experience .aio-contact-trigger-front,
+body.single-fp_experience .aio-contact-trigger,
+body.single-fp_experience .aio-contact-show-dot-status,
+body.single-fp_experience .aio-contact-box-shadow,
+body.single-fp_experience .aio-contact-hide-not-available-agent,
+body.single-fp_experience .aio-contact-rounded-avatar,
+body.single-fp_experience .animate__animated.animate__fadeInRight {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+
 @media (min-width: 1024px) {
     .fp-layout {
         --fp-max: var(--fp-exp-max, 1200px);
