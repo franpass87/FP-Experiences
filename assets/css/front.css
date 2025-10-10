@@ -4228,8 +4228,9 @@ body.fp-modal-open {
     pointer-events: none;
 }
 
-/* Nasconde blast_button str1 nelle pagine esperienza */
-.fp-exp-page .blast_button.str1 {
+/* Nasconde blast_button str1 e aio-contact-trigger-front nelle pagine esperienza */
+.fp-exp-page .blast_button.str1,
+.fp-exp-page .aio-contact-trigger-front {
     display: none !important;
 }
 
