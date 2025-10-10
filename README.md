@@ -2,7 +2,7 @@
 
 > Plugin WordPress professionale per la gestione di esperienze turistiche, prenotazioni online, e calendario disponibilità.
 
-[![Version](https://img.shields.io/badge/version-0.3.4-blue.svg)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.3.6-blue.svg)](CHANGELOG.md)
 [![WordPress](https://img.shields.io/badge/WordPress-6.0%2B-blue.svg)](https://wordpress.org/)
 [![PHP](https://img.shields.io/badge/PHP-8.1%2B-purple.svg)](https://php.net/)
 [![License](https://img.shields.io/badge/license-GPL--2.0%2B-green.svg)](LICENSE)
@@ -17,6 +17,7 @@
 - [Configurazione Rapida](#-configurazione-rapida)
 - [Documentazione](#-documentazione)
 - [Build e Sviluppo](#-build-e-sviluppo)
+- [Deployment Automatico](#-deployment-automatico)
 - [Changelog](#-changelog)
 - [Supporto](#-supporto)
 
@@ -292,6 +293,62 @@ npm run lint
 composer run phpcbf
 npm run lint:fix
 ```
+
+---
+
+## 🚀 Deployment Automatico
+
+Il plugin è configurato con **GitHub Actions** per deployment automatico su merge.
+
+### Cosa Succede Automaticamente
+
+Ogni volta che fai un **merge su `main`**:
+
+1. ✅ GitHub Actions crea la build del plugin
+2. ✅ Viene creata una release su GitHub con il file ZIP
+3. ✅ (Opzionale) Il plugin viene deployato automaticamente su WordPress
+
+### Setup Rapido (5 minuti)
+
+#### Opzione A: GitHub Updater (CONSIGLIATO)
+
+1. Installa [GitHub Updater](https://github.com/afragen/github-updater) su WordPress
+2. Configura con il tuo repository
+3. ✅ WordPress si aggiorna automaticamente ad ogni release!
+
+#### Opzione B: Deploy Diretto SSH
+
+1. Configura i secrets su GitHub (vedi documentazione)
+2. Abilita `ENABLE_WP_DEPLOY=true`
+3. ✅ Deploy automatico via SSH ad ogni merge!
+
+### Aggiorna Versione
+
+```bash
+# Usa lo script helper
+.github/scripts/update-version.sh 0.3.7
+
+# Poi commit e push su main
+git commit -am "Bump version to 0.3.7"
+git push origin main
+
+# GitHub Actions fa il resto! 🎉
+```
+
+### 📖 Documentazione Completa
+
+- 📘 **[Setup Rapido](DEPLOYMENT-SETUP.md)** - Configurazione in 5 minuti
+- 📗 **[Guida Completa](.github/DEPLOYMENT.md)** - Tutte le opzioni di deployment
+- 📙 **[Test Sistema](.github/QUICK-TEST.md)** - Come testare il deployment
+- 📕 **[Riepilogo](GITHUB-DEPLOYMENT-SUMMARY.md)** - Panoramica generale
+
+### Workflow Disponibili
+
+| Workflow | Trigger | Funzione |
+|----------|---------|----------|
+| `deploy-on-merge.yml` | Push su `main` | Build + Release + Deploy |
+| `build-zip.yml` | Push/tag | Solo build |
+| `build-plugin-zip.yml` | Push su main/tag | Build ZIP |
 
 ---
 

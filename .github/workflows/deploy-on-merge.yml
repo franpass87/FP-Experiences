@@ -1,0 +1,115 @@
+name: Deploy Plugin on Merge
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch:  # Permette esecuzione manuale
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          coverage: none
+
+      - name: Install Composer dependencies
+        run: |
+          composer install --no-dev --prefer-dist --no-interaction --optimize-autoloader
+          composer dump-autoload -o
+
+      - name: Determine plugin version
+        id: version
+        run: |
+          VERSION=$(grep -E '^[[:space:]]*\*[[:space:]]*Version:' fp-experiences.php | head -n 1 | sed -E 's/^[[:space:]]*\*[[:space:]]*Version:[[:space:]]*//;s/[[:space:]]*$//')
+          if [ -z "$VERSION" ]; then
+            echo "Unable to determine plugin version" >&2
+            exit 1
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "📦 Plugin version: $VERSION"
+
+      - name: Make build script executable
+        run: chmod +x .github/scripts/build-zip.sh
+
+      - name: Build plugin ZIP
+        run: .github/scripts/build-zip.sh
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: fp-experiences-${{ steps.version.outputs.version }}
+          path: fp-experiences-${{ steps.version.outputs.version }}.zip
+          if-no-files-found: error
+
+      - name: Create GitHub Release
+        id: create_release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.version.outputs.version }}
+          name: FP Experiences v${{ steps.version.outputs.version }}
+          body: |
+            ## 🚀 Release automatica v${{ steps.version.outputs.version }}
+            
+            Questa release è stata creata automaticamente dopo il merge su ${{ github.ref_name }}.
+            
+            ### 📦 Download
+            Scarica il file ZIP allegato per installare o aggiornare il plugin.
+            
+            ### 🔄 Auto-aggiornamento WordPress
+            Se hai configurato GitHub Updater sul tuo sito WordPress, il plugin si aggiornerà automaticamente.
+            
+            ---
+            **Commit:** ${{ github.sha }}
+            **Branch:** ${{ github.ref_name }}
+            **Data:** ${{ github.event.head_commit.timestamp }}
+          files: fp-experiences-${{ steps.version.outputs.version }}.zip
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Deploy to WordPress via WP-CLI (optional)
+        if: ${{ vars.ENABLE_WP_DEPLOY == 'true' }}
+        run: |
+          echo "🔄 Deploying to WordPress site..."
+          
+          # Installa sshpass se necessario
+          sudo apt-get update && sudo apt-get install -y sshpass
+          
+          # Carica il plugin via SSH
+          sshpass -p "${{ secrets.WP_SSH_PASSWORD }}" scp -o StrictHostKeyChecking=no \
+            fp-experiences-${{ steps.version.outputs.version }}.zip \
+            ${{ secrets.WP_SSH_USER }}@${{ secrets.WP_SSH_HOST }}:/tmp/
+          
+          # Aggiorna il plugin via WP-CLI
+          sshpass -p "${{ secrets.WP_SSH_PASSWORD }}" ssh -o StrictHostKeyChecking=no \
+            ${{ secrets.WP_SSH_USER }}@${{ secrets.WP_SSH_HOST }} \
+            "cd ${{ secrets.WP_INSTALL_PATH }} && \
+             wp plugin update fp-experiences --version=${{ steps.version.outputs.version }} --activate"
+          
+          echo "✅ Plugin deployed successfully!"
+
+      - name: Notify deployment success
+        if: success()
+        run: |
+          echo "✅ Deployment completato con successo!"
+          echo "📦 Versione: ${{ steps.version.outputs.version }}"
+          echo "🔗 Release URL: ${{ steps.create_release.outputs.url }}"
+
+      - name: Notify deployment failure
+        if: failure()
+        run: |
+          echo "❌ Deployment fallito!"
+          echo "Controlla i log per maggiori dettagli."
+          exit 1
