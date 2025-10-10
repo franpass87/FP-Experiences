@@ -9,6 +9,9 @@
  * Domain Path: /languages
  * License: GPLv2+
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
+ * GitHub Plugin URI: franpass87/FP-Experiences
+ * Primary Branch: main
+ * Release Asset: true
  */
 
 declare(strict_types=1);
