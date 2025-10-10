@@ -492,47 +492,35 @@ $price_from_display = null !== $price_from_value && $price_from_value > 0
                     </div>
                     
                     <?php
-                    $overview = isset($overview) && is_array($overview) ? $overview : [];
-                    $overview_biases = isset($overview['cognitive_biases']) && is_array($overview['cognitive_biases'])
-                        ? array_values(array_filter(array_map(
-                            static function ($bias) {
-                                if (! is_array($bias)) {
-                                    $bias = [
-                                        'label' => (string) $bias,
-                                    ];
-                                }
-
-                                $label = isset($bias['label']) ? (string) $bias['label'] : '';
-                                if ('' === $label) {
-                                    return null;
-                                }
-
-                                $icon = isset($bias['icon']) ? (string) $bias['icon'] : '';
-
-                                return [
-                                    'label' => $label,
-                                    'icon' => $icon,
+                    // Trust badges - semplificato per garantire la visualizzazione
+                    $trust_badges = [];
+                    if (isset($overview['cognitive_biases']) && is_array($overview['cognitive_biases'])) {
+                        foreach ($overview['cognitive_biases'] as $bias) {
+                            if (is_array($bias) && !empty($bias['label'])) {
+                                $trust_badges[] = [
+                                    'label' => (string) $bias['label'],
+                                    'icon' => isset($bias['icon']) ? (string) $bias['icon'] : '',
+                                    'tagline' => isset($bias['tagline']) ? (string) $bias['tagline'] : '',
+                                    'description' => isset($bias['description']) ? (string) $bias['description'] : '',
                                 ];
-                            },
-                            $overview['cognitive_biases']
-                        )))
-                        : [];
+                            }
+                        }
+                    }
                     ?>
 
-                    <?php if (! empty($overview_biases)) : ?>
+                    <?php if (!empty($trust_badges)) : ?>
                         <ul class="fp-exp-overview__trust-list" role="list">
-                            <?php foreach ($overview_biases as $bias) :
-                                $label = isset($bias['label']) ? (string) $bias['label'] : '';
-                                if ('' === $label) {
-                                    continue;
-                                }
-
-                                $icon_name = isset($bias['icon']) ? (string) $bias['icon'] : '';
-                                $icon_svg = \FP_Exp\Utils\Helpers::cognitive_bias_icon_svg($icon_name);
-                                ?>
-                                <li class="fp-exp-overview__chip" title="<?php echo esc_attr($label); ?>" aria-label="<?php echo esc_attr($label); ?>">
-                                    <span class="fp-exp-overview__chip-icon" aria-hidden="true"><?php echo $icon_svg; ?></span>
-                                    <span class="fp-exp-overview__chip-label"><?php echo esc_html($label); ?></span>
+                            <?php foreach ($trust_badges as $badge) : ?>
+                                <li class="fp-exp-overview__chip" title="<?php echo esc_attr($badge['label']); ?>">
+                                    <span class="fp-exp-overview__chip-icon" aria-hidden="true">
+                                        <?php echo \FP_Exp\Utils\Helpers::cognitive_bias_icon_svg($badge['icon']); ?>
+                                    </span>
+                                    <span class="fp-exp-overview__chip-body">
+                                        <span class="fp-exp-overview__chip-label"><?php echo esc_html($badge['label']); ?></span>
+                                        <?php if (!empty($badge['tagline'])) : ?>
+                                            <span class="fp-exp-overview__chip-tagline"><?php echo esc_html($badge['tagline']); ?></span>
+                                        <?php endif; ?>
+                                    </span>
                                 </li>
                             <?php endforeach; ?>
                         </ul>

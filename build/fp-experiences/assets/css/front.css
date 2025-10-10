@@ -3095,21 +3095,30 @@
     gap: clamp(1rem, 2.5vw, 1.5rem);
     grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
     list-style: none;
-    margin: 0;
+    margin: 1.5rem 0;
     padding: 0;
 }
 
 
 .fp-exp-overview__chip {
     display: flex;
-    align-items: flex-start;
-    gap: 0.6rem;
-    padding: 0.65rem 0.85rem;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.85rem 1rem;
     border-radius: 16px;
-    background: rgba(15, 23, 42, 0.08);
+    background: rgba(15, 23, 42, 0.04);
+    border: 1px solid rgba(15, 23, 42, 0.08);
     color: var(--fp-color-text);
     min-width: 0;
     width: 100%;
+    transition: all 0.2s ease;
+}
+
+.fp-exp-overview__chip:hover {
+    background: rgba(15, 23, 42, 0.06);
+    border-color: rgba(15, 23, 42, 0.12);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 .fp-exp-overview__chip-icon {

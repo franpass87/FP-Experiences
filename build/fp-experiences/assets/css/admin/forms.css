@@ -60,6 +60,21 @@
     gap: 8px;
 }
 
+/* Meta box inline fields */
+.fp-exp-meta-box__inline {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+}
+
+.fp-exp-meta-box__inline label {
+    display: block;
+}
+
+.fp-exp-meta-box__inline input {
+    width: 100%;
+}
+
 .fp-exp-radio-cards {
     display: grid;
     gap: 12px;
