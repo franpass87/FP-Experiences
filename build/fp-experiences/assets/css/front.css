@@ -4262,6 +4262,21 @@ body.fp-modal-open {
     display: none !important;
 }
 
+/* Nasconde i widget di contatto quando esiste una pagina experience nella pagina */
+body:has(.fp-exp-page) .blast_button.str1,
+body:has(.fp-exp-page) .aio-contact-trigger-front,
+body:has(.fp-exp-page) .aio-contact-trigger,
+body:has(.fp-exp-page) .aio-contact-show-dot-status,
+body:has(.fp-exp-page) .aio-contact-box-shadow,
+body:has(.fp-exp-page) .aio-contact-hide-not-available-agent,
+body:has(.fp-exp-page) .aio-contact-rounded-avatar,
+body:has(.fp-exp-page) .animate__animated.animate__fadeInRight {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+
 @media (min-width: 1024px) {
     .fp-layout {
         --fp-max: var(--fp-exp-max, 1200px);
