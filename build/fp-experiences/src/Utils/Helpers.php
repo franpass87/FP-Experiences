@@ -1239,6 +1239,11 @@ final class Helpers
             $raw = $default;
         }
 
+        // Gestisce il caso di dati corrotti dove è stata salvata la stringa "Array"
+        if (is_string($raw) && trim($raw) === 'Array') {
+            return [];
+        }
+
         if (is_array($raw)) {
             $values = $raw;
         } elseif (is_string($raw)) {
@@ -1257,7 +1262,7 @@ final class Helpers
         }, $values);
 
         $values = array_filter($values, static function (string $value): bool {
-            return '' !== $value;
+            return '' !== $value && trim($value) !== 'Array';
         });
 
         return array_values(array_unique($values));
