@@ -1249,6 +1249,10 @@ final class Helpers
         }
 
         $values = array_map(static function ($value): string {
+            // Gestisce array nidificati o elementi non validi
+            if (is_array($value)) {
+                return '';
+            }
             return sanitize_text_field((string) $value);
         }, $values);
 
