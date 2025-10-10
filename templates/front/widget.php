@@ -490,6 +490,54 @@ $price_from_display = null !== $price_from_value && $price_from_value > 0
                             <p class="fp-exp-summary__disclaimer" data-fp-summary-disclaimer hidden></p>
                         </div>
                     </div>
+                    
+                    <?php
+                    $overview = isset($overview) && is_array($overview) ? $overview : [];
+                    $overview_biases = isset($overview['cognitive_biases']) && is_array($overview['cognitive_biases'])
+                        ? array_values(array_filter(array_map(
+                            static function ($bias) {
+                                if (! is_array($bias)) {
+                                    $bias = [
+                                        'label' => (string) $bias,
+                                    ];
+                                }
+
+                                $label = isset($bias['label']) ? (string) $bias['label'] : '';
+                                if ('' === $label) {
+                                    return null;
+                                }
+
+                                $icon = isset($bias['icon']) ? (string) $bias['icon'] : '';
+
+                                return [
+                                    'label' => $label,
+                                    'icon' => $icon,
+                                ];
+                            },
+                            $overview['cognitive_biases']
+                        )))
+                        : [];
+                    ?>
+
+                    <?php if (! empty($overview_biases)) : ?>
+                        <ul class="fp-exp-overview__trust-list" role="list">
+                            <?php foreach ($overview_biases as $bias) :
+                                $label = isset($bias['label']) ? (string) $bias['label'] : '';
+                                if ('' === $label) {
+                                    continue;
+                                }
+
+                                $icon_name = isset($bias['icon']) ? (string) $bias['icon'] : '';
+                                $icon_svg = \FP_Exp\Utils\Helpers::cognitive_bias_icon_svg($icon_name);
+                                ?>
+                                <li class="fp-exp-overview__chip" title="<?php echo esc_attr($label); ?>" aria-label="<?php echo esc_attr($label); ?>">
+                                    <span class="fp-exp-overview__chip-icon" aria-hidden="true"><?php echo $icon_svg; ?></span>
+                                    <span class="fp-exp-overview__chip-label"><?php echo esc_html($label); ?></span>
+                                </li>
+                            <?php endforeach; ?>
+                        </ul>
+                    <?php endif; ?>
+                    
                     <?php if ($rtb_enabled) : ?>
                         <form
                             class="fp-exp-rtb-form"
@@ -558,53 +606,6 @@ $price_from_display = null !== $price_from_value && $price_from_value > 0
                 </div>
             </li>
         </ol>
-
-        <?php
-        $overview = isset($overview) && is_array($overview) ? $overview : [];
-        $overview_biases = isset($overview['cognitive_biases']) && is_array($overview['cognitive_biases'])
-            ? array_values(array_filter(array_map(
-                static function ($bias) {
-                    if (! is_array($bias)) {
-                        $bias = [
-                            'label' => (string) $bias,
-                        ];
-                    }
-
-                    $label = isset($bias['label']) ? (string) $bias['label'] : '';
-                    if ('' === $label) {
-                        return null;
-                    }
-
-                    $icon = isset($bias['icon']) ? (string) $bias['icon'] : '';
-
-                    return [
-                        'label' => $label,
-                        'icon' => $icon,
-                    ];
-                },
-                $overview['cognitive_biases']
-            )))
-            : [];
-        ?>
-
-        <?php if (! empty($overview_biases)) : ?>
-            <ul class="fp-exp-overview__trust-list" role="list">
-                <?php foreach ($overview_biases as $bias) :
-                    $label = isset($bias['label']) ? (string) $bias['label'] : '';
-                    if ('' === $label) {
-                        continue;
-                    }
-
-                    $icon_name = isset($bias['icon']) ? (string) $bias['icon'] : '';
-                    $icon_svg = \FP_Exp\Utils\Helpers::cognitive_bias_icon_svg($icon_name);
-                    ?>
-                    <li class="fp-exp-overview__chip" title="<?php echo esc_attr($label); ?>" aria-label="<?php echo esc_attr($label); ?>">
-                        <span class="fp-exp-overview__chip-icon" aria-hidden="true"><?php echo $icon_svg; ?></span>
-                        <span class="fp-exp-overview__chip-label"><?php echo esc_html($label); ?></span>
-                    </li>
-                <?php endforeach; ?>
-            </ul>
-        <?php endif; ?>
     </div>
     <?php if (! empty($schema_json)) : ?>
         <script type="application/ld+json" class="fp-exp-schema">
