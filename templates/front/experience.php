@@ -348,21 +348,6 @@ $sticky_price_display = '' !== $price_from_display ? $format_currency($price_fro
                                     <p class="fp-exp-hero__summary"><?php echo esc_html($hero_summary); ?></p>
                                 <?php endif; ?>
                             </header>
-
-                            <?php if (! empty($hero_highlights)) : ?>
-                                <ul class="fp-exp-hero__highlights" role="list">
-                                    <?php foreach ($hero_highlights as $highlight) : ?>
-                                        <li class="fp-exp-hero__highlight">
-                                            <span class="fp-exp-hero__highlight-icon" aria-hidden="true">
-                                                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" width="24" height="24">
-                                                    <path fill="currentColor" d="M9.75 18.25 3.5 12l1.41-1.41 4.84 4.84 9.34-9.34L20.5 7.5Z" />
-                                                </svg>
-                                            </span>
-                                            <span class="fp-exp-hero__highlight-text"><?php echo esc_html($highlight); ?></span>
-                                        </li>
-                                    <?php endforeach; ?>
-                                </ul>
-                            <?php endif; ?>
                         </div>
                     </div>
 
