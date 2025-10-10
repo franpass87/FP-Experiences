@@ -970,8 +970,9 @@ final class ExperienceMetaBoxes
         }
 
         $addons = $pricing['addons'];
+        // Non mostrare addon vuoto di default - l'utente può aggiungerli con il pulsante "Aggiungi extra"
         if (empty($addons)) {
-            $addons = [['name' => '', 'price' => '', 'type' => 'person', 'slug' => '', 'selection_type' => 'checkbox', 'selection_group' => '']];
+            $addons = [];
         }
 
         $group = $pricing['group'];
