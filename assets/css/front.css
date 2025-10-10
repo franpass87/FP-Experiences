@@ -3279,7 +3279,7 @@ body.fp-modal-open {
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: clamp(1.5rem, 5vw, 3rem);
+    padding: clamp(2rem, 6vw, 4rem);
     pointer-events: none;
     opacity: 0;
     transition: opacity 0.25s ease;
@@ -3305,7 +3305,7 @@ body.fp-modal-open {
     position: relative;
     z-index: 1;
     width: min(760px, 100%);
-    max-height: calc(100vh - 6rem);
+    max-height: calc(100vh - 12rem);
     overflow-y: auto;
     overflow-x: hidden;
     border-radius: var(--fp-exp-radius-large, 20px);
@@ -3355,11 +3355,11 @@ body.fp-modal-open {
 
 @media (max-width: 640px) {
     .fp-gift-modal {
-        padding: 1rem;
+        padding: 1.5rem 1rem;
     }
 
     .fp-gift-modal__dialog {
-        max-height: calc(100vh - 2rem);
+        max-height: calc(100vh - 8rem);
         border-radius: var(--fp-exp-radius-base, 12px);
     }
 
