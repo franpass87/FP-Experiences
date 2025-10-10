@@ -3410,7 +3410,14 @@ final class ExperienceMetaBoxes
             return array_values(array_filter(array_map('sanitize_text_field', $value)));
         }
 
-        $lines = preg_split('/\r?\n/', (string) $value);
+        $string_value = (string) $value;
+        
+        // Gestisce il caso di dati corrotti dove è stata salvata la stringa "Array"
+        if (trim($string_value) === 'Array') {
+            return [];
+        }
+
+        $lines = preg_split('/\r?\n/', $string_value);
         if (! is_array($lines)) {
             return [];
         }
