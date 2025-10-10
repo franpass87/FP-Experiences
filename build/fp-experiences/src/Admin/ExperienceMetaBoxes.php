@@ -48,6 +48,8 @@ use function in_array;
 use function implode;
 use function is_array;
 use function is_wp_error;
+use function ob_get_clean;
+use function ob_start;
 use function sanitize_key;
 use function sanitize_text_field;
 use function sanitize_textarea_field;
@@ -262,6 +264,9 @@ final class ExperienceMetaBoxes
 
         $raw = wp_unslash($_POST);
 
+        // Protezione contro output non intenzionale che causa corruzione dati 'Array'
+        ob_start();
+
         $this->save_details_meta($post_id, $raw['fp_exp_details'] ?? []);
         $pricing_status = $this->save_pricing_meta($post_id, $raw['fp_exp_pricing'] ?? []);
         $availability_meta = $this->save_availability_meta($post_id, $raw['fp_exp_availability'] ?? []);
@@ -269,6 +274,12 @@ final class ExperienceMetaBoxes
         $this->save_extras_meta($post_id, $raw['fp_exp_extras'] ?? []);
         $this->save_policy_meta($post_id, $raw['fp_exp_policy'] ?? []);
         $this->save_seo_meta($post_id, $raw['fp_exp_seo'] ?? []);
+
+        // Cattura e scarta qualsiasi output non intenzionale
+        $unwanted_output = ob_get_clean();
+        if (! empty($unwanted_output) && (defined('WP_DEBUG') && WP_DEBUG)) {
+            error_log('FP_EXP: Output non intenzionale durante salvataggio metadati: ' . substr($unwanted_output, 0, 200));
+        }
 
         if ('publish' === get_post_status($post_id)) {
             $this->maybe_generate_recurrence_slots($post_id, $availability_meta);
