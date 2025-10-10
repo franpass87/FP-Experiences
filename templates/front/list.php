@@ -86,10 +86,6 @@ $format_currency = static function (string $amount) use ($currency_symbol, $curr
     <?php if ($tracking_json) : ?>data-fp-items='<?php echo esc_attr($tracking_json); ?>'<?php endif; ?>
 >
     <header class="fp-listing__header">
-        <div class="fp-listing__intro">
-            <h2 class="fp-listing__title"><?php esc_html_e('Esperienze', 'fp-experiences'); ?></h2>
-            <p class="fp-listing__count" aria-live="polite"><?php echo esc_html($results_label); ?></p>
-        </div>
         <?php if (! $is_cards_variant) : ?>
             <div class="fp-listing__controls">
                 <div class="fp-listing__view" role="group" aria-label="<?php esc_attr_e('Cambia layout', 'fp-experiences'); ?>">
