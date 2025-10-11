@@ -892,12 +892,38 @@ final class RestRoutes
             ]);
         }
 
+        global $wpdb;
+        
+        // Pulisci tutti i transient del plugin
+        $transients_deleted = $wpdb->query(
+            "DELETE FROM {$wpdb->options} 
+            WHERE option_name LIKE '_transient_fp_exp_%' 
+            OR option_name LIKE '_transient_timeout_fp_exp_%'"
+        );
+        
+        // Pulisci object cache se disponibile
+        if (function_exists('wp_cache_flush')) {
+            wp_cache_flush();
+        }
+        
+        // Pulisci cache degli asset versioning
+        Helpers::clear_asset_version_cache();
+        
+        // Hook per permettere ad altri plugin/moduli di pulire la loro cache
         do_action('fp_exp_tools_clear_cache');
+        
+        // Pulisci i log
         Logger::clear();
+
+        $message = sprintf(
+            /* translators: %d: number of transients deleted */
+            __('Plugin caches cleared (%d transients removed) and logs trimmed.', 'fp-experiences'),
+            (int) $transients_deleted
+        );
 
         return rest_ensure_response([
             'success' => true,
-            'message' => __('Plugin caches cleared and logs trimmed.', 'fp-experiences'),
+            'message' => $message,
         ]);
     }
 
