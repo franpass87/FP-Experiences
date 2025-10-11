@@ -25,13 +25,17 @@ use function array_values;
 use function absint;
 use function add_action;
 use function apply_filters;
+use function delete_post_meta;
 use function do_action;
+use function get_current_user_id;
+use function get_post_meta;
+use function get_posts;
+use function get_role;
+use function get_the_title;
 use function home_url;
 use function implode;
 use function is_array;
 use function is_wp_error;
-use function get_current_user_id;
-use function get_role;
 use function rest_ensure_response;
 use function sanitize_key;
 use function sanitize_text_field;
@@ -39,10 +43,11 @@ use function sprintf;
 use function sort;
 use function strtoupper;
 use function update_option;
-use function wp_strip_all_tags;
+use function update_post_meta;
 use function wp_remote_get;
 use function wp_remote_retrieve_body;
 use function wp_remote_retrieve_response_code;
+use function wp_strip_all_tags;
 
 use const MINUTE_IN_SECONDS;
 
@@ -247,6 +252,18 @@ final class RestRoutes
                     return Helpers::can_manage_fp();
                 },
                 'callback' => [$this, 'tool_resync_pages'],
+            ]
+        );
+
+        register_rest_route(
+            'fp-exp/v1',
+            '/tools/fix-corrupted-arrays',
+            [
+                'methods' => 'POST',
+                'permission_callback' => static function (): bool {
+                    return Helpers::can_manage_fp();
+                },
+                'callback' => [$this, 'tool_fix_corrupted_arrays'],
             ]
         );
 
@@ -923,6 +940,109 @@ final class RestRoutes
             ),
             'checked' => $checked,
             'created' => $created,
+        ]);
+    }
+
+    public function tool_fix_corrupted_arrays(): WP_REST_Response
+    {
+        if (Helpers::hit_rate_limit('tools_fix_arrays_' . get_current_user_id(), 3, MINUTE_IN_SECONDS)) {
+            return rest_ensure_response([
+                'success' => false,
+                'message' => __('Repair tool already executed. Try again in a moment.', 'fp-experiences'),
+            ]);
+        }
+
+        $meta_keys = [
+            '_fp_highlights',
+            '_fp_inclusions',
+            '_fp_exclusions',
+            '_fp_what_to_bring',
+            '_fp_notes',
+        ];
+
+        $experiences = get_posts([
+            'post_type' => 'fp_experience',
+            'posts_per_page' => -1,
+            'post_status' => 'any',
+            'fields' => 'ids',
+        ]);
+
+        $checked = count($experiences);
+        $fixed = 0;
+        $details = [];
+
+        foreach ($experiences as $post_id) {
+            $post_fixed = false;
+
+            foreach ($meta_keys as $meta_key) {
+                $value = get_post_meta($post_id, $meta_key, true);
+
+                // Controlla se è la stringa "Array" corrotta
+                if (is_string($value) && trim($value) === 'Array') {
+                    delete_post_meta($post_id, $meta_key);
+                    $post_fixed = true;
+                    continue;
+                }
+
+                // Controlla se è un array che contiene elementi "Array"
+                if (is_array($value)) {
+                    $original_count = count($value);
+                    $cleaned = array_filter($value, static function ($item) {
+                        if (! is_string($item)) {
+                            return true;
+                        }
+                        return trim($item) !== 'Array';
+                    });
+
+                    if (count($cleaned) !== $original_count) {
+                        if (empty($cleaned)) {
+                            delete_post_meta($post_id, $meta_key);
+                        } else {
+                            update_post_meta($post_id, $meta_key, array_values($cleaned));
+                        }
+                        $post_fixed = true;
+                    }
+                }
+            }
+
+            if ($post_fixed) {
+                $fixed++;
+                $title = get_the_title($post_id);
+                if ($title) {
+                    $details[] = sprintf(
+                        /* translators: 1: experience ID, 2: experience title. */
+                        __('Fixed: #%1$d %2$s', 'fp-experiences'),
+                        $post_id,
+                        $title
+                    );
+                }
+            }
+        }
+
+        Logger::log('tools', 'Corrupted array fields fixed', [
+            'checked' => $checked,
+            'fixed' => $fixed,
+        ]);
+
+        $message = $fixed > 0
+            ? sprintf(
+                /* translators: 1: checked count, 2: fixed count. */
+                __('Checked %1$d experiences and fixed %2$d with corrupted data.', 'fp-experiences'),
+                $checked,
+                $fixed
+            )
+            : sprintf(
+                /* translators: %d: checked count. */
+                __('Checked %d experiences. No corrupted data found.', 'fp-experiences'),
+                $checked
+            );
+
+        return rest_ensure_response([
+            'success' => true,
+            'message' => $message,
+            'checked' => $checked,
+            'fixed' => $fixed,
+            'details' => $details,
         ]);
     }
 
