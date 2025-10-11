@@ -3282,6 +3282,12 @@
     color: var(--fp-color-on-primary, #fff);
 }
 
+@media (max-width: 768px) {
+    .fp-exp-button--secondary {
+        width: 100%;
+    }
+}
+
 body.fp-modal-open {
     overflow: hidden;
 }
