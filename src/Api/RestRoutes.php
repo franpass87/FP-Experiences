@@ -978,7 +978,7 @@ final class RestRoutes
                 $value = get_post_meta($post_id, $meta_key, true);
 
                 // Controlla se è la stringa "Array" corrotta
-                if (is_string($value) && trim($value) === 'Array') {
+                if (is_string($value) && strtolower(trim($value)) === 'array') {
                     delete_post_meta($post_id, $meta_key);
                     $post_fixed = true;
                     continue;
@@ -991,7 +991,7 @@ final class RestRoutes
                         if (! is_string($item)) {
                             return true;
                         }
-                        return trim($item) !== 'Array';
+                        return strtolower(trim($item)) !== 'array';
                     });
 
                     if (count($cleaned) !== $original_count) {

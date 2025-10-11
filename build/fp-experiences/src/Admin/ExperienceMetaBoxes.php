@@ -3421,14 +3421,14 @@ final class ExperienceMetaBoxes
             $sanitized = array_map('sanitize_text_field', $value);
             // Filtra elementi vuoti e la stringa "Array" (dati corrotti)
             return array_values(array_filter($sanitized, static function($item) {
-                return '' !== $item && trim($item) !== 'Array';
+                return '' !== $item && strtolower(trim($item)) !== 'array';
             }));
         }
 
         $string_value = (string) $value;
         
         // Gestisce il caso di dati corrotti dove è stata salvata la stringa "Array"
-        if (trim($string_value) === 'Array') {
+        if (strtolower(trim($string_value)) === 'array') {
             return [];
         }
 
@@ -3440,7 +3440,7 @@ final class ExperienceMetaBoxes
         $sanitized = array_map('sanitize_text_field', $lines);
         // Filtra elementi vuoti e la stringa "Array" (dati corrotti)
         return array_values(array_filter($sanitized, static function($item) {
-            return '' !== $item && trim($item) !== 'Array';
+            return '' !== $item && strtolower(trim($item)) !== 'array';
         }));
     }
 
@@ -3450,14 +3450,14 @@ final class ExperienceMetaBoxes
             $sanitized = array_map('sanitize_text_field', $value);
             // Filtra elementi vuoti e la stringa "Array" (dati corrotti)
             $items = array_values(array_filter($sanitized, static function($item) {
-                return '' !== $item && trim($item) !== 'Array';
+                return '' !== $item && strtolower(trim($item)) !== 'array';
             }));
             return implode("\n", $items);
         }
 
         if (is_string($value)) {
             // Gestisce il caso di dati corrotti dove è stata salvata la stringa "Array"
-            if (trim($value) === 'Array') {
+            if (strtolower(trim($value)) === 'array') {
                 return '';
             }
             return $value;
