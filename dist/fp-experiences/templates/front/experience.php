@@ -803,7 +803,9 @@ $sticky_price_display = '' !== $price_from_display ? $format_currency($price_fro
                                     <h3 class="fp-exp-essentials__title"><?php esc_html_e('Cosa portare', 'fp-experiences'); ?></h3>
                                     <ul class="fp-exp-essentials__list">
                                         <?php foreach ($what_to_bring as $item) : ?>
-                                            <li><?php echo esc_html($item); ?></li>
+                                            <?php if ('' !== trim($item) && strtolower(trim($item)) !== 'array') : ?>
+                                                <li><?php echo esc_html($item); ?></li>
+                                            <?php endif; ?>
                                         <?php endforeach; ?>
                                     </ul>
                                 </article>
@@ -814,6 +816,10 @@ $sticky_price_display = '' !== $price_from_display ? $format_currency($price_fro
                                     <h3 class="fp-exp-essentials__title"><?php esc_html_e('Note', 'fp-experiences'); ?></h3>
                                     <?php
                                     $notes_items = is_array($notes) ? $notes : array_filter(array_map('trim', explode("\n", $notes)));
+                                    // Filtra elementi vuoti e la stringa "Array"
+                                    $notes_items = array_filter($notes_items, static function($item) {
+                                        return '' !== trim($item) && strtolower(trim($item)) !== 'array';
+                                    });
                                     if (! empty($notes_items)) :
                                         ?>
                                         <ul class="fp-exp-essentials__list">
@@ -825,11 +831,15 @@ $sticky_price_display = '' !== $price_from_display ? $format_currency($price_fro
                                 </article>
                             <?php endif; ?>
 
-                            <?php if ('' !== $children_rules) : ?>
+                            <?php if ('' !== $children_rules && strtolower(trim($children_rules)) !== 'array') : ?>
                                 <article class="fp-exp-essentials__card">
                                     <h3 class="fp-exp-essentials__title"><?php esc_html_e('Regole bambini', 'fp-experiences'); ?></h3>
                                     <?php
                                     $children_rules_items = array_filter(array_map('trim', explode("\n", $children_rules)));
+                                    // Filtra elementi vuoti e la stringa "Array"
+                                    $children_rules_items = array_filter($children_rules_items, static function($item) {
+                                        return '' !== trim($item) && strtolower(trim($item)) !== 'array';
+                                    });
                                     if (count($children_rules_items) > 1) :
                                         ?>
                                         <ul class="fp-exp-essentials__list">
@@ -838,7 +848,9 @@ $sticky_price_display = '' !== $price_from_display ? $format_currency($price_fro
                                             <?php endforeach; ?>
                                         </ul>
                                     <?php else : ?>
-                                        <p class="fp-exp-essentials__copy"><?php echo esc_html($children_rules); ?></p>
+                                        <?php if (strtolower(trim($children_rules)) !== 'array') : ?>
+                                            <p class="fp-exp-essentials__copy"><?php echo esc_html($children_rules); ?></p>
+                                        <?php endif; ?>
                                     <?php endif; ?>
                                 </article>
                             <?php endif; ?>
