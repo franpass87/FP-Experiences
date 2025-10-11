@@ -708,12 +708,14 @@ $sticky_price_display = '' !== $price_from_display ? $format_currency($price_fro
                     <div class="fp-exp-section__body">
                         <ul class="fp-exp-highlights__list" role="list">
                             <?php foreach ($highlights as $highlight) : ?>
-                                <li class="fp-exp-highlights__item">
-                                    <span class="fp-exp-highlights__icon" aria-hidden="true">
-                                        <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M9.75 18.25 3.5 12l1.41-1.41 4.84 4.84 9.34-9.34L20.5 7.5Z"/></svg>
-                                    </span>
-                                    <span class="fp-exp-highlights__text"><?php echo esc_html($highlight); ?></span>
-                                </li>
+                                <?php if ('' !== trim($highlight) && strtolower(trim($highlight)) !== 'array') : ?>
+                                    <li class="fp-exp-highlights__item">
+                                        <span class="fp-exp-highlights__icon" aria-hidden="true">
+                                            <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M9.75 18.25 3.5 12l1.41-1.41 4.84 4.84 9.34-9.34L20.5 7.5Z"/></svg>
+                                        </span>
+                                        <span class="fp-exp-highlights__text"><?php echo esc_html($highlight); ?></span>
+                                    </li>
+                                <?php endif; ?>
                             <?php endforeach; ?>
                         </ul>
                     </div>
@@ -738,12 +740,14 @@ $sticky_price_display = '' !== $price_from_display ? $format_currency($price_fro
                                     <h3 class="fp-exp-inclusions__title"><?php esc_html_e('Incluso', 'fp-experiences'); ?></h3>
                                     <ul class="fp-exp-inclusions__list" role="list">
                                         <?php foreach ($inclusions as $item) : ?>
-                                            <li class="fp-exp-inclusions__item">
-                                                <span class="fp-exp-inclusions__icon fp-exp-inclusions__icon--check" aria-hidden="true">
-                                                    <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M9.75 18.25 3.5 12l1.41-1.41 4.84 4.84 9.34-9.34L20.5 7.5Z"/></svg>
-                                                </span>
-                                                <span class="fp-exp-inclusions__text"><?php echo esc_html($item); ?></span>
-                                            </li>
+                                            <?php if ('' !== trim($item) && strtolower(trim($item)) !== 'array') : ?>
+                                                <li class="fp-exp-inclusions__item">
+                                                    <span class="fp-exp-inclusions__icon fp-exp-inclusions__icon--check" aria-hidden="true">
+                                                        <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M9.75 18.25 3.5 12l1.41-1.41 4.84 4.84 9.34-9.34L20.5 7.5Z"/></svg>
+                                                    </span>
+                                                    <span class="fp-exp-inclusions__text"><?php echo esc_html($item); ?></span>
+                                                </li>
+                                            <?php endif; ?>
                                         <?php endforeach; ?>
                                     </ul>
                                 </div>
@@ -753,12 +757,14 @@ $sticky_price_display = '' !== $price_from_display ? $format_currency($price_fro
                                     <h3 class="fp-exp-inclusions__title"><?php esc_html_e('Non incluso', 'fp-experiences'); ?></h3>
                                     <ul class="fp-exp-inclusions__list" role="list">
                                         <?php foreach ($exclusions as $item) : ?>
-                                            <li class="fp-exp-inclusions__item">
-                                                <span class="fp-exp-inclusions__icon fp-exp-inclusions__icon--cross" aria-hidden="true">
-                                                    <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="m18.3 5.71 1.42 1.42-5.3 5.29 5.3 5.29-1.42 1.42-5.29-5.3-5.29 5.3-1.42-1.42 5.3-5.29-5.3-5.29 1.42-1.42 5.29 5.3Z"/></svg>
-                                                </span>
-                                                <span class="fp-exp-inclusions__text"><?php echo esc_html($item); ?></span>
-                                            </li>
+                                            <?php if ('' !== trim($item) && strtolower(trim($item)) !== 'array') : ?>
+                                                <li class="fp-exp-inclusions__item">
+                                                    <span class="fp-exp-inclusions__icon fp-exp-inclusions__icon--cross" aria-hidden="true">
+                                                        <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="m18.3 5.71 1.42 1.42-5.3 5.29 5.3 5.29-1.42 1.42-5.29-5.3-5.29 5.3-1.42-1.42 5.3-5.29-5.3-5.29 1.42-1.42 5.29 5.3Z"/></svg>
+                                                    </span>
+                                                    <span class="fp-exp-inclusions__text"><?php echo esc_html($item); ?></span>
+                                                </li>
+                                            <?php endif; ?>
                                         <?php endforeach; ?>
                                     </ul>
                                 </div>
@@ -880,6 +886,12 @@ $sticky_price_display = '' !== $price_from_display ? $format_currency($price_fro
                         <?php foreach ($faq as $index => $item) :
                             $button_id = $scope_class . '-faq-' . $index;
                             $panel_id = $scope_class . '-faq-panel-' . $index;
+                            $question = isset($item['question']) ? (string) $item['question'] : '';
+                            $answer = isset($item['answer']) ? (string) $item['answer'] : '';
+                            // Salta se contiene "Array"
+                            if (strtolower(trim($question)) === 'array' || strtolower(trim($answer)) === 'array') {
+                                continue;
+                            }
                             ?>
                             <div class="fp-exp-accordion__item">
                                 <h3 class="fp-exp-accordion__heading">
@@ -891,7 +903,7 @@ $sticky_price_display = '' !== $price_from_display ? $format_currency($price_fro
                                         aria-controls="<?php echo esc_attr($panel_id); ?>"
                                         data-fp-accordion-trigger
                                     >
-                                        <span class="fp-exp-accordion__label"><?php echo esc_html($item['question']); ?></span>
+                                        <span class="fp-exp-accordion__label"><?php echo esc_html($question); ?></span>
                                         <span class="fp-exp-accordion__icon" aria-hidden="true">
                                             <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M12 5v14m-7-7h14"/></svg>
                                         </span>
@@ -904,7 +916,7 @@ $sticky_price_display = '' !== $price_from_display ? $format_currency($price_fro
                                     aria-labelledby="<?php echo esc_attr($button_id); ?>"
                                     hidden
                                 >
-                                    <div class="fp-exp-accordion__content"><?php echo wp_kses_post($item['answer']); ?></div>
+                                    <div class="fp-exp-accordion__content"><?php echo wp_kses_post($answer); ?></div>
                                 </div>
                             </div>
                         <?php endforeach; ?>
