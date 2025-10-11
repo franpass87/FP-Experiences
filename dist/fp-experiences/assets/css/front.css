@@ -3365,11 +3365,11 @@ body.fp-modal-open {
 
 @media (max-width: 640px) {
     .fp-gift-modal {
-        padding: 1.5rem 1rem;
+        padding: 1rem 0.5rem;
     }
 
     .fp-gift-modal__dialog {
-        max-height: calc(100vh - 6rem);
+        max-height: calc(100vh - 12rem);
         border-radius: var(--fp-exp-radius-base, 12px);
     }
 
