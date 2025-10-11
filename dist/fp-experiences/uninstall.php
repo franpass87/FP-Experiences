@@ -22,26 +22,30 @@ foreach ($tables as $table_name) {
 }
 
 // Remove plugin options.
+// NOTA: Le opzioni di configurazione e branding vengono mantenute per preservare
+// le impostazioni in caso di reinstallazione del plugin.
 $options = [
     'fp_exp_roles_version',
     'fp_exp_migrations',
-    'fp_exp_experience_layout',
-    'fp_exp_tracking',
-    'fp_exp_listing',
-    'fp_exp_gift',
-    'fp_exp_rtb',
-    'fp_exp_enable_meeting_points',
-    'fp_exp_enable_meeting_point_import',
-    'fp_exp_debug_logging',
-    'fp_exp_branding',
     'fp_exp_logs',
-    'fp_exp_google_calendar',
-    'fp_exp_brevo',
-    'fp_exp_emails',
-    'fp_exp_email_branding',
-    'fp_exp_structure_email',
-    'fp_exp_webmaster_email',
 ];
+
+// Opzioni conservate (non vengono eliminate):
+// - fp_exp_branding (colori, font, temi)
+// - fp_exp_email_branding (branding email)
+// - fp_exp_tracking (configurazione tracking: GA4, Meta Pixel, Google Ads, Clarity)
+// - fp_exp_emails (configurazione email)
+// - fp_exp_brevo (integrazione Brevo)
+// - fp_exp_google_calendar (integrazione Google Calendar)
+// - fp_exp_experience_layout (layout esperienze)
+// - fp_exp_listing (impostazioni listing)
+// - fp_exp_gift (impostazioni gift/voucher)
+// - fp_exp_rtb (request to book)
+// - fp_exp_enable_meeting_points (punti di incontro)
+// - fp_exp_enable_meeting_point_import (import punti di incontro)
+// - fp_exp_structure_email (email struttura)
+// - fp_exp_webmaster_email (email webmaster)
+// - fp_exp_debug_logging (debug logging)
 
 foreach ($options as $option) {
     delete_option($option);
