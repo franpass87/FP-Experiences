@@ -1,0 +1,153 @@
+/**
+ * Admin Forms Components
+ */
+.fp-exp-fieldset {
+    border: 1px solid var(--fp-exp-admin-border);
+    border-radius: var(--fp-exp-admin-radius);
+    padding: 20px;
+    margin: 0 0 20px;
+    background: #ffffff;
+}
+
+.fp-exp-fieldset:last-of-type {
+    margin-bottom: 0;
+}
+
+.fp-exp-fieldset legend {
+    font-weight: 600;
+    padding: 0 8px;
+}
+
+.fp-exp-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 16px;
+}
+
+.fp-exp-field--columns {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+}
+
+.fp-exp-field--taxonomies {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+}
+
+.fp-exp-field__label {
+    font-weight: 600;
+    color: var(--fp-exp-color-text, #1f1f1f);
+}
+
+.fp-exp-field__description {
+    font-size: 12px;
+    color: var(--fp-exp-color-muted, #5f5f5f);
+    margin: 0;
+    position: relative;
+    z-index: 1;
+}
+
+.fp-exp-field__description--warning {
+    color: var(--fp-exp-color-danger, #c44536);
+}
+
+.fp-exp-field__buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+/* Meta box inline fields */
+.fp-exp-meta-box__inline {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+}
+
+.fp-exp-meta-box__inline label {
+    display: block;
+}
+
+.fp-exp-meta-box__inline input {
+    width: 100%;
+}
+
+.fp-exp-radio-cards {
+    display: grid;
+    gap: 12px;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    margin-bottom: 8px;
+}
+
+.fp-exp-radio-card {
+    position: relative;
+    display: grid;
+    gap: 4px;
+    align-content: start;
+    padding: 14px 16px;
+    border: 1px solid var(--fp-exp-admin-border);
+    border-radius: var(--fp-exp-admin-radius);
+    background: #ffffff;
+    cursor: pointer;
+    min-height: 100%;
+    transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.fp-exp-radio-card:hover {
+    border-color: #d1d5db;
+    background: #f9fafb;
+}
+
+.fp-exp-radio-card:focus-within {
+    border-color: var(--fp-exp-color-primary);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.fp-exp-radio-card.is-selected {
+    border-color: var(--fp-exp-color-primary);
+    background: #eff6ff;
+}
+
+.fp-exp-radio-card input[type="radio"] {
+    position: absolute;
+    inset: 0;
+    margin: 0;
+    opacity: 0;
+}
+
+.fp-exp-radio-card__title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--fp-exp-color-text, #1f1f1f);
+}
+
+.fp-exp-radio-card__text {
+    font-size: 13px;
+    color: var(--fp-exp-color-muted, #505050);
+    line-height: 1.45;
+}
+
+.fp-exp-tab-panel input[type="text"],
+.fp-exp-tab-panel input[type="number"],
+.fp-exp-tab-panel input[type="time"],
+.fp-exp-tab-panel input[type="date"],
+.fp-exp-tab-panel select,
+.fp-exp-tab-panel textarea {
+    width: 100%;
+}
+
+/* Dark mode forms */
+html.fp-exp-dark .fp-exp-fieldset {
+    background: linear-gradient(135deg, #1a1e24 0%, rgba(18, 21, 25, 0.94) 100%);
+    box-shadow: 0 16px 34px rgba(0, 0, 0, 0.5);
+    border-color: rgba(230, 232, 235, 0.06);
+}
+
+html.fp-exp-dark .fp-exp-radio-card {
+    background: linear-gradient(135deg, #1a1e24 0%, rgba(18, 21, 25, 0.94) 100%);
+    border-color: rgba(230, 232, 235, 0.06);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+}

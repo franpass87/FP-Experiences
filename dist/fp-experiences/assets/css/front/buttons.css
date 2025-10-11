@@ -1,0 +1,115 @@
+/**
+ * Frontend Buttons Components
+ */
+.fp-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--fp-spacing-sm);
+    padding: 12px 16px;
+    border-radius: var(--fp-radius-lg);
+    font-weight: var(--fp-font-weight-semibold);
+    font-size: var(--fp-font-size-base);
+    border: none;
+    cursor: pointer;
+    transition: all var(--fp-transition-normal);
+    text-decoration: none;
+    min-height: 44px;
+}
+
+.fp-btn:focus-visible {
+    outline: 2px solid var(--fp-color-primary);
+    outline-offset: 2px;
+}
+
+.fp-btn--primary {
+    background: var(--fp-color-primary);
+    color: var(--fp-color-text-inverse);
+    box-shadow: var(--fp-shadow-sm);
+}
+
+.fp-btn--primary:hover {
+    background: var(--fp-color-primary-hover);
+    transform: translateY(-1px);
+    box-shadow: var(--fp-shadow-md);
+}
+
+.fp-btn--secondary {
+    background: var(--fp-color-surface);
+    color: var(--fp-color-primary);
+    border: 1px solid var(--fp-color-primary);
+}
+
+.fp-btn--secondary:hover {
+    background: var(--fp-color-primary-light);
+}
+
+.fp-btn--danger {
+    background: var(--fp-color-danger);
+    color: var(--fp-color-text-inverse);
+}
+
+.fp-btn--danger:hover {
+    background: var(--fp-color-danger-hover);
+}
+
+.fp-btn--sm {
+    padding: 8px 12px;
+    font-size: var(--fp-font-size-sm);
+    min-height: 36px;
+}
+
+.fp-btn--lg {
+    padding: 16px 24px;
+    font-size: var(--fp-font-size-lg);
+    min-height: 52px;
+}
+
+.fp-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.fp-exp-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--fp-spacing-sm);
+    padding: 12px 16px;
+    border-radius: var(--fp-radius-lg);
+    font-weight: var(--fp-font-weight-semibold);
+    font-size: var(--fp-font-size-base);
+    border: none;
+    cursor: pointer;
+    transition: all var(--fp-transition-normal);
+    text-decoration: none;
+    min-height: 44px;
+    background: var(--fp-color-primary);
+    color: var(--fp-color-text-inverse);
+    box-shadow: var(--fp-shadow-sm);
+}
+
+.fp-exp-button:hover,
+.fp-exp-button:focus-visible {
+    background: color-mix(in srgb,var(--fp-color-primary) 88%,#000);
+    transform: translateY(-1px);
+    box-shadow: var(--fp-shadow-md);
+}
+
+.fp-exp-button--secondary {
+    background: transparent;
+    color: var(--fp-color-primary);
+    border: 1px solid currentColor;
+}
+
+.fp-exp-button--secondary:hover,
+.fp-exp-button--secondary:focus-visible {
+    background: var(--fp-color-primary);
+    color: var(--fp-color-text-inverse);
+}
+
+.fp-exp-button:focus-visible,
+.fp-exp-page__sticky-button:focus-visible {
+    box-shadow: 0 0 0 3px var(--fp-focus-ring-soft,color-mix(in srgb,var(--fp-color-primary) 32%,#fff)), var(--fp-shadow);
+}

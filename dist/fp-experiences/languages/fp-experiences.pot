@@ -1,0 +1,3526 @@
+# Copyright (C) 2025 Francesco Passeri
+# This file is distributed under the GPLv2+.
+msgid ""
+msgstr ""
+"Project-Id-Version: FP Experiences 0.2.0\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/fp-experiences\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"POT-Creation-Date: 2025-09-29T20:55:17+00:00\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"X-Generator: WP-CLI 2.12.0\n"
+"X-Domain: fp-experiences\n"
+
+#. Plugin Name of the plugin
+#: fp-experiences.php
+#: src/Admin/AdminMenu.php:76
+#: src/Admin/AdminMenu.php:77
+#: src/Admin/AdminMenu.php:231
+#: src/Admin/Dashboard.php:43
+#: src/Elementor/WidgetsRegistrar.php:50
+msgid "FP Experiences"
+msgstr ""
+
+#. Description of the plugin
+#: fp-experiences.php
+msgid "Booking esperienze stile GetYourGuide — shortcode/Elementor only, carrello/checkout isolati, Brevo opzionale, Google Calendar opzionale, tracking marketing opzionale."
+msgstr ""
+
+#. Author of the plugin
+#: fp-experiences.php
+msgid "Francesco Passeri"
+msgstr ""
+
+#. Author URI of the plugin
+#: fp-experiences.php
+msgid "https://francescopasseri.com"
+msgstr ""
+
+#: src/Activation.php:74
+msgid "FP Experiences Manager"
+msgstr ""
+
+#: src/Activation.php:90
+msgid "FP Experiences Operator"
+msgstr ""
+
+#: src/Activation.php:101
+msgid "FP Experiences Guide"
+msgstr ""
+
+#: src/Admin/AdminMenu.php:87
+#: src/Admin/AdminMenu.php:88
+#: src/Admin/Dashboard.php:45
+msgid "Dashboard"
+msgstr ""
+
+#: src/Admin/AdminMenu.php:96
+#: src/PostTypes/ExperienceCPT.php:59
+#: templates/front/list.php:67
+msgid "Experiences"
+msgstr ""
+
+#: src/Admin/AdminMenu.php:97
+msgid "Esperienze"
+msgstr ""
+
+#: src/Admin/AdminMenu.php:104
+#: src/PostTypes/ExperienceCPT.php:61
+msgid "Add New Experience"
+msgstr ""
+
+#: src/Admin/AdminMenu.php:105
+#: src/Admin/AdminMenu.php:243
+#: src/Admin/Onboarding.php:104
+msgid "Nuova esperienza"
+msgstr ""
+
+#: src/Admin/AdminMenu.php:113
+#: src/MeetingPoints/MeetingPointCPT.php:36
+#: src/MeetingPoints/MeetingPointCPT.php:45
+msgid "Meeting Points"
+msgstr ""
+
+#: src/Admin/AdminMenu.php:114
+#: src/Elementor/WidgetExperiencePage.php:75
+#: src/Shortcodes/ExperienceShortcode.php:238
+#: templates/front/experience.php:243
+#: templates/front/widget.php:85
+msgid "Meeting point"
+msgstr ""
+
+#: src/Admin/AdminMenu.php:122
+#: src/Admin/CalendarAdmin.php:138
+#: src/Admin/SettingsPage.php:698
+#: src/Admin/SettingsPage.php:765
+#: src/Admin/SettingsPage.php:1392
+msgid "Calendar"
+msgstr ""
+
+#: src/Admin/AdminMenu.php:123
+#: src/Admin/AdminMenu.php:253
+msgid "Calendario"
+msgstr ""
+
+#: src/Admin/AdminMenu.php:132
+msgid "Requests"
+msgstr ""
+
+#: src/Admin/AdminMenu.php:133
+#: src/Admin/AdminMenu.php:262
+msgid "Richieste"
+msgstr ""
+
+#: src/Admin/AdminMenu.php:142
+#: src/Admin/AdminMenu.php:143
+msgid "Check-in"
+msgstr ""
+
+#: src/Admin/AdminMenu.php:152
+msgid "Orders"
+msgstr ""
+
+#: src/Admin/AdminMenu.php:153
+msgid "Ordini"
+msgstr ""
+
+#: src/Admin/AdminMenu.php:162
+msgid "Settings"
+msgstr ""
+
+#: src/Admin/AdminMenu.php:163
+#: src/Admin/AdminMenu.php:273
+msgid "Impostazioni"
+msgstr ""
+
+#: src/Admin/AdminMenu.php:171
+#: src/Admin/AdminMenu.php:172
+#: src/Admin/SettingsPage.php:702
+msgid "Tools"
+msgstr ""
+
+#: src/Admin/AdminMenu.php:180
+#: src/Admin/AdminMenu.php:181
+#: src/Admin/SettingsPage.php:703
+msgid "Logs"
+msgstr ""
+
+#: src/Admin/AdminMenu.php:189
+msgid "Guide & Shortcodes"
+msgstr ""
+
+#: src/Admin/AdminMenu.php:190
+#: src/Admin/HelpPage.php:21
+msgid "Guida & Shortcode"
+msgstr ""
+
+#: src/Admin/AdminMenu.php:199
+msgid "Create Experience Page"
+msgstr ""
+
+#: src/Admin/AdminMenu.php:200
+#: src/Admin/ExperiencePageCreator.php:113
+msgid "Crea pagina esperienza"
+msgstr ""
+
+#: src/Admin/AdminMenu.php:305
+#: src/Admin/ExperienceMetaBoxes.php:117
+msgid "Aggiungi almeno un tipo di biglietto con un prezzo valido."
+msgstr ""
+
+#: src/Admin/CalendarAdmin.php:92
+msgid "Month"
+msgstr ""
+
+#: src/Admin/CalendarAdmin.php:93
+msgid "Week"
+msgstr ""
+
+#: src/Admin/CalendarAdmin.php:94
+msgid "Day"
+msgstr ""
+
+#: src/Admin/CalendarAdmin.php:95
+#: templates/front/list.php:294
+#: templates/front/list.php:296
+msgid "Previous"
+msgstr ""
+
+#: src/Admin/CalendarAdmin.php:96
+#: templates/front/list.php:310
+#: templates/front/list.php:312
+msgid "Next"
+msgstr ""
+
+#: src/Admin/CalendarAdmin.php:97
+msgid "No slots scheduled for this period."
+msgstr ""
+
+#: src/Admin/CalendarAdmin.php:98
+msgid "New total capacity for this slot"
+msgstr ""
+
+#: src/Admin/CalendarAdmin.php:99
+#, php-format
+msgid "Optional capacity override for %s (leave blank to keep current)"
+msgstr ""
+
+#: src/Admin/CalendarAdmin.php:100
+#, php-format
+msgid "Move slot to %s at %s?"
+msgstr ""
+
+#: src/Admin/CalendarAdmin.php:101
+msgid "Slot updated successfully."
+msgstr ""
+
+#: src/Admin/CalendarAdmin.php:102
+msgid "Unable to update the slot. Please try again."
+msgstr ""
+
+#: src/Admin/CalendarAdmin.php:112
+msgid "You do not have permission to manage FP Experiences bookings."
+msgstr ""
+
+#. translators: %s payment link URL.
+#: src/Admin/CalendarAdmin.php:128
+#, php-format
+msgid "Manual booking created. Share the payment link: %s"
+msgstr ""
+
+#: src/Admin/CalendarAdmin.php:135
+msgid "FP Experiences — Operations"
+msgstr ""
+
+#: src/Admin/CalendarAdmin.php:139
+msgid "Manual Booking"
+msgstr ""
+
+#: src/Admin/CalendarAdmin.php:176
+msgid "Loading…"
+msgstr ""
+
+#: src/Admin/CalendarAdmin.php:177
+msgid "Loading calendar…"
+msgstr ""
+
+#: src/Admin/CalendarAdmin.php:181
+msgid "Upcoming reservations:"
+msgstr ""
+
+#: src/Admin/CalendarAdmin.php:196
+msgid "Untitled"
+msgstr ""
+
+#: src/Admin/CalendarAdmin.php:199
+msgid "guests"
+msgstr ""
+
+#: src/Admin/CalendarAdmin.php:206
+msgid "No upcoming reservations found."
+msgstr ""
+
+#: src/Admin/CalendarAdmin.php:260
+#: src/Admin/RequestsPage.php:176
+#: src/PostTypes/ExperienceCPT.php:60
+msgid "Experience"
+msgstr ""
+
+#: src/Admin/CalendarAdmin.php:266
+msgid "Selecting a different experience reloads available slots."
+msgstr ""
+
+#: src/Admin/CalendarAdmin.php:269
+#: src/Admin/RequestsPage.php:177
+msgid "Slot"
+msgstr ""
+
+#: src/Admin/CalendarAdmin.php:284
+msgid "No upcoming slots for this experience."
+msgstr ""
+
+#: src/Admin/CalendarAdmin.php:288
+msgid "Tickets"
+msgstr ""
+
+#: src/Admin/CalendarAdmin.php:298
+msgid "Configure ticket types for this experience to enable manual bookings."
+msgstr ""
+
+#: src/Admin/CalendarAdmin.php:302
+#: templates/front/widget.php:188
+msgid "Extra"
+msgstr ""
+
+#: src/Admin/CalendarAdmin.php:320
+msgid "No extras configured for this experience."
+msgstr ""
+
+#: src/Admin/CalendarAdmin.php:326
+msgid "Customer name"
+msgstr ""
+
+#: src/Admin/CalendarAdmin.php:327
+#: templates/front/checkout.php:47
+msgid "First name"
+msgstr ""
+
+#: src/Admin/CalendarAdmin.php:328
+#: templates/front/checkout.php:51
+msgid "Last name"
+msgstr ""
+
+#: src/Admin/CalendarAdmin.php:332
+msgid "Customer email"
+msgstr ""
+
+#: src/Admin/CalendarAdmin.php:337
+#: templates/front/checkout.php:59
+msgid "Phone"
+msgstr ""
+
+#: src/Admin/CalendarAdmin.php:344
+msgid "Create manual booking"
+msgstr ""
+
+#: src/Admin/CalendarAdmin.php:351
+msgid "Pricing summary"
+msgstr ""
+
+#: src/Admin/CalendarAdmin.php:354
+msgid "Subtotal"
+msgstr ""
+
+#: src/Admin/CalendarAdmin.php:355
+#: templates/front/checkout.php:130
+#: templates/front/widget.php:232
+msgid "Total"
+msgstr ""
+
+#: src/Admin/CalendarAdmin.php:405
+msgid "You do not have permission to create manual bookings."
+msgstr ""
+
+#: src/Admin/CalendarAdmin.php:412
+msgid "Select an experience and slot before creating a booking."
+msgstr ""
+
+#: src/Admin/CalendarAdmin.php:418
+msgid "Selected slot no longer exists for this experience."
+msgstr ""
+
+#: src/Admin/CalendarAdmin.php:435
+msgid "Provide at least one ticket quantity."
+msgstr ""
+
+#: src/Admin/CalendarAdmin.php:441
+#: src/Booking/Slots.php:527
+msgid "The selected slot cannot accommodate the requested party size."
+msgstr ""
+
+#: src/Admin/CheckinPage.php:76
+msgid "Impossibile registrare il check-in, riprova più tardi."
+msgstr ""
+
+#: src/Admin/CheckinPage.php:81
+msgid "Check-in confermato."
+msgstr ""
+
+#: src/Admin/CheckinPage.php:93
+msgid "You do not have permission to access the check-in console."
+msgstr ""
+
+#: src/Admin/CheckinPage.php:106
+msgid "Console check-in"
+msgstr ""
+
+#: src/Admin/CheckinPage.php:107
+msgid "Segna gli ospiti al loro arrivo e controlla le prenotazioni imminenti."
+msgstr ""
+
+#: src/Admin/CheckinPage.php:110
+msgid "Nessuna prenotazione in arrivo nelle prossime 48 ore."
+msgstr ""
+
+#: src/Admin/CheckinPage.php:118
+msgid "Esperienza"
+msgstr ""
+
+#: src/Admin/CheckinPage.php:119
+#: src/Admin/ExperienceMetaBoxes.php:975
+#: templates/emails/customer-confirmation.php:58
+#: templates/emails/customer-reminder.php:49
+#: templates/emails/staff-notification.php:62
+msgid "Orario"
+msgstr ""
+
+#: src/Admin/CheckinPage.php:120
+msgid "Ospiti"
+msgstr ""
+
+#: src/Admin/CheckinPage.php:121
+#: src/Admin/Dashboard.php:80
+#: templates/emails/staff-notification.php:75
+msgid "Stato"
+msgstr ""
+
+#: src/Admin/CheckinPage.php:122
+msgid "Azione"
+msgstr ""
+
+#: src/Admin/CheckinPage.php:135
+msgid "Completato"
+msgstr ""
+
+#: src/Admin/CheckinPage.php:141
+msgid "Segna check-in"
+msgstr ""
+
+#: src/Admin/CheckinPage.php:222
+msgid "Confermato"
+msgstr ""
+
+#: src/Admin/CheckinPage.php:224
+msgid "In attesa pagamento"
+msgstr ""
+
+#: src/Admin/CheckinPage.php:227
+msgid "In attesa"
+msgstr ""
+
+#: src/Admin/CheckinPage.php:229
+msgid "Check-in effettuato"
+msgstr ""
+
+#: src/Admin/CheckinPage.php:231
+msgid "Cancellato"
+msgstr ""
+
+#: src/Admin/CheckinPage.php:233
+msgid "Aggiornamento"
+msgstr ""
+
+#: src/Admin/Dashboard.php:36
+msgid "You do not have permission to access the FP Experiences dashboard."
+msgstr ""
+
+#: src/Admin/Dashboard.php:42
+msgid "Percorso di navigazione"
+msgstr ""
+
+#: src/Admin/Dashboard.php:48
+msgid "FP Experiences — Dashboard"
+msgstr ""
+
+#: src/Admin/Dashboard.php:52
+msgid "Prenotazioni oggi"
+msgstr ""
+
+#: src/Admin/Dashboard.php:58
+msgid "Riempimento settimana"
+msgstr ""
+
+#: src/Admin/Dashboard.php:65
+msgid "Richieste in attesa"
+msgstr ""
+
+#: src/Admin/Dashboard.php:74
+msgid "Ultimi ordini esperienza"
+msgstr ""
+
+#: src/Admin/Dashboard.php:78
+msgid "# Ordine"
+msgstr ""
+
+#: src/Admin/Dashboard.php:79
+#: src/Admin/ExperienceMetaBoxes.php:969
+#: src/Admin/SettingsPage.php:784
+#: templates/emails/customer-confirmation.php:54
+#: templates/emails/customer-reminder.php:45
+#: templates/emails/staff-notification.php:58
+msgid "Data"
+msgstr ""
+
+#: src/Admin/Dashboard.php:81
+#: templates/emails/customer-confirmation.php:125
+#: templates/emails/staff-notification.php:137
+msgid "Totale"
+msgstr ""
+
+#: src/Admin/Dashboard.php:93
+msgid "Ancora nessun ordine registrato per le esperienze."
+msgstr ""
+
+#: src/Admin/Dashboard.php:98
+msgid "Azioni rapide"
+msgstr ""
+
+#: src/Admin/Dashboard.php:101
+msgid "Crea nuova esperienza"
+msgstr ""
+
+#: src/Admin/Dashboard.php:103
+msgid "Gestisci vetrina"
+msgstr ""
+
+#: src/Admin/Dashboard.php:105
+msgid "Apri impostazioni"
+msgstr ""
+
+#: src/Admin/Dashboard.php:195
+#: src/Admin/Dashboard.php:271
+msgid "n/d"
+msgstr ""
+
+#. translators: 1: booked guests, 2: available seats.
+#: src/Admin/Dashboard.php:199
+#, php-format
+msgid "%1$s ospiti su %2$s posti disponibili nei prossimi 7 giorni."
+msgstr ""
+
+#: src/Admin/Dashboard.php:203
+msgid "Nessun slot programmato per la settimana corrente."
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:76
+msgid "Impostazioni esperienza"
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:115
+#: src/Admin/ExperienceMetaBoxes.php:139
+msgid "Sezioni esperienza"
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:116
+msgid "Rimuovi elemento"
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:118
+msgid "Il prezzo non può essere negativo."
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:119
+msgid "La quantità non può essere negativa."
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:220
+msgid "✔ Prezzi salvati"
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:222
+msgid "⚠ Manca almeno un tipo biglietto"
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:233
+msgid "Questa esperienza è pubblicata senza prezzi configurati. Aggiungi almeno un prezzo prima di accettare prenotazioni."
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:249
+msgid "Informazioni generali"
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:252
+msgid "Descrizione breve"
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:253
+msgid "Testo sintetico mostrato in anteprima e nei widget."
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:259
+msgid "Es. Visita guidata alla Galleria degli Uffizi"
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:262
+msgid "Suggerito massimo 160 caratteri."
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:268
+msgid "Durata (minuti)"
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:269
+msgid "Durata media dell'esperienza utilizzata anche nello schema."
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:280
+msgid "Inserisci solo numeri interi."
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:284
+msgid "Lingue disponibili"
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:285
+msgid "Separa le lingue con una virgola. Esempio: Italiano, Inglese."
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:292
+msgid "Italiano, Inglese"
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:295
+msgid "Le lingue vengono mostrate nei badge e nel markup schema."
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:302
+msgid "Partecipanti minimi"
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:303
+msgid "Numero minimo richiesto per confermare la partenza."
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:317
+msgid "Capienza totale"
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:318
+msgid "Numero massimo di posti disponibili complessivi."
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:335
+msgid "Età minima"
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:336
+msgid "Età minima consigliata per partecipare."
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:350
+msgid "Età massima"
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:351
+msgid "Lascia vuoto se non previsto."
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:367
+msgid "Regole bambini"
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:368
+msgid "Note su policy bambini, passeggini o riduzioni."
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:374
+msgid "Es. Gratuito sotto i 6 anni accompagnati da un adulto"
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:377
+msgid "Testo mostrato nelle informazioni aggiuntive."
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:411
+msgid "Tipi di biglietto"
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:427
+msgid "Aggiungi tipo biglietto"
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:435
+msgid "Prezzo gruppo (opzionale)"
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:439
+msgid "Prezzo totale (€)"
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:452
+msgid "Capienza massima gruppo"
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:467
+msgid "Extra"
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:483
+msgid "Aggiungi extra"
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:490
+msgid "IVA"
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:493
+msgid "Classe tassa WooCommerce"
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:496
+msgid "Seleziona classe tassa"
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:531
+msgid "Frequenza"
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:534
+msgid "Ricorrenza slot"
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:535
+msgid "Scegli se generare slot giornalieri, settimanali o manuali."
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:538
+msgid "Giornaliera"
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:539
+msgid "Settimanale"
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:540
+msgid "Personalizzata"
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:542
+msgid "La frequenza determina quali blocchi attivare qui sotto."
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:547
+msgid "Giorni disponibili"
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:559
+#: templates/front/partials/meeting-point.php:39
+msgid "Orari"
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:570
+msgid "Aggiungi orario"
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:576
+msgid "Slot personalizzati"
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:587
+msgid "Aggiungi slot"
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:593
+msgid "Capienza e buffer"
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:597
+msgid "Capienza slot"
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:610
+msgid "Preavviso minimo (ore)"
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:626
+msgid "Buffer prima (minuti)"
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:639
+msgid "Buffer dopo (minuti)"
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:669
+msgid "Seleziona i meeting point"
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:672
+msgid "Attiva la funzione Meeting Point dalle impostazioni del plugin per gestire i luoghi di incontro."
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:677
+#: src/MeetingPoints/ExperienceMetaBox.php:67
+msgid "Meeting point principale"
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:680
+#: src/MeetingPoints/ExperienceMetaBox.php:69
+msgid "Nessuno"
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:689
+#: src/MeetingPoints/ExperienceMetaBox.php:77
+msgid "Meeting point alternativi"
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:690
+msgid "Seleziona uno o più punti di incontro alternativi per casi particolari."
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:703
+msgid "Usa CTRL/CMD + clic per selezionare più voci."
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:723
+msgid "Cosa include l'esperienza"
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:726
+msgid "Highlight (uno per riga)"
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:728
+msgid "Accesso prioritario&#10;Guida certificata&#10;Piccoli gruppi"
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:733
+msgid "Incluso (uno per riga)"
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:739
+msgid "Non incluso (uno per riga)"
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:747
+msgid "Consigli utili"
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:750
+msgid "Cosa portare"
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:756
+msgid "Note aggiuntive"
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:782
+msgid "Policy di cancellazione"
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:785
+msgid "Testo policy"
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:786
+msgid "Puoi utilizzare HTML semplice per grassetti o link."
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:789
+msgid "Esempio: Cancellazione gratuita fino a 48 ore dalla partenza."
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:794
+#: src/Elementor/WidgetExperiencePage.php:77
+#: src/Shortcodes/ExperienceShortcode.php:246
+msgid "FAQ"
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:805
+msgid "Aggiungi FAQ"
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:826
+msgid "SEO"
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:829
+msgid "Meta title personalizzato"
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:836
+msgid "Es. Tour segreto di Firenze | Brand"
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:841
+msgid "Meta description"
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:848
+msgid "Schema markup"
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:851
+msgid "Schema JSON-LD personalizzato"
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:852
+msgid "Incolla JSON-LD valido per sovrascrivere lo schema generato automaticamente."
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:855
+msgid "Lascia vuoto per usare lo schema standard dell'esperienza."
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:884
+msgid "Etichetta"
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:885
+msgid "Es. Adulto"
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:888
+#: src/Admin/ExperienceMetaBoxes.php:922
+msgid "Codice"
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:889
+msgid "adulto"
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:892
+#: src/Admin/ExperienceMetaBoxes.php:926
+msgid "Prezzo (€)"
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:896
+msgid "Capienza"
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:918
+msgid "Nome extra"
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:919
+msgid "Transfer"
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:923
+msgid "transfer"
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:930
+msgid "Calcolo"
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:932
+msgid "Per persona"
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:933
+msgid "Per prenotazione"
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:950
+msgid "Orario disponibile"
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:994
+msgid "Domanda"
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:995
+msgid "Qual è il punto di ritrovo?"
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:998
+msgid "Risposta"
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:1609
+msgid "Aliquota standard"
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:1630
+msgid "Lunedì"
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:1631
+msgid "Martedì"
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:1632
+msgid "Mercoledì"
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:1633
+msgid "Giovedì"
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:1634
+msgid "Venerdì"
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:1635
+msgid "Sabato"
+msgstr ""
+
+#: src/Admin/ExperienceMetaBoxes.php:1636
+msgid "Domenica"
+msgstr ""
+
+#: src/Admin/ExperiencePageCreator.php:60
+msgid "Seleziona un'esperienza e inserisci un titolo valido."
+msgstr ""
+
+#: src/Admin/ExperiencePageCreator.php:77
+msgid "Pagina esperienza creata con successo."
+msgstr ""
+
+#: src/Admin/ExperiencePageCreator.php:82
+msgid "Impossibile creare la pagina, riprova più tardi."
+msgstr ""
+
+#: src/Admin/ExperiencePageCreator.php:94
+msgid "You do not have permission to generate experience pages."
+msgstr ""
+
+#: src/Admin/ExperiencePageCreator.php:114
+msgid "Genera una pagina WordPress con shortcode preconfigurato per un'esperienza."
+msgstr ""
+
+#: src/Admin/ExperiencePageCreator.php:121
+msgid "Titolo pagina"
+msgstr ""
+
+#: src/Admin/ExperiencePageCreator.php:126
+msgid "Esperienza da collegare"
+msgstr ""
+
+#: src/Admin/ExperiencePageCreator.php:128
+msgid "Seleziona un'esperienza"
+msgstr ""
+
+#: src/Admin/ExperiencePageCreator.php:135
+msgid "Crea pagina"
+msgstr ""
+
+#: src/Admin/HelpPage.php:17
+msgid "You do not have permission to access the FP Experiences guide."
+msgstr ""
+
+#: src/Admin/HelpPage.php:22
+msgid "Consulta i componenti disponibili e copia rapidamente gli shortcode nelle pagine del sito."
+msgstr ""
+
+#: src/Admin/HelpPage.php:25
+msgid "Shortcode disponibili"
+msgstr ""
+
+#: src/Admin/HelpPage.php:27
+msgid "Pagina esperienza completa con calendario e CTA."
+msgstr ""
+
+#: src/Admin/HelpPage.php:28
+msgid "Widget prenotazione compatto per pagine di vendita."
+msgstr ""
+
+#: src/Admin/HelpPage.php:29
+msgid "Vetrina delle esperienze con filtri e ricerca."
+msgstr ""
+
+#: src/Admin/HelpPage.php:30
+msgid "Mappa dei meeting point collegati a una esperienza."
+msgstr ""
+
+#: src/Admin/HelpPage.php:35
+msgid "Risorse utili"
+msgstr ""
+
+#: src/Admin/HelpPage.php:36
+msgid "Tutte le pagine dell'amministrazione FP Experiences rispettano i ruoli guida, operatore e manager. Per supporto aggiuntivo consulta la documentazione interna."
+msgstr ""
+
+#: src/Admin/LogsPage.php:38
+msgid "You do not have permission to view FP Experiences logs."
+msgstr ""
+
+#: src/Admin/LogsPage.php:61
+msgid "Logs cleared successfully."
+msgstr ""
+
+#: src/Admin/LogsPage.php:71
+msgid "FP Experiences Logs"
+msgstr ""
+
+#: src/Admin/LogsPage.php:78
+msgid "Clear logs"
+msgstr ""
+
+#: src/Admin/LogsPage.php:82
+msgid "No log entries recorded yet."
+msgstr ""
+
+#: src/Admin/LogsPage.php:86
+msgid "Timestamp"
+msgstr ""
+
+#: src/Admin/LogsPage.php:87
+msgid "Channel"
+msgstr ""
+
+#: src/Admin/LogsPage.php:88
+msgid "Message"
+msgstr ""
+
+#: src/Admin/LogsPage.php:89
+msgid "Context"
+msgstr ""
+
+#: src/Admin/LogsPage.php:106
+msgid "Diagnostics"
+msgstr ""
+
+#: src/Admin/LogsPage.php:133
+msgid "Filter by channel"
+msgstr ""
+
+#: src/Admin/LogsPage.php:135
+msgid "All channels"
+msgstr ""
+
+#: src/Admin/LogsPage.php:143
+#: src/Admin/LogsPage.php:144
+msgid "Search logs"
+msgstr ""
+
+#: src/Admin/LogsPage.php:146
+msgid "Filter"
+msgstr ""
+
+#: src/Admin/LogsPage.php:147
+msgid "Export CSV"
+msgstr ""
+
+#: src/Admin/LogsPage.php:159
+#: src/Elementor/WidgetWidget.php:67
+msgid "Yes"
+msgstr ""
+
+#: src/Admin/LogsPage.php:159
+#: src/Elementor/WidgetWidget.php:68
+msgid "No"
+msgstr ""
+
+#: src/Admin/LogsPage.php:162
+msgid "WordPress version"
+msgstr ""
+
+#: src/Admin/LogsPage.php:163
+msgid "PHP version"
+msgstr ""
+
+#: src/Admin/LogsPage.php:164
+msgid "Database version"
+msgstr ""
+
+#: src/Admin/LogsPage.php:165
+msgid "WooCommerce active"
+msgstr ""
+
+#: src/Admin/Onboarding.php:55
+msgid "Benvenuto in FP Experiences"
+msgstr ""
+
+#: src/Admin/Onboarding.php:56
+msgid "Onboarding"
+msgstr ""
+
+#: src/Admin/Onboarding.php:74
+#: src/Admin/Onboarding.php:139
+msgid "You do not have permission to manage FP Experiences."
+msgstr ""
+
+#: src/Admin/Onboarding.php:82
+msgid "FP Experiences — Onboarding"
+msgstr ""
+
+#: src/Admin/Onboarding.php:87
+msgid "✅ Onboarding completato: puoi sempre riaprire questa guida per rivedere i passaggi chiave."
+msgstr ""
+
+#. translators: %s: formatted date string.
+#: src/Admin/Onboarding.php:91
+#, php-format
+msgid "Ultimo aggiornamento: %s"
+msgstr ""
+
+#: src/Admin/Onboarding.php:98
+msgid "Configura rapidamente il plugin seguendo i tre step consigliati. Ogni step include shortcut verso le aree principali del plugin."
+msgstr ""
+
+#: src/Admin/Onboarding.php:102
+msgid "1. Crea o collega le esperienze"
+msgstr ""
+
+#: src/Admin/Onboarding.php:103
+msgid "Importa le esperienze esistenti o creane di nuove, completando descrizioni, media e prezzi."
+msgstr ""
+
+#: src/Admin/Onboarding.php:105
+msgid "Gestisci esperienze"
+msgstr ""
+
+#: src/Admin/Onboarding.php:109
+msgid "2. Imposta disponibilità e prenotazioni"
+msgstr ""
+
+#: src/Admin/Onboarding.php:110
+msgid "Configura calendario, regole di pricing e opzioni di checkout o richiesta di prenotazione."
+msgstr ""
+
+#: src/Admin/Onboarding.php:111
+msgid "Apri calendario"
+msgstr ""
+
+#: src/Admin/Onboarding.php:112
+msgid "Vai alle impostazioni"
+msgstr ""
+
+#: src/Admin/Onboarding.php:116
+msgid "3. Pubblica la vetrina e monitora"
+msgstr ""
+
+#: src/Admin/Onboarding.php:117
+msgid "Inserisci shortcode o widget Elementor per la vetrina e la pagina esperienza, poi verifica tracking e branding."
+msgstr ""
+
+#: src/Admin/Onboarding.php:118
+msgid "Apri guida & shortcode"
+msgstr ""
+
+#: src/Admin/Onboarding.php:119
+msgid "Strumenti utili"
+msgstr ""
+
+#: src/Admin/Onboarding.php:127
+msgid "Segna onboarding come completato"
+msgstr ""
+
+#: src/Admin/Onboarding.php:177
+msgid "Benvenuto! Completa l’onboarding guidato per verificare prezzi, disponibilità e tracking prima di andare live."
+msgstr ""
+
+#: src/Admin/Onboarding.php:178
+msgid "Apri onboarding"
+msgstr ""
+
+#: src/Admin/OrdersPage.php:34
+msgid "You do not have permission to view experience orders."
+msgstr ""
+
+#: src/Admin/RequestsPage.php:89
+msgid "Request approved successfully."
+msgstr ""
+
+#: src/Admin/RequestsPage.php:98
+msgid "Request declined."
+msgstr ""
+
+#: src/Admin/RequestsPage.php:101
+msgid "Unsupported action."
+msgstr ""
+
+#: src/Admin/RequestsPage.php:159
+msgid "Request-to-Book"
+msgstr ""
+
+#: src/Admin/RequestsPage.php:163
+msgid "Filter by status"
+msgstr ""
+
+#: src/Admin/RequestsPage.php:165
+msgid "All statuses"
+msgstr ""
+
+#: src/Admin/RequestsPage.php:178
+msgid "Customer"
+msgstr ""
+
+#: src/Admin/RequestsPage.php:179
+msgid "Guests"
+msgstr ""
+
+#: src/Admin/RequestsPage.php:180
+msgid "Status"
+msgstr ""
+
+#: src/Admin/RequestsPage.php:181
+msgid "Actions"
+msgstr ""
+
+#: src/Admin/RequestsPage.php:186
+msgid "No requests found for the selected filter."
+msgstr ""
+
+#: src/Admin/RequestsPage.php:204
+msgid "Payment request"
+msgstr ""
+
+#: src/Admin/RequestsPage.php:205
+msgid "Confirm booking"
+msgstr ""
+
+#: src/Admin/RequestsPage.php:208
+#: src/Admin/RequestsPage.php:232
+#: src/Booking/RequestToBook.php:786
+msgid "Unknown"
+msgstr ""
+
+#. translators: %s: remaining minutes.
+#: src/Admin/RequestsPage.php:216
+#, php-format
+msgid "%s min remaining hold"
+msgstr ""
+
+#: src/Admin/RequestsPage.php:253
+msgid "Approve"
+msgstr ""
+
+#: src/Admin/RequestsPage.php:260
+msgid "Optional reason"
+msgstr ""
+
+#: src/Admin/RequestsPage.php:261
+msgid "Decline"
+msgstr ""
+
+#: src/Admin/RequestsPage.php:265
+msgid "Open payment link"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:94
+msgid "You do not have permission to manage FP Experiences settings."
+msgstr ""
+
+#: src/Admin/SettingsPage.php:101
+msgid "FP Experiences Settings"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:196
+msgid "Running action…"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:197
+msgid "Action completed successfully."
+msgstr ""
+
+#: src/Admin/SettingsPage.php:198
+msgid "Action failed. Check the logs for details."
+msgstr ""
+
+#: src/Admin/SettingsPage.php:243
+#: src/Admin/SettingsPage.php:694
+msgid "General"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:250
+msgid "Structure email"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:256
+msgid "Primary address for booking confirmations and staff alerts."
+msgstr ""
+
+#: src/Admin/SettingsPage.php:262
+msgid "Webmaster email"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:268
+msgid "Secondary address to receive staff notifications."
+msgstr ""
+
+#: src/Admin/SettingsPage.php:274
+msgid "Meeting points module"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:280
+msgid "Enable meeting points management and widgets."
+msgstr ""
+
+#: src/Admin/SettingsPage.php:286
+msgid "Experience Page Layout"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:293
+msgid "Container mode"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:301
+msgid "Boxed (respect theme container)"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:302
+msgid "Full width (edge to edge)"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:304
+msgid "Choose whether the experience layout stays inside the theme container or spans the full viewport width."
+msgstr ""
+
+#: src/Admin/SettingsPage.php:310
+msgid "Maximum width"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:318
+msgid "Desktop max-width in pixels (set 0 to keep the default theme width)."
+msgstr ""
+
+#: src/Admin/SettingsPage.php:324
+msgid "Side padding"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:332
+msgid "Horizontal padding (gutter) in pixels applied on desktop layouts."
+msgstr ""
+
+#: src/Admin/SettingsPage.php:338
+#: src/Elementor/WidgetExperiencePage.php:135
+msgid "Sidebar position"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:346
+#: src/Elementor/WidgetExperiencePage.php:139
+msgid "Right column"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:347
+#: src/Elementor/WidgetExperiencePage.php:140
+msgid "Left column"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:348
+#: src/Elementor/WidgetExperiencePage.php:141
+msgid "No sidebar (single column)"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:350
+msgid "Default position for the booking widget on desktop."
+msgstr ""
+
+#: src/Admin/SettingsPage.php:357
+msgid "Set the default container width, gutter, and sidebar placement used by the Experience Page shortcode and widget."
+msgstr ""
+
+#: src/Admin/SettingsPage.php:425
+msgid "Branding & Theme"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:452
+msgid "Showcase defaults"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:500
+msgid "Marketing channels"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:518
+msgid "Consent defaults"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:545
+msgid "Workflow"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:563
+msgid "Notifications"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:590
+msgid "Connection"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:608
+msgid "Attribute mapping"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:626
+msgid "Transactional templates"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:653
+msgid "OAuth credentials"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:671
+msgid "Calendar selection"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:695
+msgid "Branding"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:696
+msgid "Booking Rules"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:697
+msgid "Brevo"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:699
+msgid "Tracking"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:700
+#: src/Admin/SettingsPage.php:764
+msgid "RTB"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:701
+msgid "Vetrina"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:710
+msgid "Run diagnostic and recovery actions. These operations execute immediately and their results are logged for auditing."
+msgstr ""
+
+#: src/Admin/SettingsPage.php:731
+msgid "Richiede conferma manuale"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:732
+msgid "Pagamento differito"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:733
+msgid "Disattivato"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:737
+msgid "Regole attive"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:739
+msgid "Meeting point: "
+msgstr ""
+
+#: src/Admin/SettingsPage.php:739
+msgid "abilitati"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:739
+msgid "disabilitati"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:740
+msgid "Modalità richiesta di prenotazione: "
+msgstr ""
+
+#. translators: %s: minutes.
+#: src/Admin/SettingsPage.php:743
+#, php-format
+msgid "Tempo massimo di risposta: %s minuti"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:761
+msgid "Aggiorna le regole intervenendo sulle seguenti schede:"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:763
+msgid "Generale"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:777
+msgid "Ultime attività"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:780
+msgid "Nessun evento registrato nei log."
+msgstr ""
+
+#: src/Admin/SettingsPage.php:785
+msgid "Canale"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:786
+msgid "Messaggio"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:802
+msgid "Apri registro completo"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:814
+msgid "Resynchronise Brevo"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:815
+msgid "Push pending reservations, marketing attributes, and tags to Brevo."
+msgstr ""
+
+#: src/Admin/SettingsPage.php:816
+msgid "Run Brevo sync"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:820
+msgid "Replay lifecycle events"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:821
+msgid "Requeue reservation events for integrations that may have missed them."
+msgstr ""
+
+#: src/Admin/SettingsPage.php:822
+msgid "Replay events"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:826
+msgid "Ping site REST API"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:827
+msgid "Verify public availability of the WordPress REST API endpoint."
+msgstr ""
+
+#: src/Admin/SettingsPage.php:828
+msgid "Run ping test"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:832
+msgid "Clear caches & logs"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:833
+msgid "Purge plugin transients and truncate the internal log buffer."
+msgstr ""
+
+#: src/Admin/SettingsPage.php:834
+msgid "Clear caches"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:1115
+msgid "FP Experiences now uses a single default color palette that keeps every experience readable and on brand."
+msgstr ""
+
+#: src/Admin/SettingsPage.php:887
+msgid "Set the default filters, ordering, and card badges used by the experiences listing shortcode and Elementor widget."
+msgstr ""
+
+#: src/Admin/SettingsPage.php:892
+msgid "Provide tracking IDs for each enabled channel. Scripts only load when consent is granted and the channel toggle is enabled."
+msgstr ""
+
+#: src/Admin/SettingsPage.php:897
+msgid "Request-to-book holds slots for a short time while staff review the inquiry. Configure the global workflow here and enable it per experience."
+msgstr ""
+
+#: src/Admin/SettingsPage.php:902
+msgid "Connect your Brevo account to deliver transactional emails and sync contacts with marketing attributes and tags."
+msgstr ""
+
+#: src/Admin/SettingsPage.php:912
+msgid "Brevo is currently disabled. WooCommerce templates will be used for customer emails."
+msgstr ""
+
+#: src/Admin/SettingsPage.php:914
+msgid "Brevo connection active. Transactional emails will use the configured templates when available."
+msgstr ""
+
+#: src/Admin/SettingsPage.php:916
+msgid "Brevo is enabled but the API key is missing. Add the API key to send transactional emails via Brevo."
+msgstr ""
+
+#. translators: %d: number of configured templates.
+#: src/Admin/SettingsPage.php:925
+#, php-format
+msgid "%d Brevo templates configured for confirmations and RTB stages."
+msgstr ""
+
+#: src/Admin/SettingsPage.php:929
+msgid "Transactional templates are optional; the plugin falls back to WooCommerce emails when none are provided."
+msgstr ""
+
+#: src/Admin/SettingsPage.php:957
+msgid "Create an OAuth client in Google Cloud and add the redirect URI below. After saving credentials, connect the account to sync reservations."
+msgstr ""
+
+#: src/Admin/SettingsPage.php:1208
+msgid "Color palette"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:1210
+msgid "Brand colors use the default palette and cannot be customized."
+msgstr ""
+
+#: src/Elementor/WidgetCalendar.php:108
+#: src/Elementor/WidgetCheckout.php:72
+#: src/Elementor/WidgetExperiencePage.php:192
+#: src/Elementor/WidgetList.php:418
+#: src/Elementor/WidgetWidget.php:123
+msgid "Brand colors use the default FP Experiences palette."
+msgstr ""
+
+
+#: src/Admin/SettingsPage.php:999
+#: src/Elementor/WidgetCalendar.php:158
+#: src/Elementor/WidgetCheckout.php:122
+#: src/Elementor/WidgetExperiencePage.php:242
+#: src/Elementor/WidgetList.php:339
+#: src/Admin/SettingsPage.php:1014
+#: src/Elementor/WidgetList.php:79
+msgid "Experiences per page"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:1016
+msgid "Default number of cards displayed before pagination."
+msgstr ""
+
+#: src/Admin/SettingsPage.php:1021
+msgid "Enabled filters"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:1023
+msgid "Choose which filters appear in the showcase search form."
+msgstr ""
+
+#: src/Admin/SettingsPage.php:1028
+msgid "Default sort order"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:1030
+#: src/Elementor/WidgetList.php:93
+msgid "Manual order"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:1031
+#: src/Elementor/WidgetList.php:94
+#: templates/front/list.php:202
+msgid "Publish date"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:1032
+#: src/Elementor/WidgetList.php:95
+#: templates/front/list.php:203
+msgid "Title"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:1033
+#: src/Elementor/WidgetList.php:96
+msgid "Price (lowest first)"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:1039
+msgid "Default direction"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:1041
+#: src/Elementor/WidgetList.php:108
+#: templates/front/list.php:211
+msgid "Ascending"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:1042
+#: src/Elementor/WidgetList.php:109
+#: templates/front/list.php:212
+msgid "Descending"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:1048
+msgid "Display “price from” badge"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:1049
+msgid "Show the lowest available ticket price on each card by default."
+msgstr ""
+
+#: src/Admin/SettingsPage.php:1060
+#: src/Elementor/WidgetList.php:64
+#: templates/front/list.php:90
+msgid "Search"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:1061
+#: src/Elementor/WidgetCalendar.php:77
+#: src/Elementor/WidgetCheckout.php:47
+#: src/Elementor/WidgetExperiencePage.php:152
+#: src/Elementor/WidgetList.php:65
+#: src/Elementor/WidgetList.php:229
+#: src/Elementor/WidgetWidget.php:91
+#: src/Shortcodes/ListShortcode.php:643
+#: templates/front/list.php:104
+msgid "Theme"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:1062
+#: src/Elementor/WidgetList.php:66
+#: src/Shortcodes/ListShortcode.php:651
+#: templates/front/list.php:117
+msgid "Language"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:1063
+#: src/Elementor/WidgetList.php:67
+#: src/PostTypes/ExperienceCPT.php:132
+#: src/Shortcodes/ListShortcode.php:659
+#: templates/front/list.php:130
+#: templates/front/widget.php:73
+msgid "Duration"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:1064
+#: src/Shortcodes/ListShortcode.php:667
+msgid "Price range"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:1065
+#: src/Elementor/WidgetList.php:69
+#: src/Shortcodes/ListShortcode.php:765
+msgid "Family-friendly"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:1066
+msgid "Date picker"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:1078
+msgid "Enable Google Analytics 4"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:1080
+msgid "Loads Google Tag Manager or the GA4 gtag snippet when consent allows."
+msgstr ""
+
+#: src/Admin/SettingsPage.php:1084
+msgid "Google Tag Manager ID"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:1090
+msgid "GA4 Measurement ID"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:1096
+msgid "Enable Google Ads conversions"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:1101
+msgid "Conversion ID"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:1107
+msgid "Conversion label"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:1112
+msgid "Enable enhanced conversions hashing"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:1117
+msgid "Enable Meta Pixel"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:1122
+msgid "Pixel ID"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:1127
+msgid "CAPI token (optional)"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:1132
+msgid "Enable Microsoft Clarity"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:1137
+msgid "Clarity project ID"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:1149
+msgid "Google Analytics 4"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:1150
+msgid "Google Ads"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:1151
+msgid "Meta Pixel"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:1152
+msgid "Microsoft Clarity"
+msgstr ""
+
+#. translators: %s: channel name.
+#: src/Admin/SettingsPage.php:1161
+#, php-format
+msgid "%s consent default"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:1165
+msgid "Used when no CMP override is provided."
+msgstr ""
+
+#: src/Admin/SettingsPage.php:1180
+msgid "Mode"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:1183
+#: src/Elementor/WidgetExperiencePage.php:89
+msgid "Disabled"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:1184
+msgid "Confirm without payment"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:1185
+msgid "Confirm and request payment later"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:1187
+msgid "Choose how request-to-book approvals are processed globally."
+msgstr ""
+
+#: src/Admin/SettingsPage.php:1191
+msgid "Hold timeout (minutes)"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:1193
+msgid "How long to reserve capacity for a pending request before it is released automatically."
+msgstr ""
+
+#: src/Admin/SettingsPage.php:1197
+msgid "Block capacity during hold"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:1199
+msgid "When enabled, pending requests reduce availability until their hold expires."
+msgstr ""
+
+#: src/Admin/SettingsPage.php:1210
+msgid "Request received (customer)"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:1211
+msgid "Request approved"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:1212
+msgid "Request declined"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:1213
+msgid "Payment required"
+msgstr ""
+
+#. translators: %s: notification label.
+#: src/Admin/SettingsPage.php:1221
+#, php-format
+msgid "Brevo template ID — %s"
+msgstr ""
+
+#. translators: %s: notification label.
+#: src/Admin/SettingsPage.php:1227
+#, php-format
+msgid "Fallback subject — %s"
+msgstr ""
+
+#. translators: %s: notification label.
+#: src/Admin/SettingsPage.php:1232
+#, php-format
+msgid "Fallback body — %s"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:1234
+msgid "Available placeholders: {customer_name}, {experience}, {date}, {time}, {guests}, {payment_url}, {total}, {notes}."
+msgstr ""
+
+#: src/Admin/SettingsPage.php:1249
+msgid "Enable Brevo"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:1254
+msgid "API key"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:1256
+msgid "xkeysib-..."
+msgstr ""
+
+#: src/Admin/SettingsPage.php:1260
+msgid "Webhook secret"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:1262
+msgid "Used to validate Brevo webhook signatures."
+msgstr ""
+
+#: src/Admin/SettingsPage.php:1266
+msgid "Default list ID"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:1268
+msgid "Optional: contacts will be subscribed to this list on sync."
+msgstr ""
+
+#: src/Admin/SettingsPage.php:1272
+msgid "Subscribe contact to list on sync"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:1286
+msgid "First name attribute"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:1292
+msgid "Last name attribute"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:1298
+msgid "Phone attribute"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:1304
+msgid "Language attribute"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:1310
+msgid "Marketing consent attribute"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:1325
+msgid "Confirmation template ID"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:1330
+msgid "Reminder template ID"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:1335
+msgid "Post-experience template ID"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:1340
+msgid "Cancellation template ID"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:1345
+msgid "Abandoned checkout template ID"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:1347
+msgid "Optional automation triggered via custom code or cron."
+msgstr ""
+
+#: src/Admin/SettingsPage.php:1366
+msgid "Client ID"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:1371
+msgid "Client secret"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:1376
+msgid "Authorised redirect URI"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:1379
+msgid "Copy this value into the Google Cloud console OAuth configuration."
+msgstr ""
+
+#: src/Admin/SettingsPage.php:1394
+msgid "Select the target calendar for new reservations. Save credentials and connect to load calendars."
+msgstr ""
+
+#: src/Admin/SettingsPage.php:1458
+#: src/Admin/SettingsPage.php:1478
+#: src/Admin/SettingsPage.php:1509
+#: src/Admin/SettingsPage.php:1531
+#: src/Elementor/WidgetExperiencePage.php:88
+msgid "Enabled"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:1554
+msgid "Select a calendar…"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:1585
+#: src/Admin/SettingsPage.php:1599
+msgid "Accessibility checks"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:1586
+#: src/Admin/SettingsPage.php:1605
+msgid "Current palette passes AA contrast checks."
+msgstr ""
+
+#: src/Admin/SettingsPage.php:1587
+#, php-format
+msgid "Primary color contrast against the background is %s:1. Consider adjusting colors for AA compliance."
+msgstr ""
+
+#: src/Admin/SettingsPage.php:1588
+#, php-format
+msgid "Body text contrast is %s:1. Increase contrast for readability."
+msgstr ""
+
+#: src/Admin/SettingsPage.php:1615
+msgid "Google Calendar is connected."
+msgstr ""
+
+#: src/Admin/SettingsPage.php:1616
+msgid "Google Calendar is not connected."
+msgstr ""
+
+#: src/Admin/SettingsPage.php:1622
+msgid "Reservations will create or update events on the linked calendar."
+msgstr ""
+
+#: src/Admin/SettingsPage.php:1624
+msgid "Connect a Google account to synchronise confirmed reservations with your calendar."
+msgstr ""
+
+#: src/Admin/SettingsPage.php:1628
+msgid "Refresh token missing. Reconnect Google Calendar to keep the integration active."
+msgstr ""
+
+#: src/Admin/SettingsPage.php:1632
+msgid "Calendar ID is empty. Events cannot be pushed until a calendar is selected."
+msgstr ""
+
+#: src/Admin/SettingsPage.php:1676
+msgid "Disconnect Google account"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:1678
+msgid "Connect Google account"
+msgstr ""
+
+#: src/Admin/SettingsPage.php:2005
+msgid "Save your client ID and secret before connecting."
+msgstr ""
+
+#: src/Admin/SettingsPage.php:2044
+msgid "Google Calendar disconnected."
+msgstr ""
+
+#: src/Admin/SettingsPage.php:2059
+msgid "OAuth response missing state or code."
+msgstr ""
+
+#: src/Admin/SettingsPage.php:2067
+msgid "OAuth session expired. Please try again."
+msgstr ""
+
+#: src/Admin/SettingsPage.php:2076
+msgid "OAuth credentials missing. Save the settings and try again."
+msgstr ""
+
+#: src/Admin/SettingsPage.php:2098
+msgid "Could not complete the Google OAuth flow. See logs for details."
+msgstr ""
+
+#: src/Admin/SettingsPage.php:2104
+msgid "Unexpected OAuth response from Google."
+msgstr ""
+
+#: src/Admin/SettingsPage.php:2113
+msgid "Google Calendar connected successfully."
+msgstr ""
+
+#: src/Admin/ToolsPage.php:41
+msgid "You do not have permission to run FP Experiences tools."
+msgstr ""
+
+#: src/Admin/ToolsPage.php:45
+msgid "Strumenti operativi"
+msgstr ""
+
+#: src/Admin/ToolsPage.php:46
+msgid "Esegui azioni di manutenzione: sincronizzazioni Brevo, ripubblicazione eventi, pulizia cache e diagnostica."
+msgstr ""
+
+#: src/Api/RestRoutes.php:176
+msgid "Provide a valid date range."
+msgstr ""
+
+#: src/Api/RestRoutes.php:220
+msgid "Missing slot data."
+msgstr ""
+
+#: src/Api/RestRoutes.php:224
+msgid "Too many calendar changes in a short period. Please retry in a moment."
+msgstr ""
+
+#: src/Api/RestRoutes.php:230
+msgid "Unable to move the slot to the requested time."
+msgstr ""
+
+#: src/Api/RestRoutes.php:249
+msgid "Invalid slot identifier."
+msgstr ""
+
+#: src/Api/RestRoutes.php:257
+msgid "Please wait before adjusting capacity again."
+msgstr ""
+
+#: src/Api/RestRoutes.php:263
+msgid "Unable to update capacity. Check reservations before lowering limits."
+msgstr ""
+
+#: src/Api/RestRoutes.php:280
+msgid "Please wait before running the Brevo sync again."
+msgstr ""
+
+#: src/Api/RestRoutes.php:289
+msgid "Brevo resynchronisation queued."
+msgstr ""
+
+#: src/Api/RestRoutes.php:298
+msgid "Event replay recently executed. Please retry shortly."
+msgstr ""
+
+#: src/Api/RestRoutes.php:307
+msgid "Event replay initiated."
+msgstr ""
+
+#: src/Api/RestRoutes.php:351
+msgid "Cache already cleared recently. Try again in a moment."
+msgstr ""
+
+#: src/Api/RestRoutes.php:360
+msgid "Plugin caches cleared and logs trimmed."
+msgstr ""
+
+#: src/Api/Webhooks.php:98
+msgid "Invalid Brevo webhook signature."
+msgstr ""
+
+#: src/Booking/Cart.php:247
+msgid "The experience cart is locked while payment is in progress."
+msgstr ""
+
+#: src/Booking/Cart.php:276
+msgid "Please empty your WooCommerce cart before booking an experience."
+msgstr ""
+
+#: src/Booking/Cart.php:293
+msgid "Experiences cannot be purchased together with other products. Please complete your booking first."
+msgstr ""
+
+#: src/Booking/Checkout.php:121
+msgid "Your session has expired. Please refresh and try again."
+msgstr ""
+
+#: src/Booking/Checkout.php:127
+msgid "Please wait before submitting another checkout attempt."
+msgstr ""
+
+#: src/Booking/Checkout.php:139
+#: src/Booking/Orders.php:94
+#: src/Shortcodes/CheckoutShortcode.php:75
+msgid "Your experience cart is empty."
+msgstr ""
+
+#: src/Booking/Checkout.php:150
+#: src/Booking/Slots.php:511
+msgid "Selected slot is no longer available."
+msgstr ""
+
+#: src/Booking/Checkout.php:159
+msgid "Selected slot is sold out."
+msgstr ""
+
+#: src/Booking/Emails.php:80
+msgid "Cancelled"
+msgstr ""
+
+#. translators: %s: experience title.
+#: src/Booking/Emails.php:120
+#, php-format
+msgid "Your reservation for %s"
+msgstr ""
+
+#. translators: %s: experience title.
+#: src/Booking/Emails.php:151
+#, php-format
+msgid "Reservation cancelled for %s"
+msgstr ""
+
+#. translators: %s: experience title.
+#: src/Booking/Emails.php:157
+#, php-format
+msgid "New reservation for %s"
+msgstr ""
+
+#. translators: %s: experience title.
+#: src/Booking/Emails.php:227
+#, php-format
+msgid "Experience: %s"
+msgstr ""
+
+#: src/Booking/Orders.php:66
+msgid "Experience item"
+msgstr ""
+
+#: src/Booking/Orders.php:80
+msgid "WooCommerce is required to process experience checkout."
+msgstr ""
+
+#: src/Booking/Orders.php:88
+msgid "Unable to create the order. Please try again."
+msgstr ""
+
+#: src/Booking/Orders.php:165
+#: src/Booking/RequestToBook.php:609
+#: src/Shortcodes/CheckoutShortcode.php:133
+msgid "Experience booking"
+msgstr ""
+
+#: src/Booking/Pricing.php:346
+msgid "Seasonal adjustment"
+msgstr ""
+
+#: src/Booking/Pricing.php:349
+msgid "Weekday adjustment"
+msgstr ""
+
+#: src/Booking/Pricing.php:352
+msgid "Weekend adjustment"
+msgstr ""
+
+#: src/Booking/RequestToBook.php:103
+#: src/Booking/RequestToBook.php:216
+msgid "Your session expired. Please refresh and try again."
+msgstr ""
+
+#: src/Booking/RequestToBook.php:107
+msgid "Please wait before sending another request."
+msgstr ""
+
+#: src/Booking/RequestToBook.php:116
+msgid "Select a date and time before submitting your request."
+msgstr ""
+
+#: src/Booking/RequestToBook.php:121
+#: src/Booking/RequestToBook.php:234
+msgid "The selected slot is no longer available."
+msgstr ""
+
+#: src/Booking/RequestToBook.php:126
+msgid "The selected slot cannot accept more guests."
+msgstr ""
+
+#: src/Booking/RequestToBook.php:134
+msgid "Please provide a valid email address so we can reply to your request."
+msgstr ""
+
+#: src/Booking/RequestToBook.php:138
+msgid "You must accept the privacy policy to send a request."
+msgstr ""
+
+#: src/Booking/RequestToBook.php:181
+msgid "We could not record your request. Please try again."
+msgstr ""
+
+#: src/Booking/RequestToBook.php:202
+msgid "Thank you! Your request was received and our team will confirm availability shortly."
+msgstr ""
+
+#: src/Booking/RequestToBook.php:220
+msgid "Please wait before requesting a new quote."
+msgstr ""
+
+#: src/Booking/RequestToBook.php:229
+msgid "Select a date and time before continuing."
+msgstr ""
+
+#: src/Booking/RequestToBook.php:426
+#: src/Booking/RequestToBook.php:494
+msgid "The request could not be found."
+msgstr ""
+
+#: src/Booking/RequestToBook.php:432
+#: src/Booking/RequestToBook.php:500
+msgid "Unable to load the request details."
+msgstr ""
+
+#: src/Booking/RequestToBook.php:557
+msgid "WooCommerce is required to send payment requests."
+msgstr ""
+
+#: src/Booking/RequestToBook.php:565
+msgid "Unable to generate the payment order. Please try again."
+msgstr ""
+
+#: src/Booking/RequestToBook.php:755
+msgid "We received your experience request"
+msgstr ""
+
+#: src/Booking/RequestToBook.php:756
+msgid "Thank you for your request. Our team will get back to you shortly."
+msgstr ""
+
+#. translators: %s: experience title.
+#: src/Booking/RequestToBook.php:781
+#, php-format
+msgid "New request-to-book for %s"
+msgstr ""
+
+#: src/Booking/RequestToBook.php:786
+#, php-format
+msgid "Customer: %s (%s)"
+msgstr ""
+
+#: src/Booking/RequestToBook.php:788
+#, php-format
+msgid "Phone: %s"
+msgstr ""
+
+#: src/Booking/RequestToBook.php:790
+#, php-format
+msgid "Guests: %d"
+msgstr ""
+
+#: src/Booking/RequestToBook.php:791
+#, php-format
+msgid "Requested slot: %s"
+msgstr ""
+
+#: src/Booking/RequestToBook.php:793
+msgid "Notes:"
+msgstr ""
+
+#: src/Booking/Reservations.php:385
+msgid "Pending review"
+msgstr ""
+
+#: src/Booking/Reservations.php:386
+msgid "Approved"
+msgstr ""
+
+#: src/Booking/Reservations.php:387
+msgid "Waiting payment"
+msgstr ""
+
+#: src/Booking/Reservations.php:388
+msgid "Declined"
+msgstr ""
+
+#: src/Booking/Slots.php:546
+msgid "The selected ticket type is sold out for this slot."
+msgstr ""
+
+#: src/Elementor/WidgetCalendar.php:24
+msgid "FP Experiences Calendar"
+msgstr ""
+
+#: src/Elementor/WidgetCalendar.php:47
+#: src/Elementor/WidgetExperiencePage.php:50
+#: src/Elementor/WidgetList.php:51
+#: src/Elementor/WidgetMeetingPoints.php:46
+#: src/Elementor/WidgetWidget.php:48
+msgid "Content"
+msgstr ""
+
+#: src/Elementor/WidgetCalendar.php:54
+#: src/Elementor/WidgetExperiencePage.php:57
+#: src/Elementor/WidgetMeetingPoints.php:53
+#: src/Elementor/WidgetWidget.php:55
+msgid "Experience ID"
+msgstr ""
+
+#: src/Elementor/WidgetCalendar.php:64
+msgid "Months to display"
+msgstr ""
+
+#: src/Utils/Theme.php:37
+msgid "Default"
+msgstr ""
+
+#: src/Elementor/WidgetCalendar.php:124
+#: src/Elementor/WidgetCheckout.php:88
+#: src/Elementor/WidgetExperiencePage.php:208
+#: src/Elementor/WidgetList.php:305
+#: src/Elementor/WidgetWidget.php:139
+msgid "Inherit"
+msgstr ""
+
+#: src/Elementor/WidgetCalendar.php:126
+#: src/Elementor/WidgetCheckout.php:90
+#: src/Elementor/WidgetExperiencePage.php:210
+#: src/Elementor/WidgetList.php:307
+#: src/Elementor/WidgetWidget.php:141
+msgid "Dark (.fp-theme-dark)"
+msgstr ""
+
+#: src/Elementor/WidgetCalendar.php:127
+#: src/Elementor/WidgetCheckout.php:91
+#: src/Elementor/WidgetExperiencePage.php:211
+#: src/Elementor/WidgetList.php:308
+#: src/Elementor/WidgetWidget.php:142
+msgid "Automatic (prefers-color-scheme)"
+msgstr ""
+
+#: src/Elementor/WidgetCalendar.php:133
+#: src/Elementor/WidgetCheckout.php:97
+#: src/Elementor/WidgetExperiencePage.php:217
+#: src/Elementor/WidgetList.php:314
+#: src/Elementor/WidgetWidget.php:148
+msgid "Primary"
+msgstr ""
+
+#: src/Elementor/WidgetCalendar.php:134
+#: src/Elementor/WidgetCheckout.php:98
+#: src/Elementor/WidgetExperiencePage.php:218
+#: src/Elementor/WidgetList.php:315
+#: src/Elementor/WidgetWidget.php:149
+msgid "Secondary"
+msgstr ""
+
+#: src/Elementor/WidgetCalendar.php:135
+#: src/Elementor/WidgetCheckout.php:99
+#: src/Elementor/WidgetExperiencePage.php:219
+#: src/Elementor/WidgetList.php:316
+#: src/Elementor/WidgetWidget.php:150
+msgid "Accent"
+msgstr ""
+
+#: src/Elementor/WidgetCalendar.php:138
+#: src/Elementor/WidgetCheckout.php:102
+#: src/Elementor/WidgetExperiencePage.php:222
+#: src/Elementor/WidgetList.php:319
+#: src/Elementor/WidgetWidget.php:153
+msgid "Text"
+msgstr ""
+
+#: src/Elementor/WidgetCalendar.php:139
+#: src/Elementor/WidgetCheckout.php:103
+#: src/Elementor/WidgetExperiencePage.php:223
+#: src/Elementor/WidgetList.php:320
+#: src/Elementor/WidgetWidget.php:154
+msgid "Muted"
+msgstr ""
+
+#: src/Elementor/WidgetCalendar.php:176
+#: src/Elementor/WidgetCheckout.php:140
+#: src/Elementor/WidgetExperiencePage.php:260
+#: src/Elementor/WidgetList.php:357
+#: src/Elementor/WidgetWidget.php:191
+msgid "Font family"
+msgstr ""
+
+#: src/Elementor/WidgetCheckout.php:24
+msgid "FP Experiences Checkout"
+msgstr ""
+
+#: src/Elementor/WidgetExperiencePage.php:27
+msgid "FP Experience Page"
+msgstr ""
+
+#: src/Elementor/WidgetExperiencePage.php:67
+msgid "Sections"
+msgstr ""
+
+#: src/Elementor/WidgetExperiencePage.php:72
+msgid "Hero"
+msgstr ""
+
+#: src/Elementor/WidgetExperiencePage.php:73
+#: src/Shortcodes/ExperienceShortcode.php:230
+#: templates/front/experience.php:189
+msgid "Highlights"
+msgstr ""
+
+#: src/Elementor/WidgetExperiencePage.php:74
+msgid "Inclusions/Exclusions"
+msgstr ""
+
+#: src/Elementor/WidgetExperiencePage.php:76
+msgid "Extras & Policy"
+msgstr ""
+
+#: src/Elementor/WidgetExperiencePage.php:78
+#: src/Shortcodes/ExperienceShortcode.php:250
+msgid "Reviews"
+msgstr ""
+
+#: src/Elementor/WidgetExperiencePage.php:86
+msgid "Sticky availability button"
+msgstr ""
+
+#: src/Elementor/WidgetExperiencePage.php:98
+msgid "Container"
+msgstr ""
+
+#: src/Elementor/WidgetExperiencePage.php:102
+msgid "Boxed"
+msgstr ""
+
+#: src/Elementor/WidgetExperiencePage.php:103
+msgid "Full width"
+msgstr ""
+
+#: src/Elementor/WidgetExperiencePage.php:113
+msgid "Maximum width (px)"
+msgstr ""
+
+#: src/Elementor/WidgetExperiencePage.php:124
+msgid "Side padding (px)"
+msgstr ""
+
+#: src/Elementor/WidgetList.php:28
+msgid "FP Experiences List"
+msgstr ""
+
+#: src/Elementor/WidgetList.php:60
+msgid "Filters"
+msgstr ""
+
+#: src/Elementor/WidgetList.php:68
+#: templates/front/list.php:204
+#: templates/front/widget.php:155
+msgid "Price"
+msgstr ""
+
+#: src/Elementor/WidgetList.php:70
+#: src/Shortcodes/ListShortcode.php:686
+#: templates/front/list.php:187
+msgid "Date"
+msgstr ""
+
+#: src/Elementor/WidgetList.php:90
+msgid "Order by"
+msgstr ""
+
+#: src/Elementor/WidgetList.php:105
+msgid "Order direction"
+msgstr ""
+
+#: src/Elementor/WidgetList.php:118
+msgid "Initial view"
+msgstr ""
+
+#: src/Elementor/WidgetList.php:121
+#: templates/front/list.php:221
+msgid "Grid"
+msgstr ""
+
+#: src/Elementor/WidgetList.php:122
+#: templates/front/list.php:222
+msgid "List"
+msgstr ""
+
+#: src/Elementor/WidgetList.php:131
+msgid "Show map link"
+msgstr ""
+
+#: src/Elementor/WidgetList.php:140
+msgid "CTA behaviour"
+msgstr ""
+
+#: src/Elementor/WidgetList.php:143
+msgid "Open experience page"
+msgstr ""
+
+#: src/Elementor/WidgetList.php:144
+msgid "Scroll to booking widget"
+msgstr ""
+
+#: src/Elementor/WidgetList.php:155
+msgid "Layout"
+msgstr ""
+
+#: src/Elementor/WidgetList.php:163
+msgid "Columns"
+msgstr ""
+
+#: src/Elementor/WidgetList.php:177
+msgid "Card spacing"
+msgstr ""
+
+#: src/Elementor/WidgetList.php:180
+msgid "Compact"
+msgstr ""
+
+#: src/Elementor/WidgetList.php:181
+msgid "Cozy"
+msgstr ""
+
+#: src/Elementor/WidgetList.php:182
+msgid "Spacious"
+msgstr ""
+
+#: src/Elementor/WidgetList.php:191
+msgid "Show “price from” badge"
+msgstr ""
+
+#: src/Elementor/WidgetList.php:200
+msgid "Show language badge"
+msgstr ""
+
+#: src/Elementor/WidgetList.php:209
+msgid "Show duration badge"
+msgstr ""
+
+#: src/Elementor/WidgetList.php:218
+msgid "Show family badge"
+msgstr ""
+
+#: src/Elementor/WidgetMeetingPoints.php:23
+msgid "FP Meeting Points"
+msgstr ""
+
+#: src/Elementor/WidgetWidget.php:25
+msgid "FP Experiences Widget"
+msgstr ""
+
+#: src/Elementor/WidgetWidget.php:65
+msgid "Sticky summary"
+msgstr ""
+
+#: src/Elementor/WidgetWidget.php:77
+msgid "Show inline calendar"
+msgstr ""
+
+#: src/Elementor/WidgetWidget.php:79
+msgid "Show"
+msgstr ""
+
+#: src/Elementor/WidgetWidget.php:80
+msgid "Hide"
+msgstr ""
+
+#. translators: %d: HTTP status code.
+#: src/Integrations/Brevo.php:224
+#, php-format
+msgid "Brevo contact sync failed (HTTP %d). Check the logs for details."
+msgstr ""
+
+#: src/Integrations/Brevo.php:264
+msgid "Transactional email template not configured. WooCommerce fallback used."
+msgstr ""
+
+#: src/Integrations/Brevo.php:331
+msgid "Brevo transactional email failed to send. Check the logs for details."
+msgstr ""
+
+#. translators: %d: HTTP status code.
+#: src/Integrations/Brevo.php:350
+#, php-format
+msgid "Brevo transactional email failed with HTTP %d. Check the logs for details."
+msgstr ""
+
+#: src/Integrations/Brevo.php:422
+msgid "Brevo event tracking failed. Check the logs for diagnostics."
+msgstr ""
+
+#. translators: %d: HTTP status code.
+#: src/Integrations/Brevo.php:442
+#, php-format
+msgid "Brevo event tracking request returned HTTP %d."
+msgstr ""
+
+#: src/Integrations/GoogleCalendar.php:177
+msgid "Google Calendar event sync failed. Check the logs for details."
+msgstr ""
+
+#: src/Integrations/GoogleCalendar.php:249
+msgid "Google Calendar event deletion failed. Check the logs for details."
+msgstr ""
+
+#: src/Integrations/GoogleCalendar.php:273
+msgid "Google Calendar event deletion failed. Check the logs for diagnostics."
+msgstr ""
+
+#: src/Integrations/GoogleCalendar.php:394
+msgid "Google Calendar token refresh failed. Reconnect the account from Settings → Calendar."
+msgstr ""
+
+#: src/MeetingPoints/ExperienceMetaBox.php:48
+#: src/MeetingPoints/MeetingPointCPT.php:37
+msgid "Meeting Point"
+msgstr ""
+
+#: src/MeetingPoints/MeetingPointCPT.php:38
+#: src/MeetingPoints/MeetingPointCPT.php:39
+msgid "Add Meeting Point"
+msgstr ""
+
+#: src/MeetingPoints/MeetingPointCPT.php:40
+msgid "Edit Meeting Point"
+msgstr ""
+
+#: src/MeetingPoints/MeetingPointCPT.php:41
+msgid "New Meeting Point"
+msgstr ""
+
+#: src/MeetingPoints/MeetingPointCPT.php:42
+msgid "View Meeting Point"
+msgstr ""
+
+#: src/MeetingPoints/MeetingPointCPT.php:43
+msgid "Search Meeting Points"
+msgstr ""
+
+#: src/MeetingPoints/MeetingPointCPT.php:44
+msgid "No meeting points found."
+msgstr ""
+
+#: src/MeetingPoints/MeetingPointCPT.php:72
+#: templates/front/checkout.php:70
+msgid "Address"
+msgstr ""
+
+#: src/MeetingPoints/MeetingPointCPT.php:73
+msgid "Lat/Lng"
+msgstr ""
+
+#: src/MeetingPoints/MeetingPointImporter.php:59
+#: src/MeetingPoints/MeetingPointImporter.php:60
+msgid "Import Meeting Points"
+msgstr ""
+
+#: src/MeetingPoints/MeetingPointImporter.php:70
+msgid "You do not have permission to access this page."
+msgstr ""
+
+#: src/MeetingPoints/MeetingPointImporter.php:86
+msgid "Import meeting points"
+msgstr ""
+
+#: src/MeetingPoints/MeetingPointImporter.php:87
+msgid "Incolla qui un CSV con le colonne: title,address,lat,lng,notes,phone,email,opening_hours."
+msgstr ""
+
+#: src/MeetingPoints/MeetingPointImporter.php:94
+msgid "Import CSV"
+msgstr ""
+
+#: src/MeetingPoints/MeetingPointImporter.php:103
+msgid "Meeting points are disabled."
+msgstr ""
+
+#: src/MeetingPoints/MeetingPointImporter.php:107
+msgid "You do not have permission to import meeting points."
+msgstr ""
+
+#: src/MeetingPoints/MeetingPointImporter.php:111
+msgid "Security check failed."
+msgstr ""
+
+#: src/MeetingPoints/MeetingPointImporter.php:182
+#, php-format
+msgid "%1$d meeting points imported, %2$d skipped."
+msgstr ""
+
+#: src/MeetingPoints/MeetingPointMetaBoxes.php:44
+msgid "Dettagli meeting point"
+msgstr ""
+
+#: src/MeetingPoints/MeetingPointMetaBoxes.php:66
+msgid "Indirizzo completo"
+msgstr ""
+
+#: src/MeetingPoints/MeetingPointMetaBoxes.php:71
+msgid "Latitudine"
+msgstr ""
+
+#: src/MeetingPoints/MeetingPointMetaBoxes.php:75
+msgid "Longitudine"
+msgstr ""
+
+#: src/MeetingPoints/MeetingPointMetaBoxes.php:80
+msgid "Note per i partecipanti"
+msgstr ""
+
+#: src/MeetingPoints/MeetingPointMetaBoxes.php:85
+msgid "Telefono"
+msgstr ""
+
+#: src/MeetingPoints/MeetingPointMetaBoxes.php:89
+#: templates/front/checkout.php:55
+#: templates/front/partials/meeting-point.php:50
+#: templates/front/widget.php:268
+msgid "Email"
+msgstr ""
+
+#: src/MeetingPoints/MeetingPointMetaBoxes.php:94
+msgid "Orari di apertura"
+msgstr ""
+
+#: src/Plugin.php:319
+msgid "FP Experiences could not finish loading some modules. Check the logs for more details."
+msgstr ""
+
+#. translators: 1: module name, 2: method, 3: error message
+#: src/Plugin.php:328
+#, php-format
+msgid "%1$s::%2$s — %3$s"
+msgstr ""
+
+#: src/PostTypes/ExperienceCPT.php:62
+msgid "Edit Experience"
+msgstr ""
+
+#: src/PostTypes/ExperienceCPT.php:63
+msgid "New Experience"
+msgstr ""
+
+#: src/PostTypes/ExperienceCPT.php:64
+msgid "View Experience"
+msgstr ""
+
+#: src/PostTypes/ExperienceCPT.php:65
+msgid "Search Experiences"
+msgstr ""
+
+#: src/PostTypes/ExperienceCPT.php:66
+msgid "No experiences found."
+msgstr ""
+
+#: src/PostTypes/ExperienceCPT.php:67
+msgid "No experiences found in Trash."
+msgstr ""
+
+#: src/PostTypes/ExperienceCPT.php:68
+msgid "All Experiences"
+msgstr ""
+
+#: src/PostTypes/ExperienceCPT.php:101
+msgid "Experience Themes"
+msgstr ""
+
+#: src/PostTypes/ExperienceCPT.php:102
+msgid "Experience Theme"
+msgstr ""
+
+#: src/PostTypes/ExperienceCPT.php:116
+msgid "Experience Languages"
+msgstr ""
+
+#: src/PostTypes/ExperienceCPT.php:117
+msgid "Experience Language"
+msgstr ""
+
+#: src/PostTypes/ExperienceCPT.php:131
+msgid "Durations"
+msgstr ""
+
+#: src/PostTypes/ExperienceCPT.php:146
+#: src/PostTypes/ExperienceCPT.php:147
+msgid "Family Friendly"
+msgstr ""
+
+#: src/Shortcodes/CalendarShortcode.php:62
+#: src/Shortcodes/ExperienceShortcode.php:103
+#: src/Shortcodes/MeetingPointsShortcode.php:35
+#: src/Shortcodes/WidgetShortcode.php:85
+msgid "Missing experience ID."
+msgstr ""
+
+#: src/Shortcodes/CalendarShortcode.php:67
+#: src/Shortcodes/ExperienceShortcode.php:109
+#: src/Shortcodes/WidgetShortcode.php:91
+msgid "Experience not found."
+msgstr ""
+
+#: src/Shortcodes/CheckoutShortcode.php:89
+msgid "Contact details"
+msgstr ""
+
+#: src/Shortcodes/CheckoutShortcode.php:90
+msgid "Billing address"
+msgstr ""
+
+#: src/Shortcodes/CheckoutShortcode.php:91
+msgid "Payment method"
+msgstr ""
+
+#: src/Shortcodes/CheckoutShortcode.php:92
+msgid "Order summary"
+msgstr ""
+
+#: src/Shortcodes/CheckoutShortcode.php:93
+msgid "Confirm and pay"
+msgstr ""
+
+#: src/Shortcodes/CheckoutShortcode.php:94
+msgid "The experience cart is locked while you complete payment."
+msgstr ""
+
+#: src/Shortcodes/ExperienceShortcode.php:226
+msgid "Overview"
+msgstr ""
+
+#: src/Shortcodes/ExperienceShortcode.php:234
+#: templates/front/experience.php:201
+msgid "What's included"
+msgstr ""
+
+#: src/Shortcodes/ExperienceShortcode.php:242
+#: templates/front/experience.php:254
+msgid "Good to know"
+msgstr ""
+
+#: src/Shortcodes/ExperienceShortcode.php:795
+#, php-format
+msgid "%dh %02dm"
+msgstr ""
+
+#: src/Shortcodes/ExperienceShortcode.php:796
+#: templates/front/widget.php:74
+#, php-format
+msgid "%d minutes"
+msgstr ""
+
+#: src/Shortcodes/ExperienceShortcode.php:814
+#: src/Shortcodes/ListShortcode.php:513
+#: src/Shortcodes/ListShortcode.php:679
+msgid "Family friendly"
+msgstr ""
+
+#: src/Shortcodes/ListShortcode.php:615
+#, php-format
+msgid "%1$dh %2$dmin"
+msgstr ""
+
+#: src/Shortcodes/ListShortcode.php:619
+#, php-format
+msgid "%dh"
+msgid_plural "%dh"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/Shortcodes/ListShortcode.php:622
+#, php-format
+msgid "%d minute"
+msgid_plural "%d minutes"
+msgstr[0] ""
+msgstr[1] ""
+
+#. translators: %s: filter label.
+#: src/Shortcodes/ListShortcode.php:745
+#, php-format
+msgid "Remove %s filter"
+msgstr ""
+
+#: src/Shortcodes/ListShortcode.php:767
+msgid "Remove family-friendly filter"
+msgstr ""
+
+#: src/Shortcodes/MeetingPointsShortcode.php:50
+msgid "No meeting point configured for this experience."
+msgstr ""
+
+#. translators: %s: contrast ratio.
+#: src/Utils/Theme.php:171
+#, php-format
+msgid "Primary color contrast against the background is %.2f:1. Consider adjusting colors for AA compliance."
+msgstr ""
+
+#. translators: %s: contrast ratio.
+#: src/Utils/Theme.php:180
+#, php-format
+msgid "Body text contrast is %.2f:1. Increase contrast for readability."
+msgstr ""
+
+#. translators: %s: experience title.
+#: templates/emails/customer-confirmation.php:40
+#, php-format
+msgid "Grazie per aver prenotato %s"
+msgstr ""
+
+#: templates/emails/customer-confirmation.php:46
+msgid "Di seguito trovi tutti i dettagli della tua esperienza. Presentati con qualche minuto di anticipo e porta con te questa email (o il QR code se disponibile)."
+msgstr ""
+
+#: templates/emails/customer-confirmation.php:66
+#: templates/emails/customer-reminder.php:54
+#: templates/emails/staff-notification.php:69
+msgid "Punto di incontro"
+msgstr ""
+
+#: templates/emails/customer-confirmation.php:78
+msgid "Riepilogo partecipanti"
+msgstr ""
+
+#: templates/emails/customer-confirmation.php:96
+msgid "Nessun partecipante registrato."
+msgstr ""
+
+#: templates/emails/customer-confirmation.php:105
+msgid "Extra selezionati"
+msgstr ""
+
+#: templates/emails/customer-confirmation.php:118
+msgid "Informazioni ordine"
+msgstr ""
+
+#: templates/emails/customer-confirmation.php:121
+msgid "Numero ordine"
+msgstr ""
+
+#: templates/emails/customer-confirmation.php:131
+#: templates/emails/staff-notification.php:150
+msgid "Note del cliente"
+msgstr ""
+
+#: templates/emails/customer-confirmation.php:137
+msgid "Troverai allegato un file .ics per aggiungere automaticamente la prenotazione al tuo calendario."
+msgstr ""
+
+#: templates/emails/customer-confirmation.php:140
+msgid "Aggiungi a Google Calendar"
+msgstr ""
+
+#. translators: %s: customer name.
+#: templates/emails/customer-confirmation.php:149
+#, php-format
+msgid "Contatto: %s"
+msgstr ""
+
+#. translators: %s: phone number.
+#: templates/emails/customer-confirmation.php:157
+#, php-format
+msgid "Telefono: %s"
+msgstr ""
+
+#: templates/emails/customer-confirmation.php:163
+msgid "Per qualsiasi richiesta rispondi a questa email, saremo felici di aiutarti."
+msgstr ""
+
+#. translators: %s: experience title.
+#: templates/emails/customer-post-experience.php:22
+#, php-format
+msgid "Com’è andata %s?"
+msgstr ""
+
+#: templates/emails/customer-post-experience.php:28
+msgid "Grazie per aver partecipato! Ci farebbe piacere ricevere un tuo feedback per continuare a migliorare."
+msgstr ""
+
+#: templates/emails/customer-post-experience.php:32
+msgid "Raccontaci cosa ti è piaciuto o cosa possiamo migliorare rispondendo a questa email oppure lasciando una recensione."
+msgstr ""
+
+#: templates/emails/customer-post-experience.php:38
+msgid "Lascia una recensione"
+msgstr ""
+
+#: templates/emails/customer-post-experience.php:44
+msgid "Ti aspettiamo presto per una nuova esperienza!"
+msgstr ""
+
+#. translators: %s: experience title.
+#: templates/emails/customer-reminder.php:34
+#, php-format
+msgid "Ci vediamo presto per %s"
+msgstr ""
+
+#: templates/emails/customer-reminder.php:40
+msgid "Manca poco alla tua esperienza: ecco un promemoria con data, orario e punto di incontro."
+msgstr ""
+
+#: templates/emails/customer-reminder.php:61
+msgid "Ricorda di portare con te un documento valido e di arrivare con qualche minuto di anticipo."
+msgstr ""
+
+#: templates/emails/customer-reminder.php:65
+msgid "Hai già aggiunto l’evento al calendario?"
+msgstr ""
+
+#: templates/emails/customer-reminder.php:68
+msgid "Aggiungi con un clic"
+msgstr ""
+
+#: templates/emails/customer-reminder.php:74
+msgid "Per qualsiasi richiesta rispondi a questa email: il nostro team è a tua disposizione."
+msgstr ""
+
+#. translators: %s: experience title.
+#: templates/emails/staff-notification.php:39
+#, php-format
+msgid "Prenotazione annullata – %s"
+msgstr ""
+
+#. translators: %s: experience title.
+#: templates/emails/staff-notification.php:45
+#, php-format
+msgid "Nuova prenotazione – %s"
+msgstr ""
+
+#: templates/emails/staff-notification.php:52
+msgid "Riepilogo dettagli della prenotazione:"
+msgstr ""
+
+#: templates/emails/staff-notification.php:85
+msgid "Partecipanti"
+msgstr ""
+
+#: templates/emails/staff-notification.php:98
+msgid "Extra"
+msgstr ""
+
+#: templates/emails/staff-notification.php:111
+msgid "Contatto cliente"
+msgstr ""
+
+#: templates/emails/staff-notification.php:130
+msgid "Ordine"
+msgstr ""
+
+#: templates/emails/staff-notification.php:133
+msgid "Numero"
+msgstr ""
+
+#: templates/emails/staff-notification.php:143
+msgid "Apri ordine in WooCommerce"
+msgstr ""
+
+#: templates/front/calendar.php:20
+#, php-format
+msgid "%s availability"
+msgstr ""
+
+#: templates/front/calendar.php:31
+#: templates/front/widget.php:133
+#, php-format
+msgid "%d slots"
+msgstr ""
+
+#: templates/front/calendar.php:39
+#, php-format
+msgid "%d places left"
+msgstr ""
+
+#: templates/front/checkout.php:24
+msgid "Complete your booking"
+msgstr ""
+
+#: templates/front/checkout.php:31
+#, php-format
+msgid "Please complete the %s field."
+msgstr ""
+
+#: templates/front/checkout.php:32
+#: templates/front/widget.php:245
+msgid "Enter a valid email address."
+msgstr ""
+
+#: templates/front/checkout.php:41
+#: templates/front/widget.php:261
+msgid "Please review the highlighted fields:"
+msgstr ""
+
+#: templates/front/checkout.php:66
+msgid "Country"
+msgstr ""
+
+#: templates/front/checkout.php:74
+msgid "City"
+msgstr ""
+
+#: templates/front/checkout.php:78
+msgid "Postal code"
+msgstr ""
+
+#: templates/front/checkout.php:84
+msgid "I agree to receive marketing updates about future experiences."
+msgstr ""
+
+#: templates/front/checkout.php:91
+msgid "Payment methods will load here from WooCommerce gateways."
+msgstr ""
+
+#: templates/front/checkout.php:126
+msgid "Your experience selection will appear here."
+msgstr ""
+
+#: templates/front/checkout.php:138
+msgid "Payment is currently being processed. If you have completed checkout, you can close this page."
+msgstr ""
+
+#: templates/front/experience.php:82
+msgid "Controlla disponibilità"
+msgstr ""
+
+#: templates/front/experience.php:170
+msgid "Experience sections"
+msgstr ""
+
+#: templates/front/experience.php:203
+msgid "and what's not"
+msgstr ""
+
+#: templates/front/experience.php:209
+msgid "Included"
+msgstr ""
+
+#: templates/front/experience.php:224
+msgid "Not included"
+msgstr ""
+
+#: templates/front/experience.php:258
+msgid "What to bring"
+msgstr ""
+
+#: templates/front/experience.php:269
+msgid "Notes"
+msgstr ""
+
+#: templates/front/experience.php:284
+msgid "Cancellation policy"
+msgstr ""
+
+#: templates/front/experience.php:294
+msgid "Frequently asked questions"
+msgstr ""
+
+#: templates/front/experience.php:333
+msgid "Traveler reviews"
+msgstr ""
+
+#: templates/front/experience.php:340
+#, php-format
+msgid "%s out of 5"
+msgstr ""
+
+#: templates/front/experience.php:374
+msgid "Riepilogo prenotazione"
+msgstr ""
+
+#: templates/front/list.php:55
+#, php-format
+msgid "%d experience found"
+msgid_plural "%d experiences found"
+msgstr[0] ""
+msgstr[1] ""
+
+#: templates/front/list.php:81
+msgid "Reset filters"
+msgstr ""
+
+#: templates/front/list.php:97
+msgid "Search experiences…"
+msgstr ""
+
+#: templates/front/list.php:148
+msgid "Price range (€)"
+msgstr ""
+
+#: templates/front/list.php:151
+msgid "Minimum price"
+msgstr ""
+
+#: templates/front/list.php:162
+msgid "Maximum price"
+msgstr ""
+
+#: templates/front/list.php:180
+msgid "Family-friendly only"
+msgstr ""
+
+#: templates/front/list.php:199
+msgid "Sort by"
+msgstr ""
+
+#: templates/front/list.php:201
+msgid "Featured"
+msgstr ""
+
+#: templates/front/list.php:209
+msgid "Order"
+msgstr ""
+
+#: templates/front/list.php:217
+msgid "Apply filters"
+msgstr ""
+
+#: templates/front/list.php:220
+msgid "Change layout"
+msgstr ""
+
+#: templates/front/list.php:228
+msgid "No experiences match your filters. Try adjusting your search."
+msgstr ""
+
+#: templates/front/list.php:250
+#, php-format
+msgid "From €%s"
+msgstr ""
+
+#: templates/front/list.php:275
+msgid "Details"
+msgstr ""
+
+#: templates/front/list.php:277
+msgid "View on map"
+msgstr ""
+
+#: templates/front/list.php:286
+msgid "Experiences navigation"
+msgstr ""
+
+#: templates/front/meeting-points.php:22
+msgid "Punti di ritrovo alternativi"
+msgstr ""
+
+#: templates/front/partials/meeting-point.php:31
+msgid "Apri in Maps"
+msgstr ""
+
+#: templates/front/partials/meeting-point.php:47
+msgid "Tel"
+msgstr ""
+
+#: templates/front/widget.php:50
+msgid "Send approval with payment link"
+msgstr ""
+
+#: templates/front/widget.php:51
+msgid "Send booking request"
+msgstr ""
+
+#: templates/front/widget.php:79
+msgid "Languages"
+msgstr ""
+
+#: templates/front/widget.php:99
+msgid "Open booking panel"
+msgstr ""
+
+#: templates/front/widget.php:113
+msgid "Close booking panel"
+msgstr ""
+
+#: templates/front/widget.php:122
+msgid "Choose a date"
+msgstr ""
+
+#: templates/front/widget.php:140
+#: templates/front/widget.php:141
+msgid "Select a date to view time slots"
+msgstr ""
+
+#: templates/front/widget.php:148
+msgid "Select tickets"
+msgstr ""
+
+#: templates/front/widget.php:154
+msgid "Ticket type"
+msgstr ""
+
+#: templates/front/widget.php:156
+msgid "Quantity"
+msgstr ""
+
+#: templates/front/widget.php:173
+#, php-format
+msgid "Decrease %s"
+msgstr ""
+
+#: templates/front/widget.php:174
+#, php-format
+msgid "%s quantity"
+msgstr ""
+
+#: templates/front/widget.php:175
+#, php-format
+msgid "Increase %s"
+msgstr ""
+
+#: templates/front/widget.php:213
+msgid "Summary"
+msgstr ""
+
+#: templates/front/widget.php:218
+#: templates/front/widget.php:226
+msgid "Select tickets to see the summary"
+msgstr ""
+
+#: templates/front/widget.php:219
+msgid "Updating price…"
+msgstr ""
+
+#: templates/front/widget.php:220
+msgid "We could not refresh the price. Please try again."
+msgstr ""
+
+#: templates/front/widget.php:221
+msgid "Choose a time to confirm price and availability."
+msgstr ""
+
+#: templates/front/widget.php:222
+msgid "Taxes included where applicable."
+msgstr ""
+
+#: templates/front/widget.php:223
+msgid "Base price"
+msgstr ""
+
+#: templates/front/widget.php:243
+msgid "Enter your name."
+msgstr ""
+
+#: templates/front/widget.php:244
+msgid "Enter your email address."
+msgstr ""
+
+#: templates/front/experience.php:316
+#: build/fp-experiences/templates/front/experience.php:314
+msgid "Perché prenotare con noi"
+msgstr ""
+
+#: templates/front/widget.php:246
+msgid "Accept the privacy policy to continue."
+msgstr ""
+
+#: templates/front/widget.php:264
+msgid "Name and surname"
+msgstr ""
+
+#: templates/front/widget.php:272
+msgid "Phone number"
+msgstr ""
+
+#: templates/front/widget.php:276
+msgid "Notes or special requests"
+msgstr ""
+
+#: templates/front/widget.php:282
+msgid "I would like to receive news and marketing updates."
+msgstr ""
+
+#: templates/front/widget.php:288
+msgid "I agree to the privacy policy and terms of booking."
+msgstr ""
+
+#: templates/front/widget.php:294
+msgid "Sending your request…"
+msgstr ""
+
+#: templates/front/widget.php:294
+msgid "Request received! We will reply soon."
+msgstr ""
+
+#: templates/front/widget.php:294
+msgid "Unable to submit your request. Please try again."
+msgstr ""
+
+#: templates/front/widget.php:298
+msgid "Proceed to checkout"
+msgstr ""

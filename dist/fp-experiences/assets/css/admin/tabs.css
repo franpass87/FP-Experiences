@@ -1,0 +1,84 @@
+/**
+ * Admin Tabs Component
+ */
+.fp-exp-tabs {
+    position: sticky;
+    top: 32px;
+    z-index: 20;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 12px 16px;
+    background: #ffffff;
+    border-bottom: 1px solid var(--fp-exp-admin-border);
+}
+
+.fp-exp-tab {
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    padding: 8px 16px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--fp-exp-color-muted);
+    cursor: pointer;
+    transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.fp-exp-tab:hover {
+    color: var(--fp-exp-color-text);
+    background: #f3f4f6;
+}
+
+.fp-exp-tab[aria-selected="true"] {
+    color: var(--fp-exp-color-primary);
+    background: #eff6ff;
+    border-color: #dbeafe;
+}
+
+.fp-exp-tab:focus-visible {
+    outline: 2px solid var(--fp-exp-color-primary);
+    outline-offset: 2px;
+}
+
+.fp-exp-tab-panels {
+    display: grid;
+    gap: 24px;
+    padding: 24px;
+    background: #fff;
+}
+
+.fp-exp-tab-panel[hidden] {
+    display: none;
+}
+
+.fp-exp-tab-panel {
+    display: grid;
+    gap: 24px;
+}
+
+/* Dark mode tabs */
+html.fp-exp-dark .fp-exp-tabs {
+    background: linear-gradient(180deg, rgba(24, 26, 31, 0.92) 0%, rgba(20, 22, 26, 0.92) 100%);
+    border-bottom-color: rgba(230, 232, 235, 0.08);
+    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.3);
+}
+
+html.fp-exp-dark .fp-exp-tab {
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--fp-exp-color-muted);
+}
+
+html.fp-exp-dark .fp-exp-tab:hover {
+    color: var(--fp-exp-color-text);
+}
+
+html.fp-exp-dark .fp-exp-tab[aria-selected="true"] {
+    background: linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.06) 100%);
+    border-color: rgba(139, 30, 63, 0.45);
+    box-shadow: 0 14px 34px rgba(0, 0, 0, 0.4);
+}
+
+html.fp-exp-dark .fp-exp-tab-panels {
+    background: #15181d;
+}

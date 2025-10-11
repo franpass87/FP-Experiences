@@ -1,0 +1,31 @@
+✅ Sistema di Deployment Automatico Configurato
+
+Data: 2025-10-10
+Plugin: FP Experiences v0.3.6
+Branch: cursor/deploy-plugin-on-github-merge-0312
+
+=============================================================
+
+File creati:
+  - .github/workflows/deploy-on-merge.yml
+  - .github/scripts/update-version.sh
+  - .github/DEPLOYMENT.md
+  - .github/QUICK-TEST.md
+  - .github/START-HERE.md
+  - DEPLOYMENT-SETUP.md
+  - GITHUB-DEPLOYMENT-SUMMARY.md
+  - DEPLOYMENT-CHANGES.md
+
+Workflow attivi:
+  ✓ deploy-on-merge.yml (NUOVO - principale)
+  ✓ build-zip.yml (esistente)
+  ✓ build-plugin-zip.yml (esistente)
+
+Prossimi passi:
+  1. Leggi .github/START-HERE.md
+  2. Configura seguendo DEPLOYMENT-SETUP.md
+  3. Testa con .github/QUICK-TEST.md
+
+=============================================================
+
+Sistema pronto all'uso! 🚀
