@@ -769,21 +769,11 @@ $sticky_price_display = '' !== $price_from_display ? $format_currency($price_fro
             <?php endif; ?>
 
             <?php if (! empty($sections['meeting']) && $has_meeting) : ?>
-                <section class="fp-exp-section fp-exp-meeting" id="fp-exp-section-meeting" data-fp-section="meeting">
-                    <header class="fp-exp-section__header">
-                        <div class="fp-exp-section__heading">
-                            <span class="fp-exp-section__icon" aria-hidden="true"><?php echo $get_section_icon('meeting'); ?></span>
-                            <h2 class="fp-exp-section__title"><?php esc_html_e('Punto di incontro', 'fp-experiences'); ?></h2>
-                        </div>
-                    </header>
-                    <div class="fp-exp-section__body fp-exp-section__body--flush">
-                        <?php
-                        $primary = $meeting_points['primary'];
-                        $alternatives = $meeting_points['alternatives'];
-                        include __DIR__ . '/meeting-points.php';
-                        ?>
-                    </div>
-                </section>
+                <?php
+                $primary = $meeting_points['primary'];
+                $alternatives = $meeting_points['alternatives'];
+                include __DIR__ . '/meeting-points.php';
+                ?>
             <?php endif; ?>
 
             <?php if (! empty($sections['extras']) && $has_extras) : ?>
