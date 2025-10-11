@@ -166,15 +166,25 @@ final class ExperienceShortcode extends BaseShortcode
         $notes_raw = get_post_meta($experience_id, '_fp_notes', true);
         if (is_array($notes_raw)) {
             $notes = array_values(array_filter(array_map('wp_kses_post', array_map('strval', $notes_raw)), static function (string $item): bool {
-                return '' !== trim($item);
+                $trimmed = trim($item);
+                return '' !== $trimmed && strtolower($trimmed) !== 'array';
             }));
         } else {
             $notes_string = (string) $notes_raw;
-            $notes = '' !== $notes_string ? wp_kses_post($notes_string) : '';
+            // Gestisce il caso di dati corrotti dove è stata salvata la stringa "Array"
+            if (strtolower(trim($notes_string)) === 'array') {
+                $notes = '';
+            } else {
+                $notes = '' !== $notes_string ? wp_kses_post($notes_string) : '';
+            }
         }
 
-        $policy = wp_kses_post((string) get_post_meta($experience_id, '_fp_policy_cancel', true));
-        $children_rules = sanitize_textarea_field((string) get_post_meta($experience_id, '_fp_rules_children', true));
+        $policy_raw = (string) get_post_meta($experience_id, '_fp_policy_cancel', true);
+        // Gestisce il caso di dati corrotti dove è stata salvata la stringa "Array"
+        $policy = (strtolower(trim($policy_raw)) === 'array') ? '' : wp_kses_post($policy_raw);
+        $children_rules_raw = (string) get_post_meta($experience_id, '_fp_rules_children', true);
+        // Gestisce il caso di dati corrotti dove è stata salvata la stringa "Array"
+        $children_rules = (strtolower(trim($children_rules_raw)) === 'array') ? '' : sanitize_textarea_field($children_rules_raw);
 
         $faq_meta = get_post_meta($experience_id, '_fp_faq', true);
         $faq_items = $this->prepare_faq($faq_meta);
