@@ -1349,6 +1349,12 @@ final class SettingsPage
                 'button' => esc_html__('Run role sync', 'fp-experiences'),
             ],
             [
+                'slug' => 'fix-corrupted-arrays',
+                'label' => esc_html__('Ripara dati corrotti', 'fp-experiences'),
+                'description' => esc_html__('Pulisce i campi array corrotti (highlights, inclusions, exclusions, what_to_bring, notes) rimuovendo le stringhe "Array" non valide.', 'fp-experiences'),
+                'button' => esc_html__('Ripara dati', 'fp-experiences'),
+            ],
+            [
                 'slug' => 'resync-pages',
                 'label' => esc_html__('Resynchronise experience pages', 'fp-experiences'),
                 'description' => esc_html__('Create or relink WordPress pages for experiences missing the `[fp_exp_page]` shortcode.', 'fp-experiences'),

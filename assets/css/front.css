@@ -2754,6 +2754,7 @@
     overflow: hidden;
     background: rgba(15, 23, 42, 0.08);
     aspect-ratio: 4 / 3;
+    margin: 0;
 }
 
 .fp-exp-hero__media--placeholder {
