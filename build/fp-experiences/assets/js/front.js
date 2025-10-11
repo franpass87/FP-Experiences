@@ -732,6 +732,11 @@
                     total += price * qty;
                 });
 
+                // Se non ci sono biglietti selezionati, usa il prezzo iniziale dalla configurazione
+                if (!hasTickets && config && config.priceFrom && parseFloat(config.priceFrom) > 0) {
+                    total = parseFloat(config.priceFrom);
+                }
+
                 // Mostra/nascondi la label "Da" in base alla presenza di biglietti
                 if (priceLabelEl) {
                     if (hasTickets) {
@@ -1061,6 +1066,11 @@
                     const price = priceEl ? parseFloat(priceEl.getAttribute('data-price') || '0') : 0;
                     total += price * qty;
                 });
+
+                // Se non ci sono biglietti selezionati, usa il prezzo iniziale dalla configurazione
+                if (!hasTickets && config && config.priceFrom && parseFloat(config.priceFrom) > 0) {
+                    total = parseFloat(config.priceFrom);
+                }
 
                 // Mostra/nascondi la label "Da" in base alla presenza di biglietti
                 if (priceLabelEl) {

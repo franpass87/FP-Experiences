@@ -45,21 +45,7 @@ $rtb_defaults = [
 ];
 $rtb = is_array($rtb) ? array_merge($rtb_defaults, $rtb) : $rtb_defaults;
 
-$dataset = [
-    'experienceId' => (int) $experience['id'],
-    'experienceTitle' => wp_strip_all_tags((string) $experience['title']),
-    'experienceUrl' => esc_url_raw((string) ($experience['permalink'] ?? '')),
-    'slots' => $slots,
-    'tickets' => $tickets,
-    'addons' => $addons,
-    'calendar' => $calendar,
-    'behavior' => $behavior,
-    'rtb' => $rtb,
-    'nonce' => $rtb_nonce,
-    'displayContext' => $display_context,
-    'timezone' => (string) wp_timezone_string(),
-    'version' => $config_version,
-];
+$currency_code = isset($currency) && is_string($currency) ? $currency : (string) get_option('woocommerce_currency', 'EUR');
 
 $container_class = 'fp-exp fp-exp-widget ' . esc_attr($scope_class);
 $rtb_enabled = ! empty($rtb['enabled']);
@@ -68,8 +54,6 @@ $rtb_forced = ! empty($rtb['forced']);
 $rtb_submit_label = 'pay_later' === $rtb_mode
     ? esc_html__('Invia approvazione con link di pagamento', 'fp-experiences')
     : esc_html__('Invia richiesta di prenotazione', 'fp-experiences');
-
-$currency_code = isset($currency) && is_string($currency) ? $currency : (string) get_option('woocommerce_currency', 'EUR');
 $currency_symbol = function_exists('get_woocommerce_currency_symbol')
     ? get_woocommerce_currency_symbol($currency_code)
     : $currency_code;
@@ -177,6 +161,25 @@ if (null === $price_from_value) {
 $price_from_display = null !== $price_from_value && $price_from_value > 0
     ? $format_currency(number_format_i18n($price_from_value, 0))
     : '';
+
+// Dataset per il JavaScript (deve essere definito dopo il calcolo del prezzo)
+$dataset = [
+    'experienceId' => (int) $experience['id'],
+    'experienceTitle' => wp_strip_all_tags((string) $experience['title']),
+    'experienceUrl' => esc_url_raw((string) ($experience['permalink'] ?? '')),
+    'slots' => $slots,
+    'tickets' => $tickets,
+    'addons' => $addons,
+    'calendar' => $calendar,
+    'behavior' => $behavior,
+    'rtb' => $rtb,
+    'nonce' => $rtb_nonce,
+    'displayContext' => $display_context,
+    'timezone' => (string) wp_timezone_string(),
+    'version' => $config_version,
+    'currency' => $currency_code,
+    'priceFrom' => $price_from_value,
+];
 ?>
 <div
     class="<?php echo $container_class; ?>"
