@@ -2593,12 +2593,33 @@
     font-size: 1.1rem;
 }
 
+/* Riduce il font per le email (quando ha scope class) */
+[class*="fp-exp-scope-"] .fp-exp-meeting-point__title {
+    font-size: 0.95rem;
+}
+
+[class*="fp-exp-scope-"] .fp-exp-meeting-point__address {
+    font-size: 0.9rem;
+}
+
+[class*="fp-exp-scope-"] .fp-exp-meeting-point__contacts {
+    font-size: 0.9rem;
+}
+
+[class*="fp-exp-scope-"] .fp-exp-meeting-point__notes {
+    font-size: 0.85rem;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+
 .fp-exp-meeting-point__address {
     display: flex;
     flex-wrap: wrap;
     gap: 0.5rem;
     align-items: baseline;
     margin: 0 0 0.5rem;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
 }
 
 .fp-exp-meeting-point__map-link {
@@ -3280,6 +3301,12 @@
 .fp-exp-button--secondary:focus-visible {
     background: var(--fp-color-primary);
     color: var(--fp-color-on-primary, #fff);
+}
+
+@media (max-width: 768px) {
+    .fp-exp-button--secondary {
+        width: 100%;
+    }
 }
 
 body.fp-modal-open {
