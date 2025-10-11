@@ -2,14 +2,18 @@
 /** @var array $primary */
 /** @var array $alternatives */
 /** @var string $scope_class */
+/** @var bool $embedded */
 
 if (! isset($primary) || ! is_array($primary)) {
     return;
 }
 
+$embedded = $embedded ?? false;
 $wrapper_classes = trim('fp-exp-meeting-points ' . ($scope_class ?? ''));
+$wrapper_tag = $embedded ? 'div' : 'section';
+$wrapper_classes_final = $embedded ? $wrapper_classes : $wrapper_classes . ' fp-exp-section';
 ?>
-<section class="<?php echo esc_attr($wrapper_classes); ?>" data-fp-shortcode="meeting-points">
+<<?php echo $wrapper_tag; ?> class="<?php echo esc_attr($wrapper_classes_final); ?>" data-fp-shortcode="meeting-points"<?php if (!$embedded) : ?> id="fp-exp-section-meeting" data-fp-section="meeting"<?php endif; ?>>
     <div class="fp-exp-meeting-points__primary">
         <?php
         $meeting_point = $primary;
@@ -30,4 +34,4 @@ $wrapper_classes = trim('fp-exp-meeting-points ' . ($scope_class ?? ''));
             </div>
         </details>
     <?php endif; ?>
-</section>
+</<?php echo $wrapper_tag; ?>>
