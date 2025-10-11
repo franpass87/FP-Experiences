@@ -9,7 +9,7 @@ if (! isset($primary) || ! is_array($primary)) {
 
 $wrapper_classes = trim('fp-exp-meeting-points ' . ($scope_class ?? ''));
 ?>
-<section class="<?php echo esc_attr($wrapper_classes); ?>" data-fp-shortcode="meeting-points">
+<div class="<?php echo esc_attr($wrapper_classes); ?>" data-fp-shortcode="meeting-points">
     <div class="fp-exp-meeting-points__primary">
         <?php
         $meeting_point = $primary;
@@ -30,4 +30,4 @@ $wrapper_classes = trim('fp-exp-meeting-points ' . ($scope_class ?? ''));
             </div>
         </details>
     <?php endif; ?>
-</section>
+</div>
