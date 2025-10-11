@@ -804,59 +804,71 @@ $sticky_price_display = '' !== $price_from_display ? $format_currency($price_fro
                     </header>
                     <div class="fp-exp-section__body">
                         <div class="fp-exp-essentials__grid">
-                            <?php if (! empty($what_to_bring)) : ?>
+                            <?php
+                            // Filtra gli elementi di "Cosa portare" prima di verificare se renderizzare la card
+                            $what_to_bring_filtered = ! empty($what_to_bring) ? array_filter($what_to_bring, static function($item) {
+                                $trimmed = trim((string) $item);
+                                return '' !== $trimmed && strtolower($trimmed) !== 'array';
+                            }) : [];
+                            ?>
+                            <?php if (! empty($what_to_bring_filtered)) : ?>
                                 <article class="fp-exp-essentials__card">
                                     <h3 class="fp-exp-essentials__title"><?php esc_html_e('Cosa portare', 'fp-experiences'); ?></h3>
                                     <ul class="fp-exp-essentials__list">
-                                        <?php foreach ($what_to_bring as $item) : ?>
-                                            <?php if ('' !== trim($item) && strtolower(trim($item)) !== 'array') : ?>
-                                                <li><?php echo esc_html($item); ?></li>
-                                            <?php endif; ?>
+                                        <?php foreach ($what_to_bring_filtered as $item) : ?>
+                                            <li><?php echo esc_html($item); ?></li>
                                         <?php endforeach; ?>
                                     </ul>
                                 </article>
                             <?php endif; ?>
 
-                            <?php if (! empty($notes)) : ?>
+                            <?php
+                            // Prepara e filtra le note prima di renderizzare la card
+                            $notes_items = [];
+                            if (! empty($notes)) {
+                                $notes_items = is_array($notes) ? $notes : array_filter(array_map('trim', explode("\n", $notes)));
+                                // Filtra elementi vuoti e la stringa "Array"
+                                $notes_items = array_filter($notes_items, static function($item) {
+                                    return '' !== trim($item) && strtolower(trim($item)) !== 'array';
+                                });
+                            }
+                            ?>
+                            <?php if (! empty($notes_items)) : ?>
                                 <article class="fp-exp-essentials__card">
                                     <h3 class="fp-exp-essentials__title"><?php esc_html_e('Note', 'fp-experiences'); ?></h3>
-                                    <?php
-                                    $notes_items = is_array($notes) ? $notes : array_filter(array_map('trim', explode("\n", $notes)));
-                                    // Filtra elementi vuoti e la stringa "Array"
-                                    $notes_items = array_filter($notes_items, static function($item) {
-                                        return '' !== trim($item) && strtolower(trim($item)) !== 'array';
-                                    });
-                                    if (! empty($notes_items)) :
-                                        ?>
-                                        <ul class="fp-exp-essentials__list">
-                                            <?php foreach ($notes_items as $note) : ?>
-                                                <li><?php echo esc_html($note); ?></li>
-                                            <?php endforeach; ?>
-                                        </ul>
-                                    <?php endif; ?>
+                                    <ul class="fp-exp-essentials__list">
+                                        <?php foreach ($notes_items as $note) : ?>
+                                            <li><?php echo esc_html($note); ?></li>
+                                        <?php endforeach; ?>
+                                    </ul>
                                 </article>
                             <?php endif; ?>
 
-                            <?php if ('' !== $children_rules && strtolower(trim($children_rules)) !== 'array') : ?>
+                            <?php
+                            // Prepara e filtra le regole bambini prima di renderizzare la card
+                            $children_rules_trimmed = trim((string) $children_rules);
+                            $has_children_rules = '' !== $children_rules_trimmed && strtolower($children_rules_trimmed) !== 'array';
+                            $children_rules_items = [];
+                            
+                            if ($has_children_rules) {
+                                $children_rules_items = array_filter(array_map('trim', explode("\n", $children_rules)));
+                                // Filtra elementi vuoti e la stringa "Array"
+                                $children_rules_items = array_filter($children_rules_items, static function($item) {
+                                    return '' !== trim($item) && strtolower(trim($item)) !== 'array';
+                                });
+                            }
+                            ?>
+                            <?php if (! empty($children_rules_items) || ($has_children_rules && count(array_map('trim', explode("\n", $children_rules))) === 1)) : ?>
                                 <article class="fp-exp-essentials__card">
                                     <h3 class="fp-exp-essentials__title"><?php esc_html_e('Regole bambini', 'fp-experiences'); ?></h3>
-                                    <?php
-                                    $children_rules_items = array_filter(array_map('trim', explode("\n", $children_rules)));
-                                    // Filtra elementi vuoti e la stringa "Array"
-                                    $children_rules_items = array_filter($children_rules_items, static function($item) {
-                                        return '' !== trim($item) && strtolower(trim($item)) !== 'array';
-                                    });
-                                    if (count($children_rules_items) > 1) :
-                                        ?>
+                                    <?php if (count($children_rules_items) > 1) : ?>
                                         <ul class="fp-exp-essentials__list">
                                             <?php foreach ($children_rules_items as $rule) : ?>
                                                 <li><?php echo esc_html($rule); ?></li>
                                             <?php endforeach; ?>
                                         </ul>
-                                    <?php else : ?>
-                                        <?php if (strtolower(trim($children_rules)) !== 'array') : ?>
-                                            <p class="fp-exp-essentials__copy"><?php echo esc_html($children_rules); ?></p>
-                                        <?php endif; ?>
+                                    <?php elseif ($has_children_rules) : ?>
+                                        <p class="fp-exp-essentials__copy"><?php echo esc_html($children_rules_trimmed); ?></p>
                                     <?php endif; ?>
                                 </article>
                             <?php endif; ?>
