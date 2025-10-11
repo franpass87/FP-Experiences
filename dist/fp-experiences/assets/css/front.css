@@ -2781,6 +2781,10 @@
     object-fit: cover;
 }
 
+.fp-exp-hero__media img {
+    height: 100%;
+}
+
 .fp-exp-hero__content {
     display: flex;
     flex-direction: column;
@@ -3315,7 +3319,7 @@ body.fp-modal-open {
     position: relative;
     z-index: 1;
     width: min(760px, 100%);
-    max-height: calc(100vh - 10rem);
+    max-height: calc(100vh - 14rem);
     overflow-y: auto;
     overflow-x: hidden;
     border-radius: var(--fp-exp-radius-large, 20px);

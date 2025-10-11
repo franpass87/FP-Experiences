@@ -639,27 +639,32 @@
                 widget.addEventListener('change', (ev) => {
                     if (ev.target && ev.target.closest('.fp-exp-quantity__input')) {
                         updatePriceSummary();
+                        updateStickyBarPrice();
                     }
                     // Aggiorna anche quando si selezionano/deselezionano gli addon
                     if (ev.target && ev.target.matches('.fp-exp-addons input[type="checkbox"]')) {
                         updatePriceSummary();
+                        updateStickyBarPrice();
                     }
                 });
                 widget.addEventListener('input', (ev) => {
                     if (ev.target && ev.target.closest('.fp-exp-quantity__input')) {
                         updatePriceSummary();
+                        updateStickyBarPrice();
                     }
                 });
                 if (slotsEl) {
                     slotsEl.addEventListener('click', (ev) => {
                         if (ev.target && ev.target.closest('.fp-exp-slots__item')) {
                             updatePriceSummary();
+                            updateStickyBarPrice();
                         }
                     });
                 }
 
                 // Stato iniziale
                 updatePriceSummary();
+                updateStickyBarPrice();
             };
 
             setupWooCommercePriceSummary();
@@ -692,6 +697,44 @@
                     }
                 });
                 return map;
+            }
+
+            // Funzione per aggiornare il prezzo nella sticky bar in tempo reale
+            function updateStickyBarPrice() {
+                const stickyBar = document.querySelector('[data-fp-sticky-bar]');
+                if (!stickyBar) return;
+
+                const priceValueEl = stickyBar.querySelector('.fp-exp-page__sticky-price-value');
+                if (!priceValueEl) return;
+
+                const tickets = collectTickets();
+                const addons = collectAddons();
+                const currency = (config && config.currency) || 'EUR';
+
+                // Calcola il totale
+                let total = 0;
+
+                // Somma biglietti
+                Object.entries(tickets).forEach(([slug, qty]) => {
+                    const priceEl = document.querySelector(`tr[data-ticket="${slug}"] .fp-exp-ticket__price[data-price]`);
+                    const price = priceEl ? parseFloat(priceEl.getAttribute('data-price') || '0') : 0;
+                    total += price * qty;
+                });
+
+                // Somma addon
+                Object.entries(addons).forEach(([slug, qty]) => {
+                    const priceEl = document.querySelector(`li[data-addon="${slug}"] .fp-exp-addon__price[data-price]`);
+                    const price = priceEl ? parseFloat(priceEl.getAttribute('data-price') || '0') : 0;
+                    total += price * qty;
+                });
+
+                // Formatta e aggiorna il prezzo nella sticky bar
+                try {
+                    const fmt = new Intl.NumberFormat(undefined, { style: 'currency', currency: currency });
+                    priceValueEl.textContent = fmt.format(total);
+                } catch (e) {
+                    priceValueEl.textContent = String(total);
+                }
             }
 
             // Gestisci click sul pulsante "Procedi al pagamento"
@@ -973,6 +1016,44 @@
                 return map;
             };
 
+            // Funzione per aggiornare il prezzo nella sticky bar in tempo reale (modalità RTB)
+            const updateStickyBarPrice = () => {
+                const stickyBar = document.querySelector('[data-fp-sticky-bar]');
+                if (!stickyBar) return;
+
+                const priceValueEl = stickyBar.querySelector('.fp-exp-page__sticky-price-value');
+                if (!priceValueEl) return;
+
+                const tickets = collectTickets();
+                const addons = collectAddons();
+                const currency = (config && config.currency) || 'EUR';
+
+                // Calcola il totale
+                let total = 0;
+
+                // Somma biglietti
+                Object.entries(tickets).forEach(([slug, qty]) => {
+                    const priceEl = document.querySelector(`tr[data-ticket="${slug}"] .fp-exp-ticket__price[data-price]`);
+                    const price = priceEl ? parseFloat(priceEl.getAttribute('data-price') || '0') : 0;
+                    total += price * qty;
+                });
+
+                // Somma addon
+                Object.entries(addons).forEach(([slug, qty]) => {
+                    const priceEl = document.querySelector(`li[data-addon="${slug}"] .fp-exp-addon__price[data-price]`);
+                    const price = priceEl ? parseFloat(priceEl.getAttribute('data-price') || '0') : 0;
+                    total += price * qty;
+                });
+
+                // Formatta e aggiorna il prezzo nella sticky bar
+                try {
+                    const fmt = new Intl.NumberFormat(undefined, { style: 'currency', currency: currency });
+                    priceValueEl.textContent = fmt.format(total);
+                } catch (e) {
+                    priceValueEl.textContent = String(total);
+                }
+            };
+
             const experienceId = (config && config.experienceId) || 0;
             const quoteUrl = (() => {
                 const base = (window.fpExpApiBase && typeof window.fpExpApiBase === 'string')
@@ -1145,15 +1226,18 @@
                 if (ev.target && ev.target.closest('.fp-exp-quantity__input')) {
                     debounceQuote();
                     updateCtaState();
+                    updateStickyBarPrice();
                 }
                 if (ev.target && ev.target.matches('.fp-exp-addons input[type="checkbox"]')) {
                     debounceQuote();
+                    updateStickyBarPrice();
                 }
             });
             widget.addEventListener('input', (ev) => {
                 if (ev.target && ev.target.closest('.fp-exp-quantity__input')) {
                     debounceQuote();
                     updateCtaState();
+                    updateStickyBarPrice();
                 }
             });
 
@@ -1163,10 +1247,12 @@
                     if (ev.target && ev.target.closest('.fp-exp-slots__item')) {
                         debounceQuote();
                         updateCtaState();
+                        updateStickyBarPrice();
                     }
                 });
             }
             updateCtaState();
+            updateStickyBarPrice();
             // Inizializza modulo RTB Summary
             if (window.FPFront.summaryRtb && window.FPFront.summaryRtb.init) {
                 window.FPFront.summaryRtb.init({ widget, slotsEl, config });
