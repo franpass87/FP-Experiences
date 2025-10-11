@@ -58,6 +58,14 @@ final class Helpers
     private static array $asset_version_cache = [];
 
     /**
+     * Clear the asset version cache.
+     */
+    public static function clear_asset_version_cache(): void
+    {
+        self::$asset_version_cache = [];
+    }
+
+    /**
      * @var array<int, array{id: string, label: string, description: string, tagline: string, icon: string, priority: int, keywords: array<int, string>}>|null
      */
     private static ?array $cognitive_bias_choices_cache = null;
@@ -182,19 +190,37 @@ final class Helpers
             return self::$asset_version_cache[$relative_path];
         }
 
-        $absolute_path = trailingslashit(FP_EXP_PLUGIN_DIR) . $relative_path;
+        // In production, usa sempre la versione del plugin per garantire cache busting
+        // ad ogni release, indipendentemente dai timestamp dei file
+        if (defined('FP_EXP_VERSION') && FP_EXP_VERSION !== '') {
+            $version = FP_EXP_VERSION;
+            
+            // In development (WP_DEBUG attivo), aggiungi il timestamp per cache busting immediato
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                $absolute_path = trailingslashit(FP_EXP_PLUGIN_DIR) . $relative_path;
+                if (is_readable($absolute_path)) {
+                    $mtime = filemtime($absolute_path);
+                    if (false !== $mtime) {
+                        $version .= '.' . $mtime;
+                    }
+                }
+            }
+            
+            self::$asset_version_cache[$relative_path] = $version;
+            return self::$asset_version_cache[$relative_path];
+        }
 
+        // Fallback: usa il timestamp del file se la versione non è definita
+        $absolute_path = trailingslashit(FP_EXP_PLUGIN_DIR) . $relative_path;
         if (is_readable($absolute_path)) {
             $mtime = filemtime($absolute_path);
             if (false !== $mtime) {
                 self::$asset_version_cache[$relative_path] = (string) $mtime;
-
                 return self::$asset_version_cache[$relative_path];
             }
         }
 
-        self::$asset_version_cache[$relative_path] = FP_EXP_VERSION;
-
+        self::$asset_version_cache[$relative_path] = '1.0.0';
         return self::$asset_version_cache[$relative_path];
     }
 

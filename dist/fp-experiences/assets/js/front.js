@@ -707,8 +707,20 @@
                 const priceValueEl = stickyBar.querySelector('.fp-exp-page__sticky-price-value');
                 if (!priceValueEl) return;
 
+                // Salva il prezzo iniziale al primo caricamento
+                if (!updateStickyBarPrice.initialPrice) {
+                    updateStickyBarPrice.initialPrice = priceValueEl.textContent;
+                }
+
                 const tickets = collectTickets();
                 const addons = collectAddons();
+
+                // Se non ci sono biglietti selezionati, mostra il prezzo iniziale "Da..."
+                if (Object.keys(tickets).length === 0) {
+                    priceValueEl.textContent = updateStickyBarPrice.initialPrice;
+                    return;
+                }
+
                 const currency = (config && config.currency) || 'EUR';
 
                 // Calcola il totale
@@ -1024,8 +1036,20 @@
                 const priceValueEl = stickyBar.querySelector('.fp-exp-page__sticky-price-value');
                 if (!priceValueEl) return;
 
+                // Salva il prezzo iniziale al primo caricamento
+                if (!updateStickyBarPrice.initialPrice) {
+                    updateStickyBarPrice.initialPrice = priceValueEl.textContent;
+                }
+
                 const tickets = collectTickets();
                 const addons = collectAddons();
+
+                // Se non ci sono biglietti selezionati, mostra il prezzo iniziale "Da..."
+                if (Object.keys(tickets).length === 0) {
+                    priceValueEl.textContent = updateStickyBarPrice.initialPrice;
+                    return;
+                }
+
                 const currency = (config && config.currency) || 'EUR';
 
                 // Calcola il totale
@@ -1040,7 +1064,7 @@
 
                 // Somma addon
                 Object.entries(addons).forEach(([slug, qty]) => {
-                    const priceEl = document.querySelector(`li[data-addon="${slug}"] .fp-exp-addon__price[data-price]`);
+                    const priceEl = document.querySelector(`li[data-addon="${slug}]"] .fp-exp-addon__price[data-price]`);
                     const price = priceEl ? parseFloat(priceEl.getAttribute('data-price') || '0') : 0;
                     total += price * qty;
                 });
