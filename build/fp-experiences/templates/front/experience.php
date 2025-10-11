@@ -280,6 +280,10 @@ if (null === $overview_has_content) {
 $has_overview = ! empty($sections['overview']) && $overview_has_content;
 $cta_label = esc_html__('Controlla disponibilità', 'fp-experiences');
 $price_from_display = isset($experience['price_from_display']) ? (string) $experience['price_from_display'] : '';
+// Non mostrare il prezzo se è 0
+if ('' !== $price_from_display && (float) $price_from_display <= 0) {
+    $price_from_display = '';
+}
 $currency_code = get_option('woocommerce_currency', 'EUR');
 $currency_symbol = function_exists('get_woocommerce_currency_symbol')
     ? get_woocommerce_currency_symbol($currency_code)

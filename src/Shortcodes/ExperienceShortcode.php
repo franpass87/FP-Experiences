@@ -480,14 +480,20 @@ final class ExperienceShortcode extends BaseShortcode
             return null;
         }
 
+        // Debug: log dei ticket
+        error_log('[FP-EXP] Experience ID ' . $experience_id . ' - Tickets: ' . print_r($tickets, true));
+
         // First, look for a ticket marked as "use_as_price_from"
         foreach ($tickets as $ticket) {
             if (! is_array($ticket) || ! isset($ticket['price'])) {
                 continue;
             }
 
+            error_log('[FP-EXP] Checking ticket: ' . print_r($ticket, true));
+
             if (! empty($ticket['use_as_price_from'])) {
                 $price = (float) $ticket['price'];
+                error_log('[FP-EXP] Found use_as_price_from ticket with price: ' . $price);
                 if ($price > 0) {
                     return $price;
                 }
@@ -507,6 +513,7 @@ final class ExperienceShortcode extends BaseShortcode
             }
         }
 
+        error_log('[FP-EXP] Final price: ' . ($min_price ?? 'null'));
         return $min_price;
     }
 
