@@ -4,10 +4,47 @@
  * Caricatore modulare per ottimizzare il caricamento
  */
 
+const FP_EXP_LOADER_SCRIPT = (typeof document !== 'undefined' ? (document.currentScript || (function () {
+    const scripts = document.getElementsByTagName('script');
+    for (let i = scripts.length - 1; i >= 0; i--) {
+        const candidate = scripts[i];
+        if (candidate && candidate.src && candidate.src.indexOf('module-loader.js') !== -1) {
+            return candidate;
+        }
+    }
+    return null;
+})()) : null);
+
+function fpExpNormaliseBaseUrl(url) {
+    if (typeof url !== 'string' || url === '') {
+        return '';
+    }
+
+    return url.endsWith('/') ? url : url + '/';
+}
+
+function fpExpDetectLoaderBaseUrl() {
+    if (typeof window !== 'undefined' && typeof window.fpExpModuleBaseUrl === 'string' && window.fpExpModuleBaseUrl) {
+        return fpExpNormaliseBaseUrl(window.fpExpModuleBaseUrl);
+    }
+
+    if (FP_EXP_LOADER_SCRIPT && FP_EXP_LOADER_SCRIPT.src) {
+        const withoutFile = FP_EXP_LOADER_SCRIPT.src.replace(/module-loader\.js(?:\?.*)?$/, '');
+        return fpExpNormaliseBaseUrl(withoutFile);
+    }
+
+    if (typeof window !== 'undefined' && window.fpExpConfig && typeof window.fpExpConfig.pluginUrl === 'string') {
+        return fpExpNormaliseBaseUrl(window.fpExpConfig.pluginUrl + 'assets/js/dist/');
+    }
+
+    return '';
+}
+
 class FpExperiencesLoader {
-    constructor() {
+    constructor(options = {}) {
         this.loadedModules = new Set();
         this.moduleCallbacks = new Map();
+        this.baseUrl = fpExpNormaliseBaseUrl(options.baseUrl || fpExpDetectLoaderBaseUrl());
     }
 
     /**
@@ -20,7 +57,9 @@ class FpExperiencesLoader {
 
         return new Promise((resolve, reject) => {
             const script = document.createElement('script');
-            script.src = `/assets/js/dist/${moduleName}.js`;
+            const base = this.baseUrl || fpExpDetectLoaderBaseUrl();
+            const src = base ? base + moduleName + '.js' : moduleName + '.js';
+            script.src = src;
             script.onload = () => {
                 this.loadedModules.add(moduleName);
                 resolve();

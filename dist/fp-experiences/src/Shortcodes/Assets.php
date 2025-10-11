@@ -191,6 +191,7 @@ final class Assets
                 'checkoutUrl' => function_exists('wc_get_checkout_url') ? (string) wc_get_checkout_url() : trailingslashit(home_url('/checkout')),
                 'currency' => $currency,
                 'tracking' => Helpers::tracking_config(),
+                'pluginUrl' => trailingslashit(FP_EXP_PLUGIN_URL),
                 'autoLocale' => [
                     'strings' => AutoTranslator::strings(),
                     'plurals' => AutoTranslator::plurals(),

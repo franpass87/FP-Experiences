@@ -382,7 +382,7 @@ final class ExperienceShortcode extends BaseShortcode
         }
 
         $price_from = $this->calculate_price_from_meta($experience_id);
-        $price_from_display = null !== $price_from ? number_format_i18n($price_from, 0) : '';
+        $price_from_display = null !== $price_from && $price_from > 0 ? number_format_i18n($price_from, 0) : '';
 
         return [
             'theme' => $theme,
