@@ -1240,7 +1240,7 @@ final class Helpers
         }
 
         // Gestisce il caso di dati corrotti dove è stata salvata la stringa "Array"
-        if (is_string($raw) && trim($raw) === 'Array') {
+        if (is_string($raw) && strtolower(trim($raw)) === 'array') {
             return [];
         }
 
@@ -1262,7 +1262,8 @@ final class Helpers
         }, $values);
 
         $values = array_filter($values, static function (string $value): bool {
-            return '' !== $value && trim($value) !== 'Array';
+            $trimmed = trim($value);
+            return '' !== $trimmed && strtolower($trimmed) !== 'array';
         });
 
         return array_values(array_unique($values));
