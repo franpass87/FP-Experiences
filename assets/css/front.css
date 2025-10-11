@@ -4403,6 +4403,10 @@ body:has(.fp-listing) .aio-contact-trigger.aio-contact-show-dot-status.aio-conta
         min-height: 100%;
     }
 
+    .fp-main img {
+        height: 100%;
+    }
+
     .fp-layout[data-sidebar="left"] .fp-main {
         grid-column: 2;
     }
