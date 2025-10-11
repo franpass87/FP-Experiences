@@ -25,6 +25,7 @@ use function wp_register_script;
 use function wp_register_style;
 use function wp_style_is;
 use function rest_url;
+use function str_contains;
 
 final class Assets
 {
@@ -90,14 +91,17 @@ final class Assets
         $this->registered = true;
 
         // Scegli in modo resiliente: usa i file minificati se presenti, altrimenti fallback ai non minificati
-        $css_min_rel = 'assets/css/dist/fp-experiences-frontend.min.css';
-        $css_non_rel = 'assets/css/front.css';
-        $js_min_rel = 'assets/js/dist/fp-experiences-frontend.min.js';
-        $js_non_rel = 'assets/js/front.js';
+        $css_rel = Helpers::resolve_asset_rel([
+            'assets/css/dist/fp-experiences-frontend.min.css',
+            'assets/css/front.css',
+        ]);
 
-        $css_rel = is_readable(trailingslashit(FP_EXP_PLUGIN_DIR) . $css_min_rel) ? $css_min_rel : $css_non_rel;
-        $js_rel = is_readable(trailingslashit(FP_EXP_PLUGIN_DIR) . $js_min_rel) ? $js_min_rel : $js_non_rel;
-        $use_minified = is_readable(trailingslashit(FP_EXP_PLUGIN_DIR) . $js_min_rel);
+        $js_rel = Helpers::resolve_asset_rel([
+            'assets/js/dist/fp-experiences-frontend.min.js',
+            'assets/js/front.js',
+        ]);
+
+        $use_minified = str_contains($js_rel, 'assets/js/dist/');
 
         $style_url = trailingslashit(FP_EXP_PLUGIN_URL) . $css_rel;
         $front_js = trailingslashit(FP_EXP_PLUGIN_URL) . $js_rel;

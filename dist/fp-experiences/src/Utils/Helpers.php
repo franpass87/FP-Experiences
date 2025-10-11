@@ -201,25 +201,68 @@ final class Helpers
     /**
      * Resolve the first existing readable asset path (relative to plugin dir), falling back to the last candidate.
      *
+     * If a preferred (typically minified) asset is older than a later fallback candidate, the fallback is used to avoid stale bundles.
+     *
      * @param array<int, string> $candidates relative paths ordered by preference (minified first)
      */
     public static function resolve_asset_rel(array $candidates): string
     {
-        $chosen = '';
+        if (empty($candidates)) {
+            return '';
+        }
 
-        if (! empty($candidates)) {
-            $chosen = (string) end($candidates);
-            foreach ($candidates as $rel) {
-                $rel = ltrim((string) $rel, '/');
-                $abs = trailingslashit(FP_EXP_PLUGIN_DIR) . $rel;
-                if (is_readable($abs)) {
-                    $chosen = $rel;
+        $resolved = [];
+        $fallback = '';
+
+        foreach ($candidates as $index => $candidate) {
+            if (! is_string($candidate) || '' === $candidate) {
+                continue;
+            }
+
+            $rel = ltrim($candidate, '/');
+            $fallback = $rel;
+            $abs = trailingslashit(FP_EXP_PLUGIN_DIR) . $rel;
+
+            if (! is_readable($abs)) {
+                continue;
+            }
+
+            $mtime = filemtime($abs);
+            $resolved[] = [
+                'index' => (int) $index,
+                'rel' => $rel,
+                'mtime' => false !== $mtime ? (int) $mtime : 0,
+            ];
+        }
+
+        if (empty($resolved)) {
+            return $fallback;
+        }
+
+        usort($resolved, static fn (array $a, array $b): int => $a['index'] <=> $b['index']);
+
+        foreach ($resolved as $candidate) {
+            $is_stale = false;
+
+            foreach ($resolved as $other) {
+                if ($other['index'] <= $candidate['index']) {
+                    continue;
+                }
+
+                if ($other['mtime'] > $candidate['mtime']) {
+                    $is_stale = true;
                     break;
                 }
             }
+
+            if (! $is_stale) {
+                return $candidate['rel'];
+            }
         }
 
-        return $chosen;
+        $last = end($resolved);
+
+        return is_array($last) && isset($last['rel']) ? (string) $last['rel'] : $fallback;
     }
 
     /**
