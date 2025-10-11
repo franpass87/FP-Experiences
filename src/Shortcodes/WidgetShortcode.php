@@ -583,14 +583,10 @@ final class WidgetShortcode extends BaseShortcode
             return (float) $rules['base_price'];
         }
 
-        error_log('[FP-EXP Widget] Tickets for price calculation: ' . print_r($tickets, true));
-
         // First, look for a ticket marked as "use_as_price_from"
         foreach ($tickets as $ticket) {
-            error_log('[FP-EXP Widget] Checking ticket: ' . print_r($ticket, true));
             if (! empty($ticket['use_as_price_from'])) {
                 $price = $ticket['price'] ?? 0;
-                error_log('[FP-EXP Widget] Found use_as_price_from, price: ' . $price);
                 if (is_numeric($price) && $price > 0) {
                     return (float) $price;
                 }
@@ -611,7 +607,6 @@ final class WidgetShortcode extends BaseShortcode
             }
         }
 
-        error_log('[FP-EXP Widget] Final price: ' . ($price_from ?? 0.0));
         return $price_from ?? 0.0;
     }
 }
