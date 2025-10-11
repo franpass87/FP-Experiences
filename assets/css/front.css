@@ -3400,7 +3400,7 @@ body.fp-modal-open {
     }
 
     .fp-gift-modal__dialog {
-        max-height: calc(100vh - 12rem);
+        max-height: calc(100vh - 12rem) !important;
         border-radius: var(--fp-exp-radius-base, 12px);
     }
 
