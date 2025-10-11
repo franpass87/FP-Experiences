@@ -1,0 +1,1 @@
+!function(){"use strict";const n=window.fpExpTranslate&&window.fpExpTranslate.localize?window.fpExpTranslate.localize:n=>n;window.fpExpAdmin={ready:function(n){"loading"===document.readyState?document.addEventListener("DOMContentLoaded",n):n()},getString:function(t){return n(t)},translate:n}}();
