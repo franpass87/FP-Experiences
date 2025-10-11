@@ -4312,6 +4312,27 @@ body.single-fp_experience .animate__animated.animate__fadeInRight {
     pointer-events: none !important;
 }
 
+/* Regole con specificità massima per nascondere aio-contact nelle pagine esperienze */
+body.single-fp_experience .aio-contact-trigger.aio-contact-show-dot-status.aio-contact-box-shadow.aio-contact-hide-not-available-agent.aio-contact-rounded-avatar,
+body:has(.single-fp_experience) .aio-contact-trigger.aio-contact-show-dot-status.aio-contact-box-shadow.aio-contact-hide-not-available-agent.aio-contact-rounded-avatar,
+body:has(.fp-exp-page) .aio-contact-trigger.aio-contact-show-dot-status.aio-contact-box-shadow.aio-contact-hide-not-available-agent.aio-contact-rounded-avatar,
+body:has(.fp-listing) .aio-contact-trigger.aio-contact-show-dot-status.aio-contact-box-shadow.aio-contact-hide-not-available-agent.aio-contact-rounded-avatar,
+.single-fp_experience .aio-contact-trigger.aio-contact-show-dot-status,
+.fp-exp-page .aio-contact-trigger.aio-contact-show-dot-status,
+.fp-listing .aio-contact-trigger.aio-contact-show-dot-status,
+.aio-contact-trigger.aio-contact-show-dot-status.aio-contact-box-shadow,
+.aio-contact-trigger.aio-contact-rounded-avatar {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    width: 0 !important;
+    height: 0 !important;
+    overflow: hidden !important;
+    position: absolute !important;
+    left: -9999px !important;
+}
+
 @media (min-width: 1024px) {
     .fp-layout {
         --fp-max: var(--fp-exp-max, 1200px);
