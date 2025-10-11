@@ -2754,6 +2754,7 @@
     overflow: hidden;
     background: rgba(15, 23, 42, 0.08);
     aspect-ratio: 4 / 3;
+    margin: 0;
 }
 
 .fp-exp-hero__media--placeholder {
@@ -3314,7 +3315,7 @@ body.fp-modal-open {
     position: relative;
     z-index: 1;
     width: min(760px, 100%);
-    max-height: calc(100vh - 16rem);
+    max-height: calc(100vh - 10rem);
     overflow-y: auto;
     overflow-x: hidden;
     border-radius: var(--fp-exp-radius-large, 20px);
@@ -3329,10 +3330,10 @@ body.fp-modal-open {
 
 .fp-gift-modal__close {
     position: sticky;
-    top: 2.5rem;
+    top: 1.5rem;
     right: 1rem;
     float: right;
-    margin-bottom: -2.5rem;
+    margin-bottom: -1.5rem;
     margin-right: 1rem;
     z-index: 10;
     border: none;
@@ -3368,12 +3369,12 @@ body.fp-modal-open {
     }
 
     .fp-gift-modal__dialog {
-        max-height: calc(100vh - 10rem);
+        max-height: calc(100vh - 6rem);
         border-radius: var(--fp-exp-radius-base, 12px);
     }
 
     .fp-gift-modal__close {
-        top: 1.5rem;
+        top: 1rem;
         right: 0.5rem;
         margin-right: 0.5rem;
         width: 2.25rem;
@@ -3389,35 +3390,35 @@ body.fp-modal-open {
     background: var(--fp-color-surface, #fff);
     border-radius: var(--fp-exp-radius-large, 20px);
     border: 1px solid rgba(19, 29, 56, 0.08);
-    padding: clamp(1.75rem, 3vw, 3rem);
-    padding-top: clamp(2.5rem, 4vw, 3.5rem);
+    padding: clamp(1.25rem, 2.5vw, 1.75rem);
+    padding-top: clamp(1.5rem, 3vw, 2rem);
     box-shadow: 0 20px 45px -20px rgba(19, 29, 56, 0.25);
     overflow-wrap: break-word;
     word-wrap: break-word;
 }
 
 .fp-gift__title {
-    margin: 0 0 0.5rem;
+    margin: 0 0 0.35rem;
     font-size: clamp(1.4rem, 1.1vw + 1rem, 1.9rem);
 }
 
 .fp-gift__intro {
-    margin: 0 0 1.75rem;
+    margin: 0 0 1.25rem;
     color: var(--fp-color-text-muted, rgba(19, 29, 56, 0.7));
-    font-size: 1.05rem;
+    font-size: 1rem;
 }
 
 .fp-gift__grid {
     display: grid;
-    gap: 1.25rem 1.5rem;
+    gap: 0.85rem 1rem;
     grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    margin-bottom: 1.5rem;
+    margin-bottom: 1rem;
 }
 
 .fp-gift__field label {
     display: block;
     font-weight: 600;
-    margin-bottom: 0.35rem;
+    margin-bottom: 0.25rem;
     color: var(--fp-color-text, #131d38);
 }
 
@@ -3427,7 +3428,7 @@ body.fp-modal-open {
     max-width: 100%;
     border-radius: 14px;
     border: 1px solid rgba(19, 29, 56, 0.16);
-    padding: 0.75rem 0.9rem;
+    padding: 0.6rem 0.85rem;
     font: inherit;
     line-height: 1.45;
     color: var(--fp-color-text, #131d38);
@@ -3450,15 +3451,15 @@ body.fp-modal-open {
 }
 
 .fp-gift__field textarea {
-    min-height: 120px;
+    min-height: 80px;
     resize: vertical;
 }
 
 .fp-gift__addons {
     border: 1px solid rgba(19, 29, 56, 0.12);
     border-radius: 14px;
-    padding: 1.25rem 1.5rem;
-    margin: 0 0 1.5rem;
+    padding: 0.85rem 1rem;
+    margin: 0 0 1rem;
 }
 
 .fp-gift__addons legend {
@@ -3469,20 +3470,20 @@ body.fp-modal-open {
 
 .fp-gift__addons-grid {
     display: grid;
-    gap: 1rem;
+    gap: 0.75rem;
     grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    margin-top: 1rem;
+    margin-top: 0.75rem;
 }
 
 .fp-gift__addon {
     display: grid;
     grid-template-columns: auto 1fr;
-    column-gap: 0.75rem;
-    row-gap: 0.35rem;
+    column-gap: 0.65rem;
+    row-gap: 0.25rem;
     align-items: flex-start;
     border: 1px solid rgba(19, 29, 56, 0.16);
     border-radius: 12px;
-    padding: 0.75rem 1rem;
+    padding: 0.6rem 0.85rem;
     background: #fff;
     cursor: pointer;
 }
@@ -3514,16 +3515,16 @@ body.fp-modal-open {
 }
 
 .fp-gift__note {
-    font-size: 0.95rem;
+    font-size: 0.9rem;
     color: var(--fp-color-text-muted, rgba(19, 29, 56, 0.7));
-    margin: 0 0 1.25rem;
+    margin: 0 0 0.85rem;
 }
 
 .fp-gift__feedback,
 .fp-gift__success {
     border-radius: 12px;
-    padding: 0.85rem 1rem;
-    margin-bottom: 1.25rem;
+    padding: 0.7rem 0.85rem;
+    margin-bottom: 0.85rem;
     font-weight: 600;
 }
 
@@ -3553,8 +3554,8 @@ body.fp-modal-open {
 
 @media (max-width: 600px) {
     .fp-gift__inner {
-        padding: 1.5rem;
-        padding-top: 2.5rem;
+        padding: 1rem;
+        padding-top: 1.5rem;
     }
 
     .fp-gift__addons-grid {

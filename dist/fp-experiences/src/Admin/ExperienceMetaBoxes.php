@@ -3404,7 +3404,7 @@ final class ExperienceMetaBoxes
                 return;
             }
 
-            update_post_meta($post_id, $key, $value);
+            update_post_meta($post_id, $key, array_values($filtered));
             return;
         }
 
@@ -3418,7 +3418,11 @@ final class ExperienceMetaBoxes
     private function lines_to_array($value): array
     {
         if (is_array($value)) {
-            return array_values(array_filter(array_map('sanitize_text_field', $value)));
+            $sanitized = array_map('sanitize_text_field', $value);
+            // Filtra elementi vuoti e la stringa "Array" (dati corrotti)
+            return array_values(array_filter($sanitized, static function($item) {
+                return '' !== $item && trim($item) !== 'Array';
+            }));
         }
 
         $string_value = (string) $value;
@@ -3433,13 +3437,21 @@ final class ExperienceMetaBoxes
             return [];
         }
 
-        return array_values(array_filter(array_map('sanitize_text_field', $lines)));
+        $sanitized = array_map('sanitize_text_field', $lines);
+        // Filtra elementi vuoti e la stringa "Array" (dati corrotti)
+        return array_values(array_filter($sanitized, static function($item) {
+            return '' !== $item && trim($item) !== 'Array';
+        }));
     }
 
     private function array_to_lines($value): string
     {
         if (is_array($value)) {
-            $items = array_values(array_filter(array_map('sanitize_text_field', $value)));
+            $sanitized = array_map('sanitize_text_field', $value);
+            // Filtra elementi vuoti e la stringa "Array" (dati corrotti)
+            $items = array_values(array_filter($sanitized, static function($item) {
+                return '' !== $item && trim($item) !== 'Array';
+            }));
             return implode("\n", $items);
         }
 
