@@ -2586,6 +2586,9 @@
     border-radius: calc(var(--fp-exp-radius-base, 12px) / 1.25);
     padding: 1rem 1.25rem;
     border: 1px solid rgba(0, 0, 0, 0.05);
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow-wrap: break-word;
 }
 
 .fp-exp-meeting-point__title {
@@ -2656,6 +2659,10 @@
     cursor: pointer;
     font-weight: 600;
     margin-bottom: 0.75rem;
+}
+
+.fp-exp-section.fp-exp-meeting {
+    overflow-x: hidden;
 }
 
 @media (max-width: 768px) {
