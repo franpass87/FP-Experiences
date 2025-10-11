@@ -780,6 +780,7 @@ $sticky_price_display = '' !== $price_from_display ? $format_currency($price_fro
                         <?php
                         $primary = $meeting_points['primary'];
                         $alternatives = $meeting_points['alternatives'];
+                        $embedded = true;
                         include __DIR__ . '/meeting-points.php';
                         ?>
                     </div>
