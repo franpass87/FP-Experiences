@@ -1,0 +1,15 @@
+{
+  "sprint": "fpx-sprint-250930",
+  "current_phase": 8,
+  "percent": 100,
+  "phases": {
+    "1": "Bugfix meeting points import / deprecazione",
+    "2": "Addon con immagini (backend+frontend)",
+    "3": "Ricorrenze slot collegate agli orari",
+    "4": "Bandierine lingua",
+    "5": "Auto-creazione pagina esperienza alla pubblicazione",
+    "6": "Archivio: layout desktop più largo + vista semplice grid/list",
+    "7": "Gift Your Experience (voucher, email, checkout zero, reminder)",
+    "8": "Tracking, migrazioni, docs, test finali"
+  }
+}

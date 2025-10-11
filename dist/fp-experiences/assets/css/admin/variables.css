@@ -1,0 +1,52 @@
+/**
+ * Admin CSS Variables and Base Styles
+ */
+:root {
+    --fp-exp-admin-spacing: 16px;
+    --fp-exp-admin-radius: 8px;
+    --fp-exp-admin-card-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    --fp-exp-admin-border: rgba(0, 0, 0, 0.08);
+    --fp-exp-color-text: #1f2937;
+    --fp-exp-color-muted: #6b7280;
+    --fp-exp-color-primary: #2563eb;
+    --fp-exp-color-danger: #dc2626;
+}
+
+/* Dark mode variables */
+html.fp-exp-dark {
+    --fp-exp-color-text: #e6e8eb;
+    --fp-exp-color-muted: #a0a7b0;
+    --fp-exp-admin-border: rgba(230, 232, 235, 0.08);
+    --fp-exp-admin-card-shadow: 0 22px 50px rgba(0, 0, 0, 0.4);
+}
+
+/* Base admin shell styles */
+body.fp-exp-admin-shell {
+    background: #f9fafb;
+}
+
+body.fp-exp-admin-shell #wpbody {
+    min-height: 100vh;
+}
+
+body.fp-exp-admin-shell #wpbody-content {
+    margin: 0;
+    padding: 24px clamp(16px, 4vw, 32px) 48px;
+    box-sizing: border-box;
+}
+
+body.fp-exp-admin-shell #wpbody-content > .wrap {
+    margin: 0 auto;
+    max-width: 1200px;
+    width: 100%;
+    padding: 0;
+}
+
+body.fp-exp-admin-shell #wpbody-content > .wrap > :first-child {
+    margin-top: 0;
+}
+
+body.fp-exp-admin-shell #screen-meta,
+body.fp-exp-admin-shell #screen-meta-links {
+    margin-right: clamp(16px, 4vw, 48px);
+}

@@ -1,0 +1,93 @@
+{
+  "current": "14",
+  "ok": true,
+  "notes": {"release":"0.2.0","ok":true},
+  "audit_current": "A2",
+  "audit": {
+    "A0": {
+      "ok": true,
+      "notes": "Inventory recorded"
+    },
+    "A1": {
+      "ok": true,
+      "notes": "PHPCS config + lint cleanup"
+    },
+    "A2": {
+      "ok": true,
+      "notes": "Security audit refreshed with public submission rate limiting"
+    },
+    "A3": {
+      "ok": true,
+      "notes": "Privacy documented"
+    },
+    "A4": {
+      "ok": true,
+      "notes": "Performance audit recorded"
+    },
+    "A5": {
+      "ok": true,
+      "notes": "Accessibility tweaks recorded"
+    },
+    "A6": {
+      "ok": true,
+      "notes": "Tracking audit complete"
+    },
+    "A7": {
+      "ok": true,
+      "notes": "Integrations audit recorded"
+    },
+    "A8": {
+      "ok": true,
+      "notes": "Functional review complete"
+    },
+    "A9": {
+      "ok": true,
+      "notes": "Documentation & checklist updated"
+    }
+  },
+  "rebuild": {
+    "feature": "exp-layout",
+    "step": "DOCS"
+  },
+  "verify_current": "FRONT-BINDING",
+  "deepfix_current": "D13",
+  "final_acceptance": {
+    "S1": {
+      "label": "Static Review & Lint",
+      "status": "done"
+    },
+    "S2": {
+      "label": "Security Audit",
+      "status": "done"
+    },
+    "S3": {
+      "label": "Data Binding & Meta",
+      "status": "done"
+    },
+    "S4": {
+      "label": "Frontend UX & UI",
+      "status": "done"
+    },
+    "S5": {
+      "label": "Admin UX & UI",
+      "status": "done"
+    },
+    "S6": {
+      "label": "Functional Testing",
+      "status": "done"
+    },
+    "S7": {
+      "label": "Integrations",
+      "status": "done"
+    },
+    "S8": {
+      "label": "Performance & Caching",
+      "status": "done"
+    },
+    "S9": {
+      "label": "Documentation",
+      "status": "done"
+    }
+  },
+  "final_acceptance_current": "COMPLETE"
+}

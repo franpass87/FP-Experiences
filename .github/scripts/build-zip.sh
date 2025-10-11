@@ -36,6 +36,7 @@ rsync -a "$REPO_DIR/" "$REPO_DIR/dist/$SLUG/" \
   --exclude 'docs' \
   --exclude 'node_modules' \
   --exclude 'dist' \
+  --exclude 'build' \
   --exclude '.gitignore' \
   --exclude '.gitattributes' \
   --exclude 'composer.lock' \
