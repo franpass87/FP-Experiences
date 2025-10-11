@@ -2572,10 +2572,7 @@
 }
 
 .fp-exp-meeting-points {
-    background: var(--fp-color-surface);
-    border-radius: var(--fp-exp-radius-base, 12px);
-    padding: 1.5rem;
-    box-shadow: var(--fp-exp-shadow-base, 0 10px 30px rgba(0,0,0,0.08));
+    /* Stili rimossi: background, border-radius, padding, box-shadow sono già applicati da .fp-exp-section */
 }
 
 .fp-exp-meeting-points__primary,
