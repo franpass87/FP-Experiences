@@ -707,15 +707,19 @@
                 const priceValueEl = stickyBar.querySelector('.fp-exp-page__sticky-price-value');
                 if (!priceValueEl) return;
 
+                const priceLabelEl = stickyBar.querySelector('.fp-exp-page__sticky-price-label');
+
                 const tickets = collectTickets();
                 const addons = collectAddons();
                 const currency = (config && config.currency) || 'EUR';
 
                 // Calcola il totale
                 let total = 0;
+                let hasTickets = false;
 
                 // Somma biglietti
                 Object.entries(tickets).forEach(([slug, qty]) => {
+                    if (qty > 0) hasTickets = true;
                     const priceEl = document.querySelector(`tr[data-ticket="${slug}"] .fp-exp-ticket__price[data-price]`);
                     const price = priceEl ? parseFloat(priceEl.getAttribute('data-price') || '0') : 0;
                     total += price * qty;
@@ -727,6 +731,15 @@
                     const price = priceEl ? parseFloat(priceEl.getAttribute('data-price') || '0') : 0;
                     total += price * qty;
                 });
+
+                // Mostra/nascondi la label "Da" in base alla presenza di biglietti
+                if (priceLabelEl) {
+                    if (hasTickets) {
+                        priceLabelEl.style.display = 'none';
+                    } else {
+                        priceLabelEl.style.display = '';
+                    }
+                }
 
                 // Formatta e aggiorna il prezzo nella sticky bar
                 try {
@@ -1024,15 +1037,19 @@
                 const priceValueEl = stickyBar.querySelector('.fp-exp-page__sticky-price-value');
                 if (!priceValueEl) return;
 
+                const priceLabelEl = stickyBar.querySelector('.fp-exp-page__sticky-price-label');
+
                 const tickets = collectTickets();
                 const addons = collectAddons();
                 const currency = (config && config.currency) || 'EUR';
 
                 // Calcola il totale
                 let total = 0;
+                let hasTickets = false;
 
                 // Somma biglietti
                 Object.entries(tickets).forEach(([slug, qty]) => {
+                    if (qty > 0) hasTickets = true;
                     const priceEl = document.querySelector(`tr[data-ticket="${slug}"] .fp-exp-ticket__price[data-price]`);
                     const price = priceEl ? parseFloat(priceEl.getAttribute('data-price') || '0') : 0;
                     total += price * qty;
@@ -1044,6 +1061,15 @@
                     const price = priceEl ? parseFloat(priceEl.getAttribute('data-price') || '0') : 0;
                     total += price * qty;
                 });
+
+                // Mostra/nascondi la label "Da" in base alla presenza di biglietti
+                if (priceLabelEl) {
+                    if (hasTickets) {
+                        priceLabelEl.style.display = 'none';
+                    } else {
+                        priceLabelEl.style.display = '';
+                    }
+                }
 
                 // Formatta e aggiorna il prezzo nella sticky bar
                 try {
