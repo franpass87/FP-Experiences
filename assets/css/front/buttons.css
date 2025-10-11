@@ -113,3 +113,9 @@
 .fp-exp-page__sticky-button:focus-visible {
     box-shadow: 0 0 0 3px var(--fp-focus-ring-soft,color-mix(in srgb,var(--fp-color-primary) 32%,#fff)), var(--fp-shadow);
 }
+
+@media (max-width: 768px) {
+    .fp-exp-button--secondary {
+        width: 100%;
+    }
+}
