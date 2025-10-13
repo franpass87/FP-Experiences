@@ -154,7 +154,7 @@
             .then(function(res) { if (!res.ok) { throw new Error('HTTP ' + res.status + ': ' + res.statusText); } return res.json(); })
             .then(function(data) {
                 if (!data || data.success !== true || !data.breakdown) {
-                    console.warn('[FP-EXP] Quote response invalid:', data);
+                    // Quote response invalid
                     setStatus(errorLabel);
                     return;
                 }
@@ -210,7 +210,7 @@
                 updateCtaState();
             })
             .catch(function(error) {
-                console.error('[FP-EXP] Quote request failed:', error);
+                // Quote request failed
                 setStatus(errorLabel);
                 updateCtaState();
             });
