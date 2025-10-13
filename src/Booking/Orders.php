@@ -260,12 +260,15 @@ final class Orders
      */
     private function persist_reservation(WC_Order $order, array $item, array $utm = [])
     {
+        $slot_id = absint($item['slot_id'] ?? 0);
+        $tickets = $item['tickets'] ?? [];
+        
         $reservation_id = Reservations::create([
             'order_id' => $order->get_id(),
             'experience_id' => absint($item['experience_id'] ?? 0),
-            'slot_id' => absint($item['slot_id'] ?? 0),
+            'slot_id' => $slot_id,
             'status' => Reservations::STATUS_PENDING,
-            'pax' => $item['tickets'] ?? [],
+            'pax' => $tickets,
             'addons' => $item['addons'] ?? [],
             'utm' => $utm,
             'locale' => get_locale(),
@@ -278,6 +281,34 @@ final class Orders
             $order->delete(true);
 
             return new WP_Error('fp_exp_reservation_failed', __('Impossibile registrare la prenotazione. Riprova.', 'fp-experiences'));
+        }
+
+        // FIX: Double-check capacity after creating reservation to prevent race condition overbooking
+        // In high-concurrency scenarios, multiple requests might pass the initial capacity check
+        // simultaneously. This post-creation verification catches overbooking and rolls back.
+        if ($slot_id > 0 && !empty($tickets)) {
+            $slot = Slots::get_slot($slot_id);
+            
+            if ($slot) {
+                $capacity_total = absint($slot['capacity_total']);
+                
+                if ($capacity_total > 0) {
+                    $snapshot = Slots::get_capacity_snapshot($slot_id);
+                    
+                    if ($snapshot['total'] > $capacity_total) {
+                        // Overbooking detected! Rollback this reservation
+                        Reservations::delete($reservation_id);
+                        Reservations::delete_by_order($order->get_id());
+                        $order->delete(true);
+                        
+                        return new WP_Error(
+                            'fp_exp_capacity_exceeded',
+                            __('Lo slot selezionato si è appena esaurito. Riprova con un altro orario.', 'fp-experiences'),
+                            ['status' => 409]
+                        );
+                    }
+                }
+            }
         }
 
         do_action('fp_exp_reservation_created', $reservation_id, $order->get_id());

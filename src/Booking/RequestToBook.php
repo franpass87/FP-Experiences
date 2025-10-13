@@ -194,6 +194,27 @@ final class RequestToBook
             return new WP_Error('fp_exp_rtb_store', __('Impossibile registrare la richiesta. Riprova.', 'fp-experiences'), ['status' => 500]);
         }
 
+        // FIX: Double-check capacity after creating reservation to prevent race condition overbooking
+        // This catches cases where multiple simultaneous requests passed the initial capacity check
+        if ($slot && !empty($tickets)) {
+            $capacity_total = absint($slot['capacity_total']);
+            
+            if ($capacity_total > 0) {
+                $snapshot = Slots::get_capacity_snapshot($slot_id);
+                
+                if ($snapshot['total'] > $capacity_total) {
+                    // Overbooking detected! Rollback this reservation
+                    Reservations::delete($reservation_id);
+                    
+                    return new WP_Error(
+                        'fp_exp_rtb_capacity_exceeded',
+                        __('Lo slot selezionato si è appena esaurito. Riprova con un altro orario.', 'fp-experiences'),
+                        ['status' => 409]
+                    );
+                }
+            }
+        }
+
         $context = $this->build_context($reservation_id, $experience_id, $slot, $contact, $breakdown, (string) ($request->get_param('notes') ?? ''));
         $context['rtb'] = [
             'mode' => $rtb_mode,
