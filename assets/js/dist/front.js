@@ -10,7 +10,7 @@
     
     // Verifica che jQuery sia disponibile
     if (typeof jQuery === 'undefined') {
-        console.warn('FP Experiences: jQuery non trovato');
+        // jQuery non trovato
         return;
     }
     
@@ -18,7 +18,7 @@
     jQuery(document).ready(function($) {
         // Namespace globale leggero per futura modularizzazione
         if (!window.FPFront) window.FPFront = {};
-        console.log('FP Experiences Frontend: Inizializzato');
+        // Frontend inizializzato
         
         // Selettori base
         const widget = document.querySelector('.fp-exp.fp-exp-widget');
@@ -62,11 +62,18 @@
         // Esegui al caricamento
         repositionWidgetForMobile();
         
-        // Esegui al resize (con debounce)
+        // Esegui al resize (con debounce) - cleanup su unmount per evitare memory leak
         let resizeTimeout;
-        window.addEventListener('resize', () => {
+        const handleResize = () => {
             clearTimeout(resizeTimeout);
             resizeTimeout = setTimeout(repositionWidgetForMobile, 150);
+        };
+        window.addEventListener('resize', handleResize);
+        
+        // Cleanup event listener quando la pagina viene scaricata
+        window.addEventListener('beforeunload', () => {
+            window.removeEventListener('resize', handleResize);
+            clearTimeout(resizeTimeout);
         });
 
         if (!widget) {
@@ -81,7 +88,7 @@
             // Popola window.FPFront.config per i moduli
             window.FPFront.config = config;
         } catch (e) {
-            console.warn('[FP-EXP] Config frontend non valida', e);
+            // Config frontend non valida
         }
 
         // 1) Apri il datepicker quando si clicca/focalizza l'input
@@ -119,7 +126,7 @@
 
         // Funzione semplificata - non più necessaria con input date nativo
         const showSlotsInline = async (dayElement, date) => {
-            console.log('[FP-EXP] showSlotsInline non più necessaria - sistema semplificato');
+            // showSlotsInline non più necessaria - sistema semplificato
         };
 
         const showSlotsError = (message) => {
@@ -143,7 +150,7 @@
         // Inizializza il modulo availability prima di usare il calendario
         if (window.FPFront.availability && window.FPFront.availability.init) {
             window.FPFront.availability.init({ config, widget });
-            console.log('[FP-EXP] Availability module initialized');
+            // Availability module initialized
         }
 
         // Mappa YYYY-MM-DD → array di slot dal dataset (dopo l'inizializzazione!)
@@ -156,7 +163,7 @@
         if (dateInput) {
             dateInput.addEventListener('change', async () => {
                 const date = dateInput.value; // formato YYYY-MM-DD
-                console.log('[FP-EXP] Date changed to:', date);
+                // Date changed to: date
                 
                 // Get fresh reference to calendarMap
                 calendarMap = getCalendarMap();
@@ -170,7 +177,7 @@
                     try {
                         items = await fetchAvailability(date);
                     } catch (e) {
-                        console.error('[FP-EXP] API fetch failed:', e);
+                        // API fetch failed
                         showSlotsError('Impossibile caricare gli slot. Riprova.');
                         items = [];
                         return; // Esci qui per evitare di chiamare renderSlots con errori
@@ -206,7 +213,7 @@
                         }
                     }
                 } else {
-                    console.log('[FP-EXP] No loading, items available:', items);
+                    // No loading, items available
                     // Se non stiamo caricando e abbiamo items, renderizza direttamente
                     if (items && items.length > 0) {
                         if (window.FPFront.slots && window.FPFront.slots.renderSlots) {
@@ -329,7 +336,7 @@
                     dayButtons.forEach(button => grid.appendChild(button));
                     
                 } catch (error) {
-                    console.error('[FP-EXP] Errore generazione calendario:', error);
+                    // Errore generazione calendario
                     grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 2rem; color: var(--fp-color-error);">Errore caricamento calendario</div>';
                 }
             }
@@ -338,7 +345,7 @@
         // Aggiungi il campo 'label' agli slot nella calendarMap per la visualizzazione
         calendarMap = getCalendarMap(); // Refresh reference
         if (calendarMap && calendarMap.size > 0) {
-            console.log('[FP-EXP] Adding labels to', calendarMap.size, 'dates in calendarMap');
+            // Adding labels to dates in calendarMap
             calendarMap.forEach((slots, dateKey) => {
                 const slotsWithLabels = slots.map(slot => {
                     if (!slot.label && slot.start_iso && slot.end_iso) {
@@ -349,7 +356,7 @@
                 calendarMap.set(dateKey, slotsWithLabels);
             });
         } else {
-            console.log('[FP-EXP] CalendarMap is empty or not initialized');
+            // CalendarMap is empty or not initialized
         }
         
         // Inizializza il calendario immediatamente (non aspettare DOMContentLoaded che potrebbe non triggerare)
@@ -772,25 +779,25 @@
                 const experienceId = (config && config.experienceId) || 0;
 
                 if (!start || !end || !experienceId) {
-                    console.error('[FP-EXP] Dati slot mancanti per checkout WooCommerce');
+                    // Dati slot mancanti per checkout WooCommerce
                     return;
                 }
 
                 // Verifica che i nonce siano disponibili
                 if (typeof fpExpConfig === 'undefined') {
-                    console.error('[FP-EXP] fpExpConfig non definito');
+                    // fpExpConfig non definito
                     alert('Errore di configurazione. Aggiorna la pagina e riprova.');
                     return;
                 }
 
                 if (!fpExpConfig.restNonce) {
-                    console.error('[FP-EXP] restNonce mancante');
+                    // restNonce mancante
                     alert('Sessione non valida. Aggiorna la pagina e riprova.');
                     return;
                 }
 
                 if (!fpExpConfig.checkoutNonce) {
-                    console.error('[FP-EXP] checkoutNonce mancante');
+                    // checkoutNonce mancante
                     alert('Sessione non valida. Aggiorna la pagina e riprova.');
                     return;
                 }
@@ -826,7 +833,7 @@
                             const text = await setCartResponse.text();
                             errorData = text ? JSON.parse(text) : {};
                         } catch (e) {
-                            console.error('[FP-EXP] Impossibile parsare risposta errore cart/set:', e);
+                            // Impossibile parsare risposta errore cart/set
                         }
                         throw new Error(errorData.message || `Errore aggiunta al carrello (${setCartResponse.status})`);
                     }
@@ -871,7 +878,7 @@
                             const text = await checkoutResponse.text();
                             errorData = text ? JSON.parse(text) : {};
                         } catch (e) {
-                            console.error('[FP-EXP] Impossibile parsare risposta errore:', e);
+                            // Impossibile parsare risposta errore
                         }
                         throw new Error(errorData.message || `Errore creazione ordine (${checkoutResponse.status})`);
                     }
@@ -879,16 +886,16 @@
                     let result = {};
                     try {
                         const text = await checkoutResponse.text();
-                        console.log('[FP-EXP] Risposta checkout ricevuta:', text ? text.substring(0, 200) : '(vuota)');
+                        // Risposta checkout ricevuta
                         
                         if (!text || text.trim() === '') {
                             throw new Error('Risposta vuota dal server');
                         }
                         
                         result = JSON.parse(text);
-                        console.log('[FP-EXP] Risposta checkout parsata:', result);
+                        // Risposta checkout parsata
                     } catch (e) {
-                        console.error('[FP-EXP] Impossibile parsare risposta checkout:', e);
+                        // Impossibile parsare risposta checkout
                         throw new Error('Risposta non valida dal server');
                     }
                     
@@ -896,16 +903,16 @@
                     const paymentUrl = result.payment_url || (result.data && result.data.payment_url);
                     
                     if (paymentUrl) {
-                        console.log('[FP-EXP] Reindirizzamento a:', paymentUrl);
+                        // Reindirizzamento a pagina di pagamento
                         // Reindirizza alla pagina di pagamento dell'ordine
                         window.location.href = paymentUrl;
                     } else {
-                        console.error('[FP-EXP] Risposta completa:', result);
+                        // Risposta completa non valida
                         throw new Error('URL di pagamento non ricevuto');
                     }
 
                 } catch (error) {
-                    console.error('[FP-EXP] Errore checkout WooCommerce:', error);
+                    // Errore checkout WooCommerce
                     ctaBtn.disabled = false;
                     
                     // Messaggio specifico per errori di sessione
@@ -945,7 +952,7 @@
             // Controlla se RTB è abilitato
             const rtbEnabled = (config && config.rtb && config.rtb.enabled === true);
             if (!rtbEnabled) {
-                console.log('[FP-EXP] RTB disabilitato, configurando flusso WooCommerce');
+                // RTB disabilitato, configurando flusso WooCommerce
                 if (window.FPFront.summaryWoo && window.FPFront.summaryWoo.init) {
                     window.FPFront.summaryWoo.init({ widget, slotsEl, config });
                 }
@@ -1179,7 +1186,7 @@
                 })
                 .then((data) => {
                     if (!data || data.success !== true || !data.breakdown) {
-                        console.warn('[FP-EXP] Quote response invalid:', data);
+                        // Quote response invalid
                         setStatus(errorLabel);
                         return;
                     }
@@ -1247,7 +1254,7 @@
                     updateCtaState();
                 })
                 .catch((error) => {
-                    console.error('[FP-EXP] Quote request failed:', error);
+                    // Quote request failed
                     setStatus(errorLabel);
                     updateCtaState();
                 });
@@ -1317,7 +1324,7 @@
                 const configAttr = giftModal.getAttribute('data-fp-gift-config');
                 giftConfig = configAttr ? JSON.parse(configAttr) : {};
             } catch (e) {
-                console.warn('[FP-EXP] Invalid gift config:', e);
+                // Invalid gift config
             }
 
             // Open modal
@@ -1442,7 +1449,7 @@
                             try {
                                 errorData = await response.json();
                             } catch (e) {
-                                console.error('[FP-EXP] Error parsing gift response:', e);
+                                // Error parsing gift response
                             }
                             throw new Error(errorData.message || 'Errore durante la creazione del voucher regalo');
                         }
@@ -1476,7 +1483,7 @@
                             }, 2000);
                         }
                     } catch (error) {
-                        console.error('[FP-EXP] Gift voucher error:', error);
+                        // Gift voucher error
                         
                         // Show error message
                         if (giftFeedback) {

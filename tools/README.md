@@ -268,4 +268,4 @@ bash tools/run-php-syntax-check.sh
 
 ---
 
-**Ultimo aggiornamento:** 7 Ottobre 2025
+**Ultimo aggiornamento:** 13 Ottobre 2025
