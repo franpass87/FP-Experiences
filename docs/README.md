@@ -176,7 +176,7 @@ Vedi **[CHANGELOG.md](CHANGELOG.md)** per:
 - Breaking changes
 - Note di migrazione
 
-**Versione corrente:** `0.3.4` (27 gennaio 2025)
+**Versione corrente:** `0.3.7` (13 ottobre 2025)
 
 ---
 
