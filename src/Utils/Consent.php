@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace FP_Exp\Utils;
 
+if (! defined('ABSPATH')) {
+    exit;
+}
+
 use function apply_filters;
 use function get_option;
 use function is_array;

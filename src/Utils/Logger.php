@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace FP_Exp\Utils;
 
+if (! defined('ABSPATH')) {
+    exit;
+}
+
 use function array_filter;
 use function array_reverse;
 use function array_slice;

@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace FP_Exp\Utils;
 
+if (! defined('ABSPATH')) {
+    exit;
+}
+
 use WP_REST_Request;
 
 use function absint;

@@ -182,7 +182,7 @@ $dataset = [
 ];
 ?>
 <div
-    class="<?php echo $container_class; ?>"
+    class="<?php echo esc_attr($container_class); ?>"
     data-fp-shortcode="widget"
     data-config="<?php echo esc_attr(wp_json_encode($dataset, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP)); ?>"
     data-sticky="<?php echo esc_attr($behavior['sticky'] ? '1' : '0'); ?>"
