@@ -589,7 +589,7 @@ $dataset = [
                             </div>
                             <div class="fp-exp-rtb-form__status" role="status" aria-live="polite" data-loading="<?php echo esc_attr__('Invio della richiesta…', 'fp-experiences'); ?>" data-success="<?php echo esc_attr__('Richiesta ricevuta! Ti risponderemo al più presto.', 'fp-experiences'); ?>" data-error="<?php echo esc_attr__('Impossibile inviare la richiesta. Riprova.', 'fp-experiences'); ?>"></div>
                         </form>
-                    <?php else : ?>
+                    <?php elseif (!$rtb_enabled) : ?>
                         <button type="button" class="fp-exp-summary__cta" disabled>
                             <?php echo esc_html__('Procedi al pagamento', 'fp-experiences'); ?>
                         </button>
