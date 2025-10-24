@@ -12,8 +12,11 @@ use FP_Exp\Gift\VoucherTable;
 
 use function __;
 use function add_role;
+use function current_time;
 use function flush_rewrite_rules;
+use function get_option;
 use function get_role;
+use function home_url;
 use function update_option;
 use function wp_json_encode;
 use function wp_roles;
@@ -34,6 +37,9 @@ final class Activation
         update_option('fp_exp_roles_version', self::roles_version());
 
         flush_rewrite_rules();
+
+        // Crea automaticamente un backup delle impostazioni di branding se non esiste già
+        self::ensure_branding_backup();
 
         do_action('fp_exp_plugin_activated');
     }
@@ -236,5 +242,66 @@ final class Activation
                 }
             }
         }
+    }
+
+    /**
+     * Crea automaticamente un backup delle impostazioni di branding se non esiste già.
+     * Questo metodo viene chiamato durante l'attivazione del plugin per preservare
+     * le impostazioni esistenti durante gli aggiornamenti.
+     */
+    private static function ensure_branding_backup(): void
+    {
+        // Controlla se esiste già un backup
+        $existing_backup = get_option('fp_exp_branding_backup', null);
+        
+        if ($existing_backup && is_array($existing_backup)) {
+            // Backup già esistente, non sovrascrivere
+            return;
+        }
+
+        // Raccoglie tutte le impostazioni di branding esistenti
+        $branding_settings = [
+            'fp_exp_branding' => get_option('fp_exp_branding', []),
+            'fp_exp_email_branding' => get_option('fp_exp_email_branding', []),
+            'fp_exp_emails' => get_option('fp_exp_emails', []),
+            'fp_exp_tracking' => get_option('fp_exp_tracking', []),
+            'fp_exp_brevo' => get_option('fp_exp_brevo', []),
+            'fp_exp_google_calendar' => get_option('fp_exp_google_calendar', []),
+            'fp_exp_experience_layout' => get_option('fp_exp_experience_layout', []),
+            'fp_exp_listing' => get_option('fp_exp_listing', []),
+            'fp_exp_gift' => get_option('fp_exp_gift', []),
+            'fp_exp_rtb' => get_option('fp_exp_rtb', []),
+            'fp_exp_enable_meeting_points' => get_option('fp_exp_enable_meeting_points', 'no'),
+            'fp_exp_enable_meeting_point_import' => get_option('fp_exp_enable_meeting_point_import', 'no'),
+            'fp_exp_structure_email' => get_option('fp_exp_structure_email', ''),
+            'fp_exp_webmaster_email' => get_option('fp_exp_webmaster_email', ''),
+            'fp_exp_debug_logging' => get_option('fp_exp_debug_logging', 'no'),
+        ];
+
+        // Verifica se ci sono impostazioni da salvare
+        $has_settings = false;
+        foreach ($branding_settings as $value) {
+            if (!empty($value) && (!is_array($value) || !empty(array_filter($value)))) {
+                $has_settings = true;
+                break;
+            }
+        }
+
+        if (!$has_settings) {
+            // Nessuna impostazione da salvare, non creare backup
+            return;
+        }
+
+        // Crea il backup
+        $backup_data = [
+            'timestamp' => current_time('mysql'),
+            'version' => get_option('fp_exp_version', 'unknown'),
+            'site_url' => home_url(),
+            'settings' => $branding_settings,
+            'auto_created' => true,
+        ];
+
+        // Salva il backup
+        update_option('fp_exp_branding_backup', $backup_data);
     }
 }

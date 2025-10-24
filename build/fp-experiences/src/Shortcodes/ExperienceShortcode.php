@@ -150,7 +150,7 @@ final class ExperienceShortcode extends BaseShortcode
 
         $language_badges = LanguageHelper::build_language_badges($languages);
         $short_desc = trim(sanitize_text_field((string) get_post_meta($experience_id, '_fp_short_desc', true)));
-        $content_summary = wp_trim_words((string) $post->post_excerpt, 36);
+        $content_summary = (string) $post->post_excerpt;
         $schema_description = '' !== $short_desc ? $short_desc : $content_summary;
 
         $hero_image_id = absint((string) get_post_meta($experience_id, '_fp_hero_image_id', true));

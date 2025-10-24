@@ -25,6 +25,8 @@ use function array_values;
 use function absint;
 use function add_action;
 use function apply_filters;
+use function current_time;
+use function date_i18n;
 use function delete_post_meta;
 use function do_action;
 use function get_current_user_id;
@@ -264,6 +266,30 @@ final class RestRoutes
                     return Helpers::can_manage_fp();
                 },
                 'callback' => [$this, 'tool_fix_corrupted_arrays'],
+            ]
+        );
+
+        register_rest_route(
+            'fp-exp/v1',
+            '/tools/backup-branding',
+            [
+                'methods' => 'POST',
+                'permission_callback' => static function (): bool {
+                    return Helpers::can_manage_fp();
+                },
+                'callback' => [$this, 'tool_backup_branding'],
+            ]
+        );
+
+        register_rest_route(
+            'fp-exp/v1',
+            '/tools/restore-branding',
+            [
+                'methods' => 'POST',
+                'permission_callback' => static function (): bool {
+                    return Helpers::can_manage_fp();
+                },
+                'callback' => [$this, 'tool_restore_branding'],
             ]
         );
 
@@ -1070,6 +1096,152 @@ final class RestRoutes
             'fixed' => $fixed,
             'details' => $details,
         ]);
+    }
+
+    public function tool_backup_branding(): WP_REST_Response
+    {
+        if (Helpers::hit_rate_limit('tools_backup_branding_' . get_current_user_id(), 3, MINUTE_IN_SECONDS)) {
+            return rest_ensure_response([
+                'success' => false,
+                'message' => __('Backup già eseguito di recente. Riprova tra qualche istante.', 'fp-experiences'),
+            ]);
+        }
+
+        // Raccoglie tutte le impostazioni di branding
+        $branding_settings = [
+            'fp_exp_branding' => get_option('fp_exp_branding', []),
+            'fp_exp_email_branding' => get_option('fp_exp_email_branding', []),
+            'fp_exp_emails' => get_option('fp_exp_emails', []),
+            'fp_exp_tracking' => get_option('fp_exp_tracking', []),
+            'fp_exp_brevo' => get_option('fp_exp_brevo', []),
+            'fp_exp_google_calendar' => get_option('fp_exp_google_calendar', []),
+            'fp_exp_experience_layout' => get_option('fp_exp_experience_layout', []),
+            'fp_exp_listing' => get_option('fp_exp_listing', []),
+            'fp_exp_gift' => get_option('fp_exp_gift', []),
+            'fp_exp_rtb' => get_option('fp_exp_rtb', []),
+            'fp_exp_enable_meeting_points' => get_option('fp_exp_enable_meeting_points', 'no'),
+            'fp_exp_enable_meeting_point_import' => get_option('fp_exp_enable_meeting_point_import', 'no'),
+            'fp_exp_structure_email' => get_option('fp_exp_structure_email', ''),
+            'fp_exp_webmaster_email' => get_option('fp_exp_webmaster_email', ''),
+            'fp_exp_debug_logging' => get_option('fp_exp_debug_logging', 'no'),
+        ];
+
+        // Aggiunge metadati del backup
+        $backup_data = [
+            'timestamp' => current_time('mysql'),
+            'version' => get_option('fp_exp_version', 'unknown'),
+            'site_url' => home_url(),
+            'settings' => $branding_settings,
+        ];
+
+        // Salva il backup come opzione WordPress
+        $backup_saved = update_option('fp_exp_branding_backup', $backup_data);
+
+        if (!$backup_saved) {
+            Logger::log('tools', 'Branding backup failed', [
+                'user_id' => get_current_user_id(),
+            ]);
+
+            return rest_ensure_response([
+                'success' => false,
+                'message' => __('Impossibile salvare il backup delle impostazioni.', 'fp-experiences'),
+            ]);
+        }
+
+        Logger::log('tools', 'Branding backup created', [
+            'user_id' => get_current_user_id(),
+            'timestamp' => $backup_data['timestamp'],
+        ]);
+
+        return rest_ensure_response([
+            'success' => true,
+            'message' => sprintf(
+                /* translators: %s: backup timestamp */
+                __('Backup delle impostazioni di branding creato con successo il %s.', 'fp-experiences'),
+                date_i18n(get_option('date_format') . ' ' . get_option('time_format'), strtotime($backup_data['timestamp']))
+            ),
+            'backup_info' => [
+                'timestamp' => $backup_data['timestamp'],
+                'version' => $backup_data['version'],
+                'settings_count' => count($branding_settings),
+            ],
+        ]);
+    }
+
+    public function tool_restore_branding(): WP_REST_Response
+    {
+        if (Helpers::hit_rate_limit('tools_restore_branding_' . get_current_user_id(), 3, MINUTE_IN_SECONDS)) {
+            return rest_ensure_response([
+                'success' => false,
+                'message' => __('Restore già eseguito di recente. Riprova tra qualche istante.', 'fp-experiences'),
+            ]);
+        }
+
+        // Recupera il backup
+        $backup_data = get_option('fp_exp_branding_backup', null);
+
+        if (!$backup_data || !is_array($backup_data) || !isset($backup_data['settings'])) {
+            return rest_ensure_response([
+                'success' => false,
+                'message' => __('Nessun backup delle impostazioni di branding trovato. Esegui prima un backup.', 'fp-experiences'),
+            ]);
+        }
+
+        $settings = $backup_data['settings'];
+        $restored_count = 0;
+        $errors = [];
+
+        // Ripristina ogni impostazione
+        foreach ($settings as $option_name => $value) {
+            $result = update_option($option_name, $value);
+            if ($result) {
+                $restored_count++;
+            } else {
+                $errors[] = $option_name;
+            }
+        }
+
+        if (empty($errors)) {
+            Logger::log('tools', 'Branding restore completed successfully', [
+                'user_id' => get_current_user_id(),
+                'restored_count' => $restored_count,
+                'backup_timestamp' => $backup_data['timestamp'] ?? 'unknown',
+            ]);
+
+            return rest_ensure_response([
+                'success' => true,
+                'message' => sprintf(
+                    /* translators: 1: restored settings count, 2: backup timestamp */
+                    __('Ripristinate con successo %1$d impostazioni dal backup del %2$s.', 'fp-experiences'),
+                    $restored_count,
+                    isset($backup_data['timestamp']) ? date_i18n(get_option('date_format'), strtotime($backup_data['timestamp'])) : __('data sconosciuta', 'fp-experiences')
+                ),
+                'restored_count' => $restored_count,
+                'backup_info' => [
+                    'timestamp' => $backup_data['timestamp'] ?? 'unknown',
+                    'version' => $backup_data['version'] ?? 'unknown',
+                ],
+            ]);
+        } else {
+            Logger::log('tools', 'Branding restore completed with errors', [
+                'user_id' => get_current_user_id(),
+                'restored_count' => $restored_count,
+                'errors' => $errors,
+                'backup_timestamp' => $backup_data['timestamp'] ?? 'unknown',
+            ]);
+
+            return rest_ensure_response([
+                'success' => false,
+                'message' => sprintf(
+                    /* translators: 1: restored count, 2: error count */
+                    __('Ripristinate %1$d impostazioni, ma %2$d hanno fallito. Controlla i log per i dettagli.', 'fp-experiences'),
+                    $restored_count,
+                    count($errors)
+                ),
+                'restored_count' => $restored_count,
+                'errors' => $errors,
+            ]);
+        }
     }
 
     /**

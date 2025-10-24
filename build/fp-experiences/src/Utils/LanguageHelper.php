@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace FP_Exp\Utils;
 
+if (! defined('ABSPATH')) {
+    exit;
+}
+
 use function esc_html__;
 use function in_array;
 use function preg_replace;

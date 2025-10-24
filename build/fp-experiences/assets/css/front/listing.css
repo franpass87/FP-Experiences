@@ -296,7 +296,7 @@
 
 .fp-listing__name {
     margin: 0;
-    font-size: 1.2rem;
+    font-size: 1.4rem;
 }
 
 .fp-listing__badges {
@@ -362,7 +362,37 @@
 .fp-listing__summary {
     margin: 0;
     color: var(--fp-color-muted);
-    font-size: 0.95rem;
+    font-size: 1.1rem;
+    line-height: 1.5;
+}
+
+.fp-listing__highlights {
+    margin: 0 0 0.5rem 0;
+    padding: 0;
+    list-style: none;
+}
+
+.fp-listing__highlights li {
+    position: relative;
+    padding-left: 1.2rem;
+    margin-bottom: 0.3rem;
+    font-size: 1rem;
+    line-height: 1.4;
+}
+
+.fp-listing__highlights li::before {
+    content: "✓";
+    position: absolute;
+    left: 0;
+    top: 0;
+    color: var(--fp-color-primary, #007cba);
+    font-weight: bold;
+    font-size: 0.9rem;
+}
+
+.fp-listing__description {
+    margin: 0;
+    font-size: 1.1rem;
     line-height: 1.5;
 }
 
@@ -372,7 +402,7 @@
     gap: 0.6rem;
     margin-top: 0.5rem;
     color: var(--fp-color-muted);
-    font-size: 0.85rem;
+    font-size: 1rem;
 }
 
 .fp-listing__meta-item {
@@ -414,12 +444,12 @@
 
 .fp-listing__price-value {
     font-weight: 700;
-    font-size: 1.05rem;
+    font-size: 1.25rem;
     color: var(--fp-color-text);
 }
 
 .fp-listing__price-note {
-    font-size: 0.8rem;
+    font-size: 1rem;
     color: var(--fp-color-muted);
 }
 
@@ -436,6 +466,7 @@
     background: var(--fp-color-primary, #0B6EFD);
     color: #fff !important;
     font-weight: 600;
+    font-size: 1.1rem;
     text-decoration: none !important;
     border: none;
 }

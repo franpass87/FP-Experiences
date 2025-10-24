@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace FP_Exp\Utils;
 
+if (! defined('ABSPATH')) {
+    exit;
+}
+
 use function extract;
 use function is_readable;
 use function ob_get_clean;

@@ -41,7 +41,7 @@
             var fmt = new Intl.DateTimeFormat(undefined, opts);
             return fmt.format(startDate) + ' - ' + fmt.format(endDate);
         } catch (e) {
-            try { console.warn('[FP-EXP] Errore formatTimeRange:', e, { startIso: startIso, endIso: endIso }); } catch (_) {}
+            // Errore formatTimeRange - fallback a estrazione pattern
             var take = function(v) { var m = String(v).match(/\d{2}:\d{2}/); return (m && m[0]) || ''; };
             var s = take(startIso);
             var ed = take(endIso);
@@ -71,7 +71,7 @@
                 label: (s.start && s.end) ? formatTimeRange(s.start, s.end) : undefined
             }; });
         } catch (e) {
-            console.warn('[FP-EXP] Errore fetch availability', e);
+            // Errore fetch availability
             throw e;
         }
     }
@@ -135,7 +135,7 @@
                 });
             }
         } catch (e) {
-            console.warn('[FP-EXP] Prefetch mese fallito', e);
+            // Prefetch mese fallito
         }
     }
 

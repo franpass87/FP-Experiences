@@ -224,6 +224,24 @@ final class Reservations
     }
 
     /**
+     * Delete a single reservation by ID.
+     */
+    public static function delete(int $reservation_id): bool
+    {
+        global $wpdb;
+
+        $table = self::table_name();
+        $deleted = $wpdb->delete(
+            $table,
+            [
+                'id' => absint($reservation_id),
+            ]
+        );
+
+        return false !== $deleted && $deleted > 0;
+    }
+
+    /**
      * @param array<string, mixed> $data
      */
     public static function update(int $reservation_id, array $data): bool

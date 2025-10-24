@@ -107,16 +107,11 @@ $format_currency = static function (string $amount) use ($currency_symbol, $curr
                 $primary_theme = isset($experience['primary_theme']) ? (string) $experience['primary_theme'] : '';
                 $raw_price_from_display = isset($experience['price_from_display']) ? (string) $experience['price_from_display'] : '';
                 $formatted_price_from_display = '' !== $raw_price_from_display ? $format_currency($raw_price_from_display) : '';
-                $highlight_line = '';
+                $highlights = [];
                 if (! empty($experience['highlights']) && is_array($experience['highlights'])) {
-                    $first_highlight = reset($experience['highlights']);
-                    if (is_string($first_highlight)) {
-                        $highlight_line = $first_highlight;
-                    }
+                    $highlights = array_filter($experience['highlights'], 'is_string');
                 }
-                if ('' === $highlight_line && ! empty($experience['short_description'])) {
-                    $highlight_line = (string) $experience['short_description'];
-                }
+                $short_description = ! empty($experience['short_description']) ? (string) $experience['short_description'] : '';
                 ?>
                 <?php if ($is_cards_variant) : ?>
                     <article
@@ -146,8 +141,19 @@ $format_currency = static function (string $amount) use ($currency_symbol, $curr
                             <h3 class="fp-listing__name">
                                 <a href="<?php echo esc_url($experience['permalink']); ?>"><?php echo esc_html($experience['title']); ?></a>
                             </h3>
-                            <?php if ('' !== $highlight_line) : ?>
-                                <p class="fp-listing__summary"><?php echo esc_html($highlight_line); ?></p>
+                            <?php if (! empty($highlights) || '' !== $short_description) : ?>
+                                <div class="fp-listing__summary">
+                                    <?php if (! empty($highlights)) : ?>
+                                        <ul class="fp-listing__highlights">
+                                            <?php foreach ($highlights as $highlight) : ?>
+                                                <li><?php echo esc_html($highlight); ?></li>
+                                            <?php endforeach; ?>
+                                        </ul>
+                                    <?php endif; ?>
+                                    <?php if ('' !== $short_description) : ?>
+                                        <p class="fp-listing__description"><?php echo esc_html($short_description); ?></p>
+                                    <?php endif; ?>
+                                </div>
                             <?php endif; ?>
                             <?php if ('' !== $duration_label || ! empty($language_labels)) : ?>
                                 <div class="fp-listing__meta">

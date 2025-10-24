@@ -25,7 +25,7 @@
         var calendarEl = calendar.querySelector('.fp-exp-calendar');
         
         if (!experienceId || !slotsData) {
-            console.warn('[FP-EXP] Calendar standalone: dati mancanti', { experienceId: experienceId, hasSlots: !!slotsData });
+            // Calendar standalone: dati mancanti
             return;
         }
 
@@ -34,7 +34,7 @@
         try {
             slotsMap = JSON.parse(slotsData);
         } catch (e) {
-            console.error('[FP-EXP] Calendar standalone: errore parsing slots', e);
+            // Errore parsing slots
             return;
         }
 
