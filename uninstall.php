@@ -33,6 +33,7 @@ $options = [
 // Opzioni conservate (non vengono eliminate):
 // - fp_exp_branding (colori, font, temi)
 // - fp_exp_email_branding (branding email)
+// - fp_exp_branding_backup (backup delle impostazioni di branding)
 // - fp_exp_tracking (configurazione tracking: GA4, Meta Pixel, Google Ads, Clarity)
 // - fp_exp_emails (configurazione email)
 // - fp_exp_brevo (integrazione Brevo)

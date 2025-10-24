@@ -1367,6 +1367,18 @@ final class SettingsPage
                 'button' => esc_html__('Run ping test', 'fp-experiences'),
             ],
             [
+                'slug' => 'backup-branding',
+                'label' => esc_html__('Backup impostazioni branding', 'fp-experiences'),
+                'description' => esc_html__('Crea un backup delle impostazioni di branding (colori, temi) per preservarle durante aggiornamenti o reinstallazioni.', 'fp-experiences'),
+                'button' => esc_html__('Crea backup', 'fp-experiences'),
+            ],
+            [
+                'slug' => 'restore-branding',
+                'label' => esc_html__('Ripristina impostazioni branding', 'fp-experiences'),
+                'description' => esc_html__('Ripristina le impostazioni di branding da un backup precedente.', 'fp-experiences'),
+                'button' => esc_html__('Ripristina backup', 'fp-experiences'),
+            ],
+            [
                 'slug' => 'clear-cache',
                 'label' => esc_html__('Clear caches & logs', 'fp-experiences'),
                 'description' => esc_html__('Purge plugin transients and truncate the internal log buffer.', 'fp-experiences'),
