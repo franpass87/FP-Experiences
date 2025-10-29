@@ -26,6 +26,7 @@ $container_class = 'fp-exp fp-exp-checkout ' . esc_attr($scope_class);
     </header>
     <form
         class="fp-exp-checkout__form"
+        data-fp-exp-checkout="true"
         data-nonce="<?php echo esc_attr($nonce); ?>"
         novalidate
         data-error-required="<?php echo esc_attr__('Completa il campo %s.', 'fp-experiences'); ?>"

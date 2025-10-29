@@ -795,15 +795,38 @@
                     return;
                 }
 
-                if (!fpExpConfig.checkoutNonce) {
-                    // checkoutNonce mancante
+                // Richiedi nonce fresco prima del checkout per evitare problemi di cache
+                let freshCheckoutNonce = '';
+                try {
+                    ctaBtn.disabled = true;
+                    ctaBtn.textContent = 'Preparazione pagamento...';
+                    
+                    // Richiedi nonce fresco da /checkout/nonce
+                    const nonceUrl = new URL('/wp-json/fp-exp/v1/checkout/nonce', window.location.origin);
+                    const nonceResponse = await fetch(nonceUrl, {
+                        method: 'GET',
+                        credentials: 'same-origin'
+                    });
+                    
+                    if (!nonceResponse.ok) {
+                        throw new Error(`Errore richiesta nonce (${nonceResponse.status})`);
+                    }
+                    
+                    const nonceData = await nonceResponse.json();
+                    if (!nonceData || !nonceData.nonce) {
+                        throw new Error('Nonce non ricevuto dal server');
+                    }
+                    
+                    freshCheckoutNonce = nonceData.nonce;
+                } catch (e) {
+                    ctaBtn.disabled = false;
+                    ctaBtn.textContent = 'Procedi al pagamento';
                     alert('Sessione non valida. Aggiorna la pagina e riprova.');
                     return;
                 }
 
                 // Usa il sistema di checkout integrato del plugin
                 try {
-                    ctaBtn.disabled = true;
                     ctaBtn.textContent = 'Aggiunta al carrello...';
 
                     // Aggiungi al carrello interno del plugin
@@ -851,7 +874,7 @@
                         },
                         credentials: 'same-origin',
                         body: JSON.stringify({
-                            nonce: (typeof fpExpConfig !== 'undefined' && fpExpConfig.checkoutNonce) || '',
+                            nonce: freshCheckoutNonce,
                             contact: {
                                 first_name: 'Cliente',
                                 last_name: 'Temporaneo', 
