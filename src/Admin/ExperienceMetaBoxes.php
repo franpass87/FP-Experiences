@@ -1012,6 +1012,26 @@ final class ExperienceMetaBoxes
             hidden
         >
             <fieldset class="fp-exp-fieldset">
+                <legend><?php esc_html_e('Prezzo base esperienza', 'fp-experiences'); ?></legend>
+                <div class="fp-exp-field">
+                    <label class="fp-exp-field__label" for="fp-exp-base-price">
+                        <?php esc_html_e('Prezzo base (€)', 'fp-experiences'); ?>
+                    </label>
+                    <input
+                        type="number"
+                        id="fp-exp-base-price"
+                        name="fp_exp_pricing[base_price]"
+                        step="0.01"
+                        min="0"
+                        value="<?php echo esc_attr((string) ($pricing['base_price'] ?? '')); ?>"
+                    />
+                    <p class="fp-exp-field__description">
+                        <?php esc_html_e('Prezzo base che viene aggiunto al totale indipendentemente dal numero di biglietti. Lascia 0 se non vuoi un prezzo base.', 'fp-experiences'); ?>
+                    </p>
+                </div>
+            </fieldset>
+
+            <fieldset class="fp-exp-fieldset">
                 <legend><?php esc_html_e('Tipi di biglietto', 'fp-experiences'); ?></legend>
                 <div
                     class="fp-exp-repeater"
@@ -2492,7 +2512,18 @@ final class ExperienceMetaBoxes
         }
         $pricing['tax_class'] = $tax_class;
 
-        if (! empty($pricing['tickets']) || ! empty($pricing['group']) || ! empty($pricing['addons']) || '' !== $pricing['tax_class']) {
+        // Salva base_price
+        $base_price = isset($raw['base_price']) ? max(0.0, (float) $raw['base_price']) : 0.0;
+        $pricing['base_price'] = $base_price;
+        
+        // Salva anche in _fp_base_price per retrocompatibilità con Pricing::get_base_price()
+        if ($base_price > 0) {
+            update_post_meta($post_id, '_fp_base_price', (string) $base_price);
+        } else {
+            delete_post_meta($post_id, '_fp_base_price');
+        }
+
+        if (! empty($pricing['tickets']) || ! empty($pricing['group']) || ! empty($pricing['addons']) || '' !== $pricing['tax_class'] || $base_price > 0) {
             update_post_meta($post_id, '_fp_exp_pricing', $pricing);
         } else {
             delete_post_meta($post_id, '_fp_exp_pricing');
@@ -3123,11 +3154,18 @@ final class ExperienceMetaBoxes
             'group' => [],
             'addons' => [],
             'tax_class' => '',
+            'base_price' => '',
         ];
 
         $meta = get_post_meta($post_id, '_fp_exp_pricing', true);
         if (! is_array($meta)) {
-            return $defaults;
+            $meta = [];
+        }
+
+        // Leggi base_price da _fp_base_price meta field (per retrocompatibilità)
+        $base_price = get_post_meta($post_id, '_fp_base_price', true);
+        if ('' !== $base_price && ! isset($meta['base_price'])) {
+            $meta['base_price'] = (string) $base_price;
         }
 
         return array_merge($defaults, $meta);
