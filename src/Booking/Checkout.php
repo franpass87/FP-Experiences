@@ -76,8 +76,14 @@ final class Checkout
                 'callback' => function (WP_REST_Request $request) {
                     nocache_headers();
                     
+                    // Genera nonce usando session ID invece di user ID
+                    // per funzionare anche con utenti non loggati
+                    $session_id = $this->cart->get_session_id();
+                    $nonce = wp_create_nonce('fp-exp-checkout-' . $session_id);
+                    
                     return rest_ensure_response([
-                        'nonce' => wp_create_nonce('fp-exp-checkout'),
+                        'nonce' => $nonce,
+                        'session_id' => $session_id, // Per debug
                     ]);
                 },
             ]
@@ -235,8 +241,13 @@ final class Checkout
     {
         nocache_headers();
         
+        // Genera nonce usando session ID invece di user ID
+        $session_id = $this->cart->get_session_id();
+        $nonce = wp_create_nonce('fp-exp-checkout-' . $session_id);
+        
         wp_send_json_success([
-            'nonce' => wp_create_nonce('fp-exp-checkout'),
+            'nonce' => $nonce,
+            'session_id' => $session_id, // Per debug
         ]);
     }
 
@@ -278,11 +289,50 @@ final class Checkout
             return false;
         }
         
-        // Verifica che la richiesta provenga dallo stesso sito
-        $result = Helpers::verify_public_rest_request($request);
+        // SEMPLIFICATO: Verifica solo referer/origin stesso dominio
+        // Non usiamo più Helpers::verify_public_rest_request() che può fallire con cache
+        $referer = sanitize_text_field((string) $request->get_header('referer'));
+        $origin = sanitize_text_field((string) $request->get_header('origin'));
+        $home = home_url();
         
         if (defined('WP_DEBUG') && WP_DEBUG) {
-            error_log('[FP-EXP-CHECKOUT] ' . ($result ? '✅' : '❌') . ' verify_public_rest_request: ' . ($result ? 'true' : 'false'));
+            error_log('[FP-EXP-CHECKOUT] Referer: ' . $referer);
+            error_log('[FP-EXP-CHECKOUT] Origin: ' . $origin);
+            error_log('[FP-EXP-CHECKOUT] Home URL: ' . $home);
+        }
+        
+        // Verifica referer O origin (almeno uno deve essere presente e corretto)
+        $referer_valid = false;
+        $origin_valid = false;
+        
+        if ($referer) {
+            $parsed_referer = wp_parse_url($referer);
+            $parsed_home = wp_parse_url($home);
+            
+            if ($parsed_referer && $parsed_home && 
+                isset($parsed_referer['host'], $parsed_home['host']) &&
+                $parsed_referer['host'] === $parsed_home['host']) {
+                $referer_valid = true;
+            }
+        }
+        
+        if ($origin) {
+            $parsed_origin = wp_parse_url($origin);
+            $parsed_home = wp_parse_url($home);
+            
+            if ($parsed_origin && $parsed_home && 
+                isset($parsed_origin['host'], $parsed_home['host']) &&
+                $parsed_origin['host'] === $parsed_home['host']) {
+                $origin_valid = true;
+            }
+        }
+        
+        $result = $referer_valid || $origin_valid;
+        
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('[FP-EXP-CHECKOUT] Referer valid: ' . ($referer_valid ? 'YES' : 'NO'));
+            error_log('[FP-EXP-CHECKOUT] Origin valid: ' . ($origin_valid ? 'YES' : 'NO'));
+            error_log('[FP-EXP-CHECKOUT] ' . ($result ? '✅ PERMISSION GRANTED' : '❌ PERMISSION DENIED'));
         }
         
         return $result;
@@ -329,6 +379,10 @@ final class Checkout
      */
     public function handle_rest(WP_REST_Request $request)
     {
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('[FP-EXP-CHECKOUT] handle_rest() called');
+        }
+        
         nocache_headers();
 
         $nonce = (string) $request->get_param('nonce');
@@ -338,9 +392,24 @@ final class Checkout
             'consent' => $request->get_param('consent'),
         ];
 
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('[FP-EXP-CHECKOUT] Nonce: ' . substr($nonce, 0, 20) . '...');
+            error_log('[FP-EXP-CHECKOUT] Has contact: ' . (isset($payload['contact']) ? 'YES' : 'NO'));
+            error_log('[FP-EXP-CHECKOUT] Calling process_checkout...');
+        }
+
         $result = $this->process_checkout($nonce, $payload);
 
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('[FP-EXP-CHECKOUT] process_checkout result: ' . (is_wp_error($result) ? 'WP_Error' : 'SUCCESS'));
+        }
+
         if ($result instanceof WP_Error) {
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('[FP-EXP-CHECKOUT] ❌ Error code: ' . $result->get_error_code());
+                error_log('[FP-EXP-CHECKOUT] ❌ Error message: ' . $result->get_error_message());
+            }
+            
             $status = (int) ($result->get_error_data()['status'] ?? 400);
             $response = new WP_REST_Response([
                 'code' => $result->get_error_code(),
@@ -352,6 +421,10 @@ final class Checkout
             ]);
             
             return $response;
+        }
+
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('[FP-EXP-CHECKOUT] ✅ Success! Returning payment_url');
         }
 
         // Assicurati che la risposta sia sempre un oggetto WP_REST_Response valido
@@ -372,16 +445,47 @@ final class Checkout
     {
         // Verifica presenza del nonce
         if (empty($nonce)) {
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('[FP-EXP-CHECKOUT] ❌ Nonce vuoto!');
+            }
             return new WP_Error('fp_exp_missing_nonce', __('Sessione non valida. Aggiorna la pagina e riprova.', 'fp-experiences'), [
                 'status' => 403,
             ]);
         }
 
-        // Verifica validità del nonce
-        if (! wp_verify_nonce($nonce, 'fp-exp-checkout')) {
+        // DEBUG: Testa verifica nonce
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('[FP-EXP-CHECKOUT] Verifica nonce...');
+            error_log('[FP-EXP-CHECKOUT] Nonce ricevuto: ' . $nonce);
+            error_log('[FP-EXP-CHECKOUT] Current user ID: ' . get_current_user_id());
+            error_log('[FP-EXP-CHECKOUT] Session ID: ' . $this->cart->get_session_id());
+        }
+
+        // Verifica validità del nonce con session ID
+        $session_id = $this->cart->get_session_id();
+        $verify_result = wp_verify_nonce($nonce, 'fp-exp-checkout-' . $session_id);
+        
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('[FP-EXP-CHECKOUT] Action: fp-exp-checkout-' . $session_id);
+            error_log('[FP-EXP-CHECKOUT] wp_verify_nonce result: ' . var_export($verify_result, true));
+            
+            // Test nonce
+            $test_nonce = wp_create_nonce('fp-exp-checkout-' . $session_id);
+            error_log('[FP-EXP-CHECKOUT] Test nonce: ' . $test_nonce);
+            error_log('[FP-EXP-CHECKOUT] Nonce match: ' . ($nonce === $test_nonce ? 'YES' : 'NO'));
+        }
+
+        if (! $verify_result) {
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('[FP-EXP-CHECKOUT] ❌ NONCE VERIFICATION FAILED!');
+            }
             return new WP_Error('fp_exp_invalid_nonce', __('La sessione è scaduta. Aggiorna la pagina e riprova.', 'fp-experiences'), [
                 'status' => 403,
             ]);
+        }
+        
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('[FP-EXP-CHECKOUT] ✅ Nonce valid! Continuing...');
         }
 
         // Reset: sblocca sempre il carrello prima di continuare, per evitare stati appesi

@@ -8,6 +8,7 @@ use Exception;
 use FP_Exp\Utils\Helpers;
 use WC_Order;
 use WC_Order_Item;
+use WC_Order_Item_Product;
 use WC_Tax;
 use WP_Error;
 
@@ -166,12 +167,13 @@ final class Orders
     /**
      * @param array<string, mixed> $item
      *
-     * @return WC_Order_Item|WP_Error
+     * @return WC_Order_Item_Product|WP_Error
      */
     private function create_line_item(array $item, string $tax_class)
     {
-        $order_item = new WC_Order_Item();
-        $order_item->set_type('fp_experience_item');
+        // Usa WC_Order_Item_Product invece di WC_Order_Item base
+        // perché ha tutti i metodi necessari (set_name, set_total, etc.)
+        $order_item = new WC_Order_Item_Product();
         $order_item->set_name($item['title'] ?? __('Experience booking', 'fp-experiences'));
 
         $subtotal = (float) ($item['totals']['subtotal'] ?? 0.0);
@@ -200,6 +202,8 @@ final class Orders
             }
         }
 
+        // Marca come experience item (non prodotto WooCommerce normale)
+        $order_item->add_meta_data('_fp_exp_item_type', 'experience', true);
         $order_item->add_meta_data('experience_id', absint($item['experience_id'] ?? 0), true);
         $order_item->add_meta_data('experience_title', sanitize_text_field((string) ($item['title'] ?? '')), true);
         $order_item->add_meta_data('slot_id', absint($item['slot_id'] ?? 0), true);

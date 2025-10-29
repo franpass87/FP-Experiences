@@ -183,8 +183,9 @@ final class Assets
             [
                 'restUrl' => rest_url('fp-exp/v1/'),
                 'restNonce' => Helpers::rest_nonce(),
-                // Nonce specifico per il checkout esperienze via REST
-                'checkoutNonce' => wp_create_nonce('fp-exp-checkout'),
+                // NON includiamo più checkoutNonce qui - sarà richiesto via AJAX
+                // per evitare problemi di cache e user ID mismatch
+                'checkoutNonce' => '', // Verrà richiesto via /checkout/nonce
                 // Nonce specifico per il request-to-book via REST
                 'rtbNonce' => wp_create_nonce('fp-exp-rtb'),
                 'ajaxUrl' => admin_url('admin-ajax.php'),

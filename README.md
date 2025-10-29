@@ -2,7 +2,7 @@
 
 > Plugin WordPress per booking di esperienze turistiche stile GetYourGuide
 
-[![Version](https://img.shields.io/badge/version-0.3.7-blue.svg)](https://github.com/franpass87/FP-Experiences)
+[![Version](https://img.shields.io/badge/version-0.3.8-blue.svg)](https://github.com/franpass87/FP-Experiences)
 [![WordPress](https://img.shields.io/badge/wordpress-6.2+-green.svg)](https://wordpress.org/)
 [![PHP](https://img.shields.io/badge/php-8.0+-purple.svg)](https://www.php.net/)
 
