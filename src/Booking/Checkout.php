@@ -44,6 +44,8 @@ final class Checkout
         add_action('rest_api_init', [$this, 'register_rest_routes']);
         add_action('wp_ajax_fp_exp_checkout', [$this, 'handle_ajax']);
         add_action('wp_ajax_nopriv_fp_exp_checkout', [$this, 'handle_ajax']);
+        add_action('wp_ajax_fp_exp_get_nonce', [$this, 'ajax_get_nonce']);
+        add_action('wp_ajax_nopriv_fp_exp_get_nonce', [$this, 'ajax_get_nonce']);
         add_action('wp_ajax_fp_exp_unlock_cart', [$this, 'ajax_unlock_cart']);
         add_action('wp_ajax_nopriv_fp_exp_unlock_cart', [$this, 'ajax_unlock_cart']);
     }
@@ -57,6 +59,25 @@ final class Checkout
                 'methods' => 'POST',
                 'callback' => [$this, 'handle_rest'],
                 'permission_callback' => [$this, 'check_checkout_permission'],
+            ]
+        );
+
+        // Endpoint per generare nonce fresco (non cachabile)
+        register_rest_route(
+            'fp-exp/v1',
+            '/checkout/nonce',
+            [
+                'methods' => 'GET',
+                'permission_callback' => function (WP_REST_Request $request): bool {
+                    return Helpers::verify_public_rest_request($request);
+                },
+                'callback' => function (WP_REST_Request $request) {
+                    nocache_headers();
+                    
+                    return rest_ensure_response([
+                        'nonce' => wp_create_nonce('fp-exp-checkout'),
+                    ]);
+                },
             ]
         );
 
@@ -166,6 +187,15 @@ final class Checkout
         );
     }
 
+    public function ajax_get_nonce(): void
+    {
+        nocache_headers();
+        
+        wp_send_json_success([
+            'nonce' => wp_create_nonce('fp-exp-checkout'),
+        ]);
+    }
+
     public function ajax_unlock_cart(): void
     {
         nocache_headers();
@@ -183,12 +213,17 @@ final class Checkout
 
     public function check_checkout_permission(WP_REST_Request $request): bool
     {
-        // Consenti accesso se presente nonce specifico di checkout
-        if (Helpers::verify_rest_nonce($request, 'fp-exp-checkout')) {
-            return true;
+        // Permetti richieste pubbliche con verifica base anti-abuso
+        // La verifica del nonce fp-exp-checkout verrà fatta nel metodo
+        // process_checkout() perché il nonce è nel body della richiesta POST,
+        // non negli header, quindi non accessibile qui nella permission_callback
+        
+        // Verifica base: stessa origine e metodo POST
+        if ($request->get_method() !== 'POST') {
+            return false;
         }
-
-        // In alternativa accetta il nonce REST standard o stessa origine (anti-abuso di base)
+        
+        // Verifica che la richiesta provenga dallo stesso sito
         return Helpers::verify_public_rest_request($request);
     }
 

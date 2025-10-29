@@ -1229,15 +1229,25 @@ final class Helpers
 
     public static function verify_public_rest_request(WP_REST_Request $request): bool
     {
+        // Prima verifica: nonce REST valido
         if (self::verify_rest_nonce($request, 'wp_rest', ['_wpnonce'])) {
             return true;
         }
 
+        // Seconda verifica: referer stesso dominio (solo per richieste pubbliche sicure)
         $referer = sanitize_text_field((string) $request->get_header('referer'));
         if ($referer) {
             $home = home_url();
-            if ($home && strpos($referer, $home) === 0) {
-                return true;
+            if ($home) {
+                $parsed_home = wp_parse_url($home);
+                $parsed_referer = wp_parse_url($referer);
+                
+                // Verifica che il dominio sia identico (non solo prefisso)
+                if ($parsed_home && $parsed_referer && 
+                    isset($parsed_home['host'], $parsed_referer['host']) &&
+                    $parsed_home['host'] === $parsed_referer['host']) {
+                    return true;
+                }
             }
         }
 

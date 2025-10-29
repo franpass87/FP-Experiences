@@ -51,6 +51,9 @@ final class Dashboard
         echo '<h1 class="fp-exp-admin__title">' . esc_html__('FP Experiences — Dashboard', 'fp-experiences') . '</h1>';
         echo '</header>';
 
+        // Setup Checklist Banner
+        self::render_setup_checklist();
+
         echo '<div class="fp-exp-dashboard__grid">';
         self::render_metric_card(
             esc_html__('Prenotazioni oggi', 'fp-experiences'),
@@ -94,7 +97,13 @@ final class Dashboard
             }
             echo '</tbody></table>';
         } else {
-            echo '<p>' . esc_html__('Ancora nessun ordine registrato per le esperienze.', 'fp-experiences') . '</p>';
+            self::render_empty_state(
+                'tickets-alt',
+                esc_html__('Nessun ordine ancora', 'fp-experiences'),
+                esc_html__('Gli ordini delle esperienze appariranno qui quando i clienti completeranno le prenotazioni.', 'fp-experiences'),
+                admin_url('edit.php?post_type=fp_experience'),
+                esc_html__('Gestisci Esperienze', 'fp-experiences')
+            );
         }
         echo '</section>';
 
@@ -292,6 +301,156 @@ final class Dashboard
         if ($description) {
             echo '<p class="fp-exp-dashboard__card-hint">' . esc_html($description) . '</p>';
         }
+        echo '</div>';
+    }
+
+    /**
+     * Renders the setup checklist banner
+     */
+    private static function render_setup_checklist(): void
+    {
+        // Check setup completion
+        $checklist = self::get_setup_checklist();
+        $completed = count(array_filter($checklist, fn($item) => $item['done']));
+        $total = count($checklist);
+        $percentage = $total > 0 ? round(($completed / $total) * 100) : 0;
+
+        // Don't show if 100% complete
+        if ($percentage >= 100) {
+            // Store that setup is complete
+            if (!get_option('fp_exp_setup_complete', false)) {
+                update_option('fp_exp_setup_complete', true, false);
+            }
+            return;
+        }
+
+        echo '<div class="fp-exp-setup-banner">';
+        echo '<div class="fp-exp-setup-banner__header">';
+        echo '<h3 class="fp-exp-setup-banner__title">';
+        echo '<span class="dashicons dashicons-admin-generic"></span> ';
+        echo esc_html__('Setup Configurazione', 'fp-experiences');
+        echo '</h3>';
+        echo '<div class="fp-exp-setup-banner__progress">';
+        echo '<span class="fp-exp-setup-banner__percentage">' . esc_html($percentage) . '%</span>';
+        echo '<div class="fp-exp-setup-banner__bar">';
+        echo '<div class="fp-exp-setup-banner__bar-fill" style="width: ' . esc_attr($percentage) . '%"></div>';
+        echo '</div>';
+        echo '</div>';
+        echo '</div>';
+
+        echo '<ul class="fp-exp-setup-banner__list">';
+        foreach ($checklist as $item) {
+            $icon = $item['done'] ? 'yes-alt' : 'marker';
+            $class = $item['done'] ? 'done' : 'pending';
+            
+            echo '<li class="fp-exp-setup-banner__item fp-exp-setup-banner__item--' . esc_attr($class) . '">';
+            echo '<span class="dashicons dashicons-' . esc_attr($icon) . '"></span> ';
+            echo '<span class="fp-exp-setup-banner__item-text">' . esc_html($item['label']) . '</span>';
+            
+            if (!$item['done'] && !empty($item['action_url'])) {
+                echo ' <a href="' . esc_url($item['action_url']) . '" class="fp-exp-setup-banner__action">' . esc_html($item['action_label']) . ' →</a>';
+            }
+            
+            echo '</li>';
+        }
+        echo '</ul>';
+        echo '</div>';
+    }
+
+    /**
+     * Gets setup checklist items with completion status
+     * 
+     * @return array<int, array<string, mixed>>
+     */
+    private static function get_setup_checklist(): array
+    {
+        global $wpdb;
+
+        // 1. Check if at least one experience exists
+        $has_experience = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->posts} WHERE post_type = 'fp_experience' AND post_status = 'publish'") > 0;
+
+        // 2. Check if calendar has slots
+        $slots_table = $wpdb->prefix . 'fp_exp_calendar_slots';
+        $has_slots = false;
+        if ($wpdb->get_var("SHOW TABLES LIKE '$slots_table'") === $slots_table) {
+            $has_slots = $wpdb->get_var("SELECT COUNT(*) FROM {$slots_table}") > 0;
+        }
+
+        // 3. Check if payment gateway is configured (WooCommerce)
+        $has_payment = false;
+        if (class_exists('WC_Payment_Gateways')) {
+            $gateways = WC()->payment_gateways()->get_available_payment_gateways();
+            $has_payment = count($gateways) > 0;
+        }
+
+        // 4. Check if Brevo is configured
+        $brevo = get_option('fp_exp_brevo', []);
+        $has_brevo = !empty($brevo['enabled'] ?? false) && !empty($brevo['api_key'] ?? '');
+
+        // 5. Check if checkout page exists
+        $checkout_pages = get_posts([
+            'post_type' => 'page',
+            'post_status' => 'publish',
+            'posts_per_page' => 1,
+            's' => '[fp_exp_checkout]',
+        ]);
+        $has_checkout_page = !empty($checkout_pages);
+
+        return [
+            [
+                'label' => esc_html__('Crea la tua prima esperienza', 'fp-experiences'),
+                'done' => $has_experience,
+                'action_url' => admin_url('post-new.php?post_type=fp_experience'),
+                'action_label' => esc_html__('Crea ora', 'fp-experiences'),
+            ],
+            [
+                'label' => esc_html__('Configura calendario disponibilità', 'fp-experiences'),
+                'done' => $has_slots,
+                'action_url' => admin_url('admin.php?page=fp_exp_calendar'),
+                'action_label' => esc_html__('Vai al calendario', 'fp-experiences'),
+            ],
+            [
+                'label' => esc_html__('Configura metodo di pagamento', 'fp-experiences'),
+                'done' => $has_payment,
+                'action_url' => admin_url('admin.php?page=wc-settings&tab=checkout'),
+                'action_label' => esc_html__('Configura', 'fp-experiences'),
+            ],
+            [
+                'label' => esc_html__('Crea pagina Checkout', 'fp-experiences'),
+                'done' => $has_checkout_page,
+                'action_url' => admin_url('post-new.php?post_type=page'),
+                'action_label' => esc_html__('Crea pagina', 'fp-experiences'),
+            ],
+            [
+                'label' => esc_html__('Email conferme (Brevo - opzionale)', 'fp-experiences'),
+                'done' => $has_brevo,
+                'action_url' => admin_url('admin.php?page=fp_exp_settings&tab=general'),
+                'action_label' => esc_html__('Configura', 'fp-experiences'),
+            ],
+        ];
+    }
+
+    /**
+     * Renders an empty state with icon, message and CTA
+     */
+    private static function render_empty_state(
+        string $icon,
+        string $title,
+        string $message,
+        ?string $action_url = null,
+        ?string $action_label = null
+    ): void {
+        echo '<div class="fp-exp-empty-state">';
+        echo '<div class="fp-exp-empty-state__icon">';
+        echo '<span class="dashicons dashicons-' . esc_attr($icon) . '"></span>';
+        echo '</div>';
+        echo '<h3 class="fp-exp-empty-state__title">' . esc_html($title) . '</h3>';
+        echo '<p class="fp-exp-empty-state__message">' . esc_html($message) . '</p>';
+        
+        if ($action_url && $action_label) {
+            echo '<a href="' . esc_url($action_url) . '" class="button button-primary fp-exp-empty-state__button">' . esc_html($action_label) . '</a>';
+        }
+        
         echo '</div>';
     }
 }

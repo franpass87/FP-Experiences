@@ -8,9 +8,11 @@ Il problema era che durante gli aggiornamenti o la disinstallazione del plugin, 
 
 È stato implementato un sistema completo di backup e restore delle impostazioni di branding che include:
 
-### 1. Backup Automatico
-- **Quando**: Durante l'attivazione del plugin (se non esiste già un backup)
-- **Cosa**: Tutte le impostazioni di branding e configurazione del plugin
+### 1. Backup e Ripristino Automatico
+- **Quando**: Durante l'attivazione del plugin
+- **Cosa**: 
+  - **Ripristino**: Ripristina automaticamente le impostazioni da un backup esistente (se le impostazioni correnti sono vuote o di default)
+  - **Backup**: Crea un nuovo backup delle impostazioni correnti (se non esiste già un backup)
 - **Dove**: Salvato come opzione WordPress `fp_exp_branding_backup`
 
 ### 2. Strumenti Manuali
@@ -55,11 +57,16 @@ Il file `uninstall.php` è stato aggiornato per:
 
 ## Come Utilizzare
 
-### Backup Automatico
-Il backup automatico si attiva quando:
-1. Il plugin viene attivato
-2. Non esiste già un backup
-3. Ci sono impostazioni da salvare
+### Backup e Ripristino Automatico
+Il sistema automatico si attiva quando:
+1. **Ripristino**: Il plugin viene attivato e:
+   - Esiste un backup delle impostazioni
+   - Le impostazioni correnti sono vuote o di default
+   - Le impostazioni vengono ripristinate automaticamente
+2. **Backup**: Il plugin viene attivato e:
+   - Non esiste già un backup
+   - Ci sono impostazioni da salvare
+   - Viene creato un nuovo backup
 
 ### Backup Manuale
 1. Vai su **FP Experiences > Strumenti**
@@ -103,9 +110,11 @@ Il sistema è completamente retrocompatibile e non interferisce con le funzional
 
 ## Benefici
 
-1. **Nessuna perdita di configurazione** durante aggiornamenti
-2. **Backup automatico** senza intervento manuale
-3. **Strumenti manuali** per controllo completo
-4. **Logging completo** per audit
-5. **Rate limiting** per sicurezza
-6. **Gestione errori** robusta
+1. **Nessuna perdita di configurazione** durante aggiornamenti o reinstallazioni
+2. **Ripristino automatico** delle impostazioni durante l'attivazione
+3. **Backup automatico** senza intervento manuale
+4. **Strumenti manuali** per controllo completo
+5. **Logging completo** per audit
+6. **Rate limiting** per sicurezza
+7. **Gestione errori** robusta
+8. **Preservazione intelligente** - ripristina solo se necessario

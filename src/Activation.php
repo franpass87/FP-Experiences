@@ -245,11 +245,94 @@ final class Activation
     }
 
     /**
-     * Crea automaticamente un backup delle impostazioni di branding se non esiste già.
-     * Questo metodo viene chiamato durante l'attivazione del plugin per preservare
-     * le impostazioni esistenti durante gli aggiornamenti.
+     * Gestisce il backup e il ripristino automatico delle impostazioni di branding.
+     * Questo metodo viene chiamato durante l'attivazione del plugin per:
+     * 1. Ripristinare le impostazioni da un backup esistente (se necessario)
+     * 2. Creare un nuovo backup delle impostazioni correnti (se non esiste già)
      */
     private static function ensure_branding_backup(): void
+    {
+        // Prima controlla se c'è un backup da ripristinare
+        self::restore_settings_from_backup();
+        
+        // Poi crea un backup se necessario
+        self::create_backup_if_needed();
+    }
+
+    /**
+     * Ripristina automaticamente le impostazioni da un backup esistente se:
+     * - Esiste un backup valido
+     * - Le impostazioni correnti sono vuote o di default
+     */
+    private static function restore_settings_from_backup(): void
+    {
+        $backup_data = get_option('fp_exp_branding_backup', null);
+        
+        if (!$backup_data || !is_array($backup_data) || !isset($backup_data['settings'])) {
+            return;
+        }
+
+        $settings = $backup_data['settings'];
+        $restored_count = 0;
+
+        // Ripristina ogni impostazione solo se quella corrente è vuota o di default
+        foreach ($settings as $option_name => $backup_value) {
+            $current_value = get_option($option_name, null);
+            
+            // Ripristina solo se l'impostazione corrente è vuota o di default
+            if (self::should_restore_setting($option_name, $current_value, $backup_value)) {
+                $result = update_option($option_name, $backup_value);
+                if ($result) {
+                    $restored_count++;
+                }
+            }
+        }
+
+        // Log del ripristino automatico
+        if ($restored_count > 0) {
+            error_log(sprintf(
+                '[FP Experiences] Ripristino automatico completato: %d impostazioni ripristinate dal backup del %s',
+                $restored_count,
+                $backup_data['timestamp'] ?? 'data sconosciuta'
+            ));
+        }
+    }
+
+    /**
+     * Determina se un'impostazione dovrebbe essere ripristinata dal backup
+     */
+    private static function should_restore_setting(string $option_name, $current_value, $backup_value): bool
+    {
+        // Se l'impostazione corrente non esiste, ripristina
+        if ($current_value === null) {
+            return true;
+        }
+
+        // Se l'impostazione corrente è vuota e quella di backup no, ripristina
+        if (empty($current_value) && !empty($backup_value)) {
+            return true;
+        }
+
+        // Per impostazioni specifiche, controlla valori di default
+        $default_values = [
+            'fp_exp_enable_meeting_points' => 'no',
+            'fp_exp_enable_meeting_point_import' => 'no',
+            'fp_exp_debug_logging' => 'no',
+            'fp_exp_structure_email' => '',
+            'fp_exp_webmaster_email' => '',
+        ];
+
+        if (isset($default_values[$option_name]) && $current_value === $default_values[$option_name] && $backup_value !== $default_values[$option_name]) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Crea un backup delle impostazioni se non esiste già
+     */
+    private static function create_backup_if_needed(): void
     {
         // Controlla se esiste già un backup
         $existing_backup = get_option('fp_exp_branding_backup', null);

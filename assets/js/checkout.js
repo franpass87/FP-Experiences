@@ -151,7 +151,7 @@
                 });
             });
 
-            form.addEventListener('submit', (event) => {
+            form.addEventListener('submit', async (event) => {
                 event.preventDefault();
 
                 hideErrorSummary(errorSummary);
@@ -165,11 +165,65 @@
                 const formData = new FormData(form);
                 const payload = Object.fromEntries(formData.entries());
 
+                // Richiedi nonce fresco via AJAX per evitare problemi di cache
+                let freshNonce = form.getAttribute('data-nonce') || '';
+                
+                const config = (typeof window !== 'undefined' && window.fpExpConfig) ? window.fpExpConfig : {};
+                const restUrl = (config.restUrl || '').replace(/\/?$/, '/');
+                const ajaxUrl = config.ajaxUrl || '';
+                
+                // Prova REST prima
+                if (restUrl) {
+                    try {
+                        const headers = {};
+                        if (config.restNonce) {
+                            headers['X-WP-Nonce'] = config.restNonce;
+                        }
+                        
+                        const res = await fetch(restUrl + 'checkout/nonce', {
+                            method: 'GET',
+                            headers,
+                            credentials: 'same-origin',
+                        });
+                        
+                        if (res.ok) {
+                            const data = await res.json();
+                            if (data && data.nonce) {
+                                freshNonce = data.nonce;
+                            }
+                        }
+                    } catch (e) {
+                        // Ignora e prova fallback AJAX
+                    }
+                }
+                
+                // Fallback AJAX se REST fallisce o nonce ancora vuoto
+                if (!freshNonce && ajaxUrl) {
+                    try {
+                        const fd = new FormData();
+                        fd.set('action', 'fp_exp_get_nonce');
+                        
+                        const res = await fetch(ajaxUrl, {
+                            method: 'POST',
+                            credentials: 'same-origin',
+                            body: fd,
+                        });
+                        
+                        const data = await res.json();
+                        if (data && data.success && data.data && data.data.nonce) {
+                            freshNonce = data.data.nonce;
+                        }
+                    } catch (e) {
+                        // Ultimo fallback: usa il nonce dall'HTML se disponibile
+                        console.warn('FP-Exp: Could not fetch fresh nonce, using cached one');
+                    }
+                }
+
                 form.dispatchEvent(new CustomEvent('fpExpCheckoutSubmit', {
                     bubbles: true,
                     detail: {
                         payload,
-                        nonce: form.getAttribute('data-nonce'),
+                        nonce: freshNonce,
                     },
                 }));
             });

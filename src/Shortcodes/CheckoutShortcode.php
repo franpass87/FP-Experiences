@@ -96,7 +96,7 @@ final class CheckoutShortcode extends BaseShortcode
 
         return [
             'theme' => $theme,
-            'nonce' => wp_create_nonce('fp-exp-checkout'),
+            'nonce' => '', // NON generare nonce qui - verrà richiesto via AJAX per evitare problemi di cache
             'locale' => get_locale(),
             'strings' => $strings,
             'currency' => get_option('woocommerce_currency', 'EUR'),

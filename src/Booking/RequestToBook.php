@@ -88,7 +88,18 @@ final class RequestToBook
 
     public function check_rtb_permission(WP_REST_Request $request): bool
     {
-        return Helpers::verify_rest_nonce($request, 'fp-exp-rtb');
+        // Verifica nonce nell'header
+        if (Helpers::verify_rest_nonce($request, 'fp-exp-rtb')) {
+            return true;
+        }
+
+        // In alternativa verifica il nonce nel body della richiesta
+        $nonce = $request->get_param('nonce');
+        if (is_string($nonce) && $nonce && wp_verify_nonce($nonce, 'fp-exp-rtb')) {
+            return true;
+        }
+
+        return false;
     }
 
     /**

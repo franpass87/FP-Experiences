@@ -126,7 +126,9 @@ final class SettingsPage
                 'tab' => $slug,
             ], admin_url('admin.php'));
             $classes = 'nav-tab' . ($active_tab === $slug ? ' nav-tab-active' : '');
-            echo '<a class="' . esc_attr($classes) . '" href="' . esc_attr($url) . '">' . esc_html($label) . '</a>';
+            // Allow dashicons spans in tab labels
+            $allowed_html = ['span' => ['class' => []]];
+            echo '<a class="' . esc_attr($classes) . '" href="' . esc_attr($url) . '">' . wp_kses($label, $allowed_html) . '</a>';
         }
         echo '</div>';
 
@@ -147,6 +149,7 @@ final class SettingsPage
                 settings_fields('fp_exp_settings_branding');
                 do_settings_sections('fp_exp_settings_branding');
                 $this->render_branding_contrast();
+                $this->render_preview_notice();
             } elseif ('gift' === $active_tab) {
                 settings_fields('fp_exp_settings_gift');
                 do_settings_sections('fp_exp_settings_gift');
@@ -205,6 +208,15 @@ final class SettingsPage
             FP_EXP_PLUGIN_URL . $admin_js,
             ['wp-api-fetch', 'wp-i18n'],
             Helpers::asset_version($admin_js),
+            true
+        );
+
+        // Toast notifications system
+        wp_enqueue_script(
+            'fp-exp-toast',
+            FP_EXP_PLUGIN_URL . 'assets/js/admin/toast.js',
+            [],
+            Helpers::asset_version('assets/js/admin/toast.js'),
             true
         );
 
@@ -1210,16 +1222,16 @@ final class SettingsPage
     private function get_tabs(): array
     {
         return [
-            'general' => esc_html__('General', 'fp-experiences'),
-            'gift' => esc_html__('Gift', 'fp-experiences'),
-            'branding' => esc_html__('Branding', 'fp-experiences'),
-            'booking' => esc_html__('Booking Rules', 'fp-experiences'),
-            'calendar' => esc_html__('Calendar', 'fp-experiences'),
-            'tracking' => esc_html__('Tracking', 'fp-experiences'),
-            'rtb' => esc_html__('RTB', 'fp-experiences'),
-            'listing' => esc_html__('Vetrina', 'fp-experiences'),
-            'tools' => esc_html__('Tools', 'fp-experiences'),
-            'logs' => esc_html__('Logs', 'fp-experiences'),
+            'general' => '<span class="dashicons dashicons-admin-settings"></span> ' . esc_html__('General', 'fp-experiences'),
+            'gift' => '<span class="dashicons dashicons-tickets-alt"></span> ' . esc_html__('Gift', 'fp-experiences'),
+            'branding' => '<span class="dashicons dashicons-art"></span> ' . esc_html__('Branding', 'fp-experiences'),
+            'booking' => '<span class="dashicons dashicons-calendar-alt"></span> ' . esc_html__('Booking Rules', 'fp-experiences'),
+            'calendar' => '<span class="dashicons dashicons-calendar"></span> ' . esc_html__('Calendar', 'fp-experiences'),
+            'tracking' => '<span class="dashicons dashicons-chart-line"></span> ' . esc_html__('Tracking', 'fp-experiences'),
+            'rtb' => '<span class="dashicons dashicons-email"></span> ' . esc_html__('RTB', 'fp-experiences'),
+            'listing' => '<span class="dashicons dashicons-list-view"></span> ' . esc_html__('Vetrina', 'fp-experiences'),
+            'tools' => '<span class="dashicons dashicons-admin-tools"></span> ' . esc_html__('Tools', 'fp-experiences'),
+            'logs' => '<span class="dashicons dashicons-media-text"></span> ' . esc_html__('Logs', 'fp-experiences'),
         ];
     }
 
@@ -2708,6 +2720,14 @@ final class SettingsPage
         $value = $this->extract_nested_value($settings, $field['key']);
         $name = $this->build_input_name('fp_exp_tracking', $field['key']);
 
+        // Show status badge for key tracking fields
+        if (in_array($field['key'], ['ga4.enabled', 'meta_pixel.enabled', 'google_ads.enabled', 'clarity.enabled'], true)) {
+            $is_enabled = !empty($value);
+            $status_class = $is_enabled ? 'active' : 'inactive';
+            $status_text = $is_enabled ? esc_html__('Attivo', 'fp-experiences') : esc_html__('Non configurato', 'fp-experiences');
+            echo '<span class="fp-exp-integration-status fp-exp-integration-status--' . esc_attr($status_class) . '">' . $status_text . '</span> ';
+        }
+
         if ('checkbox' === $field['type']) {
             $checked = ! empty($value);
             echo '<label><input type="checkbox" name="' . esc_attr($name) . '" value="1" ' . checked($checked, true, false) . ' /> ' . esc_html__('Enabled', 'fp-experiences') . '</label>';
@@ -2731,6 +2751,20 @@ final class SettingsPage
         $value = $this->extract_nested_value($settings, $field['key']);
         $name = $this->build_input_name('fp_exp_brevo', $field['key']);
 
+        // Show status badge for Brevo enabled field
+        if ($field['key'] === 'enabled') {
+            $is_enabled = !empty($value);
+            $has_api_key = !empty($settings['api_key'] ?? '');
+            
+            if ($is_enabled && $has_api_key) {
+                echo '<span class="fp-exp-integration-status fp-exp-integration-status--active">' . esc_html__('Attivo', 'fp-experiences') . '</span> ';
+            } elseif ($is_enabled && !$has_api_key) {
+                echo '<span class="fp-exp-integration-status fp-exp-integration-status--warning">' . esc_html__('API key mancante', 'fp-experiences') . '</span> ';
+            } else {
+                echo '<span class="fp-exp-integration-status fp-exp-integration-status--inactive">' . esc_html__('Non configurato', 'fp-experiences') . '</span> ';
+            }
+        }
+
         if ('checkbox' === $field['type']) {
             $checked = ! empty($value);
             echo '<label><input type="checkbox" name="' . esc_attr($name) . '" value="1" ' . checked($checked, true, false) . ' /> ' . esc_html__('Enabled', 'fp-experiences') . '</label>';
@@ -2752,6 +2786,20 @@ final class SettingsPage
         $settings = $this->get_calendar_settings();
         $value = $this->extract_nested_value($settings, $field['key']);
         $name = $this->build_input_name('fp_exp_google_calendar', $field['key']);
+
+        // Show status badge for Google Calendar enabled
+        if ($field['key'] === 'enabled') {
+            $is_enabled = !empty($value);
+            $has_credentials = !empty($settings['credentials_json'] ?? '');
+            
+            if ($is_enabled && $has_credentials) {
+                echo '<span class="fp-exp-integration-status fp-exp-integration-status--active">' . esc_html__('Connesso', 'fp-experiences') . '</span> ';
+            } elseif ($is_enabled && !$has_credentials) {
+                echo '<span class="fp-exp-integration-status fp-exp-integration-status--warning">' . esc_html__('Credenziali mancanti', 'fp-experiences') . '</span> ';
+            } else {
+                echo '<span class="fp-exp-integration-status fp-exp-integration-status--inactive">' . esc_html__('Disabilitato', 'fp-experiences') . '</span> ';
+            }
+        }
 
         if ('calendar_select' === $field['type']) {
             $choices = $this->get_calendar_choices();
@@ -3701,5 +3749,45 @@ final class SettingsPage
         update_option('fp_exp_google_calendar', $settings, false);
 
         return $settings['access_token'];
+    }
+
+    /**
+     * Renders preview notice for branding settings
+     */
+    private function render_preview_notice(): void
+    {
+        // Get a published experience for preview
+        $experiences = get_posts([
+            'post_type' => 'fp_experience',
+            'post_status' => 'publish',
+            'posts_per_page' => 1,
+            'orderby' => 'date',
+            'order' => 'DESC',
+        ]);
+
+        if (empty($experiences)) {
+            echo '<div class="fp-exp-preview-notice">';
+            echo '<p>';
+            echo '<span class="dashicons dashicons-info"></span> ';
+            echo esc_html__('Crea un\'esperienza per vedere l\'anteprima del branding.', 'fp-experiences');
+            echo ' <a href="' . esc_url(admin_url('post-new.php?post_type=fp_experience')) . '">' . esc_html__('Crea ora', 'fp-experiences') . ' →</a>';
+            echo '</p>';
+            echo '</div>';
+            return;
+        }
+
+        $experience = $experiences[0];
+        $preview_url = get_permalink($experience);
+
+        echo '<div class="fp-exp-preview-notice fp-exp-preview-notice--success">';
+        echo '<p>';
+        echo '<span class="dashicons dashicons-visibility"></span> ';
+        echo esc_html__('Visualizza le modifiche al branding:', 'fp-experiences');
+        echo ' <a href="' . esc_url($preview_url) . '" target="_blank" class="fp-exp-preview-link">';
+        echo esc_html__('Anteprima Esperienza', 'fp-experiences');
+        echo ' <span class="dashicons dashicons-external"></span>';
+        echo '</a>';
+        echo '</p>';
+        echo '</div>';
     }
 }

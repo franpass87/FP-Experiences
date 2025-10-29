@@ -35,6 +35,7 @@ final class ExperienceCPT
         add_action('init', [$this, 'register_post_type']);
         add_action('init', [$this, 'register_taxonomies']);
         add_action('init', [$this, 'register_meta']);
+        add_filter('post_row_actions', [$this, 'add_quick_actions'], 10, 2);
     }
 
     /**
@@ -115,11 +116,14 @@ final class ExperienceCPT
     public function register_meta(): void
     {
         foreach ($this->get_meta_definitions() as $key => $definition) {
+            // Set appropriate default value based on type if not explicitly defined
+            $default = $definition['default'] ?? $this->get_default_for_type($definition['type']);
+
             $args = [
                 'single' => true,
                 'type' => $definition['type'],
                 'auth_callback' => '__return_true',
-                'default' => $definition['default'] ?? null,
+                'default' => $default,
                 'sanitize_callback' => function ($value) use ($definition) {
                     return $this->sanitize_meta_value($value, $definition['type'], $definition['items'] ?? null);
                 },
@@ -146,14 +150,33 @@ final class ExperienceCPT
     }
 
     /**
+     * Returns the appropriate default value for a given meta type.
+     *
+     * @param string $type The meta field type
+     * @return mixed The default value appropriate for the type
+     */
+    private function get_default_for_type(string $type)
+    {
+        return match ($type) {
+            'string' => '',
+            'integer' => 0,
+            'number' => 0.0,
+            'boolean' => false,
+            'array' => [],
+            'object' => [],
+            default => null,
+        };
+    }
+
+    /**
      * @return array<string, string>
      */
     private function get_capabilities(): array
     {
+        // Note: 'edit_post', 'read_post', 'delete_post' are meta-capabilities
+        // handled automatically by WordPress when map_meta_cap is true.
+        // They should NOT be specified here to avoid "incorrectly called" notices.
         return [
-            'edit_post' => 'edit_fp_experience',
-            'read_post' => 'read_fp_experience',
-            'delete_post' => 'delete_fp_experience',
             'edit_posts' => 'edit_fp_experiences',
             'edit_others_posts' => 'edit_others_fp_experiences',
             'publish_posts' => 'publish_fp_experiences',
@@ -486,5 +509,49 @@ final class ExperienceCPT
             default:
                 return 'string';
         }
+    }
+
+    /**
+     * Add quick actions to experience post rows
+     *
+     * @param array<string, string> $actions
+     * @param \WP_Post $post
+     * @return array<string, string>
+     */
+    public function add_quick_actions(array $actions, $post): array
+    {
+        if ($post->post_type !== 'fp_experience') {
+            return $actions;
+        }
+
+        $new_actions = [];
+
+        // Add "View Live" first
+        if ($post->post_status === 'publish') {
+            $new_actions['view_live'] = '<a href="' . esc_url(get_permalink($post)) . '" target="_blank" aria-label="' . esc_attr__('Visualizza esperienza pubblicata', 'fp-experiences') . '">' . esc_html__('👁️ Vedi Live', 'fp-experiences') . '</a>';
+        }
+
+        // Keep default Edit
+        if (isset($actions['edit'])) {
+            $new_actions['edit'] = $actions['edit'];
+        }
+
+        // Add "Calendar" link
+        $new_actions['calendar'] = '<a href="' . esc_url(admin_url('admin.php?page=fp_exp_calendar')) . '" aria-label="' . esc_attr__('Vai al calendario', 'fp-experiences') . '">' . esc_html__('📅 Calendario', 'fp-experiences') . '</a>';
+
+        // Add "Duplicate" (if user can)
+        if (current_user_can('edit_fp_experiences')) {
+            $new_actions['duplicate'] = '<a href="#" data-post-id="' . esc_attr($post->ID) . '" class="fp-exp-duplicate-experience" aria-label="' . esc_attr__('Duplica esperienza', 'fp-experiences') . '">' . esc_html__('📋 Duplica', 'fp-experiences') . '</a>';
+        }
+
+        // Keep trash/delete
+        if (isset($actions['trash'])) {
+            $new_actions['trash'] = $actions['trash'];
+        }
+        if (isset($actions['delete'])) {
+            $new_actions['delete'] = $actions['delete'];
+        }
+
+        return $new_actions;
     }
 }

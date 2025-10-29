@@ -227,8 +227,10 @@ final class Plugin
 
         $this->booted = true;
 
+        // Load translations early to support admin_menu hooks
+        $this->load_textdomain();
+
         add_action('plugins_loaded', [$this, 'maybe_update_roles'], 5);
-        add_action('plugins_loaded', [$this, 'load_textdomain']);
         add_action('plugins_loaded', [$this, 'register_database_tables']);
         add_action('admin_init', [$this, 'maybe_update_roles']);
 

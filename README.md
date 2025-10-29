@@ -1,448 +1,316 @@
-# FP Experiences - WordPress Plugin
+# 🎫 FP Experiences
 
-> Plugin WordPress professionale per la gestione di esperienze turistiche, prenotazioni online, e calendario disponibilità.
+> Plugin WordPress per booking di esperienze turistiche stile GetYourGuide
 
-[![Version](https://img.shields.io/badge/version-0.3.7-blue.svg)](docs/CHANGELOG.md)
-[![WordPress](https://img.shields.io/badge/WordPress-6.2%2B-blue.svg)](https://wordpress.org/)
-[![PHP](https://img.shields.io/badge/PHP-8.0%2B-purple.svg)](https://php.net/)
-[![License](https://img.shields.io/badge/license-GPL--2.0%2B-green.svg)](LICENSE)
-[![Quality](https://img.shields.io/badge/code%20quality-excellent-brightgreen.svg)](#quality-assurance)
+[![Version](https://img.shields.io/badge/version-0.3.7-blue.svg)](https://github.com/franpass87/FP-Experiences)
+[![WordPress](https://img.shields.io/badge/wordpress-6.2+-green.svg)](https://wordpress.org/)
+[![PHP](https://img.shields.io/badge/php-8.0+-purple.svg)](https://www.php.net/)
 
 ---
 
 ## 📋 Indice
 
-- [Caratteristiche](#-caratteristiche)
-- [Requisiti](#-requisiti)
-- [Installazione](#-installazione)
-- [Configurazione Rapida](#-configurazione-rapida)
-- [Documentazione](#-documentazione)
-- [Build e Sviluppo](#-build-e-sviluppo)
-- [Deployment Automatico](#-deployment-automatico)
-- [Changelog](#-changelog)
-- [Supporto](#-supporto)
+- [Caratteristiche](#caratteristiche)
+- [Requisiti](#requisiti)
+- [Installazione](#installazione)
+- [Configurazione Rapida](#configurazione-rapida)
+- [Struttura Plugin](#struttura-plugin)
+- [Documentazione](#documentazione)
+- [Sviluppo](#sviluppo)
+- [Licenza](#licenza)
 
 ---
 
 ## ✨ Caratteristiche
 
-### 🎯 Core Features
+### **Core Features**
+- 🎫 **Custom Post Type** - Esperienze con meta fields completi
+- 📅 **Calendario Dinamico** - Slot, ricorrenze, eccezioni
+- 🛒 **Carrello Isolato** - Non usa WooCommerce cart
+- 💳 **Checkout Dedicato** - Form custom + integrazione pagamenti
+- 📧 **Email Automatiche** - Conferme, reminder, modifiche
+- 🎁 **Gift Vouchers** - Buoni regalo acquistabili e riscattabili
 
-- **📅 Sistema Calendario Avanzato**
-  - Ricorrenze settimanali con time slots
-  - Generazione automatica slot per 12 mesi
-  - Capacità e buffer configurabili
-  - On-the-fly availability via REST API
+### **Integrazioni**
+- ✉️ **Brevo** - Email marketing e automazioni
+- 📊 **Google Analytics 4** - Tracking eventi
+- 📅 **Google Calendar** - Sincronizzazione automatica
+- 🎯 **Meta Pixel** - Tracking conversioni Facebook
+- 📈 **Google Ads** - Conversion tracking
+- 🔍 **Microsoft Clarity** - Session recording
 
-- **🎟️ Gestione Prenotazioni**
-  - Checkout WooCommerce integrato
-  - Request-to-Book con approvazione manuale
-  - Biglietti multipli per esperienza
-  - Add-ons opzionali con immagini
+### **Frontend**
+- 📱 **Responsive** - Mobile-first design
+- ⚡ **Performance** - Lazy load, caching, ottimizzazioni
+- ♿ **Accessibile** - WCAG 2.1 compliant
+- 🎨 **Tematizzabile** - Branding customizzabile
+- 🧩 **Elementor** - 6 widget dedicati
+- 📝 **Shortcodes** - 8 shortcode disponibili
 
-- **📍 Meeting Points**
-  - Gestione locations con coordinate GPS
-  - Import CSV in massa
-  - Integrazione Google Maps
-  - Multiple locations per esperienza
-
-- **🎁 Gift Vouchers**
-  - Acquisto buoni regalo
-  - Redemption workflow completo
-  - Reminder automatici pre-scadenza
-  - Gestione validità e estensioni
-
-### 🔧 Admin Experience
-
-- **🎨 Interfaccia Moderna**
-  - UI stile GetYourGuide
-  - Gallery manager con drag & drop
-  - Badge configurabili per esperienze
-  - Branding personalizzabile
-
-- **📊 Dashboard e Analytics**
-  - Calendario admin con filtri
-  - Console check-in prenotazioni
-  - Gestione ordini e richieste
-  - Log system completo
-
-- **📧 Email Transazionali**
-  - Template personalizzabili
-  - Integrazione Brevo
-  - Placeholder dinamici
-  - Preview live admin
-
-### 🔌 Integrazioni
-
-- **WooCommerce** - Checkout e pagamenti
-- **Elementor** - Widget dedicati
-- **Google Calendar** - Sync bidirezionale
-- **Brevo** - Email marketing
-- **Google Analytics 4** - Tracking avanzato
-- **Meta Pixel** - Conversioni Facebook
-- **Google Ads** - Tracking conversioni
-- **Microsoft Clarity** - Heatmaps e sessioni
+### **Backend**
+- 🎯 **Setup Guidato** - Checklist configurazione
+- 📊 **Dashboard** - Metriche e panoramica
+- 🛠️ **Tools** - Utility manutenzione
+- 📝 **Logs** - Sistema logging integrato
+- 🔒 **Sicuro** - Capabilities, nonce, sanitizzazione
+- 🌍 **Multilingua** - Pronto per traduzioni
 
 ---
 
-## 💻 Requisiti
+## 📦 Requisiti
 
-### Ambiente
-
-| Requisito | Versione Minima | Consigliata |
-|-----------|-----------------|-------------|
-| **PHP** | 8.0 | 8.2+ |
-| **WordPress** | 6.2 | 6.4+ |
-| **MySQL** | 5.7 | 8.0+ |
-| **WooCommerce** | 7.0 | 8.0+ |
-
-### Plugin Dipendenze
-
-- **WooCommerce** (richiesto) - Per gestione checkout e ordini
-- **Elementor** (opzionale) - Per usare i widget dedicati
-
-### Estensioni PHP
-
-- `json` - Gestione dati JSON
-- `curl` - Chiamate HTTP/API
-- `mysqli` - Database
-- `mbstring` - Gestione stringhe multibyte
+| Requisito | Versione | Note |
+|-----------|----------|------|
+| **WordPress** | ≥ 6.2 | Testato fino a 6.7 |
+| **PHP** | ≥ 8.0 | Raccomandato 8.1+ |
+| **MySQL** | ≥ 5.7 | O MariaDB ≥ 10.2 |
+| **WooCommerce** | ≥ 7.0 | Per pagamenti (opzionale) |
 
 ---
 
 ## 🚀 Installazione
 
-### Metodo 1: Upload ZIP (Consigliato)
-
-1. Scarica l'ultimo release da [GitHub Releases](https://github.com/your-repo/releases)
-2. WordPress Admin → Plugin → Aggiungi nuovo → Carica plugin
-3. Seleziona il file ZIP e clicca "Installa ora"
-4. Attiva il plugin
-
-### Metodo 2: FTP/SFTP
-
-1. Estrai il file ZIP
-2. Carica la cartella `fp-experiences` in `/wp-content/plugins/`
-3. Vai su WordPress Admin → Plugin
-4. Attiva "FP Experiences"
-
-### Metodo 3: WP-CLI
+### **Via Git (Sviluppo)**
 
 ```bash
-wp plugin install fp-experiences.zip --activate
+cd wp-content/plugins
+git clone https://github.com/franpass87/FP-Experiences.git
+cd FP-Experiences
+composer install
+npm install
 ```
+
+### **Via ZIP (Produzione)**
+
+1. Scarica l'ultimo release da GitHub
+2. Carica via WP Admin → Plugin → Aggiungi Nuovo
+3. Attiva il plugin
 
 ---
 
 ## ⚙️ Configurazione Rapida
 
-### 1. Setup Iniziale
+### **1. Setup Iniziale**
 
-Dopo l'attivazione, il plugin crea automaticamente:
-- ✅ Tabelle database necessarie
-- ✅ Ruoli e capability (`fp_operator`, `fp_manager`)
-- ✅ Pagine WordPress (se configurate)
-- ✅ Tassonomie custom
-
-### 2. Impostazioni Base
-
-**FP Experiences → Impostazioni → Generali**
+Dopo l'attivazione, vai alla Dashboard:
 ```
-✓ Imposta timezone
-✓ Configura ruoli e permessi
-✓ Abilita modulo meeting points
-✓ Imposta pagine sistema
+WP Admin → FP Experiences → Dashboard
 ```
 
-**Impostazioni → Branding**
+Segui la **Setup Checklist** che ti guida attraverso:
+1. ✅ Crea la tua prima esperienza
+2. ✅ Configura calendario disponibilità
+3. ✅ Configura metodo di pagamento
+4. ✅ Crea pagina Checkout
+5. ✅ Configura email (opzionale)
+
+### **2. Crea Prima Esperienza**
+
 ```
-✓ Logo e colori brand
-✓ Colori sezioni
-✓ Icone Font Awesome
-```
-
-### 3. Prima Esperienza
-
-1. **FP Experiences → Aggiungi nuova esperienza**
-2. **Tab Dettagli:**
-   - Titolo e descrizione
-   - Gallery immagini (drag & drop)
-   - Lingue disponibili
-   - Badge showcase
-
-3. **Tab Prezzi:**
-   - Aggiungi tipi biglietto
-   - Imposta prezzi base
-   - Configura add-ons opzionali
-
-4. **Tab Calendario:**
-   - Seleziona giorni settimana
-   - Aggiungi slot orari
-   - Imposta capacità generale
-   - Configura buffer temporali
-
-5. **Tab Meeting Point:**
-   - Seleziona location primaria
-   - Aggiungi locations alternative
-
-6. **Pubblica l'esperienza**
-
-Gli slot vengono generati automaticamente al salvataggio!
-
-### 4. Shortcode Disponibili
-
-**Pagina esperienza singola:**
-```
-[fp_exp_page id="123"]
+WP Admin → FP Experiences → Nuova Esperienza
 ```
 
-**Archivio esperienze:**
+Compila:
+- Titolo, descrizione, immagine
+- Prezzi e ticket types
+- Meeting point
+- Schedule rules (calendario)
+- FAQ e dettagli
+
+### **3. Crea Pagina Checkout**
+
 ```
-[fp_exp_simple_archive]
+WP Admin → Pagine → Aggiungi Nuova
+Titolo: Checkout
+Contenuto: [fp_exp_checkout]
+Pubblica
 ```
 
-**Meeting points:**
+### **4. Configura Pagamenti**
+
 ```
-[fp_exp_meeting_points id="123"]
+WP Admin → WooCommerce → Impostazioni → Pagamenti
+Abilita: Stripe, PayPal, o altro gateway
 ```
 
-**Riscatto gift voucher:**
+### **5. Inserisci Esperienza nel Sito**
+
+Usa shortcode o Elementor:
+
 ```
-[fp_exp_gift_redeem]
+[fp_exp_page id="123"]          - Pagina esperienza completa
+[fp_exp_list]                   - Lista esperienze
+[fp_exp_calendar]               - Calendario standalone
+```
+
+---
+
+## 📁 Struttura Plugin
+
+```
+FP-Experiences/
+├── 📄 fp-experiences.php       # File principale
+├── 📄 composer.json            # Dipendenze PHP
+├── 📄 package.json             # Dipendenze JS
+├── 📄 README.md                # Questo file
+│
+├── 📂 src/                     # Codice sorgente PHP (PSR-4)
+│   ├── Plugin.php              # Classe principale
+│   ├── Activation.php          # Hook attivazione
+│   ├── Admin/                  # Interfaccia backend
+│   ├── Api/                    # REST API endpoints
+│   ├── Booking/                # Sistema prenotazioni
+│   ├── PostTypes/              # CPT Experiences & Meeting Points
+│   ├── Shortcodes/             # Shortcode frontend
+│   ├── Elementor/              # Widget Elementor
+│   ├── Integrations/           # Brevo, GA4, Calendar, etc.
+│   └── Utils/                  # Helper e utility
+│
+├── 📂 assets/                  # Asset frontend/backend
+│   ├── css/                    # Stili
+│   ├── js/                     # JavaScript
+│   └── svg/                    # Icone
+│
+├── 📂 templates/               # Template PHP
+│   ├── admin/                  # Template backend
+│   ├── emails/                 # Template email
+│   └── front/                  # Template frontend
+│
+├── 📂 docs/                    # Documentazione
+│   ├── admin/                  # Guide amministratore
+│   ├── developer/              # Guide sviluppatore
+│   ├── features/               # Documentazione feature
+│   ├── bug-fixes/              # Fix applicati
+│   ├── releases/               # Release notes
+│   ├── ux/                     # Miglioramenti UX
+│   ├── deployment/             # Deploy e setup
+│   ├── verification/           # Test e QA
+│   └── technical/              # Documentazione tecnica
+│
+├── 📂 tools/                   # Script utility
+│   ├── bump-version.php        # Versioning
+│   └── wp-*.sh                 # Script WordPress CLI
+│
+├── 📂 tests/                   # Unit tests
+│   └── Booking/                # Test modulo booking
+│
+└── 📂 languages/               # Traduzioni
+    └── fp-experiences.pot      # Template traduzioni
 ```
 
 ---
 
 ## 📚 Documentazione
 
-La documentazione completa è organizzata in **[docs/](docs/README.md)**:
+### **Per Amministratori**
+- [Guida Rapida](docs/admin/QUICK-START.md) - Primi passi
+- [Menu Admin](docs/admin/ADMIN-MENU.md) - Panoramica menu
+- [Importer CSV](docs/admin/IMPORTER-COMPLETO.md) - Import esperienze
 
-### Per Amministratori
-- 📖 **[Admin Guide](docs/admin/ADMIN-GUIDE.md)** - Guida completa interfaccia admin
-- 🗺️ **[Menu Admin](docs/admin/ADMIN-MENU.md)** - Struttura navigazione
-- 📥 **[Guida Importer](docs/admin/IMPORTER-COMPLETO.md)** - Import CSV esperienze
+### **Per Sviluppatori**
+- [Quick Start Dev](docs/developer/QUICK-START-DEV.md) - Setup sviluppo
+- [Playbook](docs/developer/PLAYBOOK.md) - Best practices
+- [Frontend Guide](docs/developer/FRONTEND-MODULAR-GUIDE.md) - Moduli frontend
 
-### Per Sviluppatori
-- 💻 **[Frontend Modular Guide](docs/developer/FRONTEND-MODULAR-GUIDE.md)** - API JavaScript
-- 📅 **[Sistema Calendario](docs/developer/CALENDAR-SIMPLIFIED.md)** - Architettura calendario
-- 🛠️ **[Playbook](docs/developer/PLAYBOOK.md)** - Workflow sviluppo
+### **Feature & UX**
+- [Miglioramenti UX](docs/ux/UX-IMPROVEMENTS-COMPLETE.md) - Tutti i miglioramenti
+- [Settings UI](docs/ux/SETTINGS-UI-IMPROVEMENTS.md) - Design settings
+- [Riepilogo Finale](docs/ux/FINAL-SUMMARY.md) - Summary completo
 
-### Documentazione Tecnica
-- 🔍 **[Calendar System](docs/technical/CALENDAR-SYSTEM.md)** - Verifica sistema calendario
-- 📊 **[Audit Completo](docs/technical/AUDIT-COMPLETO.md)** - Sicurezza e performance
-- ✅ **[Production Readiness](docs/technical/PRODUCTION-READINESS-REPORT.md)** - Checklist
+### **Technical**
+- [Architettura](docs/technical/MODULAR-ARCHITECTURE.md) - Struttura codice
+- [Security](docs/technical/SECURITY_FIXES_APPLIED.md) - Fix sicurezza
+- [Changelog](docs/CHANGELOG.md) - Storia modifiche
 
 ---
 
-## 🛠️ Build e Sviluppo
+## 🛠️ Sviluppo
 
-### Setup Ambiente Dev
+### **Setup Ambiente**
 
 ```bash
 # Clone repository
-git clone https://github.com/your-repo/fp-experiences.git
-cd fp-experiences
+git clone https://github.com/franpass87/FP-Experiences.git
+cd FP-Experiences
 
-# Installa dipendenze
+# Install dependencies
 composer install
 npm install
+
+# Build assets
+npm run build
 ```
 
-### Build Plugin
+### **Build Commands**
 
 ```bash
-# Build con bump version automatico
-bash build.sh --bump=patch    # 0.3.4 → 0.3.5
-bash build.sh --bump=minor    # 0.3.4 → 0.4.0
-bash build.sh --bump=major    # 0.3.4 → 1.0.0
-
-# Build con versione specifica
-bash build.sh --set-version=1.0.0
-
-# Build semplice (senza bump)
-bash build.sh
+npm run build           # Build production
+npm run dev             # Build development
+npm run watch           # Watch mode
 ```
 
-Il package finale viene creato in `/build/fp-experiences-{version}.zip`
-
-### Testing
+### **Testing**
 
 ```bash
-# Syntax check PHP
-bash tools/run-php-syntax-check.sh
-
-# Verifica calendario
-bash tools/verification/verify-calendar-system.sh
-
-# Test flusso dati
-php tools/verification/test-calendar-data-flow.php
-
-# PHPUnit (se configurato)
+# PHP Unit tests
 composer test
-```
 
-### Linting
+# PHP Syntax check
+./tools/run-php-syntax-check.sh
 
-```bash
-# PHP CodeSniffer
-composer run phpcs
-
-# ESLint
-npm run lint
-
-# Fix automatico
-composer run phpcbf
-npm run lint:fix
+# WordPress CLI tests
+./tools/wp-qa-all.sh
 ```
 
 ---
 
-## 🚀 Deployment Automatico
+## 🎨 Shortcodes Disponibili
 
-Il plugin è configurato con **GitHub Actions** per deployment automatico su merge.
+| Shortcode | Descrizione | Parametri |
+|-----------|-------------|-----------|
+| `[fp_exp_page]` | Pagina esperienza completa | `id`, `sections`, `theme` |
+| `[fp_exp_list]` | Lista esperienze | `limit`, `category`, `layout` |
+| `[fp_exp_calendar]` | Calendario interattivo | `experience_id`, `month` |
+| `[fp_exp_checkout]` | Form checkout | - |
+| `[fp_exp_widget]` | Widget esperienza | `id`, `style` |
+| `[fp_exp_archive]` | Archivio esperienze | `layout`, `filters` |
+| `[fp_exp_gift_redeem]` | Riscatta voucher | - |
 
-### Cosa Succede Automaticamente
-
-Ogni volta che fai un **merge su `main`**:
-
-1. ✅ GitHub Actions crea la build del plugin
-2. ✅ Viene creata una release su GitHub con il file ZIP
-3. ✅ (Opzionale) Il plugin viene deployato automaticamente su WordPress
-
-### Setup Rapido (5 minuti)
-
-#### Opzione A: GitHub Updater (CONSIGLIATO)
-
-1. Installa [GitHub Updater](https://github.com/afragen/github-updater) su WordPress
-2. Configura con il tuo repository
-3. ✅ WordPress si aggiorna automaticamente ad ogni release!
-
-#### Opzione B: Deploy Diretto SSH
-
-1. Configura i secrets su GitHub (vedi documentazione)
-2. Abilita `ENABLE_WP_DEPLOY=true`
-3. ✅ Deploy automatico via SSH ad ogni merge!
-
-### Aggiorna Versione
-
-```bash
-# Usa lo script helper
-.github/scripts/update-version.sh 0.3.7
-
-# Poi commit e push su main
-git commit -am "Bump version to 0.3.7"
-git push origin main
-
-# GitHub Actions fa il resto! 🎉
-```
-
-### 📖 Documentazione Completa
-
-- 📘 **[Setup Rapido](DEPLOYMENT-SETUP.md)** - Configurazione in 5 minuti
-- 📗 **[Guida Completa](.github/DEPLOYMENT.md)** - Tutte le opzioni di deployment
-- 📙 **[Test Sistema](.github/QUICK-TEST.md)** - Come testare il deployment
-- 📕 **[Riepilogo](GITHUB-DEPLOYMENT-SUMMARY.md)** - Panoramica generale
-
-### Workflow Disponibili
-
-| Workflow | Trigger | Funzione |
-|----------|---------|----------|
-| `deploy-on-merge.yml` | Push su `main` | Build + Release + Deploy |
-| `build-zip.yml` | Push/tag | Solo build |
-| `build-plugin-zip.yml` | Push su main/tag | Build ZIP |
+**Documentazione completa:** [docs/admin/ADMIN-GUIDE.md](docs/admin/ADMIN-GUIDE.md)
 
 ---
 
-## 📝 Changelog
+## 🔌 Elementor Widgets
 
-Vedi **[CHANGELOG.md](docs/CHANGELOG.md)** per la cronologia completa.
-
-### [0.3.4] - 2025-01-27
-
-**Ottimizzazioni:**
-- ✨ Riorganizzazione completa documentazione
-- 📚 Nuova struttura docs/ con cartelle per pubblico
-- 🗂️ Archiviazione file obsoleti
-- 📖 Nuovo indice principale con navigazione migliorata
-- 🔍 Guide quick-start per admin e dev
-
-### [0.3.3] - 2025-01-27
-
-**Miglioramenti Admin:**
-- ✨ Filtraggio esperienza nel calendario admin
-- 🎨 UI/UX migliorata per check-in e gestione ordini
-- 📧 Potenziamento sezione email con layout moderno
-- 🔍 Logs avanzati con filtri e diagnostica
-- ♿ Accessibilità migliorata
-- 🇮🇹 Localizzazione italiana completa
-
-### [0.3.2] - 2025-01-26
-- Hero gallery manager con drag & drop
-- Lingue ed esperienza con preview badge
-- Biblioteca badge configurabile
-- Controlli branding estesi
-- Fix UI ticket e CTA sticky
-
-### [0.3.0] - 2025-09-30
-- Gift Your Experience workflow
-- Meeting point importer CSV
-- Pagine dedicate auto-generate
-- Simple archive layout
-- ISO language flags
-- Migrazione runner
+- **FP Experience List** - Griglia/lista esperienze
+- **FP Experience Widget** - Card singola esperienza
+- **FP Experience Calendar** - Calendario prenotazioni
+- **FP Experience Checkout** - Form checkout
+- **FP Experience Page** - Pagina completa
+- **FP Meeting Points** - Mappa punti d'incontro
 
 ---
 
-## 🆘 Supporto
+## 📊 REST API
 
-### Problemi Comuni
+**Namespace:** `/fp-exp/v1`
 
-**Calendario non mostra slot:**
-```
-✓ Verifica esperienza pubblicata
-✓ Controlla giorni settimana selezionati
-✓ Verifica time_slots configurati
-✓ Controlla capacità generale > 0
-```
+### **Principali Endpoint**
 
-**Modifiche non salvate:**
-```
-✓ Abilita WP_DEBUG
-✓ Controlla logs in wp-content/debug.log
-✓ Verifica permessi utente
-✓ Ispeziona Network tab browser
-```
+| Endpoint | Metodo | Descrizione |
+|----------|--------|-------------|
+| `/availability` | GET | Slot disponibili per data |
+| `/cart/set` | POST | Aggiungi al carrello |
+| `/cart/status` | GET | Stato carrello |
+| `/checkout` | POST | Finalizza prenotazione |
+| `/calendar/slots` | GET | Elenco slot calendario |
+| `/gift/purchase` | POST | Acquista voucher |
 
-**Errori REST API:**
-```
-✓ Verifica permalink settings
-✓ Controlla .htaccess
-✓ Testa endpoint con Postman
-✓ Verifica nonce e auth
-```
-
-### Debug Mode
-
-```php
-// wp-config.php
-define('WP_DEBUG', true);
-define('WP_DEBUG_LOG', true);
-define('WP_DEBUG_DISPLAY', false);
-define('SCRIPT_DEBUG', true);
-```
-
-### Risorse
-
-- 📖 **[Documentazione Completa](docs/README.md)**
-- 🐛 **[Issue Tracker](https://github.com/your-repo/issues)**
-- 💬 **[Discussions](https://github.com/your-repo/discussions)**
-- 📧 **Email:** support@formazionepro.it
+**Documentazione API:** [docs/technical/](docs/technical/)
 
 ---
 
 ## 🤝 Contribuire
-
-Contributi benvenuti! Per contribuire:
 
 1. Fork il repository
 2. Crea branch feature (`git checkout -b feature/AmazingFeature`)
@@ -450,23 +318,37 @@ Contributi benvenuti! Per contribuire:
 4. Push al branch (`git push origin feature/AmazingFeature`)
 5. Apri Pull Request
 
-### Linee Guida
+### **Coding Standards**
 
-- ✅ Segui PSR-12 per PHP
-- ✅ Usa ESLint per JavaScript
-- ✅ Scrivi test per nuove feature
-- ✅ Aggiorna documentazione
-- ✅ Mantieni retrocompatibilità
+- PSR-4 autoloading
+- PSR-12 coding style
+- WordPress Coding Standards (PHPCS)
+- PHPStan level 5
+
+---
+
+## 📝 Changelog
+
+Vedi [docs/CHANGELOG.md](docs/CHANGELOG.md) per la storia completa delle modifiche.
+
+### **v0.3.7+ (Corrente)**
+- ✅ Bug fix traduzioni WordPress 6.7+
+- ✅ Fix `register_meta` default values
+- ✅ Fix `map_meta_cap` capabilities
+- ✅ Setup checklist banner
+- ✅ Integration status badges
+- ✅ Toast notifications system
+- ✅ Empty states migliorati
+- ✅ UI/UX improvements completi
 
 ---
 
 ## 📄 Licenza
 
-Questo plugin è rilasciato sotto licenza **GPL v2 o successiva**.
+GPL v2 or later
 
 ```
-FP Experiences WordPress Plugin
-Copyright (C) 2024-2025 Formazione Pro
+Copyright (C) 2024 Francesco Passeri
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -476,75 +358,57 @@ the Free Software Foundation; either version 2 of the License, or
 
 ---
 
-## 👥 Credits
+## 👤 Autore
 
-**Sviluppato da:** [Formazione Pro](https://formazionepro.it)
-
-**Contributors:**
-- Development Team
-- QA Team
-- Documentation Team
+**Francesco Passeri**
+- Website: [francescopasseri.com](https://francescopasseri.com)
+- GitHub: [@franpass87](https://github.com/franpass87)
 
 ---
 
-## 🔗 Link Utili
+## 🆘 Supporto
 
-- **[Documentazione](docs/README.md)**
-- **[Changelog](docs/CHANGELOG.md)**
-- **[Release Notes](https://github.com/your-repo/releases)**
-- **[Roadmap](https://github.com/your-repo/projects)**
-
----
-
-## 🛡️ Quality Assurance
-
-### Recenti Bug Fix (v0.3.7)
-
-Questo release include importanti fix di sicurezza e stabilità:
-
-#### 🔴 Critico - Race Condition nel Booking
-- **Problema:** Possibile overbooking in scenari di alta concorrenza
-- **Soluzione:** Implementato double-check pattern con rollback automatico
-- **Impatto:** Previene overbooking al 99.9%+
-- **File:** `Orders.php`, `RequestToBook.php`, `Reservations.php`
-
-#### 🟡 Medio - Memory Leak JavaScript
-- **Problema:** Event listener `resize` non rimosso causava accumulo di memoria
-- **Soluzione:** Cleanup automatico con evento `beforeunload`
-- **Impatto:** Riduce consumo memoria in sessioni lunghe
-- **File:** `assets/js/front.js`
-
-#### 🟢 Basso - Console Logging
-- **Problema:** 32 istanze di console.log in produzione
-- **Soluzione:** Rimossi tutti i log di debug
-- **Impatto:** Migliora performance e non espone info interne
-- **File:** 6 file JavaScript
-
-### Security Audit
-
-✅ **Audit completo eseguito** (13 Ottobre 2025):
-- Nonce verification: 24 istanze ✅
-- Input sanitization: 150+ input ✅
-- Output escaping: 418 istanze ✅
-- SQL injection: 0 vulnerabilità ✅
-- XSS prevention: 100% sicuro ✅
-
-### Code Quality Metrics
-
-- **Linee analizzate:** ~51,000
-- **File verificati:** 147
-- **Bug trovati:** 3
-- **Bug risolti:** 3
-- **Success rate:** 100%
-- **Regressioni:** 0
-
-Per dettagli completi, vedi:
-- [Analisi Bug Completa](BUG_ANALYSIS_COMPLETE_2025-10-13.md)
-- [Fix Race Condition](BUG_FIX_RACE_CONDITION_IMPLEMENTED.md)
-- [Analisi Regressioni](REGRESSION_ANALYSIS.md)
+- 📖 **Documentazione:** [docs/](docs/)
+- 🐛 **Bug Reports:** [GitHub Issues](https://github.com/franpass87/FP-Experiences/issues)
+- 💬 **Discussioni:** [GitHub Discussions](https://github.com/franpass87/FP-Experiences/discussions)
 
 ---
 
-**Versione:** 0.3.7  
-**Ultimo aggiornamento:** 13 Ottobre 2025  
-**Status:** ✅ Production Ready - Quality Assured
+## 🎯 Use Case
+
+**Perfetto per:**
+- Tour operator locali
+- Guide turistiche
+- Esperienze enogastronomiche
+- Attività outdoor
+- Cooking class
+- Workshop creativi
+- Eventi privati
+
+**Ottimizzato per:**
+- Single business (1 cliente)
+- Poche esperienze (3-20)
+- Booking diretto dal sito
+- Gestione semplificata
+
+---
+
+## 🚀 Quick Start
+
+```bash
+# 1. Attiva plugin
+wp plugin activate FP-Experiences
+
+# 2. Vai alla Dashboard
+http://your-site.com/wp-admin/admin.php?page=fp_exp_dashboard
+
+# 3. Segui la Setup Checklist (5 step)
+
+# 4. Crea la tua prima esperienza
+
+# 5. Pubblica e accetta prenotazioni!
+```
+
+---
+
+**Fatto con ❤️ per semplificare il booking di esperienze**
