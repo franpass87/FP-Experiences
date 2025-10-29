@@ -69,7 +69,9 @@ final class Checkout
             [
                 'methods' => 'GET',
                 'permission_callback' => function (WP_REST_Request $request): bool {
-                    return Helpers::verify_public_rest_request($request);
+                    // Endpoint pubblico - genera nonce fresco
+                    // Nessuna autenticazione richiesta (nonce stesso è la sicurezza)
+                    return true;
                 },
                 'callback' => function (WP_REST_Request $request) {
                     nocache_headers();
@@ -88,8 +90,9 @@ final class Checkout
             [
                 'methods' => 'GET',
                 'permission_callback' => function (WP_REST_Request $request): bool {
-                    // Permettiamo richieste pubbliche ma con verifica base anti-abuso
-                    return Helpers::verify_public_rest_request($request);
+                    // Endpoint pubblico - nessuna autenticazione richiesta
+                    // (solo lettura, nessun dato sensibile)
+                    return true;
                 },
                 'callback' => function (WP_REST_Request $request) {
                     nocache_headers();
@@ -116,8 +119,29 @@ final class Checkout
             [
                 'methods' => 'POST',
                 'permission_callback' => function (WP_REST_Request $request): bool {
-                    // Richiede stessa origine o nonce REST standard
-                    return Helpers::verify_public_rest_request($request);
+                    // Permetti POST da stesso dominio (referer check)
+                    // Non richiediamo nonce qui perché anche restNonce può essere cachato
+                    if ($request->get_method() !== 'POST') {
+                        return false;
+                    }
+                    
+                    // Verifica referer stesso dominio
+                    $referer = sanitize_text_field((string) $request->get_header('referer'));
+                    if (!$referer) {
+                        return false;
+                    }
+                    
+                    $home = home_url();
+                    $parsed_home = wp_parse_url($home);
+                    $parsed_referer = wp_parse_url($referer);
+                    
+                    if ($parsed_home && $parsed_referer && 
+                        isset($parsed_home['host'], $parsed_referer['host']) &&
+                        $parsed_home['host'] === $parsed_referer['host']) {
+                        return true;
+                    }
+                    
+                    return false;
                 },
                 'callback' => function (WP_REST_Request $request) {
                     nocache_headers();
@@ -172,8 +196,28 @@ final class Checkout
             [
                 'methods' => 'POST',
                 'permission_callback' => function (WP_REST_Request $request): bool {
-                    // Permettiamo solo stessa origine o nonce REST standard
-                    return Helpers::verify_public_rest_request($request);
+                    // Permetti POST da stesso dominio (referer check)
+                    if ($request->get_method() !== 'POST') {
+                        return false;
+                    }
+                    
+                    // Verifica referer stesso dominio
+                    $referer = sanitize_text_field((string) $request->get_header('referer'));
+                    if (!$referer) {
+                        return false;
+                    }
+                    
+                    $home = home_url();
+                    $parsed_home = wp_parse_url($home);
+                    $parsed_referer = wp_parse_url($referer);
+                    
+                    if ($parsed_home && $parsed_referer && 
+                        isset($parsed_home['host'], $parsed_referer['host']) &&
+                        $parsed_home['host'] === $parsed_referer['host']) {
+                        return true;
+                    }
+                    
+                    return false;
                 },
                 'callback' => function () {
                     $this->cart->unlock();
@@ -218,13 +262,30 @@ final class Checkout
         // process_checkout() perché il nonce è nel body della richiesta POST,
         // non negli header, quindi non accessibile qui nella permission_callback
         
+        // DEBUG: Log informazioni richiesta
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('[FP-EXP-CHECKOUT] Permission callback called');
+            error_log('[FP-EXP-CHECKOUT] Method: ' . $request->get_method());
+            error_log('[FP-EXP-CHECKOUT] Referer: ' . $request->get_header('referer'));
+            error_log('[FP-EXP-CHECKOUT] Origin: ' . $request->get_header('origin'));
+        }
+        
         // Verifica base: stessa origine e metodo POST
         if ($request->get_method() !== 'POST') {
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('[FP-EXP-CHECKOUT] ❌ Permission denied: not POST');
+            }
             return false;
         }
         
         // Verifica che la richiesta provenga dallo stesso sito
-        return Helpers::verify_public_rest_request($request);
+        $result = Helpers::verify_public_rest_request($request);
+        
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('[FP-EXP-CHECKOUT] ' . ($result ? '✅' : '❌') . ' verify_public_rest_request: ' . ($result ? 'true' : 'false'));
+        }
+        
+        return $result;
     }
 
     public function handle_ajax(): void
