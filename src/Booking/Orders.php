@@ -109,6 +109,19 @@ final class Orders
         $order->update_meta_data('_fp_exp_session', $this->cart->get_session_id());
         $order->update_meta_data('_fp_exp_cart_snapshot', $cart);
         $order->update_meta_data('_fp_exp_isolated_checkout', 'yes');
+        
+        // FIX: Imposta un metodo di pagamento di default (bonifico bancario)
+        // WooCommerce richiede un metodo di pagamento per permettere il pagamento dell'ordine
+        $available_gateways = WC()->payment_gateways()->get_available_payment_gateways();
+        $default_gateway = 'bacs'; // Bonifico bancario
+        
+        if (isset($available_gateways[$default_gateway])) {
+            $order->set_payment_method($default_gateway);
+        } elseif (!empty($available_gateways)) {
+            // Se bonifico non disponibile, usa il primo gateway disponibile
+            $first_gateway = array_key_first($available_gateways);
+            $order->set_payment_method($first_gateway);
+        }
 
         $contact = $this->normalize_contact($payload['contact'] ?? []);
         $billing = $this->normalize_billing($payload['billing'] ?? []);
@@ -160,6 +173,13 @@ final class Orders
         }
 
         $order->save();
+
+        // FIX: Aggiungi l'ordine alla sessione WooCommerce per permettere il pagamento
+        // WooCommerce verifica la sessione quando si accede alla pagina di pagamento
+        if (function_exists('WC') && WC()->session) {
+            WC()->session->set('order_awaiting_payment', $order->get_id());
+            WC()->session->save_data();
+        }
 
         return $order;
     }
