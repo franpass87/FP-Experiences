@@ -9,6 +9,8 @@ e questo progetto aderisce al [Semantic Versioning](https://semver.org/lang/it/)
 
 ## [Unreleased]
 
+## [0.4.0] - 2025-10-31
+
 ### 🐛 Bugfix Sessions - 2025-10-31 (COMPLETE)
 **Due sessioni complete di bugfix che hanno risolto 5 bug critici + 2 regressioni.**
 
