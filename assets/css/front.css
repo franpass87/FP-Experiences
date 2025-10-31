@@ -3318,21 +3318,24 @@
     background: #000;
 }
 
-/* YouTube Shorts: aspect ratio 9:16 (verticale) */
+/* YouTube Shorts: aspect ratio 9:16 (verticale) usando padding-bottom trick */
 .fp-exp-gallery__item--shorts {
     display: flex;
     justify-content: center;
-    align-items: center;
+    align-items: flex-start;
+    padding: 2rem 0;
 }
 
 .fp-exp-gallery__item--shorts .fp-exp-gallery__video-wrapper {
-    aspect-ratio: 9 / 16;
-    max-width: min(450px, 90vw);
-    width: 100%;
-    height: auto;
-    min-height: 600px;
+    position: relative;
+    width: min(450px, 90vw);
+    height: 0;
+    padding-bottom: 177.78%; /* 16/9 * 100% = 177.78% per aspect ratio 9:16 */
     max-height: 80vh;
     margin: 0 auto;
+    background: #000;
+    border-radius: calc(var(--fp-exp-radius-base, 12px) * 0.75);
+    overflow: hidden;
 }
 
 .fp-exp-gallery__item--shorts .fp-exp-gallery__video {
@@ -3341,15 +3344,27 @@
     left: 0;
     width: 100%;
     height: 100%;
-    object-fit: contain;
+    border: 0;
 }
 
 /* Shorts su mobile: occupa tutta la larghezza disponibile */
 @media (max-width: 768px) {
     .fp-exp-gallery__item--shorts .fp-exp-gallery__video-wrapper {
+        width: 100%;
         max-width: 100%;
-        min-height: 500px;
+        padding-bottom: 177.78%;
         max-height: 75vh;
+    }
+    
+    .fp-exp-gallery__item--shorts {
+        padding: 1rem 0;
+    }
+}
+
+/* Tablet: dimensione intermedia */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .fp-exp-gallery__item--shorts .fp-exp-gallery__video-wrapper {
+        width: min(380px, 80vw);
     }
 }
 
