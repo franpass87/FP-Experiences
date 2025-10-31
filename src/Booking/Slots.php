@@ -1432,6 +1432,16 @@ final class Slots
 
         $result = $wpdb->insert(self::table_name(), $prepared, self::get_formats($prepared));
 
+        // ALWAYS log insert failures
+        if (false === $result) {
+            error_log('[FP-EXP-SLOTS] insert_slot FAILED!');
+            error_log('[FP-EXP-SLOTS] Last error: ' . $wpdb->last_error);
+            error_log('[FP-EXP-SLOTS] Last query: ' . $wpdb->last_query);
+            error_log('[FP-EXP-SLOTS] Prepared data: ' . print_r($prepared, true));
+        } else {
+            error_log('[FP-EXP-SLOTS] insert_slot SUCCESS! New ID: ' . $wpdb->insert_id);
+        }
+
         return false !== $result;
     }
 

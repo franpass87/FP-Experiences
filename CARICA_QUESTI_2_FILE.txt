@@ -1,0 +1,80 @@
+═══════════════════════════════════════════════════════════════
+📤 CARICA QUESTI 2 FILE VIA FTP - FIX ERROR 500
+═══════════════════════════════════════════════════════════════
+
+Via FTP, carica:
+
+1. wp-content/plugins/FP-Experiences/src/Booking/Slots.php
+   
+2. wp-content/plugins/FP-Experiences/src/Api/RestRoutes.php
+
+═══════════════════════════════════════════════════════════════
+✨ COSA HO AGGIUNTO
+═══════════════════════════════════════════════════════════════
+
+In insert_slot():
+- Log del database error (se fallisce l'insert)
+- Log della query SQL eseguita
+- Log dei dati preparati
+
+In diagnostic endpoint:
+- Pre-check se slot esiste già nel database
+- Mostra existing_slot_id se trovato
+
+═══════════════════════════════════════════════════════════════
+🧪 DOPO IL CARICAMENTO
+═══════════════════════════════════════════════════════════════
+
+Console Browser (pagina Tools):
+
+fetch('/wp-json/fp-exp/v1/diagnostic/checkout', {
+  headers: {'X-WP-Nonce': 'a6bb83c84c'}
+})
+.then(r => r.json())
+.then(d => {
+  console.log('🔍 PRE-CHECK:', d.pre_check);
+  console.log('🧪 SLOT TEST:', d.slot_test);
+  
+  if (d.slot_test.success) {
+    console.log('✅ FUNZIONA! Prova il checkout reale!');
+  } else {
+    console.log('❌ Errore:', d.slot_test.error);
+    console.log('Error data:', d.slot_test.error_data);
+  }
+});
+
+═══════════════════════════════════════════════════════════════
+📋 POI LEGGI I LOG
+═══════════════════════════════════════════════════════════════
+
+Via FTP, apri:
+/wp-content/debug.log
+
+Cerca:
+[FP-EXP-SLOTS] insert_slot FAILED!
+[FP-EXP-SLOTS] Last error: ...
+[FP-EXP-SLOTS] Last query: ...
+
+COPIA quelle righe e mandamele!
+
+Quelle righe ti diranno ESATTAMENTE perché il database rifiuta l'insert.
+
+Possibili errori:
+- "Duplicate entry" → Slot già esiste (gestibile)
+- "Table doesn't exist" → Tabella non creata (grave)
+- "Data too long" → Problema serialization
+- "Cannot add or update" → Constraint violation
+
+═══════════════════════════════════════════════════════════════
+🎯 PROSSIMI PASSI
+═══════════════════════════════════════════════════════════════
+
+1. Carica i 2 file
+2. Esegui diagnostic
+3. Leggi debug.log
+4. Mandami le righe con "insert_slot FAILED"
+
+Con l'errore SQL esatto → fix in 2 minuti!
+
+═══════════════════════════════════════════════════════════════
+
