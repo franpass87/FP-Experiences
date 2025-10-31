@@ -269,6 +269,7 @@ final class VoucherManager
             'value' => $total,
             'currency' => $order->get_currency(),
         ]);
+        $order->update_meta_data('_fp_exp_is_gift_order', 'yes');
 
         $order->save();
 

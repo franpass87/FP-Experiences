@@ -10,6 +10,16 @@ e questo progetto aderisce al [Semantic Versioning](https://semver.org/lang/it/)
 ## [Unreleased]
 
 ### Fixed
+- **🟡 Link Errati nella Lista Esperienze**: Risolto problema dove le esperienze nella seconda riga della lista puntavano all'ultima esperienza della prima riga. Modificato `map_experience()` per usare direttamente `$post->post_title` invece di `get_the_title($post)` evitando interferenze con il post globale di WordPress. Aggiunto debug logging dettagliato per tracciare la risoluzione dei permalink. (`src/Shortcodes/ListShortcode.php`, `docs/bug-fixes/LIST_LINKS_FIX_2025-10-31.md`)
+
+- **🔴 CRITICO - Endpoint REST API Gift Errato & Validazione Slot**: Risolti due bug critici nella funzionalità "Regala esperienza":
+  1. **Endpoint errato**: Il JavaScript chiamava `/wp-json/fp-exp/v1/gift/create` invece di `/wp-json/fp-exp/v1/gift/purchase`, causando errore "Nessun percorso fornisce una corrispondenza"
+  2. **Validazione slot errata**: Il sistema `Checkout` validava anche gli ordini gift voucher richiedendo uno `slot_id` che non esiste fino al riscatto del voucher, causando errore "Lo slot selezionato non è più disponibile"
+  - Corretti 6 file JavaScript con endpoint corretto
+  - Aggiunta logica skip validazione slot per gift voucher in `Checkout::process()`
+  - Aggiunto meta `_fp_exp_is_gift_order` agli ordini gift per identificazione
+  (`assets/js/front.js`, `src/Booking/Checkout.php`, `src/Gift/VoucherManager.php`, `docs/bug-fixes/GIFT_ENDPOINT_FIX_2025-10-31.md`)
+
 - **🔴 CRITICO - Race Condition nel Sistema di Booking**: Risolto bug critico che poteva causare overbooking in scenari di alta concorrenza. Implementato pattern di double-check che verifica la capacità dello slot immediatamente dopo la creazione della prenotazione. Se viene rilevato overbooking, la prenotazione viene automaticamente cancellata e l'utente riceve un messaggio chiaro. Questo fix protegge contro prenotazioni simultanee che potrebbero superare la capacità massima dello slot. (`Orders.php`, `RequestToBook.php`, `Reservations.php`)
   - Aggiunto metodo `Reservations::delete()` per gestione atomica cancellazione
   - Double-check implementato in entrambi i flussi (checkout diretto e request-to-book)

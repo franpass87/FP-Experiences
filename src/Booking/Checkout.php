@@ -512,6 +512,13 @@ final class Checkout
         $cart = $this->cart->get_data();
 
         foreach ($cart['items'] as &$item) { // phpcs:ignore WordPress.CodeAnalysis.AssignmentInCondition.Found
+            // Skip slot validation for gift vouchers (they don't have slots until redemption)
+            $is_gift = ! empty($item['is_gift']) || ! empty($item['gift_voucher']);
+            
+            if ($is_gift) {
+                continue;
+            }
+            
             $slot_id = (int) ($item['slot_id'] ?? 0);
 
             if ($slot_id <= 0) {

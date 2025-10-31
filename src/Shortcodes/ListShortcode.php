@@ -499,7 +499,7 @@ final class ListShortcode extends BaseShortcode
     private function map_experience(WP_Post $post, ?float $price_from, bool $show_price_from, array $badge_flags, bool $show_map, string $cta_mode): array
     {
         $id = $post->ID;
-        $title = get_the_title($post);
+        $title = $post->post_title; // Use direct property instead of get_the_title() to avoid global post interference
         $permalink = $this->resolve_permalink($id, $cta_mode);
         $thumbnail = $this->get_experience_thumbnail($id);
         $highlights = array_slice(Helpers::get_meta_array($id, '_fp_highlights'), 0, 3);
@@ -621,18 +621,43 @@ final class ListShortcode extends BaseShortcode
 
     private function resolve_permalink(int $experience_id, string $cta_mode): string
     {
+        // Check if this experience has a dedicated page
         $page_id = absint((string) get_post_meta($experience_id, '_fp_exp_page_id', true));
 
+        // Debug logging for link resolution issues
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            $debug_info = [
+                'experience_id' => $experience_id,
+                'page_id' => $page_id,
+            ];
+        }
+
+        // If experience has a dedicated page, use that page's URL
         if ($page_id > 0) {
             $url = get_permalink($page_id);
+            
+            if (defined('WP_DEBUG') && WP_DEBUG && isset($debug_info)) {
+                $debug_info['page_url'] = $url ?: 'false';
+                error_log('[FP-EXP-LIST] Page link: ' . wp_json_encode($debug_info));
+            }
+            
             if ($url && 'widget' === $cta_mode && $this->page_has_widget_anchor($page_id)) {
                 return $url . '#fp-widget';
             }
 
-            return $url ?: get_permalink($experience_id);
+            // Fallback to experience permalink if page permalink fails
+            $experience_url = get_permalink($experience_id);
+            return $url ?: ($experience_url ?: '');
         }
 
+        // Use experience post permalink directly
         $fallback = get_permalink($experience_id);
+        
+        if (defined('WP_DEBUG') && WP_DEBUG && isset($debug_info)) {
+            $debug_info['experience_url'] = $fallback ?: 'false';
+            error_log('[FP-EXP-LIST] Experience link: ' . wp_json_encode($debug_info));
+        }
+        
         if (! $fallback) {
             return '';
         }

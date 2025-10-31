@@ -33,7 +33,7 @@ Aggiunta una nuova sezione `setupGiftModal()` che gestisce:
 #### Invio del Form
 - Valida i campi richiesti del form
 - Raccoglie tutti i dati del form (acquirente, destinatario, data consegna, quantità, messaggio, addon)
-- Invia richiesta POST a `/wp-json/fp-exp/v1/gift/create`
+- Invia richiesta POST a `/wp-json/fp-exp/v1/gift/purchase`
 - Gestisce la risposta:
   - Se riceve `payment_url`: reindirizza al checkout
   - Se successo senza URL: mostra messaggio di conferma e chiude dopo 2 secondi
@@ -103,10 +103,10 @@ Per verificare il fix:
 ## API Endpoint Richiesto
 Il codice assume che esista l'endpoint:
 ```
-POST /wp-json/fp-exp/v1/gift/create
+POST /wp-json/fp-exp/v1/gift/purchase
 ```
 
-Se questo endpoint non esiste ancora, deve essere implementato lato server per:
+Questo endpoint è implementato in `src/Api/RestRoutes.php` e gestisce:
 1. Validare i dati ricevuti
 2. Creare il voucher regalo nel database
 3. Creare un ordine WooCommerce (se configurato)

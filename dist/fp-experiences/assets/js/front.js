@@ -1426,7 +1426,7 @@
 
                     try {
                         // Call gift voucher endpoint
-                        const response = await fetch('/wp-json/fp-exp/v1/gift/create', {
+                        const response = await fetch('/wp-json/fp-exp/v1/gift/purchase', {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
