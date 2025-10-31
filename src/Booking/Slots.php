@@ -276,10 +276,6 @@ final class Slots
         $buffer_before_minutes = max(0, $buffer_before_minutes);
         $buffer_after_minutes = max(0, $buffer_after_minutes);
 
-        if (0 === $buffer_before_minutes && 0 === $buffer_after_minutes) {
-            return false;
-        }
-
         try {
             $requested_start = new DateTimeImmutable($start_utc, new DateTimeZone('UTC'));
             $requested_end = new DateTimeImmutable($end_utc, new DateTimeZone('UTC'));
@@ -290,8 +286,8 @@ final class Slots
         global $wpdb;
         $table = self::table_name();
 
-        // FIX: Check for ACTUAL overlap first (ignoring buffers)
-        // Only apply buffer check if slots actually overlap in time
+        // STEP 1: ALWAYS check for ACTUAL overlap first (ignoring buffers)
+        // This prevents concurrent slots even without buffer configuration
         $actual_overlap_query = "SELECT id, start_datetime, end_datetime FROM {$table} 
             WHERE experience_id = %d 
             AND status != %s 
@@ -321,6 +317,11 @@ final class Slots
                 error_log('[FP-EXP-SLOTS] ACTUAL slot overlap detected (same time): ' . wp_json_encode($actual_overlapping));
             }
             return true;
+        }
+        
+        // STEP 2: If no actual overlap and no buffers configured, no conflict
+        if (0 === $buffer_before_minutes && 0 === $buffer_after_minutes) {
+            return false;
         }
 
         // If no actual overlap, check buffer conflicts
@@ -448,6 +449,12 @@ final class Slots
         $row['capacity_per_type'] = maybe_unserialize($row['capacity_per_type']);
         $row['resource_lock'] = maybe_unserialize($row['resource_lock']);
         $row['price_rules'] = maybe_unserialize($row['price_rules']);
+        
+        // Add capacity snapshot (reserved/remaining)
+        $snapshot = self::get_capacity_snapshot((int) $row['id']);
+        $row['reserved_total'] = $snapshot['total'];
+        $row['reserved_per_type'] = $snapshot['per_type'];
+        $row['remaining'] = max(0, (int) $row['capacity_total'] - $snapshot['total']);
 
         return $row;
     }

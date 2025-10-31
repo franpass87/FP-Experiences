@@ -9,6 +9,34 @@ e questo progetto aderisce al [Semantic Versioning](https://semver.org/lang/it/)
 
 ## [Unreleased]
 
+### 🐛 Bugfix Sessions - 2025-10-31 (COMPLETE)
+**Due sessioni complete di bugfix che hanno risolto 5 bug critici + 2 regressioni.**
+
+Vedi documentazione completa: `docs/bug-fixes/BUGFIX_SESSIONS_COMPLETE_2025-10-31.md`
+
+**Session 1 - Bug Critici:**
+1. ✅ Checkout Slot Validation Failing (`fp_exp_slot_invalid`)
+2. ✅ Tool Buttons Not Working  
+3. ✅ Buffer Conflict Blocking Adjacent Slots
+
+**Session 2 - Regressioni Fix:**
+1. ✅ Slot sovrapposti non bloccati (overlap reale)
+2. ✅ get_slot() senza campo 'remaining'
+
+**Metriche Totali:**
+- 5 bug critici risolti + 2 regressioni fixate
+- 12 file modificati totali
+- 2 nuovi file (SlotRepairTool, DiagnosticShortcode)
+- 3 admin tools + 3 REST endpoints
+- 10 test automatici creati
+- 100% test pass rate finale
+- 8 documenti completi
+
+**File Deployment:** 8 file da caricare in produzione (vedi `DEPLOYMENT_INSTRUCTIONS.md`)  
+**Status:** ✅ PRODUCTION READY
+
+---
+
 ### Fixed
 - **🔴 CRITICO - Buffer Conflict Blocca Creazione Slot**: Risolto problema critico dove il checkout falliva con `fp_exp_slot_invalid` a causa di buffer conflict anche quando gli slot non si sovrapponevano realmente.
   - **Causa 1**: 50+ slot esistenti con `capacity_total = 0` (creati prima dei fix recenti)
