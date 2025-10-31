@@ -3,6 +3,82 @@
  * Questo file serve come entry point per il frontend
  */
 
+// Inizializza "Leggi di più" IMMEDIATAMENTE (standalone, non aspetta jQuery)
+(function initReadMoreImmediate() {
+    'use strict';
+    
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', setupReadMore);
+    } else {
+        setupReadMore();
+    }
+    
+    function setupReadMore() {
+        const listingSection = document.querySelector('.fp-listing');
+        if (!listingSection) {
+            console.log('FP-Experiences: Sezione listing non trovata');
+            return;
+        }
+        
+        console.log('FP-Experiences: Read More STANDALONE attivo');
+        
+        // Click handler con delegazione
+        listingSection.addEventListener('click', function(ev) {
+            const btn = ev.target.closest('[data-fp-read-more]');
+            if (!btn) return;
+            
+            ev.preventDefault();
+            console.log('FP-Experiences: Toggle Read More');
+            
+            const wrapper = btn.closest('.fp-listing__description-wrapper');
+            if (!wrapper) return;
+            
+            const description = wrapper.querySelector('[data-fp-text-clamp]');
+            const textSpan = btn.querySelector('.fp-listing__read-more-text');
+            if (!description || !textSpan) return;
+            
+            const isExpanded = btn.getAttribute('aria-expanded') === 'true';
+            const expandText = textSpan.getAttribute('data-expand-text') || 'Leggi di più';
+            const collapseText = textSpan.getAttribute('data-collapse-text') || 'Mostra meno';
+            
+            if (isExpanded) {
+                description.classList.remove('is-expanded');
+                description.classList.add('is-clamped');
+                btn.setAttribute('aria-expanded', 'false');
+                textSpan.textContent = expandText;
+            } else {
+                description.classList.remove('is-clamped');
+                description.classList.add('is-expanded');
+                btn.setAttribute('aria-expanded', 'true');
+                textSpan.textContent = collapseText;
+            }
+        });
+        
+        // Nascondi pulsante se testo non è troncato
+        function checkDescriptions() {
+            document.querySelectorAll('[data-fp-text-clamp]').forEach(function(desc) {
+                const wrapper = desc.closest('.fp-listing__description-wrapper');
+                if (!wrapper) return;
+                
+                const btn = wrapper.querySelector('[data-fp-read-more]');
+                if (!btn) return;
+                
+                // +2px tolleranza per sub-pixel rendering
+                const isOverflowing = desc.scrollHeight > desc.clientHeight + 2;
+                btn.style.display = isOverflowing ? 'inline-flex' : 'none';
+            });
+        }
+        
+        checkDescriptions();
+        
+        let resizeTimer;
+        window.addEventListener('resize', function() {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(checkDescriptions, 150);
+        });
+    }
+})();
+
 // Carica i moduli frontend necessari
 (function() {
     'use strict';
@@ -1522,86 +1598,8 @@
             }
         })();
 
-        // 8) Gestione "Leggi di più" per descrizioni troncate
-        (function setupReadMoreToggle() {
-            const listingSection = document.querySelector('.fp-listing');
-            if (!listingSection) return;
-
-            // Usa delegazione eventi per supportare paginazione dinamica
-            listingSection.addEventListener('click', (ev) => {
-                const readMoreBtn = ev.target.closest('[data-fp-read-more]');
-                if (!readMoreBtn) return;
-
-                ev.preventDefault();
-
-                const wrapper = readMoreBtn.closest('.fp-listing__description-wrapper');
-                if (!wrapper) return;
-
-                const description = wrapper.querySelector('[data-fp-text-clamp]');
-                const textSpan = readMoreBtn.querySelector('.fp-listing__read-more-text');
-                
-                if (!description || !textSpan) return;
-
-                const isExpanded = readMoreBtn.getAttribute('aria-expanded') === 'true';
-                const expandText = textSpan.getAttribute('data-expand-text') || 'Leggi di più';
-                const collapseText = textSpan.getAttribute('data-collapse-text') || 'Mostra meno';
-
-                if (isExpanded) {
-                    // Collassa
-                    description.classList.remove('is-expanded');
-                    description.classList.add('is-clamped');
-                    readMoreBtn.setAttribute('aria-expanded', 'false');
-                    textSpan.textContent = expandText;
-                } else {
-                    // Espandi
-                    description.classList.remove('is-clamped');
-                    description.classList.add('is-expanded');
-                    readMoreBtn.setAttribute('aria-expanded', 'true');
-                    textSpan.textContent = collapseText;
-                }
-            });
-
-            // Nascondi il pulsante se il testo è già corto (non troncato)
-            const checkDescriptionLength = () => {
-                document.querySelectorAll('[data-fp-text-clamp]').forEach((description) => {
-                    const wrapper = description.closest('.fp-listing__description-wrapper');
-                    if (!wrapper) return;
-
-                    const readMoreBtn = wrapper.querySelector('[data-fp-read-more]');
-                    if (!readMoreBtn) return;
-
-                    // Verifica se il testo è effettivamente troncato
-                    // Confronta scrollHeight (altezza contenuto completo) con clientHeight (altezza visibile)
-                    const isOverflowing = description.scrollHeight > description.clientHeight + 2; // +2px tolleranza
-                    
-                    if (isOverflowing) {
-                        readMoreBtn.style.display = 'inline-flex';
-                    } else {
-                        readMoreBtn.style.display = 'none';
-                    }
-                });
-            };
-
-            // Controlla al caricamento
-            checkDescriptionLength();
-
-            // Ricontrolla al resize (con debounce)
-            let resizeTimer;
-            window.addEventListener('resize', () => {
-                clearTimeout(resizeTimer);
-                resizeTimer = setTimeout(checkDescriptionLength, 150);
-            });
-
-            // Ricontrolla quando vengono caricate nuove card (per paginazione AJAX futura)
-            const observer = new MutationObserver(() => {
-                checkDescriptionLength();
-            });
-
-            observer.observe(listingSection, {
-                childList: true,
-                subtree: true
-            });
-        })();
+        // 8) Gestione "Leggi di più" - ORA GESTITO IN STANDALONE all'inizio del file
+        // (Codice rimosso per evitare duplicati - vedi riga ~7)
     });
     
 })();

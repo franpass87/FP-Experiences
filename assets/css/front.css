@@ -790,6 +790,7 @@
 
 .fp-listing__description-wrapper {
     position: relative;
+    padding-top: 15px;
 }
 
 .fp-listing__description {
@@ -802,7 +803,7 @@
 
 .fp-listing__description.is-clamped {
     display: -webkit-box;
-    -webkit-line-clamp: 3;
+    -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
 }
@@ -905,7 +906,7 @@
     }
 
     .fp-listing__description.is-clamped {
-        -webkit-line-clamp: 4; /* Una riga in più su mobile */
+        -webkit-line-clamp: 3; /* Una riga in più su mobile */
     }
 
     .fp-listing__read-more {
@@ -3318,17 +3319,36 @@
 }
 
 /* YouTube Shorts: aspect ratio 9:16 (verticale) */
+.fp-exp-gallery__item--shorts {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
 .fp-exp-gallery__item--shorts .fp-exp-gallery__video-wrapper {
     aspect-ratio: 9 / 16;
-    max-width: 450px;
+    max-width: min(450px, 90vw);
     width: 100%;
+    height: auto;
+    min-height: 600px;
+    max-height: 80vh;
     margin: 0 auto;
+}
+
+.fp-exp-gallery__item--shorts .fp-exp-gallery__video {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
 }
 
 /* Shorts su mobile: occupa tutta la larghezza disponibile */
 @media (max-width: 768px) {
     .fp-exp-gallery__item--shorts .fp-exp-gallery__video-wrapper {
         max-width: 100%;
+        min-height: 500px;
         max-height: 75vh;
     }
 }
