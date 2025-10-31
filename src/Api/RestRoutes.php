@@ -1677,6 +1677,10 @@ final class RestRoutes
                 ];
                 
                 try {
+                    // Clear previous errors
+                    global $wpdb;
+                    $wpdb->last_error = '';
+                    
                     $slot = Slots::ensure_slot_for_occurrence($exp_id, $start, $end);
                     
                     if (is_wp_error($slot)) {
@@ -1684,6 +1688,8 @@ final class RestRoutes
                             'success' => false,
                             'error' => $slot->get_error_message(),
                             'error_data' => $slot->get_error_data(),
+                            'wpdb_last_error' => $wpdb->last_error,
+                            'wpdb_last_query' => $wpdb->last_query,
                         ];
                     } else {
                         $result['slot_test'] = [
@@ -1697,6 +1703,7 @@ final class RestRoutes
                         'success' => false,
                         'exception' => $e->getMessage(),
                         'trace' => $e->getTraceAsString(),
+                        'wpdb_last_error' => $wpdb->last_error ?? '',
                     ];
                 }
             } else {
