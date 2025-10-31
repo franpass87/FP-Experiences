@@ -7,8 +7,11 @@ namespace FP_Exp\Api;
 use FP_Exp\Activation;
 use FP_Exp\Booking\AvailabilityService;
 use FP_Exp\Booking\Recurrence;
+use FP_Exp\Booking\Reservations;
+use FP_Exp\Booking\Resources;
 use FP_Exp\Booking\Slots;
 use FP_Exp\Gift\VoucherManager;
+use FP_Exp\Gift\VoucherTable;
 use FP_Exp\Migrations\Migrations\CleanupDuplicatePageIds;
 use FP_Exp\Utils\Helpers;
 use FP_Exp\Utils\Logger;
@@ -407,6 +410,18 @@ final class RestRoutes
                     return Helpers::can_manage_fp();
                 },
                 'callback' => [$this, 'diagnostic_checkout'],
+            ]
+        );
+
+        register_rest_route(
+            'fp-exp/v1',
+            '/tools/create-tables',
+            [
+                'methods' => 'POST',
+                'permission_callback' => static function (): bool {
+                    return Helpers::can_manage_fp();
+                },
+                'callback' => [$this, 'tool_create_tables'],
             ]
         );
     }
@@ -1717,5 +1732,83 @@ final class RestRoutes
         }
         
         return rest_ensure_response($result);
+    }
+    
+    public function tool_create_tables(): WP_REST_Response
+    {
+        if (Helpers::hit_rate_limit('tools_create_tables_' . get_current_user_id(), 3, MINUTE_IN_SECONDS)) {
+            return rest_ensure_response([
+                'success' => false,
+                'message' => __('Creazione tabelle già eseguita di recente. Riprova tra qualche istante.', 'fp-experiences'),
+            ]);
+        }
+        
+        try {
+            // Force create all tables
+            Slots::create_table();
+            Reservations::create_table();
+            Resources::create_table();
+            VoucherTable::create_table();
+            
+            // Verify tables exist
+            global $wpdb;
+            $tables_to_check = [
+                'fp_exp_slots' => $wpdb->prefix . 'fp_exp_slots',
+                'fp_exp_reservations' => $wpdb->prefix . 'fp_exp_reservations',
+                'fp_exp_resources' => $wpdb->prefix . 'fp_exp_resources',
+                'fp_exp_gift_vouchers' => $wpdb->prefix . 'fp_exp_gift_vouchers',
+            ];
+            
+            $created = [];
+            $missing = [];
+            
+            foreach ($tables_to_check as $name => $table) {
+                $exists = $wpdb->get_var("SHOW TABLES LIKE '{$table}'") === $table;
+                if ($exists) {
+                    $created[] = $name;
+                } else {
+                    $missing[] = $name;
+                }
+            }
+            
+            Logger::log('tools', 'Database tables creation requested', [
+                'user_id' => get_current_user_id(),
+                'created' => $created,
+                'missing' => $missing,
+            ]);
+            
+            if (empty($missing)) {
+                return rest_ensure_response([
+                    'success' => true,
+                    'message' => sprintf(
+                        __('Tutte le %d tabelle sono state create/verificate con successo!', 'fp-experiences'),
+                        count($created)
+                    ),
+                    'tables' => $created,
+                ]);
+            } else {
+                return rest_ensure_response([
+                    'success' => false,
+                    'message' => sprintf(
+                        __('Attenzione: %d tabelle create, ma %d ancora mancanti. Controlla i permessi database.', 'fp-experiences'),
+                        count($created),
+                        count($missing)
+                    ),
+                    'created' => $created,
+                    'missing' => $missing,
+                ]);
+            }
+            
+        } catch (\Throwable $e) {
+            Logger::log('tools', 'Database tables creation failed', [
+                'user_id' => get_current_user_id(),
+                'error' => $e->getMessage(),
+            ]);
+            
+            return rest_ensure_response([
+                'success' => false,
+                'message' => __('Errore durante la creazione delle tabelle: ', 'fp-experiences') . $e->getMessage(),
+            ]);
+        }
     }
 }
