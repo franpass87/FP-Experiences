@@ -221,12 +221,23 @@ final class DiagnosticShortcode
 
             <?php
             try {
-                $slot_id = Slots::ensure_slot_for_occurrence($exp_id, $test_start, $test_end);
+                $slot_result = Slots::ensure_slot_for_occurrence($exp_id, $test_start, $test_end);
 
-                if ($slot_id > 0) {
+                // Handle WP_Error
+                if (is_wp_error($slot_result)) {
+                    echo "<div class='fp-diag-box fp-diag-error'>";
+                    echo "<p class='fp-status-error'>❌ <strong>FALLITO! WP_Error: " . esc_html($slot_result->get_error_message()) . "</strong></p>";
+                    echo "<p><strong>Error Code:</strong> " . esc_html($slot_result->get_error_code()) . "</p>";
+                    $error_data = $slot_result->get_error_data();
+                    if ($error_data) {
+                        echo "<p><strong>Error Data:</strong></p>";
+                        echo "<pre class='fp-diag-pre'>" . esc_html(print_r($error_data, true)) . "</pre>";
+                    }
+                    echo "</div>";
+                } elseif ($slot_result > 0) {
                     echo "<div class='fp-diag-box fp-diag-success'>";
-                    echo "<p class='fp-status-ok'>✅ <strong>SUCCESSO! Slot creato/trovato: ID $slot_id</strong></p>";
-                    $slot = Slots::get_slot($slot_id);
+                    echo "<p class='fp-status-ok'>✅ <strong>SUCCESSO! Slot creato/trovato: ID $slot_result</strong></p>";
+                    $slot = Slots::get_slot($slot_result);
                     if ($slot) {
                         echo "<pre class='fp-diag-pre'>" . esc_html(print_r($slot, true)) . "</pre>";
                     }

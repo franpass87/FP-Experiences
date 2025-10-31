@@ -1,0 +1,165 @@
+═══════════════════════════════════════════════════════════════
+🚀 FP EXPERIENCES v0.4.1 - DEPLOY REFACTOR FAILSAFE
+═══════════════════════════════════════════════════════════════
+
+✅ REFACTOR MINIMALE FAILSAFE COMPLETATO!
+
+Versione: 0.4.0 → 0.4.1
+Tipo: Refactor Minimale - Sistema Auto-Riparante
+Tempo deploy: ~5 minuti
+
+═══════════════════════════════════════════════════════════════
+📦 FILE DA CARICARE VIA FTP
+═══════════════════════════════════════════════════════════════
+
+Carica questi 5 file in produzione:
+
+1. fp-experiences.php
+2. src/Booking/Slots.php
+3. src/Booking/Checkout.php
+4. src/Booking/RequestToBook.php
+5. src/Api/RestRoutes.php
+6. src/Admin/DiagnosticShortcode.php
+
+═══════════════════════════════════════════════════════════════
+✨ COSA FA QUESTA VERSIONE
+═══════════════════════════════════════════════════════════════
+
+1. ✅ LOGGING SEMPRE ATTIVO
+   - Tutti i tentativi di checkout sono loggati
+   - Anche se WP_DEBUG = false
+   - Log in: /wp-content/debug.log
+
+2. ✅ AUTO-REPAIR CAPACITY=0
+   - Se trova capacity=0, lo ripara AUTOMATICAMENTE
+   - Salva nel database (non solo fallback temporaneo)
+   - Previene il problema in futuro
+
+3. ✅ ERRORI DETTAGLIATI
+   - Non più solo "slot non disponibile"
+   - Include: experience_id, start, end, buffer, conflicting_slots
+   - Visibili nei log per debug
+
+4. ✅ ENDPOINT DIAGNOSTICO
+   - /wp-json/fp-exp/v1/diagnostic/checkout
+   - Mostra carrello, meta, e testa slot creation
+   - Accessibile solo da admin
+
+═══════════════════════════════════════════════════════════════
+🧪 TEST POST-DEPLOY
+═══════════════════════════════════════════════════════════════
+
+STEP 1: Upload file via FTP
+
+STEP 2: Testa checkout
+1. Vai su un'esperienza (es. Degustazione Standard)
+2. Seleziona data + orario
+3. Aggiungi al carrello
+4. Vai al checkout
+5. Compila dati e clicca "Effettua ordine"
+
+STEP 3: Se fallisce ancora - Leggi i log
+
+Via FTP, apri:
+/wp-content/debug.log
+
+Cerca:
+[FP-EXP-CHECKOUT]
+[FP-EXP-SLOTS]
+
+Esempio log:
+[31-Oct-2025 22:00:00] [FP-EXP-CHECKOUT] Cart item: {"experience_id":9104,...}
+[31-Oct-2025 22:00:00] [FP-EXP-SLOTS] ensure_slot_for_occurrence called: exp=9104, start=...
+[31-Oct-2025 22:00:00] [FP-EXP-SLOTS] Availability meta: capacity=0, buffer_before=15, buffer_after=30
+[31-Oct-2025 22:00:00] [FP-EXP-SLOTS] FAILSAFE: using default capacity=10
+[31-Oct-2025 22:00:00] [FP-EXP-SLOTS] AUTO-REPAIR: updated experience meta with capacity=10
+[31-Oct-2025 22:00:00] [FP-EXP-SLOTS] FAIL: buffer conflict detected
+[31-Oct-2025 22:00:00] [FP-EXP-SLOTS] Conflicting slots: Array(...)
+
+COPIA LE ULTIME 50 RIGHE e mandamele!
+
+STEP 4: Test diagnostico (opzionale)
+
+Console Browser (pagina Tools):
+fetch('/wp-json/fp-exp/v1/diagnostic/checkout', {
+  headers: {'X-WP-Nonce': 'a6bb83c84c'}
+})
+.then(r => r.json())
+.then(d => console.log(JSON.stringify(d, null, 2)));
+
+═══════════════════════════════════════════════════════════════
+🎯 RISULTATO ATTESO
+═══════════════════════════════════════════════════════════════
+
+SCENARIO A: Checkout FUNZIONA ✅
+- Ordine creato con successo
+- Log mostrano: [FP-EXP-SLOTS] SUCCESS: created slot ID=XXX
+- PROBLEMA RISOLTO!
+
+SCENARIO B: Checkout FALLISCE ❌
+- Errore fp_exp_slot_invalid
+- MA ora i log mostrano ESATTAMENTE perché:
+  • capacity=0 → vedi auto-repair nei log
+  • buffer conflict → vedi lista conflicting slots
+  • datetime invalido → vedi messaggio errore specifico
+- Con i log dettagliati posso fare fix mirato
+
+═══════════════════════════════════════════════════════════════
+📊 MODIFICHE TECNICHE
+═══════════════════════════════════════════════════════════════
+
+FILE: src/Booking/Slots.php
+- ensure_slot_for_occurrence() ora ritorna int|WP_Error
+- Logging SEMPRE attivo (non più condizionato a WP_DEBUG)
+- Auto-repair capacity=0 con update_post_meta()
+- WP_Error include conflicting_slots per debug
+
+FILE: src/Booking/Checkout.php
+- Gestisce WP_Error da ensure_slot_for_occurrence()
+- Logging SEMPRE attivo per tutti i cart items
+- Include availability_meta in error data
+
+FILE: src/Booking/RequestToBook.php
+- Gestisce WP_Error da ensure_slot_for_occurrence()
+- Pass-through errori dettagliati
+
+FILE: src/Admin/DiagnosticShortcode.php
+- Gestisce WP_Error da ensure_slot_for_occurrence()
+- Mostra error data completi
+
+FILE: src/Api/RestRoutes.php
+- Aggiunto endpoint /diagnostic/checkout
+
+FILE: fp-experiences.php
+- Version bump: 0.4.0 → 0.4.1
+
+═══════════════════════════════════════════════════════════════
+🔧 ROLLBACK (se necessario)
+═══════════════════════════════════════════════════════════════
+
+Se questa versione causa problemi:
+
+1. Via FTP, rinomina i file caricati in .backup:
+   - Slots.php → Slots.php.v041
+   - Checkout.php → Checkout.php.v041
+   - ecc.
+
+2. Ripristina i file della v0.4.0
+
+3. Contattami con i log
+
+═══════════════════════════════════════════════════════════════
+💡 SUPPORTO
+═══════════════════════════════════════════════════════════════
+
+Se dopo deploy:
+
+✅ FUNZIONA → Fantastico! Problema risolto.
+
+❌ NON FUNZIONA → Mandami le ultime 50 righe di /wp-content/debug.log
+                  che contengono [FP-EXP-CHECKOUT] o [FP-EXP-SLOTS]
+
+═══════════════════════════════════════════════════════════════
+
+READY TO DEPLOY! 🚀
+

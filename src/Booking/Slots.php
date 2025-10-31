@@ -462,16 +462,24 @@ final class Slots
     /**
      * Ensure a persisted slot exists for the given occurrence; create it if missing.
      *
-     * @return int Slot ID or 0 on failure
+     * @return int|WP_Error Slot ID or WP_Error on failure
      */
-    public static function ensure_slot_for_occurrence(int $experience_id, string $start_utc, string $end_utc): int
+    public static function ensure_slot_for_occurrence(int $experience_id, string $start_utc, string $end_utc)
     {
+        // ALWAYS log - critical for production debugging
+        error_log(sprintf(
+            '[FP-EXP-SLOTS] ensure_slot_for_occurrence called: exp=%d, start=%s, end=%s',
+            $experience_id,
+            $start_utc,
+            $end_utc
+        ));
+        
         $experience_id = absint($experience_id);
         if ($experience_id <= 0) {
-            if (defined('WP_DEBUG') && WP_DEBUG) {
-                error_log('[FP-EXP-SLOTS] ensure_slot failed: invalid experience_id');
-            }
-            return 0;
+            error_log('[FP-EXP-SLOTS] FAIL: invalid experience_id');
+            return new WP_Error('fp_exp_slot_invalid', 'Invalid experience ID', [
+                'experience_id' => $experience_id
+            ]);
         }
 
         // Normalise datetimes
@@ -479,17 +487,20 @@ final class Slots
             $start = new DateTimeImmutable($start_utc, new DateTimeZone('UTC'));
             $end = new DateTimeImmutable($end_utc, new DateTimeZone('UTC'));
         } catch (Exception $exception) {
-            if (defined('WP_DEBUG') && WP_DEBUG) {
-                error_log('[FP-EXP-SLOTS] ensure_slot failed: invalid datetime format - ' . $exception->getMessage());
-            }
-            return 0;
+            error_log('[FP-EXP-SLOTS] FAIL: invalid datetime - ' . $exception->getMessage());
+            return new WP_Error('fp_exp_slot_invalid', 'Invalid datetime format', [
+                'start' => $start_utc,
+                'end' => $end_utc,
+                'error' => $exception->getMessage()
+            ]);
         }
 
         if ($end <= $start) {
-            if (defined('WP_DEBUG') && WP_DEBUG) {
-                error_log('[FP-EXP-SLOTS] ensure_slot failed: end <= start');
-            }
-            return 0;
+            error_log('[FP-EXP-SLOTS] FAIL: end <= start');
+            return new WP_Error('fp_exp_slot_invalid', 'End time must be after start time', [
+                'start' => $start_utc,
+                'end' => $end_utc
+            ]);
         }
 
         $start_utc = $start->format('Y-m-d H:i:s');
@@ -497,9 +508,7 @@ final class Slots
 
         $existing_id = self::slot_exists($experience_id, $start_utc, $end_utc);
         if ($existing_id) {
-            if (defined('WP_DEBUG') && WP_DEBUG) {
-                error_log('[FP-EXP-SLOTS] ensure_slot: slot already exists, returning ID ' . $existing_id);
-            }
+            error_log('[FP-EXP-SLOTS] SUCCESS: slot exists, ID=' . $existing_id);
             return (int) $existing_id;
         }
 
@@ -515,20 +524,62 @@ final class Slots
             $buffer_after = isset($availability['buffer_after_minutes']) ? absint((string) $availability['buffer_after_minutes']) : 0;
         }
         
-        // Use default capacity if not configured (prevents slot creation failure)
+        error_log(sprintf(
+            '[FP-EXP-SLOTS] Availability meta: capacity=%d, buffer_before=%d, buffer_after=%d',
+            $capacity_total,
+            $buffer_before,
+            $buffer_after
+        ));
+        
+        // FAILSAFE: Use default capacity if not configured
+        $used_default_capacity = false;
         if ($capacity_total === 0) {
             $capacity_total = 10; // Default capacity for auto-created slots
+            $used_default_capacity = true;
             
-            if (defined('WP_DEBUG') && WP_DEBUG) {
-                error_log('[FP-EXP-SLOTS] ensure_slot: using default capacity (10) - experience has slot_capacity=0');
+            error_log('[FP-EXP-SLOTS] FAILSAFE: using default capacity=10 (experience had capacity=0)');
+            
+            // AUTO-REPAIR: Update experience meta to prevent future issues
+            if (is_array($availability)) {
+                $availability['slot_capacity'] = 10;
+                update_post_meta($experience_id, '_fp_exp_availability', $availability);
+                error_log('[FP-EXP-SLOTS] AUTO-REPAIR: updated experience meta with capacity=10');
             }
         }
 
-        if (self::has_buffer_conflict($experience_id, $start_utc, $end_utc, $buffer_before, $buffer_after)) {
-            if (defined('WP_DEBUG') && WP_DEBUG) {
-                error_log('[FP-EXP-SLOTS] ensure_slot failed: buffer conflict detected');
-            }
-            return 0;
+        // FAILSAFE: Check buffer conflicts but don't block completely
+        $has_conflict = self::has_buffer_conflict($experience_id, $start_utc, $end_utc, $buffer_before, $buffer_after);
+        if ($has_conflict) {
+            // Log detailed error with context
+            error_log('[FP-EXP-SLOTS] FAIL: buffer conflict detected');
+            
+            // Get conflicting slots for debugging
+            global $wpdb;
+            $table = self::table_name();
+            $conflicting = $wpdb->get_results($wpdb->prepare(
+                "SELECT id, start_datetime, end_datetime FROM {$table} 
+                WHERE experience_id = %d 
+                AND ((start_datetime < %s AND end_datetime > %s) 
+                     OR (start_datetime < %s AND end_datetime > %s))
+                ORDER BY start_datetime ASC
+                LIMIT 5",
+                $experience_id,
+                $end_utc,
+                $start_utc,
+                $end_utc,
+                $start_utc
+            ), ARRAY_A);
+            
+            error_log('[FP-EXP-SLOTS] Conflicting slots: ' . print_r($conflicting, true));
+            
+            return new WP_Error('fp_exp_slot_invalid', 'Slot conflicts with existing booking or buffer time', [
+                'experience_id' => $experience_id,
+                'requested_start' => $start_utc,
+                'requested_end' => $end_utc,
+                'buffer_before' => $buffer_before,
+                'buffer_after' => $buffer_after,
+                'conflicting_slots' => $conflicting
+            ]);
         }
 
         $payload = [
@@ -544,15 +595,20 @@ final class Slots
 
         $inserted = self::insert_slot($payload);
         
-        if (defined('WP_DEBUG') && WP_DEBUG) {
-            if ($inserted) {
-                error_log('[FP-EXP-SLOTS] ensure_slot: created new slot ID ' . $inserted);
-            } else {
-                error_log('[FP-EXP-SLOTS] ensure_slot failed: insert_slot returned false');
-            }
+        if ($inserted) {
+            error_log(sprintf(
+                '[FP-EXP-SLOTS] SUCCESS: created slot ID=%d, capacity=%d%s',
+                $inserted,
+                $capacity_total,
+                $used_default_capacity ? ' (FAILSAFE default)' : ''
+            ));
+            return (int) $inserted;
+        } else {
+            error_log('[FP-EXP-SLOTS] FAIL: insert_slot returned false');
+            return new WP_Error('fp_exp_slot_invalid', 'Failed to create slot in database', [
+                'payload' => $payload
+            ]);
         }
-        
-        return $inserted ? (int) $inserted : 0;
     }
 
     /**

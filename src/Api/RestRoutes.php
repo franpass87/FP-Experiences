@@ -397,6 +397,18 @@ final class RestRoutes
                 ],
             ]
         );
+
+        register_rest_route(
+            'fp-exp/v1',
+            '/diagnostic/checkout',
+            [
+                'methods' => 'GET',
+                'permission_callback' => static function (): bool {
+                    return Helpers::can_manage_fp();
+                },
+                'callback' => [$this, 'diagnostic_checkout'],
+            ]
+        );
     }
 
     public function enforce_no_cache($result, $server, $request)
@@ -1608,5 +1620,75 @@ final class RestRoutes
             'total' => $result['total'],
             'errors' => $result['errors'],
         ]);
+    }
+    
+    public function diagnostic_checkout(): WP_REST_Response
+    {
+        $result = [];
+        
+        // 1. Carrello
+        $cart = \FP_Exp\Booking\Cart::instance();
+        $result['cart'] = [
+            'has_items' => $cart->has_items(),
+            'items' => $cart->get_items(),
+        ];
+        
+        // 2. Availability Meta
+        $experiences = get_posts([
+            'post_type' => 'fp_experience',
+            'post_status' => 'publish',
+            'posts_per_page' => -1,
+            'fields' => 'ids',
+        ]);
+        
+        $result['experiences'] = [];
+        foreach ($experiences as $exp_id) {
+            $meta = get_post_meta($exp_id, '_fp_exp_availability', true);
+            $result['experiences'][] = [
+                'id' => $exp_id,
+                'title' => get_the_title($exp_id),
+                'meta' => $meta,
+            ];
+        }
+        
+        // 3. Simula checkout se c'è un item
+        if (!empty($result['cart']['items'])) {
+            $first_item = $result['cart']['items'][0];
+            $exp_id = $first_item['experience_id'] ?? 0;
+            $start = $first_item['occurrence_start'] ?? '';
+            $end = $first_item['occurrence_end'] ?? '';
+            
+            if ($exp_id && $start && $end) {
+                try {
+                    $slot = Slots::ensure_slot_for_occurrence($exp_id, $start, $end);
+                    
+                    if (is_wp_error($slot)) {
+                        $result['slot_test'] = [
+                            'success' => false,
+                            'error' => $slot->get_error_message(),
+                            'error_data' => $slot->get_error_data(),
+                        ];
+                    } else {
+                        $result['slot_test'] = [
+                            'success' => true,
+                            'slot' => $slot,
+                        ];
+                    }
+                } catch (\Throwable $e) {
+                    $result['slot_test'] = [
+                        'success' => false,
+                        'exception' => $e->getMessage(),
+                    ];
+                }
+            } else {
+                $result['slot_test'] = [
+                    'success' => false,
+                    'error' => 'Dati mancanti nel carrello',
+                    'data' => ['exp_id' => $exp_id, 'start' => $start, 'end' => $end],
+                ];
+            }
+        }
+        
+        return rest_ensure_response($result);
     }
 }

@@ -9,6 +9,83 @@ e questo progetto aderisce al [Semantic Versioning](https://semver.org/lang/it/)
 
 ## [Unreleased]
 
+## [0.4.1] - 2025-10-31
+
+### 🔧 Refactor Minimale Failsafe - Sistema Auto-Riparante
+
+**Obiettivo:** Rendere il sistema di slot validation robusto, auto-riparante, e debuggabile in produzione.
+
+**Problema:** L'errore `fp_exp_slot_invalid` persisteva in produzione senza possibilità di debug (WP_DEBUG=false, log vuoti).
+
+### Changed
+
+- **🔴 CRITICO - Logging Sempre Attivo**: `ensure_slot_for_occurrence()` e checkout ora loggano SEMPRE (non più condizionato a WP_DEBUG)
+  - **Prima**: `if (defined('WP_DEBUG') && WP_DEBUG) error_log(...)`
+  - **Dopo**: `error_log(...)` — sempre, anche in produzione
+  - **Beneficio**: Debug possibile in produzione tramite `/wp-content/debug.log`
+  - (`src/Booking/Slots.php`, `src/Booking/Checkout.php`)
+
+- **🟡 Signature Change - ensure_slot_for_occurrence()**: Ora ritorna `int|WP_Error` invece di solo `int`
+  - **Prima**: `return 0;` (nessun dettaglio)
+  - **Dopo**: `return new WP_Error('fp_exp_slot_invalid', $message, $data);` (dettagli completi)
+  - **Beneficio**: Log dettagliati con experience_id, start, end, buffer, conflicting_slots
+  - (`src/Booking/Slots.php`)
+
+### Added
+
+- **✅ Auto-Repair Capacity = 0**: Se trova `capacity=0` in availability meta, lo ripara automaticamente
+  - Usa fallback `capacity=10` per permettere il checkout
+  - Salva nel database con `update_post_meta()` per prevenire ricorrenze
+  - Log: `[FP-EXP-SLOTS] AUTO-REPAIR: updated experience meta with capacity=10`
+  - (`src/Booking/Slots.php`)
+
+- **✅ WP_Error Dettagliati**: Tutti i failure point ora ritornano WP_Error con dati completi
+  - Include: `experience_id`, `requested_start`, `requested_end`, `buffer_before`, `buffer_after`, `conflicting_slots`
+  - Visibili nei log per diagnosi immediata
+  - (`src/Booking/Slots.php`, `src/Booking/Checkout.php`)
+
+- **✅ Endpoint Diagnostico**: Nuovo endpoint `/diagnostic/checkout` per debugging avanzato
+  - Mostra: carrello, availability meta, simula slot creation
+  - Accessibile solo da admin con permission `can_manage_fp()`
+  - (`src/Api/RestRoutes.php`)
+
+- **✅ Conflicting Slots nel Log**: Quando c'è buffer conflict, logga i primi 5 slot in conflitto
+  - Query dettagliata per mostrare QUALE slot causa il conflitto
+  - Include ID, start_datetime, end_datetime
+  - (`src/Booking/Slots.php`)
+
+### Fixed
+
+- **🐛 Impossibile Debuggare Checkout in Produzione**: WP_DEBUG=false impediva qualsiasi logging
+  - **Soluzione**: Logging sempre attivo, indipendente da WP_DEBUG
+  - **Impatto**: Debug ora possibile in produzione tramite `debug.log`
+
+- **🐛 Capacity=0 Blocca Checkout**: Esperienza con `slot_capacity=0` causava `fp_exp_slot_invalid`
+  - **Soluzione**: Auto-repair automatico con `update_post_meta()`
+  - **Impatto**: Checkout procede + problema prevenuto in futuro
+
+- **🐛 Errori Generici Senza Dettagli**: Messaggio "slot non disponibile" senza contesto
+  - **Soluzione**: WP_Error con tutti i dati (experience_id, datetime, buffer, conflicting_slots)
+  - **Impatto**: Diagnosi immediata invece di guesswork
+
+### Developer Notes
+
+**Gestione WP_Error nei Consumer:**
+- `src/Booking/Checkout.php` — gestisce WP_Error e logga dettagli
+- `src/Booking/RequestToBook.php` — pass-through WP_Error
+- `src/Admin/DiagnosticShortcode.php` — mostra WP_Error con error_data
+
+**Test Locale:**
+Esegui `test-refactor-failsafe.php` per verificare:
+- Auto-repair capacity=0
+- Logging sempre attivo
+- WP_Error dettagliati con conflicting_slots
+
+**Rollback:**
+Se problemi in produzione, ripristina file v0.4.0 e contatta supporto con log da `debug.log`
+
+---
+
 ## [0.4.0] - 2025-10-31
 
 ### 🐛 Bugfix Sessions - 2025-10-31 (COMPLETE)

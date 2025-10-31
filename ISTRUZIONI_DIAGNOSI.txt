@@ -1,0 +1,60 @@
+═══════════════════════════════════════════════════════════════
+🔍 DIAGNOSI DEFINITIVA - ISTRUZIONI
+═══════════════════════════════════════════════════════════════
+
+✅ HO MODIFICATO IL FILE PER TE!
+
+FILE MODIFICATO:
+- src/Api/RestRoutes.php
+
+═══════════════════════════════════════════════════════════════
+📤 PASSO 1: CARICA VIA FTP
+═══════════════════════════════════════════════════════════════
+
+Carica SOLO questo file in produzione via FTP:
+
+wp-content/plugins/FP-Experiences/src/Api/RestRoutes.php
+
+═══════════════════════════════════════════════════════════════
+🧪 PASSO 2: ESEGUI DIAGNOSI
+═══════════════════════════════════════════════════════════════
+
+1. Apri il sito in produzione
+2. Apri Console Browser (F12)
+3. Vai nella pagina Tools (con nonce attivo):
+   https://www.ilpoderedimarfisa.it/wp-admin/admin.php?page=fp_exp_tools
+
+4. Copia e incolla nella Console:
+
+fetch('/wp-json/fp-exp/v1/diagnostic/checkout', {
+  headers: {'X-WP-Nonce': 'a6bb83c84c'}
+})
+.then(r => r.json())
+.then(d => {
+  console.log('═══════════════════════════════════════════════');
+  console.log('🔍 DIAGNOSI COMPLETA CHECKOUT');
+  console.log('═══════════════════════════════════════════════');
+  console.log(JSON.stringify(d, null, 2));
+  console.log('═══════════════════════════════════════════════');
+  console.log('📋 COPIA TUTTO L\'OUTPUT SOPRA E MANDAMELO!');
+})
+.catch(e => console.error('❌ Errore:', e));
+
+5. COPIA TUTTO l'output che vedi in console
+6. MANDAMELO
+
+═══════════════════════════════════════════════════════════════
+💡 COSA FA QUESTO SCRIPT?
+═══════════════════════════════════════════════════════════════
+
+Questo endpoint diagnostico mi mostra:
+
+✓ Cosa c'è esattamente nel carrello custom FP Experiences
+✓ Se le esperienze hanno availability meta corretta
+✓ Se il problema è nei dati del carrello
+✓ L'ERRORE ESATTO quando prova a creare/validare lo slot
+
+Con queste info saprò ESATTAMENTE dove e perché fallisce il checkout!
+
+═══════════════════════════════════════════════════════════════
+

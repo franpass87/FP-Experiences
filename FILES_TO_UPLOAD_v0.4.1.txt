@@ -1,0 +1,77 @@
+═══════════════════════════════════════════════════════════════
+📦 FILE DA CARICARE IN PRODUZIONE - v0.4.1 REFACTOR FAILSAFE
+═══════════════════════════════════════════════════════════════
+
+Carica questi 6 file via FTP in:
+wp-content/plugins/FP-Experiences/
+
+═══════════════════════════════════════════════════════════════
+
+1. fp-experiences.php
+
+2. src/Booking/Slots.php
+
+3. src/Booking/Checkout.php
+
+4. src/Booking/RequestToBook.php
+
+5. src/Api/RestRoutes.php
+
+6. src/Admin/DiagnosticShortcode.php
+
+═══════════════════════════════════════════════════════════════
+⚡ DOPO IL CARICAMENTO
+═══════════════════════════════════════════════════════════════
+
+1. Vai in Dashboard → FP Experiences → Tools
+2. Clicca "Pulisci Cache"
+3. Svuota cache FP Performance (o altro plugin cache attivo)
+4. Svuota OpCache (se possibile)
+
+═══════════════════════════════════════════════════════════════
+🧪 TEST CHECKOUT
+═══════════════════════════════════════════════════════════════
+
+1. Apri una esperienza
+2. Seleziona data + orario
+3. Aggiungi al carrello
+4. Vai al checkout
+5. Compila dati
+6. Clicca "Effettua ordine"
+
+═══════════════════════════════════════════════════════════════
+📋 SE FALLISCE ANCORA
+═══════════════════════════════════════════════════════════════
+
+Via FTP, apri:
+/wp-content/debug.log
+
+Cerca le ultime righe con:
+[FP-EXP-CHECKOUT]
+[FP-EXP-SLOTS]
+
+COPIA le ultime 50 righe e mandamele.
+
+I log ora includono TUTTI i dettagli:
+- Experience ID
+- Start/End datetime
+- Capacity
+- Buffer settings
+- Conflicting slots (se buffer conflict)
+- Availability meta completa
+
+Con questi log posso fare fix mirato in 5 minuti!
+
+═══════════════════════════════════════════════════════════════
+✅ COSA FA v0.4.1
+═══════════════════════════════════════════════════════════════
+
+✓ Log SEMPRE attivi (anche con WP_DEBUG=false)
+✓ Auto-repair capacity=0 → salva capacity=10
+✓ Errori dettagliati con tutti i dati
+✓ Endpoint diagnostico per debug avanzato
+
+═══════════════════════════════════════════════════════════════
+
+READY! 🚀
+

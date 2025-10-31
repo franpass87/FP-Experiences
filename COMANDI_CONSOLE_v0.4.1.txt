@@ -1,0 +1,161 @@
+═══════════════════════════════════════════════════════════════
+🔧 COMANDI CONSOLE POST-DEPLOY v0.4.1
+═══════════════════════════════════════════════════════════════
+
+Esegui questi comandi nella Console Browser (F12) DOPO aver deployato.
+
+═══════════════════════════════════════════════════════════════
+📍 PRIMA VAI SU:
+═══════════════════════════════════════════════════════════════
+
+https://www.ilpoderedimarfisa.it/wp-admin/admin.php?page=fp_exp_tools
+
+(per avere il nonce attivo)
+
+═══════════════════════════════════════════════════════════════
+1️⃣ VERIFICA VERSIONE PLUGIN
+═══════════════════════════════════════════════════════════════
+
+fetch('/wp-json/')
+  .then(r => r.json())
+  .then(d => {
+    const routes = Object.keys(d.routes).filter(r => r.includes('/fp-exp/'));
+    console.log('✅ FP-Experiences routes:', routes.length);
+    
+    // Check new diagnostic endpoint
+    if (routes.includes('/fp-exp/v1/diagnostic/checkout')) {
+      console.log('✅ v0.4.1 CONFERMATA! Endpoint diagnostico presente.');
+    } else {
+      console.log('❌ v0.4.1 NON deployata. Endpoint diagnostico mancante.');
+    }
+  });
+
+═══════════════════════════════════════════════════════════════
+2️⃣ PULISCI CACHE
+═══════════════════════════════════════════════════════════════
+
+fetch('/wp-json/fp-exp/v1/tools/clear-cache', {
+  method: 'POST',
+  headers: {'X-WP-Nonce': 'a6bb83c84c'}
+})
+.then(r => r.json())
+.then(d => console.log('✅ Cache:', d.message));
+
+═══════════════════════════════════════════════════════════════
+3️⃣ DIAGNOSI CARRELLO (opzionale)
+═══════════════════════════════════════════════════════════════
+
+fetch('/wp-json/fp-exp/v1/diagnostic/checkout', {
+  headers: {'X-WP-Nonce': 'a6bb83c84c'}
+})
+.then(r => r.json())
+.then(d => {
+  console.log('═══════════════════════════════════════════════');
+  console.log('🔍 DIAGNOSI CHECKOUT');
+  console.log('═══════════════════════════════════════════════');
+  console.log(JSON.stringify(d, null, 2));
+  console.log('═══════════════════════════════════════════════');
+  
+  // Summary
+  if (d.cart && d.cart.has_items) {
+    console.log('✅ Carrello: ' + d.cart.items.length + ' item(s)');
+  } else {
+    console.log('❌ Carrello vuoto');
+  }
+  
+  if (d.slot_test) {
+    if (d.slot_test.success) {
+      console.log('✅ Slot test: SUCCESS');
+    } else {
+      console.log('❌ Slot test FAIL:', d.slot_test.error);
+      if (d.slot_test.error_data) {
+        console.log('Error data:', d.slot_test.error_data);
+      }
+    }
+  }
+});
+
+═══════════════════════════════════════════════════════════════
+4️⃣ TEST AVAILABILITY
+═══════════════════════════════════════════════════════════════
+
+// Test per esperienza 9104 (Degustazione Standard)
+fetch('/wp-json/fp-exp/v1/availability?experience=9104&start=2025-11-07&end=2025-11-30')
+  .then(r => r.json())
+  .then(d => {
+    if (d.slots && d.slots.length > 0) {
+      console.log('✅ Availability OK: ' + d.slots.length + ' slot');
+      console.log('Primo slot:', d.slots[0]);
+    } else {
+      console.log('❌ Nessuno slot disponibile');
+    }
+  });
+
+═══════════════════════════════════════════════════════════════
+5️⃣ RIPARA SLOT (se necessario)
+═══════════════════════════════════════════════════════════════
+
+fetch('/wp-json/fp-exp/v1/tools/repair-slot-capacities', {
+  method: 'POST',
+  headers: {'X-WP-Nonce': 'a6bb83c84c'}
+})
+.then(r => r.json())
+.then(d => console.log('✅ Repair:', d.message));
+
+═══════════════════════════════════════════════════════════════
+6️⃣ RICOSTRUISCI AVAILABILITY META (se necessario)
+═══════════════════════════════════════════════════════════════
+
+fetch('/wp-json/fp-exp/v1/tools/rebuild-availability-meta', {
+  method: 'POST',
+  headers: {'X-WP-Nonce': 'a6bb83c84c'}
+})
+.then(r => r.json())
+.then(d => console.log('✅ Rebuild:', d.message));
+
+═══════════════════════════════════════════════════════════════
+💡 INTERPRETAZIONE RISULTATI
+═══════════════════════════════════════════════════════════════
+
+DIAGNOSI CHECKOUT:
+
+{
+  "cart": {
+    "has_items": true,
+    "items": [{
+      "experience_id": 9104,           ← OK
+      "occurrence_start": "2025-11-07...",  ← OK
+      "occurrence_end": "2025-11-07..."     ← OK
+    }]
+  },
+  "slot_test": {
+    "success": false,                  ← PROBLEMA
+    "error": "Buffer conflict",        ← CAUSA
+    "error_data": {
+      "conflicting_slots": [...]       ← DETTAGLIO
+    }
+  }
+}
+
+Se vedi questo:
+→ Il problema è buffer conflict
+→ Guarda conflicting_slots per vedere QUALE slot
+→ Possibile soluzione: elimina slot vecchi o riduci buffer
+
+═══════════════════════════════════════════════════════════════
+📋 WORKFLOW COMPLETO POST-DEPLOY
+═══════════════════════════════════════════════════════════════
+
+1. Comando 1 (verifica v0.4.1 deployata)
+2. Comando 2 (pulisci cache)
+3. Comando 3 (diagnosi pre-checkout)
+4. Testa checkout REALE
+5. Se fallisce:
+   - Leggi /wp-content/debug.log
+   - OPPURE esegui comando 3 di nuovo
+   - Mandami l'output
+
+═══════════════════════════════════════════════════════════════
+
+READY! 🚀
+

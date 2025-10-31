@@ -534,20 +534,38 @@ final class Checkout
                 $start = is_string($item['slot_start'] ?? null) ? (string) $item['slot_start'] : '';
                 $end = is_string($item['slot_end'] ?? null) ? (string) $item['slot_end'] : '';
 
-                if (defined('WP_DEBUG') && WP_DEBUG) {
-                    error_log('[FP-EXP-CHECKOUT] No slot_id, attempting ensure_slot_for_occurrence: ' . wp_json_encode([
-                        'experience_id' => $experience_id,
-                        'slot_start' => $start,
-                        'slot_end' => $end,
-                    ]));
-                }
+                // ALWAYS log checkout attempts - critical for production debugging
+                error_log('[FP-EXP-CHECKOUT] Cart item missing slot_id, attempting ensure_slot_for_occurrence: ' . wp_json_encode([
+                    'experience_id' => $experience_id,
+                    'slot_start' => $start,
+                    'slot_end' => $end,
+                    'cart_item' => $item,
+                ]));
 
                 if ($experience_id > 0 && $start && $end) {
                     $ensured = Slots::ensure_slot_for_occurrence($experience_id, $start, $end);
                     
-                    if (defined('WP_DEBUG') && WP_DEBUG) {
-                        error_log('[FP-EXP-CHECKOUT] ensure_slot_for_occurrence result: ' . ($ensured ?: 'false'));
+                    // Handle WP_Error from ensure_slot_for_occurrence
+                    if (is_wp_error($ensured)) {
+                        error_log('[FP-EXP-CHECKOUT] ❌ ensure_slot_for_occurrence returned WP_Error: ' . $ensured->get_error_message());
+                        error_log('[FP-EXP-CHECKOUT] Error data: ' . wp_json_encode($ensured->get_error_data()));
+                        
+                        // Return the detailed error directly
+                        return new WP_Error(
+                            'fp_exp_slot_invalid',
+                            __('Lo slot selezionato non è più disponibile. Per favore:', 'fp-experiences') . "\n" .
+                            '• ' . __('Ricarica la pagina e seleziona una nuova data', 'fp-experiences') . "\n" .
+                            '• ' . __('Verifica che il calendario mostri slot disponibili', 'fp-experiences') . "\n" .
+                            '• ' . __('Contatta il supporto se il problema persiste', 'fp-experiences') . "\n\n" .
+                            'Dettagli tecnici: ' . $ensured->get_error_message(),
+                            array_merge(
+                                ['status' => 400],
+                                ['error_details' => $ensured->get_error_data()]
+                            )
+                        );
                     }
+                    
+                    error_log('[FP-EXP-CHECKOUT] ✅ ensure_slot_for_occurrence success: slot_id=' . $ensured);
                     
                     if ($ensured > 0) {
                         $slot_id = $ensured;
@@ -556,17 +574,13 @@ final class Checkout
                 }
 
                 if ($slot_id <= 0) {
-                    if (defined('WP_DEBUG') && WP_DEBUG) {
-                        error_log('[FP-EXP-CHECKOUT] ❌ SLOT VALIDATION FAILED: ' . wp_json_encode($item));
-                    }
+                    error_log('[FP-EXP-CHECKOUT] ❌ SLOT VALIDATION FAILED - Final slot_id still 0');
+                    error_log('[FP-EXP-CHECKOUT] Item data: ' . wp_json_encode($item));
                     
-                    // Include more details in error for debugging
+                    // Include comprehensive debug data
                     $error_data = [
                         'status' => 400,
-                    ];
-                    
-                    if (defined('WP_DEBUG') && WP_DEBUG) {
-                        $error_data['debug'] = [
+                        'debug' => [
                             'experience_id' => $experience_id,
                             'slot_start' => $start,
                             'slot_end' => $end,
@@ -574,8 +588,9 @@ final class Checkout
                             'is_gift' => ! empty($item['is_gift']),
                             'gift_voucher' => ! empty($item['gift_voucher']),
                             'item_keys' => array_keys($item),
-                        ];
-                    }
+                            'availability_meta' => get_post_meta($experience_id, '_fp_exp_availability', true),
+                        ],
+                    ];
                     
                     // More helpful error message
                     $user_message = __('Lo slot selezionato non è più disponibile. Per favore:', 'fp-experiences') . "\n" .
