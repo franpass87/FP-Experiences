@@ -3318,66 +3318,7 @@
     background: #000;
 }
 
-/* YouTube Shorts: dimensioni FISSE per forzare visualizzazione corretta */
-.fp-exp-gallery__item--shorts {
-    display: flex !important;
-    justify-content: center !important;
-    align-items: center !important;
-    padding: 2rem 0 !important;
-    background: #f0f0f0 !important; /* DEBUG: sfondo grigio per vedere il contenitore */
-}
-
-.fp-exp-gallery__item--shorts .fp-exp-gallery__video-wrapper {
-    position: relative !important;
-    width: 405px !important;  /* Larghezza fissa: 9 parti */
-    height: 720px !important; /* Altezza fissa: 16 parti (720/405 = 1.777... = 16:9) */
-    max-height: none !important;
-    margin: 0 auto !important;
-    background: #000 !important;
-    border: 5px solid red !important; /* DEBUG: bordo rosso per vedere il wrapper */
-    border-radius: calc(var(--fp-exp-radius-base, 12px) * 0.75) !important;
-    overflow: hidden !important;
-    box-shadow: 0 10px 40px rgba(0,0,0,0.3) !important;
-}
-
-.fp-exp-gallery__item--shorts .fp-exp-gallery__video {
-    position: absolute !important;
-    top: 0 !important;
-    left: 0 !important;
-    width: 100% !important;
-    height: 100% !important;
-    border: 0 !important;
-}
-
-/* Shorts su mobile: scala proporzionalmente */
-@media (max-width: 768px) {
-    .fp-exp-gallery__item--shorts .fp-exp-gallery__video-wrapper {
-        width: 90vw !important;
-        height: calc(90vw * 1.778) !important; /* mantiene aspect ratio 9:16 */
-        max-height: 75vh !important;
-    }
-    
-    .fp-exp-gallery__item--shorts {
-        padding: 1rem 0 !important;
-    }
-}
-
-/* Tablet: dimensione intermedia */
-@media (min-width: 769px) and (max-width: 1024px) {
-    .fp-exp-gallery__item--shorts .fp-exp-gallery__video-wrapper {
-        width: 360px !important;
-        height: 640px !important;
-    }
-}
-
-/* Supporto per video verticali (9:16) - DEPRECATO, usa --shorts invece */
-@media (max-width: 768px) {
-    .fp-exp-gallery__video-wrapper {
-        max-height: 70vh;
-        width: auto;
-        aspect-ratio: auto;
-    }
-}
+/* Video YouTube standard (tutti in 16:9) */
 
 .fp-exp-gallery__video {
     position: absolute;
