@@ -10,16 +10,19 @@ use DateTimeImmutable;
 use DateTimeZone;
 use Exception;
 use FP_Exp\Utils\Helpers;
+use WP_Error;
 use wpdb;
 
 use function __;
 use function absint;
+use function is_wp_error;
 use function array_fill;
 use function array_filter;
 use function array_sum;
 use function array_unique;
 use function array_values;
 use function current_time;
+use function get_post_meta;
 use function gmdate;
 use function in_array;
 use function is_array;
@@ -28,6 +31,7 @@ use function maybe_serialize;
 use function maybe_unserialize;
 use function sanitize_key;
 use function strtotime;
+use function update_post_meta;
 use function wp_parse_args;
 use function wp_timezone;
 
