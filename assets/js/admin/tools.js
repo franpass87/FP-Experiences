@@ -30,11 +30,12 @@
                 this.textContent = 'Esecuzione...';
 
                 try {
+                    const nonce = window.fpExpTools?.nonce || window.fpExpAdmin?.restNonce || '';
                     const response = await fetch(`/wp-json/fp-exp/v1/tools/${action}`, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
-                            'X-WP-Nonce': window.fpExpAdmin?.restNonce || ''
+                            'X-WP-Nonce': nonce
                         },
                         credentials: 'same-origin'
                     });
