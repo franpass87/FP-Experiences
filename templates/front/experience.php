@@ -496,9 +496,14 @@ $sticky_price_display = '' !== $price_from_display ? $format_currency($price_fro
                     <div class="fp-exp-gallery__track" role="list">
                         <?php
                         $youtube_video_id = '' !== $gallery_video_url ? $get_youtube_video_id($gallery_video_url) : '';
+                        $is_shorts = '' !== $gallery_video_url && str_contains($gallery_video_url, '/shorts/');
                         if ('' !== $youtube_video_id) :
+                            $video_item_classes = 'fp-exp-gallery__item fp-exp-gallery__item--video';
+                            if ($is_shorts) {
+                                $video_item_classes .= ' fp-exp-gallery__item--shorts';
+                            }
                             ?>
-                            <div class="fp-exp-gallery__item fp-exp-gallery__item--video" role="listitem">
+                            <div class="<?php echo esc_attr($video_item_classes); ?>" role="listitem">
                                 <div class="fp-exp-gallery__video-wrapper">
                                     <iframe
                                         class="fp-exp-gallery__video"
