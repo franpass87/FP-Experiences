@@ -2,7 +2,7 @@
 
 **Data:** 31 Ottobre 2025  
 **Priorità:** 🟡 **ALTA**  
-**Status:** 🔍 **IN ANALISI / DEBUG ATTIVO**
+**Status:** ✅ **RISOLTO**
 
 ---
 
@@ -34,9 +34,22 @@ I permalink potrebbero essere cached in modo errato.
 
 ---
 
-## ✅ Fix Applicati
+## ✅ Fix Applicati (DEFINITIVO)
 
-### 1. Uso Diretto di `$post->post_title`
+### 1. Bypass Completo di `_fp_exp_page_id`
+La lista ora usa **sempre** `get_permalink($id)` direttamente, bypassando completamente `resolve_permalink()` che causava conflitti quando più esperienze condividevano lo stesso `page_id`.
+
+```php
+// ❌ PRIMA (causava problemi)
+$permalink = $this->resolve_permalink($id, $cta_mode);
+
+// ✅ DOPO (sempre univoco)
+$permalink = get_permalink($id) ?: '';
+```
+
+**File:** `src/Shortcodes/ListShortcode.php` - Linea 504
+
+### 2. Uso Diretto di `$post->post_title`
 Invece di usare `get_the_title($post)` che potrebbe essere influenzato dal post globale, ora usiamo direttamente la proprietà dell'oggetto.
 
 ```php
@@ -49,7 +62,7 @@ $title = $post->post_title; // Direct property access
 
 **File:** `src/Shortcodes/ListShortcode.php` - Linea 502
 
-### 2. Debug Logging Attivo
+### 3. Debug Logging (Opzionale)
 Aggiunto logging dettagliato per tracciare la risoluzione dei permalink:
 
 ```php

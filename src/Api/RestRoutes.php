@@ -9,6 +9,7 @@ use FP_Exp\Booking\AvailabilityService;
 use FP_Exp\Booking\Recurrence;
 use FP_Exp\Booking\Slots;
 use FP_Exp\Gift\VoucherManager;
+use FP_Exp\Migrations\Migrations\CleanupDuplicatePageIds;
 use FP_Exp\Utils\Helpers;
 use FP_Exp\Utils\Logger;
 use Throwable;
@@ -290,6 +291,18 @@ final class RestRoutes
                     return Helpers::can_manage_fp();
                 },
                 'callback' => [$this, 'tool_restore_branding'],
+            ]
+        );
+
+        register_rest_route(
+            'fp-exp/v1',
+            '/tools/cleanup-duplicate-page-ids',
+            [
+                'methods' => 'POST',
+                'permission_callback' => static function (): bool {
+                    return Helpers::can_manage_fp();
+                },
+                'callback' => [$this, 'tool_cleanup_duplicate_page_ids'],
             ]
         );
 
@@ -1345,5 +1358,58 @@ final class RestRoutes
         }
 
         return [! $missing, $details];
+    }
+
+    public function tool_cleanup_duplicate_page_ids(): WP_REST_Response
+    {
+        if (Helpers::hit_rate_limit('tools_cleanup_page_ids_' . get_current_user_id(), 3, MINUTE_IN_SECONDS)) {
+            return rest_ensure_response([
+                'success' => false,
+                'message' => __('Pulizia già eseguita di recente. Riprova tra qualche istante.', 'fp-experiences'),
+            ]);
+        }
+
+        // First check if there are duplicates
+        $check = CleanupDuplicatePageIds::check_duplicates();
+        
+        if (! $check['has_duplicates']) {
+            Logger::log('tools', 'Page ID cleanup check: no duplicates found', [
+                'user_id' => get_current_user_id(),
+            ]);
+            
+            return rest_ensure_response([
+                'success' => true,
+                'message' => __('Nessun page_id duplicato trovato. Tutte le esperienze hanno ID univoci.', 'fp-experiences'),
+                'cleaned' => 0,
+                'total' => 0,
+            ]);
+        }
+
+        // Run the cleanup
+        $result = CleanupDuplicatePageIds::execute_cleanup();
+        
+        Logger::log('tools', 'Page ID cleanup executed', [
+            'user_id' => get_current_user_id(),
+            'cleaned' => $result['cleaned'],
+            'total' => $result['total'],
+            'duplicate_page_ids' => count($result['duplicates_found']),
+        ]);
+
+        $message = $result['cleaned'] > 0
+            ? sprintf(
+                /* translators: 1: cleaned count, 2: total experiences */
+                __('Pulizia completata: rimossi %1$d page_id duplicati da %2$d esperienze totali. Ogni esperienza ora ha un link univoco.', 'fp-experiences'),
+                $result['cleaned'],
+                $result['total']
+            )
+            : __('Nessun page_id duplicato trovato. Tutte le esperienze hanno già ID univoci.', 'fp-experiences');
+
+        return rest_ensure_response([
+            'success' => $result['success'],
+            'message' => $message,
+            'cleaned' => $result['cleaned'],
+            'total' => $result['total'],
+            'details' => $result['duplicates_found'],
+        ]);
     }
 }

@@ -10,7 +10,12 @@ e questo progetto aderisce al [Semantic Versioning](https://semver.org/lang/it/)
 ## [Unreleased]
 
 ### Fixed
-- **🟡 Link Errati nella Lista Esperienze**: Risolto problema dove le esperienze nella seconda riga della lista puntavano all'ultima esperienza della prima riga. Modificato `map_experience()` per usare direttamente `$post->post_title` invece di `get_the_title($post)` evitando interferenze con il post globale di WordPress. Aggiunto debug logging dettagliato per tracciare la risoluzione dei permalink. (`src/Shortcodes/ListShortcode.php`, `docs/bug-fixes/LIST_LINKS_FIX_2025-10-31.md`)
+- **🟡 Link Errati nella Lista Esperienze**: Risolto problema dove le esperienze nella seconda riga della lista puntavano all'ultima esperienza della prima riga. Il bug era causato da più esperienze che condividevano lo stesso `_fp_exp_page_id` (pagina template comune). Implementate 3 soluzioni:
+  1. **Lista usa permalink diretti**: Bypassato `resolve_permalink()` - la lista usa sempre `get_permalink($id)` 
+  2. **Migration automatica**: Creata `CleanupDuplicatePageIds` che rimuove `_fp_exp_page_id` duplicati all'avvio
+  3. **Validazione preventiva**: `ExperiencePageCreator` ora verifica che il `page_id` non sia già usato prima di salvarlo
+  4. **Tool admin**: Aggiunto "Pulisci Page ID duplicati" in Strumenti per pulizia manuale
+  (`src/Shortcodes/ListShortcode.php`, `src/Migrations/Migrations/CleanupDuplicatePageIds.php`, `src/Admin/ExperiencePageCreator.php`, `src/Api/RestRoutes.php`, `docs/bug-fixes/LIST_LINKS_FIX_2025-10-31.md`)
 
 - **🔴 CRITICO - Endpoint REST API Gift Errato & Validazione Slot**: Risolti due bug critici nella funzionalità "Regala esperienza":
   1. **Endpoint errato**: Il JavaScript chiamava `/wp-json/fp-exp/v1/gift/create` invece di `/wp-json/fp-exp/v1/gift/purchase`, causando errore "Nessun percorso fornisce una corrispondenza"

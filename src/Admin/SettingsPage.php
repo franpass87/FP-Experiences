@@ -1367,6 +1367,12 @@ final class SettingsPage
                 'button' => esc_html__('Ripara dati', 'fp-experiences'),
             ],
             [
+                'slug' => 'cleanup-duplicate-page-ids',
+                'label' => esc_html__('Pulisci Page ID duplicati', 'fp-experiences'),
+                'description' => esc_html__('Rimuove i _fp_exp_page_id dalle esperienze che condividono lo stesso page_id. Questo garantisce che ogni esperienza abbia un link univoco nella lista.', 'fp-experiences'),
+                'button' => esc_html__('Pulisci duplicati', 'fp-experiences'),
+            ],
+            [
                 'slug' => 'resync-pages',
                 'label' => esc_html__('Resynchronise experience pages', 'fp-experiences'),
                 'description' => esc_html__('Create or relink WordPress pages for experiences missing the `[fp_exp_page]` shortcode.', 'fp-experiences'),

@@ -100,7 +100,33 @@ final class ExperiencePageCreator
         $result = wp_insert_post($page_args);
 
         if ($result && ! is_wp_error($result)) {
-            update_post_meta($experience_id, '_fp_exp_page_id', (int) $result);
+            // Verify this page_id isn't already used by another experience before saving
+            $page_id = (int) $result;
+            $existing_uses = get_posts([
+                'post_type' => 'fp_experience',
+                'post_status' => 'any',
+                'posts_per_page' => 1,
+                'fields' => 'ids',
+                'post__not_in' => [$experience_id],
+                'meta_query' => [
+                    [
+                        'key' => '_fp_exp_page_id',
+                        'value' => $page_id,
+                        'compare' => '=',
+                    ],
+                ],
+            ]);
+            
+            if (empty($existing_uses)) {
+                update_post_meta($experience_id, '_fp_exp_page_id', $page_id);
+            } else {
+                // Another experience already uses this page_id, don't save it
+                Helpers::log_debug('pages', 'Prevented duplicate page_id assignment', [
+                    'experience_id' => $experience_id,
+                    'page_id' => $page_id,
+                    'already_used_by' => $existing_uses,
+                ]);
+            }
 
             set_transient(self::NOTICE_KEY, [
                 'message' => esc_html__('Pagina esperienza creata con successo.', 'fp-experiences'),
@@ -312,6 +338,33 @@ final class ExperiencePageCreator
             return 0;
         }
 
+        // Verify this page_id isn't already used by another experience before saving
+        $existing_uses = get_posts([
+            'post_type' => 'fp_experience',
+            'post_status' => 'any',
+            'posts_per_page' => 1,
+            'fields' => 'ids',
+            'post__not_in' => [$experience_id],
+            'meta_query' => [
+                [
+                    'key' => '_fp_exp_page_id',
+                    'value' => (int) $page_id,
+                    'compare' => '=',
+                ],
+            ],
+        ]);
+        
+        if (! empty($existing_uses)) {
+            // Another experience already uses this page_id, don't save it
+            Helpers::log_debug('pages', 'Prevented duplicate page_id assignment in auto-create', [
+                'experience_id' => $experience_id,
+                'page_id' => (int) $page_id,
+                'already_used_by' => $existing_uses,
+            ]);
+            
+            return 0;
+        }
+        
         update_post_meta($experience_id, '_fp_exp_page_id', (int) $page_id);
 
         Logger::log('pages', 'Auto-created experience page', [

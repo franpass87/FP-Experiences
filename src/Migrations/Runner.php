@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace FP_Exp\Migrations;
 
 use FP_Exp\Migrations\Migrations\AddAddonImageMeta;
+use FP_Exp\Migrations\Migrations\CleanupDuplicatePageIds;
 use FP_Exp\Migrations\Migrations\CreateGiftVoucherTable;
 use FP_Exp\Utils\Helpers;
 use Throwable;
@@ -32,6 +33,7 @@ final class Runner
         $this->migrations = [
             new AddAddonImageMeta(),
             new CreateGiftVoucherTable(),
+            new CleanupDuplicatePageIds(),
         ];
     }
 
