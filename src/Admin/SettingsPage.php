@@ -1373,6 +1373,12 @@ final class SettingsPage
                 'button' => esc_html__('Pulisci duplicati', 'fp-experiences'),
             ],
             [
+                'slug' => 'rebuild-availability-meta',
+                'label' => esc_html__('Ricostruisci Availability Meta', 'fp-experiences'),
+                'description' => esc_html__('Ricostruisce _fp_exp_availability per tutte le esperienze usando i meta esistenti (_fp_capacity_slot, _fp_lead_time_hours, ecc). Utile dopo import CSV o per sistemare availability incomplete.', 'fp-experiences'),
+                'button' => esc_html__('Ricostruisci meta', 'fp-experiences'),
+            ],
+            [
                 'slug' => 'resync-pages',
                 'label' => esc_html__('Resynchronise experience pages', 'fp-experiences'),
                 'description' => esc_html__('Create or relink WordPress pages for experiences missing the `[fp_exp_page]` shortcode.', 'fp-experiences'),

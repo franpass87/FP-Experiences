@@ -10,6 +10,12 @@ e questo progetto aderisce al [Semantic Versioning](https://semver.org/lang/it/)
 ## [Unreleased]
 
 ### Fixed
+- **🔴 CRITICO - Checkout Slot Validation Fallisce con Capacity=0**: Risolto triplo problema critico nel checkout:
+  1. **Salvataggio admin**: La funzione `sync_recurrence_to_availability()` sovrascriveva/cancellava il meta causando perdita di `slot_capacity`. Fix: disattivata chiamata problematica.
+  2. **Import CSV**: L'importer usava `! empty()` invece di `isset()` e non salvava `capacity_slot` se era 0 o vuoto. Fix: importer ora salva sempre availability completa e preserva campi esistenti.
+  3. **Default fallback**: `ensure_slot_for_occurrence()` ora usa default capacity=10 quando `slot_capacity=0`.
+  4. **Tool riparazione**: Aggiunto "Ricostruisci Availability Meta" per sistemare esperienze già importate con meta incompleti.
+  (`src/Admin/ExperienceMetaBoxes.php`, `src/Admin/ImporterPage.php`, `src/Booking/Slots.php`, `src/Booking/Checkout.php`, `src/Api/RestRoutes.php`, `src/Admin/SettingsPage.php`)
 - **🟡 Link Errati nella Lista Esperienze**: Risolto problema dove le esperienze nella seconda riga della lista puntavano all'ultima esperienza della prima riga. Il bug era causato da più esperienze che condividevano lo stesso `_fp_exp_page_id` (pagina template comune). Implementate 3 soluzioni:
   1. **Lista usa permalink diretti**: Bypassato `resolve_permalink()` - la lista usa sempre `get_permalink($id)` 
   2. **Migration automatica**: Creata `CleanupDuplicatePageIds` che rimuove `_fp_exp_page_id` duplicati all'avvio

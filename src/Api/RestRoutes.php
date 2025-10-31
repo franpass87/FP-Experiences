@@ -308,6 +308,18 @@ final class RestRoutes
 
         register_rest_route(
             'fp-exp/v1',
+            '/tools/rebuild-availability-meta',
+            [
+                'methods' => 'POST',
+                'permission_callback' => static function (): bool {
+                    return Helpers::can_manage_fp();
+                },
+                'callback' => [$this, 'tool_rebuild_availability_meta'],
+            ]
+        );
+
+        register_rest_route(
+            'fp-exp/v1',
             '/gift/purchase',
             [
                 'methods' => 'POST',
@@ -1358,6 +1370,96 @@ final class RestRoutes
         }
 
         return [! $missing, $details];
+    }
+
+    public function tool_rebuild_availability_meta(): WP_REST_Response
+    {
+        if (Helpers::hit_rate_limit('tools_rebuild_availability_' . get_current_user_id(), 3, MINUTE_IN_SECONDS)) {
+            return rest_ensure_response([
+                'success' => false,
+                'message' => __('Ricostruzione già eseguita di recente. Riprova tra qualche istante.', 'fp-experiences'),
+            ]);
+        }
+
+        $experiences = get_posts([
+            'post_type' => 'fp_experience',
+            'post_status' => 'any',
+            'posts_per_page' => -1,
+            'fields' => 'ids',
+        ]);
+
+        $rebuilt = 0;
+        $skipped = 0;
+
+        foreach ($experiences as $experience_id) {
+            $experience_id = absint($experience_id);
+            
+            if ($experience_id <= 0) {
+                continue;
+            }
+
+            // Get legacy meta fields
+            $capacity_slot = absint((string) get_post_meta($experience_id, '_fp_capacity_slot', true));
+            $lead_time = absint((string) get_post_meta($experience_id, '_fp_lead_time_hours', true));
+            $buffer_before = absint((string) get_post_meta($experience_id, '_fp_buffer_before_minutes', true));
+            $buffer_after = absint((string) get_post_meta($experience_id, '_fp_buffer_after_minutes', true));
+
+            // Get existing availability
+            $existing = get_post_meta($experience_id, '_fp_exp_availability', true);
+            $availability = is_array($existing) ? $existing : [];
+
+            // Check if it needs rebuilding
+            $needs_rebuild = ! is_array($existing)
+                || ! isset($existing['slot_capacity'])
+                || ($capacity_slot > 0 && $existing['slot_capacity'] !== $capacity_slot);
+
+            if (! $needs_rebuild) {
+                $skipped++;
+                continue;
+            }
+
+            // Rebuild with complete structure
+            $availability = array_merge([
+                'frequency' => 'weekly',
+                'times' => [],
+                'days_of_week' => [],
+                'custom_slots' => [],
+                'slot_capacity' => $capacity_slot,
+                'lead_time_hours' => $lead_time,
+                'buffer_before_minutes' => $buffer_before,
+                'buffer_after_minutes' => $buffer_after,
+                'start_date' => '',
+                'end_date' => '',
+            ], $availability);
+
+            // Update slot_capacity from legacy if exists
+            if ($capacity_slot > 0) {
+                $availability['slot_capacity'] = $capacity_slot;
+            }
+
+            update_post_meta($experience_id, '_fp_exp_availability', $availability);
+            $rebuilt++;
+        }
+
+        Logger::log('tools', 'Availability meta rebuilt', [
+            'user_id' => get_current_user_id(),
+            'total' => count($experiences),
+            'rebuilt' => $rebuilt,
+            'skipped' => $skipped,
+        ]);
+
+        return rest_ensure_response([
+            'success' => true,
+            'message' => sprintf(
+                /* translators: 1: rebuilt count, 2: total experiences */
+                __('Ricostruzione completata: aggiornate %1$d esperienze su %2$d totali.', 'fp-experiences'),
+                $rebuilt,
+                count($experiences)
+            ),
+            'rebuilt' => $rebuilt,
+            'skipped' => $skipped,
+            'total' => count($experiences),
+        ]);
     }
 
     public function tool_cleanup_duplicate_page_ids(): WP_REST_Response

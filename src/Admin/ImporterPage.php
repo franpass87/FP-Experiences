@@ -733,35 +733,49 @@ final class ImporterPage
      */
     private function update_availability_meta(int $post_id, array $data): void
     {
-        $availability = [];
+        // Get existing availability to preserve any existing configuration
+        $existing = get_post_meta($post_id, '_fp_exp_availability', true);
+        $availability = is_array($existing) ? $existing : [];
+        
+        // Set defaults for a complete structure
+        $defaults = [
+            'frequency' => 'weekly',
+            'times' => [],
+            'days_of_week' => [],
+            'custom_slots' => [],
+            'slot_capacity' => 0,
+            'lead_time_hours' => 0,
+            'buffer_before_minutes' => 0,
+            'buffer_after_minutes' => 0,
+            'start_date' => '',
+            'end_date' => '',
+        ];
+        
+        // Merge: defaults < existing < CSV data
+        $availability = array_merge($defaults, $availability);
 
-        // Slot capacity (from capacity_slot field)
-        if (! empty($data['capacity_slot'])) {
+        // Update from CSV data - use isset() not empty() to allow 0 values
+        if (isset($data['capacity_slot'])) {
             $availability['slot_capacity'] = absint($data['capacity_slot']);
         }
 
-        // Buffer before
-        if (! empty($data['buffer_before'])) {
+        if (isset($data['buffer_before'])) {
             $availability['buffer_before_minutes'] = absint($data['buffer_before']);
         }
 
-        // Buffer after
-        if (! empty($data['buffer_after'])) {
+        if (isset($data['buffer_after'])) {
             $availability['buffer_after_minutes'] = absint($data['buffer_after']);
         }
 
-        // Lead time hours
-        if (! empty($data['lead_time_hours'])) {
+        if (isset($data['lead_time_hours'])) {
             $lead_time = absint($data['lead_time_hours']);
             $availability['lead_time_hours'] = $lead_time;
             // Also save as separate meta for backward compatibility
             update_post_meta($post_id, '_fp_lead_time_hours', $lead_time);
         }
 
-        // Save availability only if we have meaningful data
-        if (! empty($availability)) {
-            update_post_meta($post_id, '_fp_exp_availability', $availability);
-        }
+        // Always save availability with complete structure
+        update_post_meta($post_id, '_fp_exp_availability', $availability);
     }
 
     /**

@@ -380,6 +380,9 @@ final class Slots
     {
         $experience_id = absint($experience_id);
         if ($experience_id <= 0) {
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('[FP-EXP-SLOTS] ensure_slot failed: invalid experience_id');
+            }
             return 0;
         }
 
@@ -388,10 +391,16 @@ final class Slots
             $start = new DateTimeImmutable($start_utc, new DateTimeZone('UTC'));
             $end = new DateTimeImmutable($end_utc, new DateTimeZone('UTC'));
         } catch (Exception $exception) {
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('[FP-EXP-SLOTS] ensure_slot failed: invalid datetime format - ' . $exception->getMessage());
+            }
             return 0;
         }
 
         if ($end <= $start) {
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('[FP-EXP-SLOTS] ensure_slot failed: end <= start');
+            }
             return 0;
         }
 
@@ -400,6 +409,9 @@ final class Slots
 
         $existing_id = self::slot_exists($experience_id, $start_utc, $end_utc);
         if ($existing_id) {
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('[FP-EXP-SLOTS] ensure_slot: slot already exists, returning ID ' . $existing_id);
+            }
             return (int) $existing_id;
         }
 
@@ -414,8 +426,20 @@ final class Slots
             $buffer_before = isset($availability['buffer_before_minutes']) ? absint((string) $availability['buffer_before_minutes']) : 0;
             $buffer_after = isset($availability['buffer_after_minutes']) ? absint((string) $availability['buffer_after_minutes']) : 0;
         }
+        
+        // Use default capacity if not configured (prevents slot creation failure)
+        if ($capacity_total === 0) {
+            $capacity_total = 10; // Default capacity for auto-created slots
+            
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('[FP-EXP-SLOTS] ensure_slot: using default capacity (10) - experience has slot_capacity=0');
+            }
+        }
 
         if (self::has_buffer_conflict($experience_id, $start_utc, $end_utc, $buffer_before, $buffer_after)) {
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('[FP-EXP-SLOTS] ensure_slot failed: buffer conflict detected');
+            }
             return 0;
         }
 
@@ -431,6 +455,15 @@ final class Slots
         ];
 
         $inserted = self::insert_slot($payload);
+        
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            if ($inserted) {
+                error_log('[FP-EXP-SLOTS] ensure_slot: created new slot ID ' . $inserted);
+            } else {
+                error_log('[FP-EXP-SLOTS] ensure_slot failed: insert_slot returned false');
+            }
+        }
+        
         return $inserted ? (int) $inserted : 0;
     }
 

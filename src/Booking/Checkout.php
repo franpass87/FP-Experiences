@@ -511,11 +511,19 @@ final class Checkout
 
         $cart = $this->cart->get_data();
 
+        // Debug logging per capire cosa c'è nel carrello
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('[FP-EXP-CHECKOUT] Cart items: ' . wp_json_encode($cart['items']));
+        }
+
         foreach ($cart['items'] as &$item) { // phpcs:ignore WordPress.CodeAnalysis.AssignmentInCondition.Found
             // Skip slot validation for gift vouchers (they don't have slots until redemption)
             $is_gift = ! empty($item['is_gift']) || ! empty($item['gift_voucher']);
             
             if ($is_gift) {
+                if (defined('WP_DEBUG') && WP_DEBUG) {
+                    error_log('[FP-EXP-CHECKOUT] Skipping gift voucher validation for experience_id: ' . ($item['experience_id'] ?? 'unknown'));
+                }
                 continue;
             }
             
@@ -526,8 +534,21 @@ final class Checkout
                 $start = is_string($item['slot_start'] ?? null) ? (string) $item['slot_start'] : '';
                 $end = is_string($item['slot_end'] ?? null) ? (string) $item['slot_end'] : '';
 
+                if (defined('WP_DEBUG') && WP_DEBUG) {
+                    error_log('[FP-EXP-CHECKOUT] No slot_id, attempting ensure_slot_for_occurrence: ' . wp_json_encode([
+                        'experience_id' => $experience_id,
+                        'slot_start' => $start,
+                        'slot_end' => $end,
+                    ]));
+                }
+
                 if ($experience_id > 0 && $start && $end) {
                     $ensured = Slots::ensure_slot_for_occurrence($experience_id, $start, $end);
+                    
+                    if (defined('WP_DEBUG') && WP_DEBUG) {
+                        error_log('[FP-EXP-CHECKOUT] ensure_slot_for_occurrence result: ' . ($ensured ?: 'false'));
+                    }
+                    
                     if ($ensured > 0) {
                         $slot_id = $ensured;
                         $item['slot_id'] = $slot_id;
@@ -535,9 +556,34 @@ final class Checkout
                 }
 
                 if ($slot_id <= 0) {
-                    return new WP_Error('fp_exp_slot_invalid', __('Lo slot selezionato non è più disponibile.', 'fp-experiences'), [
+                    if (defined('WP_DEBUG') && WP_DEBUG) {
+                        error_log('[FP-EXP-CHECKOUT] ❌ SLOT VALIDATION FAILED: ' . wp_json_encode($item));
+                    }
+                    
+                    // Include more details in error for debugging
+                    $error_data = [
                         'status' => 400,
-                    ]);
+                    ];
+                    
+                    if (defined('WP_DEBUG') && WP_DEBUG) {
+                        $error_data['debug'] = [
+                            'experience_id' => $experience_id,
+                            'slot_start' => $start,
+                            'slot_end' => $end,
+                            'slot_id_in_item' => (int) ($item['slot_id'] ?? 0),
+                            'is_gift' => ! empty($item['is_gift']),
+                            'gift_voucher' => ! empty($item['gift_voucher']),
+                            'item_keys' => array_keys($item),
+                        ];
+                    }
+                    
+                    // More helpful error message
+                    $user_message = __('Lo slot selezionato non è più disponibile. Per favore:', 'fp-experiences') . "\n" .
+                        '• ' . __('Ricarica la pagina e seleziona una nuova data', 'fp-experiences') . "\n" .
+                        '• ' . __('Verifica che il calendario mostri slot disponibili', 'fp-experiences') . "\n" .
+                        '• ' . __('Contatta il supporto se il problema persiste', 'fp-experiences');
+                    
+                    return new WP_Error('fp_exp_slot_invalid', $user_message, $error_data);
                 }
             }
 

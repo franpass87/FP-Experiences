@@ -2589,8 +2589,10 @@ final class ExperienceMetaBoxes
             delete_post_meta($post_id, '_fp_exp_recurrence');
         }
         
-        // Sync recurrence to availability for frontend
-        $this->sync_recurrence_to_availability($post_id, $recurrence_meta, $slot_capacity, $lead_time, $buffer_before, $buffer_after);
+        // NOTE: sync_recurrence_to_availability() can overwrite _fp_exp_availability
+        // We already saved it above (line 2577), so we skip this to preserve slot_capacity
+        // The frontend can read times from _fp_exp_recurrence if needed
+        // $this->sync_recurrence_to_availability($post_id, $recurrence_meta, $slot_capacity, $lead_time, $buffer_before, $buffer_after);
 
         $this->update_or_delete_meta($post_id, '_fp_lead_time_hours', $lead_time);
         $this->update_or_delete_meta($post_id, '_fp_buffer_before_minutes', $buffer_before);
@@ -2717,13 +2719,19 @@ final class ExperienceMetaBoxes
             $availability['times'] = [];
         }
         
-        // Salva sempre per mantenere la sincronizzazione
-        // Se ci sono dati validi, li salviamo
-        if (!empty($availability['times']) || !empty($availability['custom_slots']) || $slot_capacity > 0) {
+        // Salva sempre availability se c'è QUALSIASI configurazione
+        // Anche solo slot_capacity, lead_time, o buffer devono essere preservati
+        $has_config = !empty($availability['times']) 
+            || !empty($availability['custom_slots']) 
+            || $slot_capacity > 0
+            || $lead_time > 0
+            || $buffer_before > 0
+            || $buffer_after > 0;
+            
+        if ($has_config) {
             update_post_meta($post_id, '_fp_exp_availability', $availability);
         } else {
-            // Se non ci sono dati, cancella il meta per evitare confusione
-            // Il calendario capirà che non ci sono slot disponibili
+            // Solo se NESSUN campo è configurato, cancella il meta
             delete_post_meta($post_id, '_fp_exp_availability');
         }
     }
