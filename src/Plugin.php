@@ -187,6 +187,10 @@ final class Plugin
         $this->migrations = new MigrationRunner();
         $this->single_experience_renderer = new SingleExperienceRenderer();
         $this->auto_translator = new AutoTranslator();
+        
+        // Integrazione con plugin cache/performance - esclude REST API dalla cache
+        $performance_integration = new Integrations\PerformanceIntegration();
+        $performance_integration->register();
 
         if (is_admin()) {
             $this->settings_page = new SettingsPage();
