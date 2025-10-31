@@ -1521,6 +1521,87 @@
                 });
             }
         })();
+
+        // 8) Gestione "Leggi di più" per descrizioni troncate
+        (function setupReadMoreToggle() {
+            const listingSection = document.querySelector('.fp-listing');
+            if (!listingSection) return;
+
+            // Usa delegazione eventi per supportare paginazione dinamica
+            listingSection.addEventListener('click', (ev) => {
+                const readMoreBtn = ev.target.closest('[data-fp-read-more]');
+                if (!readMoreBtn) return;
+
+                ev.preventDefault();
+
+                const wrapper = readMoreBtn.closest('.fp-listing__description-wrapper');
+                if (!wrapper) return;
+
+                const description = wrapper.querySelector('[data-fp-text-clamp]');
+                const textSpan = readMoreBtn.querySelector('.fp-listing__read-more-text');
+                
+                if (!description || !textSpan) return;
+
+                const isExpanded = readMoreBtn.getAttribute('aria-expanded') === 'true';
+                const expandText = textSpan.getAttribute('data-expand-text') || 'Leggi di più';
+                const collapseText = textSpan.getAttribute('data-collapse-text') || 'Mostra meno';
+
+                if (isExpanded) {
+                    // Collassa
+                    description.classList.remove('is-expanded');
+                    description.classList.add('is-clamped');
+                    readMoreBtn.setAttribute('aria-expanded', 'false');
+                    textSpan.textContent = expandText;
+                } else {
+                    // Espandi
+                    description.classList.remove('is-clamped');
+                    description.classList.add('is-expanded');
+                    readMoreBtn.setAttribute('aria-expanded', 'true');
+                    textSpan.textContent = collapseText;
+                }
+            });
+
+            // Nascondi il pulsante se il testo è già corto (non troncato)
+            const checkDescriptionLength = () => {
+                document.querySelectorAll('[data-fp-text-clamp]').forEach((description) => {
+                    const wrapper = description.closest('.fp-listing__description-wrapper');
+                    if (!wrapper) return;
+
+                    const readMoreBtn = wrapper.querySelector('[data-fp-read-more]');
+                    if (!readMoreBtn) return;
+
+                    // Verifica se il testo è effettivamente troncato
+                    // Confronta scrollHeight (altezza contenuto completo) con clientHeight (altezza visibile)
+                    const isOverflowing = description.scrollHeight > description.clientHeight + 2; // +2px tolleranza
+                    
+                    if (isOverflowing) {
+                        readMoreBtn.style.display = 'inline-flex';
+                    } else {
+                        readMoreBtn.style.display = 'none';
+                    }
+                });
+            };
+
+            // Controlla al caricamento
+            checkDescriptionLength();
+
+            // Ricontrolla al resize (con debounce)
+            let resizeTimer;
+            window.addEventListener('resize', () => {
+                clearTimeout(resizeTimer);
+                resizeTimer = setTimeout(checkDescriptionLength, 150);
+            });
+
+            // Ricontrolla quando vengono caricate nuove card (per paginazione AJAX futura)
+            const observer = new MutationObserver(() => {
+                checkDescriptionLength();
+            });
+
+            observer.observe(listingSection, {
+                childList: true,
+                subtree: true
+            });
+        })();
     });
     
 })();

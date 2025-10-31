@@ -151,7 +151,17 @@ $format_currency = static function (string $amount) use ($currency_symbol, $curr
                                         </ul>
                                     <?php endif; ?>
                                     <?php if ('' !== $short_description) : ?>
-                                        <p class="fp-listing__description"><?php echo esc_html($short_description); ?></p>
+                                        <div class="fp-listing__description-wrapper">
+                                            <p class="fp-listing__description is-clamped" data-fp-text-clamp><?php echo esc_html($short_description); ?></p>
+                                            <button type="button" class="fp-listing__read-more" data-fp-read-more aria-expanded="false">
+                                                <span class="fp-listing__read-more-text" data-expand-text="<?php esc_attr_e('Leggi di più', 'fp-experiences'); ?>" data-collapse-text="<?php esc_attr_e('Mostra meno', 'fp-experiences'); ?>">
+                                                    <?php esc_html_e('Leggi di più', 'fp-experiences'); ?>
+                                                </span>
+                                                <svg class="fp-listing__read-more-icon" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
+                                                    <path fill="currentColor" d="M7.41 8.59 12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/>
+                                                </svg>
+                                            </button>
+                                        </div>
                                     <?php endif; ?>
                                 </div>
                             <?php endif; ?>
