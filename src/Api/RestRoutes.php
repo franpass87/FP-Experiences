@@ -1660,6 +1660,22 @@ final class RestRoutes
             $end = $first_item['slot_end'] ?? ($first_item['occurrence_end'] ?? '');
             
             if ($exp_id && $start && $end) {
+                // Check if slot already exists BEFORE trying to create
+                global $wpdb;
+                $table = $wpdb->prefix . 'fp_exp_slots';
+                $existing_slot = $wpdb->get_row($wpdb->prepare(
+                    "SELECT * FROM {$table} WHERE experience_id = %d AND start_datetime = %s AND end_datetime = %s",
+                    $exp_id,
+                    $start,
+                    $end
+                ), ARRAY_A);
+                
+                $result['pre_check'] = [
+                    'slot_exists' => !empty($existing_slot),
+                    'existing_slot_id' => $existing_slot['id'] ?? null,
+                    'existing_slot_capacity' => $existing_slot['capacity_total'] ?? null,
+                ];
+                
                 try {
                     $slot = Slots::ensure_slot_for_occurrence($exp_id, $start, $end);
                     
@@ -1672,7 +1688,8 @@ final class RestRoutes
                     } else {
                         $result['slot_test'] = [
                             'success' => true,
-                            'slot' => $slot,
+                            'slot_id' => $slot,
+                            'slot' => Slots::get_slot($slot),
                         ];
                     }
                 } catch (\Throwable $e) {
