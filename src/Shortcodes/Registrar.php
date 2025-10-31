@@ -44,6 +44,11 @@ final class Registrar
         foreach ($this->shortcodes as $shortcode) {
             $shortcode->register();
         }
+        
+        // Register diagnostic shortcode (admin only)
+        if (is_admin() || current_user_can('manage_options')) {
+            \FP_Exp\Admin\DiagnosticShortcode::register();
+        }
     }
 
     public function flush_experience_cache(int $post_id, WP_Post $post, bool $update): void

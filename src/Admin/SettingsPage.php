@@ -1379,6 +1379,18 @@ final class SettingsPage
                 'button' => esc_html__('Ricostruisci meta', 'fp-experiences'),
             ],
             [
+                'slug' => 'repair-slot-capacities',
+                'label' => esc_html__('Ripara Capacity Slot', 'fp-experiences'),
+                'description' => esc_html__('Aggiorna la capacity di tutti gli slot esistenti con capacity=0, usando la configurazione corrente dall\'esperienza. Utile per slot creati prima dei fix recenti.', 'fp-experiences'),
+                'button' => esc_html__('Ripara slot', 'fp-experiences'),
+            ],
+            [
+                'slug' => 'cleanup-old-slots',
+                'label' => esc_html__('Pulisci Slot Vecchi', 'fp-experiences'),
+                'description' => esc_html__('Cancella slot passati (oltre 30 giorni) che non hanno prenotazioni. Aiuta a mantenere il database pulito.', 'fp-experiences'),
+                'button' => esc_html__('Pulisci slot', 'fp-experiences'),
+            ],
+            [
                 'slug' => 'resync-pages',
                 'label' => esc_html__('Resynchronise experience pages', 'fp-experiences'),
                 'description' => esc_html__('Create or relink WordPress pages for experiences missing the `[fp_exp_page]` shortcode.', 'fp-experiences'),

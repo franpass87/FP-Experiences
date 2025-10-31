@@ -281,11 +281,52 @@ final class Slots
         }
 
         try {
-            $start = new DateTimeImmutable($start_utc, new DateTimeZone('UTC'));
-            $end = new DateTimeImmutable($end_utc, new DateTimeZone('UTC'));
+            $requested_start = new DateTimeImmutable($start_utc, new DateTimeZone('UTC'));
+            $requested_end = new DateTimeImmutable($end_utc, new DateTimeZone('UTC'));
         } catch (Exception $exception) {
             return false;
         }
+
+        global $wpdb;
+        $table = self::table_name();
+
+        // FIX: Check for ACTUAL overlap first (ignoring buffers)
+        // Only apply buffer check if slots actually overlap in time
+        $actual_overlap_query = "SELECT id, start_datetime, end_datetime FROM {$table} 
+            WHERE experience_id = %d 
+            AND status != %s 
+            AND start_datetime < %s 
+            AND end_datetime > %s";
+        
+        $actual_overlap_params = [
+            $experience_id,
+            self::STATUS_CANCELLED,
+            $requested_end->format('Y-m-d H:i:s'),
+            $requested_start->format('Y-m-d H:i:s'),
+        ];
+
+        if ($ignore_slot_id) {
+            $actual_overlap_query .= ' AND id != %d';
+            $actual_overlap_params[] = $ignore_slot_id;
+        }
+
+        $actual_overlapping = $wpdb->get_results(
+            $wpdb->prepare($actual_overlap_query, $actual_overlap_params),
+            ARRAY_A
+        );
+
+        // If there's ACTUAL overlap (slots running at the same time), that's a conflict
+        if (!empty($actual_overlapping)) {
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('[FP-EXP-SLOTS] ACTUAL slot overlap detected (same time): ' . wp_json_encode($actual_overlapping));
+            }
+            return true;
+        }
+
+        // If no actual overlap, check buffer conflicts
+        // But be more lenient: allow adjacent slots (end-to-end) even with buffers
+        $start = $requested_start;
+        $end = $requested_end;
 
         if ($buffer_before_minutes > 0) {
             $start = $start->sub(new DateInterval('PT' . $buffer_before_minutes . 'M'));
@@ -295,11 +336,12 @@ final class Slots
             $end = $end->add(new DateInterval('PT' . $buffer_after_minutes . 'M'));
         }
 
-        global $wpdb;
-
-        $table = self::table_name();
-
-        $query = "SELECT id FROM {$table} WHERE experience_id = %d AND status != %s AND start_datetime < %s AND end_datetime > %s";
+        $query = "SELECT id, start_datetime, end_datetime FROM {$table} 
+            WHERE experience_id = %d 
+            AND status != %s 
+            AND start_datetime < %s 
+            AND end_datetime > %s";
+        
         $params = [
             $experience_id,
             self::STATUS_CANCELLED,
@@ -312,11 +354,50 @@ final class Slots
             $params[] = $ignore_slot_id;
         }
 
-        $sql = $wpdb->prepare($query, $params);
+        $buffer_overlapping = $wpdb->get_results(
+            $wpdb->prepare($query, $params),
+            ARRAY_A
+        );
 
-        $result = $wpdb->get_var($sql);
+        if (empty($buffer_overlapping)) {
+            return false; // No conflict
+        }
 
-        return null !== $result;
+        // Check if it's just adjacent slots (end-to-end) - ALLOW this
+        foreach ($buffer_overlapping as $slot) {
+            try {
+                $slot_start = new DateTimeImmutable($slot['start_datetime'], new DateTimeZone('UTC'));
+                $slot_end = new DateTimeImmutable($slot['end_datetime'], new DateTimeZone('UTC'));
+                
+                // Allow if the existing slot ends exactly when the new one starts (or vice versa)
+                // Use timestamp comparison for accuracy
+                $is_adjacent = ($slot_end->getTimestamp() === $requested_start->getTimestamp()) 
+                            || ($slot_start->getTimestamp() === $requested_end->getTimestamp());
+                
+                if ($is_adjacent) {
+                    if (defined('WP_DEBUG') && WP_DEBUG) {
+                        error_log('[FP-EXP-SLOTS] Adjacent slot allowed (end-to-end): ID ' . $slot['id']);
+                        error_log('[FP-EXP-SLOTS] Slot end: ' . $slot_end->format('Y-m-d H:i:s') . ' === Requested start: ' . $requested_start->format('Y-m-d H:i:s'));
+                    }
+                    continue; // This is OK - adjacent slots
+                }
+                
+                // If we get here, there's a real buffer conflict
+                if (defined('WP_DEBUG') && WP_DEBUG) {
+                    error_log('[FP-EXP-SLOTS] Buffer conflict detected!');
+                    error_log('[FP-EXP-SLOTS] Conflicting slot ID: ' . $slot['id']);
+                    error_log('[FP-EXP-SLOTS] Requested: ' . $requested_start->format('Y-m-d H:i:s') . ' → ' . $requested_end->format('Y-m-d H:i:s'));
+                    error_log('[FP-EXP-SLOTS] Existing: ' . $slot['start_datetime'] . ' → ' . $slot['end_datetime']);
+                    error_log('[FP-EXP-SLOTS] Buffer: before=' . $buffer_before_minutes . 'min, after=' . $buffer_after_minutes . 'min');
+                    error_log('[FP-EXP-SLOTS] Not adjacent: slot_end timestamp=' . $slot_end->getTimestamp() . ', req_start=' . $requested_start->getTimestamp());
+                }
+                return true; // Real conflict
+            } catch (Exception $e) {
+                continue;
+            }
+        }
+
+        return false; // All conflicts were just adjacent slots - allowed
     }
 
     /**

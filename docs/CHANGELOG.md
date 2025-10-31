@@ -10,6 +10,15 @@ e questo progetto aderisce al [Semantic Versioning](https://semver.org/lang/it/)
 ## [Unreleased]
 
 ### Fixed
+- **🔴 CRITICO - Buffer Conflict Blocca Creazione Slot**: Risolto problema critico dove il checkout falliva con `fp_exp_slot_invalid` a causa di buffer conflict anche quando gli slot non si sovrapponevano realmente.
+  - **Causa 1**: 50+ slot esistenti con `capacity_total = 0` (creati prima dei fix recenti)
+  - **Causa 2**: La logica `has_buffer_conflict()` bloccava anche slot adiacenti (end-to-end) a causa del buffer "before/after"
+  - **Fix 1**: Creato `SlotRepairTool` per aggiornare capacity di slot esistenti con `capacity=0`
+  - **Fix 2**: Modificata `has_buffer_conflict()` per distinguere tra overlap reale e buffer overlap, permettendo slot adiacenti
+  - **Fix 3**: Aggiunti 2 tool admin: "Ripara Capacity Slot" e "Pulisci Slot Vecchi"
+  - **Fix 4**: Aggiunto shortcode diagnostico `[fp_exp_diagnostic]` per debug in produzione
+  (`src/Booking/Slots.php`, `src/Admin/SlotRepairTool.php`, `src/Api/RestRoutes.php`, `src/Admin/SettingsPage.php`, `src/Admin/DiagnosticShortcode.php`)
+
 - **🔴 CRITICO - Checkout Slot Validation Fallisce con Capacity=0**: Risolto triplo problema critico nel checkout:
   1. **Salvataggio admin**: La funzione `sync_recurrence_to_availability()` sovrascriveva/cancellava il meta causando perdita di `slot_capacity`. Fix: disattivata chiamata problematica.
   2. **Import CSV**: L'importer usava `! empty()` invece di `isset()` e non salvava `capacity_slot` se era 0 o vuoto. Fix: importer ora salva sempre availability completa e preserva campi esistenti.

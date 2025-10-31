@@ -305,6 +305,30 @@ final class RestRoutes
                 'callback' => [$this, 'tool_cleanup_duplicate_page_ids'],
             ]
         );
+        
+        register_rest_route(
+            'fp-exp/v1',
+            '/tools/repair-slot-capacities',
+            [
+                'methods' => 'POST',
+                'permission_callback' => static function (): bool {
+                    return Helpers::can_manage_fp();
+                },
+                'callback' => [$this, 'tool_repair_slot_capacities'],
+            ]
+        );
+        
+        register_rest_route(
+            'fp-exp/v1',
+            '/tools/cleanup-old-slots',
+            [
+                'methods' => 'POST',
+                'permission_callback' => static function (): bool {
+                    return Helpers::can_manage_fp();
+                },
+                'callback' => [$this, 'tool_cleanup_old_slots'],
+            ]
+        );
 
         register_rest_route(
             'fp-exp/v1',
@@ -1512,6 +1536,77 @@ final class RestRoutes
             'cleaned' => $result['cleaned'],
             'total' => $result['total'],
             'details' => $result['duplicates_found'],
+        ]);
+    }
+    
+    public function tool_repair_slot_capacities(): WP_REST_Response
+    {
+        if (Helpers::hit_rate_limit('tools_repair_slots_' . get_current_user_id(), 3, MINUTE_IN_SECONDS)) {
+            return rest_ensure_response([
+                'success' => false,
+                'message' => __('Riparazione già eseguita di recente. Riprova tra qualche istante.', 'fp-experiences'),
+            ]);
+        }
+        
+        $result = \FP_Exp\Admin\SlotRepairTool::repair_slot_capacities();
+        
+        Logger::log('tools', 'Slot capacities repaired', [
+            'user_id' => get_current_user_id(),
+            'updated' => $result['updated'],
+            'total' => $result['total'],
+            'errors' => $result['errors'],
+        ]);
+        
+        $message = $result['updated'] > 0
+            ? sprintf(
+                /* translators: 1: updated count, 2: total slots */
+                __('Riparazione completata: aggiornati %1$d slot su %2$d con capacity=0.', 'fp-experiences'),
+                $result['updated'],
+                $result['total']
+            )
+            : __('Nessuno slot con capacity=0 trovato. Tutti gli slot hanno già una capacity valida.', 'fp-experiences');
+        
+        return rest_ensure_response([
+            'success' => empty($result['errors']),
+            'message' => $message,
+            'updated' => $result['updated'],
+            'total' => $result['total'],
+            'errors' => $result['errors'],
+        ]);
+    }
+    
+    public function tool_cleanup_old_slots(): WP_REST_Response
+    {
+        if (Helpers::hit_rate_limit('tools_cleanup_slots_' . get_current_user_id(), 3, MINUTE_IN_SECONDS)) {
+            return rest_ensure_response([
+                'success' => false,
+                'message' => __('Pulizia già eseguita di recente. Riprova tra qualche istante.', 'fp-experiences'),
+            ]);
+        }
+        
+        $result = \FP_Exp\Admin\SlotRepairTool::cleanup_old_slots(30);
+        
+        Logger::log('tools', 'Old slots cleaned up', [
+            'user_id' => get_current_user_id(),
+            'deleted' => $result['deleted'],
+            'total' => $result['total'],
+            'errors' => $result['errors'],
+        ]);
+        
+        $message = $result['deleted'] > 0
+            ? sprintf(
+                /* translators: 1: deleted count */
+                __('Pulizia completata: rimossi %1$d slot vecchi senza prenotazioni.', 'fp-experiences'),
+                $result['deleted']
+            )
+            : __('Nessuno slot vecchio trovato. Il database è già pulito.', 'fp-experiences');
+        
+        return rest_ensure_response([
+            'success' => empty($result['errors']),
+            'message' => $message,
+            'deleted' => $result['deleted'],
+            'total' => $result['total'],
+            'errors' => $result['errors'],
         ]);
     }
 }
