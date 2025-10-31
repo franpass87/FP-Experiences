@@ -466,6 +466,9 @@ final class Slots
     /**
      * Ensure a persisted slot exists for the given occurrence; create it if missing.
      *
+     * @param int $experience_id
+     * @param string $start_utc
+     * @param string $end_utc
      * @return int|WP_Error Slot ID or WP_Error on failure
      */
     public static function ensure_slot_for_occurrence(int $experience_id, string $start_utc, string $end_utc)

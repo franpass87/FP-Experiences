@@ -1655,8 +1655,9 @@ final class RestRoutes
         if (!empty($result['cart']['items'])) {
             $first_item = $result['cart']['items'][0];
             $exp_id = $first_item['experience_id'] ?? 0;
-            $start = $first_item['occurrence_start'] ?? '';
-            $end = $first_item['occurrence_end'] ?? '';
+            // Il carrello usa 'slot_start'/'slot_end', non 'occurrence_start'/'occurrence_end'
+            $start = $first_item['slot_start'] ?? ($first_item['occurrence_start'] ?? '');
+            $end = $first_item['slot_end'] ?? ($first_item['occurrence_end'] ?? '');
             
             if ($exp_id && $start && $end) {
                 try {
@@ -1678,6 +1679,7 @@ final class RestRoutes
                     $result['slot_test'] = [
                         'success' => false,
                         'exception' => $e->getMessage(),
+                        'trace' => $e->getTraceAsString(),
                     ];
                 }
             } else {
@@ -1685,6 +1687,7 @@ final class RestRoutes
                     'success' => false,
                     'error' => 'Dati mancanti nel carrello',
                     'data' => ['exp_id' => $exp_id, 'start' => $start, 'end' => $end],
+                    'item_keys' => array_keys($first_item),
                 ];
             }
         }
