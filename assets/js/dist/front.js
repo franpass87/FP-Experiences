@@ -1,8 +1,83 @@
-/* assets/js/front.js */
 /**
  * Frontend JavaScript - Entry point per il frontend
  * Questo file serve come entry point per il frontend
  */
+
+// Inizializza "Leggi di più" IMMEDIATAMENTE (standalone, non aspetta jQuery)
+(function initReadMoreImmediate() {
+    'use strict';
+    
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', setupReadMore);
+    } else {
+        setupReadMore();
+    }
+    
+    function setupReadMore() {
+        const listingSection = document.querySelector('.fp-listing');
+        if (!listingSection) {
+            console.log('FP-Experiences: Sezione listing non trovata');
+            return;
+        }
+        
+        console.log('FP-Experiences: Read More STANDALONE attivo');
+        
+        // Click handler con delegazione
+        listingSection.addEventListener('click', function(ev) {
+            const btn = ev.target.closest('[data-fp-read-more]');
+            if (!btn) return;
+            
+            ev.preventDefault();
+            console.log('FP-Experiences: Toggle Read More');
+            
+            const wrapper = btn.closest('.fp-listing__description-wrapper');
+            if (!wrapper) return;
+            
+            const description = wrapper.querySelector('[data-fp-text-clamp]');
+            const textSpan = btn.querySelector('.fp-listing__read-more-text');
+            if (!description || !textSpan) return;
+            
+            const isExpanded = btn.getAttribute('aria-expanded') === 'true';
+            const expandText = textSpan.getAttribute('data-expand-text') || 'Leggi di più';
+            const collapseText = textSpan.getAttribute('data-collapse-text') || 'Mostra meno';
+            
+            if (isExpanded) {
+                description.classList.remove('is-expanded');
+                description.classList.add('is-clamped');
+                btn.setAttribute('aria-expanded', 'false');
+                textSpan.textContent = expandText;
+            } else {
+                description.classList.remove('is-clamped');
+                description.classList.add('is-expanded');
+                btn.setAttribute('aria-expanded', 'true');
+                textSpan.textContent = collapseText;
+            }
+        });
+        
+        // Nascondi pulsante se testo non è troncato
+        function checkDescriptions() {
+            document.querySelectorAll('[data-fp-text-clamp]').forEach(function(desc) {
+                const wrapper = desc.closest('.fp-listing__description-wrapper');
+                if (!wrapper) return;
+                
+                const btn = wrapper.querySelector('[data-fp-read-more]');
+                if (!btn) return;
+                
+                // +2px tolleranza per sub-pixel rendering
+                const isOverflowing = desc.scrollHeight > desc.clientHeight + 2;
+                btn.style.display = isOverflowing ? 'inline-flex' : 'none';
+            });
+        }
+        
+        checkDescriptions();
+        
+        let resizeTimer;
+        window.addEventListener('resize', function() {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(checkDescriptions, 150);
+        });
+    }
+})();
 
 // Carica i moduli frontend necessari
 (function() {
@@ -117,7 +192,12 @@
             if (!slotsEl) return;
             if (isLoading) {
                 const loadingLabel = (slotsEl.getAttribute('data-loading-label') || 'Caricamento…');
-                slotsEl.innerHTML = '<p class="fp-exp-slots__placeholder">' + loadingLabel + '</p>';
+                // ✅ XSS fix: usa createElement + textContent invece di innerHTML
+                const placeholder = document.createElement('p');
+                placeholder.className = 'fp-exp-slots__placeholder';
+                placeholder.textContent = loadingLabel;
+                slotsEl.innerHTML = '';
+                slotsEl.appendChild(placeholder);
             } else {
                 // Rimuovi il loading state - il contenuto verrà sostituito dal renderSlots o dal fallback
                 slotsEl.innerHTML = '';
@@ -132,7 +212,12 @@
         const showSlotsError = (message) => {
             if (!slotsEl) return;
             const text = message || 'Impossibile caricare gli slot. Riprova.';
-            slotsEl.innerHTML = '<p class="fp-exp-slots__placeholder">' + text + '</p>';
+            // ✅ XSS fix: usa createElement + textContent invece di innerHTML
+            const placeholder = document.createElement('p');
+            placeholder.className = 'fp-exp-slots__placeholder';
+            placeholder.textContent = text;
+            slotsEl.innerHTML = '';
+            slotsEl.appendChild(placeholder);
         };
 
         const formatTimeRange = (startIso, endIso) => window.FPFront.availability ? window.FPFront.availability.formatTimeRange(startIso, endIso) : 'Slot';
@@ -796,19 +881,45 @@
                     return;
                 }
 
-                if (!fpExpConfig.checkoutNonce) {
-                    // checkoutNonce mancante
+                // Richiedi nonce fresco prima del checkout per evitare problemi di cache
+                let freshCheckoutNonce = '';
+                try {
+                    ctaBtn.disabled = true;
+                    ctaBtn.textContent = 'Preparazione pagamento...';
+                    
+                    // Richiedi nonce fresco da /checkout/nonce
+                    const restBaseUrl = (typeof fpExpConfig !== 'undefined' && fpExpConfig.restUrl) 
+                        || (window.wpApiSettings && wpApiSettings.root) 
+                        || (window.location.origin + '/wp-json/fp-exp/v1/');
+                    const nonceUrl = new URL(restBaseUrl + 'checkout/nonce', window.location.origin);
+                    const nonceResponse = await fetch(nonceUrl, {
+                        method: 'GET',
+                        credentials: 'same-origin'
+                    });
+                    
+                    if (!nonceResponse.ok) {
+                        throw new Error(`Errore richiesta nonce (${nonceResponse.status})`);
+                    }
+                    
+                    const nonceData = await nonceResponse.json();
+                    if (!nonceData || !nonceData.nonce) {
+                        throw new Error('Nonce non ricevuto dal server');
+                    }
+                    
+                    freshCheckoutNonce = nonceData.nonce;
+                } catch (e) {
+                    ctaBtn.disabled = false;
+                    ctaBtn.textContent = 'Procedi al pagamento';
                     alert('Sessione non valida. Aggiorna la pagina e riprova.');
                     return;
                 }
 
                 // Usa il sistema di checkout integrato del plugin
                 try {
-                    ctaBtn.disabled = true;
                     ctaBtn.textContent = 'Aggiunta al carrello...';
 
                     // Aggiungi al carrello interno del plugin
-                    const setCartUrl = new URL('/wp-json/fp-exp/v1/cart/set', window.location.origin);
+                    const setCartUrl = new URL(restBaseUrl + 'cart/set', window.location.origin);
                     
                     const setCartResponse = await fetch(setCartUrl, {
                         method: 'POST',
@@ -838,78 +949,13 @@
                         throw new Error(errorData.message || `Errore aggiunta al carrello (${setCartResponse.status})`);
                     }
 
-                    ctaBtn.textContent = 'Creazione ordine...';
-
-                    // Ora crea l'ordine direttamente usando l'endpoint di checkout
-                    const checkoutUrl = new URL('/wp-json/fp-exp/v1/checkout', window.location.origin);
+                    // ✅ v0.5.0: Redirect to WooCommerce checkout page
+                    // Cart will be automatically synced via template_redirect hook
+                    ctaBtn.textContent = 'Reindirizzamento...';
                     
-                    // Inviamo solo il nonce fp-exp-checkout nel body per la verifica specifica del checkout
-                    // NON inviamo X-WP-Nonce nell'header per evitare conflitti con la verifica del nonce
-                    const checkoutResponse = await fetch(checkoutUrl, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        credentials: 'same-origin',
-                        body: JSON.stringify({
-                            nonce: (typeof fpExpConfig !== 'undefined' && fpExpConfig.checkoutNonce) || '',
-                            contact: {
-                                first_name: 'Cliente',
-                                last_name: 'Temporaneo', 
-                                email: 'temp@example.com',
-                                phone: ''
-                            },
-                            billing: {
-                                first_name: 'Cliente',
-                                last_name: 'Temporaneo',
-                                email: 'temp@example.com', 
-                                phone: ''
-                            },
-                            consent: {
-                                privacy: true,
-                                marketing: false
-                            }
-                        })
-                    });
-
-                    if (!checkoutResponse.ok) {
-                        let errorData = {};
-                        try {
-                            const text = await checkoutResponse.text();
-                            errorData = text ? JSON.parse(text) : {};
-                        } catch (e) {
-                            // Impossibile parsare risposta errore
-                        }
-                        throw new Error(errorData.message || `Errore creazione ordine (${checkoutResponse.status})`);
-                    }
-
-                    let result = {};
-                    try {
-                        const text = await checkoutResponse.text();
-                        // Risposta checkout ricevuta
-                        
-                        if (!text || text.trim() === '') {
-                            throw new Error('Risposta vuota dal server');
-                        }
-                        
-                        result = JSON.parse(text);
-                        // Risposta checkout parsata
-                    } catch (e) {
-                        // Impossibile parsare risposta checkout
-                        throw new Error('Risposta non valida dal server');
-                    }
-                    
-                    // Verifica se la risposta ha payment_url direttamente o dentro data
-                    const paymentUrl = result.payment_url || (result.data && result.data.payment_url);
-                    
-                    if (paymentUrl) {
-                        // Reindirizzamento a pagina di pagamento
-                        // Reindirizza alla pagina di pagamento dell'ordine
-                        window.location.href = paymentUrl;
-                    } else {
-                        // Risposta completa non valida
-                        throw new Error('URL di pagamento non ricevuto');
-                    }
+                    // Redirect to WooCommerce checkout page (with fallback)
+                    const checkoutPageUrl = (typeof fpExpConfig !== 'undefined' && fpExpConfig.checkoutUrl) || '/checkout/';
+                    window.location.href = checkoutPageUrl;
 
                 } catch (error) {
                     // Errore checkout WooCommerce
@@ -1434,7 +1480,10 @@
 
                     try {
                         // Call gift voucher endpoint
-                        const response = await fetch('/wp-json/fp-exp/v1/gift/purchase', {
+                        const restBaseUrl = (typeof fpExpConfig !== 'undefined' && fpExpConfig.restUrl) 
+                            || (window.wpApiSettings && wpApiSettings.root) 
+                            || (window.location.origin + '/wp-json/fp-exp/v1/');
+                        const response = await fetch(restBaseUrl + 'gift/purchase', {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
@@ -1499,7 +1548,9 @@
                 });
             }
         })();
+
+        // 8) Gestione "Leggi di più" - ORA GESTITO IN STANDALONE all'inizio del file
+        // (Codice rimosso per evitare duplicati - vedi riga ~7)
     });
     
 })();
-

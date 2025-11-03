@@ -191,6 +191,18 @@ final class Plugin
         // Integrazione con plugin cache/performance - esclude REST API dalla cache
         $performance_integration = new Integrations\PerformanceIntegration();
         $performance_integration->register();
+        
+        // Integrazione con WooCommerce - prodotto virtuale per esperienze
+        $wc_experience_product = new Integrations\ExperienceProduct();
+        $wc_experience_product->register();
+        
+        // Integrazione con WooCommerce - display personalizzato cart/checkout
+        $wc_product_integration = new Integrations\WooCommerceProduct();
+        $wc_product_integration->register();
+        
+        // Integrazione con WooCommerce checkout - validazione slot
+        $wc_checkout_integration = new Integrations\WooCommerceCheckout();
+        $wc_checkout_integration->register();
 
         if (is_admin()) {
             $this->settings_page = new SettingsPage();

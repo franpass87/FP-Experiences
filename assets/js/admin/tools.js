@@ -31,7 +31,10 @@
 
                 try {
                     const nonce = window.fpExpTools?.nonce || window.fpExpAdmin?.restNonce || '';
-                    const response = await fetch(`/wp-json/fp-exp/v1/tools/${action}`, {
+                    const restBaseUrl = (window.fpExpAdmin && window.fpExpAdmin.restUrl) 
+                        || (window.wpApiSettings && wpApiSettings.root) 
+                        || (window.location.origin + '/wp-json/fp-exp/v1/');
+                    const response = await fetch(`${restBaseUrl}tools/${action}`, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',

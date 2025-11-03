@@ -12,12 +12,16 @@ use function absint;
 use function add_action;
 use function add_filter;
 use function apply_filters;
+use function array_sum;
+use function array_values;
 use function current_time;
 use function delete_transient;
 use function function_exists;
 use function get_option;
 use function get_transient;
 use function is_array;
+use function is_cart;
+use function is_checkout;
 use function is_ssl;
 use function sanitize_text_field;
 use function setcookie;
@@ -62,6 +66,9 @@ final class Cart
     {
         add_action('init', [$this, 'bootstrap_session']);
         add_filter('woocommerce_add_to_cart_validation', [$this, 'prevent_mixed_carts'], 10, 3);
+        
+        // Sync custom cart to WooCommerce before checkout/cart pages
+        add_action('template_redirect', [$this, 'maybe_sync_to_woocommerce'], 5);
     }
 
     public function bootstrap_session(): void
@@ -388,5 +395,116 @@ final class Cart
                 'samesite' => 'Lax',
             ]
         );
+    }
+
+    /**
+     * Maybe sync custom cart to WooCommerce cart on checkout/cart pages
+     */
+    public function maybe_sync_to_woocommerce(): void
+    {
+        if (!function_exists('is_checkout') || !function_exists('is_cart')) {
+            return;
+        }
+
+        // Only sync on checkout or cart pages
+        if (!is_checkout() && !is_cart()) {
+            return;
+        }
+
+        if (!function_exists('WC') || !WC()->cart) {
+            return;
+        }
+
+        // Check if already synced this session
+        if (WC()->session && WC()->session->get('fp_exp_cart_synced_' . $this->get_session_id())) {
+            return;
+        }
+
+        $custom_cart = $this->get_data();
+        
+        if (empty($custom_cart['items'])) {
+            error_log('[FP-EXP-CART] Custom cart empty, nothing to sync');
+            return;
+        }
+
+        error_log('[FP-EXP-CART] Syncing ' . count($custom_cart['items']) . ' items to WooCommerce cart');
+
+        // Clear WooCommerce cart (prevent mixed carts)
+        if (!WC()->cart->is_empty()) {
+            error_log('[FP-EXP-CART] Clearing WooCommerce cart before sync');
+            WC()->cart->empty_cart();
+        }
+
+        $synced_count = 0;
+
+        // Add each custom cart item to WooCommerce
+        foreach ($custom_cart['items'] as $index => $item) {
+            $experience_id = absint($item['experience_id'] ?? 0);
+            
+            if ($experience_id <= 0) {
+                continue;
+            }
+
+            // Cart item data (meta for this item)
+            $cart_item_data = [
+                'fp_exp_item' => true,
+                'fp_exp_experience_id' => $experience_id,
+                'fp_exp_slot_id' => absint($item['slot_id'] ?? 0),
+                'fp_exp_slot_start' => sanitize_text_field($item['slot_start'] ?? ''),
+                'fp_exp_slot_end' => sanitize_text_field($item['slot_end'] ?? ''),
+                'fp_exp_tickets' => $item['tickets'] ?? [],
+                'fp_exp_addons' => $item['addons'] ?? [],
+            ];
+
+            $tickets = is_array($item['tickets'] ?? null) ? $item['tickets'] : [];
+            $quantity = array_sum(array_values($tickets));
+
+            if ($quantity <= 0) {
+                $quantity = 1;
+            }
+
+            // Add to WooCommerce cart using virtual product (NOT experience ID directly)
+            $virtual_product_id = \FP_Exp\Integrations\ExperienceProduct::get_product_id();
+            
+            if ($virtual_product_id <= 0) {
+                error_log('[FP-EXP-CART] ❌ Virtual product not found! Cannot add to WooCommerce cart.');
+                continue;
+            }
+            
+            $added = WC()->cart->add_to_cart(
+                $virtual_product_id, // Use virtual product ID, NOT experience ID
+                $quantity,
+                0, // No variation
+                [], // No variation attributes
+                $cart_item_data // Experience data in meta
+            );
+
+            if ($added) {
+                error_log('[FP-EXP-CART] ✅ Added experience ' . $experience_id . ' to WooCommerce cart (key: ' . $added . ')');
+                $synced_count++;
+            } else {
+                error_log('[FP-EXP-CART] ❌ FAILED to add experience ' . $experience_id . ' to WooCommerce cart');
+            }
+        }
+
+        // Mark as synced for this session
+        if (WC()->session) {
+            WC()->session->set('fp_exp_cart_synced_' . $this->get_session_id(), true);
+        }
+
+        error_log('[FP-EXP-CART] Sync complete. Synced: ' . $synced_count . ', WC cart total: ' . WC()->cart->get_cart_contents_count());
+        
+        // If sync failed for all items, show warning
+        if ($synced_count === 0 && count($custom_cart['items']) > 0) {
+            error_log('[FP-EXP-CART] ⚠️ WARNING: Cart sync failed for all items! WooCommerce cart is empty.');
+            
+            // Add WooCommerce notice to inform user
+            if (function_exists('wc_add_notice')) {
+                wc_add_notice(
+                    __('Si è verificato un problema durante l\'aggiunta delle esperienze al carrello. Riprova o contatta il supporto.', 'fp-experiences'),
+                    'error'
+                );
+            }
+        }
     }
 }

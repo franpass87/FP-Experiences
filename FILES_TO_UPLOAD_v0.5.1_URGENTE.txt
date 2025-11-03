@@ -1,0 +1,311 @@
+═══════════════════════════════════════════════════════════════
+📦 FILE DA CARICARE v0.5.1 - BUGFIX CRITICO
+═══════════════════════════════════════════════════════════════
+
+🚨 PRIORITÀ: IMMEDIATA
+
+Versione: 0.5.1
+Data: 2025-10-31
+Tipo: Critical Fix - Checkout JavaScript
+
+═══════════════════════════════════════════════════════════════
+⚡ OPZIONE 1: SOLO BUGFIX (3 FILE) - MINIMO
+═══════════════════════════════════════════════════════════════
+
+Se hai GIÀ CARICATO v0.5.0, carica SOLO questi 3 file:
+
+wp-content/plugins/FP-Experiences/
+
+1. fp-experiences.php
+2. assets/js/front.js
+3. assets/js/dist/front.js
+
+TEMPO: < 1 minuto
+RISCHIO: BASSO (solo JS fix)
+
+═══════════════════════════════════════════════════════════════
+📦 OPZIONE 2: PACKAGE COMPLETO (12 FILE) - RACCOMANDATO
+═══════════════════════════════════════════════════════════════
+
+Se NON hai ancora caricato v0.5.0, carica tutti questi:
+
+wp-content/plugins/FP-Experiences/
+
+** FILE PRINCIPALE **
+1. fp-experiences.php (v0.5.1)
+
+** NUOVI FILE (creare cartella src/Integrations/) **
+2. src/Integrations/ExperienceProduct.php
+3. src/Integrations/WooCommerceProduct.php
+4. src/Integrations/WooCommerceCheckout.php
+
+** FILE MODIFICATI **
+5. src/Plugin.php
+6. src/Booking/Cart.php
+7. src/Booking/Slots.php
+8. src/Booking/Checkout.php
+9. src/Booking/RequestToBook.php
+10. src/Api/RestRoutes.php
+
+** JAVASCRIPT (FIXED) **
+11. assets/js/front.js
+12. assets/js/dist/front.js
+
+TEMPO: ~5 minuti
+RISCHIO: MEDIO (full refactor)
+
+═══════════════════════════════════════════════════════════════
+🔧 PRIMA DI CARICARE
+═══════════════════════════════════════════════════════════════
+
+1. Backup via FTP:
+   - Scarica cartella wp-content/plugins/FP-Experiences/ completa
+   - Salva come FP-Experiences-BACKUP-2025-10-31.zip
+
+2. Verifica percorsi:
+   - I file devono essere in wp-content/plugins/FP-Experiences/
+   - NON in wp-content/plugins/FP-Experiences/FP-Experiences/
+
+═══════════════════════════════════════════════════════════════
+📤 UPLOAD VIA FTP
+═══════════════════════════════════════════════════════════════
+
+Server: (il tuo FTP server)
+Porta: 21 (o 22 per SFTP)
+Utente: (il tuo utente FTP)
+
+Naviga a:
+/public_html/wp-content/plugins/FP-Experiences/
+
+Modalità: BINARY (importante per file PHP)
+
+Sovrascrivi: SÌ (quando chiesto)
+
+═══════════════════════════════════════════════════════════════
+🧹 DOPO L'UPLOAD
+═══════════════════════════════════════════════════════════════
+
+1. **Pulisci cache (OBBLIGATORIO):**
+
+   Via Console Browser (F12):
+   ```javascript
+   fetch('/wp-json/fp-exp/v1/tools/clear-cache', {
+     method: 'POST',
+     headers: {'X-WP-Nonce': 'TUO_NONCE'}
+   })
+   .then(r => r.json())
+   .then(d => alert(d.message));
+   ```
+
+   Sostituisci TUO_NONCE con il valore da:
+   - Dashboard → FP Experiences → Tools
+   - Console: window.fpExpTools?.nonce
+
+2. **Cache browser:**
+   - Chrome/Edge: Ctrl+Shift+Del → Svuota cache
+   - Firefox: Ctrl+Shift+Del → Svuota cache
+
+3. **FP Performance:**
+   - Dashboard → FP Performance → "Svuota cache"
+
+4. **OpCache (se attivo):**
+   - Chiedi hosting di svuotare OpCache
+   - Oppure aspetta 5 minuti (auto-refresh)
+
+═══════════════════════════════════════════════════════════════
+🧪 TEST POST-DEPLOY
+═══════════════════════════════════════════════════════════════
+
+TEST 1: Verifica Versione
+
+Console Browser:
+```javascript
+fetch('/wp-json/fp-exp/v1/ping')
+  .then(r => r.json())
+  .then(d => console.log('Versione:', d.version));
+```
+
+ATTESO: "Versione: 0.5.1"
+
+---
+
+TEST 2: Checkout Standard
+
+1. Apri pagina esperienza (es. Degustazione Standard)
+2. Seleziona data + ora
+3. Seleziona 2 adulti
+4. Clicca "Procedi al pagamento"
+
+ATTESO:
+✅ Redirect a URL: .../checkout/
+✅ Vedi form WooCommerce con campi:
+   - Nome *
+   - Cognome *
+   - Email *
+   - Telefono
+   - Privacy checkbox *
+✅ Item nel carrello mostra: "Degustazione Standard"
+✅ NO "Cliente Temporaneo"
+✅ NO "temp@example.com"
+
+5. Compila form con dati REALI:
+   - Nome: Mario
+   - Cognome: Rossi
+   - Email: mario.rossi@test.com
+
+6. Clicca "Effettua ordine"
+
+ATTESO:
+✅ Redirect a Stripe payment
+✅ Ordine creato con nome "Mario Rossi"
+✅ Email ricevuta a mario.rossi@test.com
+✅ NO più "Cliente Temporaneo"
+
+---
+
+TEST 3: Verifica JavaScript Caricato
+
+Console Browser (F12):
+```javascript
+// Verifica version nel file JS
+fetch('/wp-content/plugins/FP-Experiences/assets/js/dist/front.js')
+  .then(r => r.text())
+  .then(t => {
+    if (t.includes('temp@example.com')) {
+      alert('❌ VECCHIO JS! Cache non svuotata!');
+    } else if (t.includes('checkoutPageUrl')) {
+      alert('✅ NUOVO JS caricato correttamente!');
+    } else {
+      alert('⚠️ JS diverso da atteso');
+    }
+  });
+```
+
+ATTESO: "✅ NUOVO JS caricato correttamente!"
+
+Se vedi "❌ VECCHIO JS":
+- Svuota cache browser (Ctrl+Shift+Del)
+- Ricarica pagina con Ctrl+F5
+- Riprova test
+
+═══════════════════════════════════════════════════════════════
+❌ TROUBLESHOOTING
+═══════════════════════════════════════════════════════════════
+
+PROBLEMA: Checkout ancora crea "Cliente Temporaneo"
+
+CAUSA: Cache non svuotata o vecchio JS caricato
+
+FIX:
+1. Verifica versione plugin:
+   Dashboard → Plugin → FP Experiences
+   Deve mostrare: "Versione 0.5.1"
+
+2. Se mostra 0.5.0 o meno:
+   - Ricarica file via FTP
+   - Verifica percorsi corretti
+
+3. Se mostra 0.5.1 ma problema persiste:
+   - Svuota TUTTE le cache
+   - Aspetta 5 minuti (OpCache)
+   - Riprova
+
+4. Verifica JS con test console (sopra)
+
+---
+
+PROBLEMA: Errore 500 dopo upload
+
+CAUSA: File corrotto o permessi sbagliati
+
+FIX:
+1. Via FTP, imposta permessi:
+   - File PHP: 644
+   - Cartelle: 755
+
+2. Ricarica file che da errore
+
+3. Se persiste, rollback:
+   - Ripristina backup
+   - Contatta supporto
+
+---
+
+PROBLEMA: Pagina bianca / errore PHP
+
+CAUSA: Sintassi error (improbabile, già testato)
+
+FIX:
+1. Attiva debug:
+   wp-config.php:
+   define('WP_DEBUG', true);
+   define('WP_DEBUG_LOG', true);
+
+2. Leggi /wp-content/debug.log
+
+3. Rollback immediato se fatal error
+
+═══════════════════════════════════════════════════════════════
+🔄 ROLLBACK (se necessario)
+═══════════════════════════════════════════════════════════════
+
+Se il deploy causa problemi CRITICI:
+
+1. Via FTP, ripristina backup:
+   FP-Experiences-BACKUP-2025-10-31.zip
+   → Estrai → Carica su server
+
+2. O torna a v0.4.1 (versione stabile precedente):
+   - Richiedi file v0.4.1
+
+TEMPO ROLLBACK: < 2 minuti
+
+═══════════════════════════════════════════════════════════════
+📊 CHECKLIST DEPLOY
+═══════════════════════════════════════════════════════════════
+
+Prima del deploy:
+☐ Backup completo fatto
+☐ File scaricati dal repo giusto
+☐ Percorsi verificati
+
+Durante upload:
+☐ Modalità FTP: BINARY
+☐ Permessi: 644 (file), 755 (cartelle)
+☐ Sovrascrivi: SÌ
+
+Dopo upload:
+☐ Cache FP Performance svuotata
+☐ Cache plugin svuotata (console)
+☐ Cache browser svuotata
+☐ OpCache svuotato/aspettato 5 min
+
+Test:
+☐ Versione 0.5.1 confermata
+☐ Checkout redirect a /checkout/
+☐ Form WC mostrato correttamente
+☐ NO "Cliente Temporaneo"
+☐ Ordine test con dati reali OK
+
+═══════════════════════════════════════════════════════════════
+✅ DEPLOY COMPLETATO CON SUCCESSO
+═══════════════════════════════════════════════════════════════
+
+Se tutti i test passano:
+
+✅ v0.5.1 attiva
+✅ Checkout funzionante con dati reali
+✅ Nessun "Cliente Temporaneo"
+✅ Form WooCommerce standard
+✅ Email con dati corretti
+
+🎉 BUGFIX CRITICO RISOLTO!
+
+═══════════════════════════════════════════════════════════════
+
+Supporto: francesco@francescopasseri.com
+Docs: /wp-content/plugins/FP-Experiences/docs/
+Changelog: /wp-content/plugins/FP-Experiences/docs/CHANGELOG.md
+
+═══════════════════════════════════════════════════════════════
+

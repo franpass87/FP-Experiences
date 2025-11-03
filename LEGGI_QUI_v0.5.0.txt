@@ -1,0 +1,141 @@
+═══════════════════════════════════════════════════════════════
+🎉 FP EXPERIENCES v0.5.0 - INTEGRAZIONE WOOCOMMERCE COMPLETA!
+═══════════════════════════════════════════════════════════════
+
+✅ REFACTOR COMPLETATO!
+
+PRIMA: Ordini con "Cliente Temporaneo" + temp@example.com
+DOPO:  Form WooCommerce standard + Dati REALI dell'utente
+
+═══════════════════════════════════════════════════════════════
+🎯 COSA CAMBIA PER L'UTENTE
+═══════════════════════════════════════════════════════════════
+
+FLUSSO VECCHIO (v0.4.1):
+1. Seleziona esperienza + data
+2. Clicca "Prenota"
+3. ❌ Ordine creato SUBITO con dati fake
+4. Va direttamente a pagamento
+
+FLUSSO NUOVO (v0.5.0):
+1. Seleziona esperienza + data
+2. Clicca "Prenota"
+3. ✅ Redirect a FORM CHECKOUT WOOCOMMERCE
+4. ✅ Inserisce Nome, Cognome, Email, Telefono
+5. ✅ Accetta privacy
+6. Clicca "Effettua ordine"
+7. ✅ Ordine creato con DATI REALI
+8. Redirect a pagamento Stripe
+
+═══════════════════════════════════════════════════════════════
+📤 CARICA 10 FILE VIA FTP
+═══════════════════════════════════════════════════════════════
+
+Vedi lista completa in:
+📄 FILES_TO_UPLOAD_v0.5.0_LISTA_COMPLETA.txt
+
+IMPORTANTE:
+- Crea cartella: src/Integrations/ (se non esiste)
+- Carica i 2 file nuovi lì dentro
+
+═══════════════════════════════════════════════════════════════
+🔧 PRIMO AVVIO - CREA TABELLE
+═══════════════════════════════════════════════════════════════
+
+⚠️ UNA VOLTA SOLA dopo aver caricato i file!
+
+Console Browser (pagina Tools):
+
+fetch('/wp-json/fp-exp/v1/tools/create-tables', {
+  method: 'POST',
+  headers: {'X-WP-Nonce': 'a6bb83c84c'}
+})
+.then(r => r.json())
+.then(d => alert(d.message));
+
+RISULTATO ATTESO:
+"Tutte le 4 tabelle sono state create/verificate con successo!"
+
+═══════════════════════════════════════════════════════════════
+🧪 TEST RAPIDO
+═══════════════════════════════════════════════════════════════
+
+1. Apri un'esperienza
+2. Seleziona data
+3. Clicca "Prenota"
+
+RISULTATO ATTESO:
+✅ Redirect a /checkout/
+✅ Vedi form WooCommerce con campi Nome, Email, ecc.
+✅ NON vedi più "Cliente Temporaneo"
+
+Se vedi il form → FUNZIONA! 🎉
+
+═══════════════════════════════════════════════════════════════
+❌ SE NON FUNZIONA
+═══════════════════════════════════════════════════════════════
+
+1. Apri Console Browser (F12)
+2. Guarda tab "Network" quando clicchi "Prenota"
+3. Cerca errori JS in console
+4. Mandami screenshot/errori
+
+OPPURE
+
+Esegui diagnostico:
+
+fetch('/wp-json/fp-exp/v1/diagnostic/checkout', {
+  headers: {'X-WP-Nonce': 'a6bb83c84c'}
+})
+.then(r => r.json())
+.then(d => console.log(JSON.stringify(d, null, 2)));
+
+Copia output e mandamelo!
+
+═══════════════════════════════════════════════════════════════
+📊 NUOVO IN v0.5.0
+═══════════════════════════════════════════════════════════════
+
+✓ Checkout WooCommerce standard (invece di bypass)
+✓ Form con campi reali (Nome, Email, Telefono)
+✓ Experience funzionano come prodotti WooCommerce
+✓ Carrello custom sincronizzato con WooCommerce
+✓ Validazione slot durante checkout WooCommerce
+✓ Tool per creare tabelle database manualmente
+✓ Logging sempre attivo per debug
+✓ Sistema auto-riparante (capacity=0)
+
+═══════════════════════════════════════════════════════════════
+🎯 VANTAGGI
+═══════════════════════════════════════════════════════════════
+
+Per l'utente:
+✅ UX e-commerce professionale e standard
+✅ Form chiaro e familiare
+✅ Dati personali corretti negli ordini
+✅ Email con nome reale (non "Cliente Temporaneo")
+
+Per te:
+✅ Integrazione nativa WooCommerce
+✅ Tutti i plugin WooCommerce compatibili
+✅ Email WooCommerce standard funzionano
+✅ Report e analytics WooCommerce accurati
+✅ Debug facile con log completi
+
+═══════════════════════════════════════════════════════════════
+🚀 PRONTO!
+═══════════════════════════════════════════════════════════════
+
+1. Carica 10 file
+2. Crea tabelle (/tools/create-tables)
+3. Pulisci cache
+4. Testa!
+
+Tempo deploy: ~10 minuti
+Rischio: MEDIO (major refactor)
+Beneficio: ALTO (checkout standard + dati reali)
+
+═══════════════════════════════════════════════════════════════
+
+LET'S GO! 🎯
+
