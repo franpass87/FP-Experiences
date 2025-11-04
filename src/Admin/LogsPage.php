@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace FP_Exp\Admin;
 
+use FP_Exp\Admin\Traits\EmptyStateRenderer;
 use FP_Exp\Utils\Helpers;
 use FP_Exp\Utils\Logger;
 
@@ -28,6 +29,8 @@ use function wp_unslash;
 
 final class LogsPage
 {
+    use EmptyStateRenderer;
+
     public function register_hooks(): void
     {
         // Intentionally left blank; menu registered via AdminMenu.
@@ -36,7 +39,7 @@ final class LogsPage
     public function render_page(): void
     {
         if (! Helpers::can_manage_fp()) {
-            wp_die(esc_html__('You do not have permission to view FP Experiences logs.', 'fp-experiences'));
+            wp_die(esc_html__('Non hai i permessi per visualizzare i log di FP Experiences.', 'fp-experiences'));
         }
 
         $channel_filter = isset($_GET['channel']) ? sanitize_key((string) wp_unslash($_GET['channel'])) : '';
@@ -61,7 +64,7 @@ final class LogsPage
         if (isset($_POST['fp_exp_clear_logs'])) {
             check_admin_referer('fp_exp_clear_logs', 'fp_exp_clear_logs_nonce');
             Logger::clear();
-            $notice_html = '<div class="notice notice-success"><p>' . esc_html__('Logs cleared successfully.', 'fp-experiences') . '</p></div>';
+            $notice_html = '<div class="notice notice-success"><p>' . esc_html__('Log cancellati con successo.', 'fp-experiences') . '</p></div>';
         }
 
         $logs = Logger::query([
@@ -93,18 +96,22 @@ final class LogsPage
         echo '<form method="post">';
         wp_nonce_field('fp_exp_clear_logs', 'fp_exp_clear_logs_nonce');
         echo '<input type="hidden" name="fp_exp_clear_logs" value="1" />';
-        submit_button(esc_html__('Clear logs', 'fp-experiences'), 'delete');
+        submit_button(esc_html__('Cancella log', 'fp-experiences'), 'delete');
         echo '</form>';
 
         if (! $logs) {
-            echo '<p>' . esc_html__('No log entries recorded yet.', 'fp-experiences') . '</p>';
+            self::render_empty_state(
+                'admin-generic',
+                esc_html__('Nessun log registrato', 'fp-experiences'),
+                esc_html__('I log di sistema appariranno qui quando verranno registrati eventi importanti o errori.', 'fp-experiences')
+            );
         } else {
             echo '<table class="widefat striped">';
             echo '<thead><tr>';
-            echo '<th>' . esc_html__('Timestamp', 'fp-experiences') . '</th>';
-            echo '<th>' . esc_html__('Channel', 'fp-experiences') . '</th>';
-            echo '<th>' . esc_html__('Message', 'fp-experiences') . '</th>';
-            echo '<th>' . esc_html__('Context', 'fp-experiences') . '</th>';
+            echo '<th>' . esc_html__('Data/Ora', 'fp-experiences') . '</th>';
+            echo '<th>' . esc_html__('Canale', 'fp-experiences') . '</th>';
+            echo '<th>' . esc_html__('Messaggio', 'fp-experiences') . '</th>';
+            echo '<th>' . esc_html__('Contesto', 'fp-experiences') . '</th>';
             echo '</tr></thead><tbody>';
 
             foreach ($logs as $entry) {
@@ -151,9 +158,9 @@ final class LogsPage
         echo '<form method="get" action="' . esc_url($base_url) . '" class="fp-exp-log-filter">';
         echo '<input type="hidden" name="page" value="fp_exp_logs" />';
 
-        echo '<label for="fp-exp-log-channel" class="screen-reader-text">' . esc_html__('Filter by channel', 'fp-experiences') . '</label>';
+        echo '<label for="fp-exp-log-channel" class="screen-reader-text">' . esc_html__('Filtra per canale', 'fp-experiences') . '</label>';
         echo '<select id="fp-exp-log-channel" name="channel">';
-        echo '<option value="">' . esc_html__('All channels', 'fp-experiences') . '</option>';
+        echo '<option value="">' . esc_html__('Tutti i canali', 'fp-experiences') . '</option>';
         foreach ($channels as $available_channel) {
             $label = ucwords(str_replace('_', ' ', $available_channel));
             $selected = $channel === $available_channel ? ' selected' : '';
@@ -161,11 +168,11 @@ final class LogsPage
         }
         echo '</select>';
 
-        echo '<label for="fp-exp-log-search" class="screen-reader-text">' . esc_html__('Search logs', 'fp-experiences') . '</label>';
-        echo '<input type="search" id="fp-exp-log-search" name="s" value="' . esc_attr($search) . '" placeholder="' . esc_attr__('Search logs', 'fp-experiences') . '" />';
+        echo '<label for="fp-exp-log-search" class="screen-reader-text">' . esc_html__('Cerca nei log', 'fp-experiences') . '</label>';
+        echo '<input type="search" id="fp-exp-log-search" name="s" value="' . esc_attr($search) . '" placeholder="' . esc_attr__('Cerca nei log', 'fp-experiences') . '" />';
 
-        submit_button(esc_html__('Filter', 'fp-experiences'), '', '', false);
-        echo ' <a class="button" href="' . esc_url($export_url) . '">' . esc_html__('Export CSV', 'fp-experiences') . '</a>';
+        submit_button(esc_html__('Filtra', 'fp-experiences'), '', '', false);
+        echo ' <a class="button" href="' . esc_url($export_url) . '">' . esc_html__('Esporta CSV', 'fp-experiences') . '</a>';
 
         echo '</form>';
     }

@@ -351,3 +351,4 @@ Sessioni bugfix completate:
 **Ultimo aggiornamento**: 2025-11-01  
 **Prossima sessione bugfix**: On-demand o pre-release v1.1.0
 
+

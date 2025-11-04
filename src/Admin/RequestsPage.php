@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace FP_Exp\Admin;
 
+use FP_Exp\Admin\Traits\EmptyStateRenderer;
 use FP_Exp\Booking\RequestToBook;
 use FP_Exp\Booking\Reservations;
 use FP_Exp\Utils\Helpers;
@@ -40,6 +41,8 @@ use function wp_unslash;
 
 final class RequestsPage
 {
+    use EmptyStateRenderer;
+
     private RequestToBook $request_to_book;
 
     public function __construct(RequestToBook $request_to_book)
@@ -86,7 +89,7 @@ final class RequestsPage
                 $message = $result->get_error_message();
                 $type = 'error';
             } else {
-                $message = esc_html__('Request approved successfully.', 'fp-experiences');
+                $message = esc_html__('Richiesta approvata con successo.', 'fp-experiences');
             }
         } elseif ('decline' === $action) {
             $reason = isset($_POST['reason']) ? sanitize_textarea_field((string) wp_unslash($_POST['reason'])) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing
@@ -95,10 +98,10 @@ final class RequestsPage
                 $message = $result->get_error_message();
                 $type = 'error';
             } else {
-                $message = esc_html__('Request declined.', 'fp-experiences');
+                $message = esc_html__('Richiesta rifiutata.', 'fp-experiences');
             }
         } else {
-            $message = esc_html__('Unsupported action.', 'fp-experiences');
+            $message = esc_html__('Azione non supportata.', 'fp-experiences');
             $type = 'error';
         }
 
@@ -170,31 +173,36 @@ final class RequestsPage
 
         echo '<form method="get" class="fp-exp-requests__filters">';
         echo '<input type="hidden" name="page" value="fp_exp_requests" />';
-        echo '<label for="fp-exp-requests-status">' . esc_html__('Filter by status', 'fp-experiences') . '</label> ';
+        echo '<label for="fp-exp-requests-status">' . esc_html__('Filtra per stato', 'fp-experiences') . '</label> ';
         echo '<select id="fp-exp-requests-status" name="status">';
-        $options = ['all' => esc_html__('All statuses', 'fp-experiences')] + $statuses;
+        $options = ['all' => esc_html__('Tutti gli stati', 'fp-experiences')] + $statuses;
         foreach ($options as $key => $label) {
             $selected = selected($status_filter, $key, false);
             echo '<option value="' . esc_attr($key) . '" ' . $selected . '>' . esc_html($label) . '</option>';
         }
         echo '</select> ';
-        submit_button(esc_html__('Filter'), 'secondary', '', false);
+        submit_button(esc_html__('Filtra', 'fp-experiences'), 'secondary', '', false);
         echo '</form>';
 
-        echo '<table class="widefat fixed striped">';
-        echo '<thead><tr>';
-        echo '<th>' . esc_html__('Experience', 'fp-experiences') . '</th>';
-        echo '<th>' . esc_html__('Slot', 'fp-experiences') . '</th>';
-        echo '<th>' . esc_html__('Customer', 'fp-experiences') . '</th>';
-        echo '<th>' . esc_html__('Guests', 'fp-experiences') . '</th>';
-        echo '<th>' . esc_html__('Status', 'fp-experiences') . '</th>';
-        echo '<th>' . esc_html__('Actions', 'fp-experiences') . '</th>';
-        echo '</tr></thead>';
-        echo '<tbody>';
-
         if (! $requests) {
-            echo '<tr><td colspan="6">' . esc_html__('No requests found for the selected filter.', 'fp-experiences') . '</td></tr>';
+            self::render_empty_state(
+                'email-alt',
+                esc_html__('Nessuna richiesta in attesa', 'fp-experiences'),
+                esc_html__('Le richieste di prenotazione con "Request to Book" attivato appariranno qui per l\'approvazione.', 'fp-experiences'),
+                admin_url('admin.php?page=fp_exp_settings&tab=rtb'),
+                esc_html__('Configura Request to Book', 'fp-experiences')
+            );
         } else {
+            echo '<table class="widefat fixed striped">';
+            echo '<thead><tr>';
+            echo '<th>' . esc_html__('Esperienza', 'fp-experiences') . '</th>';
+            echo '<th>' . esc_html__('Slot', 'fp-experiences') . '</th>';
+            echo '<th>' . esc_html__('Cliente', 'fp-experiences') . '</th>';
+            echo '<th>' . esc_html__('Ospiti', 'fp-experiences') . '</th>';
+            echo '<th>' . esc_html__('Stato', 'fp-experiences') . '</th>';
+            echo '<th>' . esc_html__('Azioni', 'fp-experiences') . '</th>';
+            echo '</tr></thead>';
+            echo '<tbody>';
             foreach ($requests as $request) {
                 $reservation_id = absint($request['id'] ?? 0);
                 $experience_title = isset($request['experience_title']) ? (string) $request['experience_title'] : '';
@@ -211,11 +219,11 @@ final class RequestsPage
                 $mode = $this->request_to_book->resolve_mode_for_reservation($request);
                 $status_label = $statuses[$status] ?? ucwords(str_replace('_', ' ', $status));
                 $mode_label = 'pay_later' === $mode
-                    ? esc_html__('Payment request', 'fp-experiences')
-                    : esc_html__('Confirm booking', 'fp-experiences');
+                    ? esc_html__('Richiesta pagamento', 'fp-experiences')
+                    : esc_html__('Conferma prenotazione', 'fp-experiences');
 
                 $start = isset($request['start_datetime']) ? (string) $request['start_datetime'] : '';
-                $start_label = $start ? wp_date($date_format . ' ' . $time_format, strtotime($start . ' UTC')) : esc_html__('Unknown', 'fp-experiences');
+                $start_label = $start ? wp_date($date_format . ' ' . $time_format, strtotime($start . ' UTC')) : esc_html__('Sconosciuto', 'fp-experiences');
 
                 $hold_display = '';
                 if (! empty($request['hold_expires_at'])) {
@@ -239,7 +247,7 @@ final class RequestsPage
                 echo '<td>' . esc_html($experience_title ?: sprintf('#%d', absint($request['experience_id'] ?? 0))) . '</td>';
                 echo '<td>' . esc_html($start_label) . '</td>';
                 echo '<td>';
-                echo esc_html($customer_name ?: esc_html__('Unknown', 'fp-experiences'));
+                echo esc_html($customer_name ?: esc_html__('Sconosciuto', 'fp-experiences'));
                 if ($customer_email) {
                     echo '<br><a href="mailto:' . esc_attr($customer_email) . '">' . esc_html($customer_email) . '</a>';
                 }
@@ -260,28 +268,28 @@ final class RequestsPage
                 wp_nonce_field('fp_exp_rtb_approve_' . $reservation_id, 'fp_exp_rtb_nonce');
                 echo '<input type="hidden" name="reservation_id" value="' . esc_attr((string) $reservation_id) . '" />';
                 echo '<input type="hidden" name="fp_exp_rtb_action" value="approve" />';
-                echo '<button type="submit" class="button button-primary">' . esc_html__('Approve', 'fp-experiences') . '</button>';
+                echo '<button type="submit" class="button button-primary">' . esc_html__('Approva', 'fp-experiences') . '</button>';
                 echo '</form>';
 
                 echo '<form method="post" class="fp-exp-requests__action">';
                 wp_nonce_field('fp_exp_rtb_decline_' . $reservation_id, 'fp_exp_rtb_nonce');
                 echo '<input type="hidden" name="reservation_id" value="' . esc_attr((string) $reservation_id) . '" />';
                 echo '<input type="hidden" name="fp_exp_rtb_action" value="decline" />';
-                echo '<input type="text" name="reason" class="regular-text" placeholder="' . esc_attr__('Optional reason', 'fp-experiences') . '" />';
-                echo '<button type="submit" class="button">' . esc_html__('Decline', 'fp-experiences') . '</button>';
+                echo '<input type="text" name="reason" class="regular-text" placeholder="' . esc_attr__('Motivo opzionale', 'fp-experiences') . '" />';
+                echo '<button type="submit" class="button">' . esc_html__('Rifiuta', 'fp-experiences') . '</button>';
                 echo '</form>';
 
                 if ($payment_url && Reservations::STATUS_APPROVED_PENDING_PAYMENT === $status) {
-                    echo '<a class="button button-secondary" href="' . esc_url($payment_url) . '" target="_blank" rel="noopener">' . esc_html__('Open payment link', 'fp-experiences') . '</a>';
+                    echo '<a class="button button-secondary" href="' . esc_url($payment_url) . '" target="_blank" rel="noopener">' . esc_html__('Apri link pagamento', 'fp-experiences') . '</a>';
                 }
 
                 echo '</td>';
                 echo '</tr>';
             }
+            echo '</tbody>';
+            echo '</table>';
         }
 
-        echo '</tbody>';
-        echo '</table>';
         echo '</div>'; // .fp-exp-admin__layout
         echo '</div>';
         echo '</div>';

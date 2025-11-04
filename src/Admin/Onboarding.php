@@ -72,7 +72,7 @@ final class Onboarding
     public function render(): void
     {
         if (! Helpers::can_manage_fp()) {
-            wp_die(esc_html__('You do not have permission to manage FP Experiences.', 'fp-experiences'));
+            wp_die(esc_html__('Non hai i permessi per gestire FP Experiences.', 'fp-experiences'));
         }
 
         $status = $this->get_status();
@@ -89,7 +89,7 @@ final class Onboarding
         echo ' <span aria-hidden="true">›</span> ';
         echo '<span>' . esc_html__('Onboarding', 'fp-experiences') . '</span>';
         echo '</nav>';
-        echo '<h1 class="fp-exp-admin__title">' . esc_html__('FP Experiences — Onboarding', 'fp-experiences') . '</h1>';
+        echo '<h1 class="fp-exp-admin__title">' . esc_html__('Onboarding FP Experiences', 'fp-experiences') . '</h1>';
         echo '</header>';
 
         if ($completed) {
@@ -150,7 +150,7 @@ final class Onboarding
     public function handle_submission(): void
     {
         if (! Helpers::can_manage_fp()) {
-            wp_die(esc_html__('You do not have permission to manage FP Experiences.', 'fp-experiences'));
+            wp_die(esc_html__('Non hai i permessi per gestire FP Experiences.', 'fp-experiences'));
         }
 
         check_admin_referer('fp_exp_onboarding_complete');

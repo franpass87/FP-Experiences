@@ -97,7 +97,7 @@ final class SettingsPage
     public function render_page(): void
     {
         if (! Helpers::can_manage_fp()) {
-            wp_die(esc_html__('You do not have permission to manage FP Experiences settings.', 'fp-experiences'));
+            wp_die(esc_html__('Non hai i permessi per gestire le impostazioni di FP Experiences.', 'fp-experiences'));
         }
 
         $tabs = $this->get_tabs();
@@ -113,7 +113,7 @@ final class SettingsPage
         echo ' <span aria-hidden="true">›</span> ';
         echo '<span>' . esc_html__('Impostazioni', 'fp-experiences') . '</span>';
         echo '</nav>';
-        echo '<h1 class="fp-exp-admin__title">' . esc_html__('FP Experiences — Settings', 'fp-experiences') . '</h1>';
+        echo '<h1 class="fp-exp-admin__title">' . esc_html__('Impostazioni FP Experiences', 'fp-experiences') . '</h1>';
         echo '<p class="fp-exp-admin__intro">' . esc_html__('Configura preferenze, integrazioni e regole operative delle esperienze.', 'fp-experiences') . '</p>';
         echo '</header>';
 
@@ -586,9 +586,9 @@ final class SettingsPage
                 'key' => 'sidebar',
                 'type' => 'select',
                 'options' => [
-                    'right' => esc_html__('Right column', 'fp-experiences'),
-                    'left' => esc_html__('Left column', 'fp-experiences'),
-                    'none' => esc_html__('No sidebar (single column)', 'fp-experiences'),
+                    'right' => esc_html__('Colonna destra', 'fp-experiences'),
+                    'left' => esc_html__('Colonna sinistra', 'fp-experiences'),
+                    'none' => esc_html__('Nessuna sidebar (colonna singola)', 'fp-experiences'),
                 ],
                 'description' => esc_html__('Default position for the booking widget on desktop.', 'fp-experiences'),
             ]
@@ -1416,9 +1416,9 @@ final class SettingsPage
             ],
             [
                 'slug' => 'clear-cache',
-                'label' => esc_html__('Clear caches & logs', 'fp-experiences'),
-                'description' => esc_html__('Purge plugin transients and truncate the internal log buffer.', 'fp-experiences'),
-                'button' => esc_html__('Clear caches', 'fp-experiences'),
+                'label' => esc_html__('Pulisci cache e log', 'fp-experiences'),
+                'description' => esc_html__('Elimina i transient del plugin e svuota il buffer dei log interni.', 'fp-experiences'),
+                'button' => esc_html__('Pulisci cache', 'fp-experiences'),
             ],
         ];
     }
@@ -2240,10 +2240,10 @@ final class SettingsPage
     private function get_rtb_template_fields(): array
     {
         $events = [
-            'request' => esc_html__('Request received (customer)', 'fp-experiences'),
-            'approved' => esc_html__('Request approved', 'fp-experiences'),
-            'declined' => esc_html__('Request declined', 'fp-experiences'),
-            'payment' => esc_html__('Payment required', 'fp-experiences'),
+            'request' => esc_html__('Richiesta ricevuta (cliente)', 'fp-experiences'),
+            'approved' => esc_html__('Richiesta approvata', 'fp-experiences'),
+            'declined' => esc_html__('Richiesta rifiutata', 'fp-experiences'),
+            'payment' => esc_html__('Pagamento richiesto', 'fp-experiences'),
         ];
 
         $fields = [];

@@ -7,6 +7,7 @@ namespace FP_Exp\Admin;
 use DateInterval;
 use DateTimeImmutable;
 use DateTimeZone;
+use FP_Exp\Admin\Traits\EmptyStateRenderer;
 use FP_Exp\Booking\Reservations;
 use FP_Exp\Booking\Slots;
 use FP_Exp\Utils\Helpers;
@@ -37,6 +38,8 @@ use function strtotime;
 
 final class CheckinPage
 {
+    use EmptyStateRenderer;
+
     private const NOTICE_KEY = 'fp_exp_checkin_notice';
 
     public function register_hooks(): void
@@ -90,7 +93,7 @@ final class CheckinPage
     public function render_page(): void
     {
         if (! Helpers::can_operate_fp()) {
-            wp_die(esc_html__('You do not have permission to access the check-in console.', 'fp-experiences'));
+            wp_die(esc_html__('Non hai i permessi per accedere alla console di check-in.', 'fp-experiences'));
         }
 
         $notice = get_transient(self::NOTICE_KEY);
@@ -122,7 +125,13 @@ final class CheckinPage
         }
 
         if (! $rows) {
-            echo '<p>' . esc_html__('Nessuna prenotazione in arrivo nelle prossime 48 ore.', 'fp-experiences') . '</p>';
+            self::render_empty_state(
+                'calendar-alt',
+                esc_html__('Nessuna prenotazione imminente', 'fp-experiences'),
+                esc_html__('Le prenotazioni dei prossimi 7 giorni appariranno qui per il check-in rapido.', 'fp-experiences'),
+                admin_url('admin.php?page=fp_exp_calendar'),
+                esc_html__('Vedi Calendario', 'fp-experiences')
+            );
             echo '</div>';
             echo '</div>';
             echo '</div>';

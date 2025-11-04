@@ -118,28 +118,28 @@ final class CalendarAdmin
             'experiences' => $experience_options,
             'has_experiences' => !empty($experience_options),
             'i18n' => [
-                'month' => esc_html__('Month', 'fp-experiences'),
-                'week' => esc_html__('Week', 'fp-experiences'),
-                'day' => esc_html__('Day', 'fp-experiences'),
-                'previous' => esc_html__('Previous', 'fp-experiences'),
-                'next' => esc_html__('Next', 'fp-experiences'),
-                'noSlots' => esc_html__('No slots scheduled for this period.', 'fp-experiences'),
-                'capacityPrompt' => esc_html__('New total capacity for this slot', 'fp-experiences'),
-                'perTypePrompt' => esc_html__('Optional capacity override for %s (leave blank to keep current)', 'fp-experiences'),
-                'moveConfirm' => esc_html__('Move slot to %s at %s?', 'fp-experiences'),
-                'updateSuccess' => esc_html__('Slot updated successfully.', 'fp-experiences'),
+                'month' => esc_html__('Mese', 'fp-experiences'),
+                'week' => esc_html__('Settimana', 'fp-experiences'),
+                'day' => esc_html__('Giorno', 'fp-experiences'),
+                'previous' => esc_html__('Precedente', 'fp-experiences'),
+                'next' => esc_html__('Successivo', 'fp-experiences'),
+                'noSlots' => esc_html__('Nessuno slot programmato per questo periodo.', 'fp-experiences'),
+                'capacityPrompt' => esc_html__('Nuova capacità totale per questo slot', 'fp-experiences'),
+                'perTypePrompt' => esc_html__('Capacità opzionale per %s (lascia vuoto per mantenere corrente)', 'fp-experiences'),
+                'moveConfirm' => esc_html__('Spostare lo slot a %s alle %s?', 'fp-experiences'),
+                'updateSuccess' => esc_html__('Slot aggiornato con successo.', 'fp-experiences'),
                 'updateError' => esc_html__('Impossibile aggiornare lo slot. Riprova.', 'fp-experiences'),
-                'seatsAvailable' => esc_html__('seats available', 'fp-experiences'),
-                'bookedLabel' => esc_html__('booked', 'fp-experiences'),
-                'untitledExperience' => esc_html__('Untitled experience', 'fp-experiences'),
+                'seatsAvailable' => esc_html__('posti disponibili', 'fp-experiences'),
+                'bookedLabel' => esc_html__('prenotati', 'fp-experiences'),
+                'untitledExperience' => esc_html__('Esperienza senza titolo', 'fp-experiences'),
                 'loadError' => esc_html__('Impossibile caricare il calendario. Riprova.', 'fp-experiences'),
-                'selectExperience' => esc_html__('Select experience', 'fp-experiences'),
+                'selectExperience' => esc_html__('Seleziona esperienza', 'fp-experiences'),
                 'selectExperienceFirst' => esc_html__('Seleziona un\'esperienza per visualizzare la disponibilità', 'fp-experiences'),
                 'accessDenied' => esc_html__('Accesso negato. Ricarica la pagina e riprova.', 'fp-experiences'),
                 'notFound' => esc_html__('Risorsa non trovata.', 'fp-experiences'),
                 'serverError' => esc_html__('Errore del server. Riprova tra qualche minuto.', 'fp-experiences'),
-                'listView' => esc_html__('List', 'fp-experiences'),
-                'calendarView' => esc_html__('Calendar', 'fp-experiences'),
+                'listView' => esc_html__('Lista', 'fp-experiences'),
+                'calendarView' => esc_html__('Calendario', 'fp-experiences'),
             ],
         ];
 
@@ -149,7 +149,7 @@ final class CalendarAdmin
     public function render_page(): void
     {
         if (! Helpers::can_operate_fp()) {
-            wp_die(esc_html__('You do not have permission to manage FP Experiences bookings.', 'fp-experiences'));
+            wp_die(esc_html__('Non hai i permessi per gestire le prenotazioni di FP Experiences.', 'fp-experiences'));
         }
 
         $active_tab = isset($_GET['view']) ? sanitize_text_field((string) wp_unslash($_GET['view'])) : 'calendar';
@@ -181,13 +181,13 @@ final class CalendarAdmin
         echo ' <span aria-hidden="true">›</span> ';
         echo '<span>' . esc_html__('Operazioni', 'fp-experiences') . '</span>';
         echo '</nav>';
-        echo '<h1 class="fp-exp-admin__title">' . esc_html__('FP Experiences — Operations', 'fp-experiences') . '</h1>';
+        echo '<h1 class="fp-exp-admin__title">' . esc_html__('Operazioni FP Experiences', 'fp-experiences') . '</h1>';
         echo '<p class="fp-exp-admin__intro">' . esc_html__('Gestisci calendario, disponibilità e prenotazioni manuali da un unico pannello.', 'fp-experiences') . '</p>';
         echo '</header>';
         echo '<div class="fp-exp-tabs nav-tab-wrapper">';
         $tabs = [
-            'calendar' => esc_html__('Calendar', 'fp-experiences'),
-            'manual' => esc_html__('Manual Booking', 'fp-experiences'),
+            'calendar' => esc_html__('Calendario', 'fp-experiences'),
+            'manual' => esc_html__('Prenotazione Manuale', 'fp-experiences'),
         ];
         foreach ($tabs as $slug => $label) {
             $url = add_query_arg([
@@ -279,7 +279,7 @@ final class CalendarAdmin
             }
             echo '</ul>';
         } else {
-            echo '<p>' . esc_html__('No upcoming reservations found.', 'fp-experiences') . '</p>';
+            echo '<p>' . esc_html__('Nessuna prenotazione imminente trovata.', 'fp-experiences') . '</p>';
         }
         echo '</noscript>';
         echo '</div>';
@@ -333,13 +333,13 @@ final class CalendarAdmin
         echo '<input type="hidden" name="fp_exp_manual_booking" value="1" />';
 
         echo '<table class="form-table">';
-        echo '<tr><th scope="row"><label for="fp-exp-experience">' . esc_html__('Experience', 'fp-experiences') . '</label></th><td>';
+        echo '<tr><th scope="row"><label for="fp-exp-experience">' . esc_html__('Esperienza', 'fp-experiences') . '</label></th><td>';
         echo '<select id="fp-exp-experience" name="experience_id" onchange="this.form.submit()">';
         foreach ($experiences as $experience) {
             echo '<option value="' . esc_attr((string) $experience->ID) . '" ' . selected($selected_experience, $experience->ID, false) . '>' . esc_html($experience->post_title) . '</option>';
         }
         echo '</select>';
-        echo '<p class="description">' . esc_html__('Selecting a different experience reloads available slots.', 'fp-experiences') . '</p>';
+        echo '<p class="description">' . esc_html__('Selezionando un\'esperienza diversa verranno ricaricati gli slot disponibili.', 'fp-experiences') . '</p>';
         echo '</td></tr>';
 
         echo '<tr><th scope="row"><label for="fp-exp-slot">' . esc_html__('Slot', 'fp-experiences') . '</label></th><td>';
@@ -357,11 +357,11 @@ final class CalendarAdmin
             }
             echo '</select>';
         } else {
-            echo '<p>' . esc_html__('No upcoming slots for this experience.', 'fp-experiences') . '</p>';
+            echo '<p>' . esc_html__('Nessuno slot disponibile per questa esperienza.', 'fp-experiences') . '</p>';
         }
         echo '</td></tr>';
 
-        echo '<tr><th scope="row"><label>' . esc_html__('Tickets', 'fp-experiences') . '</label></th><td>';
+        echo '<tr><th scope="row"><label>' . esc_html__('Biglietti', 'fp-experiences') . '</label></th><td>';
         if ($ticket_config) {
             foreach ($ticket_config as $slug => $ticket) {
                 $label = $ticket['label'] ?? $slug;
@@ -393,7 +393,7 @@ final class CalendarAdmin
                 }
             }
         } else {
-            echo '<p>' . esc_html__('No extras configured for this experience.', 'fp-experiences') . '</p>';
+            echo '<p>' . esc_html__('Nessun extra configurato per questa esperienza.', 'fp-experiences') . '</p>';
         }
         echo '</td></tr>';
 
@@ -417,7 +417,7 @@ final class CalendarAdmin
         echo '</table>';
 
         if ($slots) {
-            submit_button(esc_html__('Create manual booking', 'fp-experiences'));
+            submit_button(esc_html__('Crea prenotazione manuale', 'fp-experiences'));
         }
 
         echo '</form>';
@@ -478,7 +478,7 @@ final class CalendarAdmin
         check_admin_referer('fp_exp_manual_booking', 'fp_exp_manual_booking_nonce');
 
         if (! Helpers::can_operate_fp()) {
-            return new WP_Error('fp_exp_manual_permission', esc_html__('You do not have permission to create manual bookings.', 'fp-experiences'));
+            return new WP_Error('fp_exp_manual_permission', esc_html__('Non hai i permessi per creare prenotazioni manuali.', 'fp-experiences'));
         }
 
         $experience_id = isset($_POST['experience_id']) ? absint((string) $_POST['experience_id']) : 0;

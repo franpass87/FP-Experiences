@@ -32,7 +32,7 @@ final class OrdersPage
     public function render_page(): void
     {
         if (! Helpers::can_manage_fp() || ! current_user_can('manage_woocommerce')) {
-            wp_die(esc_html__('You do not have permission to view experience orders.', 'fp-experiences'));
+            wp_die(esc_html__('Non hai i permessi per visualizzare gli ordini delle esperienze.', 'fp-experiences'));
         }
 
         $url = add_query_arg(

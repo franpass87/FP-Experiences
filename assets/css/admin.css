@@ -9,6 +9,93 @@
     --fp-exp-color-danger: #dc2626;
 }
 
+/* ============================================
+   Empty State Component (v1.0.3)
+   ============================================ */
+.fp-exp-empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    max-width: 480px;
+    margin: 40px auto;
+    background: #f9fafb;
+    border-radius: 8px;
+    border: 2px dashed #e5e7eb;
+}
+
+.fp-exp-empty-state__icon {
+    display: inline-block;
+    font-size: 64px;
+    width: 64px;
+    height: 64px;
+    color: var(--fp-exp-color-muted, #6b7280);
+    margin-bottom: 20px;
+    opacity: 0.6;
+}
+
+.fp-exp-empty-state__icon::before {
+    display: inline-block;
+}
+
+.fp-exp-empty-state__title {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--fp-exp-color-text, #1f2937);
+    margin: 0 0 12px 0;
+    line-height: 1.4;
+}
+
+.fp-exp-empty-state__description {
+    font-size: 14px;
+    color: var(--fp-exp-color-muted, #6b7280);
+    line-height: 1.6;
+    margin: 0 0 24px 0;
+}
+
+.fp-exp-empty-state__cta {
+    margin-top: 8px;
+}
+
+@media (prefers-color-scheme: dark) {
+    .fp-exp-empty-state {
+        background: #1f2937;
+        border-color: #374151;
+    }
+    
+    .fp-exp-empty-state__icon {
+        color: #9ca3af;
+    }
+    
+    .fp-exp-empty-state__title {
+        color: #f9fafb;
+    }
+    
+    .fp-exp-empty-state__description {
+        color: #9ca3af;
+    }
+}
+
+@media screen and (max-width: 782px) {
+    .fp-exp-empty-state {
+        padding: 40px 16px;
+        margin: 20px auto;
+    }
+    
+    .fp-exp-empty-state__icon {
+        font-size: 48px;
+        width: 48px;
+        height: 48px;
+        margin-bottom: 16px;
+    }
+    
+    .fp-exp-empty-state__title {
+        font-size: 16px;
+    }
+    
+    .fp-exp-empty-state__description {
+        font-size: 13px;
+    }
+}
+
 body.fp-exp-admin-shell {
     background: #f9fafb;
 }

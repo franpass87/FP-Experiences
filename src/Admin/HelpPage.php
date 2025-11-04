@@ -15,7 +15,7 @@ final class HelpPage
     public function render_page(): void
     {
         if (! Helpers::can_access_guides()) {
-            wp_die(esc_html__('You do not have permission to access the FP Experiences guide.', 'fp-experiences'));
+            wp_die(esc_html__('Non hai i permessi per accedere alla guida di FP Experiences.', 'fp-experiences'));
         }
 
         echo '<div class="wrap fp-exp-help">';

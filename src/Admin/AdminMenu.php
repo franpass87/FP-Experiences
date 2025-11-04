@@ -220,7 +220,7 @@ final class AdminMenu
         if ($this->page_creator instanceof ExperiencePageCreator) {
             add_submenu_page(
                 'fp_exp_dashboard',
-                esc_html__('Create Experience Page', 'fp-experiences'),
+                esc_html__('Crea pagina esperienza', 'fp-experiences'),
                 esc_html__('Crea pagina esperienza', 'fp-experiences'),
                 Helpers::management_capability(),
                 'fp_exp_create_page',

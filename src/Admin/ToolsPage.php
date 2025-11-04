@@ -39,7 +39,7 @@ final class ToolsPage
     public function render_page(): void
     {
         if (! Helpers::can_manage_fp()) {
-            wp_die(esc_html__('You do not have permission to run FP Experiences tools.', 'fp-experiences'));
+            wp_die(esc_html__('Non hai i permessi per eseguire gli strumenti di FP Experiences.', 'fp-experiences'));
         }
 
         echo '<div class="wrap fp-exp-tools-page">';

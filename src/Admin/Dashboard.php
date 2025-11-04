@@ -33,7 +33,7 @@ final class Dashboard
     public static function render(): void
     {
         if (! Helpers::can_manage_fp()) {
-            wp_die(esc_html__('You do not have permission to access the FP Experiences dashboard.', 'fp-experiences'));
+            wp_die(esc_html__('Non hai i permessi per accedere alla dashboard di FP Experiences.', 'fp-experiences'));
         }
 
         $metrics = self::collect_metrics();
@@ -48,7 +48,7 @@ final class Dashboard
         echo ' <span aria-hidden="true">›</span> ';
         echo '<span>' . esc_html__('Dashboard', 'fp-experiences') . '</span>';
         echo '</nav>';
-        echo '<h1 class="fp-exp-admin__title">' . esc_html__('FP Experiences — Dashboard', 'fp-experiences') . '</h1>';
+        echo '<h1 class="fp-exp-admin__title">' . esc_html__('Dashboard FP Experiences', 'fp-experiences') . '</h1>';
         echo '</header>';
 
         // Setup Checklist Banner

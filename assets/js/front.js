@@ -72,9 +72,16 @@
         checkDescriptions();
         
         let resizeTimer;
-        window.addEventListener('resize', function() {
+        const handleResizeReadMore = function() {
             clearTimeout(resizeTimer);
             resizeTimer = setTimeout(checkDescriptions, 150);
+        };
+        window.addEventListener('resize', handleResizeReadMore);
+        
+        // Cleanup event listener quando la pagina viene scaricata
+        window.addEventListener('beforeunload', () => {
+            window.removeEventListener('resize', handleResizeReadMore);
+            clearTimeout(resizeTimer);
         });
     }
 })();
@@ -510,7 +517,7 @@
         // 3.b) Gestisci CTA con data-fp-scroll (hero e sticky): mostra sezione date e scrolla
         (function setupCtaScrollHandlers() {
             // Delega a tutto il documento per coprire sia il bottone in hero sia quello sticky
-            document.addEventListener('click', function(ev) {
+            const handleCtaScroll = function(ev) {
                 var btn = ev.target && (ev.target.closest('[data-fp-scroll]'));
                 if (!btn) return;
                 // Evita qualunque navigazione predefinita (es. <a href="…">)
@@ -537,6 +544,12 @@
                 if (targetEl && typeof targetEl.scrollIntoView === 'function') {
                     targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 }
+            };
+            document.addEventListener('click', handleCtaScroll);
+            
+            // Cleanup event listener quando la pagina viene scaricata
+            window.addEventListener('beforeunload', () => {
+                document.removeEventListener('click', handleCtaScroll);
             });
         })();
 
@@ -1437,10 +1450,16 @@
             }
 
             // Escape key to close
-            document.addEventListener('keydown', (ev) => {
+            const handleEscapeKey = (ev) => {
                 if (ev.key === 'Escape' && !giftModal.hidden) {
                     closeGiftModal();
                 }
+            };
+            document.addEventListener('keydown', handleEscapeKey);
+            
+            // Cleanup event listener quando la pagina viene scaricata
+            window.addEventListener('beforeunload', () => {
+                document.removeEventListener('keydown', handleEscapeKey);
             });
 
             // Form submission

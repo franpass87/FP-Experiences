@@ -146,7 +146,7 @@ final class ExperiencePageCreator
     public function render_page(): void
     {
         if (! Helpers::can_manage_fp()) {
-            wp_die(esc_html__('You do not have permission to generate experience pages.', 'fp-experiences'));
+            wp_die(esc_html__('Non hai i permessi per generare pagine esperienza.', 'fp-experiences'));
         }
 
         $notice = get_transient(self::NOTICE_KEY);

@@ -71,7 +71,7 @@ final class EmailsPage
     public function render_page(): void
     {
         if (! Helpers::can_manage_fp()) {
-            wp_die(esc_html__('You do not have permission to manage email settings.', 'fp-experiences'));
+            wp_die(esc_html__('Non hai i permessi per gestire le impostazioni email.', 'fp-experiences'));
         }
 
 		$tabs = $this->get_tabs();
