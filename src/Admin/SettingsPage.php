@@ -1446,6 +1446,18 @@ final class SettingsPage
                 'description' => esc_html__('Ricrea il prodotto virtuale WooCommerce necessario per il checkout. Usa questo se il checkout restituisce errori di "configurazione mancante".', 'fp-experiences'),
                 'button' => esc_html__('Ricrea prodotto', 'fp-experiences'),
             ],
+            [
+                'slug' => 'fix-virtual-product-quantity',
+                'label' => esc_html__('Fix quantità prodotto virtuale', 'fp-experiences'),
+                'description' => esc_html__('Disabilita "Venduto singolarmente" sul prodotto virtuale per permettere quantità multiple (numero di persone). Usa questo se il checkout mostra sempre "Quantità: 1".', 'fp-experiences'),
+                'button' => esc_html__('Fix quantità', 'fp-experiences'),
+            ],
+            [
+                'slug' => 'fix-experience-prices',
+                'label' => esc_html__('Fix prezzi esperienze', 'fp-experiences'),
+                'description' => esc_html__('Imposta automaticamente _fp_price per tutte le esperienze prendendo il prezzo dal primo ticket type. Usa questo se il checkout mostra "Prezzo: 0€".', 'fp-experiences'),
+                'button' => esc_html__('Fix prezzi', 'fp-experiences'),
+            ],
         ];
     }
 

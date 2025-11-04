@@ -358,6 +358,30 @@ final class RestRoutes
                 'callback' => [$this, 'tool_recreate_virtual_product'],
             ]
         );
+        
+        register_rest_route(
+            'fp-exp/v1',
+            '/tools/fix-virtual-product-quantity',
+            [
+                'methods' => 'POST',
+                'permission_callback' => static function (): bool {
+                    return Helpers::can_manage_fp();
+                },
+                'callback' => [$this, 'tool_fix_virtual_product_quantity'],
+            ]
+        );
+        
+        register_rest_route(
+            'fp-exp/v1',
+            '/tools/fix-experience-prices',
+            [
+                'methods' => 'POST',
+                'permission_callback' => static function (): bool {
+                    return Helpers::can_manage_fp();
+                },
+                'callback' => [$this, 'tool_fix_experience_prices'],
+            ]
+        );
 
         register_rest_route(
             'fp-exp/v1',
@@ -1891,7 +1915,7 @@ final class RestRoutes
         
         $product->set_virtual(true);
         $product->set_downloadable(false);
-        $product->set_sold_individually(true);
+        $product->set_sold_individually(false); // Allow multiple quantity (for multiple people)
         $product->set_catalog_visibility('hidden');
         $product->set_price(0);
         $product->set_regular_price(0);
@@ -1914,6 +1938,121 @@ final class RestRoutes
                 __('Prodotto virtuale ricreato con successo. Nuovo ID: %d', 'fp-experiences'),
                 $product_id
             ),
+        ]);
+    }
+    
+    /**
+     * Tool: Fix virtual product quantity settings (disable sold_individually)
+     */
+    public function tool_fix_virtual_product_quantity(): WP_REST_Response
+    {
+        if (!function_exists('wc_get_product')) {
+            return rest_ensure_response([
+                'success' => false,
+                'message' => __('WooCommerce non è attivo.', 'fp-experiences'),
+            ]);
+        }
+
+        $product_id = \FP_Exp\Integrations\ExperienceProduct::get_product_id();
+        
+        if ($product_id <= 0) {
+            return rest_ensure_response([
+                'success' => false,
+                'message' => __('Prodotto virtuale non trovato. Usa "Ricrea prodotto virtuale" prima.', 'fp-experiences'),
+            ]);
+        }
+        
+        $product = wc_get_product($product_id);
+        
+        if (!$product) {
+            return rest_ensure_response([
+                'success' => false,
+                'message' => sprintf(__('Prodotto ID %d non esiste.', 'fp-experiences'), $product_id),
+            ]);
+        }
+        
+        $was_sold_individually = $product->get_sold_individually();
+        
+        $product->set_sold_individually(false);
+        $product->save();
+        
+        Logger::log('tools', 'Virtual product quantity settings fixed', [
+            'user_id' => get_current_user_id(),
+            'product_id' => $product_id,
+            'was_sold_individually' => $was_sold_individually,
+        ]);
+        
+        return rest_ensure_response([
+            'success' => true,
+            'message' => sprintf(
+                __('Prodotto virtuale aggiornato. Ora supporta quantità multiple (era: %s).', 'fp-experiences'),
+                $was_sold_individually ? 'SÌ' : 'NO'
+            ),
+        ]);
+    }
+    
+    /**
+     * Tool: Fix experience prices (_fp_price meta)
+     */
+    public function tool_fix_experience_prices(): WP_REST_Response
+    {
+        $experiences = get_posts([
+            'post_type' => 'fp_experience',
+            'posts_per_page' => -1,
+            'post_status' => 'any',
+        ]);
+        
+        $fixed = [];
+        $already_ok = [];
+        $no_price = [];
+        
+        foreach ($experiences as $exp) {
+            $current_fp_price = get_post_meta($exp->ID, '_fp_price', true);
+            $pricing = get_post_meta($exp->ID, '_fp_exp_pricing', true);
+            $ticket_types = get_post_meta($exp->ID, '_fp_ticket_types', true);
+            
+            // Cerca il prezzo nei ticket types
+            $found_price = null;
+            
+            if (!empty($pricing['tickets'][0]['price']) && is_numeric($pricing['tickets'][0]['price'])) {
+                $found_price = (float) $pricing['tickets'][0]['price'];
+            } elseif (!empty($ticket_types[0]['price']) && is_numeric($ticket_types[0]['price'])) {
+                $found_price = (float) $ticket_types[0]['price'];
+            }
+            
+            if (is_numeric($current_fp_price) && $current_fp_price > 0) {
+                $already_ok[] = $exp->post_title . ' (' . $current_fp_price . '€)';
+            } elseif ($found_price && $found_price > 0) {
+                update_post_meta($exp->ID, '_fp_price', $found_price);
+                $fixed[] = $exp->post_title . ' → ' . $found_price . '€';
+            } else {
+                $no_price[] = $exp->post_title;
+            }
+        }
+        
+        Logger::log('tools', 'Experience prices fixed', [
+            'user_id' => get_current_user_id(),
+            'fixed_count' => count($fixed),
+            'already_ok_count' => count($already_ok),
+            'no_price_count' => count($no_price),
+        ]);
+        
+        $message = sprintf(
+            __('Esperienze analizzate: %d. Fixate: %d, Già OK: %d, Senza prezzo: %d', 'fp-experiences'),
+            count($experiences),
+            count($fixed),
+            count($already_ok),
+            count($no_price)
+        );
+        
+        return rest_ensure_response([
+            'success' => true,
+            'message' => $message,
+            'details' => [
+                'fixed' => $fixed,
+                'already_ok' => $already_ok,
+                'no_price' => $no_price,
+            ],
         ]);
     }
 }

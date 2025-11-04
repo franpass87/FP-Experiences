@@ -126,14 +126,19 @@ final class Checkout
                 'methods' => 'POST',
                 'permission_callback' => function (WP_REST_Request $request): bool {
                     // Permetti POST da stesso dominio (referer check)
-                    // Non richiediamo nonce qui perché anche restNonce può essere cachato
+                    error_log('[FP-EXP-CART-SET] Permission check started');
+                    
                     if ($request->get_method() !== 'POST') {
+                        error_log('[FP-EXP-CART-SET] ❌ Not POST method: ' . $request->get_method());
                         return false;
                     }
                     
                     // Verifica referer stesso dominio
                     $referer = sanitize_text_field((string) $request->get_header('referer'));
+                    error_log('[FP-EXP-CART-SET] Referer: ' . $referer);
+                    
                     if (!$referer) {
+                        error_log('[FP-EXP-CART-SET] ❌ No referer');
                         return false;
                     }
                     
@@ -141,56 +146,77 @@ final class Checkout
                     $parsed_home = wp_parse_url($home);
                     $parsed_referer = wp_parse_url($referer);
                     
+                    error_log('[FP-EXP-CART-SET] Home host: ' . ($parsed_home['host'] ?? 'N/A'));
+                    error_log('[FP-EXP-CART-SET] Referer host: ' . ($parsed_referer['host'] ?? 'N/A'));
+                    
                     if ($parsed_home && $parsed_referer && 
                         isset($parsed_home['host'], $parsed_referer['host']) &&
                         $parsed_home['host'] === $parsed_referer['host']) {
+                        error_log('[FP-EXP-CART-SET] ✅ Permission granted');
                         return true;
                     }
                     
+                    error_log('[FP-EXP-CART-SET] ❌ Host mismatch or parsing failed');
                     return false;
                 },
                 'callback' => function (WP_REST_Request $request) {
-                    nocache_headers();
+                    error_log('[FP-EXP-CART-SET] Callback started');
+                    
+                    try {
+                        nocache_headers();
 
-                    $experience_id = (int) $request->get_param('experience_id');
-                    $slot_id = (int) $request->get_param('slot_id');
-                    $slot_start = sanitize_text_field((string) $request->get_param('slot_start'));
-                    $slot_end = sanitize_text_field((string) $request->get_param('slot_end'));
+                        $experience_id = (int) $request->get_param('experience_id');
+                        $slot_id = (int) $request->get_param('slot_id');
+                        $slot_start = sanitize_text_field((string) $request->get_param('slot_start'));
+                        $slot_end = sanitize_text_field((string) $request->get_param('slot_end'));
 
-                    // tickets e addons possono essere mappe o array
-                    $tickets = $request->get_param('tickets');
-                    $addons = $request->get_param('addons');
-                    $tickets = is_array($tickets) ? $tickets : [];
-                    $addons = is_array($addons) ? $addons : [];
+                        error_log('[FP-EXP-CART-SET] Params: exp=' . $experience_id . ', slot=' . $slot_id . ', start=' . $slot_start . ', end=' . $slot_end);
 
-                    if ($experience_id <= 0) {
-                        return new WP_Error('fp_exp_set_cart_invalid', __('Experience ID non valido.', 'fp-experiences'), ['status' => 400]);
+                        // tickets e addons possono essere mappe o array
+                        $tickets = $request->get_param('tickets');
+                        $addons = $request->get_param('addons');
+                        $tickets = is_array($tickets) ? $tickets : [];
+                        $addons = is_array($addons) ? $addons : [];
+
+                        error_log('[FP-EXP-CART-SET] Tickets: ' . print_r($tickets, true));
+
+                        if ($experience_id <= 0) {
+                            error_log('[FP-EXP-CART-SET] ❌ Invalid experience ID');
+                            return new WP_Error('fp_exp_set_cart_invalid', __('Experience ID non valido.', 'fp-experiences'), ['status' => 400]);
+                        }
+
+                        $item = [
+                            'experience_id' => $experience_id,
+                            'slot_id' => max(0, $slot_id),
+                            'tickets' => $tickets,
+                            'addons' => $addons,
+                            'totals' => [],
+                        ];
+
+                        // Aggiungi slot_start e slot_end se forniti (per slot dinamici)
+                        if ($slot_start && $slot_end) {
+                            $item['slot_start'] = $slot_start;
+                            $item['slot_end'] = $slot_end;
+                        }
+
+                        $items = [$item];
+
+                        error_log('[FP-EXP-CART-SET] Calling cart->set_items...');
+                        $this->cart->set_items($items, [
+                            'currency' => get_option('woocommerce_currency', 'EUR'),
+                        ]);
+
+                        error_log('[FP-EXP-CART-SET] ✅ Cart set successfully');
+
+                        return rest_ensure_response([
+                            'ok' => true,
+                            'has_items' => $this->cart->has_items(),
+                        ]);
+                    } catch (\Throwable $e) {
+                        error_log('[FP-EXP-CART-SET] ❌ EXCEPTION: ' . $e->getMessage());
+                        error_log('[FP-EXP-CART-SET] ❌ File: ' . $e->getFile() . ':' . $e->getLine());
+                        return new WP_Error('fp_exp_cart_exception', $e->getMessage(), ['status' => 500]);
                     }
-
-                    $item = [
-                        'experience_id' => $experience_id,
-                        'slot_id' => max(0, $slot_id),
-                        'tickets' => $tickets,
-                        'addons' => $addons,
-                        'totals' => [],
-                    ];
-
-                    // Aggiungi slot_start e slot_end se forniti (per slot dinamici)
-                    if ($slot_start && $slot_end) {
-                        $item['slot_start'] = $slot_start;
-                        $item['slot_end'] = $slot_end;
-                    }
-
-                    $items = [$item];
-
-                    $this->cart->set_items($items, [
-                        'currency' => get_option('woocommerce_currency', 'EUR'),
-                    ]);
-
-                    return rest_ensure_response([
-                        'ok' => true,
-                        'has_items' => $this->cart->has_items(),
-                    ]);
                 },
             ]
         );
