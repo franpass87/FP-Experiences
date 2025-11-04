@@ -90,11 +90,17 @@ final class Assets
 
         $this->registered = true;
 
+        // TEMP FIX: Usa sempre CSS non-minificato perché il minificato è incompleto
+        // TODO: Ricompilare il CSS minificato con tutti i moduli
+        $css_rel = 'assets/css/front.css';
+        
+        /* 
         // Scegli in modo resiliente: usa i file minificati se presenti, altrimenti fallback ai non minificati
         $css_rel = Helpers::resolve_asset_rel([
             'assets/css/dist/fp-experiences-frontend.min.css',
             'assets/css/front.css',
         ]);
+        */
 
         $js_rel = Helpers::resolve_asset_rel([
             'assets/js/dist/fp-experiences-frontend.min.js',
@@ -122,7 +128,7 @@ final class Assets
         );
 
         // Se non usiamo il file minificato, registra i moduli separati
-        $front_deps = ['wp-i18n'];
+        $front_deps = []; // Non serve wp-i18n, usiamo già fpExpConfig.autoLocale
         if (! $use_minified) {
             $modules = [
                 'fp-exp-availability' => 'assets/js/front/availability.js',
@@ -138,7 +144,7 @@ final class Assets
                 wp_register_script(
                     $handle,
                     trailingslashit(FP_EXP_PLUGIN_URL) . $path,
-                    ['wp-i18n'],
+                    [], // Nessuna dipendenza da WordPress core (usiamo vanilla JS)
                     Helpers::asset_version($path),
                     true
                 );

@@ -15,11 +15,14 @@ use function add_role;
 use function current_time;
 use function flush_rewrite_rules;
 use function get_option;
+use function get_post;
 use function get_role;
 use function home_url;
 use function update_option;
+use function update_post_meta;
 use function wp_json_encode;
 use function wp_roles;
+use function wp_update_post;
 
 final class Activation
 {
@@ -40,6 +43,9 @@ final class Activation
 
         // Crea automaticamente un backup delle impostazioni di branding se non esiste già
         self::ensure_branding_backup();
+        
+        // Configura automaticamente il checkout classico WooCommerce (compatibile con FP-Experiences)
+        self::setup_classic_checkout();
 
         do_action('fp_exp_plugin_activated');
     }
@@ -386,5 +392,68 @@ final class Activation
 
         // Salva il backup
         update_option('fp_exp_branding_backup', $backup_data);
+    }
+    
+    /**
+     * Configura automaticamente il checkout classico di WooCommerce
+     * Il checkout Blocks causa problemi di compatibilità con Store API
+     * Il checkout classico è più stabile e completamente compatibile con FP-Experiences
+     */
+    private static function setup_classic_checkout(): void
+    {
+        // Verifica se WooCommerce è attivo
+        if (!function_exists('wc_get_page_id')) {
+            return;
+        }
+        
+        $checkout_page_id = wc_get_page_id('checkout');
+        
+        if ($checkout_page_id <= 0) {
+            return;
+        }
+        
+        $page = get_post($checkout_page_id);
+        
+        if (!$page) {
+            return;
+        }
+        
+        // Verifica se la pagina usa già il checkout classico
+        if (strpos($page->post_content, '[woocommerce_checkout]') !== false) {
+            // Già configurato con checkout classico
+            return;
+        }
+        
+        // Salva backup del contenuto Blocks (se esiste)
+        if (!empty($page->post_content) && strpos($page->post_content, 'wp:woocommerce/checkout') !== false) {
+            $backup_key = '_checkout_backup_before_fp_exp_' . time();
+            update_post_meta($checkout_page_id, $backup_key, $page->post_content);
+            
+            error_log(sprintf(
+                '[FP Experiences] Backup checkout Blocks salvato in meta %s per pagina ID %d',
+                $backup_key,
+                $checkout_page_id
+            ));
+        }
+        
+        // Imposta il checkout classico
+        $classic_content = '[woocommerce_checkout]';
+        
+        $result = wp_update_post([
+            'ID' => $checkout_page_id,
+            'post_content' => $classic_content,
+        ]);
+        
+        if (!is_wp_error($result)) {
+            error_log(sprintf(
+                '[FP Experiences] Checkout classico configurato automaticamente per pagina ID %d',
+                $checkout_page_id
+            ));
+        } else {
+            error_log(sprintf(
+                '[FP Experiences] Errore configurazione checkout classico: %s',
+                $result->get_error_message()
+            ));
+        }
     }
 }

@@ -42,6 +42,11 @@ final class ExperienceProduct
             if ($product && $product->get_status() === 'publish') {
                 return; // Product exists and is OK
             }
+            
+            // Product deleted or invalid - log warning
+            error_log('[FP-EXP-WC] ⚠️ Virtual product ID ' . $product_id . ' no longer exists or is not published. Recreating...');
+        } else {
+            error_log('[FP-EXP-WC] ℹ️ No virtual product configured. Creating...');
         }
 
         // Create virtual product for experiences
@@ -62,6 +67,7 @@ final class ExperienceProduct
     private function create_product(): void
     {
         if (!function_exists('wc_get_product')) {
+            error_log('[FP-EXP-WC] ❌ Cannot create virtual product: WooCommerce not available');
             return;
         }
 
@@ -73,24 +79,30 @@ final class ExperienceProduct
             'post_content' => 'Virtual product for FP Experiences bookings. Do not delete.',
         ]);
 
-        if ($product_id && !is_wp_error($product_id)) {
-            // Setup as virtual product
-            $product = wc_get_product($product_id);
-            
-            if ($product) {
-                $product->set_virtual(true);
-                $product->set_downloadable(false);
-                $product->set_sold_individually(true);
-                $product->set_catalog_visibility('hidden'); // Hide from catalog
-                $product->set_price(0); // Price will be set per cart item
-                $product->set_regular_price(0);
-                $product->save();
-
-                update_option(self::OPTION_KEY, $product_id);
-
-                error_log('[FP-EXP-WC] Created virtual product for experiences: ID ' . $product_id);
-            }
+        if (!$product_id || is_wp_error($product_id)) {
+            error_log('[FP-EXP-WC] ❌ Failed to create virtual product: ' . (is_wp_error($product_id) ? $product_id->get_error_message() : 'Unknown error'));
+            return;
         }
+
+        // Setup as virtual product
+        $product = wc_get_product($product_id);
+        
+        if (!$product) {
+            error_log('[FP-EXP-WC] ❌ Failed to load virtual product after creation (ID: ' . $product_id . ')');
+            return;
+        }
+        
+        $product->set_virtual(true);
+        $product->set_downloadable(false);
+        $product->set_sold_individually(false); // Allow multiple quantity (for multiple people)
+        $product->set_catalog_visibility('hidden'); // Hide from catalog
+        $product->set_price(0); // Price will be set per cart item
+        $product->set_regular_price(0);
+        $product->save();
+
+        update_option(self::OPTION_KEY, $product_id);
+
+        error_log('[FP-EXP-WC] ✅ Created virtual product for experiences: ID ' . $product_id);
     }
 }
 

@@ -153,10 +153,19 @@ final class ExperienceMetaBoxes
         wp_enqueue_script(
             'fp-exp-admin',
             FP_EXP_PLUGIN_URL . $admin_js,
-            ['wp-api-fetch', 'wp-i18n'],
+            ['jquery'],
             Helpers::asset_version($admin_js),
             true
         );
+
+        // Config base per fpExpAdmin
+        wp_localize_script('fp-exp-admin', 'fpExpAdmin', [
+            'restUrl' => rest_url('fp-exp/v1/'),
+            'restNonce' => wp_create_nonce('wp_rest'),
+            'ajaxUrl' => admin_url('admin-ajax.php'),
+            'pluginUrl' => FP_EXP_PLUGIN_URL,
+            'strings' => [],
+        ]);
 
         $post_id = isset($_GET['post']) ? absint((string) $_GET['post']) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 

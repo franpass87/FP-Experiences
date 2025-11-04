@@ -50,6 +50,8 @@ use function sort;
 use function strtoupper;
 use function update_option;
 use function update_post_meta;
+use function wp_delete_post;
+use function wp_insert_post;
 use function wp_remote_get;
 use function wp_remote_retrieve_body;
 use function wp_remote_retrieve_response_code;
@@ -342,6 +344,18 @@ final class RestRoutes
                     return Helpers::can_manage_fp();
                 },
                 'callback' => [$this, 'tool_rebuild_availability_meta'],
+            ]
+        );
+
+        register_rest_route(
+            'fp-exp/v1',
+            '/tools/recreate-virtual-product',
+            [
+                'methods' => 'POST',
+                'permission_callback' => static function (): bool {
+                    return Helpers::can_manage_fp();
+                },
+                'callback' => [$this, 'tool_recreate_virtual_product'],
             ]
         );
 
@@ -1810,5 +1824,96 @@ final class RestRoutes
                 'message' => __('Errore durante la creazione delle tabelle: ', 'fp-experiences') . $e->getMessage(),
             ]);
         }
+    }
+
+    /**
+     * Tool: Recreate WooCommerce virtual product for experiences
+     */
+    public function tool_recreate_virtual_product(): WP_REST_Response
+    {
+        // Rate limiting
+        if (Helpers::hit_rate_limit('tools_recreate_virtual_product_' . get_current_user_id(), 3, MINUTE_IN_SECONDS)) {
+            return rest_ensure_response([
+                'success' => false,
+                'message' => __('Operazione già eseguita di recente. Riprova tra qualche istante.', 'fp-experiences'),
+            ]);
+        }
+
+        // Check if WooCommerce is active
+        if (!function_exists('wc_get_product')) {
+            return rest_ensure_response([
+                'success' => false,
+                'message' => __('WooCommerce non è attivo. Impossibile creare il prodotto virtuale.', 'fp-experiences'),
+            ]);
+        }
+
+        $old_product_id = \FP_Exp\Integrations\ExperienceProduct::get_product_id();
+        
+        // Delete old product if exists
+        if ($old_product_id > 0) {
+            $old_product = wc_get_product($old_product_id);
+            if ($old_product) {
+                error_log('[FP-EXP-TOOL] Deleting old virtual product ID ' . $old_product_id);
+                wp_delete_post($old_product_id, true);
+            }
+        }
+
+        // Create new virtual product
+        $product_id = wp_insert_post([
+            'post_title' => 'Experience Booking',
+            'post_name' => 'fp-experience-booking',
+            'post_type' => 'product',
+            'post_status' => 'publish',
+            'post_content' => 'Virtual product for FP Experiences bookings. Do not delete.',
+        ]);
+
+        if (!$product_id || is_wp_error($product_id)) {
+            $error_message = is_wp_error($product_id) ? $product_id->get_error_message() : __('Errore sconosciuto', 'fp-experiences');
+            error_log('[FP-EXP-TOOL] ❌ Failed to create virtual product: ' . $error_message);
+            
+            return rest_ensure_response([
+                'success' => false,
+                'message' => __('Impossibile creare il prodotto virtuale: ', 'fp-experiences') . $error_message,
+            ]);
+        }
+
+        // Configure as virtual product
+        $product = wc_get_product($product_id);
+        
+        if (!$product) {
+            error_log('[FP-EXP-TOOL] ❌ Failed to load virtual product after creation');
+            
+            return rest_ensure_response([
+                'success' => false,
+                'message' => __('Prodotto creato ma impossibile configurarlo. ID: ', 'fp-experiences') . $product_id,
+            ]);
+        }
+        
+        $product->set_virtual(true);
+        $product->set_downloadable(false);
+        $product->set_sold_individually(true);
+        $product->set_catalog_visibility('hidden');
+        $product->set_price(0);
+        $product->set_regular_price(0);
+        $product->save();
+
+        // Save product ID
+        update_option('fp_exp_wc_product_id', $product_id);
+
+        error_log('[FP-EXP-TOOL] ✅ Virtual product recreated successfully: ID ' . $product_id);
+
+        Logger::log('tools', 'Virtual product recreated', [
+            'user_id' => get_current_user_id(),
+            'old_product_id' => $old_product_id,
+            'new_product_id' => $product_id,
+        ]);
+
+        return rest_ensure_response([
+            'success' => true,
+            'message' => sprintf(
+                __('Prodotto virtuale ricreato con successo. Nuovo ID: %d', 'fp-experiences'),
+                $product_id
+            ),
+        ]);
     }
 }

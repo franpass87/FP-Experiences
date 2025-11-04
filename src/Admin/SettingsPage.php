@@ -206,7 +206,7 @@ final class SettingsPage
         wp_enqueue_script(
             'fp-exp-admin',
             FP_EXP_PLUGIN_URL . $admin_js,
-            ['wp-api-fetch', 'wp-i18n'],
+            ['jquery'], // Usa solo jQuery, non servono wp-api-fetch o wp-i18n
             Helpers::asset_version($admin_js),
             true
         );
@@ -239,10 +239,15 @@ final class SettingsPage
 
     public function enqueue_tools_assets(): void
     {
+        error_log('[FP-EXP-SETTINGS] enqueue_tools_assets() START');
+        
         $admin_css = Helpers::resolve_asset_rel([
             'assets/css/dist/fp-experiences-admin.min.css',
             'assets/css/admin.css',
         ]);
+        
+        error_log('[FP-EXP-SETTINGS] CSS file: ' . $admin_css);
+        
         wp_enqueue_style(
             'fp-exp-admin',
             FP_EXP_PLUGIN_URL . $admin_css,
@@ -254,14 +259,29 @@ final class SettingsPage
             'assets/js/dist/fp-experiences-admin.min.js',
             'assets/js/admin.js',
         ]);
+        
+        error_log('[FP-EXP-SETTINGS] JS file: ' . $admin_js);
+        
         wp_enqueue_script(
             'fp-exp-admin',
             FP_EXP_PLUGIN_URL . $admin_js,
-            ['wp-api-fetch', 'wp-i18n'],
+            ['jquery'], // Usa solo jQuery, non servono wp-api-fetch o wp-i18n
             Helpers::asset_version($admin_js),
             true
         );
+        
+        error_log('[FP-EXP-SETTINGS] Script enqueued: fp-exp-admin');
 
+        // Config base per fpExpAdmin (richiesto da admin.js)
+        wp_localize_script('fp-exp-admin', 'fpExpAdmin', [
+            'restUrl' => rest_url('fp-exp/v1/'),
+            'restNonce' => wp_create_nonce('wp_rest'),
+            'ajaxUrl' => admin_url('admin-ajax.php'),
+            'pluginUrl' => FP_EXP_PLUGIN_URL,
+            'strings' => [],
+        ]);
+
+        // Config specifico per tools
         wp_localize_script('fp-exp-admin', 'fpExpTools', [
             'nonce' => wp_create_nonce('wp_rest'),
             'actions' => $this->get_tool_actions_localised(),
@@ -1419,6 +1439,12 @@ final class SettingsPage
                 'label' => esc_html__('Pulisci cache e log', 'fp-experiences'),
                 'description' => esc_html__('Elimina i transient del plugin e svuota il buffer dei log interni.', 'fp-experiences'),
                 'button' => esc_html__('Pulisci cache', 'fp-experiences'),
+            ],
+            [
+                'slug' => 'recreate-virtual-product',
+                'label' => esc_html__('Ricrea prodotto virtuale WooCommerce', 'fp-experiences'),
+                'description' => esc_html__('Ricrea il prodotto virtuale WooCommerce necessario per il checkout. Usa questo se il checkout restituisce errori di "configurazione mancante".', 'fp-experiences'),
+                'button' => esc_html__('Ricrea prodotto', 'fp-experiences'),
             ],
         ];
     }

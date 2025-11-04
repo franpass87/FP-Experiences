@@ -896,14 +896,17 @@
 
                 // Richiedi nonce fresco prima del checkout per evitare problemi di cache
                 let freshCheckoutNonce = '';
+                
+                // Definisci restBaseUrl FUORI dal try per usarlo in entrambi i blocchi
+                const restBaseUrl = (typeof fpExpConfig !== 'undefined' && fpExpConfig.restUrl) 
+                    || (window.wpApiSettings && wpApiSettings.root) 
+                    || (window.location.origin + '/wp-json/fp-exp/v1/');
+                
                 try {
                     ctaBtn.disabled = true;
                     ctaBtn.textContent = 'Preparazione pagamento...';
                     
                     // Richiedi nonce fresco da /checkout/nonce
-                    const restBaseUrl = (typeof fpExpConfig !== 'undefined' && fpExpConfig.restUrl) 
-                        || (window.wpApiSettings && wpApiSettings.root) 
-                        || (window.location.origin + '/wp-json/fp-exp/v1/');
                     const nonceUrl = new URL(restBaseUrl + 'checkout/nonce', window.location.origin);
                     const nonceResponse = await fetch(nonceUrl, {
                         method: 'GET',
@@ -920,20 +923,70 @@
                     }
                     
                     freshCheckoutNonce = nonceData.nonce;
+                    console.log('FP-EXP: Nonce ottenuto:', freshCheckoutNonce);
                 } catch (e) {
+                    console.error('FP-EXP: Errore nonce:', e);
                     ctaBtn.disabled = false;
                     ctaBtn.textContent = 'Procedi al pagamento';
                     alert('Sessione non valida. Aggiorna la pagina e riprova.');
                     return;
                 }
 
+                console.log('FP-EXP: Procedo con cart/set...');
+
                 // Usa il sistema di checkout integrato del plugin
                 try {
                     ctaBtn.textContent = 'Aggiunta al carrello...';
+                    console.log('FP-EXP: Preparazione chiamata cart/set');
+                    
+                    // Verifica variabili PRIMA di procedere
+                    console.log('FP-EXP: Verifica variabili:', {
+                        experienceId: experienceId,
+                        start: start,
+                        end: end,
+                        tickets: tickets,
+                        hasCollectAddons: typeof collectAddons === 'function'
+                    });
+                    
+                    if (!experienceId) {
+                        throw new Error('Experience ID mancante');
+                    }
+                    if (!start || !end) {
+                        throw new Error('Slot mancante (start/end)');
+                    }
+                    if (!tickets || Object.keys(tickets).length === 0) {
+                        throw new Error('Nessun ticket selezionato');
+                    }
+
+                    console.log('FP-EXP: Variabili OK, costruisco URL...');
+                    console.log('FP-EXP: restBaseUrl vale:', restBaseUrl);
+                    console.log('FP-EXP: window.location.origin vale:', window.location.origin);
 
                     // Aggiungi al carrello interno del plugin
-                    const setCartUrl = new URL(restBaseUrl + 'cart/set', window.location.origin);
+                    try {
+                        const setCartUrl = new URL(restBaseUrl + 'cart/set', window.location.origin);
+                        console.log('FP-EXP: URL costruito:', setCartUrl.toString());
+                    } catch (urlError) {
+                        console.error('FP-EXP: Errore costruzione URL:', urlError);
+                        throw new Error('Errore costruzione URL: ' + urlError.message);
+                    }
                     
+                    const setCartUrl = new URL(restBaseUrl + 'cart/set', window.location.origin);
+                    console.log('FP-EXP: URL finale:', setCartUrl.toString());
+                    
+                    const cartData = {
+                        experience_id: experienceId,
+                        slot_id: 0,
+                        slot_start: start,
+                        slot_end: end,
+                        tickets: tickets,
+                        addons: (typeof collectAddons === 'function' ? collectAddons() : {})
+                    };
+                    
+                    console.log('FP-EXP: Dati carrello preparati:', cartData);
+
+                    console.log('FP-EXP: Invio fetch a cart/set...');
+
                     const setCartResponse = await fetch(setCartUrl, {
                         method: 'POST',
                         headers: {
@@ -941,15 +994,11 @@
                             'X-WP-Nonce': (typeof fpExpConfig !== 'undefined' && fpExpConfig.restNonce) || ''
                         },
                         credentials: 'same-origin',
-                        body: JSON.stringify({
-                            experience_id: experienceId,
-                            slot_id: 0, // Il plugin creerà lo slot automaticamente
-                            slot_start: start,
-                            slot_end: end,
-                            tickets: tickets,
-                            addons: collectAddons()
-                        })
+                        body: JSON.stringify(cartData)
                     });
+
+                    console.log('FP-EXP: Fetch completato!');
+                    console.log('FP-EXP: Risposta cart/set:', setCartResponse.status, setCartResponse.ok);
 
                     if (!setCartResponse.ok) {
                         let errorData = {};
@@ -966,8 +1015,11 @@
                     // Cart will be automatically synced via template_redirect hook
                     ctaBtn.textContent = 'Reindirizzamento...';
                     
+                    console.log('FP-EXP: Cart/set OK, procedo con redirect...');
+                    
                     // Redirect to WooCommerce checkout page (with fallback)
                     const checkoutPageUrl = (typeof fpExpConfig !== 'undefined' && fpExpConfig.checkoutUrl) || '/checkout/';
+                    console.log('FP-EXP: Redirect a:', checkoutPageUrl);
                     window.location.href = checkoutPageUrl;
 
                 } catch (error) {
