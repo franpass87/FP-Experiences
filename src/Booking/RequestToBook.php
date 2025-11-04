@@ -164,6 +164,10 @@ final class RequestToBook
             return new WP_Error('fp_exp_rtb_contact', __('Fornisci un indirizzo email valido per poterti rispondere.', 'fp-experiences'), ['status' => 400]);
         }
 
+        if (! $contact['phone']) {
+            return new WP_Error('fp_exp_rtb_contact', __('Fornisci un numero di telefono per poterti contattare.', 'fp-experiences'), ['status' => 400]);
+        }
+
         if (empty($request->get_param('consent')['privacy'])) {
             return new WP_Error('fp_exp_rtb_consent', __('Devi accettare l’informativa privacy per inviare la richiesta.', 'fp-experiences'), ['status' => 400]);
         }
@@ -299,6 +303,12 @@ final class RequestToBook
                 return new WP_Error('fp_exp_rtb_invalid', __('Seleziona data e ora prima di proseguire.', 'fp-experiences'), ['status' => 400]);
             }
             $slot_id = Slots::ensure_slot_for_occurrence($experience_id, $start, $end);
+            
+            // Handle WP_Error from ensure_slot_for_occurrence
+            if (is_wp_error($slot_id)) {
+                return $slot_id; // Pass through the detailed error
+            }
+            
             if ($slot_id <= 0) {
                 return new WP_Error('fp_exp_rtb_slot', __('Lo slot selezionato non è più disponibile.', 'fp-experiences'), ['status' => 404]);
             }

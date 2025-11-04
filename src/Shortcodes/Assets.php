@@ -183,6 +183,10 @@ final class Assets
             }
         }
 
+        // Get RTB settings
+        $rtb_settings = get_option('fp_exp_rtb', []);
+        $rtb_enabled = isset($rtb_settings['enabled']) && $rtb_settings['enabled'] === 'yes';
+        
         wp_localize_script(
             'fp-exp-front',
             'fpExpConfig',
@@ -199,6 +203,10 @@ final class Assets
                 'currency' => $currency,
                 'tracking' => Helpers::tracking_config(),
                 'pluginUrl' => trailingslashit(FP_EXP_PLUGIN_URL),
+                'rtb' => [
+                    'enabled' => $rtb_enabled,
+                    'settings' => $rtb_settings,
+                ],
                 'autoLocale' => [
                     'strings' => AutoTranslator::strings(),
                     'plurals' => AutoTranslator::plurals(),

@@ -565,8 +565,8 @@ $dataset = [
                                 <input type="email" id="fp-exp-rtb-email-<?php echo esc_attr($scope_class); ?>" name="email" class="fp-exp-input" required>
                             </div>
                             <div class="fp-exp-field">
-                                <label class="fp-exp-label" for="fp-exp-rtb-phone-<?php echo esc_attr($scope_class); ?>"><?php echo esc_html__('Numero di telefono', 'fp-experiences'); ?></label>
-                                <input type="tel" id="fp-exp-rtb-phone-<?php echo esc_attr($scope_class); ?>" name="phone" class="fp-exp-input">
+                                <label class="fp-exp-label" for="fp-exp-rtb-phone-<?php echo esc_attr($scope_class); ?>"><?php echo esc_html__('Numero di telefono', 'fp-experiences'); ?> *</label>
+                                <input type="tel" id="fp-exp-rtb-phone-<?php echo esc_attr($scope_class); ?>" name="phone" class="fp-exp-input" required>
                             </div>
                             <div class="fp-exp-field">
                                 <label class="fp-exp-label" for="fp-exp-rtb-notes-<?php echo esc_attr($scope_class); ?>"><?php echo esc_html__('Note o richieste particolari', 'fp-experiences'); ?></label>
