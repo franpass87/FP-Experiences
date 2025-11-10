@@ -8,6 +8,7 @@ use FP_Exp\Utils\Helpers;
 use WP_Post;
 
 use function add_action;
+use function did_action;
 
 final class Registrar
 {
@@ -40,7 +41,11 @@ final class Registrar
 
     public function register(): void
     {
-        add_action('init', [$this, 'register_shortcodes']);
+        if (did_action('init')) {
+            $this->register_shortcodes();
+        } else {
+            add_action('init', [$this, 'register_shortcodes']);
+        }
         add_action('save_post_fp_experience', [$this, 'flush_experience_cache'], 20, 3);
     }
 

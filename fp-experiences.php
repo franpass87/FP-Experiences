@@ -110,6 +110,11 @@ if (is_readable($autoload)) {
 use FP_Exp\Activation;
 use FP_Exp\Plugin;
 
+// Hard fallback: ensure critical classes exist even if autoloading fails in some environments.
+if (! class_exists(Activation::class) && is_readable(__DIR__ . '/src/Activation.php')) {
+    require_once __DIR__ . '/src/Activation.php';
+}
+
 register_activation_hook(__FILE__, [Activation::class, 'activate']);
 register_deactivation_hook(__FILE__, [Activation::class, 'deactivate']);
 
