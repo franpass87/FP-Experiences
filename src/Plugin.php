@@ -243,119 +243,86 @@ final class Plugin
 
         $this->booted = true;
 
-        // Load translations early to support admin_menu hooks
-        $this->load_textdomain();
+        // Load translations on init to comply with WP 6.7 timing requirements
+        add_action('init', [$this, 'load_textdomain']);
 
         add_action('plugins_loaded', [$this, 'maybe_update_roles'], 5);
         add_action('plugins_loaded', [$this, 'register_database_tables']);
+        add_action('plugins_loaded', [Helpers::class, 'ensure_admin_capabilities'], 1);
         add_action('admin_init', [$this, 'maybe_update_roles']);
+        add_action('admin_init', [Helpers::class, 'ensure_admin_capabilities'], 1);
+        add_filter('map_meta_cap', [$this, 'map_meta_cap_fallback'], 10, 4);
 
-        $this->guard([$this->experience_cpt, 'register_hooks'], ExperienceCPT::class, 'register_hooks');
-        $this->guard([$this->shortcodes, 'register'], ShortcodeRegistrar::class, 'register');
-        $this->guard([$this->cart, 'register_hooks'], Cart::class, 'register_hooks');
-        $this->guard([$this->orders, 'register_hooks'], Orders::class, 'register_hooks');
-        $this->guard([$this->checkout, 'register_hooks'], BookingCheckout::class, 'register_hooks');
-        $this->guard([$this->emails, 'register_hooks'], Emails::class, 'register_hooks');
-        $this->guard([$this->brevo, 'register_hooks'], Brevo::class, 'register_hooks');
-        $this->guard([$this->request_to_book, 'register_hooks'], RequestToBook::class, 'register_hooks');
-        $this->guard([$this->google_calendar, 'register_hooks'], GoogleCalendar::class, 'register_hooks');
-        $this->guard([$this->ga4, 'register_hooks'], GA4::class, 'register_hooks');
-        $this->guard([$this->google_ads, 'register_hooks'], GoogleAds::class, 'register_hooks');
-        $this->guard([$this->meta_pixel, 'register_hooks'], MetaPixel::class, 'register_hooks');
-        $this->guard([$this->clarity, 'register_hooks'], Clarity::class, 'register_hooks');
+        $hookables = [
+            $this->experience_cpt,
+            $this->shortcodes,
+            $this->cart,
+            $this->orders,
+            $this->checkout,
+            $this->emails,
+            $this->brevo,
+            $this->request_to_book,
+            $this->google_calendar,
+            $this->ga4,
+            $this->google_ads,
+            $this->meta_pixel,
+            $this->clarity,
+            $this->elementor_widgets,
+            $this->gift_cpt,
+            $this->gift_manager,
+            $this->rest_routes,
+            $this->webhooks,
+            $this->meeting_points,
+            $this->migrations,
+            $this->single_experience_renderer,
+            $this->auto_translator,
+        ];
 
-        if ($this->rest_routes instanceof RestRoutes) {
-            $this->guard([$this->rest_routes, 'register_hooks'], RestRoutes::class, 'register_hooks');
+        if (is_admin()) {
+            $hookables = array_merge(
+                $hookables,
+                [
+                    $this->settings_page,
+                    $this->calendar_admin,
+                    $this->logs_page,
+                    $this->requests_page,
+                    $this->experience_meta_boxes,
+                    $this->tools_page,
+                    $this->emails_page,
+                    $this->checkin_page,
+                    $this->orders_page,
+                    $this->help_page,
+                    $this->importer_page,
+                    $this->page_creator,
+                    $this->onboarding,
+                    $this->language_admin,
+                    $this->admin_menu,
+                ]
+            );
         }
 
-        if ($this->migrations instanceof MigrationRunner) {
-            $this->guard([$this->migrations, 'register_hooks'], MigrationRunner::class, 'register_hooks');
+        foreach ($hookables as $hookable) {
+            if (! is_object($hookable) || ! method_exists($hookable, 'register_hooks')) {
+                continue;
+            }
+
+            $this->guard(
+                static function () use ($hookable): void {
+                    $hookable->register_hooks();
+                },
+                get_class($hookable),
+                'register_hooks'
+            );
         }
 
-        if ($this->meeting_points instanceof MeetingPointsManager) {
-            $this->guard([$this->meeting_points, 'register_hooks'], MeetingPointsManager::class, 'register_hooks');
-        }
-
-        if ($this->webhooks instanceof Webhooks) {
-            $this->guard([$this->webhooks, 'register_hooks'], Webhooks::class, 'register_hooks');
-        }
-
-        if ($this->single_experience_renderer instanceof SingleExperienceRenderer) {
-            $this->guard([$this->single_experience_renderer, 'register_hooks'], SingleExperienceRenderer::class, 'register_hooks');
-        }
-
-        if ($this->settings_page instanceof SettingsPage) {
-            $this->guard([$this->settings_page, 'register_hooks'], SettingsPage::class, 'register_hooks');
-        }
-
-        if ($this->calendar_admin instanceof CalendarAdmin) {
-            $this->guard([$this->calendar_admin, 'register_hooks'], CalendarAdmin::class, 'register_hooks');
-        }
-
-        if ($this->logs_page instanceof LogsPage) {
-            $this->guard([$this->logs_page, 'register_hooks'], LogsPage::class, 'register_hooks');
-        }
-
-        if ($this->language_admin instanceof LanguageAdmin) {
-            $this->guard([$this->language_admin, 'register_hooks'], LanguageAdmin::class, 'register_hooks');
-        }
-
-        if ($this->requests_page instanceof RequestsPage) {
-            $this->guard([$this->requests_page, 'register_hooks'], RequestsPage::class, 'register_hooks');
-        }
-
-        if ($this->experience_meta_boxes instanceof ExperienceMetaBoxes) {
-            $this->guard([$this->experience_meta_boxes, 'register_hooks'], ExperienceMetaBoxes::class, 'register_hooks');
-        }
-
-        if ($this->tools_page instanceof ToolsPage) {
-            $this->guard([$this->tools_page, 'register_hooks'], ToolsPage::class, 'register_hooks');
-        }
-
-        if ($this->emails_page instanceof EmailsPage) {
-            $this->guard([$this->emails_page, 'register_hooks'], EmailsPage::class, 'register_hooks');
-        }
-
-        if ($this->checkin_page instanceof CheckinPage) {
-            $this->guard([$this->checkin_page, 'register_hooks'], CheckinPage::class, 'register_hooks');
-        }
-
-        if ($this->importer_page instanceof ImporterPage) {
-            $this->guard([$this->importer_page, 'register_hooks'], ImporterPage::class, 'register_hooks');
-        }
-
-        $this->guard([ImporterStats::class, 'register_hooks'], ImporterStats::class, 'register_hooks');
-
-        if ($this->page_creator instanceof ExperiencePageCreator) {
-            $this->guard([$this->page_creator, 'register_hooks'], ExperiencePageCreator::class, 'register_hooks');
-        }
-
-        if ($this->orders_page instanceof OrdersPage) {
-            $this->guard([$this->orders_page, 'register_hooks'], OrdersPage::class, 'register_hooks');
-        }
-
-        if ($this->admin_menu instanceof AdminMenu) {
-            $this->guard([$this->admin_menu, 'register_hooks'], AdminMenu::class, 'register_hooks');
-        }
-
-        if ($this->onboarding instanceof Onboarding) {
-            $this->guard([$this->onboarding, 'register'], Onboarding::class, 'register');
-        }
-
-        if ($this->elementor_widgets instanceof ElementorWidgetsRegistrar) {
-            $this->guard([$this->elementor_widgets, 'register'], ElementorWidgetsRegistrar::class, 'register');
-        }
-
-        if ($this->gift_cpt instanceof VoucherCPT) {
-            $this->guard([$this->gift_cpt, 'register_hooks'], VoucherCPT::class, 'register_hooks');
-        }
-
-        if ($this->gift_manager instanceof VoucherManager) {
-            $this->guard([$this->gift_manager, 'register_hooks'], VoucherManager::class, 'register_hooks');
-        }
-
-        if ($this->auto_translator instanceof AutoTranslator) {
-            $this->guard([$this->auto_translator, 'register_hooks'], AutoTranslator::class, 'register_hooks');
+        if (class_exists(ImporterStats::class)) {
+            $this->guard(
+                static function (): void {
+                    ImporterStats::register_hooks();
+                },
+                ImporterStats::class,
+                'register_hooks'
+            );
         }
     }
 
@@ -377,7 +344,7 @@ final class Plugin
 
         if ($administrator) {
             foreach (array_keys($manager_capabilities) as $capability) {
-                if ($administrator->has_cap($capability)) {
+                if (! empty($administrator->capabilities[$capability])) {
                     continue;
                 }
 
@@ -388,7 +355,7 @@ final class Plugin
 
         if ($current_user instanceof WP_User && in_array('administrator', $current_user->roles, true)) {
             foreach (array_keys($manager_capabilities) as $capability) {
-                if ($current_user->has_cap($capability)) {
+                if (! empty($current_user->allcaps[$capability])) {
                     continue;
                 }
 
@@ -406,13 +373,28 @@ final class Plugin
 
         if ($current_user_missing_caps && $current_user instanceof WP_User) {
             foreach (array_keys($manager_capabilities) as $capability) {
-                if ($current_user->has_cap($capability)) {
+                if (! empty($current_user->allcaps[$capability])) {
                     continue;
                 }
 
                 $current_user->add_cap($capability);
             }
         }
+    }
+
+    public function map_meta_cap_fallback(array $caps, string $cap, int $user_id, array $args)
+    {
+        if (! in_array($cap, ['delete_post', 'edit_post', 'read_post'], true)) {
+            return $caps;
+        }
+
+        if (! empty($args)) {
+            return $caps;
+        }
+
+        $caps = ['fp_exp_admin_access'];
+
+        return $caps;
     }
 
     /**

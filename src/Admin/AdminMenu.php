@@ -115,6 +115,22 @@ final class AdminMenu
 
         add_submenu_page(
             'fp_exp_dashboard',
+            esc_html__('Gift Vouchers', 'fp-experiences'),
+            esc_html__('Gift voucher', 'fp-experiences'),
+            'fp_exp_manage',
+            'edit.php?post_type=fp_exp_gift_voucher'
+        );
+
+        add_submenu_page(
+            'fp_exp_dashboard',
+            esc_html__('Create Gift Voucher', 'fp-experiences'),
+            esc_html__('Nuovo voucher', 'fp-experiences'),
+            'fp_exp_manage',
+            'post-new.php?post_type=fp_exp_gift_voucher'
+        );
+
+        add_submenu_page(
+            'fp_exp_dashboard',
             esc_html__('Importer Esperienze', 'fp-experiences'),
             esc_html__('Importer Esperienze', 'fp-experiences'),
             Helpers::management_capability(),

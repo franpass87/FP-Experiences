@@ -17,6 +17,10 @@ final class MetaPixel
 {
     public function register_hooks(): void
     {
+        if (! $this->is_enabled()) {
+            return;
+        }
+
         add_action('wp_head', [$this, 'output_snippet'], 8);
         add_action('woocommerce_thankyou', [$this, 'render_purchase'], 30, 1);
     }
@@ -73,5 +77,19 @@ final class MetaPixel
         $currency = $order->get_currency();
 
         echo "<script>if(window.fbq){fbq('track','Purchase',{value:" . $value . ",currency:'" . esc_html($currency) . "'});}</script>";
+    }
+
+    private function is_enabled(): bool
+    {
+        $settings = Helpers::tracking_settings();
+        $config = isset($settings['meta_pixel']) && is_array($settings['meta_pixel']) ? $settings['meta_pixel'] : [];
+
+        if (empty($config['enabled'])) {
+            return false;
+        }
+
+        $pixel_id = (string) ($config['pixel_id'] ?? '');
+
+        return $pixel_id !== '';
     }
 }

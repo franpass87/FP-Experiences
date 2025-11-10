@@ -531,6 +531,8 @@ $dataset = [
                     
                     <?php if ($rtb_enabled) : ?>
                         <form
+                            method="POST"
+                            action=""
                             class="fp-exp-rtb-form"
                             data-fp-rtb-form="1"
                             data-nonce="<?php echo esc_attr($rtb_nonce); ?>"
@@ -558,15 +560,15 @@ $dataset = [
                             ></div>
                             <div class="fp-exp-field">
                                 <label class="fp-exp-label" for="fp-exp-rtb-name-<?php echo esc_attr($scope_class); ?>"><?php echo esc_html__('Nome e cognome', 'fp-experiences'); ?> <span class="fp-exp-required" aria-hidden="true">*</span></label>
-                                <input type="text" id="fp-exp-rtb-name-<?php echo esc_attr($scope_class); ?>" name="name" class="fp-exp-input" required>
+                                <input type="text" id="fp-exp-rtb-name-<?php echo esc_attr($scope_class); ?>" name="name" class="fp-exp-input">
                             </div>
                             <div class="fp-exp-field">
                                 <label class="fp-exp-label" for="fp-exp-rtb-email-<?php echo esc_attr($scope_class); ?>"><?php echo esc_html__('Email', 'fp-experiences'); ?> <span class="fp-exp-required" aria-hidden="true">*</span></label>
-                                <input type="email" id="fp-exp-rtb-email-<?php echo esc_attr($scope_class); ?>" name="email" class="fp-exp-input" required>
+                                <input type="email" id="fp-exp-rtb-email-<?php echo esc_attr($scope_class); ?>" name="email" class="fp-exp-input">
                             </div>
                             <div class="fp-exp-field">
                                 <label class="fp-exp-label" for="fp-exp-rtb-phone-<?php echo esc_attr($scope_class); ?>"><?php echo esc_html__('Numero di telefono', 'fp-experiences'); ?> *</label>
-                                <input type="tel" id="fp-exp-rtb-phone-<?php echo esc_attr($scope_class); ?>" name="phone" class="fp-exp-input" required>
+                                <input type="tel" id="fp-exp-rtb-phone-<?php echo esc_attr($scope_class); ?>" name="phone" class="fp-exp-input">
                             </div>
                             <div class="fp-exp-field">
                                 <label class="fp-exp-label" for="fp-exp-rtb-notes-<?php echo esc_attr($scope_class); ?>"><?php echo esc_html__('Note o richieste particolari', 'fp-experiences'); ?></label>

@@ -231,6 +231,7 @@ final class Plugin
         add_action('plugins_loaded', [$this, 'load_textdomain']);
         add_action('plugins_loaded', [$this, 'register_database_tables']);
         add_action('admin_init', [$this, 'maybe_update_roles']);
+        add_filter('map_meta_cap', [$this, 'map_meta_cap_fallback'], 10, 4);
 
         $this->guard([$this->experience_cpt, 'register_hooks'], ExperienceCPT::class, 'register_hooks');
         $this->guard([$this->shortcodes, 'register'], ShortcodeRegistrar::class, 'register');
@@ -395,6 +396,19 @@ final class Plugin
                 $current_user->add_cap($capability);
             }
         }
+    }
+
+    public function map_meta_cap_fallback(array $caps, string $cap, int $user_id, array $args)
+    {
+        if (! in_array($cap, ['delete_post', 'edit_post', 'read_post'], true)) {
+            return $caps;
+        }
+
+        if (! empty($args)) {
+            return $caps;
+        }
+
+        return ['fp_exp_admin_access'];
     }
 
     /**

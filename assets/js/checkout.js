@@ -143,6 +143,18 @@
         document.querySelectorAll('[data-fp-shortcode="checkout"] form.fp-exp-checkout__form').forEach((form) => {
             const errorSummary = form.querySelector('[data-fp-error-summary]');
             const container = form.closest('[data-fp-shortcode="checkout"]');
+            const updateCheckoutNonce = (value) => {
+                if (!value) {
+                    return;
+                }
+                form.setAttribute('data-nonce', value);
+                if (typeof window !== 'undefined') {
+                    if (!window.fpExpConfig) {
+                        window.fpExpConfig = {};
+                    }
+                    window.fpExpConfig.checkoutNonce = value;
+                }
+            };
 
             form.querySelectorAll('input, select, textarea').forEach((field) => {
                 const eventName = field.type === 'checkbox' ? 'change' : 'input';
@@ -190,6 +202,7 @@
                             const data = await res.json();
                             if (data && data.nonce) {
                                 freshNonce = data.nonce;
+                                updateCheckoutNonce(freshNonce);
                             }
                         }
                     } catch (e) {
@@ -212,6 +225,7 @@
                         const data = await res.json();
                         if (data && data.success && data.data && data.data.nonce) {
                             freshNonce = data.data.nonce;
+                            updateCheckoutNonce(freshNonce);
                         }
                     } catch (e) {
                         // Ultimo fallback: usa il nonce dall'HTML se disponibile
@@ -352,9 +366,33 @@
                     } catch (e) {
                         // Fallback AJAX
                         try {
+                            if (!config.checkoutNonce) {
+                                if (restUrl) {
+                                    const headers = {};
+                                    if (config.restNonce) {
+                                        headers['X-WP-Nonce'] = config.restNonce;
+                                    }
+                                    const nonceRes = await fetch(restUrl + 'checkout/nonce', { method: 'GET', headers, credentials: 'same-origin' });
+                                    if (nonceRes.ok) {
+                                        const nonceData = await nonceRes.json().catch(() => ({}));
+                                        if (nonceData && nonceData.nonce) {
+                                            updateCheckoutNonce(nonceData.nonce);
+                                        }
+                                    }
+                                } else if (config.ajaxUrl) {
+                                    const nonceForm = new FormData();
+                                    nonceForm.set('action', 'fp_exp_get_nonce');
+                                    const ajaxNonceRes = await fetch(config.ajaxUrl, { method: 'POST', credentials: 'same-origin', body: nonceForm });
+                                    const ajaxNonceData = await ajaxNonceRes.json().catch(() => ({}));
+                                    if (ajaxNonceData && ajaxNonceData.success && ajaxNonceData.data && ajaxNonceData.data.nonce) {
+                                        updateCheckoutNonce(ajaxNonceData.data.nonce);
+                                    }
+                                }
+                            }
+
                             const fd = new FormData();
                             fd.set('action', 'fp_exp_unlock_cart');
-                            fd.set('nonce', config.checkoutNonce || '');
+                            fd.set('nonce', (typeof window !== 'undefined' && window.fpExpConfig ? window.fpExpConfig.checkoutNonce : '') || '');
                             await fetch(config.ajaxUrl, { method: 'POST', credentials: 'same-origin', body: fd });
                         } catch (e2) {
                             // Ultimo fallback: reset cookie sessione

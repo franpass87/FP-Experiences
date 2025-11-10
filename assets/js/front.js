@@ -923,6 +923,12 @@
                     }
                     
                     freshCheckoutNonce = nonceData.nonce;
+                    if (typeof window !== 'undefined') {
+                        if (!window.fpExpConfig) {
+                            window.fpExpConfig = {};
+                        }
+                        window.fpExpConfig.checkoutNonce = freshCheckoutNonce;
+                    }
                     console.log('FP-EXP: Nonce ottenuto:', freshCheckoutNonce);
                 } catch (e) {
                     console.error('FP-EXP: Errore nonce:', e);
@@ -1411,6 +1417,147 @@
             // Inizializza modulo RTB Summary
             if (window.FPFront.summaryRtb && window.FPFront.summaryRtb.init) {
                 window.FPFront.summaryRtb.init({ widget, slotsEl, config });
+            }
+
+            // Gestione submit form RTB via AJAX
+            if (rtbForm) {
+                rtbForm.addEventListener('submit', async (ev) => {
+                    console.log('🔥 RTB SUBMIT HANDLER ESEGUITO - VERSIONE CORRETTA');
+                    ev.preventDefault();
+
+                    const statusEl = rtbForm.querySelector('.fp-exp-rtb-form__status');
+                    const submitBtn = rtbForm.querySelector('button[type="submit"]');
+
+                    if (submitBtn && submitBtn.disabled) return;
+
+                    // Validazione base - TEMPORANEAMENTE DISABILITATA PER TEST
+                    const nameInput = rtbForm.querySelector('[name="name"]');
+                    const emailInput = rtbForm.querySelector('[name="email"]');
+                    const phoneInput = rtbForm.querySelector('[name="phone"]');
+                    const privacyCheck = rtbForm.querySelector('[name="consent_privacy"]');
+                    
+                    console.log('📝 DEBUG CAMPI:', {
+                        nameInput: !!nameInput,
+                        nameValue: nameInput ? nameInput.value : 'N/A',
+                        emailInput: !!emailInput,
+                        emailValue: emailInput ? emailInput.value : 'N/A'
+                    });
+
+                    /* VALIDAZIONE COMMENTATA PER TEST
+                    if (!nameInput || !nameInput.value.trim()) {
+                        alert(rtbForm.getAttribute('data-error-name') || 'Inserisci il tuo nome.');
+                        return;
+                    }
+
+                    if (!emailInput || !emailInput.value.trim()) {
+                        alert(rtbForm.getAttribute('data-error-email') || 'Inserisci il tuo indirizzo email.');
+                        return;
+                    }
+
+                    if (!privacyCheck || !privacyCheck.checked) {
+                        alert(rtbForm.getAttribute('data-error-privacy') || 'Accetta l\'informativa privacy per continuare.');
+                        return;
+                    }
+                    */
+
+                    // Raccogli dati
+                    const payload = {
+                        nonce: rtbForm.getAttribute('data-nonce') || '',
+                        experience_id: parseInt(rtbForm.querySelector('[name="experience_id"]').value, 10),
+                        slot_id: parseInt(rtbForm.querySelector('[name="slot_id"]').value, 10) || 0,
+                        start: startInput ? startInput.value : '',
+                        end: endInput ? endInput.value : '',
+                        tickets: ticketsHidden ? JSON.parse(ticketsHidden.value || '{}') : {},
+                        addons: addonsHidden ? JSON.parse(addonsHidden.value || '{}') : {},
+                        mode: rtbForm.querySelector('[name="mode"]').value || 'confirm',
+                        forced: rtbForm.querySelector('[name="forced"]').value === '1',
+                        contact: {
+                            name: nameInput.value.trim(),
+                            email: emailInput.value.trim(),
+                            phone: phoneInput ? phoneInput.value.trim() : '',
+                        },
+                        notes: rtbForm.querySelector('[name="notes"]')?.value || '',
+                        consent: {
+                            privacy: true,
+                            marketing: rtbForm.querySelector('[name="consent_marketing"]')?.checked || false,
+                        },
+                    };
+
+                    // Mostra stato loading
+                    if (submitBtn) {
+                        submitBtn.disabled = true;
+                        submitBtn.textContent = statusEl?.getAttribute('data-loading') || 'Invio della richiesta…';
+                    }
+
+                    if (statusEl) {
+                        statusEl.textContent = '';
+                        statusEl.className = 'fp-exp-rtb-form__status';
+                    }
+
+                    try {
+                        const restBaseUrl = (typeof fpExpConfig !== 'undefined' && fpExpConfig.restUrl) 
+                            || (window.wpApiSettings && wpApiSettings.root) 
+                            || (window.location.origin + '/wp-json/fp-exp/v1/');
+
+                        const response = await fetch(restBaseUrl + 'rtb/request', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-WP-Nonce': (typeof fpExpConfig !== 'undefined' && fpExpConfig.rtbNonce) || '',
+                            },
+                            credentials: 'same-origin',
+                            body: JSON.stringify(payload),
+                        });
+
+                        console.log('📡 RTB Response Status:', response.status, response.statusText);
+                        const result = await response.json();
+                        console.log('📦 RTB Response Data:', result);
+
+                        if (!response.ok || result.success !== true) {
+                            console.error('❌ RTB Request failed:', result);
+                            throw new Error(result.message || 'Errore durante l\'invio della richiesta.');
+                        }
+
+                        // Successo!
+                        if (statusEl) {
+                            statusEl.className = 'fp-exp-rtb-form__status fp-exp-rtb-form__status--success';
+                            statusEl.textContent = result.message || statusEl.getAttribute('data-success') || 'Richiesta ricevuta! Ti risponderemo al più presto.';
+                        }
+
+                        // Reset form dopo 2 secondi
+                        setTimeout(() => {
+                            rtbForm.reset();
+                            if (submitBtn) {
+                                submitBtn.textContent = 'Invia richiesta di prenotazione';
+                                submitBtn.disabled = true;
+                            }
+                            if (statusEl) {
+                                statusEl.textContent = '';
+                                statusEl.className = 'fp-exp-rtb-form__status';
+                            }
+                            // Reset quantità biglietti
+                            document.querySelectorAll('.fp-exp-quantity__input').forEach(input => {
+                                input.value = '0';
+                            });
+                            // Deseleziona slot
+                            if (window.FPFront.slots && window.FPFront.slots.clearSelection) {
+                                window.FPFront.slots.clearSelection();
+                            }
+                        }, 3000);
+
+                    } catch (error) {
+                        // Errore
+                        if (statusEl) {
+                            statusEl.className = 'fp-exp-rtb-form__status fp-exp-rtb-form__status--error';
+                            statusEl.textContent = error.message || statusEl.getAttribute('data-error') || 'Impossibile inviare la richiesta. Riprova.';
+                        }
+
+                        if (submitBtn) {
+                            submitBtn.disabled = false;
+                            submitBtn.textContent = 'Invia richiesta di prenotazione';
+                        }
+                    }
+                });
             }
         })();
 

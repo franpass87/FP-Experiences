@@ -402,23 +402,50 @@ final class Cart
      */
     public function maybe_sync_to_woocommerce(): void
     {
-        error_log('[FP-EXP-CART] maybe_sync_to_woocommerce() called');
+        $shouldLog = defined('WP_DEBUG') && WP_DEBUG && apply_filters('fp_exp_debug_log_cart', false);
+        $logCache = [];
+
+        $log = static function (string $message) use (&$logCache, $shouldLog): void {
+            if (!$shouldLog) {
+                return;
+            }
+
+            $key = md5($message);
+            $now = time();
+
+            if (isset($logCache[$key]) && ($now - $logCache[$key]) < 300) {
+                return;
+            }
+
+            if (function_exists('get_transient')) {
+                $transientKey = 'fp_exp_cart_log_' . $key;
+                if (false !== get_transient($transientKey)) {
+                    return;
+                }
+                set_transient($transientKey, 1, 300);
+            }
+
+            $logCache[$key] = $now;
+            error_log($message);
+        };
+
+        $log('[FP-EXP-CART] maybe_sync_to_woocommerce() called');
         
         if (!function_exists('is_checkout') || !function_exists('is_cart')) {
-            error_log('[FP-EXP-CART] is_checkout/is_cart functions not available');
+            $log('[FP-EXP-CART] is_checkout/is_cart functions not available');
             return;
         }
 
         // Only sync on checkout or cart pages
         if (!is_checkout() && !is_cart()) {
-            error_log('[FP-EXP-CART] Not on checkout/cart page, skip sync');
+            $log('[FP-EXP-CART] Not on checkout/cart page, skip sync');
             return;
         }
 
-        error_log('[FP-EXP-CART] On checkout/cart page, proceeding with sync...');
+        $log('[FP-EXP-CART] On checkout/cart page, proceeding with sync...');
 
         if (!function_exists('WC') || !WC()->cart) {
-            error_log('[FP-EXP-CART] WooCommerce or cart not available');
+            $log('[FP-EXP-CART] WooCommerce or cart not available');
             return;
         }
 
@@ -430,22 +457,22 @@ final class Cart
         
         // Skip sync if cart content hasn't changed
         if ($last_synced_hash === $cart_hash && !empty($last_synced_hash)) {
-            error_log('[FP-EXP-CART] Cart content unchanged (hash: ' . $cart_hash . '), skip sync');
+            $log('[FP-EXP-CART] Cart content unchanged (hash: ' . $cart_hash . '), skip sync');
             return;
         }
         
-        error_log('[FP-EXP-CART] Cart content changed or first sync (hash: ' . $cart_hash . '), syncing...');
+        $log('[FP-EXP-CART] Cart content changed or first sync (hash: ' . $cart_hash . '), syncing...');
         
         if (empty($custom_cart['items'])) {
-            error_log('[FP-EXP-CART] Custom cart empty, nothing to sync');
+            $log('[FP-EXP-CART] Custom cart empty, nothing to sync');
             return;
         }
 
-        error_log('[FP-EXP-CART] ✅ Starting sync of ' . count($custom_cart['items']) . ' items to WooCommerce cart');
+        $log('[FP-EXP-CART] ✅ Starting sync of ' . count($custom_cart['items']) . ' items to WooCommerce cart');
 
         // Clear WooCommerce cart (prevent mixed carts)
         if (!WC()->cart->is_empty()) {
-            error_log('[FP-EXP-CART] Clearing WooCommerce cart before sync');
+            $log('[FP-EXP-CART] Clearing WooCommerce cart before sync');
             WC()->cart->empty_cart();
         }
 
@@ -474,11 +501,11 @@ final class Cart
             $quantity = array_sum(array_values($tickets));
             
             // Debug logging
-            error_log('[FP-EXP-CART] Experience ' . $experience_id . ' tickets data: ' . print_r($tickets, true));
-            error_log('[FP-EXP-CART] Calculated quantity: ' . $quantity);
+            $log('[FP-EXP-CART] Experience ' . $experience_id . ' tickets data: ' . print_r($tickets, true));
+            $log('[FP-EXP-CART] Calculated quantity: ' . $quantity);
 
             if ($quantity <= 0) {
-                error_log('[FP-EXP-CART] ⚠️ Quantity is 0, defaulting to 1');
+                $log('[FP-EXP-CART] ⚠️ Quantity is 0, defaulting to 1');
                 $quantity = 1;
             }
 
@@ -486,7 +513,7 @@ final class Cart
             $virtual_product_id = \FP_Exp\Integrations\ExperienceProduct::get_product_id();
             
             if ($virtual_product_id <= 0) {
-                error_log('[FP-EXP-CART] ❌ Virtual product not found! Cannot add to WooCommerce cart.');
+                $log('[FP-EXP-CART] ❌ Virtual product not found! Cannot add to WooCommerce cart.');
                 continue;
             }
             
@@ -499,36 +526,36 @@ final class Cart
             );
 
             if ($added) {
-                error_log('[FP-EXP-CART] ✅ Added experience ' . $experience_id . ' to WooCommerce cart (key: ' . $added . ')');
+                $log('[FP-EXP-CART] ✅ Added experience ' . $experience_id . ' to WooCommerce cart (key: ' . $added . ')');
                 $synced_count++;
             } else {
-                error_log('[FP-EXP-CART] ❌ FAILED to add experience ' . $experience_id . ' to WooCommerce cart');
+                $log('[FP-EXP-CART] ❌ FAILED to add experience ' . $experience_id . ' to WooCommerce cart');
             }
         }
 
         // Save cart hash to detect future changes
         if (WC()->session) {
             WC()->session->set('fp_exp_cart_hash_' . $session_id, $cart_hash);
-            error_log('[FP-EXP-CART] Saved cart hash: ' . $cart_hash);
+            $log('[FP-EXP-CART] Saved cart hash: ' . $cart_hash);
         }
 
-        error_log('[FP-EXP-CART] Sync complete. Synced: ' . $synced_count . ', WC cart total: ' . WC()->cart->get_cart_contents_count());
+        $log('[FP-EXP-CART] Sync complete. Synced: ' . $synced_count . ', WC cart total: ' . WC()->cart->get_cart_contents_count());
         
         // If sync failed for all items, show warning
         if ($synced_count === 0 && count($custom_cart['items']) > 0) {
-            error_log('[FP-EXP-CART] ⚠️ WARNING: Cart sync failed for all items! WooCommerce cart is empty.');
+            $log('[FP-EXP-CART] ⚠️ WARNING: Cart sync failed for all items! WooCommerce cart is empty.');
             
             // Check if virtual product exists - this is usually the cause
             $virtual_product_id = \FP_Exp\Integrations\ExperienceProduct::get_product_id();
             $error_message = '';
             
             if ($virtual_product_id <= 0) {
-                error_log('[FP-EXP-CART] ❌ CAUSA: Prodotto virtuale non configurato!');
+                $log('[FP-EXP-CART] ❌ CAUSA: Prodotto virtuale non configurato!');
                 $error_message = __('Configurazione mancante. Contatta l\'amministratore del sito.', 'fp-experiences');
             } else {
                 $product = wc_get_product($virtual_product_id);
                 if (!$product) {
-                    error_log('[FP-EXP-CART] ❌ CAUSA: Prodotto virtuale ID ' . $virtual_product_id . ' non esiste più!');
+                    $log('[FP-EXP-CART] ❌ CAUSA: Prodotto virtuale ID ' . $virtual_product_id . ' non esiste più!');
                     $error_message = __('Configurazione non valida. Contatta l\'amministratore del sito.', 'fp-experiences');
                 } else {
                     // Other reason

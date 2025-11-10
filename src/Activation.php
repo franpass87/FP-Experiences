@@ -127,6 +127,7 @@ final class Activation
                 'upload_files' => true,
                 'fp_exp_manage' => true,
                 'fp_exp_operate' => true,
+                'fp_exp_admin_access' => true,
                 'fp_exp_guide' => true,
             ],
             $experience_caps
@@ -225,7 +226,7 @@ final class Activation
             }
 
             if ($role->has_cap('manage_woocommerce')) {
-                foreach (['fp_exp_manage', 'fp_exp_operate', 'fp_exp_guide'] as $capability) {
+                foreach (['fp_exp_manage', 'fp_exp_operate', 'fp_exp_guide', 'fp_exp_admin_access'] as $capability) {
                     if (! $role->has_cap($capability)) {
                         $role->add_cap($capability);
                     }

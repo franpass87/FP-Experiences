@@ -50,6 +50,7 @@ use function wp_create_nonce;
 use function wp_parse_args;
 use function wp_unslash;
 use function wp_verify_nonce;
+use function wp_get_current_user;
 
 use const FP_EXP_PLUGIN_DIR;
 use const FP_EXP_VERSION;
@@ -115,40 +116,77 @@ final class Helpers
 
     public static function can_manage_fp(): bool
     {
-        return current_user_can('fp_exp_manage')
-            || current_user_can('manage_options')
-            || current_user_can('manage_woocommerce');
+        $user = wp_get_current_user();
+
+        if ($user && ! empty($user->allcaps['fp_exp_admin_access'])) {
+            return true;
+        }
+
+        if ($user && ! empty($user->allcaps['fp_exp_manage'])) {
+            return true;
+        }
+
+        return $user && ! empty($user->allcaps['manage_options']);
     }
 
     public static function can_operate_fp(): bool
     {
-        return current_user_can('fp_exp_operate')
-            || current_user_can('manage_woocommerce')
-            || current_user_can('edit_shop_orders')
-            || self::can_manage_fp();
+        $user = wp_get_current_user();
+
+        if ($user && ! empty($user->allcaps['fp_exp_operate'])) {
+            return true;
+        }
+
+        if ($user && (! empty($user->allcaps['manage_woocommerce']) || ! empty($user->allcaps['edit_shop_orders']))) {
+            return true;
+        }
+
+        return self::can_manage_fp();
     }
 
     public static function can_access_guides(): bool
     {
-        return current_user_can('fp_exp_guide') || self::can_operate_fp();
+        $user = wp_get_current_user();
+
+        if ($user && ! empty($user->allcaps['fp_exp_guide'])) {
+            return true;
+        }
+
+        return self::can_operate_fp();
     }
 
     public static function management_capability(): string
     {
-        return current_user_can('fp_exp_manage') ? 'fp_exp_manage' : 'manage_options';
+        $user = wp_get_current_user();
+
+        if ($user && ! empty($user->allcaps['fp_exp_admin_access'])) {
+            return 'fp_exp_admin_access';
+        }
+
+        if ($user && ! empty($user->allcaps['fp_exp_manage'])) {
+            return 'fp_exp_manage';
+        }
+
+        return 'manage_options';
     }
 
     public static function operations_capability(): string
     {
-        if (current_user_can('fp_exp_operate')) {
+        $user = wp_get_current_user();
+
+        if ($user && ! empty($user->allcaps['fp_exp_operate'])) {
             return 'fp_exp_operate';
         }
 
-        if (current_user_can('fp_exp_manage')) {
+        if ($user && ! empty($user->allcaps['fp_exp_manage'])) {
             return 'fp_exp_manage';
         }
 
-        if (current_user_can('manage_woocommerce')) {
+        if ($user && ! empty($user->allcaps['fp_exp_admin_access'])) {
+            return 'fp_exp_admin_access';
+        }
+
+        if ($user && ! empty($user->allcaps['manage_woocommerce'])) {
             return 'manage_woocommerce';
         }
 
@@ -157,19 +195,25 @@ final class Helpers
 
     public static function guide_capability(): string
     {
-        if (current_user_can('fp_exp_guide')) {
+        $user = wp_get_current_user();
+
+        if ($user && ! empty($user->allcaps['fp_exp_guide'])) {
             return 'fp_exp_guide';
         }
 
-        if (current_user_can('fp_exp_operate')) {
+        if ($user && ! empty($user->allcaps['fp_exp_operate'])) {
             return 'fp_exp_operate';
         }
 
-        if (current_user_can('fp_exp_manage')) {
+        if ($user && ! empty($user->allcaps['fp_exp_manage'])) {
             return 'fp_exp_manage';
         }
 
-        if (current_user_can('manage_woocommerce')) {
+        if ($user && ! empty($user->allcaps['fp_exp_admin_access'])) {
+            return 'fp_exp_admin_access';
+        }
+
+        if ($user && ! empty($user->allcaps['manage_woocommerce'])) {
             return 'manage_woocommerce';
         }
 

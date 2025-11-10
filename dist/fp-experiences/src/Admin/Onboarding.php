@@ -55,7 +55,7 @@ final class Onboarding
             'fp_exp_dashboard',
             esc_html__('Benvenuto in FP Experiences', 'fp-experiences'),
             esc_html__('Onboarding', 'fp-experiences'),
-            'fp_exp_manage',
+            Helpers::management_capability(),
             'fp_exp_onboarding',
             [$this, 'render']
         );

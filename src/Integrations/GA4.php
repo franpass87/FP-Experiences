@@ -19,6 +19,10 @@ final class GA4
 {
     public function register_hooks(): void
     {
+        if (! $this->is_enabled()) {
+            return;
+        }
+
         add_action('wp_head', [$this, 'output_snippet'], 5);
         add_action('woocommerce_thankyou', [$this, 'render_purchase_event'], 20, 1);
     }
@@ -106,5 +110,21 @@ final class GA4
         ];
 
         echo '<script>window.dataLayer = window.dataLayer || [];window.dataLayer.push(' . wp_json_encode($payload) . ');</script>';
+    }
+
+    private function is_enabled(): bool
+    {
+        $settings = Helpers::tracking_settings();
+        $config = isset($settings['ga4']) && is_array($settings['ga4']) ? $settings['ga4'] : [];
+
+        if (empty($config['enabled'])) {
+            return false;
+        }
+
+        if (! empty($config['gtm_id']) || ! empty($config['measurement_id'])) {
+            return true;
+        }
+
+        return false;
     }
 }

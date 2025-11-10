@@ -282,8 +282,9 @@ final class Checkout
         nocache_headers();
 
         $nonce = isset($_POST['nonce']) ? sanitize_text_field(wp_unslash((string) $_POST['nonce'])) : '';
+        $session_id = $this->cart->get_session_id();
 
-        if (! wp_verify_nonce($nonce, 'fp-exp-checkout')) {
+        if (! wp_verify_nonce($nonce, 'fp-exp-checkout-' . $session_id)) {
             wp_send_json_error(['message' => __('Nonce non valido.', 'fp-experiences')], 403);
         }
 
@@ -320,7 +321,6 @@ final class Checkout
         $referer = sanitize_text_field((string) $request->get_header('referer'));
         $origin = sanitize_text_field((string) $request->get_header('origin'));
         $home = home_url();
-        
         if (defined('WP_DEBUG') && WP_DEBUG) {
             error_log('[FP-EXP-CHECKOUT] Referer: ' . $referer);
             error_log('[FP-EXP-CHECKOUT] Origin: ' . $origin);
@@ -330,7 +330,6 @@ final class Checkout
         // Verifica referer O origin (almeno uno deve essere presente e corretto)
         $referer_valid = false;
         $origin_valid = false;
-        
         if ($referer) {
             $parsed_referer = wp_parse_url($referer);
             $parsed_home = wp_parse_url($home);
@@ -355,6 +354,14 @@ final class Checkout
         
         $result = $referer_valid || $origin_valid;
         
+        if (! $result) {
+            $header_nonce = sanitize_text_field((string) $request->get_header('x-wp-nonce'));
+
+            if ($header_nonce && wp_verify_nonce($header_nonce, 'wp_rest')) {
+                $result = true;
+            }
+        }
+
         if (defined('WP_DEBUG') && WP_DEBUG) {
             error_log('[FP-EXP-CHECKOUT] Referer valid: ' . ($referer_valid ? 'YES' : 'NO'));
             error_log('[FP-EXP-CHECKOUT] Origin valid: ' . ($origin_valid ? 'YES' : 'NO'));

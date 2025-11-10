@@ -3353,6 +3353,7 @@
     color: var(--fp-color-text);
 }
 
+
 .fp-exp-button {
     display: inline-flex;
     align-items: center;
@@ -3416,7 +3417,12 @@ body.fp-modal-open {
     position: absolute;
     inset: 0;
     background: rgba(19, 29, 56, 0.55);
-    backdrop-filter: blur(4px);
+}
+
+@media (min-width: 1024px) {
+    .fp-gift-modal__backdrop {
+        background: rgba(19, 29, 56, 0.65);
+    }
 }
 
 .fp-gift-modal__dialog {
@@ -3428,8 +3434,16 @@ body.fp-modal-open {
     overflow-x: hidden;
     border-radius: var(--fp-exp-radius-large, 20px);
     outline: none;
-    -webkit-overflow-scrolling: touch;
-    overscroll-behavior: contain;
+    background: var(--fp-color-surface, #fff);
+    box-shadow: 0 20px 45px -20px rgba(19, 29, 56, 0.25);
+    padding: clamp(1.5rem, 3vw, 2rem);
+}
+
+@media (min-width: 1024px) {
+    .fp-gift-modal__dialog {
+        max-height: min(700px, calc(100vh - 16rem));
+        width: min(680px, 90%);
+    }
 }
 
 .fp-gift-modal__dialog:focus {
@@ -3437,16 +3451,11 @@ body.fp-modal-open {
 }
 
 .fp-gift-modal__close {
-    position: sticky;
-    top: 1.5rem;
-    right: 1rem;
-    float: right;
-    margin-bottom: -1.5rem;
-    margin-right: 1rem;
-    z-index: 10;
+    position: absolute;
+    top: 1.25rem;
+    right: 1.25rem;
     border: none;
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(8px);
+    background: #fff;
     border-radius: 999px;
     width: 2.5rem;
     height: 2.5rem;
@@ -3456,7 +3465,7 @@ body.fp-modal-open {
     color: var(--fp-color-text, #131d38);
     cursor: pointer;
     transition: transform 0.2s ease, background 0.2s ease;
-    box-shadow: 0 12px 32px -12px rgba(19, 29, 56, 0.35);
+    box-shadow: 0 4px 12px rgba(19, 29, 56, 0.15);
 }
 
 .fp-gift-modal__close:hover,
@@ -3477,14 +3486,13 @@ body.fp-modal-open {
     }
 
     .fp-gift-modal__dialog {
-        max-height: calc(100vh - 12rem) !important;
+        max-height: calc(100vh - 12rem);
         border-radius: var(--fp-exp-radius-base, 12px);
     }
 
     .fp-gift-modal__close {
         top: 1rem;
-        right: 0.5rem;
-        margin-right: 0.5rem;
+        right: 1rem;
         width: 2.25rem;
         height: 2.25rem;
     }
@@ -3890,6 +3898,11 @@ body.fp-modal-open {
 .fp-exp-button:focus-visible {
     background: color-mix(in srgb, var(--fp-color-primary) 88%, #000);
     transform: translateY(-1px);
+}
+
+.fp-exp-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }
 
 .fp-hero-gift-link {

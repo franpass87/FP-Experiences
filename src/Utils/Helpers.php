@@ -24,6 +24,7 @@ use function esc_url_raw;
 use function filemtime;
 use function function_exists;
 use function get_current_user_id;
+use function get_role;
 use function get_option;
 use function get_post_meta;
 use function get_transient;
@@ -50,6 +51,8 @@ use function wp_create_nonce;
 use function wp_parse_args;
 use function wp_unslash;
 use function wp_verify_nonce;
+use function wp_get_current_user;
+use function is_user_logged_in;
 
 use const FP_EXP_PLUGIN_DIR;
 use const FP_EXP_VERSION;
@@ -115,40 +118,129 @@ final class Helpers
 
     public static function can_manage_fp(): bool
     {
-        return current_user_can('fp_exp_manage')
-            || current_user_can('manage_options')
-            || current_user_can('manage_woocommerce');
+        $user = wp_get_current_user();
+
+        if ($user && ! empty($user->allcaps['fp_exp_admin_access'])) {
+            return true;
+        }
+
+        if ($user && ! empty($user->allcaps['fp_exp_manage'])) {
+            return true;
+        }
+
+        return $user && ! empty($user->allcaps['manage_options']);
+    }
+
+    /**
+     * Ensure that administrators (role and current user) always retain the FP Experiences capabilities.
+     *
+     * Called on admin_init to repair installations where role propagation did not run correctly.
+     */
+    public static function ensure_admin_capabilities(): void
+    {
+        if (! is_user_logged_in()) {
+            return;
+        }
+
+        $debug = defined('WP_DEBUG') && WP_DEBUG;
+        if ($debug) {
+            error_log('[FP Experiences] ensure_admin_capabilities triggered');
+        }
+
+        $caps = [
+            'fp_exp_admin_access',
+            'fp_exp_manage',
+            'fp_exp_operate',
+            'fp_exp_guide',
+        ];
+
+        $admin_role = get_role('administrator');
+        if ($admin_role) {
+            foreach ($caps as $cap) {
+                if (! $admin_role->has_cap($cap)) {
+                    $admin_role->add_cap($cap);
+                }
+            }
+        }
+
+        $user = wp_get_current_user();
+        if (! $user || ! $user->exists()) {
+            return;
+        }
+
+        $is_administrator = in_array('administrator', (array) $user->roles, true) || $user->has_cap('manage_options');
+        if (! $is_administrator) {
+            return;
+        }
+
+        foreach ($caps as $cap) {
+            if (! $user->has_cap($cap)) {
+                $user->add_cap($cap);
+                if ($debug) {
+                    error_log('[FP Experiences] Added cap to user: ' . $cap);
+                }
+            }
+        }
     }
 
     public static function can_operate_fp(): bool
     {
-        return current_user_can('fp_exp_operate')
-            || current_user_can('manage_woocommerce')
-            || current_user_can('edit_shop_orders')
-            || self::can_manage_fp();
+        $user = wp_get_current_user();
+
+        if ($user && ! empty($user->allcaps['fp_exp_operate'])) {
+            return true;
+        }
+
+        if ($user && (! empty($user->allcaps['manage_woocommerce']) || ! empty($user->allcaps['edit_shop_orders']))) {
+            return true;
+        }
+
+        return self::can_manage_fp();
     }
 
     public static function can_access_guides(): bool
     {
-        return current_user_can('fp_exp_guide') || self::can_operate_fp();
+        $user = wp_get_current_user();
+
+        if ($user && ! empty($user->allcaps['fp_exp_guide'])) {
+            return true;
+        }
+
+        return self::can_operate_fp();
     }
 
     public static function management_capability(): string
     {
-        return current_user_can('fp_exp_manage') ? 'fp_exp_manage' : 'manage_options';
+        $user = wp_get_current_user();
+
+        if ($user && ! empty($user->allcaps['fp_exp_admin_access'])) {
+            return 'fp_exp_admin_access';
+        }
+
+        if ($user && ! empty($user->allcaps['fp_exp_manage'])) {
+            return 'fp_exp_manage';
+        }
+
+        return 'manage_options';
     }
 
     public static function operations_capability(): string
     {
-        if (current_user_can('fp_exp_operate')) {
+        $user = wp_get_current_user();
+
+        if ($user && ! empty($user->allcaps['fp_exp_operate'])) {
             return 'fp_exp_operate';
         }
 
-        if (current_user_can('fp_exp_manage')) {
+        if ($user && ! empty($user->allcaps['fp_exp_manage'])) {
             return 'fp_exp_manage';
         }
 
-        if (current_user_can('manage_woocommerce')) {
+        if ($user && ! empty($user->allcaps['fp_exp_admin_access'])) {
+            return 'fp_exp_admin_access';
+        }
+
+        if ($user && ! empty($user->allcaps['manage_woocommerce'])) {
             return 'manage_woocommerce';
         }
 
@@ -157,19 +249,25 @@ final class Helpers
 
     public static function guide_capability(): string
     {
-        if (current_user_can('fp_exp_guide')) {
+        $user = wp_get_current_user();
+
+        if ($user && ! empty($user->allcaps['fp_exp_guide'])) {
             return 'fp_exp_guide';
         }
 
-        if (current_user_can('fp_exp_operate')) {
+        if ($user && ! empty($user->allcaps['fp_exp_operate'])) {
             return 'fp_exp_operate';
         }
 
-        if (current_user_can('fp_exp_manage')) {
+        if ($user && ! empty($user->allcaps['fp_exp_manage'])) {
             return 'fp_exp_manage';
         }
 
-        if (current_user_can('manage_woocommerce')) {
+        if ($user && ! empty($user->allcaps['fp_exp_admin_access'])) {
+            return 'fp_exp_admin_access';
+        }
+
+        if ($user && ! empty($user->allcaps['manage_woocommerce'])) {
             return 'manage_woocommerce';
         }
 
@@ -1267,8 +1365,19 @@ final class Helpers
             return false;
         }
 
+        // Controlla se RTB è abilitato globalmente
+        $global_rtb_mode = self::rtb_mode();
+        $global_rtb_enabled = ('off' !== $global_rtb_mode);
+
+        // Controlla se l'esperienza ha un override specifico
         $value = get_post_meta($experience_id, '_fp_use_rtb', true);
 
+        // Se il meta field non è impostato (vuoto/null), usa l'impostazione globale
+        if (empty($value) && ! is_numeric($value) && ! is_bool($value)) {
+            return $global_rtb_enabled;
+        }
+
+        // Se il meta field è impostato, rispetta la scelta specifica dell'esperienza
         if (is_bool($value)) {
             return $value;
         }

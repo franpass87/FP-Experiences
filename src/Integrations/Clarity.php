@@ -15,6 +15,10 @@ final class Clarity
 {
     public function register_hooks(): void
     {
+        if (! $this->is_enabled()) {
+            return;
+        }
+
         add_action('wp_head', [$this, 'output_snippet'], 12);
     }
 
@@ -39,5 +43,19 @@ final class Clarity
         echo "<script type='text/javascript'>(function(c,l,a,r,i,t,y){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};" .
             "t=l.createElement(r);t.async=1;t.src='https://www.clarity.ms/tag/'+i;y=l.getElementsByTagName(r)[0];" .
             "y.parentNode.insertBefore(t,y);})(window, document, 'clarity', 'script', '" . esc_html($project_id) . "');</script>";
+    }
+
+    private function is_enabled(): bool
+    {
+        $settings = Helpers::tracking_settings();
+        $config = isset($settings['clarity']) && is_array($settings['clarity']) ? $settings['clarity'] : [];
+
+        if (empty($config['enabled'])) {
+            return false;
+        }
+
+        $project_id = (string) ($config['project_id'] ?? '');
+
+        return $project_id !== '';
     }
 }

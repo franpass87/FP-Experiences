@@ -285,6 +285,25 @@ final class AutoTranslator
 
 	private function should_translate_to_english(): bool
 	{
+		// 1. Verifica se FP-Multilanguage è attivo
+		if (class_exists('FPML_Language')) {
+			$current_lang = \FPML_Language::instance()->get_current_language();
+			return $current_lang === 'en';
+		}
+
+		// 2. Fallback: verifica Polylang
+		if (function_exists('pll_current_language')) {
+			$pll_lang = pll_current_language();
+			return $pll_lang === 'en' || $pll_lang === 'en_US';
+		}
+
+		// 3. Fallback: verifica WPML
+		if (defined('ICL_LANGUAGE_CODE')) {
+			$wpml_lang = apply_filters('wpml_current_language', null);
+			return $wpml_lang === 'en';
+		}
+
+		// 4. Fallback: verifica browser + locale sito
 		return $this->is_english_browser() && $this->is_site_locale_english();
 	}
 }

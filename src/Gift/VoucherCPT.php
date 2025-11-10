@@ -67,9 +67,6 @@ final class VoucherCPT
         ];
 
         $capabilities = [
-            'edit_post' => 'fp_exp_manage',
-            'read_post' => 'fp_exp_manage',
-            'delete_post' => 'fp_exp_manage',
             'edit_posts' => 'fp_exp_manage',
             'edit_others_posts' => 'fp_exp_manage',
             'publish_posts' => 'fp_exp_manage',
@@ -84,7 +81,7 @@ final class VoucherCPT
             'labels' => $labels,
             'public' => false,
             'show_ui' => true,
-            'show_in_menu' => 'fp_exp_dashboard',
+            'show_in_menu' => false,
             'show_in_admin_bar' => false,
             'menu_position' => 61,
             'supports' => ['title'],
