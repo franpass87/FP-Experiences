@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace FP_Exp\PostTypes;
 
 use function add_action;
+use function did_action;
 use function register_post_meta;
 use function register_post_type;
 use function register_taxonomy;
@@ -32,9 +33,15 @@ final class ExperienceCPT
 
         $this->hooks_registered = true;
 
-        add_action('init', [$this, 'register_post_type']);
-        add_action('init', [$this, 'register_taxonomies']);
-        add_action('init', [$this, 'register_meta']);
+        if (did_action('init')) {
+            $this->register_post_type();
+            $this->register_taxonomies();
+            $this->register_meta();
+        } else {
+            add_action('init', [$this, 'register_post_type']);
+            add_action('init', [$this, 'register_taxonomies']);
+            add_action('init', [$this, 'register_meta']);
+        }
         add_filter('post_row_actions', [$this, 'add_quick_actions'], 10, 2);
     }
 
