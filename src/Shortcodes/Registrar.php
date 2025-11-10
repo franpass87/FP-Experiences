@@ -33,6 +33,11 @@ final class Registrar
         }
     }
 
+    public function register_hooks(): void
+    {
+        $this->register();
+    }
+
     public function register(): void
     {
         add_action('init', [$this, 'register_shortcodes']);
