@@ -500,8 +500,7 @@ final class ListShortcode extends BaseShortcode
     {
         $id = $post->ID;
         $title = $post->post_title; // Use direct property instead of get_the_title() to avoid global post interference
-        // Always use direct experience permalink for list items to avoid page_id conflicts
-        $permalink = get_permalink($id) ?: '';
+        $permalink = $this->resolve_permalink($id, $cta_mode);
         $thumbnail = $this->get_experience_thumbnail($id);
         $highlights = array_slice(Helpers::get_meta_array($id, '_fp_highlights'), 0, 3);
         $short_description = sanitize_text_field((string) get_post_meta($id, '_fp_short_desc', true));
