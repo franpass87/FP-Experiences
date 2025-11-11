@@ -16,14 +16,19 @@ use function __;
 use function add_action;
 use function get_option;
 use function is_array;
+use function is_wp_error;
 use function nocache_headers;
 use function register_rest_route;
 use function rest_ensure_response;
 use function sanitize_text_field;
+use function home_url;
+use function wp_json_encode;
 use function wp_send_json_error;
 use function wp_send_json_success;
 use function wp_unslash;
 use function wp_verify_nonce;
+use function wp_parse_url;
+use function apply_filters;
 
 use const MINUTE_IN_SECONDS;
 
@@ -125,43 +130,18 @@ final class Checkout
             [
                 'methods' => 'POST',
                 'permission_callback' => function (WP_REST_Request $request): bool {
-                    // Permetti POST da stesso dominio (referer check)
-                    error_log('[FP-EXP-CART-SET] Permission check started');
-                    
-                    if ($request->get_method() !== 'POST') {
-                        error_log('[FP-EXP-CART-SET] ❌ Not POST method: ' . $request->get_method());
-                        return false;
-                    }
-                    
-                    // Verifica referer stesso dominio
-                    $referer = sanitize_text_field((string) $request->get_header('referer'));
-                    error_log('[FP-EXP-CART-SET] Referer: ' . $referer);
-                    
-                    if (!$referer) {
-                        error_log('[FP-EXP-CART-SET] ❌ No referer');
-                        return false;
-                    }
-                    
-                    $home = home_url();
-                    $parsed_home = wp_parse_url($home);
-                    $parsed_referer = wp_parse_url($referer);
-                    
-                    error_log('[FP-EXP-CART-SET] Home host: ' . ($parsed_home['host'] ?? 'N/A'));
-                    error_log('[FP-EXP-CART-SET] Referer host: ' . ($parsed_referer['host'] ?? 'N/A'));
-                    
-                    if ($parsed_home && $parsed_referer && 
-                        isset($parsed_home['host'], $parsed_referer['host']) &&
-                        $parsed_home['host'] === $parsed_referer['host']) {
-                        error_log('[FP-EXP-CART-SET] ✅ Permission granted');
-                        return true;
-                    }
-                    
-                    error_log('[FP-EXP-CART-SET] ❌ Host mismatch or parsing failed');
-                    return false;
+                    $allowed = $this->verify_public_cart_request($request);
+
+                    $this->debug_log('cart_set_permission', 'Cart set permission evaluated', [
+                        'allowed' => $allowed,
+                        'method' => $request->get_method(),
+                        'referer_present' => (bool) $request->get_header('referer'),
+                        'origin_present' => (bool) $request->get_header('origin'),
+                    ]);
+
+                    return $allowed;
                 },
                 'callback' => function (WP_REST_Request $request) {
-                    error_log('[FP-EXP-CART-SET] Callback started');
-                    
                     try {
                         nocache_headers();
 
@@ -170,18 +150,25 @@ final class Checkout
                         $slot_start = sanitize_text_field((string) $request->get_param('slot_start'));
                         $slot_end = sanitize_text_field((string) $request->get_param('slot_end'));
 
-                        error_log('[FP-EXP-CART-SET] Params: exp=' . $experience_id . ', slot=' . $slot_id . ', start=' . $slot_start . ', end=' . $slot_end);
-
-                        // tickets e addons possono essere mappe o array
                         $tickets = $request->get_param('tickets');
                         $addons = $request->get_param('addons');
                         $tickets = is_array($tickets) ? $tickets : [];
                         $addons = is_array($addons) ? $addons : [];
 
-                        error_log('[FP-EXP-CART-SET] Tickets: ' . print_r($tickets, true));
+                        $this->debug_log('cart_set', 'Cart set request received', [
+                            'experience_id' => $experience_id,
+                            'slot_id' => $slot_id,
+                            'slot_start' => $slot_start,
+                            'slot_end' => $slot_end,
+                            'tickets_total' => array_sum(array_map('intval', $tickets)),
+                            'ticket_types' => array_slice(array_keys($tickets), 0, 5),
+                            'addons_count' => count($addons),
+                        ]);
 
                         if ($experience_id <= 0) {
-                            error_log('[FP-EXP-CART-SET] ❌ Invalid experience ID');
+                            $this->debug_log('cart_set', 'Invalid experience ID in cart set request', [
+                                'experience_id' => $experience_id,
+                            ]);
                             return new WP_Error('fp_exp_set_cart_invalid', __('Experience ID non valido.', 'fp-experiences'), ['status' => 400]);
                         }
 
@@ -201,20 +188,26 @@ final class Checkout
 
                         $items = [$item];
 
-                        error_log('[FP-EXP-CART-SET] Calling cart->set_items...');
                         $this->cart->set_items($items, [
                             'currency' => get_option('woocommerce_currency', 'EUR'),
                         ]);
 
-                        error_log('[FP-EXP-CART-SET] ✅ Cart set successfully');
+                        $this->debug_log('cart_set', 'Cart set successfully', [
+                            'experience_id' => $experience_id,
+                            'slot_id' => $item['slot_id'],
+                            'cart_has_items' => $this->cart->has_items(),
+                        ]);
 
                         return rest_ensure_response([
                             'ok' => true,
                             'has_items' => $this->cart->has_items(),
                         ]);
                     } catch (\Throwable $e) {
-                        error_log('[FP-EXP-CART-SET] ❌ EXCEPTION: ' . $e->getMessage());
-                        error_log('[FP-EXP-CART-SET] ❌ File: ' . $e->getFile() . ':' . $e->getLine());
+                        $this->debug_log('cart_set_error', 'Exception while setting cart', [
+                            'message' => $e->getMessage(),
+                            'file' => method_exists($e, 'getFile') ? $e->getFile() : '',
+                            'line' => method_exists($e, 'getLine') ? (string) $e->getLine() : '',
+                        ]);
                         return new WP_Error('fp_exp_cart_exception', $e->getMessage(), ['status' => 500]);
                     }
                 },
@@ -228,28 +221,16 @@ final class Checkout
             [
                 'methods' => 'POST',
                 'permission_callback' => function (WP_REST_Request $request): bool {
-                    // Permetti POST da stesso dominio (referer check)
-                    if ($request->get_method() !== 'POST') {
-                        return false;
-                    }
-                    
-                    // Verifica referer stesso dominio
-                    $referer = sanitize_text_field((string) $request->get_header('referer'));
-                    if (!$referer) {
-                        return false;
-                    }
-                    
-                    $home = home_url();
-                    $parsed_home = wp_parse_url($home);
-                    $parsed_referer = wp_parse_url($referer);
-                    
-                    if ($parsed_home && $parsed_referer && 
-                        isset($parsed_home['host'], $parsed_referer['host']) &&
-                        $parsed_home['host'] === $parsed_referer['host']) {
-                        return true;
-                    }
-                    
-                    return false;
+                    $allowed = $this->verify_public_cart_request($request);
+
+                    $this->debug_log('cart_unlock_permission', 'Cart unlock permission evaluated', [
+                        'allowed' => $allowed,
+                        'method' => $request->get_method(),
+                        'referer_present' => (bool) $request->get_header('referer'),
+                        'origin_present' => (bool) $request->get_header('origin'),
+                    ]);
+
+                    return $allowed;
                 },
                 'callback' => function () {
                     $this->cart->unlock();
@@ -261,6 +242,64 @@ final class Checkout
                 },
             ]
         );
+    }
+
+    private function verify_public_cart_request(WP_REST_Request $request): bool
+    {
+        if ($request->get_method() !== 'POST') {
+            return false;
+        }
+
+        if ($this->request_matches_site_origin($request)) {
+            return true;
+        }
+
+        $header_nonce = sanitize_text_field((string) $request->get_header('x-wp-nonce'));
+        if ($header_nonce && wp_verify_nonce($header_nonce, 'wp_rest')) {
+            return true;
+        }
+
+        return (bool) apply_filters('fp_exp_cart_public_request_allowed', false, $request);
+    }
+
+    private function request_matches_site_origin(WP_REST_Request $request): bool
+    {
+        $home = home_url();
+        $parsed_home = wp_parse_url($home);
+
+        if (! $parsed_home || empty($parsed_home['host'])) {
+            return false;
+        }
+
+        $hosts_to_check = [
+            sanitize_text_field((string) $request->get_header('referer')),
+            sanitize_text_field((string) $request->get_header('origin')),
+        ];
+
+        $allowed_hosts = array_filter((array) apply_filters('fp_exp_cart_allowed_hosts', [], $request));
+
+        foreach ($hosts_to_check as $header_value) {
+            if ('' === $header_value) {
+                continue;
+            }
+
+            $parsed = wp_parse_url($header_value);
+            if (! $parsed || empty($parsed['host'])) {
+                continue;
+            }
+
+            if (strcasecmp($parsed['host'], (string) $parsed_home['host']) === 0) {
+                return true;
+            }
+
+            foreach ($allowed_hosts as $allowed_host) {
+                if (strcasecmp($parsed['host'], (string) $allowed_host) === 0) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     public function ajax_get_nonce(): void
@@ -295,65 +334,54 @@ final class Checkout
 
     public function check_checkout_permission(WP_REST_Request $request): bool
     {
-        // Permetti richieste pubbliche con verifica base anti-abuso
-        // La verifica del nonce fp-exp-checkout verrà fatta nel metodo
-        // process_checkout() perché il nonce è nel body della richiesta POST,
-        // non negli header, quindi non accessibile qui nella permission_callback
-        
-        // DEBUG: Log informazioni richiesta
-        if (defined('WP_DEBUG') && WP_DEBUG) {
-            error_log('[FP-EXP-CHECKOUT] Permission callback called');
-            error_log('[FP-EXP-CHECKOUT] Method: ' . $request->get_method());
-            error_log('[FP-EXP-CHECKOUT] Referer: ' . $request->get_header('referer'));
-            error_log('[FP-EXP-CHECKOUT] Origin: ' . $request->get_header('origin'));
-        }
-        
-        // Verifica base: stessa origine e metodo POST
+        // Permetti richieste pubbliche con verifica base anti-abuso.
+        // La verifica del nonce fp-exp-checkout viene effettuata in process_checkout()
+        // perché il nonce risiede nel corpo della richiesta POST.
+
+        $this->debug_log('checkout_permission', 'Permission callback invoked', [
+            'method' => $request->get_method(),
+            'referer_present' => (bool) $request->get_header('referer'),
+            'origin_present' => (bool) $request->get_header('origin'),
+        ]);
+
         if ($request->get_method() !== 'POST') {
-            if (defined('WP_DEBUG') && WP_DEBUG) {
-                error_log('[FP-EXP-CHECKOUT] ❌ Permission denied: not POST');
-            }
+            $this->debug_log('checkout_permission', 'Permission denied: not a POST request', [
+                'method' => $request->get_method(),
+            ]);
             return false;
         }
-        
-        // SEMPLIFICATO: Verifica solo referer/origin stesso dominio
-        // Non usiamo più Helpers::verify_public_rest_request() che può fallire con cache
+
         $referer = sanitize_text_field((string) $request->get_header('referer'));
         $origin = sanitize_text_field((string) $request->get_header('origin'));
         $home = home_url();
-        if (defined('WP_DEBUG') && WP_DEBUG) {
-            error_log('[FP-EXP-CHECKOUT] Referer: ' . $referer);
-            error_log('[FP-EXP-CHECKOUT] Origin: ' . $origin);
-            error_log('[FP-EXP-CHECKOUT] Home URL: ' . $home);
-        }
-        
-        // Verifica referer O origin (almeno uno deve essere presente e corretto)
+
         $referer_valid = false;
         $origin_valid = false;
+
         if ($referer) {
             $parsed_referer = wp_parse_url($referer);
             $parsed_home = wp_parse_url($home);
-            
-            if ($parsed_referer && $parsed_home && 
+
+            if ($parsed_referer && $parsed_home &&
                 isset($parsed_referer['host'], $parsed_home['host']) &&
-                $parsed_referer['host'] === $parsed_home['host']) {
+                strcasecmp($parsed_referer['host'], (string) $parsed_home['host']) === 0) {
                 $referer_valid = true;
             }
         }
-        
+
         if ($origin) {
             $parsed_origin = wp_parse_url($origin);
             $parsed_home = wp_parse_url($home);
-            
-            if ($parsed_origin && $parsed_home && 
+
+            if ($parsed_origin && $parsed_home &&
                 isset($parsed_origin['host'], $parsed_home['host']) &&
-                $parsed_origin['host'] === $parsed_home['host']) {
+                strcasecmp($parsed_origin['host'], (string) $parsed_home['host']) === 0) {
                 $origin_valid = true;
             }
         }
-        
+
         $result = $referer_valid || $origin_valid;
-        
+
         if (! $result) {
             $header_nonce = sanitize_text_field((string) $request->get_header('x-wp-nonce'));
 
@@ -362,12 +390,12 @@ final class Checkout
             }
         }
 
-        if (defined('WP_DEBUG') && WP_DEBUG) {
-            error_log('[FP-EXP-CHECKOUT] Referer valid: ' . ($referer_valid ? 'YES' : 'NO'));
-            error_log('[FP-EXP-CHECKOUT] Origin valid: ' . ($origin_valid ? 'YES' : 'NO'));
-            error_log('[FP-EXP-CHECKOUT] ' . ($result ? '✅ PERMISSION GRANTED' : '❌ PERMISSION DENIED'));
-        }
-        
+        $this->debug_log('checkout_permission', 'Permission evaluation completed', [
+            'referer_valid' => $referer_valid,
+            'origin_valid' => $origin_valid,
+            'result' => $result,
+        ]);
+
         return $result;
     }
 
@@ -412,10 +440,6 @@ final class Checkout
      */
     public function handle_rest(WP_REST_Request $request)
     {
-        if (defined('WP_DEBUG') && WP_DEBUG) {
-            error_log('[FP-EXP-CHECKOUT] handle_rest() called');
-        }
-        
         nocache_headers();
 
         $nonce = (string) $request->get_param('nonce');
@@ -425,24 +449,25 @@ final class Checkout
             'consent' => $request->get_param('consent'),
         ];
 
-        if (defined('WP_DEBUG') && WP_DEBUG) {
-            error_log('[FP-EXP-CHECKOUT] Nonce: ' . substr($nonce, 0, 20) . '...');
-            error_log('[FP-EXP-CHECKOUT] Has contact: ' . (isset($payload['contact']) ? 'YES' : 'NO'));
-            error_log('[FP-EXP-CHECKOUT] Calling process_checkout...');
-        }
+        $this->debug_log('checkout_rest', 'REST checkout invoked', [
+            'nonce_prefix' => substr($nonce, 0, 12),
+            'has_contact' => is_array($payload['contact'] ?? null),
+            'has_billing' => is_array($payload['billing'] ?? null),
+            'has_consent' => is_array($payload['consent'] ?? null),
+        ]);
 
         $result = $this->process_checkout($nonce, $payload);
 
-        if (defined('WP_DEBUG') && WP_DEBUG) {
-            error_log('[FP-EXP-CHECKOUT] process_checkout result: ' . (is_wp_error($result) ? 'WP_Error' : 'SUCCESS'));
-        }
+        $this->debug_log('checkout_rest', 'REST checkout processed', [
+            'result' => is_wp_error($result) ? 'error' : 'success',
+        ]);
 
         if ($result instanceof WP_Error) {
-            if (defined('WP_DEBUG') && WP_DEBUG) {
-                error_log('[FP-EXP-CHECKOUT] ❌ Error code: ' . $result->get_error_code());
-                error_log('[FP-EXP-CHECKOUT] ❌ Error message: ' . $result->get_error_message());
-            }
-            
+            $this->debug_log('checkout_rest_error', 'REST checkout failed', [
+                'code' => $result->get_error_code(),
+                'message' => $result->get_error_message(),
+            ]);
+
             $status = (int) ($result->get_error_data()['status'] ?? 400);
             $response = new WP_REST_Response([
                 'code' => $result->get_error_code(),
@@ -456,9 +481,9 @@ final class Checkout
             return $response;
         }
 
-        if (defined('WP_DEBUG') && WP_DEBUG) {
-            error_log('[FP-EXP-CHECKOUT] ✅ Success! Returning payment_url');
-        }
+        $this->debug_log('checkout_rest', 'REST checkout succeeded', [
+            'order_id' => $result['order_id'] ?? null,
+        ]);
 
         // Assicurati che la risposta sia sempre un oggetto WP_REST_Response valido
         $response = new WP_REST_Response($result, 200);
@@ -470,56 +495,79 @@ final class Checkout
     }
 
     /**
+     * @param array<string, mixed> $item
+     *
+     * @return array<string, mixed>
+     */
+    private function summarize_cart_item(array $item): array
+    {
+        $tickets = is_array($item['tickets'] ?? null) ? $item['tickets'] : [];
+        $ticket_total = 0;
+
+        if ($tickets) {
+            $ticket_total = array_sum(array_map(static fn ($value) => (int) $value, $tickets));
+        }
+
+        return [
+            'experience_id' => (int) ($item['experience_id'] ?? 0),
+            'slot_id' => (int) ($item['slot_id'] ?? 0),
+            'slot_start' => isset($item['slot_start']) ? (string) $item['slot_start'] : '',
+            'slot_end' => isset($item['slot_end']) ? (string) $item['slot_end'] : '',
+            'tickets_total' => $ticket_total,
+            'ticket_types' => array_slice(array_keys($tickets), 0, 5),
+            'is_gift' => ! empty($item['is_gift']) || ! empty($item['gift_voucher']),
+        ];
+    }
+
+    private function debug_log(string $channel, string $message, array $context = []): void
+    {
+        if (! Helpers::debug_logging_enabled()) {
+            return;
+        }
+
+        Helpers::log_debug($channel, $message, $context);
+    }
+
+    /**
      * @param array<string, mixed> $payload
      *
      * @return array<string, mixed>|WP_Error
      */
     private function process_checkout(string $nonce, array $payload)
     {
-        // Verifica presenza del nonce
+        $this->debug_log('checkout_process', 'Starting checkout processing', [
+            'nonce_present' => ! empty($nonce),
+            'session_id' => $this->cart->get_session_id(),
+        ]);
+
         if (empty($nonce)) {
-            if (defined('WP_DEBUG') && WP_DEBUG) {
-                error_log('[FP-EXP-CHECKOUT] ❌ Nonce vuoto!');
-            }
+            $this->debug_log('checkout_process', 'Checkout aborted: missing nonce', []);
             return new WP_Error('fp_exp_missing_nonce', __('Sessione non valida. Aggiorna la pagina e riprova.', 'fp-experiences'), [
                 'status' => 403,
             ]);
         }
 
-        // DEBUG: Testa verifica nonce
-        if (defined('WP_DEBUG') && WP_DEBUG) {
-            error_log('[FP-EXP-CHECKOUT] Verifica nonce...');
-            error_log('[FP-EXP-CHECKOUT] Nonce ricevuto: ' . $nonce);
-            error_log('[FP-EXP-CHECKOUT] Current user ID: ' . get_current_user_id());
-            error_log('[FP-EXP-CHECKOUT] Session ID: ' . $this->cart->get_session_id());
-        }
-
         // Verifica validità del nonce con session ID
         $session_id = $this->cart->get_session_id();
         $verify_result = wp_verify_nonce($nonce, 'fp-exp-checkout-' . $session_id);
-        
-        if (defined('WP_DEBUG') && WP_DEBUG) {
-            error_log('[FP-EXP-CHECKOUT] Action: fp-exp-checkout-' . $session_id);
-            error_log('[FP-EXP-CHECKOUT] wp_verify_nonce result: ' . var_export($verify_result, true));
-            
-            // Test nonce
-            $test_nonce = wp_create_nonce('fp-exp-checkout-' . $session_id);
-            error_log('[FP-EXP-CHECKOUT] Test nonce: ' . $test_nonce);
-            error_log('[FP-EXP-CHECKOUT] Nonce match: ' . ($nonce === $test_nonce ? 'YES' : 'NO'));
-        }
+
+        $this->debug_log('checkout_process', 'Nonce verification result', [
+            'session_id' => $session_id,
+            'verified' => (bool) $verify_result,
+        ]);
 
         if (! $verify_result) {
-            if (defined('WP_DEBUG') && WP_DEBUG) {
-                error_log('[FP-EXP-CHECKOUT] ❌ NONCE VERIFICATION FAILED!');
-            }
+            $this->debug_log('checkout_process', 'Checkout aborted: nonce verification failed', [
+                'session_id' => $session_id,
+            ]);
             return new WP_Error('fp_exp_invalid_nonce', __('La sessione è scaduta. Aggiorna la pagina e riprova.', 'fp-experiences'), [
                 'status' => 403,
             ]);
         }
-        
-        if (defined('WP_DEBUG') && WP_DEBUG) {
-            error_log('[FP-EXP-CHECKOUT] ✅ Nonce valid! Continuing...');
-        }
+
+        $this->debug_log('checkout_process', 'Nonce valid, continuing checkout', [
+            'session_id' => $session_id,
+        ]);
 
         // Reset: sblocca sempre il carrello prima di continuare, per evitare stati appesi
         $this->cart->unlock();
@@ -544,19 +592,18 @@ final class Checkout
 
         $cart = $this->cart->get_data();
 
-        // Debug logging per capire cosa c'è nel carrello
-        if (defined('WP_DEBUG') && WP_DEBUG) {
-            error_log('[FP-EXP-CHECKOUT] Cart items: ' . wp_json_encode($cart['items']));
-        }
+        $this->debug_log('checkout_process', 'Cart snapshot before validation', [
+            'items' => array_map([$this, 'summarize_cart_item'], $cart['items']),
+        ]);
 
         foreach ($cart['items'] as &$item) { // phpcs:ignore WordPress.CodeAnalysis.AssignmentInCondition.Found
             // Skip slot validation for gift vouchers (they don't have slots until redemption)
             $is_gift = ! empty($item['is_gift']) || ! empty($item['gift_voucher']);
             
             if ($is_gift) {
-                if (defined('WP_DEBUG') && WP_DEBUG) {
-                    error_log('[FP-EXP-CHECKOUT] Skipping gift voucher validation for experience_id: ' . ($item['experience_id'] ?? 'unknown'));
-                }
+                $this->debug_log('checkout_process', 'Skipping gift voucher slot validation', [
+                    'experience_id' => (int) ($item['experience_id'] ?? 0),
+                ]);
                 continue;
             }
             
@@ -567,21 +614,24 @@ final class Checkout
                 $start = is_string($item['slot_start'] ?? null) ? (string) $item['slot_start'] : '';
                 $end = is_string($item['slot_end'] ?? null) ? (string) $item['slot_end'] : '';
 
-                // ALWAYS log checkout attempts - critical for production debugging
-                error_log('[FP-EXP-CHECKOUT] Cart item missing slot_id, attempting ensure_slot_for_occurrence: ' . wp_json_encode([
+                $this->debug_log('checkout_process', 'Cart item missing slot_id, attempting ensure_slot_for_occurrence', [
                     'experience_id' => $experience_id,
                     'slot_start' => $start,
                     'slot_end' => $end,
-                    'cart_item' => $item,
-                ]));
+                ]);
 
                 if ($experience_id > 0 && $start && $end) {
                     $ensured = Slots::ensure_slot_for_occurrence($experience_id, $start, $end);
                     
                     // Handle WP_Error from ensure_slot_for_occurrence
                     if (is_wp_error($ensured)) {
-                        error_log('[FP-EXP-CHECKOUT] ❌ ensure_slot_for_occurrence returned WP_Error: ' . $ensured->get_error_message());
-                        error_log('[FP-EXP-CHECKOUT] Error data: ' . wp_json_encode($ensured->get_error_data()));
+                        $this->debug_log('checkout_process_error', 'ensure_slot_for_occurrence returned WP_Error', [
+                            'experience_id' => $experience_id,
+                            'slot_start' => $start,
+                            'slot_end' => $end,
+                            'error_code' => $ensured->get_error_code(),
+                            'error_message' => $ensured->get_error_message(),
+                        ]);
                         
                         // Return the detailed error directly
                         return new WP_Error(
@@ -598,7 +648,10 @@ final class Checkout
                         );
                     }
                     
-                    error_log('[FP-EXP-CHECKOUT] ✅ ensure_slot_for_occurrence success: slot_id=' . $ensured);
+                    $this->debug_log('checkout_process', 'ensure_slot_for_occurrence succeeded', [
+                        'experience_id' => $experience_id,
+                        'slot_id' => $ensured,
+                    ]);
                     
                     if ($ensured > 0) {
                         $slot_id = $ensured;
@@ -607,8 +660,12 @@ final class Checkout
                 }
 
                 if ($slot_id <= 0) {
-                    error_log('[FP-EXP-CHECKOUT] ❌ SLOT VALIDATION FAILED - Final slot_id still 0');
-                    error_log('[FP-EXP-CHECKOUT] Item data: ' . wp_json_encode($item));
+                    $this->debug_log('checkout_process_error', 'Slot validation failed: slot_id still zero', [
+                        'experience_id' => $experience_id,
+                        'slot_start' => $start,
+                        'slot_end' => $end,
+                        'cart_item' => $this->summarize_cart_item($item),
+                    ]);
                     
                     // Include comprehensive debug data
                     $error_data = [
@@ -641,6 +698,12 @@ final class Checkout
             if (! $capacity['allowed']) {
                 $message = isset($capacity['message']) ? (string) $capacity['message'] : __('Lo slot selezionato è al completo.', 'fp-experiences');
 
+                 $this->debug_log('checkout_process_error', 'Slot capacity validation failed', [
+                     'slot_id' => $slot_id,
+                     'experience_id' => (int) ($item['experience_id'] ?? 0),
+                     'tickets_total' => array_sum(array_map(static fn ($value) => (int) $value, $requested)),
+                 ]);
+
                 return new WP_Error('fp_exp_capacity', $message, [
                     'status' => 409,
                 ]);
@@ -653,6 +716,11 @@ final class Checkout
 
         if ($order instanceof WP_Error) {
             $this->cart->unlock();
+
+            $this->debug_log('checkout_process_error', 'Order creation returned WP_Error', [
+                'code' => $order->get_error_code(),
+                'message' => $order->get_error_message(),
+            ]);
 
             return $order;
         }
@@ -677,6 +745,11 @@ final class Checkout
                 'status' => 500,
             ]);
         }
+
+        $this->debug_log('checkout_process', 'Checkout completed successfully', [
+            'order_id' => $order_id,
+            'payment_url_generated' => ! empty($payment_url),
+        ]);
 
         return [
             'order_id' => $order_id,

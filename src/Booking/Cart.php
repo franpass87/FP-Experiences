@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace FP_Exp\Booking;
 
+use FP_Exp\Utils\Helpers;
+use FP_Exp\Utils\Logger;
 use WP_Error;
 
 use function __;
@@ -402,11 +404,12 @@ final class Cart
      */
     public function maybe_sync_to_woocommerce(): void
     {
-        $shouldLog = defined('WP_DEBUG') && WP_DEBUG && apply_filters('fp_exp_debug_log_cart', false);
         $logCache = [];
 
-        $log = static function (string $message) use (&$logCache, $shouldLog): void {
-            if (!$shouldLog) {
+        $log = static function (string $message) use (&$logCache): void {
+            $should_log = Helpers::debug_logging_enabled() || apply_filters('fp_exp_debug_log_cart', false);
+
+            if (! $should_log) {
                 return;
             }
 
@@ -426,7 +429,12 @@ final class Cart
             }
 
             $logCache[$key] = $now;
-            error_log($message);
+
+            if (Helpers::debug_logging_enabled()) {
+                Helpers::log_debug('cart_sync', $message);
+            } else {
+                Logger::log('cart_sync', $message);
+            }
         };
 
         $log('[FP-EXP-CART] maybe_sync_to_woocommerce() called');

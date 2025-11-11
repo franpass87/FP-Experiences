@@ -9,6 +9,7 @@ use DatePeriod;
 use DateTimeImmutable;
 use DateTimeZone;
 use Exception;
+use FP_Exp\Utils\Helpers;
 
 use function absint;
 use function get_post_meta;
@@ -36,12 +37,9 @@ final class AvailabilityService
         
         // Fallback al vecchio formato per retrocompatibilità
         if (! is_array($recurrence) || empty($recurrence)) {
-            if (defined('WP_DEBUG') && WP_DEBUG) {
-                error_log(sprintf(
-                    'FP_EXP AvailabilityService: Experience %d - No recurrence data, trying legacy availability format',
-                    $experience_id
-                ));
-            }
+            Helpers::log_debug('availability', 'No recurrence data, falling back to legacy availability format', [
+                'experience_id' => $experience_id,
+            ]);
             return self::get_virtual_slots_legacy($experience_id, $start_utc, $end_utc);
         }
 
@@ -115,28 +113,22 @@ final class AvailabilityService
         // Leggi lead_time dai meta separati (se presenti)
         $lead_time = absint(get_post_meta($experience_id, '_fp_lead_time_hours', true));
         
-        // Debug log
-        if (defined('WP_DEBUG') && WP_DEBUG) {
-            error_log(sprintf(
-                'FP_EXP AvailabilityService: Experience %d - Reading from _fp_exp_recurrence. Frequency: %s, Times: %d (%s), Days: %d (%s), Capacity: %d',
-                $experience_id,
-                $frequency,
-                count($all_times),
-                implode(', ', $all_times),
-                count($all_days),
-                implode(', ', $all_days),
-                $capacity
-            ));
-        }
+        Helpers::log_debug('availability', 'Reading recurrence availability configuration', [
+            'experience_id' => $experience_id,
+            'frequency' => $frequency,
+            'times_count' => count($all_times),
+            'times' => $all_times,
+            'days_count' => count($all_days),
+            'days' => $all_days,
+            'capacity' => $capacity,
+        ]);
         
         // Controllo early return se non ci sono times
         if ($frequency !== 'custom' && empty($all_times)) {
-            if (defined('WP_DEBUG') && WP_DEBUG) {
-                error_log(sprintf(
-                    'FP_EXP AvailabilityService: Experience %d - No times configured in time_slots, cannot generate slots',
-                    $experience_id
-                ));
-            }
+            Helpers::log_debug('availability', 'No times configured for recurrence, cannot generate virtual slots', [
+                'experience_id' => $experience_id,
+                'frequency' => $frequency,
+            ]);
             return [];
         }
         

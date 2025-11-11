@@ -13,6 +13,8 @@ use FP_Exp\Booking\Slots;
 use FP_Exp\Utils\Helpers;
 use WC_Order;
 use WC_Order_Item_Product;
+use WC_Product;
+use WC_Product_Simple;
 use WP_Error;
 use WP_Post;
 
@@ -40,6 +42,7 @@ use function get_post_meta;
 use function get_posts;
 use function get_post_modified_time;
 use function get_post_time;
+use function get_post_status;
 use function get_the_excerpt;
 use function get_the_post_thumbnail_url;
 use function get_the_title;
@@ -56,6 +59,7 @@ use function sanitize_textarea_field;
 use function strtotime;
 use function time;
 use function update_post_meta;
+use function update_option;
 use function wp_get_scheduled_event;
 use function wp_date;
 use function wp_insert_post;
@@ -65,6 +69,7 @@ use function wp_schedule_single_event;
 use function wp_unschedule_event;
 use function wp_timezone;
 use function wc_create_order;
+use function wc_get_product;
 use function wc_get_order;
 use function wp_kses_post;
 use function explode;
@@ -72,6 +77,7 @@ use function wc_get_checkout_url;
 use function wp_safe_redirect;
 use function is_singular;
 use function get_the_ID;
+use function wp_set_object_terms;
 
 use const DAY_IN_SECONDS;
 use const HOUR_IN_SECONDS;
@@ -290,7 +296,7 @@ final class VoucherManager
                 'billing_phone' => $purchaser['phone'],
             ];
 
-            if (WC()->session) {
+        if (WC()->session) {
                 WC()->session->set('fp_exp_gift_pending', $gift_pending_data);
                 WC()->session->set('fp_exp_gift_prefill', $prefill_data);
                 
@@ -310,35 +316,61 @@ final class VoucherManager
                 }
             }
 
+        $gift_product_id = $this->ensure_gift_product_id();
+
+        if ($gift_product_id <= 0) {
+            return new WP_Error(
+                'fp_exp_gift_product_missing',
+                esc_html__('Non è stato possibile preparare il prodotto WooCommerce per i voucher regalo.', 'fp-experiences'),
+                [
+                    'status' => 500,
+                ]
+            );
+        }
+
         // Svuota e aggiungi gift product al cart
         if (function_exists('wc_load_cart')) {
             wc_load_cart();
         }
 
-        if (WC()->cart) {
-            WC()->cart->empty_cart();
-            
-            // Aggiungi un prodotto semplice virtuale al cart con i dati gift
-            // Usa il prodotto gift (ID 199) come base
-            $gift_product_id = (int) get_option('fp_exp_gift_product_id', 199);
-            
-            // OPZIONE 1 FIX: Salva TUTTI i dati gift nei cart_item_data (più affidabile di session/transient)
-            $cart_item_data = [
-                '_fp_exp_item_type' => 'gift',
-                'gift_voucher' => 'yes',
-                'experience_id' => $experience_id,
-                'experience_title' => $experience->post_title,
-                'gift_quantity' => $quantity,
-                '_fp_exp_gift_price' => (float) $total,
-                // Dati completi gift per recupero in checkout
-                '_fp_exp_gift_full_data' => $gift_pending_data,
-                '_fp_exp_gift_prefill_data' => $prefill_data,
-            ];
-
-            $cart_item_key = WC()->cart->add_to_cart($gift_product_id, 1, 0, [], $cart_item_data);
-            
-            WC()->cart->calculate_totals();
+        if (! WC()->cart) {
+            return new WP_Error(
+                'fp_exp_gift_cart_unavailable',
+                esc_html__('Il carrello WooCommerce non è disponibile. Ricarica la pagina e riprova.', 'fp-experiences'),
+                [
+                    'status' => 500,
+                ]
+            );
         }
+
+        WC()->cart->empty_cart();
+
+        // OPZIONE 1 FIX: Salva TUTTI i dati gift nei cart_item_data (più affidabile di session/transient)
+        $cart_item_data = [
+            '_fp_exp_item_type' => 'gift',
+            'gift_voucher' => 'yes',
+            'experience_id' => $experience_id,
+            'experience_title' => $experience->post_title,
+            'gift_quantity' => $quantity,
+            '_fp_exp_gift_price' => (float) $total,
+            // Dati completi gift per recupero in checkout
+            '_fp_exp_gift_full_data' => $gift_pending_data,
+            '_fp_exp_gift_prefill_data' => $prefill_data,
+        ];
+
+        $cart_item_key = WC()->cart->add_to_cart($gift_product_id, 1, 0, [], $cart_item_data);
+
+        if (! $cart_item_key) {
+            return new WP_Error(
+                'fp_exp_gift_cart_add',
+                esc_html__('Non è stato possibile aggiungere il voucher regalo al carrello. Riprova più tardi.', 'fp-experiences'),
+                [
+                    'status' => 500,
+                ]
+            );
+        }
+
+        WC()->cart->calculate_totals();
 
         // Redirect al checkout WooCommerce STANDARD
         $checkout_url = function_exists('wc_get_checkout_url') 
@@ -352,6 +384,132 @@ final class VoucherManager
             'experience_title' => $experience->post_title,
             'code' => $code,
         ];
+    }
+
+    private function ensure_gift_product_id(): int
+    {
+        if (! function_exists('wc_get_product')) {
+            return 0;
+        }
+
+        $candidates = [];
+        $saved_id = (int) get_option('fp_exp_gift_product_id', 0);
+
+        if ($saved_id > 0) {
+            $candidates[] = $saved_id;
+        }
+
+        $existing = get_posts([
+            'post_type' => 'product',
+            'post_status' => ['publish', 'draft', 'private'],
+            'meta_key' => '_fp_exp_is_gift_product',
+            'meta_value' => 'yes',
+            'fields' => 'ids',
+            'numberposts' => 5,
+        ]);
+
+        if ($existing) {
+            $candidates = array_merge($candidates, array_map('absint', $existing));
+        }
+
+        foreach (array_unique($candidates) as $candidate_id) {
+            if ($candidate_id <= 0) {
+                continue;
+            }
+
+            if ($this->prepare_gift_product($candidate_id)) {
+                return $candidate_id;
+            }
+        }
+
+        $product_id = $this->create_gift_product_post();
+
+        if ($product_id > 0 && $this->prepare_gift_product($product_id)) {
+            return $product_id;
+        }
+
+        return 0;
+    }
+
+    private function prepare_gift_product(int $product_id): bool
+    {
+        $product = wc_get_product($product_id);
+
+        if (! $product) {
+            return false;
+        }
+
+        $status = get_post_status($product_id);
+        if ('trash' === $status) {
+            return false;
+        }
+
+        if (! $product->is_type('simple') && class_exists(WC_Product_Simple::class)) {
+            $product = new WC_Product_Simple($product_id);
+        }
+
+        if (! $product instanceof WC_Product) {
+            return false;
+        }
+
+        $name = $product->get_name();
+        if (! $name) {
+            $name = esc_html__('Voucher regalo FP Experiences', 'fp-experiences');
+        }
+
+        $product->set_name($name);
+        $product->set_status('publish');
+        $product->set_catalog_visibility('hidden');
+        $product->set_virtual(true);
+        $product->set_downloadable(false);
+        $product->set_manage_stock(false);
+        $product->set_stock_status('instock');
+        $product->set_sold_individually(true);
+        $product->set_price(0);
+        $product->set_regular_price(0);
+
+        try {
+            $product->save();
+        } catch (Exception $exception) {
+            error_log('FP Experiences Gift: failed saving gift product #' . $product_id . ' - ' . $exception->getMessage());
+
+            return false;
+        }
+
+        wp_set_object_terms($product_id, 'simple', 'product_type', false);
+        wp_set_object_terms($product_id, ['exclude-from-catalog', 'exclude-from-search'], 'product_visibility', false);
+
+        update_post_meta($product_id, '_fp_exp_is_gift_product', 'yes');
+        update_option('fp_exp_gift_product_id', $product_id);
+
+        return true;
+    }
+
+    private function create_gift_product_post(): int
+    {
+        $product_id = wp_insert_post([
+            'post_type' => 'product',
+            'post_status' => 'publish',
+            'post_title' => esc_html__('Voucher regalo FP Experiences', 'fp-experiences'),
+            'post_content' => esc_html__('Voucher digitale utilizzato dal plugin FP Experiences. Non eliminare.', 'fp-experiences'),
+            'meta_input' => [
+                '_fp_exp_is_gift_product' => 'yes',
+            ],
+        ]);
+
+        if (is_wp_error($product_id)) {
+            error_log('FP Experiences Gift: failed creating gift product - ' . $product_id->get_error_message());
+
+            return 0;
+        }
+
+        if (! $product_id) {
+            return 0;
+        }
+
+        wp_set_object_terms($product_id, 'simple', 'product_type', false);
+
+        return (int) $product_id;
     }
 
     public function handle_payment_complete(int $order_id): void

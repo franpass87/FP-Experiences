@@ -65,7 +65,7 @@ final class RequestToBook
 
     public function register_rest_route(): void
     {
-        error_log('✅ [FP-EXP-RTB] register_rest_route() CALLED - registering /rtb/request endpoint');
+        $this->debug_log('Registering RTB endpoints');
         
         register_rest_route(
             'fp-exp/v1',
@@ -77,7 +77,7 @@ final class RequestToBook
             ]
         );
         
-        error_log('✅ [FP-EXP-RTB] /rtb/request endpoint registered');
+        $this->debug_log('RTB request endpoint registered');
 
         register_rest_route(
             'fp-exp/v1',
@@ -92,22 +92,25 @@ final class RequestToBook
 
     public function check_rtb_permission(WP_REST_Request $request): bool
     {
-        error_log('[FP-EXP-RTB] check_rtb_permission() CALLED');
+        $this->debug_log('RTB permission check invoked', [
+            'method' => $request->get_method(),
+            'referer_present' => (bool) $request->get_header('referer'),
+        ]);
         
         // Verifica nonce nell'header
         if (Helpers::verify_rest_nonce($request, 'fp-exp-rtb')) {
-            error_log('[FP-EXP-RTB] Permission GRANTED via header nonce');
+            $this->debug_log('RTB permission granted via header nonce');
             return true;
         }
 
         // In alternativa verifica il nonce nel body della richiesta
         $nonce = $request->get_param('nonce');
         if (is_string($nonce) && $nonce && wp_verify_nonce($nonce, 'fp-exp-rtb')) {
-            error_log('[FP-EXP-RTB] Permission GRANTED via body nonce');
+            $this->debug_log('RTB permission granted via body nonce');
             return true;
         }
 
-        error_log('[FP-EXP-RTB] Permission DENIED - no valid nonce');
+        $this->debug_log('RTB permission denied: nonce missing or invalid');
         return false;
     }
 
@@ -116,11 +119,13 @@ final class RequestToBook
      */
     public function handle_request(WP_REST_Request $request)
     {
-        error_log('🚀 [FP-EXP-RTB] handle_request() CALLED - START');
+        $this->debug_log('RTB handle_request invoked');
         nocache_headers();
 
         $nonce = (string) $request->get_param('nonce');
-        error_log('[FP-EXP-RTB] Nonce from request: ' . substr($nonce, 0, 10) . '...');
+        $this->debug_log('RTB request nonce received', [
+            'nonce_prefix' => substr($nonce, 0, 10),
+        ]);
 
         if (! wp_verify_nonce($nonce, 'fp-exp-rtb')) {
             return new WP_Error('fp_exp_rtb_nonce', __('La sessione è scaduta. Aggiorna la pagina e riprova.', 'fp-experiences'), ['status' => 403]);
@@ -197,7 +202,9 @@ final class RequestToBook
 
         // Rileva la lingua con cui il cliente sta navigando
         $customer_locale = $this->detect_customer_locale();
-        error_log('[FP-EXP-RTB] Customer locale detected: ' . $customer_locale);
+        $this->debug_log('RTB customer locale detected', [
+            'locale' => $customer_locale,
+        ]);
 
         $reservation_id = Reservations::create([
             'order_id' => 0,
@@ -283,8 +290,9 @@ final class RequestToBook
         $nonce = (string) $request->get_param('nonce');
 
         if (! wp_verify_nonce($nonce, 'fp-exp-rtb')) {
-            // Log per debug
-            error_log('[FP-EXP] Quote nonce verification failed: ' . $nonce);
+            $this->debug_log('RTB quote denied: nonce verification failed', [
+                'nonce_prefix' => substr($nonce, 0, 10),
+            ]);
             return new WP_Error('fp_exp_rtb_nonce', __('La sessione è scaduta. Aggiorna la pagina e riprova.', 'fp-experiences'), ['status' => 403]);
         }
 
@@ -299,15 +307,14 @@ final class RequestToBook
         $tickets = $this->normalize_array($request->get_param('tickets'));
         $addons = $this->normalize_array($request->get_param('addons'));
 
-        // Log per debug
-        error_log('[FP-EXP] Quote request params: ' . json_encode([
+        $this->debug_log('RTB quote request received', [
             'experience_id' => $experience_id,
             'slot_id' => $slot_id,
             'start' => $start,
             'end' => $end,
-            'tickets' => $tickets,
-            'addons' => $addons
-        ]));
+            'tickets_total' => array_sum(array_map('intval', $tickets)),
+            'addons_count' => count($addons),
+        ]);
 
         if ($experience_id <= 0) {
             return new WP_Error('fp_exp_rtb_invalid', __('Seleziona data e ora prima di proseguire.', 'fp-experiences'), ['status' => 400]);
@@ -315,35 +322,53 @@ final class RequestToBook
 
         if ($slot_id <= 0) {
             if (! $start || ! $end) {
-                error_log('[FP-EXP] Quote error: Missing start/end. Start: ' . $start . ', End: ' . $end);
+                $this->debug_log('RTB quote error: missing start/end', [
+                    'start' => $start,
+                    'end' => $end,
+                ]);
                 return new WP_Error('fp_exp_rtb_invalid', __('Seleziona data e ora prima di proseguire.', 'fp-experiences'), ['status' => 400]);
             }
             
-            error_log('[FP-EXP] Quote: Ensuring slot for occurrence. Exp: ' . $experience_id . ', Start: ' . $start . ', End: ' . $end);
+            $this->debug_log('RTB quote ensuring slot for occurrence', [
+                'experience_id' => $experience_id,
+                'start' => $start,
+                'end' => $end,
+            ]);
             
             $slot_id = Slots::ensure_slot_for_occurrence($experience_id, $start, $end);
             
             // Handle WP_Error from ensure_slot_for_occurrence
             if (is_wp_error($slot_id)) {
-                error_log('[FP-EXP] Quote error: ensure_slot_for_occurrence failed: ' . $slot_id->get_error_message());
                 return $slot_id; // Pass through the detailed error
             }
             
             if ($slot_id <= 0) {
-                error_log('[FP-EXP] Quote error: slot_id still 0 after ensure_slot_for_occurrence');
+                $this->debug_log('RTB quote error: ensure_slot_for_occurrence returned zero', [
+                    'experience_id' => $experience_id,
+                    'start' => $start,
+                    'end' => $end,
+                ]);
                 return new WP_Error('fp_exp_rtb_slot', __('Lo slot selezionato non è più disponibile.', 'fp-experiences'), ['status' => 404]);
             }
             
-            error_log('[FP-EXP] Quote: Slot ensured successfully. Slot ID: ' . $slot_id);
+            $this->debug_log('RTB quote slot ensured successfully', [
+                'slot_id' => $slot_id,
+            ]);
         }
 
         $slot = Slots::get_slot($slot_id);
         if (! $slot || (int) $slot['experience_id'] !== $experience_id) {
-            error_log('[FP-EXP] Quote error: Slot not found or experience mismatch. Slot: ' . json_encode($slot) . ', Expected Exp ID: ' . $experience_id);
+            $this->debug_log('RTB quote error: slot not found or mismatch', [
+                'slot' => $slot,
+                'expected_experience' => $experience_id,
+            ]);
             return new WP_Error('fp_exp_rtb_slot', __('Lo slot selezionato non è più disponibile.', 'fp-experiences'), ['status' => 404]);
         }
 
-        error_log('[FP-EXP] Quote: Slot found. Calculating pricing...');
+        $this->debug_log('RTB quote calculating pricing', [
+            'slot_id' => $slot_id,
+            'tickets_total' => array_sum(array_map('intval', $tickets)),
+        ]);
 
         try {
             $breakdown = Pricing::calculate_breakdown(
@@ -354,19 +379,27 @@ final class RequestToBook
             );
 
             if (! is_array($breakdown)) {
-                error_log('[FP-EXP] Pricing calculation returned invalid result: ' . json_encode($breakdown));
+                $this->debug_log('RTB quote error: pricing calculation returned invalid result', [
+                    'breakdown' => $breakdown,
+                    'experience_id' => $experience_id,
+                    'slot_id' => $slot_id,
+                ]);
                 return new WP_Error('fp_exp_pricing_error', __('Errore nel calcolo del prezzo. Riprova.', 'fp-experiences'), ['status' => 500]);
             }
 
-            error_log('[FP-EXP] Quote: Pricing calculated successfully. Total: ' . ($breakdown['total'] ?? 0));
+            $this->debug_log('RTB quote pricing calculated successfully', [
+                'total' => $breakdown['total'] ?? 0,
+            ]);
 
             return rest_ensure_response([
                 'success' => true,
                 'breakdown' => $breakdown,
             ]);
         } catch (Throwable $e) {
-            error_log('[FP-EXP] Pricing calculation exception: ' . $e->getMessage());
-            error_log('[FP-EXP] Exception trace: ' . $e->getTraceAsString());
+            $this->debug_log('RTB quote pricing exception', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
             return new WP_Error('fp_exp_pricing_error', __('Errore nel calcolo del prezzo. Riprova.', 'fp-experiences'), ['status' => 500]);
         }
     }
@@ -1120,5 +1153,14 @@ final class RequestToBook
 
         // Fallback: titolo originale
         return $experience->post_title;
+    }
+
+    private function debug_log(string $message, array $context = []): void
+    {
+        if (! Helpers::debug_logging_enabled()) {
+            return;
+        }
+
+        Helpers::log_debug('rtb', $message, $context);
     }
 }
