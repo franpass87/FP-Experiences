@@ -1831,6 +1831,12 @@
     opacity: 0.3;
 }
 
+.fp-exp-calendar-nav__day.is-unavailable {
+    opacity: 0.5;
+    background: rgba(220, 38, 38, 0.05);
+    border-color: rgba(220, 38, 38, 0.2);
+}
+
 .fp-exp-calendar-nav__day-number {
     font-size: 0.9rem;
     font-weight: 600;

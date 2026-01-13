@@ -83,7 +83,7 @@
     async function prefetchMonth(yyyyMm) {
         var experienceId = (_config && _config.experienceId) || 0;
         if (!experienceId || !yyyyMm) return;
-        if (_monthCache.has(yyyyMm)) return;
+        // Rimosso controllo cache per permettere sempre il prefetch quando si cambia mese
         try {
             var base = (window.fpExpApiBase && typeof window.fpExpApiBase === 'string')
                 ? window.fpExpApiBase
@@ -135,7 +135,10 @@
                 });
             }
         } catch (e) {
-            // Prefetch mese fallito
+            // Prefetch mese fallito - logga l'errore per debug
+            console.error('FP Experiences: Prefetch mese fallito per', yyyyMm, e);
+            // Non bloccare il rendering del calendario, ma segna il mese come tentato
+            _monthCache.set(yyyyMm, new Map());
         }
     }
 

@@ -475,11 +475,22 @@
                         
                         const dayButton = document.createElement('button');
                         dayButton.type = 'button';
-                        dayButton.className = 'fp-exp-calendar-nav__day' + (isPast ? ' is-past' : '');
+                        let className = 'fp-exp-calendar-nav__day';
+                        if (isPast) {
+                            className += ' is-past';
+                        } else if (!isAvailable) {
+                            className += ' is-unavailable';
+                        }
+                        dayButton.className = className;
                         dayButton.setAttribute('data-date', dateKey);
                         dayButton.setAttribute('data-available', isAvailable ? '1' : '0');
                         dayButton.setAttribute('data-month', monthKey);
-                        if (isPast || !isAvailable) dayButton.disabled = true;
+                        
+                        // Disabilita sempre i giorni passati
+                        // Disabilita i giorni futuri senza slot (con classe is-unavailable per distinguerli visivamente)
+                        if (isPast || !isAvailable) {
+                            dayButton.disabled = true;
+                        }
                         
                         let slotsHtml = '';
                         if (slotCount > 0) {
