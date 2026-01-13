@@ -73,6 +73,31 @@ final class AvailabilityController
                 $endDateTime = new DateTimeImmutable($end . ' 23:59:59');
                 $availability = $useCase->execute($experience_id, $startDateTime, $endDateTime);
                 
+                // Normalizza il formato per compatibilità con il frontend
+                // Il frontend si aspetta un array di slot con 'start' e 'end' (non 'start_datetime'/'end_datetime')
+                if (is_array($availability)) {
+                    $normalized = [];
+                    foreach ($availability as $slot) {
+                        // Se è già nel formato corretto, usa direttamente
+                        if (isset($slot['start']) && isset($slot['end'])) {
+                            $normalized[] = $slot;
+                        }
+                        // Altrimenti converte da start_datetime/end_datetime a start/end
+                        elseif (isset($slot['start_datetime']) && isset($slot['end_datetime'])) {
+                            $normalized[] = [
+                                'date' => substr($slot['start_datetime'], 0, 10),
+                                'start' => $slot['start_datetime'],
+                                'end' => $slot['end_datetime'],
+                                'capacity_total' => (int) ($slot['capacity_total'] ?? 0),
+                                'capacity_remaining' => (int) ($slot['remaining'] ?? $slot['capacity_remaining'] ?? 0),
+                                'available' => (bool) ($slot['available'] ?? (($slot['remaining'] ?? $slot['capacity_remaining'] ?? 0) > 0)),
+                            ];
+                        }
+                    }
+                    // Il frontend si aspetta { slots: [...] } non un array diretto
+                    return ErrorHandlingMiddleware::success(['slots' => $normalized]);
+                }
+                
                 return ErrorHandlingMiddleware::success($availability);
             } catch (\Throwable $e) {
                 // Fall through to legacy implementation
@@ -92,7 +117,8 @@ final class AvailabilityController
                 $availability = [];
             }
 
-            return ErrorHandlingMiddleware::success($availability);
+            // Il frontend si aspetta { slots: [...] } non un array diretto
+            return ErrorHandlingMiddleware::success(['slots' => $availability]);
         } catch (\Throwable $e) {
             return ErrorHandlingMiddleware::handleError($e);
         }
