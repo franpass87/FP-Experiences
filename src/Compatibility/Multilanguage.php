@@ -993,13 +993,13 @@ final class Multilanguage implements HookableInterface
     private function copy_experience_meta(int $source_id, int $target_id): void
     {
         // Meta fields to copy (these should have the same value across translations)
+        // Note: _fp_ticket_types and _fp_addons are NOT copied because they contain
+        // translatable labels that should be edited independently per translation
         $meta_keys_to_copy = [
-            // Pricing
+            // Pricing (base price and rules, but NOT ticket_types/addons which have labels)
             '_fp_base_price',
             '_fp_pricing_rules',
             '_fp_exp_pricing',
-            '_fp_ticket_types',
-            '_fp_addons',
             // Availability & Schedule
             '_fp_exp_availability',
             '_fp_schedule_rules',
