@@ -2,7 +2,7 @@
 /**
  * Plugin Name: FP Experiences
  * Description: Booking esperienze stile GetYourGuide — shortcode/Elementor only, carrello/checkout isolati, Brevo opzionale, Google Calendar opzionale, tracking marketing opzionale.
- * Version: 0.3.7
+ * Version: 1.2.0
  * Requires at least: 6.2
  * Requires PHP: 8.0
  * Author: Francesco Passeri
@@ -37,7 +37,7 @@ if (! defined('FP_EXP_PLUGIN_URL')) {
 }
 
 if (! defined('FP_EXP_VERSION')) {
-    define('FP_EXP_VERSION', '0.3.7');
+    define('FP_EXP_VERSION', '1.2.0');
 }
 
 // Early bootstrap guard: detect common issues and surface an admin notice instead of a fatal.
@@ -85,6 +85,12 @@ if (! defined('FP_EXP_VERSION')) {
 		return;
 	}
 })();
+
+// Ensure HookableInterface is loaded early (critical for all service classes)
+$hookable_interface = __DIR__ . '/src/Core/Hook/HookableInterface.php';
+if (is_readable($hookable_interface)) {
+    require_once $hookable_interface;
+}
 
 $autoload = __DIR__ . '/vendor/autoload.php';
 
@@ -142,7 +148,14 @@ register_deactivation_hook(__FILE__, [Activation::class, 'deactivate']);
 	}
 
 	try {
-		Plugin::instance()->boot();
+		// Kernel architecture handles all boot logic now
+		// Legacy Plugin boot is handled by LegacyServiceProvider
+		$kernel = \FP_Exp\Core\Bootstrap\Bootstrap::kernel();
+		if ($kernel === null) {
+			$store_and_hook_notice('FP Experiences: Kernel not initialized. Plugin may not function correctly.');
+			return;
+		}
+		// Kernel boot is already scheduled in Bootstrap::init()
 	} catch (\Throwable $e) {
 		$message = 'Errore in avvio FP Experiences: ' . ($e->getMessage() ?: get_class($e));
 		$context = [
