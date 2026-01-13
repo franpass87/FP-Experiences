@@ -4,6 +4,14 @@ declare(strict_types=1);
 
 namespace FP_Exp\PostTypes;
 
+// Ensure HookableInterface is loaded before this class
+if (!interface_exists('FP_Exp\Core\Hook\HookableInterface')) {
+    $interface_path = __DIR__ . '/../Core/Hook/HookableInterface.php';
+    if (is_readable($interface_path)) {
+        require_once $interface_path;
+    }
+}
+
 use FP_Exp\Core\Hook\HookableInterface;
 
 use function add_action;
