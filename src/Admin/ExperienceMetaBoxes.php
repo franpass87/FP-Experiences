@@ -454,62 +454,28 @@ final class ExperienceMetaBoxes implements HookableInterface
 
     public function render_meta_box(WP_Post $post): void
     {
-        // Debug: verifica che il rendering inizi
-        echo '<!-- FP_EXP DEBUG: render_meta_box called for post ' . esc_html((string) $post->ID) . ' -->';
-        
-        try {
-            // Use DetailsMetaBoxHandler for Details tab
-            echo '<!-- FP_EXP DEBUG: loading details -->';
-            $details = $this->details_handler->get($post->ID);
-            echo '<!-- FP_EXP DEBUG: details OK -->';
-            
-            // Use PricingMetaBoxHandler for Pricing tab
-            echo '<!-- FP_EXP DEBUG: loading pricing -->';
-            $pricing = $this->pricing_handler->get($post->ID);
-            echo '<!-- FP_EXP DEBUG: pricing OK -->';
-            
-            // Use CalendarMetaBoxHandler for Calendar tab
-            echo '<!-- FP_EXP DEBUG: loading calendar -->';
-            $availability = $this->calendar_handler->get($post->ID);
-            echo '<!-- FP_EXP DEBUG: calendar OK -->';
-            
-            // Use MeetingPointMetaBoxHandler for Meeting Point tab
-            echo '<!-- FP_EXP DEBUG: loading meeting_point -->';
-            $meeting_data = $this->meeting_point_handler->get($post->ID);
-            $meeting = [
-                'primary' => $meeting_data['primary'] ?? 0,
-                'alternatives' => $meeting_data['alternatives'] ?? [],
-            ];
-            $meeting_choices = $meeting_data['choices'] ?? [];
-            echo '<!-- FP_EXP DEBUG: meeting_point OK -->';
-            
-            // Use ExtrasMetaBoxHandler for Extras tab
-            echo '<!-- FP_EXP DEBUG: loading extras -->';
-            $extras = $this->extras_handler->get($post->ID);
-            echo '<!-- FP_EXP DEBUG: extras OK -->';
-            
-            // Use PolicyMetaBoxHandler for Policy tab
-            echo '<!-- FP_EXP DEBUG: loading policy -->';
-            $policy = $this->policy_handler->get($post->ID);
-            echo '<!-- FP_EXP DEBUG: policy OK -->';
-            
-            // Use SEOMetaBoxHandler for SEO tab
-            echo '<!-- FP_EXP DEBUG: loading seo -->';
-            $seo = $this->seo_handler->get($post->ID);
-            echo '<!-- FP_EXP DEBUG: all handlers loaded OK -->';
-        } catch (\Throwable $e) {
-            echo '<!-- FP_EXP DEBUG ERROR: ' . esc_html($e->getMessage()) . ' in ' . esc_html($e->getFile()) . ':' . esc_html((string) $e->getLine()) . ' -->';
-            return;
-        }
+        // Use DetailsMetaBoxHandler for Details tab
+        $details = $this->details_handler->get($post->ID);
+        // Use PricingMetaBoxHandler for Pricing tab
+        $pricing = $this->pricing_handler->get($post->ID);
+        // Use CalendarMetaBoxHandler for Calendar tab
+        $availability = $this->calendar_handler->get($post->ID);
+        // Use MeetingPointMetaBoxHandler for Meeting Point tab
+        $meeting_data = $this->meeting_point_handler->get($post->ID);
+        $meeting = [
+            'primary' => $meeting_data['primary'] ?? 0,
+            'alternatives' => $meeting_data['alternatives'] ?? [],
+        ];
+        $meeting_choices = $meeting_data['choices'] ?? [];
+        // Use ExtrasMetaBoxHandler for Extras tab
+        $extras = $this->extras_handler->get($post->ID);
+        // Use PolicyMetaBoxHandler for Policy tab
+        $policy = $this->policy_handler->get($post->ID);
+        // Use SEOMetaBoxHandler for SEO tab
+        $seo = $this->seo_handler->get($post->ID);
 
         wp_nonce_field('fp_exp_meta_nonce', 'fp_exp_meta_nonce');
         ?>
-        <style>
-        /* Fallback: assicura visibilità anche senza CSS esterno */
-        .fp-exp-admin { min-height: 200px; }
-        .fp-exp-tab-panels { display: block !important; }
-        .fp-exp-tab-panel:first-child { display: block !important; }
-        </style>
         <div class="fp-exp-admin" data-fp-exp-admin>
             <div class="fp-exp-tabs" role="tablist" aria-label="<?php echo esc_attr(esc_html__('Sezioni esperienza', 'fp-experiences')); ?>">
                 <?php 

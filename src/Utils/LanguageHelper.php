@@ -154,6 +154,26 @@ final class LanguageHelper
         ];
     }
 
+    /**
+     * Get sprite ID for a language code.
+     *
+     * @param string $code Language code (e.g., 'it', 'en', 'de')
+     * @return string Sprite ID for SVG use (e.g., 'fp-exp-flag-it')
+     */
+    public static function get_sprite_id_for_code(string $code): string
+    {
+        $normalized = self::normalize($code);
+
+        foreach (self::LANGUAGE_MAP as $lang_code => $config) {
+            if ($normalized === $lang_code || in_array($normalized, $config['aliases'], true)) {
+                return 'fp-exp-flag-' . $lang_code;
+            }
+        }
+
+        // Fallback to globe icon for unknown languages
+        return 'fp-exp-flag-globe';
+    }
+
     private static function normalize(string $value): string
     {
         $value = strtolower(trim($value));
