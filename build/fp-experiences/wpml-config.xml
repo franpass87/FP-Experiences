@@ -262,4 +262,10 @@
         </key>
     </language-switcher-settings>
 
+    <!-- ============================================
+         LOCALIZATION (Plugin Translations)
+         ============================================ -->
+    <!-- Tell WPML to load translation files from plugin's languages folder -->
+    <locale-file>languages/fp-experiences</locale-file>
+
 </wpml-config>
