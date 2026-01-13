@@ -293,6 +293,237 @@ final class ExperienceMetaBoxes implements HookableInterface
         return $post_id;
     }
 
+    /**
+     * Check if current post is a WPML translation and get its original post ID.
+     *
+     * @param int $post_id Current post ID
+     * @return int|null Original post ID or null if not a translation
+     */
+    private function get_wpml_original_id(int $post_id): ?int
+    {
+        if (!defined('ICL_SITEPRESS_VERSION')) {
+            return null;
+        }
+
+        global $sitepress;
+        if (!$sitepress) {
+            return null;
+        }
+
+        $default_lang = $sitepress->get_default_language();
+        $post_lang = $sitepress->get_language_for_element($post_id, 'post_fp_experience');
+        
+        // If this is the default language post, it's the original
+        if (!$post_lang || $post_lang === $default_lang) {
+            return null;
+        }
+
+        // Get the original post from translation group
+        $trid = $sitepress->get_element_trid($post_id, 'post_fp_experience');
+        if (!$trid) {
+            return null;
+        }
+
+        $translations = $sitepress->get_element_translations($trid, 'post_fp_experience');
+        if (isset($translations[$default_lang])) {
+            return (int) $translations[$default_lang]->element_id;
+        }
+
+        return null;
+    }
+
+    /**
+     * Check if post has empty meta (needs sync from original).
+     *
+     * @param int $post_id Post ID to check
+     * @return bool True if meta is empty
+     */
+    private function has_empty_meta(int $post_id): bool
+    {
+        $duration = get_post_meta($post_id, '_fp_duration_minutes', true);
+        $base_price = get_post_meta($post_id, '_fp_base_price', true);
+        $availability = get_post_meta($post_id, '_fp_exp_availability', true);
+        
+        return empty($duration) && empty($base_price) && empty($availability);
+    }
+
+    /**
+     * Render sync button for existing translations with empty meta.
+     *
+     * @param int $post_id Current post ID
+     * @param int $source_post_id Source post ID used for rendering
+     */
+    private function maybe_render_sync_button(int $post_id, int $source_post_id): void
+    {
+        // Only show if this is an existing translation (not new)
+        $post = get_post($post_id);
+        if (!$post || $post->post_status === 'auto-draft') {
+            return;
+        }
+
+        // Check if this is a WPML translation
+        $original_id = $this->get_wpml_original_id($post_id);
+        if (!$original_id) {
+            return;
+        }
+
+        // Check if meta is empty (needs sync)
+        if (!$this->has_empty_meta($post_id)) {
+            return;
+        }
+
+        // Get original post title for reference
+        $original_title = get_the_title($original_id);
+        ?>
+        <div class="fp-exp-sync-notice" style="background: #fff3cd; border: 1px solid #ffc107; border-radius: 4px; padding: 12px 16px; margin-bottom: 16px; display: flex; align-items: center; gap: 12px;">
+            <span class="dashicons dashicons-warning" style="color: #856404; font-size: 20px;"></span>
+            <div style="flex: 1;">
+                <strong style="color: #856404;"><?php esc_html_e('Meta dati non sincronizzati', 'fp-experiences'); ?></strong>
+                <p style="margin: 4px 0 0; color: #856404; font-size: 13px;">
+                    <?php 
+                    printf(
+                        /* translators: %s: Original post title */
+                        esc_html__('Questa traduzione non ha i meta dati copiati dall\'originale "%s". Clicca per sincronizzare.', 'fp-experiences'),
+                        esc_html($original_title)
+                    );
+                    ?>
+                </p>
+            </div>
+            <button type="button" class="button button-primary" id="fp-exp-sync-meta-btn" data-post-id="<?php echo esc_attr($post_id); ?>" data-original-id="<?php echo esc_attr($original_id); ?>" data-nonce="<?php echo esc_attr(wp_create_nonce('fp_exp_sync_meta')); ?>">
+                <span class="dashicons dashicons-update" style="margin-right: 4px;"></span>
+                <?php esc_html_e('Sincronizza meta', 'fp-experiences'); ?>
+            </button>
+        </div>
+        <script>
+        jQuery(function($) {
+            $('#fp-exp-sync-meta-btn').on('click', function(e) {
+                e.preventDefault();
+                var $btn = $(this);
+                var originalText = $btn.html();
+                
+                $btn.prop('disabled', true).html('<span class="dashicons dashicons-update" style="animation: rotation 1s infinite linear; margin-right: 4px;"></span> <?php echo esc_js(__('Sincronizzazione...', 'fp-experiences')); ?>');
+                
+                $.ajax({
+                    url: ajaxurl,
+                    type: 'POST',
+                    data: {
+                        action: 'fp_exp_sync_meta_from_original',
+                        post_id: $btn.data('post-id'),
+                        original_id: $btn.data('original-id'),
+                        nonce: $btn.data('nonce')
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            // Reload page to show updated meta
+                            location.reload();
+                        } else {
+                            alert(response.data || '<?php echo esc_js(__('Errore durante la sincronizzazione', 'fp-experiences')); ?>');
+                            $btn.prop('disabled', false).html(originalText);
+                        }
+                    },
+                    error: function() {
+                        alert('<?php echo esc_js(__('Errore di connessione', 'fp-experiences')); ?>');
+                        $btn.prop('disabled', false).html(originalText);
+                    }
+                });
+            });
+        });
+        </script>
+        <style>
+        @keyframes rotation {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        </style>
+        <?php
+    }
+
+    /**
+     * AJAX handler to sync meta from original translation.
+     */
+    public function ajax_sync_meta_from_original(): void
+    {
+        // Verify nonce
+        if (!isset($_POST['nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['nonce'])), 'fp_exp_sync_meta')) {
+            wp_send_json_error(__('Nonce non valido', 'fp-experiences'));
+        }
+
+        // Get post IDs
+        $post_id = isset($_POST['post_id']) ? absint($_POST['post_id']) : 0;
+        $original_id = isset($_POST['original_id']) ? absint($_POST['original_id']) : 0;
+
+        if (!$post_id || !$original_id) {
+            wp_send_json_error(__('ID post mancanti', 'fp-experiences'));
+        }
+
+        // Check permissions
+        if (!current_user_can('edit_post', $post_id)) {
+            wp_send_json_error(__('Permessi insufficienti', 'fp-experiences'));
+        }
+
+        // Meta keys to sync
+        $meta_keys = [
+            '_fp_base_price',
+            '_fp_pricing_rules',
+            '_fp_exp_pricing',
+            '_fp_ticket_types',
+            '_fp_addons',
+            '_fp_exp_availability',
+            '_fp_schedule_rules',
+            '_fp_schedule_exceptions',
+            '_fp_duration_minutes',
+            '_fp_lead_time_hours',
+            '_fp_buffer_before_minutes',
+            '_fp_buffer_after_minutes',
+            '_fp_min_party',
+            '_fp_capacity_slot',
+            '_fp_resources',
+            '_fp_age_min',
+            '_fp_age_max',
+            '_fp_meeting_point_id',
+            '_fp_meeting_point_alt',
+            '_fp_meeting_point',
+            '_fp_gallery_ids',
+            '_fp_gallery_video_url',
+            '_fp_hero_image_id',
+            '_thumbnail_id',
+            '_fp_use_rtb',
+            '_fp_languages',
+            '_fp_short_desc',
+            '_fp_highlights',
+            '_fp_included',
+            '_fp_excluded',
+            '_fp_what_to_bring',
+            '_fp_additional_notes',
+            '_fp_cancellation_policy',
+            '_fp_faq',
+        ];
+
+        $synced = 0;
+        foreach ($meta_keys as $key) {
+            $value = get_post_meta($original_id, $key, true);
+            if ($value !== '' && $value !== null && $value !== false) {
+                update_post_meta($post_id, $key, $value);
+                $synced++;
+            }
+        }
+
+        // Also sync thumbnail if present
+        $thumbnail_id = get_post_thumbnail_id($original_id);
+        if ($thumbnail_id) {
+            set_post_thumbnail($post_id, $thumbnail_id);
+        }
+
+        wp_send_json_success([
+            'message' => sprintf(
+                /* translators: %d: Number of synced fields */
+                __('Sincronizzati %d campi meta', 'fp-experiences'),
+                $synced
+            ),
+            'synced' => $synced,
+        ]);
+    }
+
     private const PRICING_NOTICE_KEY = 'fp_exp_pricing_notice_';
 
     public function register_hooks(): void
@@ -302,6 +533,8 @@ final class ExperienceMetaBoxes implements HookableInterface
         add_action('save_post_fp_experience', [$this, 'save_meta_boxes'], 20, 3);
         add_action('admin_enqueue_scripts', [$this, 'enqueue_assets']);
         add_action('admin_notices', [$this, 'maybe_show_pricing_notice']);
+        // AJAX action for syncing meta from original translation
+        add_action('wp_ajax_fp_exp_sync_meta_from_original', [$this, 'ajax_sync_meta_from_original']);
     }
 
     public function remove_default_meta_boxes(): void
@@ -540,6 +773,9 @@ final class ExperienceMetaBoxes implements HookableInterface
         $seo = $this->seo_handler->get($source_post_id);
 
         wp_nonce_field('fp_exp_meta_nonce', 'fp_exp_meta_nonce');
+        
+        // Show sync button for existing WPML translations with empty meta
+        $this->maybe_render_sync_button($post->ID, $source_post_id);
         ?>
         <div class="fp-exp-admin" data-fp-exp-admin>
             <div class="fp-exp-tabs" role="tablist" aria-label="<?php echo esc_attr(esc_html__('Sezioni esperienza', 'fp-experiences')); ?>">
