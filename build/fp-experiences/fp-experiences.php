@@ -90,6 +90,12 @@ if (! defined('FP_EXP_VERSION')) {
 $hookable_interface = __DIR__ . '/src/Core/Hook/HookableInterface.php';
 if (is_readable($hookable_interface)) {
     require_once $hookable_interface;
+} else {
+    // Fallback: try alternative path separators
+    $hookable_interface_alt = __DIR__ . DIRECTORY_SEPARATOR . 'src' . DIRECTORY_SEPARATOR . 'Core' . DIRECTORY_SEPARATOR . 'Hook' . DIRECTORY_SEPARATOR . 'HookableInterface.php';
+    if (is_readable($hookable_interface_alt)) {
+        require_once $hookable_interface_alt;
+    }
 }
 
 $autoload = __DIR__ . '/vendor/autoload.php';
@@ -98,14 +104,30 @@ if (is_readable($autoload)) {
     require $autoload;
 } else {
     // Simple PSR-4 autoloader for the plugin when Composer autoload is unavailable.
+    // Register HookableInterface loading first
     spl_autoload_register(function (string $class): void {
+        // Handle HookableInterface specifically first
+        if ($class === 'FP_Exp\\Core\\Hook\\HookableInterface') {
+            $path = __DIR__ . '/src/Core/Hook/HookableInterface.php';
+            if (is_readable($path)) {
+                require_once $path;
+                return;
+            }
+            // Try alternative path
+            $path = __DIR__ . DIRECTORY_SEPARATOR . 'src' . DIRECTORY_SEPARATOR . 'Core' . DIRECTORY_SEPARATOR . 'Hook' . DIRECTORY_SEPARATOR . 'HookableInterface.php';
+            if (is_readable($path)) {
+                require_once $path;
+                return;
+            }
+        }
+        
         if (strpos($class, __NAMESPACE__ . '\\') !== 0) {
             return;
         }
 
         $relative = substr($class, strlen(__NAMESPACE__ . '\\'));
         $relative = str_replace('\\', DIRECTORY_SEPARATOR, $relative);
-        $path = __DIR__ . '/src/' . $relative . '.php';
+        $path = __DIR__ . DIRECTORY_SEPARATOR . 'src' . DIRECTORY_SEPARATOR . $relative . '.php';
 
         if (is_readable($path)) {
             require_once $path;
