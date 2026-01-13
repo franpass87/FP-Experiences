@@ -39,7 +39,7 @@ final class LanguageHelper
         'fr' => [
             'label' => 'Français',
             'display' => 'FR',
-            'aliases' => ['fr', 'fr-fr', 'french', 'francese', 'fra'],
+            'aliases' => ['fr', 'fr-fr', 'french', 'francese', 'fra', 'francais'],
         ],
         'de' => [
             'label' => 'Deutsch',
@@ -49,12 +49,12 @@ final class LanguageHelper
         'es' => [
             'label' => 'Español',
             'display' => 'ES',
-            'aliases' => ['es', 'es-es', 'spanish', 'spagnolo', 'spa'],
+            'aliases' => ['es', 'es-es', 'spanish', 'spagnolo', 'spa', 'espanol'],
         ],
         'pt' => [
             'label' => 'Português',
             'display' => 'PT',
-            'aliases' => ['pt', 'pt-pt', 'pt-br', 'portuguese', 'portoghese', 'por'],
+            'aliases' => ['pt', 'pt-pt', 'pt-br', 'portuguese', 'portoghese', 'por', 'portugues'],
         ],
         'nl' => [
             'label' => 'Nederlands',
@@ -157,6 +157,14 @@ final class LanguageHelper
     private static function normalize(string $value): string
     {
         $value = strtolower(trim($value));
+        
+        // Converti caratteri accentati in equivalenti ASCII
+        $value = str_replace(
+            ['à', 'á', 'â', 'ã', 'ä', 'å', 'æ', 'ç', 'è', 'é', 'ê', 'ë', 'ì', 'í', 'î', 'ï', 'ð', 'ñ', 'ò', 'ó', 'ô', 'õ', 'ö', 'ø', 'ù', 'ú', 'û', 'ü', 'ý', 'þ', 'ÿ'],
+            ['a', 'a', 'a', 'a', 'a', 'a', 'ae', 'c', 'e', 'e', 'e', 'e', 'i', 'i', 'i', 'i', 'd', 'n', 'o', 'o', 'o', 'o', 'o', 'o', 'u', 'u', 'u', 'u', 'y', 'th', 'y'],
+            $value
+        );
+        
         $value = str_replace([' ', '_'], '-', $value);
         $value = preg_replace('/[^a-z-]/', '', $value);
 
