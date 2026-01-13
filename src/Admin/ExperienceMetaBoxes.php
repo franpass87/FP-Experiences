@@ -585,10 +585,10 @@ final class ExperienceMetaBoxes implements HookableInterface
             error_log('FP_EXP: Output non intenzionale durante salvataggio metadati: ' . substr($unwanted_output, 0, 200));
         }
 
-        // Get availability meta for slot generation
-        $availability_meta = get_post_meta($post_id, '_fp_exp_availability', true);
-        if ('publish' === get_post_status($post_id) && !empty($availability_meta)) {
-            $this->maybe_generate_recurrence_slots($post_id, $availability_meta);
+        // Generate recurrence slots only if we have valid recurrence data from the form
+        $availability_data = $raw['fp_exp_availability'] ?? [];
+        if ('publish' === get_post_status($post_id) && !empty($availability_data) && is_array($availability_data)) {
+            $this->maybe_generate_recurrence_slots($post_id, $availability_data);
         }
     }
 
