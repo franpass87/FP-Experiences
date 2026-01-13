@@ -646,6 +646,12 @@ msgstr "Dauer"
 msgid "Seleziona almeno 1 biglietto"
 msgstr "Mindestens 1 Ticket auswählen"
 
+msgid "Seleziona data e orario"
+msgstr "Datum und Uhrzeit auswählen"
+
+msgid "Procedi al pagamento"
+msgstr "Zur Zahlung"
+
 msgid "Adulto"
 msgstr "Erwachsener"
 

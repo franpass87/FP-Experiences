@@ -646,6 +646,9 @@ msgstr "Duration"
 msgid "Seleziona almeno 1 biglietto"
 msgstr "Select at least 1 ticket"
 
+msgid "Seleziona data e orario"
+msgstr "Select date and time"
+
 msgid "Adulto"
 msgstr "Adult"
 

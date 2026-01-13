@@ -86,6 +86,73 @@
     }
 })();
 
+// Inizializza accordion FAQ IMMEDIATAMENTE (standalone, non aspetta jQuery)
+// Usa delegazione eventi su document per funzionare anche con contenuti caricati dinamicamente
+(function initAccordionImmediate() {
+    'use strict';
+    
+    // Delegazione eventi direttamente su document - funziona sempre, anche con contenuti dinamici
+    // Usa capture: true per intercettare il click prima di altri listener
+    document.addEventListener('click', function(ev) {
+        // Cerca il trigger, anche se il click è sull'icona SVG o sul path
+        let trigger = ev.target.closest('[data-fp-accordion-trigger]');
+        
+        // Se non trovato, potrebbe essere un click diretto sull'icona
+        if (!trigger) {
+            const icon = ev.target.closest('.fp-exp-accordion__icon, .fp-exp-accordion__icon svg, .fp-exp-accordion__icon path');
+            if (icon) {
+                trigger = icon.closest('[data-fp-accordion-trigger]');
+            }
+        }
+        
+        // Se ancora non trovato, potrebbe essere un click sul label
+        if (!trigger) {
+            const label = ev.target.closest('.fp-exp-accordion__label');
+            if (label) {
+                trigger = label.closest('[data-fp-accordion-trigger]');
+            }
+        }
+        
+        // Se non è un trigger accordion, esci
+        if (!trigger) return;
+        
+        // Verifica che il trigger sia dentro un accordion container
+        const accordionContainer = trigger.closest('[data-fp-accordion]');
+        if (!accordionContainer) return;
+        
+        
+        ev.preventDefault();
+        ev.stopPropagation();
+        
+        const panelId = trigger.getAttribute('aria-controls');
+        if (!panelId) return;
+        
+        const panel = document.getElementById(panelId);
+        if (!panel) return;
+        
+        const isExpanded = trigger.getAttribute('aria-expanded') === 'true';
+        const icon = trigger.querySelector('.fp-exp-accordion__icon svg path');
+        
+        if (isExpanded) {
+            // Chiudi
+            trigger.setAttribute('aria-expanded', 'false');
+            panel.hidden = true;
+            if (icon) {
+                // Icona "+" (verticale + orizzontale)
+                icon.setAttribute('d', 'M12 5v14m-7-7h14');
+            }
+        } else {
+            // Apri
+            trigger.setAttribute('aria-expanded', 'true');
+            panel.hidden = false;
+            if (icon) {
+                // Icona "-" (solo orizzontale)
+                icon.setAttribute('d', 'M5 12h14');
+            }
+        }
+    }, { capture: true });
+})();
+
 // Carica i moduli frontend necessari
 (function() {
     'use strict';
@@ -198,7 +265,8 @@
         const setSlotsLoading = (isLoading) => {
             if (!slotsEl) return;
             if (isLoading) {
-                const loadingLabel = (slotsEl.getAttribute('data-loading-label') || 'Caricamento…');
+                const defaultLoading = (window.fpExpConfig && window.fpExpConfig.i18n && window.fpExpConfig.i18n.loading) ? window.fpExpConfig.i18n.loading : 'Caricamento…';
+                const loadingLabel = (slotsEl.getAttribute('data-loading-label') || defaultLoading);
                 // ✅ XSS fix: usa createElement + textContent invece di innerHTML
                 const placeholder = document.createElement('p');
                 placeholder.className = 'fp-exp-slots__placeholder';
@@ -356,11 +424,11 @@
         const updateCalendarMonth = async (calendarNav, date) => {
             const monthKey = date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0');
             
-            // Nomi mesi in italiano
-            const monthNames = [
-                'Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno',
-                'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre'
-            ];
+            // Nomi mesi localizzati (da fpExpConfig.i18n.months o fallback italiano)
+            const monthNames = (window.fpExpConfig && window.fpExpConfig.i18n && window.fpExpConfig.i18n.months) 
+                ? window.fpExpConfig.i18n.months 
+                : ['Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno',
+                   'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre'];
             
             const monthName = monthNames[date.getMonth()];
             const year = date.getFullYear();
@@ -381,7 +449,10 @@
             
             if (grid) {
                 // Pulisce il grid e mostra caricamento
-                grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 2rem; color: var(--fp-color-muted);">Caricamento...</div>';
+                const loadingText = (window.fpExpConfig && window.fpExpConfig.i18n && window.fpExpConfig.i18n.loading) 
+                    ? window.fpExpConfig.i18n.loading 
+                    : 'Caricamento...';
+                grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 2rem; color: var(--fp-color-muted);">' + loadingText + '</div>';
                 
                 try {
                     // Prefetch dell'intero mese in una sola chiamata API
@@ -569,11 +640,38 @@
             slotsEl.addEventListener('click', (ev) => {
                 const li = ev.target && ev.target.closest('.fp-exp-slots__item');
                 if (!li) return;
-                const start = li.getAttribute('data-start') || '';
-                const end = li.getAttribute('data-end') || '';
+                let start = li.getAttribute('data-start') || '';
+                let end = li.getAttribute('data-end') || '';
 
                 clearSelection();
                 li.classList.add('is-selected');
+
+                // IMPORTANTE: Usa sempre start_iso e end_iso se disponibili nel config
+                // Gli attributi data-start e data-end potrebbero essere solo date senza orario
+                if (config && config.slots) {
+                    // Cerca lo slot nel config che corrisponde ai valori data-start/data-end
+                    // Usa la data (senza orario) per trovare lo slot corretto
+                    const startDateOnly = start.includes('T') ? start.split('T')[0] : start;
+                    const endDateOnly = end.includes('T') ? end.split('T')[0] : end;
+                    
+                    const slot = config.slots.find(s => {
+                        const slotStart = s.start_iso || s.start || '';
+                        const slotEnd = s.end_iso || s.end || '';
+                        const slotStartDate = slotStart.includes('T') ? slotStart.split('T')[0] : slotStart;
+                        const slotEndDate = slotEnd.includes('T') ? slotEnd.split('T')[0] : slotEnd;
+                        return (slotStartDate === startDateOnly || slotEndDate === endDateOnly);
+                    });
+                    
+                    if (slot) {
+                        // Usa sempre start_iso e end_iso se disponibili
+                        if (slot.start_iso) {
+                            start = slot.start_iso;
+                        }
+                        if (slot.end_iso) {
+                            end = slot.end_iso;
+                        }
+                    }
+                }
 
                 // Aggiorna campi RTB solo se RTB è abilitato
                 if (rtbEnabled && startInput) startInput.value = start;
@@ -605,12 +703,13 @@
                 const slotOk = hasSelectedSlot();
                 ctaBtn.disabled = !(anyTicket && slotOk);
                 
+                const i18n = (window.fpExpConfig && window.fpExpConfig.i18n) ? window.fpExpConfig.i18n : {};
                 if (!anyTicket) {
-                    ctaBtn.textContent = 'Seleziona almeno 1 biglietto';
+                    ctaBtn.textContent = i18n.selectAtLeast1Ticket || 'Seleziona almeno 1 biglietto';
                 } else if (!slotOk) {
-                    ctaBtn.textContent = 'Seleziona data e orario';
+                    ctaBtn.textContent = i18n.selectDateTime || 'Seleziona data e orario';
                 } else {
-                    ctaBtn.textContent = 'Procedi al pagamento';
+                    ctaBtn.textContent = i18n.proceedToPayment || 'Procedi al pagamento';
                 }
             };
 
@@ -1239,11 +1338,12 @@
                 const slotOk = hasSelectedSlot();
                 ctaBtn.disabled = !(anyTicket && slotOk);
                 if (ctaHint) {
+                    const i18nHint = (window.fpExpConfig && window.fpExpConfig.i18n) ? window.fpExpConfig.i18n : {};
                     if (!anyTicket) {
-                        ctaHint.textContent = 'Seleziona almeno 1 biglietto.';
+                        ctaHint.textContent = (i18nHint.selectAtLeast1Ticket || 'Seleziona almeno 1 biglietto') + '.';
                         ctaHint.hidden = false;
                     } else if (!slotOk) {
-                        ctaHint.textContent = 'Seleziona data e orario.';
+                        ctaHint.textContent = (i18nHint.selectDateTime || 'Seleziona data e orario') + '.';
                         ctaHint.hidden = false;
                     } else {
                         ctaHint.textContent = '';

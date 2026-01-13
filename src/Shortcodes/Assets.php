@@ -211,6 +211,26 @@ final class Assets
                     'strings' => AutoTranslator::strings(),
                     'plurals' => AutoTranslator::plurals(),
                 ],
+                'i18n' => [
+                    'months' => [
+                        __('Gennaio', 'fp-experiences'),
+                        __('Febbraio', 'fp-experiences'),
+                        __('Marzo', 'fp-experiences'),
+                        __('Aprile', 'fp-experiences'),
+                        __('Maggio', 'fp-experiences'),
+                        __('Giugno', 'fp-experiences'),
+                        __('Luglio', 'fp-experiences'),
+                        __('Agosto', 'fp-experiences'),
+                        __('Settembre', 'fp-experiences'),
+                        __('Ottobre', 'fp-experiences'),
+                        __('Novembre', 'fp-experiences'),
+                        __('Dicembre', 'fp-experiences'),
+                    ],
+                    'loading' => __('Caricamento...', 'fp-experiences'),
+                    'selectAtLeast1Ticket' => __('Seleziona almeno 1 biglietto', 'fp-experiences'),
+                    'selectDateTime' => __('Seleziona data e orario', 'fp-experiences'),
+                    'proceedToPayment' => __('Procedi al pagamento', 'fp-experiences'),
+                ],
             ]
         );
     }
