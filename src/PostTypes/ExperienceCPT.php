@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace FP_Exp\PostTypes;
 
+use FP_Exp\Core\Hook\HookableInterface;
+
 use function add_action;
 use function did_action;
 use function register_post_meta;
@@ -15,7 +17,7 @@ use function sanitize_text_field;
 /**
  * Registers the Experience custom post type, taxonomies, and meta.
  */
-final class ExperienceCPT
+final class ExperienceCPT implements HookableInterface
 {
     /**
      * Tracks hook registration status.
@@ -43,6 +45,9 @@ final class ExperienceCPT
             add_action('init', [$this, 'register_meta']);
         }
         add_filter('post_row_actions', [$this, 'add_quick_actions'], 10, 2);
+        
+        // Register post type as translatable for WPML
+        add_filter('wpml_translatable_post_types', [$this, 'add_to_wpml_translatable_types']);
     }
 
     /**
@@ -560,5 +565,22 @@ final class ExperienceCPT
         }
 
         return $new_actions;
+    }
+
+    /**
+     * Add fp_experience to WPML translatable post types.
+     *
+     * This ensures WPML recognizes fp_experience as a translatable post type,
+     * even if wpml-config.xml is not being read correctly.
+     *
+     * @param array<string> $post_types Array of translatable post types
+     * @return array<string>
+     */
+    public function add_to_wpml_translatable_types(array $post_types): array
+    {
+        if (!in_array('fp_experience', $post_types, true)) {
+            $post_types[] = 'fp_experience';
+        }
+        return $post_types;
     }
 }
