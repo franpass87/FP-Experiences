@@ -19,6 +19,16 @@ if (! defined('ABSPATH')) {
     exit;
 }
 
+// Ensure correct textdomain is loaded for WPML
+$current_lang = apply_filters('wpml_current_language', null);
+if ($current_lang && $current_lang !== 'it') {
+    $mo_path = WP_PLUGIN_DIR . '/FP-Experiences/languages/fp-experiences-' . $current_lang . '.mo';
+    if (file_exists($mo_path)) {
+        unload_textdomain('fp-experiences');
+        load_textdomain('fp-experiences', $mo_path);
+    }
+}
+
 $language_sprite = \FP_Exp\Utils\LanguageHelper::get_sprite_url();
 
 

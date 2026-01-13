@@ -29,23 +29,15 @@ if (! defined('ABSPATH')) {
     exit;
 }
 
-// DEBUG: Check translation loading
-$debug_wpml_lang = apply_filters('wpml_current_language', 'none');
-$debug_locale = get_locale();
-$debug_mo_path = WP_PLUGIN_DIR . '/FP-Experiences/languages/fp-experiences-' . $debug_wpml_lang . '.mo';
-$debug_mo_exists = file_exists($debug_mo_path) ? 'YES' : 'NO';
-
-// Force load textdomain NOW
-if ($debug_wpml_lang && $debug_wpml_lang !== 'it' && $debug_mo_exists === 'YES') {
-    unload_textdomain('fp-experiences');
-    $load_result = load_textdomain('fp-experiences', $debug_mo_path);
-    $debug_load = $load_result ? 'LOADED' : 'FAILED';
-} else {
-    $debug_load = 'SKIPPED';
+// Ensure correct textdomain is loaded for WPML
+$current_lang = apply_filters('wpml_current_language', null);
+if ($current_lang && $current_lang !== 'it') {
+    $mo_path = WP_PLUGIN_DIR . '/FP-Experiences/languages/fp-experiences-' . $current_lang . '.mo';
+    if (file_exists($mo_path)) {
+        unload_textdomain('fp-experiences');
+        load_textdomain('fp-experiences', $mo_path);
+    }
 }
-
-$debug_test_string = __('Perché prenotare con noi', 'fp-experiences');
-echo "<!-- FP_EXP_DEBUG: wpml_lang={$debug_wpml_lang}, locale={$debug_locale}, load_result={$debug_load}, test_translation={$debug_test_string}, mo_exists={$debug_mo_exists} -->";
 
 $scope_class = $scope_class ?? '';
 $language_sprite = \FP_Exp\Utils\LanguageHelper::get_sprite_url();
