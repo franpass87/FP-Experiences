@@ -1,4 +1,4 @@
-# German (Germany) translation for FP Experiences
+# German translation for FP Experiences
 # Copyright (C) 2025 Francesco Passeri
 # This file is distributed under the GPLv2+.
 msgid ""
@@ -11,15 +11,15 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2025-01-12T00:00:00+00:00\n"
-"PO-Revision-Date: 2025-01-12T00:00:00+00:00\n"
+"POT-Creation-Date: 2026-01-13T00:00:00+00:00\n"
+"PO-Revision-Date: 2026-01-13T00:00:00+00:00\n"
 "X-Generator: Cursor AI\n"
 "X-Domain: fp-experiences\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
 # Admin Menu & Dashboard
 msgid "FP Experiences"
-msgstr "FP Erlebnisse"
+msgstr "FP Experiences"
 
 msgid "Dashboard"
 msgstr "Dashboard"
@@ -98,7 +98,7 @@ msgid "Next"
 msgstr "Weiter"
 
 msgid "No slots scheduled for this period."
-msgstr "Keine Zeitfenster für diesen Zeitraum geplant."
+msgstr "Keine Termine für diesen Zeitraum geplant."
 
 msgid "Loading…"
 msgstr "Laden…"
@@ -117,7 +117,7 @@ msgid "Richieste in attesa"
 msgstr "Ausstehende Anfragen"
 
 msgid "Ultimi ordini esperienza"
-msgstr "Letzte Erlebnis-Bestellungen"
+msgstr "Letzte Erlebnisbestellungen"
 
 msgid "# Ordine"
 msgstr "Bestellnr."
@@ -145,16 +145,16 @@ msgstr "Einstellungen öffnen"
 
 # Experience Editor
 msgid "Impostazioni esperienza"
-msgstr "Erlebnis-Einstellungen"
+msgstr "Erlebniseinstellungen"
 
 msgid "Sezioni esperienza"
-msgstr "Erlebnis-Abschnitte"
+msgstr "Erlebnisabschnitte"
 
 msgid "Rimuovi elemento"
 msgstr "Element entfernen"
 
 msgid "Aggiungi almeno un tipo di biglietto con un prezzo valido."
-msgstr "Fügen Sie mindestens einen Tickettyp mit einem gültigen Preis hinzu."
+msgstr "Fügen Sie mindestens einen Tickettyp mit gültigem Preis hinzu."
 
 msgid "✔ Prezzi salvati"
 msgstr "✔ Preise gespeichert"
@@ -190,13 +190,13 @@ msgid "Età massima"
 msgstr "Höchstalter"
 
 msgid "Regole bambini"
-msgstr "Kinderrichtlinien"
+msgstr "Kinderregeln"
 
 msgid "Tipi di biglietto"
-msgstr "Ticketarten"
+msgstr "Tickettypen"
 
 msgid "Aggiungi tipo biglietto"
-msgstr "Ticketart hinzufügen"
+msgstr "Tickettyp hinzufügen"
 
 msgid "Prezzo (€)"
 msgstr "Preis (€)"
@@ -230,7 +230,7 @@ msgid "Frequenza"
 msgstr "Häufigkeit"
 
 msgid "Ricorrenza slot"
-msgstr "Zeitfenster-Wiederholung"
+msgstr "Slot-Wiederholung"
 
 msgid "Giornaliera"
 msgstr "Täglich"
@@ -245,22 +245,22 @@ msgid "Giorni disponibili"
 msgstr "Verfügbare Tage"
 
 msgid "Orari"
-msgstr "Uhrzeiten"
+msgstr "Zeiten"
 
 msgid "Aggiungi orario"
-msgstr "Uhrzeit hinzufügen"
+msgstr "Zeit hinzufügen"
 
 msgid "Slot personalizzati"
-msgstr "Benutzerdefinierte Zeitfenster"
+msgstr "Benutzerdefinierte Slots"
 
 msgid "Aggiungi slot"
-msgstr "Zeitfenster hinzufügen"
+msgstr "Slot hinzufügen"
 
 msgid "Capienza e buffer"
 msgstr "Kapazität & Puffer"
 
 msgid "Capienza slot"
-msgstr "Zeitfenster-Kapazität"
+msgstr "Slot-Kapazität"
 
 msgid "Preavviso minimo (ore)"
 msgstr "Mindestvorlaufzeit (Stunden)"
@@ -304,11 +304,11 @@ msgid "Meeting point alternativi"
 msgstr "Alternative Treffpunkte"
 
 msgid "Nessuno"
-msgstr "Keine"
+msgstr "Keiner"
 
 # Content Sections
 msgid "Cosa include l'esperienza"
-msgstr "Was ist enthalten"
+msgstr "Was das Erlebnis beinhaltet"
 
 msgid "Highlight (uno per riga)"
 msgstr "Highlights (eins pro Zeile)"
@@ -323,13 +323,13 @@ msgid "Consigli utili"
 msgstr "Nützliche Tipps"
 
 msgid "Cosa portare"
-msgstr "Mitbringen"
+msgstr "Was mitzubringen ist"
 
 msgid "Note aggiuntive"
 msgstr "Zusätzliche Hinweise"
 
 msgid "Policy di cancellazione"
-msgstr "Stornierungsrichtlinien"
+msgstr "Stornierungsrichtlinie"
 
 msgid "Testo policy"
 msgstr "Richtlinientext"
@@ -360,7 +360,7 @@ msgid "Schema markup"
 msgstr "Schema-Markup"
 
 msgid "Schema JSON-LD personalizzato"
-msgstr "Benutzerdefiniertes JSON-LD Schema"
+msgstr "Benutzerdefiniertes JSON-LD-Schema"
 
 # Frontend - Widget
 msgid "Controlla disponibilità"
@@ -373,13 +373,13 @@ msgid "Select tickets"
 msgstr "Tickets auswählen"
 
 msgid "Ticket type"
-msgstr "Ticketart"
+msgstr "Tickettyp"
 
 msgid "Price"
 msgstr "Preis"
 
 msgid "Quantity"
-msgstr "Anzahl"
+msgstr "Menge"
 
 msgid "Summary"
 msgstr "Zusammenfassung"
@@ -391,7 +391,7 @@ msgid "Subtotal"
 msgstr "Zwischensumme"
 
 msgid "Select tickets to see the summary"
-msgstr "Tickets auswählen für Zusammenfassung"
+msgstr "Tickets auswählen, um die Zusammenfassung zu sehen"
 
 msgid "Proceed to checkout"
 msgstr "Zur Kasse"
@@ -409,16 +409,16 @@ msgid "Phone number"
 msgstr "Telefonnummer"
 
 msgid "Notes or special requests"
-msgstr "Hinweise oder Sonderwünsche"
+msgstr "Anmerkungen oder besondere Wünsche"
 
 msgid "I would like to receive news and marketing updates."
 msgstr "Ich möchte Neuigkeiten und Marketing-Updates erhalten."
 
 msgid "I agree to the privacy policy and terms of booking."
-msgstr "Ich stimme den Datenschutzrichtlinien und Buchungsbedingungen zu."
+msgstr "Ich stimme der Datenschutzerklärung und den Buchungsbedingungen zu."
 
 msgid "Sending your request…"
-msgstr "Anfrage wird gesendet…"
+msgstr "Ihre Anfrage wird gesendet…"
 
 msgid "Request received! We will reply soon."
 msgstr "Anfrage erhalten! Wir antworten in Kürze."
@@ -433,10 +433,10 @@ msgid "Languages"
 msgstr "Sprachen"
 
 msgid "Open booking panel"
-msgstr "Buchungspanel öffnen"
+msgstr "Buchungsbereich öffnen"
 
 msgid "Close booking panel"
-msgstr "Buchungspanel schließen"
+msgstr "Buchungsbereich schließen"
 
 # Frontend - Checkout
 msgid "Complete your booking"
@@ -482,17 +482,182 @@ msgid "I agree to receive marketing updates about future experiences."
 msgstr "Ich stimme zu, Marketing-Updates über zukünftige Erlebnisse zu erhalten."
 
 msgid "Your experience cart is empty."
-msgstr "Ihr Erlebnis-Warenkorb ist leer."
+msgstr "Ihr Erlebniswarenkorb ist leer."
+
+# Frontend - Experience Page (Template Strings)
+msgid "Da"
+msgstr "Ab"
+
+msgid "Vedi galleria"
+msgstr "Galerie ansehen"
+
+msgid "Lingue disponibili"
+msgstr "Verfügbare Sprachen"
+
+msgid "Perché prenotare con noi"
+msgstr "Warum bei uns buchen"
+
+msgid "Caratteristiche esperienza"
+msgstr "Erlebnismerkmale"
+
+msgid "Uno sguardo all'esperienza"
+msgstr "Ein Blick auf das Erlebnis"
+
+msgid "Regala questa esperienza"
+msgstr "Verschenken Sie dieses Erlebnis"
+
+msgid "Acquista un voucher e invialo con un messaggio personalizzato in pochi clic."
+msgstr "Kaufen Sie einen Gutschein und senden Sie ihn mit einer persönlichen Nachricht in wenigen Klicks."
+
+msgid "Chiudi modulo regalo"
+msgstr "Geschenkformular schließen"
+
+msgid "Acquista un voucher, personalizza un messaggio e invialo via email in pochi clic."
+msgstr "Kaufen Sie einen Gutschein, personalisieren Sie eine Nachricht und senden Sie sie per E-Mail in wenigen Klicks."
+
+msgid "Il tuo nome"
+msgstr "Ihr Name"
+
+msgid "La tua email"
+msgstr "Ihre E-Mail"
+
+msgid "Nome destinatario"
+msgstr "Name des Empfängers"
+
+msgid "Email destinatario"
+msgstr "E-Mail des Empfängers"
+
+msgid "Data di consegna (opzionale)"
+msgstr "Lieferdatum (optional)"
+
+msgid "Invieremo il regalo via email alle 9:00 (Europe/Rome). Lascia vuoto per inviarlo subito dopo il pagamento."
+msgstr "Wir senden das Geschenk per E-Mail um 9:00 Uhr (Europe/Rome). Leer lassen, um es sofort nach der Zahlung zu senden."
+
+msgid "Numero di ospiti"
+msgstr "Anzahl der Gäste"
+
+msgid "Messaggio personale (opzionale)"
+msgstr "Persönliche Nachricht (optional)"
+
+msgid "Extra prepagati"
+msgstr "Vorausbezahlte Extras"
+
+msgid "Potrai verificare il totale e completare il pagamento al checkout. Il destinatario riceverà il voucher la mattina programmata o immediatamente dopo il pagamento se non è stata selezionata una data."
+msgstr "Sie können den Gesamtbetrag überprüfen und die Zahlung an der Kasse abschließen. Der Empfänger erhält den Gutschein am geplanten Morgen oder sofort nach der Zahlung, wenn kein Datum ausgewählt wurde."
+
+msgid "Procedi al pagamento"
+msgstr "Zur Zahlung"
+
+msgid "Perché questa esperienza è speciale"
+msgstr "Warum dieses Erlebnis besonders ist"
+
+msgid "Cosa è incluso"
+msgstr "Was ist inbegriffen"
+
+msgid "Cosa aspettarsi il giorno dell'esperienza e cosa è a pagamento."
+msgstr "Was Sie am Tag des Erlebnisses erwartet und was kostenpflichtig ist."
+
+msgid "Incluso"
+msgstr "Inklusive"
+
+msgid "Non incluso"
+msgstr "Nicht inklusive"
+
+msgid "Punto di ritrovo"
+msgstr "Treffpunkt"
+
+msgid "Da sapere"
+msgstr "Gut zu wissen"
+
+msgid "Suggerimenti utili per pianificare, oltre a note e politiche importanti."
+msgstr "Nützliche Planungstipps sowie wichtige Hinweise und Richtlinien."
+
+msgid "Cosa portare"
+msgstr "Was mitzubringen ist"
+
+msgid "Note"
+msgstr "Hinweise"
+
+msgid "Regole bambini"
+msgstr "Kinderregeln"
+
+msgid "Politica di cancellazione"
+msgstr "Stornierungsrichtlinie"
+
+msgid "Domande frequenti"
+msgstr "Häufig gestellte Fragen"
+
+msgid "Recensioni dei viaggiatori"
+msgstr "Reisendenbewertungen"
+
+msgid "%s su 5"
+msgstr "%s von 5"
+
+msgid "Riepilogo prenotazione"
+msgstr "Buchungsübersicht"
+
+# Months (for calendar)
+msgid "Gennaio"
+msgstr "Januar"
+
+msgid "Febbraio"
+msgstr "Februar"
+
+msgid "Marzo"
+msgstr "März"
+
+msgid "Aprile"
+msgstr "April"
+
+msgid "Maggio"
+msgstr "Mai"
+
+msgid "Giugno"
+msgstr "Juni"
+
+msgid "Luglio"
+msgstr "Juli"
+
+msgid "Agosto"
+msgstr "August"
+
+msgid "Settembre"
+msgstr "September"
+
+msgid "Ottobre"
+msgstr "Oktober"
+
+msgid "Novembre"
+msgstr "November"
+
+msgid "Dicembre"
+msgstr "Dezember"
+
+msgid "Caricamento..."
+msgstr "Laden..."
+
+# Booking widget strings
+msgid "Tipo biglietto"
+msgstr "Tickettyp"
+
+msgid "Durata"
+msgstr "Dauer"
+
+msgid "Seleziona almeno 1 biglietto"
+msgstr "Mindestens 1 Ticket auswählen"
+
+msgid "Adulto"
+msgstr "Erwachsener"
 
 # Frontend - Experience Page
 msgid "Overview"
-msgstr "Übersicht"
+msgstr "Überblick"
 
 msgid "Highlights"
 msgstr "Highlights"
 
 msgid "What's included"
-msgstr "Was ist enthalten"
+msgstr "Was inbegriffen ist"
 
 msgid "and what's not"
 msgstr "und was nicht"
@@ -507,19 +672,19 @@ msgid "Good to know"
 msgstr "Gut zu wissen"
 
 msgid "What to bring"
-msgstr "Mitbringen"
+msgstr "Was mitzubringen ist"
 
 msgid "Notes"
 msgstr "Hinweise"
 
 msgid "Cancellation policy"
-msgstr "Stornierungsrichtlinien"
+msgstr "Stornierungsrichtlinie"
 
 msgid "Frequently asked questions"
 msgstr "Häufig gestellte Fragen"
 
 msgid "Traveler reviews"
-msgstr "Reisebewertungen"
+msgstr "Reisendenbewertungen"
 
 msgid "Riepilogo prenotazione"
 msgstr "Buchungsübersicht"
@@ -529,7 +694,7 @@ msgstr "Warum bei uns buchen"
 
 # Frontend - List/Archive
 msgid "Search"
-msgstr "Suche"
+msgstr "Suchen"
 
 msgid "Search experiences…"
 msgstr "Erlebnisse suchen…"
@@ -635,7 +800,7 @@ msgid "Approved"
 msgstr "Genehmigt"
 
 msgid "Waiting payment"
-msgstr "Zahlung ausstehend"
+msgstr "Zahlung erwartet"
 
 msgid "Declined"
 msgstr "Abgelehnt"
@@ -666,7 +831,7 @@ msgid "Open payment link"
 msgstr "Zahlungslink öffnen"
 
 msgid "Payment request"
-msgstr "Zahlungsanfrage"
+msgstr "Zahlungsaufforderung"
 
 msgid "Confirm booking"
 msgstr "Buchung bestätigen"
@@ -697,7 +862,7 @@ msgid "Numero ordine"
 msgstr "Bestellnummer"
 
 msgid "Note del cliente"
-msgstr "Kundenhinweise"
+msgstr "Kundennotizen"
 
 msgid "Aggiungi a Google Calendar"
 msgstr "Zu Google Kalender hinzufügen"
@@ -706,10 +871,10 @@ msgid "Per qualsiasi richiesta rispondi a questa email, saremo felici di aiutart
 msgstr "Bei Fragen antworten Sie auf diese E-Mail, wir helfen Ihnen gerne."
 
 msgid "Ci vediamo presto per %s"
-msgstr "Bis bald bei %s"
+msgstr "Wir sehen uns bald bei %s"
 
 msgid "Manca poco alla tua esperienza: ecco un promemoria con data, orario e punto di incontro."
-msgstr "Ihr Erlebnis steht bevor: Hier eine Erinnerung mit Datum, Uhrzeit und Treffpunkt."
+msgstr "Ihr Erlebnis steht kurz bevor: Hier ist eine Erinnerung mit Datum, Uhrzeit und Treffpunkt."
 
 msgid "Nuova prenotazione – %s"
 msgstr "Neue Buchung – %s"
@@ -718,7 +883,7 @@ msgid "Prenotazione annullata – %s"
 msgstr "Buchung storniert – %s"
 
 msgid "Riepilogo dettagli della prenotazione:"
-msgstr "Buchungsdetails:"
+msgstr "Zusammenfassung der Buchungsdetails:"
 
 msgid "Partecipanti"
 msgstr "Teilnehmer"
@@ -737,7 +902,7 @@ msgstr "Bestellung in WooCommerce öffnen"
 
 # Settings Page
 msgid "FP Experiences Settings"
-msgstr "FP Erlebnisse Einstellungen"
+msgstr "FP Experiences Einstellungen"
 
 msgid "General"
 msgstr "Allgemein"
@@ -767,29 +932,29 @@ msgid "Webmaster email"
 msgstr "Webmaster-E-Mail"
 
 msgid "Meeting points module"
-msgstr "Treffpunkt-Modul"
+msgstr "Treffpunkte-Modul"
 
 msgid "Enable meeting points management and widgets."
 msgstr "Treffpunktverwaltung und Widgets aktivieren."
 
 # Validation Messages
 msgid "Your session has expired. Please refresh and try again."
-msgstr "Ihre Sitzung ist abgelaufen. Bitte aktualisieren Sie die Seite und versuchen Sie es erneut."
+msgstr "Ihre Sitzung ist abgelaufen. Bitte aktualisieren Sie und versuchen Sie es erneut."
 
 msgid "Selected slot is no longer available."
-msgstr "Das ausgewählte Zeitfenster ist nicht mehr verfügbar."
+msgstr "Der ausgewählte Termin ist nicht mehr verfügbar."
 
 msgid "Selected slot is sold out."
-msgstr "Das ausgewählte Zeitfenster ist ausverkauft."
+msgstr "Der ausgewählte Termin ist ausverkauft."
 
 msgid "The selected slot cannot accommodate the requested party size."
-msgstr "Das ausgewählte Zeitfenster kann die gewünschte Gruppengröße nicht aufnehmen."
+msgstr "Der ausgewählte Termin kann die angeforderte Gruppengröße nicht aufnehmen."
 
 msgid "Please provide a valid email address so we can reply to your request."
 msgstr "Bitte geben Sie eine gültige E-Mail-Adresse an, damit wir auf Ihre Anfrage antworten können."
 
 msgid "You must accept the privacy policy to send a request."
-msgstr "Sie müssen die Datenschutzrichtlinie akzeptieren, um eine Anfrage zu senden."
+msgstr "Sie müssen die Datenschutzerklärung akzeptieren, um eine Anfrage zu senden."
 
 msgid "Enter a valid email address."
 msgstr "Geben Sie eine gültige E-Mail-Adresse ein."
@@ -801,30 +966,30 @@ msgid "Enter your email address."
 msgstr "Geben Sie Ihre E-Mail-Adresse ein."
 
 msgid "Accept the privacy policy to continue."
-msgstr "Akzeptieren Sie die Datenschutzrichtlinie, um fortzufahren."
+msgstr "Akzeptieren Sie die Datenschutzerklärung, um fortzufahren."
 
 # Success Messages
 msgid "Thank you! Your request was received and our team will confirm availability shortly."
 msgstr "Vielen Dank! Ihre Anfrage wurde erhalten und unser Team wird die Verfügbarkeit in Kürze bestätigen."
 
 msgid "We received your experience request"
-msgstr "Wir haben Ihre Erlebnis-Anfrage erhalten"
+msgstr "Wir haben Ihre Erlebnisanfrage erhalten"
 
 msgid "Thank you for your request. Our team will get back to you shortly."
 msgstr "Vielen Dank für Ihre Anfrage. Unser Team wird sich in Kürze bei Ihnen melden."
 
 # Permission Errors
 msgid "You do not have permission to manage FP Experiences bookings."
-msgstr "Sie haben keine Berechtigung, FP Erlebnisse Buchungen zu verwalten."
+msgstr "Sie haben keine Berechtigung, FP Experiences Buchungen zu verwalten."
 
 msgid "You do not have permission to access the FP Experiences dashboard."
-msgstr "Sie haben keine Berechtigung, auf das FP Erlebnisse Dashboard zuzugreifen."
+msgstr "Sie haben keine Berechtigung, auf das FP Experiences Dashboard zuzugreifen."
 
 msgid "You do not have permission to manage FP Experiences settings."
-msgstr "Sie haben keine Berechtigung, FP Erlebnisse Einstellungen zu verwalten."
+msgstr "Sie haben keine Berechtigung, FP Experiences Einstellungen zu verwalten."
 
 msgid "You do not have permission to view FP Experiences logs."
-msgstr "Sie haben keine Berechtigung, FP Erlebnisse Protokolle anzuzeigen."
+msgstr "Sie haben keine Berechtigung, FP Experiences Protokolle anzuzeigen."
 
 # Misc UI
 msgid "Yes"
@@ -867,7 +1032,7 @@ msgid "Actions"
 msgstr "Aktionen"
 
 msgid "Slot"
-msgstr "Zeitfenster"
+msgstr "Termin"
 
 msgid "Tickets"
 msgstr "Tickets"
@@ -899,10 +1064,10 @@ msgstr "Alternative Treffpunkte"
 
 # Check-in Console
 msgid "Console check-in"
-msgstr "Check-in Konsole"
+msgstr "Check-in-Konsole"
 
 msgid "Segna gli ospiti al loro arrivo e controlla le prenotazioni imminenti."
-msgstr "Markieren Sie Gäste bei Ankunft und überprüfen Sie bevorstehende Buchungen."
+msgstr "Markieren Sie Gäste bei ihrer Ankunft und überprüfen Sie bevorstehende Buchungen."
 
 msgid "Nessuna prenotazione in arrivo nelle prossime 48 ore."
 msgstr "Keine Buchungen in den nächsten 48 Stunden."
@@ -924,10 +1089,10 @@ msgstr "Check-in bestätigt."
 
 # Onboarding
 msgid "Benvenuto in FP Experiences"
-msgstr "Willkommen bei FP Erlebnisse"
+msgstr "Willkommen bei FP Experiences"
 
 msgid "Onboarding"
-msgstr "Einrichtung"
+msgstr "Onboarding"
 
 msgid "1. Crea o collega le esperienze"
 msgstr "1. Erlebnisse erstellen oder verknüpfen"
@@ -954,7 +1119,7 @@ msgid "Strumenti utili"
 msgstr "Nützliche Werkzeuge"
 
 msgid "Segna onboarding come completato"
-msgstr "Einrichtung als abgeschlossen markieren"
+msgstr "Onboarding als abgeschlossen markieren"
 
 # Gift Vouchers
 msgid "Gift Vouchers"
@@ -977,16 +1142,16 @@ msgid "Manual Booking"
 msgstr "Manuelle Buchung"
 
 msgid "Manual booking created. Share the payment link: %s"
-msgstr "Manuelle Buchung erstellt. Zahlungslink teilen: %s"
+msgstr "Manuelle Buchung erstellt. Teilen Sie den Zahlungslink: %s"
 
 msgid "FP Experiences — Operations"
-msgstr "FP Erlebnisse — Betrieb"
+msgstr "FP Experiences — Betrieb"
 
 msgid "Upcoming reservations:"
-msgstr "Kommende Reservierungen:"
+msgstr "Bevorstehende Reservierungen:"
 
 msgid "No upcoming reservations found."
-msgstr "Keine kommenden Reservierungen gefunden."
+msgstr "Keine bevorstehenden Reservierungen gefunden."
 
 msgid "Customer name"
 msgstr "Kundenname"
@@ -1004,34 +1169,34 @@ msgid "Untitled"
 msgstr "Ohne Titel"
 
 msgid "Select an experience and slot before creating a booking."
-msgstr "Wählen Sie ein Erlebnis und Zeitfenster vor dem Erstellen einer Buchung."
+msgstr "Wählen Sie ein Erlebnis und einen Termin, bevor Sie eine Buchung erstellen."
 
 msgid "Provide at least one ticket quantity."
 msgstr "Geben Sie mindestens eine Ticketmenge an."
 
 msgid "No upcoming slots for this experience."
-msgstr "Keine kommenden Zeitfenster für dieses Erlebnis."
+msgstr "Keine bevorstehenden Termine für dieses Erlebnis."
 
 msgid "Configure ticket types for this experience to enable manual bookings."
-msgstr "Konfigurieren Sie Ticketarten für dieses Erlebnis, um manuelle Buchungen zu aktivieren."
+msgstr "Konfigurieren Sie Tickettypen für dieses Erlebnis, um manuelle Buchungen zu ermöglichen."
 
 msgid "No extras configured for this experience."
 msgstr "Keine Extras für dieses Erlebnis konfiguriert."
 
 msgid "Selecting a different experience reloads available slots."
-msgstr "Beim Auswählen eines anderen Erlebnisses werden verfügbare Zeitfenster neu geladen."
+msgstr "Die Auswahl eines anderen Erlebnisses lädt verfügbare Termine neu."
 
 msgid "Slot updated successfully."
-msgstr "Zeitfenster erfolgreich aktualisiert."
+msgstr "Termin erfolgreich aktualisiert."
 
 msgid "Unable to update the slot. Please try again."
-msgstr "Zeitfenster konnte nicht aktualisiert werden. Bitte versuchen Sie es erneut."
+msgstr "Termin konnte nicht aktualisiert werden. Bitte versuchen Sie es erneut."
 
 msgid "New total capacity for this slot"
-msgstr "Neue Gesamtkapazität für dieses Zeitfenster"
+msgstr "Neue Gesamtkapazität für diesen Termin"
 
 msgid "Impossibile registrare il check-in, riprova più tardi."
-msgstr "Check-in konnte nicht registriert werden, bitte später erneut versuchen."
+msgstr "Check-in konnte nicht registriert werden, bitte versuchen Sie es später erneut."
 
 msgid "Aggiornamento"
 msgstr "Aktualisierung"
@@ -1040,22 +1205,22 @@ msgid "Percorso di navigazione"
 msgstr "Navigationspfad"
 
 msgid "FP Experiences — Dashboard"
-msgstr "FP Erlebnisse — Dashboard"
+msgstr "FP Experiences — Dashboard"
 
 msgid "Ancora nessun ordine registrato per le esperienze."
-msgstr "Noch keine Erlebnis-Bestellungen verzeichnet."
+msgstr "Noch keine Erlebnisbestellungen erfasst."
 
 msgid "%1$s ospiti su %2$s posti disponibili nei prossimi 7 giorni."
 msgstr "%1$s Gäste von %2$s verfügbaren Plätzen in den nächsten 7 Tagen."
 
 msgid "Nessun slot programmato per la settimana corrente."
-msgstr "Keine Zeitfenster für die aktuelle Woche geplant."
+msgstr "Keine Termine für die aktuelle Woche geplant."
 
 msgid "Testo sintetico mostrato in anteprima e nei widget."
-msgstr "Kurztext, der in Vorschauen und Widgets angezeigt wird."
+msgstr "Kurztext in Vorschauen und Widgets angezeigt."
 
 msgid "Es. Visita guidata alla Galleria degli Uffizi"
-msgstr "z.B. Führung durch die Uffizien-Galerie"
+msgstr "Z.B. Führung durch die Uffizien-Galerie"
 
 msgid "Suggerito massimo 160 caratteri."
 msgstr "Empfohlen maximal 160 Zeichen."
@@ -1073,7 +1238,7 @@ msgid "Le lingue vengono mostrate nei badge e nel markup schema."
 msgstr "Sprachen werden in Badges und Schema-Markup angezeigt."
 
 msgid "Numero minimo richiesto per confermare la partenza."
-msgstr "Mindestanzahl zur Bestätigung der Abfahrt erforderlich."
+msgstr "Mindestanzahl für die Bestätigung der Abfahrt erforderlich."
 
 msgid "Numero massimo di posti disponibili complessivi."
 msgstr "Maximale Gesamtzahl verfügbarer Plätze."
@@ -1088,13 +1253,13 @@ msgid "Note su policy bambini, passeggini o riduzioni."
 msgstr "Hinweise zu Kinderrichtlinien, Kinderwagen oder Ermäßigungen."
 
 msgid "Es. Gratuito sotto i 6 anni accompagnati da un adulto"
-msgstr "z.B. Kostenlos für Kinder unter 6 Jahren in Begleitung eines Erwachsenen"
+msgstr "Z.B. Kostenlos für Kinder unter 6 Jahren in Begleitung eines Erwachsenen"
 
 msgid "Testo mostrato nelle informazioni aggiuntive."
 msgstr "Text in zusätzlichen Informationen angezeigt."
 
 msgid "Es. Adulto"
-msgstr "z.B. Erwachsener"
+msgstr "Z.B. Erwachsener"
 
 msgid "adulto"
 msgstr "erwachsener"
@@ -1109,13 +1274,13 @@ msgid "Calcolo"
 msgstr "Berechnung"
 
 msgid "Scegli se generare slot giornalieri, settimanali o manuali."
-msgstr "Wählen Sie, ob tägliche, wöchentliche oder manuelle Zeitfenster generiert werden sollen."
+msgstr "Wählen Sie, ob Sie tägliche, wöchentliche oder manuelle Termine generieren möchten."
 
 msgid "La frequenza determina quali blocchi attivare qui sotto."
 msgstr "Die Häufigkeit bestimmt, welche Blöcke unten aktiviert werden."
 
 msgid "Orario disponibile"
-msgstr "Verfügbare Zeit"
+msgstr "Verfügbare Uhrzeit"
 
 msgid "Qual è il punto di ritrovo?"
 msgstr "Was ist der Treffpunkt?"
@@ -1124,7 +1289,7 @@ msgid "IVA"
 msgstr "MwSt."
 
 msgid "Classe tassa WooCommerce"
-msgstr "WooCommerce Steuerklasse"
+msgstr "WooCommerce-Steuerklasse"
 
 msgid "Seleziona classe tassa"
 msgstr "Steuerklasse auswählen"
@@ -1133,34 +1298,34 @@ msgid "Aliquota standard"
 msgstr "Standardsatz"
 
 msgid "Attiva la funzione Meeting Point dalle impostazioni del plugin per gestire i luoghi di incontro."
-msgstr "Aktivieren Sie Treffpunkte in den Plugin-Einstellungen, um Treffpunkte zu verwalten."
+msgstr "Aktivieren Sie die Treffpunkt-Funktion in den Plugin-Einstellungen, um Treffpunkte zu verwalten."
 
 msgid "Seleziona uno o più punti di incontro alternativi per casi particolari."
-msgstr "Wählen Sie einen oder mehrere alternative Treffpunkte für Sonderfälle."
+msgstr "Wählen Sie einen oder mehrere alternative Treffpunkte für besondere Fälle."
 
 msgid "Usa CTRL/CMD + clic per selezionare più voci."
-msgstr "Verwenden Sie STRG/CMD + Klick, um mehrere Elemente auszuwählen."
+msgstr "Verwenden Sie STRG/CMD + Klick, um mehrere Einträge auszuwählen."
 
 msgid "Accesso prioritario&#10;Guida certificata&#10;Piccoli gruppi"
-msgstr "Bevorzugter Zugang&#10;Zertifizierter Guide&#10;Kleine Gruppen"
+msgstr "Bevorzugter Zugang&#10;Zertifizierter Führer&#10;Kleine Gruppen"
 
 msgid "Puoi utilizzare HTML semplice per grassetti o link."
-msgstr "Sie können einfaches HTML für Fettschrift oder Links verwenden."
+msgstr "Sie können einfaches HTML für Fettdruck oder Links verwenden."
 
 msgid "Esempio: Cancellazione gratuita fino a 48 ore dalla partenza."
 msgstr "Beispiel: Kostenlose Stornierung bis 48 Stunden vor Abfahrt."
 
 msgid "Es. Tour segreto di Firenze | Brand"
-msgstr "z.B. Geheime Florenz-Tour | Marke"
+msgstr "Z.B. Geheime Florenz-Tour | Marke"
 
 msgid "Incolla JSON-LD valido per sovrascrivere lo schema generato automaticamente."
-msgstr "Gültiges JSON-LD einfügen, um das automatisch generierte Schema zu überschreiben."
+msgstr "Fügen Sie gültiges JSON-LD ein, um das automatisch generierte Schema zu überschreiben."
 
 msgid "Lascia vuoto per usare lo schema standard dell'esperienza."
-msgstr "Leer lassen, um das Standard-Erlebnis-Schema zu verwenden."
+msgstr "Leer lassen, um das Standard-Erlebnisschema zu verwenden."
 
 msgid "Questa esperienza è pubblicata senza prezzi configurati. Aggiungi almeno un prezzo prima di accettare prenotazioni."
-msgstr "Dieses Erlebnis wurde ohne konfigurierte Preise veröffentlicht. Fügen Sie mindestens einen Preis hinzu, bevor Sie Buchungen annehmen."
+msgstr "Dieses Erlebnis ist ohne konfigurierte Preise veröffentlicht. Fügen Sie mindestens einen Preis hinzu, bevor Sie Buchungen akzeptieren."
 
 msgid "Prezzo gruppo (opzionale)"
 msgstr "Gruppenpreis (optional)"
@@ -1173,22 +1338,22 @@ msgstr "Maximale Gruppenkapazität"
 
 # Elementor Widgets
 msgid "FP Experiences Calendar"
-msgstr "FP Erlebnisse Kalender"
+msgstr "FP Experiences Kalender"
 
 msgid "FP Experience Page"
-msgstr "FP Erlebnis-Seite"
+msgstr "FP Erlebnisseite"
 
 msgid "FP Experiences List"
-msgstr "FP Erlebnisse Liste"
+msgstr "FP Erlebnisliste"
 
 msgid "FP Meeting Points"
 msgstr "FP Treffpunkte"
 
 msgid "FP Experiences Widget"
-msgstr "FP Erlebnisse Widget"
+msgstr "FP Experiences Widget"
 
 msgid "FP Experiences Checkout"
-msgstr "FP Erlebnisse Kasse"
+msgstr "FP Experiences Kasse"
 
 msgid "Months to display"
 msgstr "Anzuzeigende Monate"
@@ -1209,13 +1374,13 @@ msgid "Reviews"
 msgstr "Bewertungen"
 
 msgid "Sticky availability button"
-msgstr "Sticky Verfügbarkeits-Button"
+msgstr "Fixierte Verfügbarkeitsschaltfläche"
 
 msgid "Container"
 msgstr "Container"
 
 msgid "Boxed"
-msgstr "Begrenzt"
+msgstr "Umrahmt"
 
 msgid "Full width"
 msgstr "Volle Breite"
@@ -1227,7 +1392,7 @@ msgid "Side padding (px)"
 msgstr "Seitenabstand (px)"
 
 msgid "Sidebar position"
-msgstr "Seitenleisten-Position"
+msgstr "Seitenleistenposition"
 
 msgid "Right column"
 msgstr "Rechte Spalte"
@@ -1257,10 +1422,10 @@ msgid "CTA behaviour"
 msgstr "CTA-Verhalten"
 
 msgid "Open experience page"
-msgstr "Erlebnis-Seite öffnen"
+msgstr "Erlebnisseite öffnen"
 
 msgid "Scroll to booking widget"
-msgstr "Zum Buchungs-Widget scrollen"
+msgstr "Zum Buchungswidget scrollen"
 
 msgid "Card spacing"
 msgstr "Kartenabstand"
@@ -1275,7 +1440,7 @@ msgid "Spacious"
 msgstr "Geräumig"
 
 msgid "Show \"price from\" badge"
-msgstr "\"Preis ab\" Badge anzeigen"
+msgstr "\"Preis ab\"-Badge anzeigen"
 
 msgid "Show language badge"
 msgstr "Sprach-Badge anzeigen"
@@ -1287,7 +1452,7 @@ msgid "Show family badge"
 msgstr "Familien-Badge anzeigen"
 
 msgid "Sticky summary"
-msgstr "Sticky Zusammenfassung"
+msgstr "Fixierte Zusammenfassung"
 
 msgid "Show inline calendar"
 msgstr "Inline-Kalender anzeigen"
@@ -1296,10 +1461,10 @@ msgid "Show"
 msgstr "Anzeigen"
 
 msgid "Hide"
-msgstr "Verstecken"
+msgstr "Verbergen"
 
 msgid "Inherit"
-msgstr "Vererben"
+msgstr "Erben"
 
 msgid "Dark (.fp-theme-dark)"
 msgstr "Dunkel (.fp-theme-dark)"
@@ -1330,25 +1495,25 @@ msgid "%s availability"
 msgstr "%s Verfügbarkeit"
 
 msgid "%d slots"
-msgstr "%d Zeitfenster"
+msgstr "%d Termine"
 
 msgid "%d places left"
 msgstr "%d Plätze übrig"
 
 msgid "Select a date to view time slots"
-msgstr "Datum wählen, um Zeitfenster anzuzeigen"
+msgstr "Datum auswählen, um Zeitfenster anzuzeigen"
 
 msgid "Updating price…"
 msgstr "Preis wird aktualisiert…"
 
 msgid "We could not refresh the price. Please try again."
-msgstr "Preis konnte nicht aktualisiert werden. Bitte erneut versuchen."
+msgstr "Preis konnte nicht aktualisiert werden. Bitte versuchen Sie es erneut."
 
 msgid "Choose a time to confirm price and availability."
-msgstr "Zeit wählen, um Preis und Verfügbarkeit zu bestätigen."
+msgstr "Wählen Sie eine Zeit, um Preis und Verfügbarkeit zu bestätigen."
 
 msgid "Taxes included where applicable."
-msgstr "Steuern inkl., falls zutreffend."
+msgstr "Steuern inklusive, wo zutreffend."
 
 msgid "Base price"
 msgstr "Grundpreis"
@@ -1360,7 +1525,7 @@ msgid "From €%s"
 msgstr "Ab €%s"
 
 msgid "Experiences navigation"
-msgstr "Erlebnisse-Navigation"
+msgstr "Erlebnisnavigation"
 
 msgid "Change layout"
 msgstr "Layout ändern"
@@ -1370,16 +1535,16 @@ msgid "Please complete the %s field."
 msgstr "Bitte füllen Sie das Feld %s aus."
 
 msgid "Payment methods will load here from WooCommerce gateways."
-msgstr "Zahlungsmethoden werden hier von WooCommerce Gateways geladen."
+msgstr "Zahlungsmethoden werden hier von WooCommerce-Gateways geladen."
 
 msgid "Your experience selection will appear here."
-msgstr "Ihre Erlebnis-Auswahl erscheint hier."
+msgstr "Ihre Erlebnisauswahl erscheint hier."
 
 msgid "Payment is currently being processed. If you have completed checkout, you can close this page."
-msgstr "Zahlung wird verarbeitet. Wenn Sie die Kasse abgeschlossen haben, können Sie diese Seite schließen."
+msgstr "Zahlung wird derzeit verarbeitet. Wenn Sie den Checkout abgeschlossen haben, können Sie diese Seite schließen."
 
 msgid "Experience sections"
-msgstr "Erlebnis-Abschnitte"
+msgstr "Erlebnisabschnitte"
 
 msgid "%s out of 5"
 msgstr "%s von 5"
@@ -1397,5 +1562,5 @@ msgstr[1] "%d Minuten"
 
 msgid "%dh"
 msgid_plural "%dh"
-msgstr[0] "%d Std."
-msgstr[1] "%d Std."
+msgstr[0] "%dh"
+msgstr[1] "%dh"
