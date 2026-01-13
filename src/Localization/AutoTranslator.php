@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace FP_Exp\Localization;
 
+use FP_Exp\Core\Hook\HookableInterface;
+
 use function add_filter;
 
-final class AutoTranslator
+final class AutoTranslator implements HookableInterface
 {
     /**
      * @var array<string, string>
@@ -285,25 +287,18 @@ final class AutoTranslator
 
 	private function should_translate_to_english(): bool
 	{
-		// 1. Verifica se FP-Multilanguage è attivo
-		if (class_exists('FPML_Language')) {
-			$current_lang = \FPML_Language::instance()->get_current_language();
-			return $current_lang === 'en';
+		// Usa la classe di compatibilità multilingua unificata
+		$current_lang = \FP_Exp\Compatibility\Multilanguage::get_current_language();
+
+		if ($current_lang === 'en') {
+			return true;
 		}
 
-		// 2. Fallback: verifica Polylang
-		if (function_exists('pll_current_language')) {
-			$pll_lang = pll_current_language();
-			return $pll_lang === 'en' || $pll_lang === 'en_US';
+		// Fallback: se nessun plugin multilingua è attivo, verifica browser + locale sito
+		if (!\FP_Exp\Compatibility\Multilanguage::is_multilanguage_active()) {
+			return $this->is_english_browser() && $this->is_site_locale_english();
 		}
 
-		// 3. Fallback: verifica WPML
-		if (defined('ICL_LANGUAGE_CODE')) {
-			$wpml_lang = apply_filters('wpml_current_language', null);
-			return $wpml_lang === 'en';
-		}
-
-		// 4. Fallback: verifica browser + locale sito
-		return $this->is_english_browser() && $this->is_site_locale_english();
+		return false;
 	}
 }

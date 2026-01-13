@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace FP_Exp\Migrations;
 
+use FP_Exp\Core\Hook\HookableInterface;
 use FP_Exp\Migrations\Migrations\AddAddonImageMeta;
 use FP_Exp\Migrations\Migrations\CleanupDuplicatePageIds;
 use FP_Exp\Migrations\Migrations\CreateGiftVoucherTable;
@@ -17,7 +18,7 @@ use function time;
 use function update_option;
 use function wp_installing;
 
-final class Runner
+final class Runner implements HookableInterface
 {
     private const OPTION = 'fp_exp_migrations';
 

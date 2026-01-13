@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace FP_Exp\Integrations;
 
+use FP_Exp\Core\Hook\HookableInterface;
 use FP_Exp\Utils\Consent;
 use FP_Exp\Utils\Helpers;
 
@@ -11,7 +12,7 @@ use function add_action;
 use function esc_html;
 use function is_array;
 
-final class Clarity
+final class Clarity implements HookableInterface
 {
     public function register_hooks(): void
     {

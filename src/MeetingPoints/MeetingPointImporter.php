@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace FP_Exp\MeetingPoints;
 
+use FP_Exp\Core\Hook\HookableInterface;
 use FP_Exp\Utils\Helpers;
 use WP_Error;
 
@@ -37,7 +38,7 @@ use function strtolower;
 
 use const MINUTE_IN_SECONDS;
 
-final class MeetingPointImporter
+final class MeetingPointImporter implements HookableInterface
 {
     private const TRANSIENT_KEY = 'fp_exp_meeting_point_import_notice';
 

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace FP_Exp\Booking;
 
+use FP_Exp\Core\Hook\HookableInterface;
 use FP_Exp\Utils\Helpers;
 use FP_Exp\Utils\Logger;
 use WP_Error;
@@ -35,7 +36,7 @@ use function wp_unslash;
 use const DAY_IN_SECONDS;
 use const WEEK_IN_SECONDS;
 
-final class Cart
+final class Cart implements HookableInterface
 {
     private const COOKIE_NAME = 'fp_exp_sid';
 
@@ -47,21 +48,43 @@ final class Cart
 
     private const LOCK_TTL = 900; // 15 minuti
 
-    private static ?Cart $instance = null;
-
     private ?string $session_id = null;
 
-    private function __construct()
+    /**
+     * Cart constructor.
+     * 
+     * @deprecated 1.2.0 Use dependency injection instead. Kept for backward compatibility.
+     *             This class should be resolved via Container.
+     */
+    public function __construct()
     {
     }
 
+    /**
+     * Get cart instance (singleton for backward compatibility).
+     * 
+     * @deprecated 1.2.0 Use dependency injection via Container instead.
+     *             This method is kept for backward compatibility but will be removed in version 2.0.0.
+     * @return Cart
+     */
     public static function instance(): Cart
     {
-        if (null === self::$instance) {
-            self::$instance = new self();
+        // Try to get from container first (new architecture)
+        $kernel = \FP_Exp\Core\Bootstrap\Bootstrap::kernel();
+        if ($kernel !== null) {
+            $container = $kernel->container();
+            if ($container->has(self::class)) {
+                return $container->make(self::class);
+            }
         }
-
-        return self::$instance;
+        
+        // Fallback to old singleton pattern (backward compatibility)
+        static $instance = null;
+        if (null === $instance) {
+            $instance = new self();
+        }
+        
+        return $instance;
     }
 
     public function register_hooks(): void

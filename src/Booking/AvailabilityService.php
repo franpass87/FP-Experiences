@@ -10,11 +10,13 @@ use DateTimeImmutable;
 use DateTimeZone;
 use Exception;
 use FP_Exp\Utils\Helpers;
+use WP_Error;
 
 use function absint;
 use function get_post_meta;
 use function in_array;
 use function is_array;
+use function is_wp_error;
 use function sanitize_key;
 use function sanitize_text_field;
 
@@ -516,6 +518,64 @@ final class AvailabilityService
         }
 
         return $slots;
+    }
+
+    /**
+     * Get virtual availability (wrapper for REST API compatibility).
+     * 
+     * @param int $experience_id
+     * @param string $start Date string (YYYY-MM-DD)
+     * @param string $end Date string (YYYY-MM-DD)
+     * @return array|WP_Error Array of available slots or WP_Error on failure
+     */
+    public static function get_virtual_availability(int $experience_id, string $start, string $end)
+    {
+        try {
+            $experience_id = absint($experience_id);
+            if ($experience_id <= 0) {
+                return new \WP_Error(
+                    'invalid_experience',
+                    __('ID esperienza non valido.', 'fp-experiences'),
+                    ['status' => 400]
+                );
+            }
+
+            // Validate date format
+            if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $start) || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $end)) {
+                return new \WP_Error(
+                    'invalid_date_format',
+                    __('Formato data non valido. Usa YYYY-MM-DD.', 'fp-experiences'),
+                    ['status' => 400]
+                );
+            }
+
+            // Convert dates to UTC datetime strings for get_virtual_slots
+            $start_utc = $start . ' 00:00:00';
+            $end_utc = $end . ' 23:59:59';
+
+            $slots = self::get_virtual_slots($experience_id, $start_utc, $end_utc);
+
+            // Format for REST API response
+            $availability = [];
+            foreach ($slots as $slot) {
+                $availability[] = [
+                    'date' => substr($slot['start'] ?? '', 0, 10), // Extract date part
+                    'start' => $slot['start'] ?? '',
+                    'end' => $slot['end'] ?? '',
+                    'capacity_total' => (int) ($slot['capacity_total'] ?? 0),
+                    'capacity_remaining' => (int) ($slot['capacity_remaining'] ?? 0),
+                    'available' => (int) ($slot['capacity_remaining'] ?? 0) > 0,
+                ];
+            }
+
+            return $availability;
+        } catch (\Throwable $e) {
+            return new \WP_Error(
+                'availability_error',
+                __('Errore nel calcolo disponibilità: ', 'fp-experiences') . $e->getMessage(),
+                ['status' => 500]
+            );
+        }
     }
 }
 

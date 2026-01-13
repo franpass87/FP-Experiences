@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace FP_Exp\Integrations;
 
+use FP_Exp\Core\Hook\HookableInterface;
+
 use function absint;
 use function add_action;
 use function function_exists;
@@ -16,9 +18,14 @@ use function wp_insert_post;
 /**
  * Manages a single virtual WooCommerce product for all experiences
  */
-final class ExperienceProduct
+final class ExperienceProduct implements HookableInterface
 {
     private const OPTION_KEY = 'fp_exp_wc_product_id';
+
+    public function register_hooks(): void
+    {
+        $this->register();
+    }
 
     public function register(): void
     {

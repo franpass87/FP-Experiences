@@ -4,13 +4,14 @@ declare(strict_types=1);
 
 namespace FP_Exp\Shortcodes;
 
+use FP_Exp\Core\Hook\HookableInterface;
 use FP_Exp\Utils\Helpers;
 use WP_Post;
 
 use function add_action;
 use function did_action;
 
-final class Registrar
+final class Registrar implements HookableInterface
 {
     /**
      * @var array<int, BaseShortcode>

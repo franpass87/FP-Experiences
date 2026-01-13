@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace FP_Exp\Admin;
 
 use FP_Exp\Admin\Traits\EmptyStateRenderer;
+use FP_Exp\Core\Hook\HookableInterface;
 use FP_Exp\Utils\Helpers;
 use FP_Exp\Utils\Logger;
 
@@ -18,22 +19,50 @@ use function esc_html;
 use function esc_html__;
 use function esc_url;
 use function get_bloginfo;
+use function get_current_screen;
 use function nocache_headers;
 use function sanitize_key;
 use function sanitize_text_field;
 use function submit_button;
 use function wp_die;
+use function wp_enqueue_style;
 use function wp_json_encode;
 use function wp_nonce_field;
 use function wp_unslash;
 
-final class LogsPage
+final class LogsPage implements HookableInterface
 {
     use EmptyStateRenderer;
 
     public function register_hooks(): void
     {
         // Intentionally left blank; menu registered via AdminMenu.
+        add_action('admin_enqueue_scripts', [$this, 'enqueue_assets']);
+    }
+
+    public function enqueue_assets(): void
+    {
+        $screen = get_current_screen();
+        // Verifica anche il hook e il page parameter per maggiore sicurezza
+        $is_logs_page = $screen && (
+            'fp-exp-dashboard_page_fp_exp_logs' === $screen->id ||
+            (isset($_GET['page']) && $_GET['page'] === 'fp_exp_logs')
+        );
+        
+        if (! $is_logs_page) {
+            return;
+        }
+
+        $admin_css = Helpers::resolve_asset_rel([
+            'assets/css/dist/fp-experiences-admin.min.css',
+            'assets/css/admin.css',
+        ]);
+        wp_enqueue_style(
+            'fp-exp-admin',
+            FP_EXP_PLUGIN_URL . $admin_css,
+            [],
+            Helpers::asset_version($admin_css)
+        );
     }
 
     public function render_page(): void

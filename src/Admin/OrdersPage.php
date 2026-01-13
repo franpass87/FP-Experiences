@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace FP_Exp\Admin;
 
+use FP_Exp\Core\Hook\HookableInterface;
 use FP_Exp\Utils\Helpers;
 use WP_Query;
 
@@ -20,7 +21,7 @@ use function wp_die;
 use function wp_safe_redirect;
 use function wp_unslash;
 
-final class OrdersPage
+final class OrdersPage implements HookableInterface
 {
     private const ORDER_ITEM_TYPE = 'fp_experience_item';
 
@@ -76,10 +77,33 @@ final class OrdersPage
             return $join;
         }
 
-        global $wpdb;
+        // Try to get prefix and posts table from DatabaseInterface if available
+        $kernel = \FP_Exp\Core\Bootstrap\Bootstrap::kernel();
+        $prefix = 'wp_';
+        $posts_table = 'wp_posts';
+        
+        if ($kernel !== null) {
+            $container = $kernel->container();
+            if ($container->has(\FP_Exp\Services\Database\DatabaseInterface::class)) {
+                try {
+                    $database = $container->make(\FP_Exp\Services\Database\DatabaseInterface::class);
+                    $prefix = $database->getPrefix();
+                    $posts_table = $prefix . 'posts';
+                } catch (\Throwable $e) {
+                    // Fall through to global $wpdb
+                }
+            }
+        }
+        
+        // Fallback to global $wpdb for backward compatibility
+        if ($prefix === 'wp_' || $posts_table === 'wp_posts') {
+            global $wpdb;
+            $prefix = $wpdb->prefix;
+            $posts_table = $wpdb->posts;
+        }
 
         if (false === strpos($join, 'fp_exp_items')) {
-            $join .= " INNER JOIN {$wpdb->prefix}woocommerce_order_items fp_exp_items ON fp_exp_items.order_id = {$wpdb->posts}.ID";
+            $join .= " INNER JOIN {$prefix}woocommerce_order_items fp_exp_items ON fp_exp_items.order_id = {$posts_table}.ID";
         }
 
         return $join;
@@ -91,8 +115,8 @@ final class OrdersPage
             return $where;
         }
 
+        // Use wpdb->prepare for backward compatibility (prepare requires wpdb instance)
         global $wpdb;
-
         return $where . $wpdb->prepare(' AND fp_exp_items.order_item_type = %s', self::ORDER_ITEM_TYPE);
     }
 

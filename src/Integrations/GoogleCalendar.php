@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace FP_Exp\Integrations;
 
+use FP_Exp\Core\Hook\HookableInterface;
+use FP_Exp\Services\Options\OptionsInterface;
 use FP_Exp\Booking\Emails;
 use FP_Exp\Utils\Logger;
 use WC_Order;
@@ -37,9 +39,51 @@ use function wc_get_order;
 use const MINUTE_IN_SECONDS;
 use function __;
 
-final class GoogleCalendar
+final class GoogleCalendar implements HookableInterface
 {
     private ?Emails $emails = null;
+    private ?OptionsInterface $options = null;
+
+    /**
+     * GoogleCalendar constructor.
+     *
+     * @param Emails|null $emails Email service (optional, can be set via set_email_service())
+     * @param OptionsInterface|null $options Optional OptionsInterface (will try to get from container if not provided)
+     */
+    public function __construct(?Emails $emails = null, ?OptionsInterface $options = null)
+    {
+        $this->emails = $emails;
+        $this->options = $options;
+    }
+
+    /**
+     * Get OptionsInterface instance.
+     * Tries container first, falls back to direct instantiation for backward compatibility.
+     */
+    private function getOptions(): OptionsInterface
+    {
+        if ($this->options !== null) {
+            return $this->options;
+        }
+
+        // Try to get from container
+        $kernel = \FP_Exp\Core\Bootstrap\Bootstrap::kernel();
+        if ($kernel !== null) {
+            $container = $kernel->container();
+            if ($container->has(OptionsInterface::class)) {
+                try {
+                    $this->options = $container->make(OptionsInterface::class);
+                    return $this->options;
+                } catch (\Throwable $e) {
+                    // Fall through to direct instantiation
+                }
+            }
+        }
+
+        // Fallback to direct instantiation
+        $this->options = new \FP_Exp\Services\Options\Options();
+        return $this->options;
+    }
 
     public function register_hooks(): void
     {
@@ -94,7 +138,7 @@ final class GoogleCalendar
      */
     public function get_settings(): array
     {
-        $settings = get_option('fp_exp_google_calendar', []);
+        $settings = $this->getOptions()->get('fp_exp_google_calendar', []);
 
         return is_array($settings) ? $settings : [];
     }
@@ -378,7 +422,7 @@ final class GoogleCalendar
             if (is_array($body) && ! empty($body['access_token'])) {
                 $settings['access_token'] = (string) $body['access_token'];
                 $settings['expires_at'] = time() + (int) ($body['expires_in'] ?? 3600);
-                update_option('fp_exp_google_calendar', $settings, false);
+                $this->getOptions()->set('fp_exp_google_calendar', $settings, false);
 
                 return (string) $body['access_token'];
             }

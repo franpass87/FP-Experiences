@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace FP_Exp\Booking;
 
+use FP_Exp\Core\Hook\HookableInterface;
 use FP_Exp\Booking\Cart;
 use FP_Exp\Booking\Orders;
 use FP_Exp\Booking\Slots;
@@ -32,7 +33,7 @@ use function apply_filters;
 
 use const MINUTE_IN_SECONDS;
 
-final class Checkout
+final class Checkout implements HookableInterface
 {
     private Cart $cart;
 

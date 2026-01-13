@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace FP_Exp\MeetingPoints;
 
+use FP_Exp\Core\Hook\HookableInterface;
 use FP_Exp\Utils\Helpers;
 use WP_Post;
 
@@ -26,7 +27,7 @@ use function wp_unslash;
 use function wp_verify_nonce;
 use function wp_kses_post;
 
-final class MeetingPointMetaBoxes
+final class MeetingPointMetaBoxes implements HookableInterface
 {
     public function register_hooks(): void
     {

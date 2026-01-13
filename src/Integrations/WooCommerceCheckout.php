@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace FP_Exp\Integrations;
 
 use FP_Exp\Booking\Slots;
+use FP_Exp\Core\Hook\HookableInterface;
 use WC_Order;
 
 use function __;
@@ -17,8 +18,13 @@ use function wc_add_notice;
 /**
  * Integrates experience booking validation with WooCommerce checkout
  */
-final class WooCommerceCheckout
+final class WooCommerceCheckout implements HookableInterface
 {
+    public function register_hooks(): void
+    {
+        $this->register();
+    }
+
     public function register(): void
     {
         // Validate slots before creating order

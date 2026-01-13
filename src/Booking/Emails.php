@@ -4,9 +4,19 @@ declare(strict_types=1);
 
 namespace FP_Exp\Booking;
 
+use FP_Exp\Core\Hook\HookableInterface;
+use FP_Exp\Booking\Email\Senders\CustomerEmailSender;
+use FP_Exp\Booking\Email\Senders\StaffEmailSender;
+use FP_Exp\Booking\Email\Services\EmailContextService;
+use FP_Exp\Booking\Email\Services\EmailSchedulerService;
+use FP_Exp\Booking\Email\Templates\BookingConfirmationTemplate;
+use FP_Exp\Booking\Email\Templates\BookingFollowupTemplate;
+use FP_Exp\Booking\Email\Templates\BookingReminderTemplate;
+use FP_Exp\Booking\Email\Templates\StaffNotificationTemplate;
 use FP_Exp\Integrations\Brevo;
 use FP_Exp\Booking\EmailTranslator;
 use FP_Exp\MeetingPoints\Repository;
+use FP_Exp\Services\Options\OptionsInterface;
 use WC_Order;
 
 use function __;
@@ -61,16 +71,72 @@ use const DAY_IN_SECONDS;
 use const MINUTE_IN_SECONDS;
 use const HOUR_IN_SECONDS;
 
-final class Emails
+final class Emails implements HookableInterface
 {
     private const REMINDER_HOOK = 'fp_exp_email_send_reminder';
     private const FOLLOWUP_HOOK = 'fp_exp_email_send_followup';
 
     private ?Brevo $brevo = null;
+    private ?OptionsInterface $options = null;
 
-    public function __construct(?Brevo $brevo = null)
+    // Refactored services
+    private ?EmailContextService $context_service = null;
+    private ?EmailSchedulerService $scheduler_service = null;
+    private ?CustomerEmailSender $customer_sender = null;
+    private ?StaffEmailSender $staff_sender = null;
+
+    /**
+     * Emails constructor.
+     *
+     * @param Brevo|null $brevo Optional Brevo integration
+     * @param OptionsInterface|null $options Optional OptionsInterface (will try to get from container if not provided)
+     */
+    public function __construct(?Brevo $brevo = null, ?OptionsInterface $options = null)
     {
         $this->brevo = $brevo;
+        $this->options = $options;
+    }
+
+    /**
+     * Get OptionsInterface instance.
+     * Tries container first, falls back to direct instantiation for backward compatibility.
+     */
+    private function getOptions(): OptionsInterface
+    {
+        if ($this->options !== null) {
+            return $this->options;
+        }
+
+        // Try to get from container
+        $kernel = \FP_Exp\Core\Bootstrap\Bootstrap::kernel();
+        if ($kernel !== null) {
+            $container = $kernel->container();
+            if ($container->has(OptionsInterface::class)) {
+                try {
+                    $this->options = $container->make(OptionsInterface::class);
+                    return $this->options;
+                } catch (\Throwable $e) {
+                    // Fall through to direct instantiation
+                }
+            }
+        }
+
+        // Fallback to direct instantiation
+        $this->options = new \FP_Exp\Services\Options\Options();
+        return $this->options;
+    }
+
+    /**
+     * Initialize services (lazy loading).
+     */
+    private function initServices(): void
+    {
+        if ($this->context_service === null) {
+            $this->context_service = new EmailContextService();
+            $this->scheduler_service = new EmailSchedulerService();
+            $this->customer_sender = new CustomerEmailSender($this->brevo);
+            $this->staff_sender = new StaffEmailSender($this->brevo);
+        }
     }
 
     public function register_hooks(): void
@@ -81,31 +147,47 @@ final class Emails
         add_action(self::FOLLOWUP_HOOK, [$this, 'handle_followup_dispatch'], 10, 2);
     }
 
+    /**
+     * Handle reservation paid (delegated to new email system).
+     *
+     * @deprecated Use EmailManager::handleReservationPaid() instead
+     */
     public function handle_reservation_paid(int $reservation_id, int $order_id): void
     {
+        $this->initServices();
         $context = $this->get_context($reservation_id, $order_id);
 
         if (! $context) {
             return;
         }
 
-        $emails_settings = get_option('fp_exp_emails', []);
+        $emails_settings = $this->getOptions()->get('fp_exp_emails', []);
         $emails_settings = is_array($emails_settings) ? $emails_settings : [];
         $types = isset($emails_settings['types']) && is_array($emails_settings['types']) ? $emails_settings['types'] : [];
 
+        // Send customer confirmation
         if ('no' !== ($types['customer_confirmation'] ?? 'yes')) {
-            $this->send_customer_confirmation($context);
+            $template = new BookingConfirmationTemplate();
+            $this->customer_sender->send($template, $context);
         }
 
+        // Send staff notification
         if ('no' !== ($types['staff_notification'] ?? 'yes')) {
-            $this->send_staff_notification($context, false);
+            $template = new StaffNotificationTemplate(false);
+            $this->staff_sender->send($template, $context);
         }
 
         $this->queue_automations($context);
     }
 
+    /**
+     * Handle reservation cancelled (delegated to new email system).
+     *
+     * @deprecated Use EmailManager::handleReservationCancelled() instead
+     */
     public function handle_reservation_cancelled(int $reservation_id, int $order_id): void
     {
+        $this->initServices();
         $context = $this->get_context($reservation_id, $order_id);
 
         if (! $context) {
@@ -116,14 +198,17 @@ final class Emails
         $context['language'] = $language;
         $context['status_label'] = EmailTranslator::text('common.status_cancelled', $language);
 
-        $emails_settings = get_option('fp_exp_emails', []);
+        $emails_settings = $this->getOptions()->get('fp_exp_emails', []);
         $emails_settings = is_array($emails_settings) ? $emails_settings : [];
         $types = isset($emails_settings['types']) && is_array($emails_settings['types']) ? $emails_settings['types'] : [];
 
+        // Send staff notification for cancellation
         if ('no' !== ($types['staff_notification'] ?? 'yes')) {
-            $this->send_staff_notification($context, true);
+            $template = new StaffNotificationTemplate(true);
+            $this->staff_sender->send($template, $context);
         }
-        $this->cancel_internal_notifications($reservation_id, $order_id);
+
+        $this->scheduler_service->cancelNotifications($reservation_id, $order_id);
     }
 
     /**
@@ -139,9 +224,18 @@ final class Emails
      *
      * @param array<string, mixed> $context
      */
+    /**
+     * Send customer confirmation fallback (delegated to CustomerEmailSender).
+     *
+     * @deprecated Use CustomerEmailSender::send() with force_send=true instead
+     *
+     * @param array<string, mixed> $context
+     */
     public function send_customer_confirmation_fallback(array $context): void
     {
-        $this->dispatch_customer_confirmation($context, true);
+        $this->initServices();
+        $template = new BookingConfirmationTemplate();
+        $this->customer_sender->send($template, $context, true);
     }
 
     /**
@@ -211,6 +305,8 @@ final class Emails
     }
 
     /**
+     * Queue automations (Brevo or internal scheduling).
+     *
      * @param array<string, mixed> $context
      */
     private function queue_automations(array $context): void
@@ -228,64 +324,39 @@ final class Emails
             return;
         }
 
-        $this->schedule_internal_notifications($reservation_id, $order_id, $context);
+        $this->initServices();
+        $this->scheduler_service->scheduleNotifications($reservation_id, $order_id, $context);
     }
 
+    /**
+     * Schedule internal notifications (delegated to EmailSchedulerService).
+     *
+     * @deprecated Use EmailSchedulerService::scheduleNotifications() instead
+     *
+     * @param array<string, mixed> $context
+     */
     private function schedule_internal_notifications(int $reservation_id, int $order_id, array $context): void
     {
-        $timers = isset($context['timers']) && is_array($context['timers']) ? $context['timers'] : [];
-        $now = time();
-
-        // Applica offset personalizzati da impostazioni se presenti
-        $emails_settings = get_option('fp_exp_emails', []);
-        $emails_settings = is_array($emails_settings) ? $emails_settings : [];
-        $schedule = isset($emails_settings['schedule']) && is_array($emails_settings['schedule']) ? $emails_settings['schedule'] : [];
-        $reminder_offset_hours = isset($schedule['reminder_offset_hours']) ? max(0, (int) $schedule['reminder_offset_hours']) : 24;
-        $followup_offset_hours = isset($schedule['followup_offset_hours']) ? max(0, (int) $schedule['followup_offset_hours']) : 24;
-
-        $start_timestamp = isset($context['slot']['start_timestamp']) ? (int) $context['slot']['start_timestamp'] : 0;
-        $end_timestamp = isset($context['slot']['end_timestamp']) ? (int) $context['slot']['end_timestamp'] : $start_timestamp;
-
-        $reminder_at = $start_timestamp > 0 ? max(0, $start_timestamp - ($reminder_offset_hours * HOUR_IN_SECONDS)) : 0;
-        if ($reminder_at > 0) {
-            if ($reminder_at <= $now) {
-                $reminder_at = $now + (5 * MINUTE_IN_SECONDS);
-            }
-
-            wp_clear_scheduled_hook(self::REMINDER_HOOK, [$reservation_id, $order_id]);
-            wp_schedule_single_event($reminder_at, self::REMINDER_HOOK, [$reservation_id, $order_id]);
-        }
-
-        $followup_at = $end_timestamp > 0 ? max(0, $end_timestamp + ($followup_offset_hours * HOUR_IN_SECONDS)) : 0;
-        if ($followup_at > 0) {
-            if ($followup_at <= $now) {
-                $followup_at = $now + (10 * MINUTE_IN_SECONDS);
-            }
-
-            wp_clear_scheduled_hook(self::FOLLOWUP_HOOK, [$reservation_id, $order_id]);
-            wp_schedule_single_event($followup_at, self::FOLLOWUP_HOOK, [$reservation_id, $order_id]);
-        }
+        $this->initServices();
+        $this->scheduler_service->scheduleNotifications($reservation_id, $order_id, $context);
     }
 
-    private function cancel_internal_notifications(int $reservation_id, int $order_id): void
-    {
-        wp_clear_scheduled_hook(self::REMINDER_HOOK, [$reservation_id, $order_id]);
-        wp_clear_scheduled_hook(self::FOLLOWUP_HOOK, [$reservation_id, $order_id]);
-    }
-
+    /**
+     * Handle reminder dispatch (delegated to new email system).
+     *
+     * @deprecated Use EmailManager::handleReminderDispatch() instead
+     */
     public function handle_reminder_dispatch(int $reservation_id, int $order_id): void
     {
+        $this->initServices();
         $context = $this->get_context($reservation_id, $order_id);
 
         if (! $context) {
             return;
         }
 
-        $language = $this->resolve_language($context);
-
-        $subject = $this->resolve_subject_override('customer_reminder', $context, $language);
-
-        $this->send_customer_template($context, 'customer-reminder', $subject, true, $language);
+        $template = new BookingReminderTemplate();
+        $this->customer_sender->send($template, $context, true);
     }
 
     public function handle_followup_dispatch(int $reservation_id, int $order_id): void
@@ -667,7 +738,7 @@ final class Emails
         ]);
 
         // Aggiungi destinatari extra da impostazioni
-        $emails_settings = get_option('fp_exp_emails', []);
+        $emails_settings = $this->getOptions()->get('fp_exp_emails', []);
         if (is_array($emails_settings) && ! empty($emails_settings['recipients']['staff_extra']) && is_array($emails_settings['recipients']['staff_extra'])) {
             $extra = array_values(array_filter(array_map('sanitize_email', $emails_settings['recipients']['staff_extra'])));
             $recipients = array_merge($recipients, $extra);
@@ -683,7 +754,7 @@ final class Emails
 
     private function get_structure_email(): string
     {
-        $emails = get_option('fp_exp_emails', []);
+        $emails = $this->getOptions()->get('fp_exp_emails', []);
         if (is_array($emails) && ! empty($emails['sender']['structure'])) {
             $candidate = sanitize_email((string) $emails['sender']['structure']);
             if ($candidate) {
@@ -691,7 +762,7 @@ final class Emails
             }
         }
 
-        $option = (string) get_option('fp_exp_structure_email', '');
+        $option = (string) $this->getOptions()->get('fp_exp_structure_email', '');
 
         if ($option) {
             return sanitize_email($option);
@@ -702,7 +773,7 @@ final class Emails
 
     private function get_webmaster_email(): string
     {
-        $emails = get_option('fp_exp_emails', []);
+        $emails = $this->getOptions()->get('fp_exp_emails', []);
         if (is_array($emails) && ! empty($emails['sender']['webmaster'])) {
             $candidate = sanitize_email((string) $emails['sender']['webmaster']);
             if ($candidate) {
@@ -710,7 +781,7 @@ final class Emails
             }
         }
 
-        $option = (string) get_option('fp_exp_webmaster_email', '');
+        $option = (string) $this->getOptions()->get('fp_exp_webmaster_email', '');
 
         if ($option) {
             return sanitize_email($option);
@@ -976,11 +1047,11 @@ final class Emails
             return '';
         }
 
-        $emails = get_option('fp_exp_emails', []);
+        $emails = $this->getOptions()->get('fp_exp_emails', []);
         $emails = is_array($emails) ? $emails : [];
         $branding = isset($emails['branding']) && is_array($emails['branding']) ? $emails['branding'] : [];
         if (! $branding) {
-            $branding = get_option('fp_exp_email_branding', []);
+            $branding = $this->getOptions()->get('fp_exp_email_branding', []);
             $branding = is_array($branding) ? $branding : [];
         }
 
@@ -1032,7 +1103,7 @@ final class Emails
      */
     private function resolve_subject_override(string $key, array $context, string $language): string
     {
-        $emails_settings = get_option('fp_exp_emails', []);
+        $emails_settings = $this->getOptions()->get('fp_exp_emails', []);
         $emails_settings = is_array($emails_settings) ? $emails_settings : [];
         $subjects = isset($emails_settings['subjects']) && is_array($emails_settings['subjects']) ? $emails_settings['subjects'] : [];
 

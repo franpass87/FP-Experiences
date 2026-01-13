@@ -8,8 +8,10 @@ use DateTimeImmutable;
 use DateTimeInterface;
 use DateTimeZone;
 use Exception;
+use FP_Exp\Application\Settings\GetSettingsUseCase;
 use FP_Exp\Booking\AvailabilityService;
 use FP_Exp\Booking\Slots;
+use FP_Exp\Domain\Booking\Repositories\ExperienceRepositoryInterface;
 use FP_Exp\MeetingPoints\Repository;
 use FP_Exp\Utils\Helpers;
 use FP_Exp\Utils\LanguageHelper;
@@ -52,6 +54,9 @@ use const ARRAY_A;
 
 final class WidgetShortcode extends BaseShortcode
 {
+    private ?ExperienceRepositoryInterface $experienceRepository = null;
+    private ?GetSettingsUseCase $getSettingsUseCase = null;
+
     protected string $tag = 'fp_exp_widget';
 
     protected string $template = 'front/widget.php';
@@ -104,11 +109,23 @@ final class WidgetShortcode extends BaseShortcode
             $attributes['mode'] = '';
         }
 
-        $tickets = $this->prepare_tickets(get_post_meta($experience_id, '_fp_ticket_types', true));
-        $addons = $this->prepare_addons(get_post_meta($experience_id, '_fp_addons', true));
+        // Try to use repository if available
+        $repo = $this->getExperienceRepository();
+        $tickets = [];
+        $addons = [];
+        $duration = 0;
+        if ($repo !== null) {
+            $tickets = $this->prepare_tickets($repo->getMeta($experience_id, '_fp_ticket_types', []));
+            $addons = $this->prepare_addons($repo->getMeta($experience_id, '_fp_addons', []));
+            $duration = absint((string) $repo->getMeta($experience_id, '_fp_duration_minutes', 0));
+        } else {
+            // Fallback to direct get_post_meta for backward compatibility
+            $tickets = $this->prepare_tickets(get_post_meta($experience_id, '_fp_ticket_types', true));
+            $addons = $this->prepare_addons(get_post_meta($experience_id, '_fp_addons', true));
+            $duration = absint((string) get_post_meta($experience_id, '_fp_duration_minutes', true));
+        }
         $highlights = Helpers::get_meta_array($experience_id, '_fp_highlights');
         $meeting_point = Repository::get_primary_summary_for_experience($experience_id);
-        $duration = absint((string) get_post_meta($experience_id, '_fp_duration_minutes', true));
         $taxonomy_languages = wp_get_post_terms($experience_id, 'fp_exp_language', ['fields' => 'names']);
         $language_term_names = is_array($taxonomy_languages)
             ? array_values(array_filter(array_map('sanitize_text_field', $taxonomy_languages)))
@@ -165,7 +182,7 @@ final class WidgetShortcode extends BaseShortcode
             '@context' => 'https://schema.org',
             '@type' => 'TouristTrip',
             'name' => get_the_title($post),
-            'description' => sanitize_text_field((string) get_post_meta($experience_id, '_fp_short_desc', true)),
+            'description' => sanitize_text_field((string) ($repo !== null ? $repo->getMeta($experience_id, '_fp_short_desc', '') : get_post_meta($experience_id, '_fp_short_desc', true))),
             'offers' => $schema_offers,
         ]);
 
@@ -196,7 +213,21 @@ final class WidgetShortcode extends BaseShortcode
             'show_calendar' => in_array((string) $attributes['show_calendar'], ['1', 'true'], true),
         ];
 
-        $cognitive_bias_meta = get_post_meta($experience_id, '_fp_cognitive_biases', true);
+        // Try to use repository if available
+        $repo = $this->getExperienceRepository();
+        $cognitive_bias_meta = [];
+        if ($repo !== null) {
+            $cognitive_bias_meta = $repo->getMeta($experience_id, '_fp_cognitive_biases', []);
+            if (!is_array($cognitive_bias_meta)) {
+                $cognitive_bias_meta = [];
+            }
+        } else {
+            // Fallback to direct get_post_meta for backward compatibility
+            $cognitive_bias_meta = get_post_meta($experience_id, '_fp_cognitive_biases', true);
+            if (!is_array($cognitive_bias_meta)) {
+                $cognitive_bias_meta = [];
+            }
+        }
         $cognitive_bias_slugs = is_array($cognitive_bias_meta)
             ? array_values(array_filter(array_map('sanitize_key', $cognitive_bias_meta)))
             : [];
@@ -608,5 +639,59 @@ final class WidgetShortcode extends BaseShortcode
         }
 
         return $price_from ?? 0.0;
+    }
+
+    /**
+     * Get ExperienceRepository from container if available.
+     */
+    private function getExperienceRepository(): ?ExperienceRepositoryInterface
+    {
+        if ($this->experienceRepository !== null) {
+            return $this->experienceRepository;
+        }
+
+        try {
+            $kernel = \FP_Exp\Core\Bootstrap\Bootstrap::kernel();
+            if ($kernel === null) {
+                return null;
+            }
+
+            $container = $kernel->container();
+            if (!$container->has(ExperienceRepositoryInterface::class)) {
+                return null;
+            }
+
+            $this->experienceRepository = $container->make(ExperienceRepositoryInterface::class);
+            return $this->experienceRepository;
+        } catch (\Throwable $e) {
+            return null;
+        }
+    }
+
+    /**
+     * Get GetSettingsUseCase from container if available.
+     */
+    private function getGetSettingsUseCase(): ?GetSettingsUseCase
+    {
+        if ($this->getSettingsUseCase !== null) {
+            return $this->getSettingsUseCase;
+        }
+
+        try {
+            $kernel = \FP_Exp\Core\Bootstrap\Bootstrap::kernel();
+            if ($kernel === null) {
+                return null;
+            }
+
+            $container = $kernel->container();
+            if (!$container->has(GetSettingsUseCase::class)) {
+                return null;
+            }
+
+            $this->getSettingsUseCase = $container->make(GetSettingsUseCase::class);
+            return $this->getSettingsUseCase;
+        } catch (\Throwable $e) {
+            return null;
+        }
     }
 }

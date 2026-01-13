@@ -5,11 +5,24 @@ declare(strict_types=1);
 namespace FP_Exp\Gift;
 
 use DateTimeImmutable;
+use FP_Exp\Core\Hook\HookableInterface;
+use FP_Exp\Services\Options\OptionsInterface;
 use DateTimeZone;
 use Exception;
 use FP_Exp\Booking\Pricing;
 use FP_Exp\Booking\Reservations;
 use FP_Exp\Booking\Slots;
+use FP_Exp\Gift\Cron\VoucherDeliveryCron;
+use FP_Exp\Gift\Cron\VoucherReminderCron;
+use FP_Exp\Gift\Delivery\VoucherDeliveryService;
+use FP_Exp\Gift\Email\VoucherEmailSender;
+use FP_Exp\Gift\Integration\WooCommerce\GiftProductManager;
+use FP_Exp\Gift\Integration\WooCommerce\WooCommerceIntegration;
+use FP_Exp\Gift\Repository\VoucherRepository;
+use FP_Exp\Gift\Services\VoucherCreationService;
+use FP_Exp\Gift\Services\VoucherRedemptionService;
+use FP_Exp\Gift\Services\VoucherValidationService;
+use FP_Exp\Gift\ValueObjects\VoucherCode;
 use FP_Exp\Utils\Helpers;
 use WC_Order;
 use WC_Order_Item_Product;
@@ -83,252 +96,200 @@ use const DAY_IN_SECONDS;
 use const HOUR_IN_SECONDS;
 use const MINUTE_IN_SECONDS;
 
-final class VoucherManager
+final class VoucherManager implements HookableInterface
 {
     private const CRON_HOOK = 'fp_exp_gift_send_reminders';
     private const DELIVERY_CRON_HOOK = 'fp_exp_gift_send_scheduled_voucher';
 
+    // Refactored services
+    private ?VoucherCreationService $creation_service = null;
+    private ?VoucherRedemptionService $redemption_service = null;
+    private ?VoucherRepository $repository = null;
+    private ?VoucherEmailSender $email_sender = null;
+    private ?VoucherDeliveryService $delivery_service = null;
+    private ?GiftProductManager $product_manager = null;
+    private ?VoucherReminderCron $reminder_cron = null;
+    private ?VoucherDeliveryCron $delivery_cron = null;
+    private ?WooCommerceIntegration $wc_integration = null;
+    private ?OptionsInterface $options = null;
+
+    /**
+     * VoucherManager constructor.
+     *
+     * @param OptionsInterface|null $options Optional OptionsInterface (will try to get from container if not provided)
+     */
+    public function __construct(?OptionsInterface $options = null)
+    {
+        $this->options = $options;
+    }
+
+    /**
+     * Get OptionsInterface instance.
+     * Tries container first, falls back to direct instantiation for backward compatibility.
+     */
+    private function getOptions(): OptionsInterface
+    {
+        if ($this->options !== null) {
+            return $this->options;
+        }
+
+        // Try to get from container
+        $kernel = \FP_Exp\Core\Bootstrap\Bootstrap::kernel();
+        if ($kernel !== null) {
+            $container = $kernel->container();
+            if ($container->has(OptionsInterface::class)) {
+                try {
+                    $this->options = $container->make(OptionsInterface::class);
+                    return $this->options;
+                } catch (\Throwable $e) {
+                    // Fall through to direct instantiation
+                }
+            }
+        }
+
+        // Fallback to direct instantiation
+        $this->options = new \FP_Exp\Services\Options\Options();
+        return $this->options;
+    }
+
+    /**
+     * Initialize refactored services (lazy loading).
+     */
+    private function initServices(): void
+    {
+        if ($this->repository === null) {
+            $this->repository = new VoucherRepository();
+            $this->creation_service = new VoucherCreationService();
+            $this->redemption_service = new VoucherRedemptionService($this->repository);
+            $this->email_sender = new VoucherEmailSender($this->repository);
+            $this->delivery_service = new VoucherDeliveryService($this->repository);
+            $this->product_manager = new GiftProductManager();
+            $this->reminder_cron = new VoucherReminderCron($this->repository, $this->email_sender);
+            $this->delivery_cron = new VoucherDeliveryCron($this->delivery_service);
+            $this->wc_integration = new WooCommerceIntegration($this->product_manager);
+        }
+    }
+
     public function register_hooks(): void
     {
+        $this->initServices();
+
+        // Register refactored cron hooks
+        $this->reminder_cron->register();
+        $this->delivery_cron->register();
+
+        // Register refactored WooCommerce integration
+        $this->wc_integration->register();
+
+        // Legacy hooks for backward compatibility
+        add_action(self::DELIVERY_CRON_HOOK, [$this, 'maybe_send_scheduled_voucher']);
+        
+        // Keep old hooks for backward compatibility (will delegate to new services)
         add_action('init', [$this, 'maybe_schedule_cron']);
         add_action(self::CRON_HOOK, [$this, 'process_reminders']);
-        add_action(self::DELIVERY_CRON_HOOK, [$this, 'maybe_send_scheduled_voucher']);
         add_action('woocommerce_payment_complete', [$this, 'handle_payment_complete'], 20);
         add_action('woocommerce_order_status_cancelled', [$this, 'handle_order_cancelled'], 20);
         add_action('woocommerce_order_fully_refunded', [$this, 'handle_order_cancelled'], 20);
-        
-        // Gestione checkout WooCommerce per gift
-        add_filter('woocommerce_checkout_get_value', [$this, 'prefill_checkout_fields'], 999, 2); // Priority 999 per override user loggato
-        
-        // FIX: Usa hook più affidabili che vengono sempre eseguiti
+        add_filter('woocommerce_checkout_get_value', [$this, 'prefill_checkout_fields'], 999, 2);
         add_action('woocommerce_checkout_order_processed', [$this, 'process_gift_order_after_checkout'], 10, 3);
-        add_action('woocommerce_thankyou', [$this, 'process_gift_order_on_thankyou'], 5, 1); // Backup hook se il primo non funziona
-        
-        // FIX EMAIL: JavaScript per forzare pre-compilazione anche con utenti loggati
+        add_action('woocommerce_thankyou', [$this, 'process_gift_order_on_thankyou'], 5, 1);
         add_action('wp_footer', [$this, 'output_gift_checkout_script'], 999);
-        
-        // Personalizza nome e prezzo prodotto gift nel cart/checkout
         add_filter('woocommerce_cart_item_name', [$this, 'customize_gift_cart_name'], 99, 3);
         add_filter('woocommerce_cart_item_price', [$this, 'set_gift_cart_price'], 10, 3);
-        add_filter('woocommerce_cart_item_permalink', '__return_null', 999); // Forza rimozione link con callback built-in
+        add_filter('woocommerce_cart_item_permalink', '__return_null', 999);
         add_filter('woocommerce_order_item_permalink', '__return_null', 999);
-        
-        // FIX PREZZO: Hook più efficaci per gestire prezzo dinamico gift
         add_filter('woocommerce_add_cart_item_data', [$this, 'add_gift_price_to_cart_data'], 10, 3);
         add_filter('woocommerce_add_cart_item', [$this, 'set_gift_price_on_add'], 10, 2);
         add_filter('woocommerce_get_cart_item_from_session', [$this, 'set_gift_price_from_session'], 10, 3);
         add_action('woocommerce_before_calculate_totals', [$this, 'set_dynamic_gift_price'], 10, 1);
-        
-        // Previeni accesso diretto alla pagina prodotto gift (causa fatal error)
         add_action('template_redirect', [$this, 'block_gift_product_page']);
-        
-        // Fix: Nascondi prodotto gift dalle query principali
         add_action('pre_get_posts', [$this, 'exclude_gift_product_from_queries']);
-        
-        // Fix: Nascondi prodotto gift anche dalle query WooCommerce (wc_get_products)
         add_filter('woocommerce_product_query_meta_query', [$this, 'exclude_gift_from_wc_queries'], 10, 2);
-        
-        // SOLUZIONE A: Template Override personalizzato per checkout
         add_filter('woocommerce_locate_template', [$this, 'locate_gift_template'], 10, 3);
-        
-        // OPZIONE 1: Validazione coupon WooCommerce gift
         add_filter('woocommerce_coupon_is_valid', [$this, 'validate_gift_coupon'], 10, 3);
         add_filter('woocommerce_coupon_error', [$this, 'custom_gift_coupon_error'], 10, 3);
     }
 
+    /**
+     * Schedule cron (delegated to VoucherReminderCron).
+     *
+     * @deprecated Use VoucherReminderCron::maybeSchedule() instead
+     */
     public function maybe_schedule_cron(): void
     {
-        if (! Helpers::gift_enabled()) {
-            $this->clear_cron();
-
-            return;
-        }
-
-        $scheduled = wp_get_scheduled_event(self::CRON_HOOK);
-        $target = $this->resolve_next_cron_timestamp();
-
-        if (! $scheduled) {
-            wp_schedule_event($target, 'daily', self::CRON_HOOK);
-
-            return;
-        }
-
-        if (abs($scheduled->timestamp - $target) > HOUR_IN_SECONDS) {
-            wp_unschedule_event($scheduled->timestamp, self::CRON_HOOK);
-            wp_schedule_event($target, 'daily', self::CRON_HOOK);
-        }
-    }
-
-    public function clear_cron(): void
-    {
-        $scheduled = wp_get_scheduled_event(self::CRON_HOOK);
-        if ($scheduled) {
-            wp_unschedule_event($scheduled->timestamp, self::CRON_HOOK);
-        }
+        $this->initServices();
+        $this->reminder_cron->maybeSchedule();
     }
 
     /**
+     * Clear cron (delegated to VoucherReminderCron).
+     *
+     * @deprecated Use VoucherReminderCron::clear() instead
+     */
+    public function clear_cron(): void
+    {
+        $this->initServices();
+        $this->reminder_cron->clear();
+    }
+
+    /**
+     * Create a purchase (prepare voucher for checkout).
+     *
      * @param array<string, mixed> $payload
+     *
+     * @return array<string, mixed>|WP_Error
      */
     public function create_purchase(array $payload)
     {
-        if (! Helpers::gift_enabled()) {
-            return new WP_Error('fp_exp_gift_disabled', esc_html__('Gift vouchers are currently disabled.', 'fp-experiences'));
+        $this->initServices();
+
+        // Use creation service
+        $result = $this->creation_service->createPurchase($payload);
+
+        if (is_wp_error($result)) {
+            return $result;
         }
 
-        $experience_id = absint((string) ($payload['experience_id'] ?? 0));
-        $experience = get_post($experience_id);
+        // Get gift data
+        $gift_data = $result['gift_data'] ?? [];
+        $prefill_data = $result['prefill_data'] ?? [];
 
-        if (! $experience instanceof WP_Post || 'fp_experience' !== $experience->post_type) {
-            return new WP_Error('fp_exp_gift_experience', esc_html__('Experience not found.', 'fp-experiences'));
+        if (empty($gift_data)) {
+            return new WP_Error(
+                'fp_exp_gift_data',
+                esc_html__('Unable to prepare gift voucher data.', 'fp-experiences')
+            );
         }
 
-        $quantity = absint((string) ($payload['quantity'] ?? 1));
-        if ($quantity <= 0) {
-            $quantity = 1;
-        }
-
-        $addons_requested = [];
-        if (isset($payload['addons']) && is_array($payload['addons'])) {
-            $addons_requested = array_values(array_filter(array_map(static function ($value) {
-                if (is_string($value)) {
-                    return sanitize_key($value);
-                }
-
-                if (is_array($value) && isset($value['slug'])) {
-                    return sanitize_key((string) $value['slug']);
-                }
-
-                return '';
-            }, $payload['addons'])));
-        }
-
-        $pricing_addons = Pricing::get_addons($experience_id);
-        $addons_selected = [];
-        $addons_total = 0.0;
-
-        foreach ($addons_requested as $slug) {
-            if (! isset($pricing_addons[$slug])) {
-                continue;
-            }
-
-            $addon = $pricing_addons[$slug];
-            $line_total = (float) ($addon['price'] ?? 0.0);
-            $allow_multiple = ! empty($addon['allow_multiple']);
-
-            if ($allow_multiple) {
-                $line_total *= $quantity;
-            }
-
-            $addons_total += max(0.0, $line_total);
-            $addons_selected[$slug] = $allow_multiple ? max(1, $quantity) : 1;
-        }
-
-        $tickets = Pricing::get_ticket_types($experience_id);
-        $ticket_price = null;
-        foreach ($tickets as $ticket) {
-            $price = (float) ($ticket['price'] ?? 0.0);
-            if (null === $ticket_price || $price < $ticket_price) {
-                $ticket_price = $price;
-            }
-        }
-
-        $base_price = (float) get_post_meta($experience_id, '_fp_base_price', true);
-        if ($base_price < 0) {
-            $base_price = 0.0;
-        }
-
-        $total = $base_price;
-        if (null !== $ticket_price && $ticket_price > 0) {
-            $total += $ticket_price * $quantity;
-        }
-
-        $total += $addons_total;
-
-        if ($total <= 0) {
-            return new WP_Error('fp_exp_gift_total', esc_html__('Unable to calculate a price for the voucher.', 'fp-experiences'));
-        }
-
-        $purchaser = $this->sanitize_contact($payload['purchaser'] ?? []);
-        $recipient = $this->sanitize_contact($payload['recipient'] ?? []);
-        $recipient['message'] = isset($payload['message']) ? sanitize_textarea_field((string) $payload['message']) : '';
-        $delivery = $this->normalize_delivery($payload['delivery'] ?? []);
-
-        if (! $purchaser['email']) {
-            return new WP_Error('fp_exp_gift_purchaser_email', esc_html__('Provide the purchaser email address.', 'fp-experiences'));
-        }
-
-        if (! $recipient['email']) {
-            return new WP_Error('fp_exp_gift_recipient_email', esc_html__('Provide the recipient email address.', 'fp-experiences'));
-        }
-
-        $currency = get_option('woocommerce_currency', 'EUR');
-
-        if (! function_exists('WC')) {
-            return new WP_Error('fp_exp_gift_wc', esc_html__('WooCommerce is required to purchase gift vouchers.', 'fp-experiences'));
-        }
-
-        // FLUSSO OPZIONE C: Salva dati in session + Redirect a checkout standard
-        // WooCommerce creerà l'ordine durante il checkout, noi aggiungiamo il voucher dopo
-
-        // Genera codice voucher in anticipo
-        $code = $this->generate_code();
-        $valid_until = $this->calculate_valid_until();
-
-            // FIX SESSION: Salva in transient E session (doppia protezione)
-            $gift_pending_data = [
-                'experience_id' => $experience_id,
-                'experience_title' => $experience->post_title,
-                'quantity' => $quantity,
-                'addons' => $addons_selected,
-                'purchaser' => $purchaser,
-                'recipient' => $recipient,
-                'delivery' => $delivery,
-                'total' => $total,
-                'currency' => $currency,
-                'code' => $code,
-                'valid_until' => $valid_until,
-            ];
-
-            $prefill_data = [
-                'billing_first_name' => $purchaser['name'],
-                'billing_email' => $purchaser['email'],
-                'billing_phone' => $purchaser['phone'],
-            ];
-
+        // Save to session
         if (WC()->session) {
-                WC()->session->set('fp_exp_gift_pending', $gift_pending_data);
-                WC()->session->set('fp_exp_gift_prefill', $prefill_data);
-                
-                // Salva anche in transient usando session ID come chiave
-                $session_id = WC()->session->get_customer_id();
-                error_log("FP Experiences: Saving gift transient with session_id: {$session_id}");
-                
-                if ($session_id) {
-                    $transient_key = 'fp_exp_gift_' . $session_id;
-                    $saved = set_transient($transient_key, [
-                        'pending' => $gift_pending_data,
-                        'prefill' => $prefill_data,
-                    ], HOUR_IN_SECONDS);
-                    error_log("FP Experiences: Transient saved: " . ($saved ? 'YES' : 'NO') . " with key: {$transient_key}");
-                } else {
-                    error_log("FP Experiences: WARNING - No session_id available for transient!");
-                }
-            }
+            WC()->session->set('fp_exp_gift_pending', $gift_data);
+            WC()->session->set('fp_exp_gift_prefill', $prefill_data);
 
-        $gift_product_id = $this->ensure_gift_product_id();
+            // Also save to transient
+            $session_id = WC()->session->get_customer_id();
+
+            if ($session_id) {
+                $transient_key = 'fp_exp_gift_' . $session_id;
+                set_transient($transient_key, [
+                    'pending' => $gift_data,
+                    'prefill' => $prefill_data,
+                ], HOUR_IN_SECONDS);
+            }
+        }
+
+        // Ensure gift product exists
+        $gift_product_id = $this->product_manager->ensureGiftProduct();
 
         if ($gift_product_id <= 0) {
             return new WP_Error(
                 'fp_exp_gift_product_missing',
                 esc_html__('Non è stato possibile preparare il prodotto WooCommerce per i voucher regalo.', 'fp-experiences'),
-                [
-                    'status' => 500,
-                ]
+                ['status' => 500]
             );
         }
 
-        // Svuota e aggiungi gift product al cart
+        // Load cart
         if (function_exists('wc_load_cart')) {
             wc_load_cart();
         }
@@ -337,24 +298,21 @@ final class VoucherManager
             return new WP_Error(
                 'fp_exp_gift_cart_unavailable',
                 esc_html__('Il carrello WooCommerce non è disponibile. Ricarica la pagina e riprova.', 'fp-experiences'),
-                [
-                    'status' => 500,
-                ]
+                ['status' => 500]
             );
         }
 
+        // Empty and add gift product
         WC()->cart->empty_cart();
 
-        // OPZIONE 1 FIX: Salva TUTTI i dati gift nei cart_item_data (più affidabile di session/transient)
         $cart_item_data = [
             '_fp_exp_item_type' => 'gift',
             'gift_voucher' => 'yes',
-            'experience_id' => $experience_id,
-            'experience_title' => $experience->post_title,
-            'gift_quantity' => $quantity,
-            '_fp_exp_gift_price' => (float) $total,
-            // Dati completi gift per recupero in checkout
-            '_fp_exp_gift_full_data' => $gift_pending_data,
+            'experience_id' => $gift_data['experience_id'] ?? 0,
+            'experience_title' => $gift_data['experience_title'] ?? '',
+            'gift_quantity' => $gift_data['quantity'] ?? 1,
+            '_fp_exp_gift_price' => (float) ($gift_data['total'] ?? 0),
+            '_fp_exp_gift_full_data' => $gift_data,
             '_fp_exp_gift_prefill_data' => $prefill_data,
         ];
 
@@ -364,71 +322,36 @@ final class VoucherManager
             return new WP_Error(
                 'fp_exp_gift_cart_add',
                 esc_html__('Non è stato possibile aggiungere il voucher regalo al carrello. Riprova più tardi.', 'fp-experiences'),
-                [
-                    'status' => 500,
-                ]
+                ['status' => 500]
             );
         }
 
         WC()->cart->calculate_totals();
 
-        // Redirect al checkout WooCommerce STANDARD
-        $checkout_url = function_exists('wc_get_checkout_url') 
+        // Return checkout URL
+        $checkout_url = function_exists('wc_get_checkout_url')
             ? wc_get_checkout_url()
             : home_url('/checkout/');
 
         return [
             'checkout_url' => $checkout_url,
-            'value' => $total,
-            'currency' => $currency,
-            'experience_title' => $experience->post_title,
-            'code' => $code,
+            'value' => $gift_data['total'] ?? 0,
+            'currency' => $gift_data['currency'] ?? 'EUR',
+            'experience_title' => $gift_data['experience_title'] ?? '',
+            'code' => $gift_data['code'] ?? '',
         ];
     }
 
+    /**
+     * Ensure gift product exists (delegated to GiftProductManager).
+     *
+     * @deprecated Use GiftProductManager::ensureGiftProduct() instead
+     */
     private function ensure_gift_product_id(): int
     {
-        if (! function_exists('wc_get_product')) {
-            return 0;
-        }
+        $this->initServices();
 
-        $candidates = [];
-        $saved_id = (int) get_option('fp_exp_gift_product_id', 0);
-
-        if ($saved_id > 0) {
-            $candidates[] = $saved_id;
-        }
-
-        $existing = get_posts([
-            'post_type' => 'product',
-            'post_status' => ['publish', 'draft', 'private'],
-            'meta_key' => '_fp_exp_is_gift_product',
-            'meta_value' => 'yes',
-            'fields' => 'ids',
-            'numberposts' => 5,
-        ]);
-
-        if ($existing) {
-            $candidates = array_merge($candidates, array_map('absint', $existing));
-        }
-
-        foreach (array_unique($candidates) as $candidate_id) {
-            if ($candidate_id <= 0) {
-                continue;
-            }
-
-            if ($this->prepare_gift_product($candidate_id)) {
-                return $candidate_id;
-            }
-        }
-
-        $product_id = $this->create_gift_product_post();
-
-        if ($product_id > 0 && $this->prepare_gift_product($product_id)) {
-            return $product_id;
-        }
-
-        return 0;
+        return $this->product_manager->ensureGiftProduct();
     }
 
     private function prepare_gift_product(int $product_id): bool
@@ -480,7 +403,7 @@ final class VoucherManager
         wp_set_object_terms($product_id, ['exclude-from-catalog', 'exclude-from-search'], 'product_visibility', false);
 
         update_post_meta($product_id, '_fp_exp_is_gift_product', 'yes');
-        update_option('fp_exp_gift_product_id', $product_id);
+        $this->getOptions()->set('fp_exp_gift_product_id', $product_id);
 
         return true;
     }
@@ -512,350 +435,127 @@ final class VoucherManager
         return (int) $product_id;
     }
 
+    /**
+     * Handle payment complete (delegated to GiftOrderHandler).
+     *
+     * @deprecated Use GiftOrderHandler::handlePaymentComplete() instead
+     */
     public function handle_payment_complete(int $order_id): void
     {
-        $voucher_ids = $this->get_voucher_ids_from_order($order_id);
-        if (! $voucher_ids) {
-            return;
-        }
-
-        foreach ($voucher_ids as $voucher_id) {
-            $status = sanitize_key((string) get_post_meta($voucher_id, '_fp_exp_gift_status', true));
-            if ('pending' !== $status) {
-                continue;
-            }
-
-            update_post_meta($voucher_id, '_fp_exp_gift_status', 'active');
-            $this->append_log($voucher_id, 'activated', $order_id);
-            $this->sync_voucher_table($voucher_id);
-
-            $delivery = get_post_meta($voucher_id, '_fp_exp_gift_delivery', true);
-            $delivery = is_array($delivery) ? $delivery : [];
-            $send_at = isset($delivery['send_at']) ? (int) $delivery['send_at'] : 0;
-            $now = current_time('timestamp', true);
-
-            if ($send_at > ($now + MINUTE_IN_SECONDS)) {
-                $this->schedule_delivery($voucher_id, $send_at);
-                $this->append_log($voucher_id, 'scheduled', $order_id);
-
-                continue;
-            }
-
-            $this->clear_delivery_schedule($voucher_id);
-            $this->send_voucher_email($voucher_id);
-        }
+        $this->initServices();
+        $this->wc_integration->getOrderHandler()->handlePaymentComplete($order_id);
     }
 
+    /**
+     * Handle order cancelled (delegated to GiftOrderHandler).
+     *
+     * @deprecated Use GiftOrderHandler::handleOrderCancelled() instead
+     */
     public function handle_order_cancelled(int $order_id): void
     {
-        $voucher_ids = $this->get_voucher_ids_from_order($order_id);
-        if (! $voucher_ids) {
-            return;
-        }
-
-        foreach ($voucher_ids as $voucher_id) {
-            $status = sanitize_key((string) get_post_meta($voucher_id, '_fp_exp_gift_status', true));
-            if (in_array($status, ['redeemed', 'cancelled', 'expired'], true)) {
-                continue;
-            }
-
-            $this->clear_delivery_schedule($voucher_id);
-            $delivery = get_post_meta($voucher_id, '_fp_exp_gift_delivery', true);
-            if (is_array($delivery)) {
-                $delivery['send_at'] = 0;
-                unset($delivery['scheduled_at']);
-                update_post_meta($voucher_id, '_fp_exp_gift_delivery', $delivery);
-            }
-            update_post_meta($voucher_id, '_fp_exp_gift_status', 'cancelled');
-            $this->append_log($voucher_id, 'cancelled', $order_id);
-            $this->sync_voucher_table($voucher_id);
-        }
+        $this->initServices();
+        $this->wc_integration->getOrderHandler()->handleOrderCancelled($order_id);
     }
 
+    /**
+     * Send scheduled voucher (delegated to VoucherDeliveryService).
+     *
+     * @deprecated Use VoucherDeliveryService::processScheduledDelivery() instead
+     *
+     * @param int $voucher_id
+     */
     public function maybe_send_scheduled_voucher($voucher_id): void
     {
+        $this->initServices();
         $voucher_id = absint($voucher_id);
 
         if ($voucher_id <= 0) {
             return;
         }
 
-        $status = sanitize_key((string) get_post_meta($voucher_id, '_fp_exp_gift_status', true));
-        if ('active' !== $status) {
-            $this->clear_delivery_schedule($voucher_id);
-
-            return;
-        }
-
-        $delivery = get_post_meta($voucher_id, '_fp_exp_gift_delivery', true);
-        $delivery = is_array($delivery) ? $delivery : [];
-        $sent_at = isset($delivery['sent_at']) ? (int) $delivery['sent_at'] : 0;
-
-        if ($sent_at > 0) {
-            $this->clear_delivery_schedule($voucher_id);
-
-            return;
-        }
-
-        $send_at = isset($delivery['send_at']) ? (int) $delivery['send_at'] : 0;
-        $now = current_time('timestamp', true);
-
-        if ($send_at > ($now + MINUTE_IN_SECONDS)) {
-            $this->schedule_delivery($voucher_id, $send_at);
-
-            return;
-        }
-
-        $this->send_voucher_email($voucher_id);
-    }
-
-    public function process_reminders(): void
-    {
-        if (! Helpers::gift_enabled()) {
-            return;
-        }
-
-        $now = current_time('timestamp', true);
-        $offsets = Helpers::gift_reminder_offsets();
-        $batch_size = 50;
-        $page = 1;
-
-        do {
-            $voucher_ids = get_posts([
-                'post_type' => VoucherCPT::POST_TYPE,
-                'post_status' => 'any',
-                'posts_per_page' => $batch_size,
-                'paged' => $page,
-                'fields' => 'ids',
-                'meta_key' => '_fp_exp_gift_status',
-                'meta_value' => 'active',
-                'no_found_rows' => true,
-            ]);
-
-            if (! $voucher_ids) {
-                break;
-            }
-
-            $voucher_ids = array_map('absint', $voucher_ids);
-
-            foreach ($voucher_ids as $voucher_id) {
-                if ($voucher_id <= 0) {
-                    continue;
-                }
-
-                $valid_until = (int) get_post_meta($voucher_id, '_fp_exp_gift_valid_until', true);
-
-                if ($valid_until > 0 && $valid_until <= $now) {
-                    update_post_meta($voucher_id, '_fp_exp_gift_status', 'expired');
-                    $this->append_log($voucher_id, 'expired');
-                    $this->sync_voucher_table($voucher_id);
-                    $this->send_expired_email($voucher_id);
-                    continue;
-                }
-
-                if ($valid_until <= 0) {
-                    continue;
-                }
-
-                $sent = get_post_meta($voucher_id, '_fp_exp_gift_reminders_sent', true);
-                $sent = is_array($sent) ? array_map('absint', $sent) : [];
-
-                foreach ($offsets as $offset) {
-                    if (in_array($offset, $sent, true)) {
-                        continue;
-                    }
-
-                    $reminder_timestamp = $valid_until - ($offset * DAY_IN_SECONDS);
-                    if ($reminder_timestamp <= $now && $valid_until > $now) {
-                        $this->send_reminder_email($voucher_id, $offset, $valid_until);
-                        $sent[] = $offset;
-                    }
-                }
-
-                $sent = array_values(array_unique(array_map('absint', $sent)));
-                update_post_meta($voucher_id, '_fp_exp_gift_reminders_sent', $sent);
-            }
-
-            $page++;
-        } while (count($voucher_ids) === $batch_size);
+        $this->delivery_service->processScheduledDelivery($voucher_id);
     }
 
     /**
+     * Process reminders (delegated to VoucherReminderCron).
+     *
+     * @deprecated Use VoucherReminderCron::process() instead
+     */
+    public function process_reminders(): void
+    {
+        $this->initServices();
+        $this->reminder_cron->process();
+    }
+
+    /**
+     * Get voucher by code.
+     *
      * @return array<string, mixed>|WP_Error
      */
     public function get_voucher_by_code(string $code)
     {
+        $this->initServices();
+
         $code = sanitize_key($code);
+
         if ('' === $code) {
-            return new WP_Error('fp_exp_gift_code', esc_html__('Voucher code not provided.', 'fp-experiences'));
-        }
-
-        $voucher = $this->find_voucher_by_code($code);
-        if (! $voucher) {
-            return new WP_Error('fp_exp_gift_not_found', esc_html__('Voucher not found.', 'fp-experiences'));
-        }
-
-        return $this->build_voucher_payload($voucher);
-    }
-
-    /**
-     * @param array<string, mixed> $payload
-     */
-    public function redeem_voucher(string $code, array $payload)
-    {
-        $voucher = $this->find_voucher_by_code($code);
-        if (! $voucher) {
-            return new WP_Error('fp_exp_gift_not_found', esc_html__('Voucher not found.', 'fp-experiences'));
-        }
-
-        $voucher_id = $voucher->ID;
-        $status = sanitize_key((string) get_post_meta($voucher_id, '_fp_exp_gift_status', true));
-        if ('active' !== $status) {
-            return new WP_Error('fp_exp_gift_not_active', esc_html__('This voucher cannot be redeemed.', 'fp-experiences'));
-        }
-
-        $valid_until = (int) get_post_meta($voucher_id, '_fp_exp_gift_valid_until', true);
-        $now = current_time('timestamp', true);
-        if ($valid_until > 0 && $valid_until < $now) {
-            update_post_meta($voucher_id, '_fp_exp_gift_status', 'expired');
-            $this->append_log($voucher_id, 'expired');
-            $this->sync_voucher_table($voucher_id);
-
-            return new WP_Error('fp_exp_gift_expired', esc_html__('This voucher has expired.', 'fp-experiences'));
-        }
-
-        $experience_id = absint((string) get_post_meta($voucher_id, '_fp_exp_gift_experience_id', true));
-        $slot_id = absint((string) ($payload['slot_id'] ?? 0));
-        if ($slot_id <= 0) {
-            return new WP_Error('fp_exp_gift_slot', esc_html__('Select a timeslot to redeem the voucher.', 'fp-experiences'));
-        }
-
-        $slot = Slots::get_slot($slot_id);
-        if (! $slot || (int) ($slot['experience_id'] ?? 0) !== $experience_id) {
-            return new WP_Error('fp_exp_gift_invalid_slot', esc_html__('The selected slot is no longer available.', 'fp-experiences'));
-        }
-
-        if (Slots::STATUS_CANCELLED === ($slot['status'] ?? '')) {
-            return new WP_Error('fp_exp_gift_cancelled_slot', esc_html__('The selected slot is no longer available.', 'fp-experiences'));
-        }
-
-        $snapshot = Slots::get_capacity_snapshot($slot_id);
-        $capacity_total = absint((string) ($slot['capacity_total'] ?? 0));
-
-        $quantity = absint((string) get_post_meta($voucher_id, '_fp_exp_gift_quantity', true));
-        if ($quantity <= 0) {
-            $quantity = 1;
-        }
-
-        if ($capacity_total > 0 && ($snapshot['total'] + $quantity) > $capacity_total) {
-            return new WP_Error('fp_exp_gift_capacity', esc_html__('The selected slot cannot accommodate the voucher quantity.', 'fp-experiences'));
-        }
-
-        if (! function_exists('wc_create_order')) {
-            return new WP_Error('fp_exp_gift_wc', esc_html__('WooCommerce is required to redeem vouchers.', 'fp-experiences'));
+            return new WP_Error(
+                'fp_exp_gift_code',
+                esc_html__('Voucher code not provided.', 'fp-experiences')
+            );
         }
 
         try {
-            $order = wc_create_order([
-                'status' => 'completed',
-            ]);
-        } catch (Exception $exception) {
-            return new WP_Error('fp_exp_gift_redeem_order', esc_html__('Unable to create the redemption order.', 'fp-experiences'));
+            $voucher_code = VoucherCode::fromString($code);
+        } catch (\InvalidArgumentException $exception) {
+            return new WP_Error(
+                'fp_exp_gift_code',
+                esc_html__('Invalid voucher code format.', 'fp-experiences')
+            );
         }
 
-        if (is_wp_error($order)) {
-            return new WP_Error('fp_exp_gift_redeem_order', esc_html__('Unable to create the redemption order.', 'fp-experiences'));
+        $voucher = $this->repository->findByCode($voucher_code);
+
+        if (! $voucher) {
+            return new WP_Error(
+                'fp_exp_gift_not_found',
+                esc_html__('Voucher not found.', 'fp-experiences')
+            );
         }
 
-        $experience = get_post($experience_id);
-        $title = $experience instanceof WP_Post ? $experience->post_title : esc_html__('Experience', 'fp-experiences');
+        return $this->creation_service->buildVoucherPayload($voucher);
+    }
 
-        $order->set_created_via('fp-exp-gift');
-        $order->set_currency(get_option('woocommerce_currency', 'EUR'));
-        $order->set_prices_include_tax(false);
-        $order->set_shipping_total(0.0);
-        $order->set_shipping_tax(0.0);
+    /**
+     * Redeem a voucher.
+     *
+     * @param array<string, mixed> $payload
+     *
+     * @return array<string, mixed>|WP_Error
+     */
+    public function redeem_voucher(string $code, array $payload)
+    {
+        $this->initServices();
 
-        $recipient = get_post_meta($voucher_id, '_fp_exp_gift_recipient', true);
-        $recipient = is_array($recipient) ? $recipient : [];
-        $order->set_billing_first_name($recipient['name'] ?? '');
-        $order->set_billing_email($recipient['email'] ?? '');
+        $code = sanitize_key($code);
 
-        $item = new WC_Order_Item_Product();
-        $item->set_product_id(0);
-        $item->set_type('fp_experience_item');
-        $item->set_name(sprintf(
-            /* translators: %s: experience title. */
-            esc_html__('Gift redemption – %s', 'fp-experiences'),
-            $title
-        ));
-        $item->set_quantity(1);
-        $item->set_total(0.0);
-        $item->add_meta_data('experience_id', $experience_id, true);
-        $item->add_meta_data('experience_title', $title, true);
-        $item->add_meta_data('gift_redemption', 'yes', true);
-        $item->add_meta_data('slot_id', $slot_id, true);
-        $item->add_meta_data('slot_start', $slot['start_datetime'] ?? '', true);
-        $item->add_meta_data('slot_end', $slot['end_datetime'] ?? '', true);
-        $item->add_meta_data('gift_quantity', $quantity, true);
-        $addons_payload = $this->normalize_voucher_addons($experience_id, get_post_meta($voucher_id, '_fp_exp_gift_addons', true) ?: []);
-        $item->add_meta_data('gift_addons', $addons_payload, true);
-        $order->add_item($item);
-        $order->set_total(0.0);
-        $order->calculate_totals(false);
-        $order->save();
-
-        $addons_selected = get_post_meta($voucher_id, '_fp_exp_gift_addons', true);
-        $addons_selected = is_array($addons_selected) ? array_map('absint', $addons_selected) : [];
-
-        $reservation_id = Reservations::create([
-            'order_id' => $order->get_id(),
-            'experience_id' => $experience_id,
-            'slot_id' => $slot_id,
-            'status' => Reservations::STATUS_PAID,
-            'pax' => [
-                'gift' => [
-                    'quantity' => $quantity,
-                ],
-            ],
-            'addons' => $addons_selected,
-            'meta' => [
-                'gift_code' => get_post_meta($voucher_id, '_fp_exp_gift_code', true),
-                'redeemed_via' => 'gift',
-            ],
-            'locale' => get_locale(),
-        ]);
-
-        if ($reservation_id <= 0) {
-            $order->delete(true);
-
-            return new WP_Error('fp_exp_gift_reservation', esc_html__('Impossibile registrare il riscatto del voucher. Riprova.', 'fp-experiences'));
+        if ('' === $code) {
+            return new WP_Error(
+                'fp_exp_gift_code',
+                esc_html__('Voucher code not provided.', 'fp-experiences')
+            );
         }
 
-        update_post_meta($voucher_id, '_fp_exp_gift_status', 'redeemed');
-        update_post_meta($voucher_id, '_fp_exp_gift_redeemed_order_id', $order->get_id());
-        update_post_meta($voucher_id, '_fp_exp_gift_redeemed_reservation_id', $reservation_id);
-        $this->append_log($voucher_id, 'redeemed', $order->get_id());
-        $this->sync_voucher_table($voucher_id);
+        try {
+            $voucher_code = VoucherCode::fromString($code);
+        } catch (\InvalidArgumentException $exception) {
+            return new WP_Error(
+                'fp_exp_gift_code',
+                esc_html__('Invalid voucher code format.', 'fp-experiences')
+            );
+        }
 
-        // OPZIONE 1: Invalida il coupon WooCommerce associato
-        $this->invalidate_gift_coupon($voucher_id);
-
-        $this->send_redeemed_email($voucher_id, $order->get_id(), $slot);
-
-        $experience_permalink = $experience instanceof WP_Post ? get_permalink($experience) : '';
-
-        do_action('fp_exp_gift_voucher_redeemed', $voucher_id, $order->get_id(), $reservation_id);
-
-        return [
-            'order_id' => $order->get_id(),
-            'reservation_id' => $reservation_id,
-            'experience' => [
-                'id' => $experience_id,
-                'title' => $title,
-                'permalink' => $experience_permalink,
-            ],
-        ];
+        return $this->redemption_service->redeem($voucher_code, $payload);
     }
 
     private function resolve_next_cron_timestamp(): int
@@ -1401,368 +1101,60 @@ final class VoucherManager
     }
 
     /**
-     * FIX EMAIL: Output script JavaScript nel footer per forzare pre-compilazione checkout
+     * Output checkout script (delegated to GiftCheckoutHandler).
+     *
+     * @deprecated Use GiftCheckoutHandler::outputCheckoutScript() instead
      */
     public function output_gift_checkout_script(): void
     {
-        // Solo nella pagina checkout
-        if (!is_checkout() || is_wc_endpoint_url('order-received')) {
-            return;
-        }
-
-        // Verifica se c'è un gift in session
-        if (!WC()->session) {
-            return;
-        }
-
-        $gift_prefill = WC()->session->get('fp_exp_gift_prefill');
-        
-        if (!is_array($gift_prefill) || empty($gift_prefill)) {
-            return;
-        }
-        ?>
-        <script type="text/javascript">
-        jQuery(document).ready(function($) {
-            // Dati gift da pre-compilare
-            var giftData = <?php echo wp_json_encode($gift_prefill); ?>;
-            
-            console.log('FP-Experiences: Gift prefill data loaded', giftData);
-            
-            // Funzione per impostare i valori
-            function setGiftCheckoutFields() {
-                var changed = false;
-                
-                if (giftData.billing_first_name) {
-                    var $field = $('#billing_first_name');
-                    if ($field.length && $field.val() !== giftData.billing_first_name) {
-                        $field.val(giftData.billing_first_name).trigger('change');
-                        changed = true;
-                        console.log('FP-Experiences: Set billing_first_name to', giftData.billing_first_name);
-                    }
-                }
-                
-                if (giftData.billing_email) {
-                    var $email = $('#billing_email');
-                    if ($email.length && $email.val() !== giftData.billing_email) {
-                        $email.val(giftData.billing_email).trigger('change');
-                        changed = true;
-                        console.log('FP-Experiences: Set billing_email to', giftData.billing_email);
-                    }
-                }
-                
-                if (giftData.billing_phone) {
-                    var $phone = $('#billing_phone');
-                    if ($phone.length && $phone.val() !== giftData.billing_phone) {
-                        $phone.val(giftData.billing_phone).trigger('change');
-                        changed = true;
-                        console.log('FP-Experiences: Set billing_phone to', giftData.billing_phone);
-                    }
-                }
-                
-                return changed;
-            }
-            
-            // Imposta subito
-            setTimeout(function() {
-                setGiftCheckoutFields();
-            }, 100);
-            
-            // Re-imposta dopo update_checkout
-            $(document.body).on('updated_checkout', function() {
-                console.log('FP-Experiences: Checkout updated, re-setting fields');
-                setGiftCheckoutFields();
-            });
-            
-            // Re-imposta periodicamente (per sicurezza con temi custom)
-            var checkCount = 0;
-            var checkInterval = setInterval(function() {
-                if (setGiftCheckoutFields()) {
-                    console.log('FP-Experiences: Fields updated (retry ' + (checkCount + 1) + ')');
-                }
-                checkCount++;
-                if (checkCount >= 10) {
-                    clearInterval(checkInterval);
-                    console.log('FP-Experiences: Stopped retrying field updates');
-                }
-            }, 500);
-        });
-        </script>
-        <?php
+        $this->initServices();
+        $this->wc_integration->getCheckoutHandler()->outputCheckoutScript();
     }
 
     /**
-     * Pre-compila i campi del checkout WooCommerce con i dati dal form gift
+     * Prefill checkout fields (delegated to GiftCheckoutHandler).
+     *
+     * @deprecated Use GiftCheckoutHandler::prefillCheckoutFields() instead
      */
     public function prefill_checkout_fields($value, string $input)
     {
-        // Verifica se ci sono dati gift in session
-        if (!function_exists('WC') || !WC()->session) {
-            return $value;
-        }
+        $this->initServices();
 
-        $gift_data = WC()->session->get('fp_exp_gift_prefill');
-        
-        if (!is_array($gift_data) || empty($gift_data)) {
-            return $value;
-        }
-
-        // Pre-compila i campi billing
-        // SOLUZIONE A: FORZA override anche per utenti loggati
-        if (isset($gift_data[$input]) && !empty($gift_data[$input])) {
-            return $gift_data[$input];
-        }
-
-        return $value;
+        return $this->wc_integration->getCheckoutHandler()->prefillCheckoutFields($value, $input);
     }
 
     /**
-     * FIX COMPLETO: Processa ordine gift dopo checkout (metadati + voucher + email)
-     * Usa hook woocommerce_checkout_order_processed che viene SEMPRE eseguito
+     * Process gift order after checkout (delegated to GiftCheckoutHandler).
+     *
+     * @deprecated Use GiftCheckoutHandler::processCheckout() instead
      */
     public function process_gift_order_after_checkout(int $order_id, $posted_data, $order): void
     {
-        // OPZIONE 1 FIX: Recupera dati dal CART invece che da session/transient
-        if (!WC()->cart) {
-            error_log("FP Experiences: No cart available in checkout_order_processed for order #{$order_id}");
-            return;
-        }
-
-        $gift_data = null;
-        $prefill_data = null;
-
-        // Cerca nei cart items quello con dati gift
-        foreach (WC()->cart->get_cart() as $cart_item) {
-            if (($cart_item['_fp_exp_item_type'] ?? '') === 'gift') {
-                $gift_data = $cart_item['_fp_exp_gift_full_data'] ?? null;
-                $prefill_data = $cart_item['_fp_exp_gift_prefill_data'] ?? null;
-                error_log("FP Experiences: Found gift data in cart for order #{$order_id}");
-                break;
-            }
-        }
-        
-        if (!is_array($gift_data) || empty($gift_data)) {
-            error_log("FP Experiences: No gift data in cart for order #{$order_id}");
-            return;
-        }
-
-        error_log("FP Experiences: Processing gift order #{$order_id} via checkout_order_processed hook");
-
-        // 1. FIX EMAIL: Forza billing data corretti dall'acquirente gift
-        if (is_array($prefill_data) && !empty($prefill_data)) {
-            // Forza email corretta dall'acquirente (non dall'utente loggato)
-            if (!empty($prefill_data['billing_email'])) {
-                $order->set_billing_email($prefill_data['billing_email']);
-                error_log("FP Experiences: Forced billing_email to {$prefill_data['billing_email']}");
-            }
-            
-            // Forza nome/cognome dall'acquirente
-            if (!empty($prefill_data['billing_first_name'])) {
-                $full_name = $prefill_data['billing_first_name'];
-                $parts = explode(' ', $full_name, 2);
-                $order->set_billing_first_name($parts[0]);
-                if (isset($parts[1])) {
-                    $order->set_billing_last_name($parts[1]);
-                }
-                error_log("FP Experiences: Forced billing_name to {$full_name}");
-            }
-            
-            // Forza telefono dall'acquirente
-            if (!empty($prefill_data['billing_phone'])) {
-                $order->set_billing_phone($prefill_data['billing_phone']);
-            }
-            
-            // Salva modifiche billing
-            $order->save();
-        }
-
-        // 2. Aggiungi metadati gift all'ordine
-        $order->update_meta_data('_fp_exp_is_gift_order', 'yes');
-        $order->update_meta_data('_fp_exp_gift_purchase', [
-            'experience_id' => $gift_data['experience_id'],
-            'quantity' => $gift_data['quantity'],
-            'value' => $gift_data['total'],
-            'currency' => $gift_data['currency'],
-        ]);
-        $order->update_meta_data('_fp_exp_gift_code', $gift_data['code']);
-        $order->set_created_via('fp-exp-gift');
-        $order->save();
-
-        error_log("FP Experiences: Saved gift metadata for order #{$order_id}");
-
-        // 3. Crea il voucher post
-        $voucher_id = $this->create_gift_voucher_post($order_id, $gift_data);
-        
-        if ($voucher_id) {
-            error_log("FP Experiences: Created gift voucher #{$voucher_id} for order #{$order_id}");
-        }
-
-        // 4. Pulisci session (se presente)
-        if (WC()->session) {
-            WC()->session->set('fp_exp_gift_pending', null);
-            WC()->session->set('fp_exp_gift_prefill', null);
-            error_log("FP Experiences: Cleared gift session data");
-        }
+        $this->initServices();
+        $this->wc_integration->getCheckoutHandler()->processCheckout($order_id, $posted_data, $order);
     }
 
     /**
-     * FIX COMPLETO: Processa ordine gift nella pagina thankyou (backup hook)
-     * Questo hook viene SEMPRE eseguito nella pagina "ordine ricevuto"
+     * Process gift order on thankyou (delegated to GiftCheckoutHandler).
+     *
+     * @deprecated Use GiftCheckoutHandler::processThankYou() instead
      */
     public function process_gift_order_on_thankyou(int $order_id): void
     {
-        if (!$order_id) {
-            return;
-        }
-
-        $order = wc_get_order($order_id);
-        
-        if (!$order) {
-            return;
-        }
-
-        // Verifica se è già stato processato
-        if ($order->get_meta('_fp_exp_is_gift_order') === 'yes') {
-            error_log("FP Experiences: Order #{$order_id} already processed as gift");
-            return;
-        }
-
-        // FIX: Recupera dati da transient invece che da session (session si pulisce)
-        $gift_data = null;
-        $prefill_data = null;
-        
-        if (WC()->session) {
-            $session_id = WC()->session->get_customer_id();
-            error_log("FP Experiences: Looking for gift transient with session_id: {$session_id} for order #{$order_id}");
-            
-            if ($session_id) {
-                $transient_key = 'fp_exp_gift_' . $session_id;
-                $transient_data = get_transient($transient_key);
-                
-                error_log("FP Experiences: Transient data found: " . (is_array($transient_data) ? 'YES' : 'NO') . " with key: {$transient_key}");
-                
-                if (is_array($transient_data)) {
-                    $gift_data = $transient_data['pending'] ?? null;
-                    $prefill_data = $transient_data['prefill'] ?? null;
-                    
-                    error_log("FP Experiences: Retrieved gift data from transient for order #{$order_id}");
-                    
-                    // Pulisci transient dopo il recupero
-                    delete_transient($transient_key);
-                }
-            } else {
-                error_log("FP Experiences: No session_id available in thankyou hook for order #{$order_id}");
-            }
-        }
-        
-        if (!is_array($gift_data) || empty($gift_data)) {
-            error_log("FP Experiences: No gift data in transient for order #{$order_id}");
-            return;
-        }
-
-        error_log("FP Experiences: Processing gift order #{$order_id} via thankyou hook");
-
-        // 1. FIX EMAIL: Forza billing data corretti dall'acquirente gift
-        
-        if (is_array($prefill_data) && !empty($prefill_data)) {
-            // Forza email corretta
-            if (!empty($prefill_data['billing_email'])) {
-                $order->set_billing_email($prefill_data['billing_email']);
-                error_log("FP Experiences: Forced billing_email to {$prefill_data['billing_email']}");
-            }
-            
-            // Forza nome/cognome
-            if (!empty($prefill_data['billing_first_name'])) {
-                $full_name = $prefill_data['billing_first_name'];
-                $parts = explode(' ', $full_name, 2);
-                $order->set_billing_first_name($parts[0]);
-                if (isset($parts[1])) {
-                    $order->set_billing_last_name($parts[1]);
-                }
-                error_log("FP Experiences: Forced billing_name to {$full_name}");
-            }
-            
-            // Forza telefono
-            if (!empty($prefill_data['billing_phone'])) {
-                $order->set_billing_phone($prefill_data['billing_phone']);
-            }
-            
-            $order->save();
-        }
-
-        // 2. Aggiungi metadati gift
-        $order->update_meta_data('_fp_exp_is_gift_order', 'yes');
-        $order->update_meta_data('_fp_exp_gift_purchase', [
-            'experience_id' => $gift_data['experience_id'],
-            'quantity' => $gift_data['quantity'],
-            'value' => $gift_data['total'],
-            'currency' => $gift_data['currency'],
-        ]);
-        $order->update_meta_data('_fp_exp_gift_code', $gift_data['code']);
-        $order->set_created_via('fp-exp-gift');
-        $order->save();
-
-        error_log("FP Experiences: Saved gift metadata for order #{$order_id}");
-
-        // 3. Crea voucher
-        $voucher_id = $this->create_gift_voucher_post($order_id, $gift_data);
-        
-        if ($voucher_id) {
-            error_log("FP Experiences: Created gift voucher #{$voucher_id} for order #{$order_id}");
-        }
-
-        // 4. Pulisci session
-        WC()->session->set('fp_exp_gift_pending', null);
-        WC()->session->set('fp_exp_gift_prefill', null);
-        
-        error_log("FP Experiences: Cleared gift session data");
+        $this->initServices();
+        $this->wc_integration->getCheckoutHandler()->processThankYou($order_id);
     }
 
     /**
-     * Crea il post del gift voucher (estratto per riuso)
+     * Create gift voucher post (delegated to GiftOrderHandler).
+     *
+     * @deprecated Use GiftOrderHandler::createVoucherPost() instead
      */
     private function create_gift_voucher_post(int $order_id, array $gift_data): ?int
     {
-        $voucher_id = wp_insert_post([
-            'post_type' => 'fp_exp_gift_voucher',
-            'post_title' => 'Gift Voucher - ' . $gift_data['code'],
-            'post_status' => 'publish',
-            'post_author' => get_current_user_id() ?: 1,
-        ]);
+        $this->initServices();
 
-        if (is_wp_error($voucher_id)) {
-            error_log('FP Experiences Gift: Failed to create voucher post: ' . $voucher_id->get_error_message());
-            return null;
-        }
-
-        // Salva metadati
-        update_post_meta($voucher_id, '_fp_exp_voucher_code', $gift_data['code']);
-        update_post_meta($voucher_id, '_fp_exp_experience_id', $gift_data['experience_id']);
-        update_post_meta($voucher_id, '_fp_exp_quantity', $gift_data['quantity']);
-        update_post_meta($voucher_id, '_fp_exp_value', $gift_data['total']);
-        update_post_meta($voucher_id, '_fp_exp_currency', $gift_data['currency']);
-        update_post_meta($voucher_id, '_fp_exp_valid_until', $gift_data['valid_until']);
-        update_post_meta($voucher_id, '_fp_exp_purchaser_name', $gift_data['purchaser']['name']);
-        update_post_meta($voucher_id, '_fp_exp_purchaser_email', $gift_data['purchaser']['email']);
-        update_post_meta($voucher_id, '_fp_exp_recipient_name', $gift_data['recipient']['name']);
-        update_post_meta($voucher_id, '_fp_exp_recipient_email', $gift_data['recipient']['email']);
-        update_post_meta($voucher_id, '_fp_exp_delivery_mode', $gift_data['delivery']);
-        update_post_meta($voucher_id, '_fp_exp_status', 'pending');
-        update_post_meta($voucher_id, '_fp_exp_wc_order_id', $order_id);
-
-        // Addons
-        if (!empty($gift_data['addons'])) {
-            update_post_meta($voucher_id, '_fp_exp_addons', $gift_data['addons']);
-        }
-
-        // OPZIONE 1: Crea coupon WooCommerce per il destinatario
-        $coupon_id = $this->create_woocommerce_coupon_for_gift($voucher_id, $gift_data);
-        
-        if ($coupon_id) {
-            update_post_meta($voucher_id, '_fp_exp_wc_coupon_id', $coupon_id);
-            error_log("FP Experiences: Created WooCommerce coupon #{$coupon_id} for gift voucher #{$voucher_id}");
-        }
-
-        return $voucher_id;
+        return $this->wc_integration->getOrderHandler()->createVoucherPost($order_id, $gift_data);
     }
 
     /**
@@ -1908,27 +1300,14 @@ final class VoucherManager
     }
 
     /**
-     * Invalida il coupon quando il voucher viene usato
+     * Invalidate gift coupon (delegated to GiftCouponManager).
+     *
+     * @deprecated Use GiftCouponManager::invalidateCoupon() instead
      */
     private function invalidate_gift_coupon(int $voucher_id): void
     {
-        $coupon_id = (int) get_post_meta($voucher_id, '_fp_exp_wc_coupon_id', true);
-        
-        if (!$coupon_id) {
-            return;
-        }
-
-        $coupon = new \WC_Coupon($coupon_id);
-        
-        if (!$coupon->get_id()) {
-            return;
-        }
-
-        // Imposta usage count al massimo per renderlo non utilizzabile
-        $coupon->set_usage_count($coupon->get_usage_limit());
-        $coupon->save();
-        
-        error_log("FP Experiences: Invalidated coupon #{$coupon_id} for redeemed voucher #{$voucher_id}");
+        $this->initServices();
+        $this->wc_integration->getCouponManager()->invalidateCoupon($voucher_id);
     }
 
     /**
@@ -2061,117 +1440,74 @@ final class VoucherManager
     }
 
     /**
-     * Personalizza nome del gift nel cart
+     * Customize cart name (delegated to GiftCartHandler).
+     *
+     * @deprecated Use GiftCartHandler::customizeCartName() instead
      */
     public function customize_gift_cart_name(string $name, array $cart_item, string $cart_item_key): string
     {
-        if (($cart_item['_fp_exp_item_type'] ?? '') === 'gift') {
-            $title = $cart_item['experience_title'] ?? '';
-            if ($title) {
-                return sprintf(
-                    esc_html__('Gift voucher – %s', 'fp-experiences'),
-                    $title
-                );
-            }
-        }
+        $this->initServices();
 
-        return $name;
+        return $this->wc_integration->getCartHandler()->customizeCartName($name, $cart_item, $cart_item_key);
     }
 
     /**
-     * Imposta prezzo dinamico per gift nel cart
+     * Set cart price (delegated to GiftCartHandler).
+     *
+     * @deprecated Use GiftCartHandler::setCartPrice() instead
      */
     public function set_gift_cart_price(string $price_html, array $cart_item, string $cart_item_key): string
     {
-        if (($cart_item['_fp_exp_item_type'] ?? '') === 'gift') {
-            $gift_data = WC()->session ? WC()->session->get('fp_exp_gift_pending') : null;
-            
-            if (is_array($gift_data) && isset($gift_data['total'])) {
-                return wc_price($gift_data['total']);
-            }
-        }
+        $this->initServices();
 
-        return $price_html;
+        return $this->wc_integration->getCartHandler()->setCartPrice($price_html, $cart_item, $cart_item_key);
     }
 
     /**
-     * FIX PREZZO: Aggiunge il prezzo gift ai cart item data
+     * Add gift price to cart data (delegated to GiftCartHandler).
+     *
+     * @deprecated Use GiftCartHandler::addGiftPriceToCartData() instead
      */
     public function add_gift_price_to_cart_data($cart_item_data, $product_id, $variation_id)
     {
-        // Se è un gift, aggiungi il prezzo ai dati del cart item
-        if (isset($cart_item_data['_fp_exp_item_type']) && $cart_item_data['_fp_exp_item_type'] === 'gift') {
-            $gift_data = WC()->session ? WC()->session->get('fp_exp_gift_pending') : null;
-            
-            if (is_array($gift_data) && !empty($gift_data['total'])) {
-                $cart_item_data['_fp_exp_gift_price'] = (float) $gift_data['total'];
-            }
-        }
-        
-        return $cart_item_data;
+        $this->initServices();
+
+        return $this->wc_integration->getCartHandler()->addGiftPriceToCartData($cart_item_data, $product_id, $variation_id);
     }
 
     /**
-     * FIX PREZZO: Setta il prezzo quando l'item viene aggiunto al cart
+     * Set gift price on add (delegated to GiftCartHandler).
+     *
+     * @deprecated Use GiftCartHandler::setGiftPriceOnAdd() instead
      */
     public function set_gift_price_on_add($cart_item, $cart_item_key)
     {
-        if (($cart_item['_fp_exp_item_type'] ?? '') === 'gift' && isset($cart_item['_fp_exp_gift_price'])) {
-            $price = (float) $cart_item['_fp_exp_gift_price'];
-            
-            if ($price > 0 && isset($cart_item['data'])) {
-                $cart_item['data']->set_price($price);
-            }
-        }
-        
-        return $cart_item;
+        $this->initServices();
+
+        return $this->wc_integration->getCartHandler()->setGiftPriceOnAdd($cart_item, $cart_item_key);
     }
 
     /**
-     * FIX PREZZO: Setta il prezzo quando l'item viene caricato dalla session
+     * Set gift price from session (delegated to GiftCartHandler).
+     *
+     * @deprecated Use GiftCartHandler::setGiftPriceFromSession() instead
      */
     public function set_gift_price_from_session($cart_item, $values, $key)
     {
-        if (($values['_fp_exp_item_type'] ?? '') === 'gift' && isset($values['_fp_exp_gift_price'])) {
-            $price = (float) $values['_fp_exp_gift_price'];
-            
-            if ($price > 0 && isset($cart_item['data'])) {
-                $cart_item['data']->set_price($price);
-            }
-        }
-        
-        return $cart_item;
+        $this->initServices();
+
+        return $this->wc_integration->getCartHandler()->setGiftPriceFromSession($cart_item, $values, $key);
     }
 
     /**
-     * Imposta prezzo dinamico nel prodotto gift prima del calcolo totali
-     * (Backup per sicurezza, i nuovi hook sopra dovrebbero gestirlo)
+     * Set dynamic gift price (delegated to GiftCartHandler).
+     *
+     * @deprecated Use GiftCartHandler::setDynamicGiftPrice() instead
      */
     public function set_dynamic_gift_price($cart): void
     {
-        if (!WC()->session) {
-            return;
-        }
-
-        $gift_data = WC()->session->get('fp_exp_gift_pending');
-        
-        if (!is_array($gift_data) || empty($gift_data)) {
-            return;
-        }
-
-        $price = (float) ($gift_data['total'] ?? 0);
-        
-        if ($price <= 0) {
-            return;
-        }
-
-        foreach ($cart->get_cart() as $cart_item_key => $cart_item) {
-            if (($cart_item['_fp_exp_item_type'] ?? '') === 'gift' && isset($cart_item['data'])) {
-                // SOLUZIONE A: Forza il prezzo come float
-                $cart_item['data']->set_price($price);
-                $cart_item['data']->set_regular_price($price);
-            }
-        }
+        $this->initServices();
+        $this->wc_integration->getCartHandler()->setDynamicGiftPrice($cart);
     }
 
     /**
@@ -2187,96 +1523,48 @@ final class VoucherManager
     }
 
     /**
-     * Blocca accesso diretto alla pagina prodotto gift (previene fatal error)
+     * Block gift product page (delegated to WooCommerceIntegration).
+     *
+     * @deprecated Use WooCommerceIntegration::blockGiftProductPage() instead
      */
     public function block_gift_product_page(): void
     {
-        if (!is_singular('product')) {
-            return;
-        }
-
-        $gift_product_id = (int) get_option('fp_exp_gift_product_id', 199);
-        
-        if (get_the_ID() === $gift_product_id) {
-            wp_safe_redirect(home_url('/'));
-            exit;
-        }
+        $this->initServices();
+        $this->wc_integration->blockGiftProductPage();
     }
 
     /**
-     * Escludi prodotto gift dalle query WooCommerce (tutte le query, non solo main)
+     * Exclude gift product from queries (delegated to WooCommerceIntegration).
+     *
+     * @deprecated Use WooCommerceIntegration::excludeGiftProductFromQueries() instead
      */
     public function exclude_gift_product_from_queries($query): void
     {
-        // Escludi da TUTTE le query prodotti sul frontend (main query E secondarie come "Novità in negozio")
-        if (!is_admin() && isset($query->query_vars['post_type']) && $query->query_vars['post_type'] === 'product') {
-            $gift_product_id = (int) get_option('fp_exp_gift_product_id', 199);
-            
-            if ($gift_product_id > 0) {
-                $existing_excludes = (array) $query->get('post__not_in');
-                $query->set('post__not_in', array_merge($existing_excludes, [$gift_product_id]));
-            }
-        }
+        $this->initServices();
+        $this->wc_integration->excludeGiftProductFromQueries($query);
     }
 
     /**
-     * Escludi prodotto gift dalle query WooCommerce (wc_get_products, widget, etc.)
+     * Exclude gift from WC queries (delegated to WooCommerceIntegration).
+     *
+     * @deprecated Use WooCommerceIntegration::excludeGiftFromWcQueries() instead
      */
     public function exclude_gift_from_wc_queries($meta_query, $query): array
     {
-        if (!is_admin()) {
-            $gift_product_id = (int) get_option('fp_exp_gift_product_id', 199);
-            
-            if ($gift_product_id > 0) {
-                // Aggiungi meta query per escludere gift product
-                $meta_query[] = [
-                    'key' => '_fp_exp_is_gift_product',
-                    'compare' => 'NOT EXISTS',
-                ];
-            }
-        }
-        
-        return $meta_query;
+        $this->initServices();
+
+        return $this->wc_integration->excludeGiftFromWcQueries($meta_query, $query);
     }
 
     /**
-     * SOLUZIONE A: Localizza template WooCommerce personalizzati per gift vouchers
-     * 
-     * Questo metodo intercetta il caricamento dei template WooCommerce e,
-     * se c'è un gift voucher nel cart, usa il nostro template custom
-     * che evita errori causati da link al prodotto virtuale.
+     * Locate gift template (delegated to WooCommerceIntegration).
+     *
+     * @deprecated Use WooCommerceIntegration::locateGiftTemplate() instead
      */
     public function locate_gift_template(string $template, string $template_name, string $template_path): string
     {
-        // Verifica se siamo nel checkout e se c'è un gift nel cart
-        if ($template_name !== 'checkout/review-order.php') {
-            return $template;
-        }
+        $this->initServices();
 
-        // Verifica se c'è un gift voucher nel cart
-        if (!function_exists('WC') || !WC()->cart) {
-            return $template;
-        }
-
-        $has_gift = false;
-        foreach (WC()->cart->get_cart() as $cart_item) {
-            if (($cart_item['_fp_exp_item_type'] ?? '') === 'gift') {
-                $has_gift = true;
-                break;
-            }
-        }
-
-        if (!$has_gift) {
-            return $template;
-        }
-
-        // Carica il nostro template personalizzato
-        $plugin_template = FP_EXP_PLUGIN_DIR . 'templates/woocommerce/' . $template_name;
-        
-        if (file_exists($plugin_template)) {
-            return $plugin_template;
-        }
-
-        return $template;
+        return $this->wc_integration->locateGiftTemplate($template, $template_name, $template_path);
     }
 }

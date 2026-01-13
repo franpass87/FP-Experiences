@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace FP_Exp\Admin;
 
+use FP_Exp\Core\Hook\HookableInterface;
 use FP_Exp\Utils\Helpers;
 use FP_Exp\Utils\LanguageHelper;
 use WP_Screen;
@@ -20,7 +21,7 @@ use function is_admin;
 use function sprintf;
 use function wp_enqueue_style;
 
-final class LanguageAdmin
+final class LanguageAdmin implements HookableInterface
 {
     public function register_hooks(): void
     {

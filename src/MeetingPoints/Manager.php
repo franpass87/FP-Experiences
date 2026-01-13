@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace FP_Exp\MeetingPoints;
 
+use FP_Exp\Core\Hook\HookableInterface;
+
 use function is_admin;
 
-final class Manager
+final class Manager implements HookableInterface
 {
     private MeetingPointCPT $cpt;
 

@@ -38,12 +38,31 @@ final class VoucherTable
 
     public static function create_table(): void
     {
-        global $wpdb;
-
         require_once ABSPATH . 'wp-admin/includes/upgrade.php';
 
-        $charset = $wpdb->get_charset_collate();
         $table = self::table_name();
+        
+        // Try to get charset_collate from DatabaseInterface if available
+        $kernel = \FP_Exp\Core\Bootstrap\Bootstrap::kernel();
+        $charset = '';
+        
+        if ($kernel !== null) {
+            $container = $kernel->container();
+            if ($container->has(\FP_Exp\Services\Database\DatabaseInterface::class)) {
+                try {
+                    $database = $container->make(\FP_Exp\Services\Database\DatabaseInterface::class);
+                    $charset = $database->getCharsetCollate();
+                } catch (\Throwable $e) {
+                    // Fall through to global $wpdb
+                }
+            }
+        }
+        
+        // Fallback to global $wpdb for backward compatibility
+        if (empty($charset)) {
+            global $wpdb;
+            $charset = $wpdb->get_charset_collate();
+        }
 
         $sql = "CREATE TABLE {$table} (
             id bigint(20) unsigned NOT NULL AUTO_INCREMENT,

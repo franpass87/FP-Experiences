@@ -22,6 +22,8 @@ use function wc_price;
 
 final class CheckoutShortcode extends BaseShortcode
 {
+    private ?GetSettingsUseCase $getSettingsUseCase = null;
+
     protected string $tag = 'fp_exp_checkout';
 
     protected string $template = 'front/checkout.php';
@@ -94,12 +96,22 @@ final class CheckoutShortcode extends BaseShortcode
             'cart_locked' => esc_html__('Il carrello è bloccato mentre completi il pagamento.', 'fp-experiences'),
         ];
 
+        // Try to use new use case if available
+        $useCase = $this->getGetSettingsUseCase();
+        $currency = 'EUR';
+        if ($useCase !== null) {
+            $currency = (string) $useCase->get('woocommerce_currency', 'EUR');
+        } else {
+            // Fallback to direct get_option for backward compatibility
+            $currency = get_option('woocommerce_currency', 'EUR');
+        }
+
         return [
             'theme' => $theme,
             'nonce' => '', // NON generare nonce qui - verrà richiesto via AJAX per evitare problemi di cache
             'locale' => get_locale(),
             'strings' => $strings,
-            'currency' => get_option('woocommerce_currency', 'EUR'),
+            'currency' => $currency,
             'cart_items' => $cart_items,
             'cart_totals' => $totals,
             'total_formatted' => $total_formatted,
@@ -109,7 +121,7 @@ final class CheckoutShortcode extends BaseShortcode
                 '@type' => 'Order',
                 'acceptedOffer' => [
                     '@type' => 'Offer',
-                    'priceCurrency' => get_option('woocommerce_currency', 'EUR'),
+                    'priceCurrency' => $currency,
                 ],
             ]),
         ];
@@ -147,7 +159,7 @@ final class CheckoutShortcode extends BaseShortcode
                 'tickets' => $tickets,
                 'addons' => $addons,
                 'total' => $total,
-                'total_formatted' => $this->format_money($total, get_option('woocommerce_currency', 'EUR')),
+                'total_formatted' => $this->format_money($total, $currency),
             ];
         }
 

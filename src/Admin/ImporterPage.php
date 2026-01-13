@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace FP_Exp\Admin;
 
+use FP_Exp\Core\Hook\HookableInterface;
 use FP_Exp\Utils\Helpers;
 use WP_Error;
 
@@ -39,7 +40,7 @@ use function update_post_meta;
 /**
  * Importer page for bulk importing experiences from CSV files.
  */
-final class ImporterPage
+final class ImporterPage implements HookableInterface
 {
     public function register_hooks(): void
     {
@@ -140,7 +141,13 @@ final class ImporterPage
     public function enqueue_assets(): void
     {
         $screen = get_current_screen();
-        if (! $screen || 'fp-exp-dashboard_page_fp_exp_importer' !== $screen->id) {
+        // Verifica anche il hook e il page parameter per maggiore sicurezza
+        $is_importer_page = $screen && (
+            'fp-exp-dashboard_page_fp_exp_importer' === $screen->id ||
+            (isset($_GET['page']) && $_GET['page'] === 'fp_exp_importer')
+        );
+        
+        if (! $is_importer_page) {
             return;
         }
 

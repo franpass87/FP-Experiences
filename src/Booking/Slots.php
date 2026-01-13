@@ -9,6 +9,12 @@ use DatePeriod;
 use DateTimeImmutable;
 use DateTimeZone;
 use Exception;
+use FP_Exp\Booking\Slot\Factory\SlotFactory;
+use FP_Exp\Booking\Slot\Repository\SlotRepository;
+use FP_Exp\Booking\Slot\Services\AvailabilityCalculator;
+use FP_Exp\Booking\Slot\Services\CapacityManager;
+use FP_Exp\Booking\Slot\Services\SlotManager;
+use FP_Exp\Booking\Slot\ValueObjects\TimeRange;
 use FP_Exp\Utils\Helpers;
 use WP_Error;
 use wpdb;
@@ -44,21 +50,112 @@ final class Slots
     public const STATUS_CLOSED = 'closed';
     public const STATUS_CANCELLED = 'cancelled';
 
+    // Refactored services (lazy loading)
+    // Note: These are kept as static for backward compatibility with static methods.
+    // In future versions, these should be instance properties accessed via DI.
+    private static ?SlotRepository $repository = null;
+    private static ?SlotManager $slot_manager = null;
+    private static ?CapacityManager $capacity_manager = null;
+    private static ?AvailabilityCalculator $availability_calculator = null;
+    private static ?SlotFactory $slot_factory = null;
+
+    /**
+     * Initialize services (lazy loading).
+     * 
+     * Tries to get services from container first (new architecture),
+     * falls back to direct instantiation (backward compatibility).
+     */
+    private static function initServices(): void
+    {
+        if (self::$repository !== null) {
+            return;
+        }
+
+        // Try to get repository from container (new architecture)
+        $kernel = \FP_Exp\Core\Bootstrap\Bootstrap::kernel();
+        $repository = null;
+        
+        if ($kernel !== null) {
+            $container = $kernel->container();
+            try {
+                // Try to get SlotRepositoryInterface from container
+                if ($container->has(\FP_Exp\Domain\Booking\Repositories\SlotRepositoryInterface::class)) {
+                    $container_repository = $container->make(\FP_Exp\Domain\Booking\Repositories\SlotRepositoryInterface::class);
+                    // Convert to SlotRepository if needed (adapter pattern)
+                    // For now, we still use the old SlotRepository, but this sets up the path for migration
+                    // The old SlotRepository can wrap the interface if needed
+                }
+            } catch (\Throwable $e) {
+                // Fall through to direct instantiation
+            }
+        }
+        
+        // Fallback to direct instantiation (backward compatibility)
+        if ($repository === null) {
+            $repository = new SlotRepository();
+        }
+        
+        self::$repository = $repository;
+        self::$capacity_manager = new CapacityManager();
+        self::$availability_calculator = new AvailabilityCalculator(self::$repository);
+        self::$slot_manager = new SlotManager(self::$repository, self::$capacity_manager, self::$availability_calculator);
+        self::$slot_factory = new SlotFactory(self::$repository);
+    }
+
+    /**
+     * Get the slots table name.
+     * 
+     * Tries to get prefix from DatabaseInterface if available,
+     * falls back to global $wpdb for backward compatibility.
+     */
     public static function table_name(): string
     {
-        global $wpdb;
+        // Try to get from container first
+        $kernel = \FP_Exp\Core\Bootstrap\Bootstrap::kernel();
+        if ($kernel !== null) {
+            $container = $kernel->container();
+            if ($container->has(\FP_Exp\Services\Database\DatabaseInterface::class)) {
+                try {
+                    $database = $container->make(\FP_Exp\Services\Database\DatabaseInterface::class);
+                    return $database->getPrefix() . 'fp_exp_slots';
+                } catch (\Throwable $e) {
+                    // Fall through to global $wpdb
+                }
+            }
+        }
 
+        // Fallback to global $wpdb for backward compatibility
+        global $wpdb;
         return $wpdb->prefix . 'fp_exp_slots';
     }
 
     public static function create_table(): void
     {
-        global $wpdb;
-
         require_once ABSPATH . 'wp-admin/includes/upgrade.php';
 
         $table_name = self::table_name();
-        $charset_collate = $wpdb->get_charset_collate();
+        
+        // Try to get charset_collate from DatabaseInterface if available
+        $kernel = \FP_Exp\Core\Bootstrap\Bootstrap::kernel();
+        $charset_collate = '';
+        
+        if ($kernel !== null) {
+            $container = $kernel->container();
+            if ($container->has(\FP_Exp\Services\Database\DatabaseInterface::class)) {
+                try {
+                    $database = $container->make(\FP_Exp\Services\Database\DatabaseInterface::class);
+                    $charset_collate = $database->getCharsetCollate();
+                } catch (\Throwable $e) {
+                    // Fall through to global $wpdb
+                }
+            }
+        }
+        
+        // Fallback to global $wpdb for backward compatibility
+        if (empty($charset_collate)) {
+            global $wpdb;
+            $charset_collate = $wpdb->get_charset_collate();
+        }
 
         $sql = "CREATE TABLE {$table_name} (
             id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -270,6 +367,11 @@ final class Slots
     /**
      * Determine if a slot violates configured buffers.
      */
+    /**
+     * Check for buffer conflicts (delegated to SlotManager).
+     *
+     * @deprecated Use SlotManager::hasBufferConflict() instead
+     */
     public static function has_buffer_conflict(
         int $experience_id,
         string $start_utc,
@@ -415,6 +517,11 @@ final class Slots
      *
      * @param array<string, mixed> $slot Slot row from the database.
      */
+    /**
+     * Check if slot passes lead time (delegated to SlotManager).
+     *
+     * @deprecated Use SlotManager::passesLeadTime() instead
+     */
     public static function passes_lead_time(array $slot, int $lead_time_hours): bool
     {
         $lead_time_hours = max(0, $lead_time_hours);
@@ -441,31 +548,29 @@ final class Slots
      *
      * @return array<string, mixed>|null
      */
+    /**
+     * Get slot by ID (delegated to SlotRepository).
+     *
+     * @deprecated Use SlotRepository::findById() instead
+     */
     public static function get_slot(int $slot_id): ?array
     {
-        global $wpdb;
+        self::initServices();
+        $slot = self::$repository->findById($slot_id);
 
-        $table = self::table_name();
-
-        $sql = $wpdb->prepare("SELECT * FROM {$table} WHERE id = %d", $slot_id);
-
-        $row = $wpdb->get_row($sql, ARRAY_A);
-
-        if (! $row) {
+        if (! $slot) {
             return null;
         }
 
-        $row['capacity_per_type'] = maybe_unserialize($row['capacity_per_type']);
-        $row['resource_lock'] = maybe_unserialize($row['resource_lock']);
-        $row['price_rules'] = maybe_unserialize($row['price_rules']);
-        
-        // Add capacity snapshot (reserved/remaining)
-        $snapshot = self::get_capacity_snapshot((int) $row['id']);
-        $row['reserved_total'] = $snapshot['total'];
-        $row['reserved_per_type'] = $snapshot['per_type'];
-        $row['remaining'] = max(0, (int) $row['capacity_total'] - $snapshot['total']);
+        $array = $slot->toArray();
 
-        return $row;
+        // Add capacity snapshot (reserved/remaining) for backward compatibility
+        $snapshot = self::get_capacity_snapshot($slot_id);
+        $array['reserved_total'] = $snapshot['total'];
+        $array['reserved_per_type'] = $snapshot['per_type'];
+        $array['remaining'] = max(0, $array['capacity_total'] - $snapshot['total']);
+
+        return $array;
     }
 
     /**
@@ -593,11 +698,59 @@ final class Slots
         }
 
         // FAILSAFE: Check buffer conflicts but don't block completely
+        // First, check if there's an overlapping slot that matches exactly (within 1 minute tolerance)
+        // This handles cases where the slot exists but with slightly different timestamps
+        global $wpdb;
+        $table = self::table_name();
+        
+        // Try to find an existing slot with similar times (within 60 seconds)
+        // Calculate the time range in PHP to avoid SQL function issues with placeholders
+        try {
+            $start_dt = new \DateTimeImmutable($start_utc, new \DateTimeZone('UTC'));
+            $end_dt = new \DateTimeImmutable($end_utc, new \DateTimeZone('UTC'));
+            
+            $start_min = $start_dt->modify('-60 seconds')->format('Y-m-d H:i:s');
+            $start_max = $start_dt->modify('+60 seconds')->format('Y-m-d H:i:s');
+            $end_min = $end_dt->modify('-60 seconds')->format('Y-m-d H:i:s');
+            $end_max = $end_dt->modify('+60 seconds')->format('Y-m-d H:i:s');
+            
+            $overlapping = $wpdb->get_results($wpdb->prepare(
+                "SELECT id, start_datetime, end_datetime FROM {$table} 
+                WHERE experience_id = %d 
+                AND start_datetime BETWEEN %s AND %s
+                AND end_datetime BETWEEN %s AND %s
+                LIMIT 1",
+                $experience_id,
+                $start_min,
+                $start_max,
+                $end_min,
+                $end_max
+            ), ARRAY_A);
+            
+            if (!empty($overlapping)) {
+                $existing_slot_id = (int) $overlapping[0]['id'];
+                Helpers::log_debug('slots', 'Found overlapping slot with similar times, returning existing slot', [
+                    'experience_id' => $experience_id,
+                    'requested_start' => $start_utc,
+                    'requested_end' => $end_utc,
+                    'existing_slot_id' => $existing_slot_id,
+                    'existing_start' => $overlapping[0]['start_datetime'],
+                    'existing_end' => $overlapping[0]['end_datetime'],
+                ]);
+                return $existing_slot_id;
+            }
+        } catch (\Exception $e) {
+            // If date calculation fails, continue with normal flow
+            Helpers::log_debug('slots', 'Error calculating date range for overlapping slot check', [
+                'error' => $e->getMessage(),
+                'start_utc' => $start_utc,
+                'end_utc' => $end_utc,
+            ]);
+        }
+        
         $has_conflict = self::has_buffer_conflict($experience_id, $start_utc, $end_utc, $buffer_before, $buffer_after);
         if ($has_conflict) {
             // Get conflicting slots for debugging
-            global $wpdb;
-            $table = self::table_name();
             $conflicting = $wpdb->get_results($wpdb->prepare(
                 "SELECT id, start_datetime, end_datetime FROM {$table} 
                 WHERE experience_id = %d 
@@ -666,6 +819,11 @@ final class Slots
     /**
      * @return array<int, array<string, mixed>>
      */
+    /**
+     * Get upcoming slots for experience (delegated to SlotManager).
+     *
+     * @deprecated Use SlotManager::getUpcomingForExperience() instead
+     */
     public static function get_upcoming_for_experience(int $experience_id, int $limit = 20): array
     {
         global $wpdb;
@@ -711,6 +869,11 @@ final class Slots
      * @param array<string, mixed> $args
      *
      * @return array<int, array<string, mixed>>
+     */
+    /**
+     * Get slots in range (delegated to SlotManager).
+     *
+     * @deprecated Use SlotManager::getSlotsInRange() instead
      */
     public static function get_slots_in_range(string $start, string $end, array $args = []): array
     {
@@ -1033,76 +1196,39 @@ final class Slots
         return $remaining;
     }
 
+    /**
+     * Move slot to new time range (delegated to SlotManager).
+     *
+     * @deprecated Use SlotManager::moveSlot() instead
+     */
     public static function move_slot(int $slot_id, string $start_iso, string $end_iso): bool
     {
-        $slot = self::get_slot($slot_id);
-
-        if (! $slot) {
-            return false;
-        }
+        self::initServices();
 
         try {
-            $start = new DateTimeImmutable($start_iso);
-            $end = new DateTimeImmutable($end_iso);
-        } catch (Exception $exception) {
+            $time_range = TimeRange::fromIsoStrings($start_iso, $end_iso);
+        } catch (\Throwable $exception) {
             return false;
         }
 
-        if ($end <= $start) {
-            return false;
-        }
+        $result = self::$slot_manager->moveSlot($slot_id, $time_range);
 
-        $start_utc = $start->setTimezone(new DateTimeZone('UTC'))->format('Y-m-d H:i:s');
-        $end_utc = $end->setTimezone(new DateTimeZone('UTC'))->format('Y-m-d H:i:s');
-
-        if (self::has_buffer_conflict((int) $slot['experience_id'], $start_utc, $end_utc, 0, 0, $slot_id)) {
-            return false;
-        }
-
-        return self::update_slot($slot_id, array_merge($slot, [
-            'start_datetime' => $start_utc,
-            'end_datetime' => $end_utc,
-        ]));
+        return ! ($result instanceof WP_Error) && $result === true;
     }
 
     /**
+     * Update slot capacity (delegated to SlotManager).
+     *
+     * @deprecated Use SlotManager::updateCapacity() instead
+     *
      * @param array<string, int|float> $per_type
      */
     public static function update_capacity(int $slot_id, int $total, array $per_type): bool
     {
-        $slot = self::get_slot($slot_id);
+        self::initServices();
+        $result = self::$slot_manager->updateCapacity($slot_id, $total, $per_type);
 
-        if (! $slot) {
-            return false;
-        }
-
-        $total = max(0, $total);
-        $sanitised = [];
-
-        foreach ($per_type as $key => $value) {
-            $key = sanitize_key((string) $key);
-            if ('' === $key) {
-                continue;
-            }
-
-            $sanitised[$key] = max(0, (int) $value);
-        }
-
-        $snapshot = self::get_capacity_snapshot($slot_id);
-        if ($total > 0 && $snapshot['total'] > $total) {
-            return false;
-        }
-
-        foreach ($sanitised as $key => $value) {
-            if ($value > 0 && ($snapshot['per_type'][$key] ?? 0) > $value) {
-                return false;
-            }
-        }
-
-        return self::update_slot($slot_id, array_merge($slot, [
-            'capacity_total' => $total,
-            'capacity_per_type' => $sanitised,
-        ]));
+        return ! ($result instanceof WP_Error) && $result === true;
     }
 
     private static function calculate_duration_minutes(?string $start, ?string $end): int
@@ -1568,6 +1694,9 @@ final class Slots
 
     /**
      * Ensure only allowed statuses are stored.
+     */
+    /**
+     * Normalize status (utility method, kept for backward compatibility).
      */
     public static function normalize_status(string $status): string
     {

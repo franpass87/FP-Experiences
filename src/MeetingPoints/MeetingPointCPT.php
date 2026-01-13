@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace FP_Exp\MeetingPoints;
 
+use FP_Exp\Core\Hook\HookableInterface;
 use FP_Exp\Utils\Helpers;
 use WP_Query;
 
@@ -18,7 +19,7 @@ use function is_admin;
 use function wp_kses_post;
 use function wp_parse_args;
 
-final class MeetingPointCPT
+final class MeetingPointCPT implements HookableInterface
 {
     public const POST_TYPE = 'fp_meeting_point';
 

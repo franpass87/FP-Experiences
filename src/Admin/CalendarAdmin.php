@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace FP_Exp\Admin;
 
+use FP_Exp\Core\Hook\HookableInterface;
 use FP_Exp\Booking\Orders;
 use FP_Exp\Booking\Pricing;
 use FP_Exp\Booking\Reservations;
@@ -45,7 +46,7 @@ use function wp_nonce_field;
 use function wp_unslash;
 use function wp_kses_post;
 
-final class CalendarAdmin
+final class CalendarAdmin implements HookableInterface
 {
     private Orders $orders;
 
@@ -61,8 +62,15 @@ final class CalendarAdmin
 
     public function enqueue_assets(string $hook): void
     {
-        // In alcuni ambienti lo screen id può variare leggermente: usiamo un controllo più permissivo
-        if (false === strpos($hook, 'fp_exp_calendar')) {
+        $screen = get_current_screen();
+        // Verifica anche il hook e il page parameter per maggiore sicurezza
+        $is_calendar_page = (
+            false !== strpos($hook, 'fp_exp_calendar') ||
+            ($screen && 'fp-exp-dashboard_page_fp_exp_calendar' === $screen->id) ||
+            (isset($_GET['page']) && $_GET['page'] === 'fp_exp_calendar')
+        );
+        
+        if (! $is_calendar_page) {
             return;
         }
 

@@ -6,14 +6,20 @@ namespace FP_Exp\Elementor;
 
 use Elementor\Elements_Manager;
 use Elementor\Widgets_Manager;
+use FP_Exp\Core\Hook\HookableInterface;
 use FP_Exp\Utils\Helpers;
 
 use function __;
 use function add_action;
 
-final class WidgetsRegistrar
+final class WidgetsRegistrar implements HookableInterface
 {
     private bool $hooks_registered = false;
+
+    public function register_hooks(): void
+    {
+        $this->register();
+    }
 
     public function register(): void
     {

@@ -4,12 +4,19 @@ declare(strict_types=1);
 
 namespace FP_Exp\Integrations;
 
+use FP_Exp\Core\Hook\HookableInterface;
+
 /**
  * Integration con FP Performance Suite
  * Esclude automaticamente REST API di FP-Experiences dalla cache
  */
-final class PerformanceIntegration
+final class PerformanceIntegration implements HookableInterface
 {
+    public function register_hooks(): void
+    {
+        $this->register();
+    }
+
     public function register(): void
     {
         // Escludi REST API dalla cache di FP Performance
@@ -31,6 +38,11 @@ final class PerformanceIntegration
     {
         $exclude_uris[] = '/wp-json/fp-exp/v1/';
         $exclude_uris[] = 'wp-json/fp-exp/';
+        
+        // CRITICAL: Escludi admin-ajax.php dalla cache (causa 503 errors)
+        $exclude_uris[] = '/wp-admin/admin-ajax.php';
+        $exclude_uris[] = 'wp-admin/admin-ajax.php';
+        $exclude_uris[] = 'admin-ajax.php';
         
         return $exclude_uris;
     }

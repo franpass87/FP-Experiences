@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace FP_Exp\Admin;
 
+use FP_Exp\Core\Hook\HookableInterface;
 use FP_Exp\Utils\Helpers;
 use WP_Admin_Bar;
 
@@ -17,13 +18,15 @@ use function esc_html__;
 use function in_array;
 use function get_current_screen;
 use function remove_menu_page;
+use function sanitize_key;
 use function strpos;
 use function wp_add_inline_script;
 use function wp_enqueue_script;
 use function wp_enqueue_style;
 use function wp_json_encode;
+use function wp_unslash;
 
-final class AdminMenu
+final class AdminMenu implements HookableInterface
 {
     private SettingsPage $settings_page;
 
@@ -71,6 +74,11 @@ final class AdminMenu
         $this->help_page = $help_page;
         $this->importer_page = $importer_page;
         $this->page_creator = $page_creator;
+        
+        // Registra gli hook per HelpPage
+        if (method_exists($this->help_page, 'register_hooks')) {
+            $this->help_page->register_hooks();
+        }
     }
 
     public function register_hooks(): void
@@ -347,20 +355,53 @@ final class AdminMenu
     public function enqueue_shared_assets(): void
     {
         $screen = get_current_screen();
-        if (! $screen) {
-            return;
-        }
-
-        $screen_id = $screen->id ?? '';
+        $screen_id = $screen ? ($screen->id ?? '') : '';
+        
+        // Lista di screen ID gestiti
         $managed_screens = [
             'toplevel_page_fp_exp_dashboard',
             'edit-fp_experience',
             'fp_experience',
             'edit-fp_meeting_point',
             'fp_meeting_point',
+            'edit-fp_exp_gift_voucher',
+            'fp_exp_gift_voucher',
         ];
 
+        // Verifica se lo screen ID corrisponde o inizia con il prefisso
         $is_managed = in_array($screen_id, $managed_screens, true) || 0 === strpos($screen_id, 'fp-exp-dashboard_page_fp_exp_');
+        
+        // Fallback: verifica anche il parametro page nella query string
+        if (! $is_managed && isset($_GET['page'])) {
+            $page = sanitize_key((string) wp_unslash($_GET['page']));
+            $fp_exp_pages = [
+                'fp_exp_dashboard',
+                'fp_exp_settings',
+                'fp_exp_calendar',
+                'fp_exp_requests',
+                'fp_exp_checkin',
+                'fp_exp_orders',
+                'fp_exp_logs',
+                'fp_exp_tools',
+                'fp_exp_emails',
+                'fp_exp_importer',
+                'fp_exp_help',
+                'fp_exp_create_page',
+            ];
+            $is_managed = in_array($page, $fp_exp_pages, true);
+        }
+        
+        // Fallback: verifica anche il post_type nella query string per i custom post types
+        if (! $is_managed && isset($_GET['post_type'])) {
+            $post_type = sanitize_key((string) wp_unslash($_GET['post_type']));
+            $fp_exp_post_types = [
+                'fp_experience',
+                'fp_meeting_point',
+                'fp_exp_gift_voucher',
+            ];
+            $is_managed = in_array($post_type, $fp_exp_post_types, true);
+        }
+        
         if (! $is_managed) {
             return;
         }

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace FP_Exp\Integrations;
 
+use FP_Exp\Core\Hook\HookableInterface;
+
 use function absint;
 use function add_filter;
 use function add_action;
@@ -24,8 +26,13 @@ use function wp_doing_ajax;
 /**
  * Customizes WooCommerce cart/checkout display for experience items
  */
-final class WooCommerceProduct
+final class WooCommerceProduct implements HookableInterface
 {
+    public function register_hooks(): void
+    {
+        $this->register();
+    }
+
     public function register(): void
     {
         // Set dynamic price for experience items (CRITICAL for checkout)

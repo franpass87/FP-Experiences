@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace FP_Exp\Integrations;
 
+use FP_Exp\Core\Hook\HookableInterface;
 use FP_Exp\Utils\Consent;
 use FP_Exp\Utils\Helpers;
 use WC_Order;
@@ -13,7 +14,7 @@ use function esc_html;
 use function is_array;
 use function wc_get_order;
 
-final class MetaPixel
+final class MetaPixel implements HookableInterface
 {
     public function register_hooks(): void
     {

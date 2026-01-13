@@ -19,19 +19,52 @@ final class Resources
 
     public static function table_name(): string
     {
-        global $wpdb;
+        // Try to get from container first
+        $kernel = \FP_Exp\Core\Bootstrap\Bootstrap::kernel();
+        if ($kernel !== null) {
+            $container = $kernel->container();
+            if ($container->has(\FP_Exp\Services\Database\DatabaseInterface::class)) {
+                try {
+                    $database = $container->make(\FP_Exp\Services\Database\DatabaseInterface::class);
+                    return $database->getPrefix() . 'fp_exp_resources';
+                } catch (\Throwable $e) {
+                    // Fall through to global $wpdb
+                }
+            }
+        }
 
+        // Fallback to global $wpdb for backward compatibility
+        global $wpdb;
         return $wpdb->prefix . 'fp_exp_resources';
     }
 
     public static function create_table(): void
     {
-        global $wpdb;
-
         require_once ABSPATH . 'wp-admin/includes/upgrade.php';
 
         $table_name = self::table_name();
-        $charset_collate = $wpdb->get_charset_collate();
+        
+        // Try to get charset_collate from DatabaseInterface if available
+        $kernel = \FP_Exp\Core\Bootstrap\Bootstrap::kernel();
+        $charset_collate = '';
+        
+        if ($kernel !== null) {
+            $container = $kernel->container();
+            if ($container->has(\FP_Exp\Services\Database\DatabaseInterface::class)) {
+                try {
+                    $database = $container->make(\FP_Exp\Services\Database\DatabaseInterface::class);
+                    $charset_collate = $database->getCharsetCollate();
+                } catch (\Throwable $e) {
+                    // Fall through to global $wpdb
+                }
+            }
+        }
+        
+        // Fallback to global $wpdb for backward compatibility
+        if (empty($charset_collate)) {
+            global $wpdb;
+            $charset_collate = $wpdb->get_charset_collate();
+        }
 
         $sql = "CREATE TABLE {$table_name} (
             id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,

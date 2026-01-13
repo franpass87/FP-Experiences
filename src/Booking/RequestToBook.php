@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace FP_Exp\Booking;
 
 use Exception;
+use FP_Exp\Core\Hook\HookableInterface;
 use FP_Exp\Integrations\Brevo;
+use FP_Exp\Services\Options\OptionsInterface;
 use Throwable;
 use FP_Exp\MeetingPoints\Repository;
 use FP_Exp\Utils\Helpers;
@@ -49,13 +51,50 @@ use function wp_verify_nonce;
 
 use const MINUTE_IN_SECONDS;
 
-final class RequestToBook
+final class RequestToBook implements HookableInterface
 {
     private Brevo $brevo;
+    private ?OptionsInterface $options = null;
 
-    public function __construct(Brevo $brevo)
+    /**
+     * RequestToBook constructor.
+     *
+     * @param Brevo $brevo Brevo integration
+     * @param OptionsInterface|null $options Optional OptionsInterface (will try to get from container if not provided)
+     */
+    public function __construct(Brevo $brevo, ?OptionsInterface $options = null)
     {
         $this->brevo = $brevo;
+        $this->options = $options;
+    }
+
+    /**
+     * Get OptionsInterface instance.
+     * Tries container first, falls back to direct instantiation for backward compatibility.
+     */
+    private function getOptions(): OptionsInterface
+    {
+        if ($this->options !== null) {
+            return $this->options;
+        }
+
+        // Try to get from container
+        $kernel = \FP_Exp\Core\Bootstrap\Bootstrap::kernel();
+        if ($kernel !== null) {
+            $container = $kernel->container();
+            if ($container->has(OptionsInterface::class)) {
+                try {
+                    $this->options = $container->make(OptionsInterface::class);
+                    return $this->options;
+                } catch (\Throwable $e) {
+                    // Fall through to direct instantiation
+                }
+            }
+        }
+
+        // Fallback to direct instantiation
+        $this->options = new \FP_Exp\Services\Options\Options();
+        return $this->options;
     }
 
     public function register_hooks(): void
@@ -329,6 +368,49 @@ final class RequestToBook
                 return new WP_Error('fp_exp_rtb_invalid', __('Seleziona data e ora prima di proseguire.', 'fp-experiences'), ['status' => 400]);
             }
             
+            // Convert dates to UTC format if they contain timezone info
+            try {
+                // Se start è solo una data (senza orario), cerca di costruirla da end
+                if ($start && strpos($start, 'T') === false && $end && strpos($end, 'T') !== false) {
+                    // start è solo data (es. "2026-01-29"), end ha orario completo (es. "2026-01-29T18:00:00+01:00")
+                    // Estrai la data da start e costruisci start con l'orario di inizio
+                    // Per ora, usa la data di start con l'orario di end meno 2 ore (durata tipica)
+                    $end_dt = new \DateTimeImmutable($end);
+                    // Usa la data di start ma con l'orario calcolato da end (meno durata)
+                    $start = $end_dt->modify('-2 hours')->format('Y-m-d\TH:i:sP');
+                }
+                
+                // Try to parse as ISO datetime with timezone
+                $start_dt = new \DateTimeImmutable($start);
+                $end_dt = new \DateTimeImmutable($end);
+                
+                // Convert to UTC
+                $start = $start_dt->setTimezone(new \DateTimeZone('UTC'))->format('Y-m-d H:i:s');
+                $end = $end_dt->setTimezone(new \DateTimeZone('UTC'))->format('Y-m-d H:i:s');
+            } catch (\Exception $e) {
+                // If parsing fails, return error
+                $this->debug_log('RTB quote: date parsing failed', [
+                    'start' => $start,
+                    'end' => $end,
+                    'error' => $e->getMessage(),
+                ]);
+                return new WP_Error('fp_exp_rtb_invalid', __('Formato data non valido. Riprova.', 'fp-experiences'), ['status' => 400]);
+            }
+            
+            // Verifica che end sia dopo start
+            $start_dt_check = new \DateTimeImmutable($start, new \DateTimeZone('UTC'));
+            $end_dt_check = new \DateTimeImmutable($end, new \DateTimeZone('UTC'));
+            if ($end_dt_check <= $start_dt_check) {
+                $this->debug_log('RTB quote error: end is not after start', [
+                    'experience_id' => $experience_id,
+                    'start' => $start,
+                    'end' => $end,
+                    'start_iso' => $start_dt_check->format('c'),
+                    'end_iso' => $end_dt_check->format('c'),
+                ]);
+                return new WP_Error('fp_exp_rtb_invalid', __('La data di fine deve essere dopo la data di inizio.', 'fp-experiences'), ['status' => 400]);
+            }
+            
             $this->debug_log('RTB quote ensuring slot for occurrence', [
                 'experience_id' => $experience_id,
                 'start' => $start,
@@ -339,6 +421,11 @@ final class RequestToBook
             
             // Handle WP_Error from ensure_slot_for_occurrence
             if (is_wp_error($slot_id)) {
+                $this->debug_log('RTB quote error from ensure_slot_for_occurrence', [
+                    'error_code' => $slot_id->get_error_code(),
+                    'error_message' => $slot_id->get_error_message(),
+                    'error_data' => $slot_id->get_error_data(),
+                ]);
                 return $slot_id; // Pass through the detailed error
             }
             
@@ -962,7 +1049,7 @@ final class RequestToBook
      */
     private function notify_staff(array $context): void
     {
-        $emails = get_option('fp_exp_emails', []);
+        $emails = $this->getOptions()->get('fp_exp_emails', []);
         $emails = is_array($emails) ? $emails : [];
         $structure = '';
         $webmaster = '';
@@ -973,10 +1060,10 @@ final class RequestToBook
             $webmaster = sanitize_email((string) $emails['sender']['webmaster']);
         }
         if (! $structure) {
-            $structure = sanitize_email((string) get_option('fp_exp_structure_email', ''));
+            $structure = sanitize_email((string) $this->getOptions()->get('fp_exp_structure_email', ''));
         }
         if (! $webmaster) {
-            $webmaster = sanitize_email((string) get_option('fp_exp_webmaster_email', ''));
+            $webmaster = sanitize_email((string) $this->getOptions()->get('fp_exp_webmaster_email', ''));
         }
 
         $recipients = array_filter(apply_filters('fp_exp_email_recipients', [$structure, $webmaster], $context['reservation_id'], 0));
@@ -1055,73 +1142,23 @@ final class RequestToBook
     }
 
     /**
-     * Rileva la lingua con cui il cliente sta navigando
-     * Supporta plugin multilingua: FP-Multilanguage, Polylang, WPML, TranslatePress, Weglot
+     * Rileva la lingua con cui il cliente sta navigando.
+     * Usa il layer di compatibilità multilingua unificato.
+     *
+     * @see \FP_Exp\Compatibility\Multilanguage
      */
     private function detect_customer_locale(): string
     {
-        $locale = '';
-
-        // 1. FP-Multilanguage (prioritario - plugin custom)
-        if (class_exists('FPML_Language')) {
-            $fp_lang = \FPML_Language::instance()->get_current_language();
-            if ($fp_lang) {
-                // FP-Multilanguage usa 'it' e 'en', convertiamo in locale completo
-                $locale = $fp_lang === 'it' ? 'it_IT' : ($fp_lang === 'en' ? 'en_US' : $fp_lang);
-            }
-        }
-
-        // 2. Polylang
-        if (! $locale && function_exists('pll_current_language')) {
-            $lang = pll_current_language('locale');
-            if ($lang) {
-                $locale = $lang;
-            }
-        }
-
-        // 3. WPML
-        if (! $locale && defined('ICL_LANGUAGE_CODE')) {
-            $wpml_locale = apply_filters('wpml_current_language', null);
-            if ($wpml_locale) {
-                // Converti codice lingua in locale (es. 'it' -> 'it_IT', 'en' -> 'en_US')
-                $locale = $wpml_locale === 'it' ? 'it_IT' : ($wpml_locale === 'en' ? 'en_US' : $wpml_locale);
-            }
-        }
-
-        // 4. TranslatePress
-        if (! $locale && function_exists('trp_get_current_language')) {
-            $tp_lang = trp_get_current_language();
-            if ($tp_lang) {
-                $locale = $tp_lang === 'it_IT' ? 'it_IT' : ($tp_lang === 'en_US' ? 'en_US' : $tp_lang);
-            }
-        }
-
-        // 5. Weglot
-        if (! $locale && function_exists('weglot_get_current_language')) {
-            $weglot_lang = weglot_get_current_language();
-            if ($weglot_lang) {
-                $locale = $weglot_lang === 'it' ? 'it_IT' : ($weglot_lang === 'en' ? 'en_US' : $weglot_lang);
-            }
-        }
-
-        // 6. Fallback: usa la lingua corrente di WordPress
-        if (! $locale) {
-            $locale = get_locale();
-        }
-
-        // 7. Fallback finale: italiano
-        if (! $locale) {
-            $locale = 'it_IT';
-        }
-
-        return sanitize_text_field($locale);
+        // Usa la classe di compatibilità unificata
+        return \FP_Exp\Compatibility\Multilanguage::get_current_locale();
     }
 
     /**
-     * Recupera il titolo tradotto dell'esperienza in base alla lingua del cliente
+     * Recupera il titolo tradotto dell'esperienza in base alla lingua del cliente.
+     * Usa il layer di compatibilità multilingua unificato.
      *
-     * @param \WP_Post $experience Post dell'esperienza
-     * @param int $reservation_id ID della reservation per recuperare la locale
+     * @param \WP_Post $experience    Post dell'esperienza
+     * @param int      $reservation_id ID della reservation per recuperare la locale
      * @return string Titolo tradotto o originale
      */
     private function get_translated_title(\WP_Post $experience, int $reservation_id): string
@@ -1138,16 +1175,19 @@ final class RequestToBook
             return $experience->post_title;
         }
 
-        // Se la lingua è inglese, cerca il post tradotto tramite FP-Multilanguage
-        if ($customer_locale === 'en_US' || $customer_locale === 'en') {
-            // Cerca il post tradotto usando il meta _fpml_pair_id
-            $translated_id = (int) get_post_meta($experience->ID, '_fpml_pair_id', true);
-            
-            if ($translated_id > 0) {
-                $translated_post = get_post($translated_id);
-                if ($translated_post && $translated_post->post_status !== 'trash') {
-                    return $translated_post->post_title;
-                }
+        // Estrai il codice lingua dalla locale (es. 'en_US' -> 'en')
+        $target_lang = substr($customer_locale, 0, 2);
+
+        // Usa il layer di compatibilità multilingua per trovare la traduzione
+        $translated_id = \FP_Exp\Compatibility\Multilanguage::get_translated_post_id(
+            $experience->ID,
+            $target_lang
+        );
+
+        if ($translated_id > 0 && $translated_id !== $experience->ID) {
+            $translated_post = get_post($translated_id);
+            if ($translated_post && $translated_post->post_status !== 'trash') {
+                return $translated_post->post_title;
             }
         }
 

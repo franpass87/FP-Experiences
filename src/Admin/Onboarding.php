@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace FP_Exp\Admin;
 
+use FP_Exp\Core\Hook\HookableInterface;
 use FP_Exp\Utils\Helpers;
 
 use function absint;
@@ -34,9 +35,17 @@ use function wp_unslash;
 /**
  * Handles the onboarding wizard for FP Experiences administrators.
  */
-final class Onboarding
+final class Onboarding implements HookableInterface
 {
     private const OPTION_KEY = 'fp_exp_onboarding_status';
+
+    /**
+     * Register hooks (implements HookableInterface).
+     */
+    public function register_hooks(): void
+    {
+        $this->register();
+    }
 
     /**
      * Bootstraps onboarding hooks for admin users.

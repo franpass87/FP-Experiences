@@ -8,8 +8,11 @@ use DateInterval;
 use DateTimeImmutable;
 use DateTimeZone;
 use Exception;
+use FP_Exp\Application\Settings\GetSettingsUseCase;
 use FP_Exp\Booking\Slots;
+use FP_Exp\Domain\Booking\Repositories\ExperienceRepositoryInterface;
 use FP_Exp\MeetingPoints\Repository as MeetingPointRepository;
+use FP_Exp\Services\Cache\CacheInterface;
 use FP_Exp\Utils\Helpers;
 use FP_Exp\Utils\LanguageHelper;
 use FP_Exp\Utils\Theme;
@@ -66,6 +69,10 @@ use const DAY_IN_SECONDS;
 
 final class ListShortcode extends BaseShortcode
 {
+    private ?ExperienceRepositoryInterface $experienceRepository = null;
+    private ?GetSettingsUseCase $getSettingsUseCase = null;
+    private ?CacheInterface $cache = null;
+
     protected string $tag = 'fp_exp_list';
 
     protected string $template = 'front/list.php';
@@ -503,8 +510,18 @@ final class ListShortcode extends BaseShortcode
         $permalink = $this->resolve_permalink($id, $cta_mode);
         $thumbnail = $this->get_experience_thumbnail($id);
         $highlights = array_slice(Helpers::get_meta_array($id, '_fp_highlights'), 0, 3);
-        $short_description = sanitize_text_field((string) get_post_meta($id, '_fp_short_desc', true));
-        $duration_minutes = absint((string) get_post_meta($id, '_fp_duration_minutes', true));
+        // Try to use repository if available
+        $repo = $this->getExperienceRepository();
+        $short_description = '';
+        $duration_minutes = 0;
+        if ($repo !== null) {
+            $short_description = sanitize_text_field((string) $repo->getMeta($id, '_fp_short_desc', ''));
+            $duration_minutes = absint((string) $repo->getMeta($id, '_fp_duration_minutes', 0));
+        } else {
+            // Fallback to direct get_post_meta for backward compatibility
+            $short_description = sanitize_text_field((string) get_post_meta($id, '_fp_short_desc', true));
+            $duration_minutes = absint((string) get_post_meta($id, '_fp_duration_minutes', true));
+        }
 
         $taxonomy_languages = wp_get_post_terms($id, 'fp_exp_language', ['fields' => 'names']);
         $language_term_names = is_array($taxonomy_languages)
@@ -622,7 +639,15 @@ final class ListShortcode extends BaseShortcode
     private function resolve_permalink(int $experience_id, string $cta_mode): string
     {
         // Check if this experience has a dedicated page
-        $page_id = absint((string) get_post_meta($experience_id, '_fp_exp_page_id', true));
+        // Try to use repository if available
+        $repo = $this->getExperienceRepository();
+        $page_id = 0;
+        if ($repo !== null) {
+            $page_id = absint((string) $repo->getMeta($experience_id, '_fp_exp_page_id', 0));
+        } else {
+            // Fallback to direct get_post_meta for backward compatibility
+            $page_id = absint((string) get_post_meta($experience_id, '_fp_exp_page_id', true));
+        }
 
         // Debug logging for link resolution issues
         if (defined('WP_DEBUG') && WP_DEBUG) {
@@ -1073,7 +1098,16 @@ final class ListShortcode extends BaseShortcode
     private function get_price_from_cache(int $experience_id): ?float
     {
         $key = self::PRICE_TRANSIENT_PREFIX . $experience_id;
-        $cached = get_transient($key);
+        
+        // Try to use cache service if available
+        $cache = $this->getCache();
+        $cached = null;
+        if ($cache !== null) {
+            $cached = $cache->get($key);
+        } else {
+            // Fallback to direct get_transient for backward compatibility
+            $cached = get_transient($key);
+        }
         if (false !== $cached) {
             if ('none' === $cached) {
                 return null;
@@ -1094,7 +1128,21 @@ final class ListShortcode extends BaseShortcode
 
     private function calculate_price_from_meta(int $experience_id): ?float
     {
-        $tickets = get_post_meta($experience_id, '_fp_ticket_types', true);
+        // Try to use repository if available
+        $repo = $this->getExperienceRepository();
+        $tickets = [];
+        if ($repo !== null) {
+            $tickets = $repo->getMeta($experience_id, '_fp_ticket_types', []);
+            if (!is_array($tickets)) {
+                $tickets = [];
+            }
+        } else {
+            // Fallback to direct get_post_meta for backward compatibility
+            $tickets = get_post_meta($experience_id, '_fp_ticket_types', true);
+            if (!is_array($tickets)) {
+                $tickets = [];
+            }
+        }
         if (! is_array($tickets) || empty($tickets)) {
             return null;
         }
@@ -1162,5 +1210,86 @@ final class ListShortcode extends BaseShortcode
         }
 
         return '';
+    }
+
+    /**
+     * Get ExperienceRepository from container if available.
+     */
+    private function getExperienceRepository(): ?ExperienceRepositoryInterface
+    {
+        if ($this->experienceRepository !== null) {
+            return $this->experienceRepository;
+        }
+
+        try {
+            $kernel = \FP_Exp\Core\Bootstrap\Bootstrap::kernel();
+            if ($kernel === null) {
+                return null;
+            }
+
+            $container = $kernel->container();
+            if (!$container->has(ExperienceRepositoryInterface::class)) {
+                return null;
+            }
+
+            $this->experienceRepository = $container->make(ExperienceRepositoryInterface::class);
+            return $this->experienceRepository;
+        } catch (\Throwable $e) {
+            return null;
+        }
+    }
+
+    /**
+     * Get GetSettingsUseCase from container if available.
+     */
+    private function getGetSettingsUseCase(): ?GetSettingsUseCase
+    {
+        if ($this->getSettingsUseCase !== null) {
+            return $this->getSettingsUseCase;
+        }
+
+        try {
+            $kernel = \FP_Exp\Core\Bootstrap\Bootstrap::kernel();
+            if ($kernel === null) {
+                return null;
+            }
+
+            $container = $kernel->container();
+            if (!$container->has(GetSettingsUseCase::class)) {
+                return null;
+            }
+
+            $this->getSettingsUseCase = $container->make(GetSettingsUseCase::class);
+            return $this->getSettingsUseCase;
+        } catch (\Throwable $e) {
+            return null;
+        }
+    }
+
+    /**
+     * Get CacheInterface from container if available.
+     */
+    private function getCache(): ?CacheInterface
+    {
+        if ($this->cache !== null) {
+            return $this->cache;
+        }
+
+        try {
+            $kernel = \FP_Exp\Core\Bootstrap\Bootstrap::kernel();
+            if ($kernel === null) {
+                return null;
+            }
+
+            $container = $kernel->container();
+            if (!$container->has(CacheInterface::class)) {
+                return null;
+            }
+
+            $this->cache = $container->make(CacheInterface::class);
+            return $this->cache;
+        } catch (\Throwable $e) {
+            return null;
+        }
     }
 }

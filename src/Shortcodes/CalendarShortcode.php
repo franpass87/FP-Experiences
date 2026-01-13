@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace FP_Exp\Shortcodes;
 
+use FP_Exp\Domain\Booking\Repositories\ExperienceRepositoryInterface;
 use FP_Exp\Utils\Theme;
 use WP_Error;
 use WP_Post;
@@ -15,6 +16,8 @@ use function wp_json_encode;
 
 final class CalendarShortcode extends BaseShortcode
 {
+    private ?ExperienceRepositoryInterface $experienceRepository = null;
+
     protected string $tag = 'fp_exp_calendar';
 
     protected string $template = 'front/calendar.php';
@@ -111,7 +114,21 @@ final class CalendarShortcode extends BaseShortcode
     private function generate_calendar_months(int $experience_id, int $count = 1): array
     {
         // NUOVA LOGICA: Verifica veloce se ci sono dati di ricorrenza configurati
-        $recurrence = get_post_meta($experience_id, '_fp_exp_recurrence', true);
+        // Try to use repository if available
+        $repo = $this->getExperienceRepository();
+        $recurrence = [];
+        if ($repo !== null) {
+            $recurrence = $repo->getMeta($experience_id, '_fp_exp_recurrence', []);
+            if (!is_array($recurrence)) {
+                $recurrence = [];
+            }
+        } else {
+            // Fallback to direct get_post_meta for backward compatibility
+            $recurrence = get_post_meta($experience_id, '_fp_exp_recurrence', true);
+            if (!is_array($recurrence)) {
+                $recurrence = [];
+            }
+        }
         
         // Debug log
         if (defined('WP_DEBUG') && WP_DEBUG) {
@@ -128,7 +145,21 @@ final class CalendarShortcode extends BaseShortcode
         
         if (! $has_time_slots && ! $has_time_sets) {
             // Fallback: prova con il vecchio formato per retrocompatibilità
-            $availability = get_post_meta($experience_id, '_fp_exp_availability', true);
+            // Try to use repository if available
+            $repo = $this->getExperienceRepository();
+            $availability = [];
+            if ($repo !== null) {
+                $availability = $repo->getMeta($experience_id, '_fp_exp_availability', []);
+                if (!is_array($availability)) {
+                    $availability = [];
+                }
+            } else {
+                // Fallback to direct get_post_meta for backward compatibility
+                $availability = get_post_meta($experience_id, '_fp_exp_availability', true);
+                if (!is_array($availability)) {
+                    $availability = [];
+                }
+            }
             $has_legacy = is_array($availability) && !empty($availability['times']);
             
             if (! $has_legacy) {
@@ -220,5 +251,32 @@ final class CalendarShortcode extends BaseShortcode
         }
 
         return $months;
+    }
+
+    /**
+     * Get ExperienceRepository from container if available.
+     */
+    private function getExperienceRepository(): ?ExperienceRepositoryInterface
+    {
+        if ($this->experienceRepository !== null) {
+            return $this->experienceRepository;
+        }
+
+        try {
+            $kernel = \FP_Exp\Core\Bootstrap\Bootstrap::kernel();
+            if ($kernel === null) {
+                return null;
+            }
+
+            $container = $kernel->container();
+            if (!$container->has(ExperienceRepositoryInterface::class)) {
+                return null;
+            }
+
+            $this->experienceRepository = $container->make(ExperienceRepositoryInterface::class);
+            return $this->experienceRepository;
+        } catch (\Throwable $e) {
+            return null;
+        }
     }
 }

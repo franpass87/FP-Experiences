@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace FP_Exp\Admin;
 
+use FP_Exp\Core\Hook\HookableInterface;
 use FP_Exp\Utils\Helpers;
 use FP_Exp\Utils\Logger;
 use WP_Error;
@@ -41,7 +42,7 @@ use function wp_strip_all_tags;
 use function wp_unslash;
 use function wp_die;
 
-final class ExperiencePageCreator
+final class ExperiencePageCreator implements HookableInterface
 {
     private const NOTICE_KEY = 'fp_exp_page_creator_notice';
 

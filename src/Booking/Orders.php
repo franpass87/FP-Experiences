@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace FP_Exp\Booking;
 
 use Exception;
+use FP_Exp\Core\Hook\HookableInterface;
 use FP_Exp\Utils\Helpers;
 use WC_Order;
 use WC_Order_Item;
@@ -29,7 +30,7 @@ use function sanitize_text_field;
 use function wc_create_order;
 use function wc_get_order;
 
-final class Orders
+final class Orders implements HookableInterface
 {
     private Cart $cart;
 

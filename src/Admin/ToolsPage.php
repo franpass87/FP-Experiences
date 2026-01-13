@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace FP_Exp\Admin;
 
+use FP_Exp\Core\Hook\HookableInterface;
 use FP_Exp\Utils\Helpers;
 
 use function add_action;
@@ -12,7 +13,7 @@ use function get_current_screen;
 use function settings_errors;
 use function wp_die;
 
-final class ToolsPage
+final class ToolsPage implements HookableInterface
 {
     private SettingsPage $settings_page;
 
@@ -29,14 +30,17 @@ final class ToolsPage
     public function enqueue_assets(): void
     {
         $screen = get_current_screen();
-        if (! $screen || 'fp-exp-dashboard_page_fp_exp_tools' !== $screen->id) {
-            error_log('[FP-EXP-TOOLS] enqueue_assets skipped - screen: ' . ($screen ? $screen->id : 'null'));
+        // Verifica anche il hook e il page parameter per maggiore sicurezza
+        $is_tools_page = $screen && (
+            'fp-exp-dashboard_page_fp_exp_tools' === $screen->id ||
+            (isset($_GET['page']) && $_GET['page'] === 'fp_exp_tools')
+        );
+        
+        if (! $is_tools_page) {
             return;
         }
 
-        error_log('[FP-EXP-TOOLS] ✅ Calling enqueue_tools_assets()');
         $this->settings_page->enqueue_tools_assets();
-        error_log('[FP-EXP-TOOLS] ✅ enqueue_tools_assets() completed');
     }
 
     public function render_page(): void

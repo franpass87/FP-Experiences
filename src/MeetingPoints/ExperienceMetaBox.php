@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace FP_Exp\MeetingPoints;
 
+use FP_Exp\Core\Hook\HookableInterface;
 use FP_Exp\Utils\Helpers;
 use FP_Exp\MeetingPoints\Repository;
 use WP_Post;
@@ -29,7 +30,7 @@ use function wp_is_post_revision;
 use function wp_nonce_field;
 use function wp_verify_nonce;
 
-final class ExperienceMetaBox
+final class ExperienceMetaBox implements HookableInterface
 {
     public function register_hooks(): void
     {

@@ -6,12 +6,48 @@ namespace FP_Exp\Admin;
 
 use FP_Exp\Utils\Helpers;
 
+use function add_action;
+use function admin_url;
+use function esc_attr__;
 use function esc_html;
 use function esc_html__;
+use function esc_url;
+use function get_current_screen;
 use function wp_die;
+use function wp_enqueue_style;
 
 final class HelpPage
 {
+    public function register_hooks(): void
+    {
+        add_action('admin_enqueue_scripts', [$this, 'enqueue_assets']);
+    }
+
+    public function enqueue_assets(): void
+    {
+        $screen = get_current_screen();
+        // Verifica anche il hook e il page parameter per maggiore sicurezza
+        $is_help_page = $screen && (
+            'fp-exp-dashboard_page_fp_exp_help' === $screen->id ||
+            (isset($_GET['page']) && $_GET['page'] === 'fp_exp_help')
+        );
+        
+        if (! $is_help_page) {
+            return;
+        }
+
+        $admin_css = Helpers::resolve_asset_rel([
+            'assets/css/dist/fp-experiences-admin.min.css',
+            'assets/css/admin.css',
+        ]);
+        wp_enqueue_style(
+            'fp-exp-admin',
+            FP_EXP_PLUGIN_URL . $admin_css,
+            [],
+            Helpers::asset_version($admin_css)
+        );
+    }
+
     public function render_page(): void
     {
         if (! Helpers::can_access_guides()) {

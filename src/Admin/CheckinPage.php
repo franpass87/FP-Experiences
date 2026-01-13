@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace FP_Exp\Admin;
 
 use DateInterval;
+use FP_Exp\Core\Hook\HookableInterface;
 use DateTimeImmutable;
 use DateTimeZone;
 use FP_Exp\Admin\Traits\EmptyStateRenderer;
@@ -19,6 +20,7 @@ use function check_admin_referer;
 use function esc_attr;
 use function esc_html;
 use function esc_html__;
+use function get_current_screen;
 use function get_option;
 use function get_transient;
 use function is_array;
@@ -29,6 +31,7 @@ use function sanitize_key;
 use function set_transient;
 use function delete_transient;
 use function wp_date;
+use function wp_enqueue_style;
 use function wp_nonce_field;
 use function wp_safe_redirect;
 use function wp_unslash;
@@ -36,7 +39,7 @@ use function wp_die;
 use function wp_timezone;
 use function strtotime;
 
-final class CheckinPage
+final class CheckinPage implements HookableInterface
 {
     use EmptyStateRenderer;
 
@@ -45,6 +48,32 @@ final class CheckinPage
     public function register_hooks(): void
     {
         add_action('admin_init', [$this, 'maybe_handle_action']);
+        add_action('admin_enqueue_scripts', [$this, 'enqueue_assets']);
+    }
+
+    public function enqueue_assets(): void
+    {
+        $screen = get_current_screen();
+        // Verifica anche il hook e il page parameter per maggiore sicurezza
+        $is_checkin_page = $screen && (
+            'fp-exp-dashboard_page_fp_exp_checkin' === $screen->id ||
+            (isset($_GET['page']) && $_GET['page'] === 'fp_exp_checkin')
+        );
+        
+        if (! $is_checkin_page) {
+            return;
+        }
+
+        $admin_css = Helpers::resolve_asset_rel([
+            'assets/css/dist/fp-experiences-admin.min.css',
+            'assets/css/admin.css',
+        ]);
+        wp_enqueue_style(
+            'fp-exp-admin',
+            FP_EXP_PLUGIN_URL . $admin_css,
+            [],
+            Helpers::asset_version($admin_css)
+        );
     }
 
     public function maybe_handle_action(): void
@@ -184,11 +213,29 @@ final class CheckinPage
      */
     private function get_upcoming_reservations(): array
     {
-        global $wpdb;
-
         $reservations_table = Reservations::table_name();
         $slots_table = Slots::table_name();
-        $posts_table = $wpdb->posts;
+        
+        // Try to get posts table name from DatabaseInterface if available
+        $kernel = \FP_Exp\Core\Bootstrap\Bootstrap::kernel();
+        $posts_table = 'wp_posts'; // Default fallback
+        if ($kernel !== null) {
+            $container = $kernel->container();
+            if ($container->has(\FP_Exp\Services\Database\DatabaseInterface::class)) {
+                try {
+                    $database = $container->make(\FP_Exp\Services\Database\DatabaseInterface::class);
+                    $posts_table = $database->getPrefix() . 'posts';
+                } catch (\Throwable $e) {
+                    // Fall through to global $wpdb
+                }
+            }
+        }
+        
+        // Fallback to global $wpdb for backward compatibility
+        if ($posts_table === 'wp_posts') {
+            global $wpdb;
+            $posts_table = $wpdb->posts;
+        }
 
         $timezone = wp_timezone();
         $now = new DateTimeImmutable('now', $timezone);

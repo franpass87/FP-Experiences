@@ -5,6 +5,13 @@ declare(strict_types=1);
 namespace FP_Exp\Api;
 
 use FP_Exp\Activation;
+use FP_Exp\Api\Controllers\AvailabilityController;
+use FP_Exp\Api\Controllers\CalendarController;
+use FP_Exp\Api\Controllers\DiagnosticController;
+use FP_Exp\Api\Controllers\GiftController;
+use FP_Exp\Api\Controllers\ToolsController;
+use FP_Exp\Api\Middleware\AuthenticationMiddleware;
+use FP_Exp\Core\Hook\HookableInterface;
 use FP_Exp\Booking\AvailabilityService;
 use FP_Exp\Booking\Recurrence;
 use FP_Exp\Booking\Reservations;
@@ -59,13 +66,139 @@ use function wp_strip_all_tags;
 
 use const MINUTE_IN_SECONDS;
 
-final class RestRoutes
+final class RestRoutes implements HookableInterface
 {
     private ?VoucherManager $voucher_manager;
 
-    public function __construct(?VoucherManager $voucher_manager = null)
-    {
+    // Refactored controllers (can be injected via constructor or lazy-loaded)
+    private ?GiftController $gift_controller = null;
+    private ?AvailabilityController $availability_controller = null;
+    private ?CalendarController $calendar_controller = null;
+    private ?ToolsController $tools_controller = null;
+    private ?DiagnosticController $diagnostic_controller = null;
+    private ?SettingsController $settings_controller = null;
+    private ?RouteRegistry $route_registry = null;
+
+    /**
+     * RestRoutes constructor.
+     *
+     * @param VoucherManager|null $voucher_manager Optional VoucherManager
+     * @param AvailabilityController|null $availability_controller Optional (will be lazy-loaded if not provided)
+     * @param CalendarController|null $calendar_controller Optional (will be lazy-loaded if not provided)
+     * @param ToolsController|null $tools_controller Optional (will be lazy-loaded if not provided)
+     * @param DiagnosticController|null $diagnostic_controller Optional (will be lazy-loaded if not provided)
+     * @param GiftController|null $gift_controller Optional (will be lazy-loaded if not provided)
+     * @param SettingsController|null $settings_controller Optional (will be lazy-loaded if not provided)
+     * @param RouteRegistry|null $route_registry Optional (will be created if not provided)
+     */
+    public function __construct(
+        ?VoucherManager $voucher_manager = null,
+        ?AvailabilityController $availability_controller = null,
+        ?CalendarController $calendar_controller = null,
+        ?ToolsController $tools_controller = null,
+        ?DiagnosticController $diagnostic_controller = null,
+        ?GiftController $gift_controller = null,
+        ?SettingsController $settings_controller = null,
+        ?RouteRegistry $route_registry = null
+    ) {
         $this->voucher_manager = $voucher_manager;
+        $this->availability_controller = $availability_controller;
+        $this->calendar_controller = $calendar_controller;
+        $this->tools_controller = $tools_controller;
+        $this->diagnostic_controller = $diagnostic_controller;
+        $this->gift_controller = $gift_controller;
+        $this->settings_controller = $settings_controller;
+        $this->route_registry = $route_registry;
+    }
+
+    /**
+     * Initialize controllers from container.
+     * 
+     * Uses dependency injection container exclusively (no fallback).
+     * Controllers must be registered in RESTServiceProvider.
+     * 
+     * @throws \RuntimeException If container or controllers are not available
+     */
+    private function initControllers(): void
+    {
+        if ($this->gift_controller !== null) {
+            return; // Already initialized
+        }
+
+        // Get controllers from container (new architecture)
+        $kernel = \FP_Exp\Core\Bootstrap\Bootstrap::kernel();
+        
+        if ($kernel === null) {
+            throw new \RuntimeException('FP Experiences kernel not initialized. Cannot resolve REST controllers.');
+        }
+        
+        $container = $kernel->container();
+        
+        try {
+            // Get all controllers from container
+            // These must be registered in RESTServiceProvider
+            if ($container->has(AvailabilityController::class)) {
+                $this->availability_controller = $container->make(AvailabilityController::class);
+            } else {
+                throw new \RuntimeException('AvailabilityController not registered in container.');
+            }
+            
+            if ($container->has(CalendarController::class)) {
+                $this->calendar_controller = $container->make(CalendarController::class);
+            } else {
+                throw new \RuntimeException('CalendarController not registered in container.');
+            }
+            
+            if ($container->has(ToolsController::class)) {
+                $this->tools_controller = $container->make(ToolsController::class);
+            } else {
+                throw new \RuntimeException('ToolsController not registered in container.');
+            }
+            
+            if ($container->has(DiagnosticController::class)) {
+                $this->diagnostic_controller = $container->make(DiagnosticController::class);
+            } else {
+                throw new \RuntimeException('DiagnosticController not registered in container.');
+            }
+            
+            // GiftController is optional (only if VoucherManager is available)
+            if ($container->has(GiftController::class)) {
+                try {
+                    $this->gift_controller = $container->make(GiftController::class);
+                } catch (\Throwable $e) {
+                    // GiftController initialization failed, but it's optional
+                    // This can happen if VoucherManager is not available
+                }
+            }
+            
+            // SettingsController is optional
+            if ($container->has(SettingsController::class)) {
+                try {
+                    $this->settings_controller = $container->make(SettingsController::class);
+                } catch (\Throwable $e) {
+                    // SettingsController initialization failed, but it's optional
+                }
+            }
+            
+            // Create RouteRegistry with all controllers (if not already created)
+            if ($this->route_registry === null) {
+                $this->route_registry = new RouteRegistry(
+                    $this->availability_controller,
+                    $this->calendar_controller,
+                    $this->tools_controller,
+                    $this->diagnostic_controller,
+                    $this,
+                    $this->gift_controller,
+                    $this->settings_controller
+                );
+            }
+        } catch (\Throwable $e) {
+            throw new \RuntimeException(
+                'Failed to initialize REST controllers: ' . $e->getMessage(),
+                0,
+                $e
+            );
+        }
     }
 
     public function register_hooks(): void
@@ -76,16 +209,34 @@ final class RestRoutes
 
     public function register_routes(): void
     {
+        $this->initControllers();
+        
+        // Use RouteRegistry to register all routes
+        if ($this->route_registry !== null) {
+            $this->route_registry->registerAll();
+            return;
+        }
+        
+        // Fallback: register routes directly (should not happen if container is working)
+        // This is kept for backward compatibility but should be removed in future versions
+        $this->registerRoutesLegacy();
+    }
+    
+    /**
+     * Legacy route registration (fallback).
+     * 
+     * @deprecated 1.2.0 Use RouteRegistry instead. This method will be removed in version 2.0.0.
+     */
+    private function registerRoutesLegacy(): void
+    {
+        // Controllers are now always available from container (no fallback)
         register_rest_route(
             'fp-exp/v1',
             '/availability',
             [
                 'methods' => 'GET',
-                'permission_callback' => function (WP_REST_Request $request): bool {
-                    // Public, ma con verifica leggera standard plugin (anti-abuso)
-                    return Helpers::verify_public_rest_request($request);
-                },
-                'callback' => [$this, 'get_virtual_availability'],
+                'permission_callback' => [AuthenticationMiddleware::class, 'publicEndpoint'],
+                'callback' => [$this->availability_controller, 'getVirtualAvailability'],
                 'args' => [
                     'experience' => [
                         'required' => true,
@@ -103,15 +254,14 @@ final class RestRoutes
             ]
         );
 
+        // Controllers are now always available from container (no fallback)
         register_rest_route(
             'fp-exp/v1',
             '/calendar/slots',
             [
                 'methods' => 'GET',
-                'permission_callback' => static function (): bool {
-                    return Helpers::can_operate_fp();
-                },
-                'callback' => [$this, 'get_calendar_slots'],
+                'permission_callback' => [AuthenticationMiddleware::class, 'operatorPermission'],
+                'callback' => [$this->calendar_controller, 'getSlots'],
                 'args' => [
                     'start' => [
                         'required' => true,
@@ -138,9 +288,7 @@ final class RestRoutes
             '/calendar/slot/(?P<id>\d+)/move',
             [
                 'methods' => 'POST',
-                'permission_callback' => static function (): bool {
-                    return Helpers::can_operate_fp();
-                },
+                'permission_callback' => [AuthenticationMiddleware::class, 'operatorPermission'],
                 'callback' => [$this, 'move_calendar_slot'],
                 'args' => [
                     'start' => [
@@ -160,9 +308,7 @@ final class RestRoutes
             '/calendar/slot/capacity/(?P<id>\d+)',
             [
                 'methods' => 'POST',
-                'permission_callback' => static function (): bool {
-                    return Helpers::can_operate_fp();
-                },
+                'permission_callback' => [AuthenticationMiddleware::class, 'operatorPermission'],
                 'callback' => [$this, 'update_slot_capacity'],
             ]
         );
@@ -172,9 +318,7 @@ final class RestRoutes
             '/calendar/recurrence/preview',
             [
                 'methods' => 'POST',
-                'permission_callback' => static function (): bool {
-                    return Helpers::can_operate_fp();
-                },
+                'permission_callback' => [AuthenticationMiddleware::class, 'operatorPermission'],
                 'callback' => [$this, 'preview_recurrence_slots'],
             ]
         );
@@ -184,9 +328,7 @@ final class RestRoutes
             '/calendar/recurrence/generate',
             [
                 'methods' => 'POST',
-                'permission_callback' => static function (): bool {
-                    return Helpers::can_operate_fp();
-                },
+                'permission_callback' => [AuthenticationMiddleware::class, 'operatorPermission'],
                 'callback' => [$this, 'generate_recurrence_slots'],
             ]
         );
@@ -196,9 +338,7 @@ final class RestRoutes
             '/tools/resync-brevo',
             [
                 'methods' => 'POST',
-                'permission_callback' => static function (): bool {
-                    return Helpers::can_manage_fp();
-                },
+                'permission_callback' => [AuthenticationMiddleware::class, 'managerPermission'],
                 'callback' => [$this, 'tool_resync_brevo'],
             ]
         );
@@ -208,9 +348,7 @@ final class RestRoutes
             '/tools/replay-events',
             [
                 'methods' => 'POST',
-                'permission_callback' => static function (): bool {
-                    return Helpers::can_manage_fp();
-                },
+                'permission_callback' => [AuthenticationMiddleware::class, 'managerPermission'],
                 'callback' => [$this, 'tool_replay_events'],
             ]
         );
@@ -220,9 +358,7 @@ final class RestRoutes
             '/tools/resync-roles',
             [
                 'methods' => 'POST',
-                'permission_callback' => static function (): bool {
-                    return Helpers::can_manage_fp();
-                },
+                'permission_callback' => [AuthenticationMiddleware::class, 'managerPermission'],
                 'callback' => [$this, 'tool_resync_roles'],
             ]
         );
@@ -232,9 +368,7 @@ final class RestRoutes
             '/tools/ping',
             [
                 'methods' => 'POST',
-                'permission_callback' => static function (): bool {
-                    return Helpers::can_manage_fp();
-                },
+                'permission_callback' => [AuthenticationMiddleware::class, 'managerPermission'],
                 'callback' => [$this, 'tool_ping'],
             ]
         );
@@ -244,9 +378,7 @@ final class RestRoutes
             '/tools/clear-cache',
             [
                 'methods' => 'POST',
-                'permission_callback' => static function (): bool {
-                    return Helpers::can_manage_fp();
-                },
+                'permission_callback' => [AuthenticationMiddleware::class, 'managerPermission'],
                 'callback' => [$this, 'tool_clear_cache'],
             ]
         );
@@ -256,9 +388,7 @@ final class RestRoutes
             '/tools/resync-pages',
             [
                 'methods' => 'POST',
-                'permission_callback' => static function (): bool {
-                    return Helpers::can_manage_fp();
-                },
+                'permission_callback' => [AuthenticationMiddleware::class, 'managerPermission'],
                 'callback' => [$this, 'tool_resync_pages'],
             ]
         );
@@ -268,9 +398,7 @@ final class RestRoutes
             '/tools/fix-corrupted-arrays',
             [
                 'methods' => 'POST',
-                'permission_callback' => static function (): bool {
-                    return Helpers::can_manage_fp();
-                },
+                'permission_callback' => [AuthenticationMiddleware::class, 'managerPermission'],
                 'callback' => [$this, 'tool_fix_corrupted_arrays'],
             ]
         );
@@ -280,9 +408,7 @@ final class RestRoutes
             '/tools/backup-branding',
             [
                 'methods' => 'POST',
-                'permission_callback' => static function (): bool {
-                    return Helpers::can_manage_fp();
-                },
+                'permission_callback' => [AuthenticationMiddleware::class, 'managerPermission'],
                 'callback' => [$this, 'tool_backup_branding'],
             ]
         );
@@ -292,9 +418,7 @@ final class RestRoutes
             '/tools/restore-branding',
             [
                 'methods' => 'POST',
-                'permission_callback' => static function (): bool {
-                    return Helpers::can_manage_fp();
-                },
+                'permission_callback' => [AuthenticationMiddleware::class, 'managerPermission'],
                 'callback' => [$this, 'tool_restore_branding'],
             ]
         );
@@ -304,9 +428,7 @@ final class RestRoutes
             '/tools/cleanup-duplicate-page-ids',
             [
                 'methods' => 'POST',
-                'permission_callback' => static function (): bool {
-                    return Helpers::can_manage_fp();
-                },
+                'permission_callback' => [AuthenticationMiddleware::class, 'managerPermission'],
                 'callback' => [$this, 'tool_cleanup_duplicate_page_ids'],
             ]
         );
@@ -316,9 +438,7 @@ final class RestRoutes
             '/tools/repair-slot-capacities',
             [
                 'methods' => 'POST',
-                'permission_callback' => static function (): bool {
-                    return Helpers::can_manage_fp();
-                },
+                'permission_callback' => [AuthenticationMiddleware::class, 'managerPermission'],
                 'callback' => [$this, 'tool_repair_slot_capacities'],
             ]
         );
@@ -328,9 +448,7 @@ final class RestRoutes
             '/tools/cleanup-old-slots',
             [
                 'methods' => 'POST',
-                'permission_callback' => static function (): bool {
-                    return Helpers::can_manage_fp();
-                },
+                'permission_callback' => [AuthenticationMiddleware::class, 'managerPermission'],
                 'callback' => [$this, 'tool_cleanup_old_slots'],
             ]
         );
@@ -340,9 +458,7 @@ final class RestRoutes
             '/tools/rebuild-availability-meta',
             [
                 'methods' => 'POST',
-                'permission_callback' => static function (): bool {
-                    return Helpers::can_manage_fp();
-                },
+                'permission_callback' => [AuthenticationMiddleware::class, 'managerPermission'],
                 'callback' => [$this, 'tool_rebuild_availability_meta'],
             ]
         );
@@ -352,9 +468,7 @@ final class RestRoutes
             '/tools/recreate-virtual-product',
             [
                 'methods' => 'POST',
-                'permission_callback' => static function (): bool {
-                    return Helpers::can_manage_fp();
-                },
+                'permission_callback' => [AuthenticationMiddleware::class, 'managerPermission'],
                 'callback' => [$this, 'tool_recreate_virtual_product'],
             ]
         );
@@ -364,9 +478,7 @@ final class RestRoutes
             '/tools/fix-virtual-product-quantity',
             [
                 'methods' => 'POST',
-                'permission_callback' => static function (): bool {
-                    return Helpers::can_manage_fp();
-                },
+                'permission_callback' => [AuthenticationMiddleware::class, 'managerPermission'],
                 'callback' => [$this, 'tool_fix_virtual_product_quantity'],
             ]
         );
@@ -376,9 +488,7 @@ final class RestRoutes
             '/tools/fix-experience-prices',
             [
                 'methods' => 'POST',
-                'permission_callback' => static function (): bool {
-                    return Helpers::can_manage_fp();
-                },
+                'permission_callback' => [AuthenticationMiddleware::class, 'managerPermission'],
                 'callback' => [$this, 'tool_fix_experience_prices'],
             ]
         );
@@ -444,9 +554,7 @@ final class RestRoutes
             '/diagnostic/checkout',
             [
                 'methods' => 'GET',
-                'permission_callback' => static function (): bool {
-                    return Helpers::can_manage_fp();
-                },
+                'permission_callback' => [AuthenticationMiddleware::class, 'managerPermission'],
                 'callback' => [$this, 'diagnostic_checkout'],
             ]
         );
@@ -456,9 +564,7 @@ final class RestRoutes
             '/tools/create-tables',
             [
                 'methods' => 'POST',
-                'permission_callback' => static function (): bool {
-                    return Helpers::can_manage_fp();
-                },
+                'permission_callback' => [AuthenticationMiddleware::class, 'managerPermission'],
                 'callback' => [$this, 'tool_create_tables'],
             ]
         );
@@ -492,870 +598,220 @@ final class RestRoutes
         return $result;
     }
 
+    /**
+     * Purchase gift voucher (delegated to GiftController).
+     *
+     * @deprecated Use GiftController::purchase() instead
+     */
     public function purchase_gift_voucher(WP_REST_Request $request)
     {
-        if (! Helpers::gift_enabled()) {
-            return new WP_Error('fp_exp_gift_disabled', esc_html__('Gift vouchers are disabled.', 'fp-experiences'), ['status' => 400]);
-        }
+        $this->initControllers();
 
-        if (! $this->voucher_manager instanceof VoucherManager) {
-            return new WP_Error('fp_exp_gift_unavailable', esc_html__('Gift manager unavailable.', 'fp-experiences'), ['status' => 500]);
-        }
-
-        $payload = [
-            'experience_id' => $request->get_param('experience_id'),
-            'quantity' => $request->get_param('quantity'),
-            'addons' => $request->get_param('addons'),
-            'purchaser' => $request->get_param('purchaser'),
-            'recipient' => $request->get_param('recipient'),
-            'message' => $request->get_param('message'),
-            'delivery' => $request->get_param('delivery'),
-        ];
-
-        $result = $this->voucher_manager->create_purchase($payload);
-
-        if (is_wp_error($result)) {
-            $result->add_data(['status' => 400]);
-
-            return $result;
-        }
-
-        return rest_ensure_response($result);
+        return $this->gift_controller->purchase($request);
     }
 
+    /**
+     * Get gift voucher (delegated to GiftController).
+     *
+     * @deprecated Use GiftController::getVoucher() instead
+     */
     public function get_gift_voucher(WP_REST_Request $request)
     {
-        if (! $this->voucher_manager instanceof VoucherManager) {
-            return new WP_Error('fp_exp_gift_unavailable', esc_html__('Gift manager unavailable.', 'fp-experiences'), ['status' => 500]);
-        }
+        $this->initControllers();
 
-        $code = sanitize_text_field((string) $request->get_param('code'));
-        $result = $this->voucher_manager->get_voucher_by_code($code);
-
-        if (is_wp_error($result)) {
-            $result->add_data(['status' => 404]);
-
-            return $result;
-        }
-
-        return rest_ensure_response($result);
+        return $this->gift_controller->getVoucher($request);
     }
 
+    /**
+     * Redeem gift voucher (delegated to GiftController).
+     *
+     * @deprecated Use GiftController::redeem() instead
+     */
     public function redeem_gift_voucher(WP_REST_Request $request)
     {
-        if (! $this->voucher_manager instanceof VoucherManager) {
-            return new WP_Error('fp_exp_gift_unavailable', esc_html__('Gift manager unavailable.', 'fp-experiences'), ['status' => 500]);
-        }
+        $this->initControllers();
 
-        $code = sanitize_text_field((string) $request->get_param('code'));
-        $payload = [
-            'slot_id' => $request->get_param('slot_id'),
-        ];
-
-        $result = $this->voucher_manager->redeem_voucher($code, $payload);
-
-        if (is_wp_error($result)) {
-            $result->add_data(['status' => 400]);
-
-            return $result;
-        }
-
-        return rest_ensure_response($result);
+        return $this->gift_controller->redeem($request);
     }
 
+    /**
+     * Get virtual availability (delegated to AvailabilityController).
+     *
+     * @deprecated Use AvailabilityController::getVirtualAvailability() instead
+     */
     public function get_virtual_availability(WP_REST_Request $request)
     {
-        $experience_id = absint((string) $request->get_param('experience'));
-        $start = sanitize_text_field((string) $request->get_param('start'));
-        $end = sanitize_text_field((string) $request->get_param('end'));
+        $this->initControllers();
 
-        if ($experience_id <= 0 || ! $start || ! $end) {
-            return new WP_Error('fp_exp_availability_params', __('Parametri non validi.', 'fp-experiences'), ['status' => 400]);
-        }
-
-        // Validazione formato date
-        if (! preg_match('/^\d{4}-\d{2}-\d{2}$/', $start) || ! preg_match('/^\d{4}-\d{2}-\d{2}$/', $end)) {
-            return new WP_Error(
-                'fp_exp_invalid_date_format',
-                __('Formato data non valido. Usa YYYY-MM-DD.', 'fp-experiences'),
-                ['status' => 400]
-            );
-        }
-
-        // Validazione range temporale
-        $start_ts = strtotime($start);
-        $end_ts = strtotime($end);
-        
-        if (false === $start_ts || false === $end_ts) {
-            return new WP_Error(
-                'fp_exp_invalid_date',
-                __('Le date fornite non sono valide.', 'fp-experiences'),
-                ['status' => 400]
-            );
-        }
-        
-        if ($end_ts < $start_ts) {
-            return new WP_Error(
-                'fp_exp_invalid_range',
-                __('La data di fine deve essere successiva alla data di inizio.', 'fp-experiences'),
-                ['status' => 400]
-            );
-        }
-
-        // Limita il range a max 1 anno per evitare query pesanti
-        $one_year = 365 * 24 * 60 * 60;
-        if (($end_ts - $start_ts) > $one_year) {
-            return new WP_Error(
-                'fp_exp_range_too_large',
-                __('Il range di date non può superare 1 anno.', 'fp-experiences'),
-                ['status' => 400]
-            );
-        }
-
-        $slots = AvailabilityService::get_virtual_slots($experience_id, $start, $end);
-
-        return rest_ensure_response([
-            'slots' => array_map(
-                static function (array $slot): array {
-                    return [
-                        'experience_id' => (int) ($slot['experience_id'] ?? 0),
-                        'start' => sanitize_text_field((string) ($slot['start'] ?? '')),
-                        'end' => sanitize_text_field((string) ($slot['end'] ?? '')),
-                        'capacity_total' => (int) ($slot['capacity_total'] ?? 0),
-                        'capacity_remaining' => (int) ($slot['capacity_remaining'] ?? 0),
-                        'duration' => (int) ($slot['duration'] ?? 0),
-                    ];
-                },
-                $slots
-            ),
-        ]);
+        return $this->availability_controller->getVirtualAvailability($request);
     }
 
+    /**
+     * Get calendar slots (delegated to CalendarController).
+     *
+     * @deprecated Use CalendarController::getSlots() instead
+     */
     public function get_calendar_slots(WP_REST_Request $request)
     {
-        $start = sanitize_text_field((string) $request->get_param('start'));
-        $end = sanitize_text_field((string) $request->get_param('end'));
-        $experience = absint((string) $request->get_param('experience'));
+        $this->initControllers();
 
-        if (! $start || ! $end) {
-            return new WP_Error('fp_exp_calendar_range', __('Provide a valid date range.', 'fp-experiences'), ['status' => 400]);
-        }
-
-        $slots = Slots::get_slots_in_range($start, $end, [
-            'experience_id' => $experience,
-        ]);
-
-        $payload = array_map(
-            static function (array $slot): array {
-                $per_type = [];
-                if (isset($slot['capacity_per_type']) && is_array($slot['capacity_per_type'])) {
-                    foreach ($slot['capacity_per_type'] as $type => $amount) {
-                        $per_type[sanitize_key((string) $type)] = (int) $amount;
-                    }
-                }
-
-                return [
-                    'id' => (int) ($slot['id'] ?? 0),
-                    'experience_id' => (int) ($slot['experience_id'] ?? 0),
-                    'experience_title' => sanitize_text_field((string) ($slot['experience_title'] ?? '')),
-                    'start' => sanitize_text_field((string) ($slot['start_datetime'] ?? '')),
-                    'end' => sanitize_text_field((string) ($slot['end_datetime'] ?? '')),
-                    'capacity_total' => (int) ($slot['capacity_total'] ?? 0),
-                    'capacity_per_type' => $per_type,
-                    'remaining' => (int) ($slot['remaining'] ?? 0),
-                    'reserved' => (int) ($slot['reserved_total'] ?? 0),
-                    'duration' => sanitize_text_field((string) ($slot['duration'] ?? '')),
-                ];
-            },
-            $slots
-        );
-
-        return rest_ensure_response([
-            'slots' => $payload,
-        ]);
+        return $this->calendar_controller->getSlots($request);
     }
 
+    /**
+     * Move calendar slot (delegated to CalendarController).
+     *
+     * @deprecated Use CalendarController::moveSlot() instead
+     */
     public function move_calendar_slot(WP_REST_Request $request)
     {
-        $slot_id = absint((string) $request->get_param('id'));
-        $start = sanitize_text_field((string) $request->get_param('start'));
-        $end = sanitize_text_field((string) $request->get_param('end'));
+        $this->initControllers();
 
-        if ($slot_id <= 0 || ! $start || ! $end) {
-            return new WP_Error('fp_exp_calendar_move', __('Missing slot data.', 'fp-experiences'), ['status' => 400]);
-        }
-
-        if (Helpers::hit_rate_limit('calendar_move_' . get_current_user_id(), 10, MINUTE_IN_SECONDS)) {
-            return new WP_Error('fp_exp_rate_limited', __('Troppe modifiche al calendario in poco tempo. Riprova tra qualche istante.', 'fp-experiences'), ['status' => 429]);
-        }
-
-        $moved = Slots::move_slot($slot_id, $start, $end);
-
-        if (! $moved) {
-            return new WP_Error('fp_exp_calendar_move_failed', __('Unable to move the slot to the requested time.', 'fp-experiences'), ['status' => 409]);
-        }
-
-        Logger::log('calendar', 'Slot moved', [
-            'slot_id' => $slot_id,
-            'start' => $start,
-            'end' => $end,
-        ]);
-
-        return rest_ensure_response(['success' => true]);
+        return $this->calendar_controller->moveSlot($request);
     }
 
+    /**
+     * Update slot capacity (delegated to CalendarController).
+     *
+     * @deprecated Use CalendarController::updateCapacity() instead
+     */
     public function update_slot_capacity(WP_REST_Request $request)
     {
-        $slot_id = absint((string) $request->get_param('id'));
-        $total = absint((string) $request->get_param('capacity_total'));
-        $per_type = $request->get_param('capacity_per_type');
+        $this->initControllers();
 
-        if ($slot_id <= 0) {
-            return new WP_Error('fp_exp_calendar_capacity', __('Invalid slot identifier.', 'fp-experiences'), ['status' => 400]);
-        }
-
-        if (! is_array($per_type)) {
-            $per_type = [];
-        }
-
-        if (Helpers::hit_rate_limit('calendar_capacity_' . get_current_user_id(), 10, MINUTE_IN_SECONDS)) {
-            return new WP_Error('fp_exp_rate_limited', __('Attendi prima di modificare nuovamente la capacità.', 'fp-experiences'), ['status' => 429]);
-        }
-
-        $updated = Slots::update_capacity($slot_id, $total, $per_type);
-
-        if (! $updated) {
-            return new WP_Error('fp_exp_calendar_capacity_failed', __('Unable to update capacity. Check reservations before lowering limits.', 'fp-experiences'), ['status' => 409]);
-        }
-
-        Logger::log('calendar', 'Slot capacity updated', [
-            'slot_id' => $slot_id,
-            'capacity_total' => $total,
-            'capacity_per_type' => $per_type,
-        ]);
-
-        return rest_ensure_response(['success' => true]);
+        return $this->calendar_controller->updateCapacity($request);
     }
 
+    /**
+     * Preview recurrence slots (delegated to CalendarController).
+     *
+     * @deprecated Use CalendarController::previewRecurrence() instead
+     */
     public function preview_recurrence_slots(WP_REST_Request $request)
     {
-        $body = $request->get_json_params();
+        $this->initControllers();
 
-        if (! is_array($body)) {
-            return new WP_Error('fp_exp_recurrence_payload', __('Invalid recurrence payload.', 'fp-experiences'), ['status' => 400]);
-        }
-
-        $experience_id = isset($body['experience_id']) ? absint((string) $body['experience_id']) : 0;
-        $recurrence_raw = isset($body['recurrence']) && is_array($body['recurrence']) ? $body['recurrence'] : [];
-        $availability = isset($body['availability']) && is_array($body['availability']) ? $body['availability'] : [];
-
-        $recurrence = Recurrence::sanitize($recurrence_raw);
-
-        if (! Recurrence::is_actionable($recurrence)) {
-            return rest_ensure_response([
-                'preview' => [],
-            ]);
-        }
-
-        $rules = Recurrence::build_rules($recurrence, [
-            'slot_capacity' => absint((string) ($availability['slot_capacity'] ?? 0)),
-            'buffer_before_minutes' => absint((string) ($availability['buffer_before_minutes'] ?? 0)),
-            'buffer_after_minutes' => absint((string) ($availability['buffer_after_minutes'] ?? 0)),
-        ]);
-
-        if (empty($rules)) {
-            return rest_ensure_response([
-                'preview' => [],
-            ]);
-        }
-
-        $default_capacity = absint((string) ($availability['slot_capacity'] ?? 0));
-        $default_buffer_before = absint((string) ($availability['buffer_before_minutes'] ?? 0));
-        $default_buffer_after = absint((string) ($availability['buffer_after_minutes'] ?? 0));
-
-        foreach ($rules as $rule) {
-            if (0 === $default_capacity && isset($rule['capacity_total'])) {
-                $default_capacity = absint((string) $rule['capacity_total']);
-            }
-            if (0 === $default_buffer_before && isset($rule['buffer_before'])) {
-                $default_buffer_before = absint((string) $rule['buffer_before']);
-            }
-            if (0 === $default_buffer_after && isset($rule['buffer_after'])) {
-                $default_buffer_after = absint((string) $rule['buffer_after']);
-            }
-        }
-
-        $options = [
-            'default_duration' => absint((string) ($recurrence['duration'] ?? 60)),
-            'default_capacity' => $default_capacity,
-            'buffer_before' => $default_buffer_before,
-            'buffer_after' => $default_buffer_after,
-        ];
-
-        $preview = Slots::preview_recurring_slots($experience_id, $rules, [], $options, 12);
-
-        return rest_ensure_response([
-            'preview' => $preview,
-        ]);
+        return $this->calendar_controller->previewRecurrence($request);
     }
 
+    /**
+     * Generate recurrence slots (delegated to CalendarController).
+     *
+     * @deprecated Use CalendarController::generateRecurrence() instead
+     */
     public function generate_recurrence_slots(WP_REST_Request $request)
     {
-        $body = $request->get_json_params();
+        $this->initControllers();
 
-        if (! is_array($body)) {
-            return new WP_Error('fp_exp_recurrence_payload', __('Invalid recurrence payload.', 'fp-experiences'), ['status' => 400]);
-        }
-
-        $experience_id = isset($body['experience_id']) ? absint((string) $body['experience_id']) : 0;
-        if ($experience_id <= 0) {
-            return new WP_Error('fp_exp_recurrence_experience', __('Select a valid experience before generating slots.', 'fp-experiences'), ['status' => 400]);
-        }
-
-        $recurrence_raw = isset($body['recurrence']) && is_array($body['recurrence']) ? $body['recurrence'] : [];
-        $availability = isset($body['availability']) && is_array($body['availability']) ? $body['availability'] : [];
-
-        $recurrence = Recurrence::sanitize($recurrence_raw);
-
-        if (! Recurrence::is_actionable($recurrence)) {
-            return new WP_Error('fp_exp_recurrence_invalid', __('Configure at least one valid time slot for the recurrence.', 'fp-experiences'), ['status' => 422]);
-        }
-
-        $rules = Recurrence::build_rules($recurrence, [
-            'slot_capacity' => absint((string) ($availability['slot_capacity'] ?? 0)),
-            'buffer_before_minutes' => absint((string) ($availability['buffer_before_minutes'] ?? 0)),
-            'buffer_after_minutes' => absint((string) ($availability['buffer_after_minutes'] ?? 0)),
-        ]);
-
-        if (empty($rules)) {
-            return new WP_Error('fp_exp_recurrence_rules', __('Unable to build recurrence rules from the provided data.', 'fp-experiences'), ['status' => 422]);
-        }
-
-        $default_capacity = absint((string) ($availability['slot_capacity'] ?? 0));
-        $default_buffer_before = absint((string) ($availability['buffer_before_minutes'] ?? 0));
-        $default_buffer_after = absint((string) ($availability['buffer_after_minutes'] ?? 0));
-
-        foreach ($rules as $rule) {
-            if (0 === $default_capacity && isset($rule['capacity_total'])) {
-                $default_capacity = absint((string) $rule['capacity_total']);
-            }
-            if (0 === $default_buffer_before && isset($rule['buffer_before'])) {
-                $default_buffer_before = absint((string) $rule['buffer_before']);
-            }
-            if (0 === $default_buffer_after && isset($rule['buffer_after'])) {
-                $default_buffer_after = absint((string) $rule['buffer_after']);
-            }
-        }
-
-        $options = [
-            'default_duration' => absint((string) ($recurrence['duration'] ?? 60)),
-            'default_capacity' => $default_capacity,
-            'buffer_before' => $default_buffer_before,
-            'buffer_after' => $default_buffer_after,
-            'replace_existing' => ! empty($body['replace_existing']),
-        ];
-
-        $created = Slots::generate_recurring_slots($experience_id, $rules, [], $options);
-        $preview = Slots::preview_recurring_slots($experience_id, $rules, [], $options, 12);
-
-        Logger::log('calendar', 'Recurrence slots generated', [
-            'experience_id' => $experience_id,
-            'created' => $created,
-        ]);
-
-        return rest_ensure_response([
-            'created' => $created,
-            'preview' => $preview,
-        ]);
+        return $this->calendar_controller->generateRecurrence($request);
     }
 
+    /**
+     * Resync Brevo (delegated to ToolsController).
+     *
+     * @deprecated Use ToolsController::resyncBrevo() instead
+     */
     public function tool_resync_brevo(): WP_REST_Response
     {
-        if (Helpers::hit_rate_limit('tools_resync_' . get_current_user_id(), 3, MINUTE_IN_SECONDS)) {
-            return rest_ensure_response([
-                'success' => false,
-                'message' => __('Attendi prima di eseguire di nuovo la sincronizzazione Brevo.', 'fp-experiences'),
-            ]);
-        }
+        $this->initControllers();
 
-        do_action('fp_exp_tools_resync_brevo');
-        Logger::log('tools', 'Triggered Brevo resynchronisation request', []);
-
-        return rest_ensure_response([
-            'success' => true,
-            'message' => __('Brevo resynchronisation queued.', 'fp-experiences'),
-        ]);
+        return $this->tools_controller->resyncBrevo();
     }
 
+    /**
+     * Replay events (delegated to ToolsController).
+     *
+     * @deprecated Use ToolsController::replayEvents() instead
+     */
     public function tool_replay_events(): WP_REST_Response
     {
-        if (Helpers::hit_rate_limit('tools_replay_' . get_current_user_id(), 3, MINUTE_IN_SECONDS)) {
-            return rest_ensure_response([
-                'success' => false,
-                'message' => __('Il replay degli eventi è stato eseguito da poco. Riprova più tardi.', 'fp-experiences'),
-            ]);
-        }
+        $this->initControllers();
 
-        do_action('fp_exp_tools_replay_events');
-        Logger::log('tools', 'Triggered lifecycle event replay', []);
-
-        return rest_ensure_response([
-            'success' => true,
-            'message' => __('Event replay initiated.', 'fp-experiences'),
-        ]);
+        return $this->tools_controller->replayEvents();
     }
 
+    /**
+     * Resync roles (delegated to ToolsController).
+     *
+     * @deprecated Use ToolsController::resyncRoles() instead
+     */
     public function tool_resync_roles(): WP_REST_Response
     {
-        if (Helpers::hit_rate_limit('tools_roles_' . get_current_user_id(), 3, MINUTE_IN_SECONDS)) {
-            return rest_ensure_response([
-                'success' => false,
-                'message' => __('Role synchronisation already executed. Try again in a moment.', 'fp-experiences'),
-            ]);
-        }
+        $this->initControllers();
 
-        $roles_blueprint = Activation::roles_blueprint();
-        $snapshot_roles = array_keys($roles_blueprint);
-        $snapshot_roles[] = 'administrator';
-
-        $before = $this->snapshot_role_capabilities($snapshot_roles);
-
-        try {
-            Activation::register_roles();
-            $version = Activation::roles_version();
-            update_option('fp_exp_roles_version', $version);
-
-            Logger::log('tools', 'Role capabilities resynchronised', [
-                'version' => $version,
-            ]);
-
-            $after = $this->snapshot_role_capabilities($snapshot_roles);
-
-            $details = [
-                sprintf(
-                    /* translators: %s: roles version hash. */
-                    __('Roles version updated to %s.', 'fp-experiences'),
-                    $version
-                ),
-            ];
-
-            $overall_success = true;
-
-            foreach ($roles_blueprint as $role_name => $definition) {
-                $expected = array_keys(array_filter($definition['capabilities']));
-                [$role_success, $role_details] = $this->summarise_role_capabilities(
-                    $role_name,
-                    $definition['label'],
-                    $expected,
-                    $before[$role_name] ?? ['exists' => false, 'caps' => []],
-                    $after[$role_name] ?? ['exists' => false, 'caps' => []]
-                );
-
-                $overall_success = $overall_success && $role_success;
-                $details = array_merge($details, $role_details);
-            }
-
-            $manager_caps = array_keys(array_filter(Activation::manager_capabilities()));
-            [$admin_success, $admin_details] = $this->summarise_role_capabilities(
-                'administrator',
-                __('Administrator', 'fp-experiences'),
-                $manager_caps,
-                $before['administrator'] ?? ['exists' => false, 'caps' => []],
-                $after['administrator'] ?? ['exists' => false, 'caps' => []]
-            );
-
-            $overall_success = $overall_success && $admin_success;
-            $details = array_merge($details, $admin_details);
-
-            $message = $overall_success
-                ? __('FP Experiences roles resynchronised.', 'fp-experiences')
-                : __('Role synchronisation completed with warnings.', 'fp-experiences');
-
-            return rest_ensure_response([
-                'success' => $overall_success,
-                'message' => $message,
-                'details' => $details,
-            ]);
-        } catch (Throwable $error) {
-            Logger::log('tools', 'Role capability resync failed', [
-                'error' => $error->getMessage(),
-            ]);
-
-            return rest_ensure_response([
-                'success' => false,
-                'message' => __('Unable to resynchronise roles. Check logs for more details.', 'fp-experiences'),
-            ]);
-        }
+        return $this->tools_controller->resyncRoles();
     }
 
+    /**
+     * Ping tool (delegated to ToolsController).
+     *
+     * @deprecated Use ToolsController::ping() instead
+     */
     public function tool_ping(): WP_REST_Response
     {
-        $response = wp_remote_get(home_url('/wp-json'));
-        if (is_wp_error($response)) {
-            Logger::log('tools', 'Ping failed', [
-                'error' => $response->get_error_message(),
-            ]);
+        $this->initControllers();
 
-            return rest_ensure_response([
-                'success' => false,
-                'status' => 0,
-                'body' => sanitize_text_field($response->get_error_message()),
-            ]);
-        }
-
-        $code = wp_remote_retrieve_response_code($response);
-        $body = wp_remote_retrieve_body($response);
-        $body = wp_strip_all_tags((string) $body);
-        if (function_exists('mb_substr')) {
-            $body = mb_substr($body, 0, 500);
-        } else {
-            $body = substr($body, 0, 500);
-        }
-
-        Logger::log('tools', 'Ping executed', [
-            'status' => $code,
-        ]);
-
-        return rest_ensure_response([
-            'success' => $code >= 200 && $code < 300,
-            'status' => $code,
-            'body' => $body,
-        ]);
+        return $this->tools_controller->ping();
     }
 
+    /**
+     * Clear cache (delegated to ToolsController).
+     *
+     * @deprecated Use ToolsController::clearCache() instead
+     */
     public function tool_clear_cache(): WP_REST_Response
     {
-        if (Helpers::hit_rate_limit('tools_clear_' . get_current_user_id(), 3, MINUTE_IN_SECONDS)) {
-            return rest_ensure_response([
-                'success' => false,
-                'message' => __('Cache already cleared recently. Try again in a moment.', 'fp-experiences'),
-            ]);
-        }
+        $this->initControllers();
 
-        global $wpdb;
-        
-        // Pulisci tutti i transient del plugin
-        $transients_deleted = $wpdb->query(
-            "DELETE FROM {$wpdb->options} 
-            WHERE option_name LIKE '_transient_fp_exp_%' 
-            OR option_name LIKE '_transient_timeout_fp_exp_%'"
-        );
-        
-        // Pulisci object cache se disponibile
-        if (function_exists('wp_cache_flush')) {
-            wp_cache_flush();
-        }
-        
-        // Pulisci cache degli asset versioning
-        Helpers::clear_asset_version_cache();
-        
-        // Hook per permettere ad altri plugin/moduli di pulire la loro cache
-        do_action('fp_exp_tools_clear_cache');
-        
-        // Pulisci i log
-        Logger::clear();
-
-        $message = sprintf(
-            /* translators: %d: number of transients deleted */
-            __('Plugin caches cleared (%d transients removed) and logs trimmed.', 'fp-experiences'),
-            (int) $transients_deleted
-        );
-
-        return rest_ensure_response([
-            'success' => true,
-            'message' => $message,
-        ]);
+        return $this->tools_controller->clearCache();
     }
 
+    /**
+     * Resync pages (delegated to ToolsController).
+     *
+     * @deprecated Use ToolsController::resyncPages() instead
+     */
     public function tool_resync_pages(): WP_REST_Response
     {
-        if (Helpers::hit_rate_limit('tools_pages_' . get_current_user_id(), 3, MINUTE_IN_SECONDS)) {
-            return rest_ensure_response([
-                'success' => false,
-                'message' => __('Experience page resync already executed. Try again in a moment.', 'fp-experiences'),
-            ]);
-        }
+        $this->initControllers();
 
-        $summary = apply_filters('fp_exp_tools_resync_pages', [
-            'checked' => 0,
-            'created' => 0,
-        ]);
-
-        if (! is_array($summary)) {
-            $summary = [
-                'checked' => 0,
-                'created' => 0,
-            ];
-        }
-
-        $checked = isset($summary['checked']) ? (int) $summary['checked'] : 0;
-        $created = isset($summary['created']) ? (int) $summary['created'] : 0;
-
-        Logger::log('tools', 'Experience page resync executed', [
-            'checked' => $checked,
-            'created' => $created,
-        ]);
-
-        return rest_ensure_response([
-            'success' => true,
-            'message' => sprintf(
-                /* translators: 1: checked experiences count, 2: created pages count. */
-                __('Checked %1$d experiences; created %2$d pages.', 'fp-experiences'),
-                $checked,
-                $created
-            ),
-            'checked' => $checked,
-            'created' => $created,
-        ]);
+        return $this->tools_controller->resyncPages();
     }
 
+    /**
+     * Fix corrupted arrays (delegated to ToolsController).
+     *
+     * @deprecated Use ToolsController::fixCorruptedArrays() instead
+     */
     public function tool_fix_corrupted_arrays(): WP_REST_Response
     {
-        if (Helpers::hit_rate_limit('tools_fix_arrays_' . get_current_user_id(), 3, MINUTE_IN_SECONDS)) {
-            return rest_ensure_response([
-                'success' => false,
-                'message' => __('Repair tool already executed. Try again in a moment.', 'fp-experiences'),
-            ]);
-        }
+        $this->initControllers();
 
-        $meta_keys = [
-            '_fp_highlights',
-            '_fp_inclusions',
-            '_fp_exclusions',
-            '_fp_what_to_bring',
-            '_fp_notes',
-        ];
-
-        $experiences = get_posts([
-            'post_type' => 'fp_experience',
-            'posts_per_page' => -1,
-            'post_status' => 'any',
-            'fields' => 'ids',
-        ]);
-
-        $checked = count($experiences);
-        $fixed = 0;
-        $details = [];
-
-        foreach ($experiences as $post_id) {
-            $post_fixed = false;
-
-            foreach ($meta_keys as $meta_key) {
-                $value = get_post_meta($post_id, $meta_key, true);
-
-                // Controlla se è la stringa "Array" corrotta
-                if (is_string($value) && strtolower(trim($value)) === 'array') {
-                    delete_post_meta($post_id, $meta_key);
-                    $post_fixed = true;
-                    continue;
-                }
-
-                // Controlla se è un array che contiene elementi "Array"
-                if (is_array($value)) {
-                    $original_count = count($value);
-                    $cleaned = array_filter($value, static function ($item) {
-                        if (! is_string($item)) {
-                            return true;
-                        }
-                        return strtolower(trim($item)) !== 'array';
-                    });
-
-                    if (count($cleaned) !== $original_count) {
-                        if (empty($cleaned)) {
-                            delete_post_meta($post_id, $meta_key);
-                        } else {
-                            update_post_meta($post_id, $meta_key, array_values($cleaned));
-                        }
-                        $post_fixed = true;
-                    }
-                }
-            }
-
-            if ($post_fixed) {
-                $fixed++;
-                $title = get_the_title($post_id);
-                if ($title) {
-                    $details[] = sprintf(
-                        /* translators: 1: experience ID, 2: experience title. */
-                        __('Fixed: #%1$d %2$s', 'fp-experiences'),
-                        $post_id,
-                        $title
-                    );
-                }
-            }
-        }
-
-        Logger::log('tools', 'Corrupted array fields fixed', [
-            'checked' => $checked,
-            'fixed' => $fixed,
-        ]);
-
-        $message = $fixed > 0
-            ? sprintf(
-                /* translators: 1: checked count, 2: fixed count. */
-                __('Checked %1$d experiences and fixed %2$d with corrupted data.', 'fp-experiences'),
-                $checked,
-                $fixed
-            )
-            : sprintf(
-                /* translators: %d: checked count. */
-                __('Checked %d experiences. No corrupted data found.', 'fp-experiences'),
-                $checked
-            );
-
-        return rest_ensure_response([
-            'success' => true,
-            'message' => $message,
-            'checked' => $checked,
-            'fixed' => $fixed,
-            'details' => $details,
-        ]);
+        return $this->tools_controller->fixCorruptedArrays();
     }
 
+    /**
+     * Backup branding (delegated to ToolsController).
+     *
+     * @deprecated Use ToolsController::backupBranding() instead
+     */
     public function tool_backup_branding(): WP_REST_Response
     {
-        if (Helpers::hit_rate_limit('tools_backup_branding_' . get_current_user_id(), 3, MINUTE_IN_SECONDS)) {
-            return rest_ensure_response([
-                'success' => false,
-                'message' => __('Backup già eseguito di recente. Riprova tra qualche istante.', 'fp-experiences'),
-            ]);
-        }
+        $this->initControllers();
 
-        // Raccoglie tutte le impostazioni di branding
-        $branding_settings = [
-            'fp_exp_branding' => get_option('fp_exp_branding', []),
-            'fp_exp_email_branding' => get_option('fp_exp_email_branding', []),
-            'fp_exp_emails' => get_option('fp_exp_emails', []),
-            'fp_exp_tracking' => get_option('fp_exp_tracking', []),
-            'fp_exp_brevo' => get_option('fp_exp_brevo', []),
-            'fp_exp_google_calendar' => get_option('fp_exp_google_calendar', []),
-            'fp_exp_experience_layout' => get_option('fp_exp_experience_layout', []),
-            'fp_exp_listing' => get_option('fp_exp_listing', []),
-            'fp_exp_gift' => get_option('fp_exp_gift', []),
-            'fp_exp_rtb' => get_option('fp_exp_rtb', []),
-            'fp_exp_enable_meeting_points' => get_option('fp_exp_enable_meeting_points', 'no'),
-            'fp_exp_enable_meeting_point_import' => get_option('fp_exp_enable_meeting_point_import', 'no'),
-            'fp_exp_structure_email' => get_option('fp_exp_structure_email', ''),
-            'fp_exp_webmaster_email' => get_option('fp_exp_webmaster_email', ''),
-            'fp_exp_debug_logging' => get_option('fp_exp_debug_logging', 'no'),
-        ];
-
-        // Aggiunge metadati del backup
-        $backup_data = [
-            'timestamp' => current_time('mysql'),
-            'version' => get_option('fp_exp_version', 'unknown'),
-            'site_url' => home_url(),
-            'settings' => $branding_settings,
-        ];
-
-        // Salva il backup come opzione WordPress
-        $backup_saved = update_option('fp_exp_branding_backup', $backup_data);
-
-        if (!$backup_saved) {
-            Logger::log('tools', 'Branding backup failed', [
-                'user_id' => get_current_user_id(),
-            ]);
-
-            return rest_ensure_response([
-                'success' => false,
-                'message' => __('Impossibile salvare il backup delle impostazioni.', 'fp-experiences'),
-            ]);
-        }
-
-        Logger::log('tools', 'Branding backup created', [
-            'user_id' => get_current_user_id(),
-            'timestamp' => $backup_data['timestamp'],
-        ]);
-
-        return rest_ensure_response([
-            'success' => true,
-            'message' => sprintf(
-                /* translators: %s: backup timestamp */
-                __('Backup delle impostazioni di branding creato con successo il %s.', 'fp-experiences'),
-                date_i18n(get_option('date_format') . ' ' . get_option('time_format'), strtotime($backup_data['timestamp']))
-            ),
-            'backup_info' => [
-                'timestamp' => $backup_data['timestamp'],
-                'version' => $backup_data['version'],
-                'settings_count' => count($branding_settings),
-            ],
-        ]);
+        return $this->tools_controller->backupBranding();
     }
 
+    /**
+     * Restore branding (delegated to ToolsController).
+     *
+     * @deprecated Use ToolsController::restoreBranding() instead
+     */
     public function tool_restore_branding(): WP_REST_Response
     {
-        if (Helpers::hit_rate_limit('tools_restore_branding_' . get_current_user_id(), 3, MINUTE_IN_SECONDS)) {
-            return rest_ensure_response([
-                'success' => false,
-                'message' => __('Restore già eseguito di recente. Riprova tra qualche istante.', 'fp-experiences'),
-            ]);
-        }
+        $this->initControllers();
 
-        // Recupera il backup
-        $backup_data = get_option('fp_exp_branding_backup', null);
-
-        if (!$backup_data || !is_array($backup_data) || !isset($backup_data['settings'])) {
-            return rest_ensure_response([
-                'success' => false,
-                'message' => __('Nessun backup delle impostazioni di branding trovato. Esegui prima un backup.', 'fp-experiences'),
-            ]);
-        }
-
-        $settings = $backup_data['settings'];
-        $restored_count = 0;
-        $errors = [];
-
-        // Ripristina ogni impostazione
-        foreach ($settings as $option_name => $value) {
-            $result = update_option($option_name, $value);
-            if ($result) {
-                $restored_count++;
-            } else {
-                $errors[] = $option_name;
-            }
-        }
-
-        if (empty($errors)) {
-            Logger::log('tools', 'Branding restore completed successfully', [
-                'user_id' => get_current_user_id(),
-                'restored_count' => $restored_count,
-                'backup_timestamp' => $backup_data['timestamp'] ?? 'unknown',
-            ]);
-
-            return rest_ensure_response([
-                'success' => true,
-                'message' => sprintf(
-                    /* translators: 1: restored settings count, 2: backup timestamp */
-                    __('Ripristinate con successo %1$d impostazioni dal backup del %2$s.', 'fp-experiences'),
-                    $restored_count,
-                    isset($backup_data['timestamp']) ? date_i18n(get_option('date_format'), strtotime($backup_data['timestamp'])) : __('data sconosciuta', 'fp-experiences')
-                ),
-                'restored_count' => $restored_count,
-                'backup_info' => [
-                    'timestamp' => $backup_data['timestamp'] ?? 'unknown',
-                    'version' => $backup_data['version'] ?? 'unknown',
-                ],
-            ]);
-        } else {
-            Logger::log('tools', 'Branding restore completed with errors', [
-                'user_id' => get_current_user_id(),
-                'restored_count' => $restored_count,
-                'errors' => $errors,
-                'backup_timestamp' => $backup_data['timestamp'] ?? 'unknown',
-            ]);
-
-            return rest_ensure_response([
-                'success' => false,
-                'message' => sprintf(
-                    /* translators: 1: restored count, 2: error count */
-                    __('Ripristinate %1$d impostazioni, ma %2$d hanno fallito. Controlla i log per i dettagli.', 'fp-experiences'),
-                    $restored_count,
-                    count($errors)
-                ),
-                'restored_count' => $restored_count,
-                'errors' => $errors,
-            ]);
-        }
+        return $this->tools_controller->restoreBranding();
     }
 
     /**
@@ -1461,598 +917,120 @@ final class RestRoutes
         return [! $missing, $details];
     }
 
+    /**
+     * Rebuild availability meta (delegated to ToolsController).
+     *
+     * @deprecated Use ToolsController::rebuildAvailabilityMeta() instead
+     */
     public function tool_rebuild_availability_meta(): WP_REST_Response
     {
-        if (Helpers::hit_rate_limit('tools_rebuild_availability_' . get_current_user_id(), 3, MINUTE_IN_SECONDS)) {
-            return rest_ensure_response([
-                'success' => false,
-                'message' => __('Ricostruzione già eseguita di recente. Riprova tra qualche istante.', 'fp-experiences'),
-            ]);
-        }
+        $this->initControllers();
 
-        $experiences = get_posts([
-            'post_type' => 'fp_experience',
-            'post_status' => 'any',
-            'posts_per_page' => -1,
-            'fields' => 'ids',
-        ]);
-
-        $rebuilt = 0;
-        $skipped = 0;
-
-        foreach ($experiences as $experience_id) {
-            $experience_id = absint($experience_id);
-            
-            if ($experience_id <= 0) {
-                continue;
-            }
-
-            // Get legacy meta fields
-            $capacity_slot = absint((string) get_post_meta($experience_id, '_fp_capacity_slot', true));
-            $lead_time = absint((string) get_post_meta($experience_id, '_fp_lead_time_hours', true));
-            $buffer_before = absint((string) get_post_meta($experience_id, '_fp_buffer_before_minutes', true));
-            $buffer_after = absint((string) get_post_meta($experience_id, '_fp_buffer_after_minutes', true));
-
-            // Get existing availability
-            $existing = get_post_meta($experience_id, '_fp_exp_availability', true);
-            $availability = is_array($existing) ? $existing : [];
-
-            // Check if it needs rebuilding
-            $needs_rebuild = ! is_array($existing)
-                || ! isset($existing['slot_capacity'])
-                || ($capacity_slot > 0 && $existing['slot_capacity'] !== $capacity_slot);
-
-            if (! $needs_rebuild) {
-                $skipped++;
-                continue;
-            }
-
-            // Rebuild with complete structure
-            $availability = array_merge([
-                'frequency' => 'weekly',
-                'times' => [],
-                'days_of_week' => [],
-                'custom_slots' => [],
-                'slot_capacity' => $capacity_slot,
-                'lead_time_hours' => $lead_time,
-                'buffer_before_minutes' => $buffer_before,
-                'buffer_after_minutes' => $buffer_after,
-                'start_date' => '',
-                'end_date' => '',
-            ], $availability);
-
-            // Update slot_capacity from legacy if exists
-            if ($capacity_slot > 0) {
-                $availability['slot_capacity'] = $capacity_slot;
-            }
-
-            update_post_meta($experience_id, '_fp_exp_availability', $availability);
-            $rebuilt++;
-        }
-
-        Logger::log('tools', 'Availability meta rebuilt', [
-            'user_id' => get_current_user_id(),
-            'total' => count($experiences),
-            'rebuilt' => $rebuilt,
-            'skipped' => $skipped,
-        ]);
-
-        return rest_ensure_response([
-            'success' => true,
-            'message' => sprintf(
-                /* translators: 1: rebuilt count, 2: total experiences */
-                __('Ricostruzione completata: aggiornate %1$d esperienze su %2$d totali.', 'fp-experiences'),
-                $rebuilt,
-                count($experiences)
-            ),
-            'rebuilt' => $rebuilt,
-            'skipped' => $skipped,
-            'total' => count($experiences),
-        ]);
+        return $this->tools_controller->rebuildAvailabilityMeta();
     }
 
+    /**
+     * Cleanup duplicate page IDs (delegated to ToolsController).
+     *
+     * @deprecated Use ToolsController::cleanupDuplicatePageIds() instead
+     */
     public function tool_cleanup_duplicate_page_ids(): WP_REST_Response
     {
-        if (Helpers::hit_rate_limit('tools_cleanup_page_ids_' . get_current_user_id(), 3, MINUTE_IN_SECONDS)) {
-            return rest_ensure_response([
-                'success' => false,
-                'message' => __('Pulizia già eseguita di recente. Riprova tra qualche istante.', 'fp-experiences'),
-            ]);
-        }
+        $this->initControllers();
 
-        // First check if there are duplicates
-        $check = CleanupDuplicatePageIds::check_duplicates();
-        
-        if (! $check['has_duplicates']) {
-            Logger::log('tools', 'Page ID cleanup check: no duplicates found', [
-                'user_id' => get_current_user_id(),
-            ]);
-            
-            return rest_ensure_response([
-                'success' => true,
-                'message' => __('Nessun page_id duplicato trovato. Tutte le esperienze hanno ID univoci.', 'fp-experiences'),
-                'cleaned' => 0,
-                'total' => 0,
-            ]);
-        }
-
-        // Run the cleanup
-        $result = CleanupDuplicatePageIds::execute_cleanup();
-        
-        Logger::log('tools', 'Page ID cleanup executed', [
-            'user_id' => get_current_user_id(),
-            'cleaned' => $result['cleaned'],
-            'total' => $result['total'],
-            'duplicate_page_ids' => count($result['duplicates_found']),
-        ]);
-
-        $message = $result['cleaned'] > 0
-            ? sprintf(
-                /* translators: 1: cleaned count, 2: total experiences */
-                __('Pulizia completata: rimossi %1$d page_id duplicati da %2$d esperienze totali. Ogni esperienza ora ha un link univoco.', 'fp-experiences'),
-                $result['cleaned'],
-                $result['total']
-            )
-            : __('Nessun page_id duplicato trovato. Tutte le esperienze hanno già ID univoci.', 'fp-experiences');
-
-        return rest_ensure_response([
-            'success' => $result['success'],
-            'message' => $message,
-            'cleaned' => $result['cleaned'],
-            'total' => $result['total'],
-            'details' => $result['duplicates_found'],
-        ]);
+        return $this->tools_controller->cleanupDuplicatePageIds();
     }
     
+    /**
+     * Repair slot capacities (delegated to ToolsController).
+     *
+     * @deprecated Use ToolsController::repairSlotCapacities() instead
+     */
     public function tool_repair_slot_capacities(): WP_REST_Response
     {
-        if (Helpers::hit_rate_limit('tools_repair_slots_' . get_current_user_id(), 3, MINUTE_IN_SECONDS)) {
-            return rest_ensure_response([
-                'success' => false,
-                'message' => __('Riparazione già eseguita di recente. Riprova tra qualche istante.', 'fp-experiences'),
-            ]);
-        }
-        
-        $result = \FP_Exp\Admin\SlotRepairTool::repair_slot_capacities();
-        
-        Logger::log('tools', 'Slot capacities repaired', [
-            'user_id' => get_current_user_id(),
-            'updated' => $result['updated'],
-            'total' => $result['total'],
-            'errors' => $result['errors'],
-        ]);
-        
-        $message = $result['updated'] > 0
-            ? sprintf(
-                /* translators: 1: updated count, 2: total slots */
-                __('Riparazione completata: aggiornati %1$d slot su %2$d con capacity=0.', 'fp-experiences'),
-                $result['updated'],
-                $result['total']
-            )
-            : __('Nessuno slot con capacity=0 trovato. Tutti gli slot hanno già una capacity valida.', 'fp-experiences');
-        
-        return rest_ensure_response([
-            'success' => empty($result['errors']),
-            'message' => $message,
-            'updated' => $result['updated'],
-            'total' => $result['total'],
-            'errors' => $result['errors'],
-        ]);
+        $this->initControllers();
+
+        return $this->tools_controller->repairSlotCapacities();
     }
     
+    /**
+     * Cleanup old slots (delegated to ToolsController).
+     *
+     * @deprecated Use ToolsController::cleanupOldSlots() instead
+     */
     public function tool_cleanup_old_slots(): WP_REST_Response
     {
-        if (Helpers::hit_rate_limit('tools_cleanup_slots_' . get_current_user_id(), 3, MINUTE_IN_SECONDS)) {
-            return rest_ensure_response([
-                'success' => false,
-                'message' => __('Pulizia già eseguita di recente. Riprova tra qualche istante.', 'fp-experiences'),
-            ]);
-        }
-        
-        $result = \FP_Exp\Admin\SlotRepairTool::cleanup_old_slots(30);
-        
-        Logger::log('tools', 'Old slots cleaned up', [
-            'user_id' => get_current_user_id(),
-            'deleted' => $result['deleted'],
-            'total' => $result['total'],
-            'errors' => $result['errors'],
-        ]);
-        
-        $message = $result['deleted'] > 0
-            ? sprintf(
-                /* translators: 1: deleted count */
-                __('Pulizia completata: rimossi %1$d slot vecchi senza prenotazioni.', 'fp-experiences'),
-                $result['deleted']
-            )
-            : __('Nessuno slot vecchio trovato. Il database è già pulito.', 'fp-experiences');
-        
-        return rest_ensure_response([
-            'success' => empty($result['errors']),
-            'message' => $message,
-            'deleted' => $result['deleted'],
-            'total' => $result['total'],
-            'errors' => $result['errors'],
-        ]);
+        $this->initControllers();
+
+        return $this->tools_controller->cleanupOldSlots();
     }
     
+    /**
+     * Diagnostic checkout (delegated to DiagnosticController).
+     *
+     * @deprecated Use DiagnosticController::checkout() instead
+     */
     public function diagnostic_checkout(): WP_REST_Response
     {
-        $result = [];
-        
-        // 1. Carrello
-        $cart = \FP_Exp\Booking\Cart::instance();
-        $result['cart'] = [
-            'has_items' => $cart->has_items(),
-            'items' => $cart->get_items(),
-        ];
-        
-        // 2. Availability Meta
-        $experiences = get_posts([
-            'post_type' => 'fp_experience',
-            'post_status' => 'publish',
-            'posts_per_page' => -1,
-            'fields' => 'ids',
-        ]);
-        
-        $result['experiences'] = [];
-        foreach ($experiences as $exp_id) {
-            $meta = get_post_meta($exp_id, '_fp_exp_availability', true);
-            $result['experiences'][] = [
-                'id' => $exp_id,
-                'title' => get_the_title($exp_id),
-                'meta' => $meta,
-            ];
-        }
-        
-        // 3. Simula checkout se c'è un item
-        if (!empty($result['cart']['items'])) {
-            $first_item = $result['cart']['items'][0];
-            $exp_id = $first_item['experience_id'] ?? 0;
-            // Il carrello usa 'slot_start'/'slot_end', non 'occurrence_start'/'occurrence_end'
-            $start = $first_item['slot_start'] ?? ($first_item['occurrence_start'] ?? '');
-            $end = $first_item['slot_end'] ?? ($first_item['occurrence_end'] ?? '');
-            
-            if ($exp_id && $start && $end) {
-                // Check if slot already exists BEFORE trying to create
-                global $wpdb;
-                $table = $wpdb->prefix . 'fp_exp_slots';
-                $existing_slot = $wpdb->get_row($wpdb->prepare(
-                    "SELECT * FROM {$table} WHERE experience_id = %d AND start_datetime = %s AND end_datetime = %s",
-                    $exp_id,
-                    $start,
-                    $end
-                ), ARRAY_A);
-                
-                $result['pre_check'] = [
-                    'slot_exists' => !empty($existing_slot),
-                    'existing_slot_id' => $existing_slot['id'] ?? null,
-                    'existing_slot_capacity' => $existing_slot['capacity_total'] ?? null,
-                ];
-                
-                try {
-                    // Clear previous errors
-                    global $wpdb;
-                    $wpdb->last_error = '';
-                    
-                    $slot = Slots::ensure_slot_for_occurrence($exp_id, $start, $end);
-                    
-                    if (is_wp_error($slot)) {
-                        $result['slot_test'] = [
-                            'success' => false,
-                            'error' => $slot->get_error_message(),
-                            'error_data' => $slot->get_error_data(),
-                            'wpdb_last_error' => $wpdb->last_error,
-                            'wpdb_last_query' => $wpdb->last_query,
-                        ];
-                    } else {
-                        $result['slot_test'] = [
-                            'success' => true,
-                            'slot_id' => $slot,
-                            'slot' => Slots::get_slot($slot),
-                        ];
-                    }
-                } catch (\Throwable $e) {
-                    $result['slot_test'] = [
-                        'success' => false,
-                        'exception' => $e->getMessage(),
-                        'trace' => $e->getTraceAsString(),
-                        'wpdb_last_error' => $wpdb->last_error ?? '',
-                    ];
-                }
-            } else {
-                $result['slot_test'] = [
-                    'success' => false,
-                    'error' => 'Dati mancanti nel carrello',
-                    'data' => ['exp_id' => $exp_id, 'start' => $start, 'end' => $end],
-                    'item_keys' => array_keys($first_item),
-                ];
-            }
-        }
-        
-        return rest_ensure_response($result);
+        $this->initControllers();
+
+        return $this->diagnostic_controller->checkout(new \WP_REST_Request());
     }
     
+    /**
+     * Create tables (delegated to ToolsController).
+     *
+     * @deprecated Use ToolsController::createTables() instead
+     */
     public function tool_create_tables(): WP_REST_Response
     {
-        if (Helpers::hit_rate_limit('tools_create_tables_' . get_current_user_id(), 3, MINUTE_IN_SECONDS)) {
-            return rest_ensure_response([
-                'success' => false,
-                'message' => __('Creazione tabelle già eseguita di recente. Riprova tra qualche istante.', 'fp-experiences'),
-            ]);
-        }
-        
-        try {
-            // Force create all tables
-            Slots::create_table();
-            Reservations::create_table();
-            Resources::create_table();
-            VoucherTable::create_table();
-            
-            // Verify tables exist
-            global $wpdb;
-            $tables_to_check = [
-                'fp_exp_slots' => $wpdb->prefix . 'fp_exp_slots',
-                'fp_exp_reservations' => $wpdb->prefix . 'fp_exp_reservations',
-                'fp_exp_resources' => $wpdb->prefix . 'fp_exp_resources',
-                'fp_exp_gift_vouchers' => $wpdb->prefix . 'fp_exp_gift_vouchers',
-            ];
-            
-            $created = [];
-            $missing = [];
-            
-            foreach ($tables_to_check as $name => $table) {
-                $exists = $wpdb->get_var("SHOW TABLES LIKE '{$table}'") === $table;
-                if ($exists) {
-                    $created[] = $name;
-                } else {
-                    $missing[] = $name;
-                }
-            }
-            
-            Logger::log('tools', 'Database tables creation requested', [
-                'user_id' => get_current_user_id(),
-                'created' => $created,
-                'missing' => $missing,
-            ]);
-            
-            if (empty($missing)) {
-                return rest_ensure_response([
-                    'success' => true,
-                    'message' => sprintf(
-                        __('Tutte le %d tabelle sono state create/verificate con successo!', 'fp-experiences'),
-                        count($created)
-                    ),
-                    'tables' => $created,
-                ]);
-            } else {
-                return rest_ensure_response([
-                    'success' => false,
-                    'message' => sprintf(
-                        __('Attenzione: %d tabelle create, ma %d ancora mancanti. Controlla i permessi database.', 'fp-experiences'),
-                        count($created),
-                        count($missing)
-                    ),
-                    'created' => $created,
-                    'missing' => $missing,
-                ]);
-            }
-            
-        } catch (\Throwable $e) {
-            Logger::log('tools', 'Database tables creation failed', [
-                'user_id' => get_current_user_id(),
-                'error' => $e->getMessage(),
-            ]);
-            
-            return rest_ensure_response([
-                'success' => false,
-                'message' => __('Errore durante la creazione delle tabelle: ', 'fp-experiences') . $e->getMessage(),
-            ]);
-        }
+        $this->initControllers();
+
+        return $this->tools_controller->createTables();
     }
 
     /**
      * Tool: Recreate WooCommerce virtual product for experiences
      */
+    /**
+     * Recreate virtual product (delegated to ToolsController).
+     *
+     * @deprecated Use ToolsController::recreateVirtualProduct() instead
+     */
     public function tool_recreate_virtual_product(): WP_REST_Response
     {
-        // Rate limiting
-        if (Helpers::hit_rate_limit('tools_recreate_virtual_product_' . get_current_user_id(), 3, MINUTE_IN_SECONDS)) {
-            return rest_ensure_response([
-                'success' => false,
-                'message' => __('Operazione già eseguita di recente. Riprova tra qualche istante.', 'fp-experiences'),
-            ]);
-        }
+        $this->initControllers();
 
-        // Check if WooCommerce is active
-        if (!function_exists('wc_get_product')) {
-            return rest_ensure_response([
-                'success' => false,
-                'message' => __('WooCommerce non è attivo. Impossibile creare il prodotto virtuale.', 'fp-experiences'),
-            ]);
-        }
-
-        $old_product_id = \FP_Exp\Integrations\ExperienceProduct::get_product_id();
-        
-        // Delete old product if exists
-        if ($old_product_id > 0) {
-            $old_product = wc_get_product($old_product_id);
-            if ($old_product) {
-                error_log('[FP-EXP-TOOL] Deleting old virtual product ID ' . $old_product_id);
-                wp_delete_post($old_product_id, true);
-            }
-        }
-
-        // Create new virtual product
-        $product_id = wp_insert_post([
-            'post_title' => 'Experience Booking',
-            'post_name' => 'fp-experience-booking',
-            'post_type' => 'product',
-            'post_status' => 'publish',
-            'post_content' => 'Virtual product for FP Experiences bookings. Do not delete.',
-        ]);
-
-        if (!$product_id || is_wp_error($product_id)) {
-            $error_message = is_wp_error($product_id) ? $product_id->get_error_message() : __('Errore sconosciuto', 'fp-experiences');
-            error_log('[FP-EXP-TOOL] ❌ Failed to create virtual product: ' . $error_message);
-            
-            return rest_ensure_response([
-                'success' => false,
-                'message' => __('Impossibile creare il prodotto virtuale: ', 'fp-experiences') . $error_message,
-            ]);
-        }
-
-        // Configure as virtual product
-        $product = wc_get_product($product_id);
-        
-        if (!$product) {
-            error_log('[FP-EXP-TOOL] ❌ Failed to load virtual product after creation');
-            
-            return rest_ensure_response([
-                'success' => false,
-                'message' => __('Prodotto creato ma impossibile configurarlo. ID: ', 'fp-experiences') . $product_id,
-            ]);
-        }
-        
-        $product->set_virtual(true);
-        $product->set_downloadable(false);
-        $product->set_sold_individually(false); // Allow multiple quantity (for multiple people)
-        $product->set_catalog_visibility('hidden');
-        $product->set_price(0);
-        $product->set_regular_price(0);
-        $product->save();
-
-        // Save product ID
-        update_option('fp_exp_wc_product_id', $product_id);
-
-        error_log('[FP-EXP-TOOL] ✅ Virtual product recreated successfully: ID ' . $product_id);
-
-        Logger::log('tools', 'Virtual product recreated', [
-            'user_id' => get_current_user_id(),
-            'old_product_id' => $old_product_id,
-            'new_product_id' => $product_id,
-        ]);
-
-        return rest_ensure_response([
-            'success' => true,
-            'message' => sprintf(
-                __('Prodotto virtuale ricreato con successo. Nuovo ID: %d', 'fp-experiences'),
-                $product_id
-            ),
-        ]);
+        return $this->tools_controller->recreateVirtualProduct();
     }
     
     /**
      * Tool: Fix virtual product quantity settings (disable sold_individually)
      */
+    /**
+     * Fix virtual product quantity (delegated to ToolsController).
+     *
+     * @deprecated Use ToolsController::fixVirtualProductQuantity() instead
+     */
     public function tool_fix_virtual_product_quantity(): WP_REST_Response
     {
-        if (!function_exists('wc_get_product')) {
-            return rest_ensure_response([
-                'success' => false,
-                'message' => __('WooCommerce non è attivo.', 'fp-experiences'),
-            ]);
-        }
+        $this->initControllers();
 
-        $product_id = \FP_Exp\Integrations\ExperienceProduct::get_product_id();
-        
-        if ($product_id <= 0) {
-            return rest_ensure_response([
-                'success' => false,
-                'message' => __('Prodotto virtuale non trovato. Usa "Ricrea prodotto virtuale" prima.', 'fp-experiences'),
-            ]);
-        }
-        
-        $product = wc_get_product($product_id);
-        
-        if (!$product) {
-            return rest_ensure_response([
-                'success' => false,
-                'message' => sprintf(__('Prodotto ID %d non esiste.', 'fp-experiences'), $product_id),
-            ]);
-        }
-        
-        $was_sold_individually = $product->get_sold_individually();
-        
-        $product->set_sold_individually(false);
-        $product->save();
-        
-        Logger::log('tools', 'Virtual product quantity settings fixed', [
-            'user_id' => get_current_user_id(),
-            'product_id' => $product_id,
-            'was_sold_individually' => $was_sold_individually,
-        ]);
-        
-        return rest_ensure_response([
-            'success' => true,
-            'message' => sprintf(
-                __('Prodotto virtuale aggiornato. Ora supporta quantità multiple (era: %s).', 'fp-experiences'),
-                $was_sold_individually ? 'SÌ' : 'NO'
-            ),
-        ]);
+        return $this->tools_controller->fixVirtualProductQuantity();
     }
     
     /**
      * Tool: Fix experience prices (_fp_price meta)
      */
+    /**
+     * Fix experience prices (delegated to ToolsController).
+     *
+     * @deprecated Use ToolsController::fixExperiencePrices() instead
+     */
     public function tool_fix_experience_prices(): WP_REST_Response
     {
-        $experiences = get_posts([
-            'post_type' => 'fp_experience',
-            'posts_per_page' => -1,
-            'post_status' => 'any',
-        ]);
-        
-        $fixed = [];
-        $already_ok = [];
-        $no_price = [];
-        
-        foreach ($experiences as $exp) {
-            $current_fp_price = get_post_meta($exp->ID, '_fp_price', true);
-            $pricing = get_post_meta($exp->ID, '_fp_exp_pricing', true);
-            $ticket_types = get_post_meta($exp->ID, '_fp_ticket_types', true);
-            
-            // Cerca il prezzo nei ticket types
-            $found_price = null;
-            
-            if (!empty($pricing['tickets'][0]['price']) && is_numeric($pricing['tickets'][0]['price'])) {
-                $found_price = (float) $pricing['tickets'][0]['price'];
-            } elseif (!empty($ticket_types[0]['price']) && is_numeric($ticket_types[0]['price'])) {
-                $found_price = (float) $ticket_types[0]['price'];
-            }
-            
-            if (is_numeric($current_fp_price) && $current_fp_price > 0) {
-                $already_ok[] = $exp->post_title . ' (' . $current_fp_price . '€)';
-            } elseif ($found_price && $found_price > 0) {
-                update_post_meta($exp->ID, '_fp_price', $found_price);
-                $fixed[] = $exp->post_title . ' → ' . $found_price . '€';
-            } else {
-                $no_price[] = $exp->post_title;
-            }
-        }
-        
-        Logger::log('tools', 'Experience prices fixed', [
-            'user_id' => get_current_user_id(),
-            'fixed_count' => count($fixed),
-            'already_ok_count' => count($already_ok),
-            'no_price_count' => count($no_price),
-        ]);
-        
-        $message = sprintf(
-            __('Esperienze analizzate: %d. Fixate: %d, Già OK: %d, Senza prezzo: %d', 'fp-experiences'),
-            count($experiences),
-            count($fixed),
-            count($already_ok),
-            count($no_price)
-        );
-        
-        return rest_ensure_response([
-            'success' => true,
-            'message' => $message,
-            'details' => [
-                'fixed' => $fixed,
-                'already_ok' => $already_ok,
-                'no_price' => $no_price,
-            ],
-        ]);
+        $this->initControllers();
+
+        return $this->tools_controller->fixExperiencePrices();
     }
 }

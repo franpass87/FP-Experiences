@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace FP_Exp\Front;
 
+use FP_Exp\Core\Hook\HookableInterface;
+
 use function add_filter;
 use function do_shortcode;
 use function get_post_type;
@@ -17,7 +19,7 @@ use function shortcode_exists;
 use function sprintf;
 use function trim;
 
-final class SingleExperienceRenderer
+final class SingleExperienceRenderer implements HookableInterface
 {
     public function register_hooks(): void
     {

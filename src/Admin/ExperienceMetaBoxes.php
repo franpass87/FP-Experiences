@@ -4,6 +4,14 @@ declare(strict_types=1);
 
 namespace FP_Exp\Admin;
 
+use FP_Exp\Admin\ExperienceMetaBoxes\Handlers\CalendarMetaBoxHandler;
+use FP_Exp\Core\Hook\HookableInterface;
+use FP_Exp\Admin\ExperienceMetaBoxes\Handlers\DetailsMetaBoxHandler;
+use FP_Exp\Admin\ExperienceMetaBoxes\Handlers\ExtrasMetaBoxHandler;
+use FP_Exp\Admin\ExperienceMetaBoxes\Handlers\MeetingPointMetaBoxHandler;
+use FP_Exp\Admin\ExperienceMetaBoxes\Handlers\PolicyMetaBoxHandler;
+use FP_Exp\Admin\ExperienceMetaBoxes\Handlers\PricingMetaBoxHandler;
+use FP_Exp\Admin\ExperienceMetaBoxes\Handlers\SEOMetaBoxHandler;
 use FP_Exp\Booking\Recurrence;
 use FP_Exp\Booking\Slots;
 use FP_Exp\MeetingPoints\MeetingPointCPT;
@@ -81,8 +89,80 @@ use function wp_insert_term;
 use function set_post_thumbnail;
 use function delete_post_thumbnail;
 
-final class ExperienceMetaBoxes
+final class ExperienceMetaBoxes implements HookableInterface
 {
+    private CalendarMetaBoxHandler $calendar_handler;
+    private DetailsMetaBoxHandler $details_handler;
+    private PolicyMetaBoxHandler $policy_handler;
+    private PricingMetaBoxHandler $pricing_handler;
+    private SEOMetaBoxHandler $seo_handler;
+    private ExtrasMetaBoxHandler $extras_handler;
+    private MeetingPointMetaBoxHandler $meeting_point_handler;
+
+    /**
+     * ExperienceMetaBoxes constructor.
+     *
+     * @param CalendarMetaBoxHandler|null $calendar_handler Optional (will be created if not provided)
+     * @param DetailsMetaBoxHandler|null $details_handler Optional (will be created if not provided)
+     * @param PolicyMetaBoxHandler|null $policy_handler Optional (will be created if not provided)
+     * @param PricingMetaBoxHandler|null $pricing_handler Optional (will be created if not provided)
+     * @param SEOMetaBoxHandler|null $seo_handler Optional (will be created if not provided)
+     * @param ExtrasMetaBoxHandler|null $extras_handler Optional (will be created if not provided)
+     * @param MeetingPointMetaBoxHandler|null $meeting_point_handler Optional (will be created if not provided)
+     */
+    public function __construct(
+        ?CalendarMetaBoxHandler $calendar_handler = null,
+        ?DetailsMetaBoxHandler $details_handler = null,
+        ?PolicyMetaBoxHandler $policy_handler = null,
+        ?PricingMetaBoxHandler $pricing_handler = null,
+        ?SEOMetaBoxHandler $seo_handler = null,
+        ?ExtrasMetaBoxHandler $extras_handler = null,
+        ?MeetingPointMetaBoxHandler $meeting_point_handler = null
+    ) {
+        // Try to get handlers from container if not provided
+        $kernel = \FP_Exp\Core\Bootstrap\Bootstrap::kernel();
+        $container = null;
+        if ($kernel !== null) {
+            $container = $kernel->container();
+        }
+
+        // Inject handlers or get from container or create defaults (backward compatibility)
+        $this->calendar_handler = $calendar_handler 
+            ?? ($container && $container->has(CalendarMetaBoxHandler::class) 
+                ? $container->make(CalendarMetaBoxHandler::class) 
+                : new CalendarMetaBoxHandler());
+        
+        $this->details_handler = $details_handler 
+            ?? ($container && $container->has(DetailsMetaBoxHandler::class) 
+                ? $container->make(DetailsMetaBoxHandler::class) 
+                : new DetailsMetaBoxHandler());
+        
+        $this->policy_handler = $policy_handler 
+            ?? ($container && $container->has(PolicyMetaBoxHandler::class) 
+                ? $container->make(PolicyMetaBoxHandler::class) 
+                : new PolicyMetaBoxHandler());
+        
+        $this->pricing_handler = $pricing_handler 
+            ?? ($container && $container->has(PricingMetaBoxHandler::class) 
+                ? $container->make(PricingMetaBoxHandler::class) 
+                : new PricingMetaBoxHandler());
+        
+        $this->seo_handler = $seo_handler 
+            ?? ($container && $container->has(SEOMetaBoxHandler::class) 
+                ? $container->make(SEOMetaBoxHandler::class) 
+                : new SEOMetaBoxHandler());
+        
+        $this->extras_handler = $extras_handler 
+            ?? ($container && $container->has(ExtrasMetaBoxHandler::class) 
+                ? $container->make(ExtrasMetaBoxHandler::class) 
+                : new ExtrasMetaBoxHandler());
+        
+        $this->meeting_point_handler = $meeting_point_handler 
+            ?? ($container && $container->has(MeetingPointMetaBoxHandler::class) 
+                ? $container->make(MeetingPointMetaBoxHandler::class) 
+                : new MeetingPointMetaBoxHandler());
+    }
+
     private const TAB_LABELS = [
         'details' => 'Dettagli',
         'pricing' => 'Biglietti & Prezzi',
@@ -92,6 +172,64 @@ final class ExperienceMetaBoxes
         'policy' => 'Policy/FAQ',
         'seo' => 'SEO/Schema',
     ];
+
+    /**
+     * Verifica se un plugin SEO è attivo
+     * 
+     * @return bool True se un plugin SEO è attivo
+     */
+    private function is_seo_plugin_active(): bool
+    {
+        // Verifica FP SEO Manager / FP SEO Performance
+        if (defined('FP_SEO_PERFORMANCE_FILE') || 
+            defined('FP_SEO_PERFORMANCE_VERSION') ||
+            class_exists('\FP\SEO\Infrastructure\Plugin') ||
+            class_exists('\FP_SEO\Core\Bootstrap\Bootstrap') || 
+            function_exists('fp_seo_performance_init') ||
+            defined('FP_SEO_VERSION') ||
+            class_exists('\FP_SEO_Performance\Core\Bootstrap')) {
+            return true;
+        }
+
+        // Verifica Yoast SEO
+        if (defined('WPSEO_VERSION') || 
+            class_exists('WPSEO_Options') ||
+            function_exists('yoast_breadcrumb') ||
+            class_exists('WPSEO_Metabox')) {
+            return true;
+        }
+
+        // Verifica Rank Math
+        if (defined('RANK_MATH_VERSION') || 
+            class_exists('RankMath') ||
+            function_exists('rank_math') ||
+            class_exists('RankMath\Admin\Admin')) {
+            return true;
+        }
+
+        // Verifica All in One SEO
+        if (defined('AIOSEO_VERSION') || 
+            class_exists('AIOSEO\Plugin\Plugin') ||
+            class_exists('AIOSEO')) {
+            return true;
+        }
+
+        // Verifica SEOPress
+        if (defined('SEOPRESS_VERSION') || 
+            function_exists('seopress_get_service') ||
+            class_exists('SEOPress')) {
+            return true;
+        }
+
+        // Verifica The SEO Framework
+        if (defined('THE_SEO_FRAMEWORK_VERSION') || 
+            class_exists('The_SEO_Framework\Core') ||
+            class_exists('The_SEO_Framework')) {
+            return true;
+        }
+
+        return false;
+    }
 
     private const PRICING_NOTICE_KEY = 'fp_exp_pricing_notice_';
 
@@ -118,9 +256,10 @@ final class ExperienceMetaBoxes
             [$this, 'render_meta_box'],
             'fp_experience',
             'normal',
-            'high'
+            'high' // Priorità alta - il riordino viene gestito via JavaScript
         );
     }
+
 
     public function enqueue_assets(string $hook_suffix): void
     {
@@ -204,25 +343,150 @@ final class ExperienceMetaBoxes
                 'experienceId' => $post_id,
             ]
         );
+
+        // Fix: Rimuovi la classe hide-if-js e riordina la metabox sopra SEO Performance
+        wp_add_inline_script(
+            'fp-exp-admin',
+            'jQuery(document).ready(function($) {
+                function fixMetabox() {
+                    var metabox = $("#fp-exp-experience-admin");
+                    if (metabox.length) {
+                        // Rimuovi la classe hide-if-js se presente
+                        if (metabox.hasClass("hide-if-js")) {
+                            metabox.removeClass("hide-if-js").show();
+                        }
+                        
+                        // Sposta la metabox sopra SEO Performance
+                        var seoMetabox = $("#fp-seo-performance-metabox");
+                        if (seoMetabox.length && metabox.length) {
+                            // Verifica che non sia già nella posizione corretta
+                            var metaboxParent = metabox.parent();
+                            var seoParent = seoMetabox.parent();
+                            if (metaboxParent.is(seoParent) && metabox.next().is(seoMetabox)) {
+                                // Già nella posizione corretta
+                                return;
+                            }
+                            seoMetabox.before(metabox);
+                        }
+                    } else {
+                        // Se la metabox non esiste ancora, riprova dopo un breve delay
+                        setTimeout(fixMetabox, 100);
+                    }
+                }
+                
+                // Esegui immediatamente e anche dopo un breve delay per sicurezza
+                fixMetabox();
+                setTimeout(fixMetabox, 500);
+                
+                // Inizializza i tooltip con data-tooltip
+                function initTooltips() {
+                    $(".fp-exp-tooltip[data-tooltip]").each(function() {
+                        var $tooltip = $(this);
+                        var tooltipText = $tooltip.attr("data-tooltip");
+                        
+                        // Se non esiste già un elemento content, crealo
+                        if (!$tooltip.next(".fp-exp-tooltip__content").length) {
+                            var $content = $("<span>")
+                                .addClass("fp-exp-tooltip__content")
+                                .attr("role", "tooltip")
+                                .attr("aria-hidden", "true")
+                                .text(tooltipText);
+                            $tooltip.after($content);
+                        }
+                    });
+                }
+                
+                // Gestisci hover/focus per i tooltip
+                function setupTooltipEvents() {
+                    // Rimuovi eventi esistenti
+                    $(document).off("mouseenter.fpExpTooltip focus.fpExpTooltip", ".fp-exp-tooltip[data-tooltip]");
+                    $(document).off("mouseleave.fpExpTooltip blur.fpExpTooltip", ".fp-exp-tooltip[data-tooltip]");
+                    
+                    // Usa namespace per evitare conflitti
+                    $(document).on("mouseenter.fpExpTooltip focus.fpExpTooltip", ".fp-exp-tooltip[data-tooltip]", function(e) {
+                        var $tooltip = $(this);
+                        var $content = $tooltip.next(".fp-exp-tooltip__content");
+                        if ($content.length) {
+                            $content.attr("aria-hidden", "false").css("display", "block");
+                        }
+                    });
+                    
+                    $(document).on("mouseleave.fpExpTooltip blur.fpExpTooltip", ".fp-exp-tooltip[data-tooltip]", function(e) {
+                        var $tooltip = $(this);
+                        var $content = $tooltip.next(".fp-exp-tooltip__content");
+                        if ($content.length) {
+                            $content.attr("aria-hidden", "true").css("display", "none");
+                        }
+                    });
+                }
+                
+                // Inizializza i tooltip
+                initTooltips();
+                setupTooltipEvents();
+                
+                // Reinizializza quando vengono aggiunti nuovi elementi (es. repeater)
+                var observer = new MutationObserver(function(mutations) {
+                    var needsInit = false;
+                    mutations.forEach(function(mutation) {
+                        if (mutation.addedNodes.length) {
+                            mutation.addedNodes.forEach(function(node) {
+                                if (node.nodeType === 1) {
+                                    if ($(node).find(".fp-exp-tooltip[data-tooltip]").length || $(node).is(".fp-exp-tooltip[data-tooltip]")) {
+                                        needsInit = true;
+                                    }
+                                }
+                            });
+                        }
+                    });
+                    if (needsInit) {
+                        initTooltips();
+                        setupTooltipEvents();
+                    }
+                });
+                
+                observer.observe(document.body, {
+                    childList: true,
+                    subtree: true
+                });
+            });'
+        );
     }
 
     public function render_meta_box(WP_Post $post): void
     {
-        $details = $this->get_details_meta($post->ID);
-        $pricing = $this->get_pricing_meta($post->ID);
-        $availability = $this->get_availability_meta($post->ID);
-        $meeting = $this->get_meeting_point_meta($post->ID);
-        $meeting_choices = $this->get_meeting_point_choices();
-        $extras = $this->get_extras_meta($post->ID);
-        $policy = $this->get_policy_meta($post->ID);
-        $seo = $this->get_seo_meta($post->ID);
+        // Use DetailsMetaBoxHandler for Details tab
+        $details = $this->details_handler->get($post->ID);
+        // Use PricingMetaBoxHandler for Pricing tab
+        $pricing = $this->pricing_handler->get($post->ID);
+        // Use CalendarMetaBoxHandler for Calendar tab
+        $availability = $this->calendar_handler->get($post->ID);
+        // Use MeetingPointMetaBoxHandler for Meeting Point tab
+        $meeting_data = $this->meeting_point_handler->get($post->ID);
+        $meeting = [
+            'primary' => $meeting_data['primary'] ?? 0,
+            'alternatives' => $meeting_data['alternatives'] ?? [],
+        ];
+        $meeting_choices = $meeting_data['choices'] ?? [];
+        // Use ExtrasMetaBoxHandler for Extras tab
+        $extras = $this->extras_handler->get($post->ID);
+        // Use PolicyMetaBoxHandler for Policy tab
+        $policy = $this->policy_handler->get($post->ID);
+        // Use SEOMetaBoxHandler for SEO tab
+        $seo = $this->seo_handler->get($post->ID);
 
         wp_nonce_field('fp_exp_meta_nonce', 'fp_exp_meta_nonce');
         ?>
         <div class="fp-exp-admin" data-fp-exp-admin>
             <div class="fp-exp-tabs" role="tablist" aria-label="<?php echo esc_attr(esc_html__('Sezioni esperienza', 'fp-experiences')); ?>">
-                <?php foreach (self::TAB_LABELS as $slug => $label) : ?>
-                    <?php $tab_id = 'fp-exp-tab-' . $slug; ?>
+                <?php 
+                $seo_plugin_active = $this->is_seo_plugin_active();
+                foreach (self::TAB_LABELS as $slug => $label) : 
+                    // Nascondi il tab SEO se un plugin SEO è attivo
+                    if ($slug === 'seo' && $seo_plugin_active) {
+                        continue;
+                    }
+                    $tab_id = 'fp-exp-tab-' . $slug; 
+                ?>
                     <button
                         type="button"
                         class="fp-exp-tab"
@@ -238,13 +502,37 @@ final class ExperienceMetaBoxes
             </div>
 
             <div class="fp-exp-tab-panels">
-                <?php $this->render_details_tab($details, (int) $post->ID); ?>
-                <?php $this->render_pricing_tab($pricing); ?>
-                <?php $this->render_calendar_tab($availability); ?>
-                <?php $this->render_meeting_point_tab($meeting, $meeting_choices); ?>
-                <?php $this->render_extras_tab($extras); ?>
-                <?php $this->render_policy_tab($policy); ?>
-                <?php $this->render_seo_tab($seo); ?>
+                <?php 
+                // Use DetailsMetaBoxHandler for Details tab
+                $this->details_handler->render($details, (int) $post->ID); 
+                ?>
+                <?php 
+                // Use PricingMetaBoxHandler for Pricing tab
+                $this->pricing_handler->render($pricing, (int) $post->ID); 
+                ?>
+                <?php 
+                // Use CalendarMetaBoxHandler for Calendar tab
+                $this->calendar_handler->render($availability, (int) $post->ID); 
+                ?>
+                <?php 
+                // Use MeetingPointMetaBoxHandler for Meeting Point tab
+                $meeting_data = array_merge($meeting, ['choices' => $meeting_choices]);
+                $this->meeting_point_handler->render($meeting_data, (int) $post->ID); 
+                ?>
+                <?php 
+                // Use ExtrasMetaBoxHandler for Extras tab
+                $this->extras_handler->render($extras, (int) $post->ID); 
+                ?>
+                <?php 
+                // Use PolicyMetaBoxHandler for Policy tab
+                $this->policy_handler->render($policy, (int) $post->ID); 
+                ?>
+                <?php 
+                // Use SEOMetaBoxHandler for SEO tab - solo se nessun plugin SEO è attivo
+                if (!$seo_plugin_active) {
+                    $this->seo_handler->render($seo, (int) $post->ID);
+                }
+                ?>
             </div>
         </div>
         <?php
@@ -276,13 +564,20 @@ final class ExperienceMetaBoxes
         // Protezione contro output non intenzionale che causa corruzione dati 'Array'
         ob_start();
 
-        $this->save_details_meta($post_id, $raw['fp_exp_details'] ?? []);
-        $pricing_status = $this->save_pricing_meta($post_id, $raw['fp_exp_pricing'] ?? []);
-        $availability_meta = $this->save_availability_meta($post_id, $raw['fp_exp_availability'] ?? []);
-        $this->save_meeting_point_meta($post_id, $raw['fp_exp_meeting_point'] ?? []);
-        $this->save_extras_meta($post_id, $raw['fp_exp_extras'] ?? []);
-        $this->save_policy_meta($post_id, $raw['fp_exp_policy'] ?? []);
-        $this->save_seo_meta($post_id, $raw['fp_exp_seo'] ?? []);
+        // Use DetailsMetaBoxHandler for Details tab
+        $this->details_handler->save($post_id, $raw['fp_exp_details'] ?? []);
+        // Use PricingMetaBoxHandler for Pricing tab
+        $this->pricing_handler->save($post_id, $raw['fp_exp_pricing'] ?? []);
+        // Use CalendarMetaBoxHandler for Calendar tab
+        $this->calendar_handler->save($post_id, $raw['fp_exp_availability'] ?? []);
+        // Use MeetingPointMetaBoxHandler for Meeting Point tab
+        $this->meeting_point_handler->save($post_id, $raw['fp_exp_meeting_point'] ?? []);
+        // Use ExtrasMetaBoxHandler for Extras tab
+        $this->extras_handler->save($post_id, $raw['fp_exp_extras'] ?? []);
+        // Use PolicyMetaBoxHandler for Policy tab
+        $this->policy_handler->save($post_id, $raw['fp_exp_policy'] ?? []);
+        // Use SEOMetaBoxHandler for SEO tab
+        $this->seo_handler->save($post_id, $raw['fp_exp_seo'] ?? []);
 
         // Cattura e scarta qualsiasi output non intenzionale
         $unwanted_output = ob_get_clean();
@@ -330,6 +625,10 @@ final class ExperienceMetaBoxes
             echo '<div class="notice notice-warning"><p>' . esc_html__('Questa esperienza è pubblicata senza prezzi configurati. Aggiungi almeno un prezzo prima di accettare prenotazioni.', 'fp-experiences') . '</p></div>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
         }
     }
+    /**
+     * @deprecated Use DetailsMetaBoxHandler::render() instead
+     * @param array<string, mixed> $details
+     */
     private function render_details_tab(array $details, int $post_id): void
     {
         $panel_id = 'fp-exp-tab-details-panel';
@@ -992,6 +1291,10 @@ final class ExperienceMetaBoxes
         </li>
         <?php
     }
+    /**
+     * @deprecated Use PricingMetaBoxHandler::render() instead
+     * @param array<string, mixed> $pricing
+     */
     private function render_pricing_tab(array $pricing): void
     {
         $panel_id = 'fp-exp-tab-pricing-panel';
@@ -1136,6 +1439,10 @@ final class ExperienceMetaBoxes
         </section>
         <?php
     }
+    /**
+     * @deprecated Use CalendarMetaBoxHandler::render() instead
+     * @param array<string, mixed> $availability
+     */
     private function render_calendar_tab(array $availability): void
     {
         $panel_id = 'fp-exp-tab-calendar-panel';
@@ -1298,6 +1605,11 @@ final class ExperienceMetaBoxes
         </section>
         <?php
     }
+    /**
+     * @deprecated Use MeetingPointMetaBoxHandler::render() instead
+     * @param array<string, mixed> $meeting
+     * @param array<int, array{id: int, title: string}> $choices
+     */
     private function render_meeting_point_tab(array $meeting, array $choices): void
     {
         $panel_id = 'fp-exp-tab-meeting-point-panel';
@@ -1352,6 +1664,10 @@ final class ExperienceMetaBoxes
         </section>
         <?php
     }
+    /**
+     * @deprecated Use ExtrasMetaBoxHandler::render() instead
+     * @param array<string, mixed> $extras
+     */
     private function render_extras_tab(array $extras): void
     {
         $panel_id = 'fp-exp-tab-extras-panel';
@@ -1407,6 +1723,10 @@ final class ExperienceMetaBoxes
         </section>
         <?php
     }
+    /**
+     * @deprecated Use PolicyMetaBoxHandler::render() instead
+     * @param array<string, mixed> $policy
+     */
     private function render_policy_tab(array $policy): void
     {
         $panel_id = 'fp-exp-tab-policy-panel';
@@ -1455,6 +1775,10 @@ final class ExperienceMetaBoxes
         </section>
         <?php
     }
+    /**
+     * @deprecated Use SEOMetaBoxHandler::render() instead
+     * @param array<string, mixed> $seo
+     */
     private function render_seo_tab(array $seo): void
     {
         $panel_id = 'fp-exp-tab-seo-panel';
@@ -2000,6 +2324,10 @@ final class ExperienceMetaBoxes
 
         return 'name="' . esc_attr($name) . '"';
     }
+    /**
+     * @deprecated Use DetailsMetaBoxHandler::save() instead
+     * @param mixed $raw
+     */
     private function save_details_meta(int $post_id, $raw): void
     {
         if (! is_array($raw)) {
@@ -2789,6 +3117,10 @@ final class ExperienceMetaBoxes
 
         Slots::generate_recurring_slots($post_id, $rules, [], $options);
     }
+    /**
+     * @deprecated Use MeetingPointMetaBoxHandler::save() instead
+     * @param mixed $raw
+     */
     private function save_meeting_point_meta(int $post_id, $raw): void
     {
         if (! is_array($raw)) {
@@ -2831,6 +3163,10 @@ final class ExperienceMetaBoxes
             delete_post_meta($post_id, '_fp_meeting_point');
         }
     }
+    /**
+     * @deprecated Use ExtrasMetaBoxHandler::save() instead
+     * @param mixed $raw
+     */
     private function save_extras_meta(int $post_id, $raw): void
     {
         if (! is_array($raw)) {
@@ -2854,6 +3190,10 @@ final class ExperienceMetaBoxes
         $this->update_or_delete_meta($post_id, '_fp_what_to_bring', $what_to_bring);
         $this->update_or_delete_meta($post_id, '_fp_notes', $notes);
     }
+    /**
+     * @deprecated Use PolicyMetaBoxHandler::save() instead
+     * @param mixed $raw
+     */
     private function save_policy_meta(int $post_id, $raw): void
     {
         if (! is_array($raw)) {
@@ -2888,6 +3228,10 @@ final class ExperienceMetaBoxes
         $this->update_or_delete_meta($post_id, '_fp_policy_cancel', $policy);
         $this->update_or_delete_meta($post_id, '_fp_faq', $faq);
     }
+    /**
+     * @deprecated Use SEOMetaBoxHandler::save() instead
+     * @param mixed $raw
+     */
     private function save_seo_meta(int $post_id, $raw): void
     {
         if (! is_array($raw)) {
@@ -2905,6 +3249,10 @@ final class ExperienceMetaBoxes
         $this->update_or_delete_meta($post_id, '_fp_meta_description', $meta_description);
         $this->update_or_delete_meta($post_id, '_fp_schema_manual', $schema_json);
     }
+    /**
+     * @deprecated Use DetailsMetaBoxHandler::get() instead
+     * @return array<string, mixed>
+     */
     private function get_details_meta(int $post_id): array
     {
         $language_selected = $this->get_assigned_terms($post_id, 'fp_exp_language');
@@ -3164,6 +3512,10 @@ final class ExperienceMetaBoxes
             'status_label' => $status_object && ! empty($status_object->label) ? (string) $status_object->label : '',
         ];
     }
+    /**
+     * @deprecated Use PricingMetaBoxHandler::get() instead
+     * @return array<string, mixed>
+     */
     private function get_pricing_meta(int $post_id): array
     {
         $defaults = [
@@ -3187,6 +3539,10 @@ final class ExperienceMetaBoxes
 
         return array_merge($defaults, $meta);
     }
+    /**
+     * @deprecated Use CalendarMetaBoxHandler::get() instead
+     * @return array<string, mixed>
+     */
     private function get_availability_meta(int $post_id): array
     {
         $defaults = [
@@ -3339,6 +3695,10 @@ final class ExperienceMetaBoxes
 
         return array_merge(Recurrence::defaults(), $stored);
     }
+    /**
+     * @deprecated Use MeetingPointMetaBoxHandler::get() instead
+     * @return array<string, mixed>
+     */
     private function get_meeting_point_meta(int $post_id): array
     {
         $primary = absint((string) get_post_meta($post_id, '_fp_meeting_point_id', true));
@@ -3380,6 +3740,10 @@ final class ExperienceMetaBoxes
 
         return $choices;
     }
+    /**
+     * @deprecated Use ExtrasMetaBoxHandler::get() instead
+     * @return array<string, mixed>
+     */
     private function get_extras_meta(int $post_id): array
     {
         $highlights = get_post_meta($post_id, '_fp_highlights', true);
@@ -3396,6 +3760,10 @@ final class ExperienceMetaBoxes
             'notes' => $this->array_to_lines($notes),
         ];
     }
+    /**
+     * @deprecated Use PolicyMetaBoxHandler::get() instead
+     * @return array<string, mixed>
+     */
     private function get_policy_meta(int $post_id): array
     {
         $faq_meta = get_post_meta($post_id, '_fp_faq', true);
@@ -3419,6 +3787,10 @@ final class ExperienceMetaBoxes
             'faq' => $faq,
         ];
     }
+    /**
+     * @deprecated Use SEOMetaBoxHandler::get() instead
+     * @return array<string, mixed>
+     */
     private function get_seo_meta(int $post_id): array
     {
         return [

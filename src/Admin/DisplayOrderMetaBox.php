@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace FP_Exp\Admin;
 
+use FP_Exp\Core\Hook\HookableInterface;
 use WP_Post;
 
 use function add_action;
@@ -25,7 +26,7 @@ use function wp_update_post;
 /**
  * Gestisce il metabox per l'ordine di visualizzazione delle esperienze.
  */
-final class DisplayOrderMetaBox
+final class DisplayOrderMetaBox implements HookableInterface
 {
     /**
      * Registra gli hooks WordPress.

@@ -4,8 +4,14 @@ declare(strict_types=1);
 
 namespace FP_Exp\Admin;
 
+use FP_Exp\Admin\Traits\FormFieldRenderer;
+use FP_Exp\Core\Hook\HookableInterface;
+use FP_Exp\Admin\Traits\FormSanitizer;
+use FP_Exp\Application\Settings\GetSettingsUseCase;
+use FP_Exp\Application\Settings\UpdateSettingsUseCase;
 use FP_Exp\Booking\EmailTranslator;
 use FP_Exp\Booking\Emails;
+use FP_Exp\Services\Options\OptionsInterface;
 use FP_Exp\Utils\Helpers;
 use FP_Exp\Utils\Logger;
 use FP_Exp\Utils\Theme;
@@ -70,9 +76,54 @@ use function wp_unslash;
 use function wp_create_nonce;
 use function wp_verify_nonce;
 
-final class SettingsPage
+final class SettingsPage implements HookableInterface
 {
+    use FormFieldRenderer;
+    use FormSanitizer;
+
     private string $menu_slug = 'fp_exp_settings';
+    private ?GetSettingsUseCase $getSettingsUseCase = null;
+    private ?UpdateSettingsUseCase $updateSettingsUseCase = null;
+    private ?OptionsInterface $options = null;
+
+    /**
+     * SettingsPage constructor.
+     *
+     * @param OptionsInterface|null $options Optional OptionsInterface (will try to get from container if not provided)
+     */
+    public function __construct(?OptionsInterface $options = null)
+    {
+        $this->options = $options;
+    }
+
+    /**
+     * Get OptionsInterface instance.
+     * Tries container first, falls back to direct instantiation for backward compatibility.
+     */
+    private function getOptions(): OptionsInterface
+    {
+        if ($this->options !== null) {
+            return $this->options;
+        }
+
+        // Try to get from container
+        $kernel = \FP_Exp\Core\Bootstrap\Bootstrap::kernel();
+        if ($kernel !== null) {
+            $container = $kernel->container();
+            if ($container->has(OptionsInterface::class)) {
+                try {
+                    $this->options = $container->make(OptionsInterface::class);
+                    return $this->options;
+                } catch (\Throwable $e) {
+                    // Fall through to direct instantiation
+                }
+            }
+        }
+
+        // Fallback to direct instantiation
+        $this->options = new \FP_Exp\Services\Options\Options();
+        return $this->options;
+    }
 
     public function register_hooks(): void
     {
@@ -183,7 +234,13 @@ final class SettingsPage
     public function enqueue_assets(string $hook = ''): void
     {
         $screen = get_current_screen();
-        if (! $screen || 'fp-exp-dashboard_page_' . $this->menu_slug !== $screen->id) {
+        // Verifica anche il hook e il page parameter per maggiore sicurezza
+        $is_settings_page = $screen && (
+            'fp-exp-dashboard_page_' . $this->menu_slug === $screen->id ||
+            (isset($_GET['page']) && $_GET['page'] === $this->menu_slug)
+        );
+        
+        if (! $is_settings_page) {
             return;
         }
 
@@ -827,7 +884,7 @@ final class SettingsPage
             'sidebar' => 'right',
         ];
 
-        $option = get_option('fp_exp_experience_layout', []);
+        $option = $this->getOptions()->get('fp_exp_experience_layout', []);
 
         if (! is_array($option)) {
             return $defaults;
@@ -903,18 +960,34 @@ final class SettingsPage
         }
 
         $default = isset($args['default']) ? (string) $args['default'] : 'yes';
-        $value = get_option($option, $default);
-        $checked = in_array($value, ['yes', '1', 'true', 1, true], true);
-
-        echo '<input type="hidden" name="' . esc_attr($option) . '" value="no" />';
-        echo '<label class="fp-exp-settings__toggle">';
-        echo '<input type="checkbox" name="' . esc_attr($option) . '" value="yes" ' . checked(true, $checked, false) . ' />';
-        echo ' <span>' . esc_html($label) . '</span>';
-        echo '</label>';
-
-        if (! empty($args['description'])) {
-            echo '<p class="description">' . esc_html((string) $args['description']) . '</p>';
+        
+        // Try to use new use case if available
+        $useCase = $this->getGetSettingsUseCase();
+        if ($useCase !== null) {
+            $value = $useCase->get($option, $default);
+        } else {
+            // Fallback to OptionsInterface for backward compatibility
+            $value = $this->getOptions()->get($option, $default);
         }
+        
+        // Convert to toggle format (yes/no)
+        $toggle_value = in_array($value, ['yes', '1', 'true', 1, true], true) ? 'yes' : 'no';
+
+        // Add hidden input for form submission (WordPress settings API requirement)
+        echo '<input type="hidden" name="' . esc_attr($option) . '" value="no" />';
+
+        // Use Field Renderer Strategy
+        echo $this->render_form_field(
+            name: $option,
+            type: 'toggle',
+            label: $label,
+            value: $toggle_value,
+            options: [
+                'description' => $args['description'] ?? null,
+                'toggle_class' => 'fp-exp-settings__toggle',
+                'label_text' => $label, // Pass label as text inside toggle
+            ]
+        );
     }
 
     /**
@@ -922,25 +995,8 @@ final class SettingsPage
      */
     public function sanitize_toggle($value): string
     {
-        if (is_bool($value)) {
-            return $value ? 'yes' : 'no';
-        }
-
-        if (is_numeric($value)) {
-            return (int) $value > 0 ? 'yes' : 'no';
-        }
-
-        if (is_string($value)) {
-            $normalized = strtolower(trim($value));
-
-            if ('' === $normalized) {
-                return 'no';
-            }
-
-            return in_array($normalized, ['1', 'yes', 'true', 'on'], true) ? 'yes' : 'no';
-        }
-
-        return $value ? 'yes' : 'no';
+        // Use Sanitizer Strategy
+        return (string) $this->sanitize_form_field('toggle', $value);
     }
 
     /**
@@ -954,10 +1010,11 @@ final class SettingsPage
             $value = [];
         }
 
+        // Use Sanitizer Strategy for nested fields
         return [
             'logo' => esc_url_raw((string) ($value['logo'] ?? '')),
-            'header_text' => sanitize_text_field((string) ($value['header_text'] ?? '')),
-            'footer_text' => sanitize_textarea_field((string) ($value['footer_text'] ?? '')),
+            'header_text' => $this->sanitize_form_field('text', $value['header_text'] ?? ''),
+            'footer_text' => $this->sanitize_form_field('textarea', $value['footer_text'] ?? ''),
         ];
     }
 
@@ -974,8 +1031,8 @@ final class SettingsPage
 
         // mittenti
         $sender = isset($value['sender']) && is_array($value['sender']) ? $value['sender'] : [];
-        $structure = sanitize_email((string) ($sender['structure'] ?? get_option('fp_exp_structure_email', '')));
-        $webmaster = sanitize_email((string) ($sender['webmaster'] ?? get_option('fp_exp_webmaster_email', '')));
+        $structure = sanitize_email((string) ($sender['structure'] ?? $this->getOptions()->get('fp_exp_structure_email', '')));
+        $webmaster = sanitize_email((string) ($sender['webmaster'] ?? $this->getOptions()->get('fp_exp_webmaster_email', '')));
 
         // branding
         $branding = isset($value['branding']) && is_array($value['branding']) ? $value['branding'] : [];
@@ -1030,12 +1087,8 @@ final class SettingsPage
 
     private function sanitize_yes_no($value): string
     {
-        if (is_string($value)) {
-            $normalized = strtolower(trim($value));
-            return in_array($normalized, ['1', 'yes', 'true', 'on'], true) ? 'yes' : 'no';
-        }
-
-        return $value ? 'yes' : 'no';
+        // Use Sanitizer Strategy
+        return (string) $this->sanitize_form_field('toggle', $value);
     }
 
     private function register_tracking_settings(): void
@@ -1241,18 +1294,26 @@ final class SettingsPage
      */
     private function get_tabs(): array
     {
-        return [
+        $tabs = [
             'general' => '<span class="dashicons dashicons-admin-settings"></span> ' . esc_html__('General', 'fp-experiences'),
             'gift' => '<span class="dashicons dashicons-tickets-alt"></span> ' . esc_html__('Gift', 'fp-experiences'),
             'branding' => '<span class="dashicons dashicons-art"></span> ' . esc_html__('Branding', 'fp-experiences'),
             'booking' => '<span class="dashicons dashicons-calendar-alt"></span> ' . esc_html__('Booking Rules', 'fp-experiences'),
             'calendar' => '<span class="dashicons dashicons-calendar"></span> ' . esc_html__('Calendar', 'fp-experiences'),
             'tracking' => '<span class="dashicons dashicons-chart-line"></span> ' . esc_html__('Tracking', 'fp-experiences'),
-            'rtb' => '<span class="dashicons dashicons-email"></span> ' . esc_html__('RTB', 'fp-experiences'),
+            'rtb' => '<span class="dashicons dashicons-email"></span> ' . esc_html__('Request to Book', 'fp-experiences'),
             'listing' => '<span class="dashicons dashicons-list-view"></span> ' . esc_html__('Vetrina', 'fp-experiences'),
             'tools' => '<span class="dashicons dashicons-admin-tools"></span> ' . esc_html__('Tools', 'fp-experiences'),
             'logs' => '<span class="dashicons dashicons-media-text"></span> ' . esc_html__('Logs', 'fp-experiences'),
         ];
+
+        /**
+         * Filter the settings tabs.
+         *
+         * @param array<string, string> $tabs Array of tab slugs and labels.
+         * @return array<string, string> Filtered tabs.
+         */
+        return apply_filters('fp_exp_settings_tabs', $tabs);
     }
 
     public function render_tools_panel(): void
@@ -1493,12 +1554,24 @@ final class SettingsPage
 
     public function render_email_field(array $args): void
     {
-        $option = $args['option'];
-        $value = get_option($option, '');
-        echo '<input type="email" class="regular-text" name="' . esc_attr($option) . '" value="' . esc_attr((string) $value) . '" />';
-        if (! empty($args['description'])) {
-            echo '<p class="description">' . esc_html($args['description']) . '</p>';
+        $option = $args['option'] ?? '';
+        if (! $option) {
+            return;
         }
+
+        $value = $this->getOptions()->get($option, '');
+        
+        // Use Field Renderer Strategy
+        echo $this->render_form_field(
+            name: $option,
+            type: 'email',
+            label: $args['label'] ?? '',
+            value: $value,
+            options: [
+                'description' => $args['description'] ?? null,
+                'attributes' => ['class' => 'regular-text'],
+            ]
+        );
     }
 
     public function render_email_nested_field(array $args): void
@@ -1508,18 +1581,18 @@ final class SettingsPage
             return;
         }
 
-        $settings = get_option('fp_exp_emails', []);
+        $settings = $this->getOptions()->get('fp_exp_emails', []);
         $settings = is_array($settings) ? $settings : [];
 
         // retrocompat: fallback a opzioni legacy
         if (! isset($settings['sender']['structure'])) {
-            $legacy = sanitize_email((string) get_option('fp_exp_structure_email', ''));
+            $legacy = sanitize_email((string) $this->getOptions()->get('fp_exp_structure_email', ''));
             if ($legacy) {
                 $settings['sender']['structure'] = $legacy;
             }
         }
         if (! isset($settings['sender']['webmaster'])) {
-            $legacy = sanitize_email((string) get_option('fp_exp_webmaster_email', ''));
+            $legacy = sanitize_email((string) $this->getOptions()->get('fp_exp_webmaster_email', ''));
             if ($legacy) {
                 $settings['sender']['webmaster'] = $legacy;
             }
@@ -1611,7 +1684,7 @@ final class SettingsPage
     public function render_email_branding_field(array $args): void
     {
         // legacy accessor per opzione separata
-        $settings = get_option('fp_exp_email_branding', []);
+        $settings = $this->getOptions()->get('fp_exp_email_branding', []);
         $settings = is_array($settings) ? $settings : [];
         $key = $args['key'] ?? '';
 
@@ -1636,13 +1709,13 @@ final class SettingsPage
 
     public function render_emails_branding_field(array $args): void
     {
-        $emails = get_option('fp_exp_emails', []);
+        $emails = $this->getOptions()->get('fp_exp_emails', []);
         $emails = is_array($emails) ? $emails : [];
         $branding = isset($emails['branding']) && is_array($emails['branding']) ? $emails['branding'] : [];
 
         // retrocompat: pre-popolare da opzione legacy
         if (! $branding) {
-            $legacy = get_option('fp_exp_email_branding', []);
+            $legacy = $this->getOptions()->get('fp_exp_email_branding', []);
             $legacy = is_array($legacy) ? $legacy : [];
             $branding = $legacy;
         }
@@ -1676,7 +1749,7 @@ final class SettingsPage
             return;
         }
 
-        $emails = get_option('fp_exp_emails', []);
+        $emails = $this->getOptions()->get('fp_exp_emails', []);
         $emails = is_array($emails) ? $emails : [];
         $cursor = $emails;
         foreach ($path as $segment) {
@@ -1727,24 +1800,21 @@ final class SettingsPage
             return;
         }
 
-        $settings = get_option('fp_exp_emails', []);
-        $settings = is_array($settings) ? $settings : [];
-        $cursor = $settings;
-        foreach ($path as $segment) {
-            if (! isset($cursor[$segment])) {
-                $cursor[$segment] = [];
-            }
-            $cursor = $cursor[$segment];
-        }
-
-        $value = 'yes' === ($cursor ?? '');
-
-        $name = 'fp_exp_emails';
-        foreach ($path as $segment) {
-            $name .= '[' . esc_attr($segment) . ']';
-        }
-
-        echo '<label><input type="checkbox" name="' . $name . '" value="yes" ' . checked($value, true, false) . ' /> ' . esc_html__('Abilitato', 'fp-experiences') . '</label>';
+        // Use NestedFieldRenderer with toggle base type
+        // Note: label is empty because WordPress already shows it via add_settings_field
+        echo $this->render_form_field(
+            name: implode('_', $path), // Temporary name for field definition
+            type: 'nested_toggle',
+            label: '', // WordPress already shows the label via add_settings_field
+            value: null, // Will be retrieved by NestedFieldRenderer
+            options: [
+                'path' => $path,
+                'base_type' => 'toggle',
+                'option_name' => 'fp_exp_emails',
+                'description' => $args['description'] ?? null,
+                'label_text' => esc_html__('Abilitato', 'fp-experiences'),
+            ]
+        );
     }
 
     public function render_email_number_field(array $args): void
@@ -1759,25 +1829,25 @@ final class SettingsPage
         $step = isset($args['step']) ? (int) $args['step'] : 1;
         $placeholder = isset($args['placeholder']) ? (string) $args['placeholder'] : '';
 
-        $settings = get_option('fp_exp_emails', []);
-        $settings = is_array($settings) ? $settings : [];
-
-        $cursor = $settings;
-        foreach ($path as $segment) {
-            if (! isset($cursor[$segment])) {
-                $cursor[$segment] = [];
-            }
-            $cursor = $cursor[$segment];
-        }
-
-        $value = is_numeric($cursor ?? null) ? (int) $cursor : '';
-
-        $name = 'fp_exp_emails';
-        foreach ($path as $segment) {
-            $name .= '[' . esc_attr($segment) . ']';
-        }
-
-        echo '<input type="number" class="small-text" min="' . esc_attr((string) $min) . '" max="' . esc_attr((string) $max) . '" step="' . esc_attr((string) $step) . '" name="' . $name . '" value="' . esc_attr((string) $value) . '" placeholder="' . esc_attr($placeholder) . '" />';
+        // Use NestedFieldRenderer
+        // Note: label is empty because WordPress already shows it via add_settings_field
+        echo $this->render_form_field(
+            name: implode('_', $path), // Temporary name for field definition
+            type: 'nested_number',
+            label: '', // WordPress already shows the label via add_settings_field
+            value: null, // Will be retrieved by NestedFieldRenderer
+            options: [
+                'path' => $path,
+                'base_type' => 'number',
+                'option_name' => 'fp_exp_emails',
+                'description' => $args['description'] ?? null,
+                'attributes' => ['class' => 'small-text'],
+                'min' => $min,
+                'max' => $max,
+                'step' => $step,
+                'placeholder' => $placeholder,
+            ]
+        );
     }
 
     public function render_email_subject_field(array $args): void
@@ -1787,25 +1857,21 @@ final class SettingsPage
             return;
         }
 
-        $settings = get_option('fp_exp_emails', []);
-        $settings = is_array($settings) ? $settings : [];
-
-        $cursor = $settings;
-        foreach ($path as $segment) {
-            if (! isset($cursor[$segment])) {
-                $cursor[$segment] = [];
-            }
-            $cursor = $cursor[$segment];
-        }
-
-        $value = is_string($cursor ?? null) ? (string) $cursor : '';
-
-        $name = 'fp_exp_emails';
-        foreach ($path as $segment) {
-            $name .= '[' . esc_attr($segment) . ']';
-        }
-
-        echo '<input type="text" class="regular-text" name="' . $name . '" value="' . esc_attr($value) . '" />';
+        // Use NestedFieldRenderer
+        // Note: label is empty because WordPress already shows it via add_settings_field
+        echo $this->render_form_field(
+            name: implode('_', $path), // Temporary name for field definition
+            type: 'nested_text',
+            label: '', // WordPress already shows the label via add_settings_field
+            value: null, // Will be retrieved by NestedFieldRenderer
+            options: [
+                'path' => $path,
+                'base_type' => 'text',
+                'option_name' => 'fp_exp_emails',
+                'description' => $args['description'] ?? null,
+                'attributes' => ['class' => 'regular-text'],
+            ]
+        );
         echo '<p class="description">' . esc_html__('Puoi usare segnaposto come {experience_title}.', 'fp-experiences') . '</p>';
     }
 
@@ -1833,7 +1899,7 @@ final class SettingsPage
     {
         echo '<p>' . esc_html__('Connect your Brevo account to deliver transactional emails and sync contacts with marketing attributes and tags.', 'fp-experiences') . '</p>';
 
-        $settings = get_option('fp_exp_brevo', []);
+        $settings = $this->getOptions()->get('fp_exp_brevo', []);
         $settings = is_array($settings) ? $settings : [];
 
         $enabled = ! empty($settings['enabled']);
@@ -2484,7 +2550,7 @@ final class SettingsPage
 
     public function render_branding_field(array $field): void
     {
-        $branding = get_option('fp_exp_branding', []);
+        $branding = $this->getOptions()->get('fp_exp_branding', []);
         $branding = is_array($branding) ? $branding : [];
         $key = $field['key'];
         $value = array_key_exists($key, $branding)
@@ -2538,7 +2604,7 @@ final class SettingsPage
 
     public function render_listing_field(array $field): void
     {
-        $settings = get_option('fp_exp_listing', []);
+        $settings = $this->getOptions()->get('fp_exp_listing', []);
         $settings = is_array($settings) ? $settings : [];
         $defaults = Helpers::listing_settings();
 
@@ -2744,103 +2810,179 @@ final class SettingsPage
 
     public function render_rtb_field(array $field): void
     {
-        $settings = get_option('fp_exp_rtb', []);
+        $settings = $this->getOptions()->get('fp_exp_rtb', []);
         $settings = is_array($settings) ? $settings : [];
         $value = $this->extract_nested_value($settings, $field['key']);
-        $name = $this->build_input_name('fp_exp_rtb', $field['key']);
+        $path = $this->parse_key_segments($field['key'] ?? '');
+        
+        if (empty($path)) {
+            return;
+        }
 
         $type = $field['type'] ?? 'text';
+        $base_type = match($type) {
+            'checkbox' => 'toggle',
+            'select' => 'select',
+            'number' => 'number',
+            'textarea' => 'textarea',
+            default => 'text',
+        };
 
-        if ('checkbox' === $type) {
-            $checked = ! empty($value);
-            echo '<label><input type="checkbox" name="' . esc_attr($name) . '" value="1" ' . checked($checked, true, false) . '/> ' . esc_html__('Enabled', 'fp-experiences') . '</label>';
-        } elseif ('select' === $type) {
-            echo '<select name="' . esc_attr($name) . '">';
-            foreach ($field['options'] as $option_value => $label) {
-                $selected = ((string) $value === (string) $option_value) ? 'selected' : '';
-                echo '<option value="' . esc_attr((string) $option_value) . '" ' . $selected . '>' . esc_html($label) . '</option>';
-            }
-            echo '</select>';
-        } elseif ('number' === $type) {
-            echo '<input type="number" class="small-text" name="' . esc_attr($name) . '" value="' . esc_attr((string) $value) . '" min="0" />';
-        } elseif ('textarea' === $type) {
-            echo '<textarea name="' . esc_attr($name) . '" rows="4" class="large-text">' . esc_textarea((string) $value) . '</textarea>';
-        } else {
-            $placeholder = $field['placeholder'] ?? '';
-            echo '<input type="text" class="regular-text" name="' . esc_attr($name) . '" value="' . esc_attr((string) $value) . '" placeholder="' . esc_attr((string) $placeholder) . '" />';
-        }
+        // Use NestedFieldRenderer for RTB fields
+        // Note: label is empty because WordPress already shows it via add_settings_field
+        $field_html = $this->render_form_field(
+            name: implode('_', $path),
+            type: 'nested_' . $base_type,
+            label: '', // WordPress already shows the label via add_settings_field
+            value: null, // Will be retrieved by NestedFieldRenderer
+            options: [
+                'path' => $path,
+                'base_type' => $base_type,
+                'option_name' => 'fp_exp_rtb',
+                'description' => $field['description'] ?? null,
+                'attributes' => $this->get_field_attributes($type),
+                'choices' => $field['options'] ?? [],
+                'min' => $field['min'] ?? 0,
+                'placeholder' => $field['placeholder'] ?? '',
+            ]
+        );
 
-        if (! empty($field['description'])) {
-            echo '<p class="description">' . esc_html($field['description']) . '</p>';
-        }
+        echo $field_html;
+    }
+
+    /**
+     * Get HTML attributes for field type.
+     * 
+     * @return array<string, string>
+     */
+    private function get_field_attributes(string $type): array
+    {
+        return match($type) {
+            'number' => ['class' => 'small-text'],
+            'textarea' => ['class' => 'large-text', 'rows' => '4'],
+            default => ['class' => 'regular-text'],
+        };
     }
 
     public function render_tracking_field(array $field): void
     {
-        $settings = get_option('fp_exp_tracking', []);
+        $settings = $this->getOptions()->get('fp_exp_tracking', []);
         $settings = is_array($settings) ? $settings : [];
         $value = $this->extract_nested_value($settings, $field['key']);
-        $name = $this->build_input_name('fp_exp_tracking', $field['key']);
+        $path = $this->parse_key_segments($field['key'] ?? '');
+        
+        if (empty($path)) {
+            return;
+        }
+
+        $type = $field['type'] ?? 'text';
+        $base_type = match($type) {
+            'checkbox' => 'toggle',
+            'number' => 'number',
+            default => 'text',
+        };
 
         // Show status badge for key tracking fields
+        $status_badge = '';
         if (in_array($field['key'], ['ga4.enabled', 'meta_pixel.enabled', 'google_ads.enabled', 'clarity.enabled'], true)) {
             $is_enabled = !empty($value);
             $status_class = $is_enabled ? 'active' : 'inactive';
             $status_text = $is_enabled ? esc_html__('Attivo', 'fp-experiences') : esc_html__('Non configurato', 'fp-experiences');
-            echo '<span class="fp-exp-integration-status fp-exp-integration-status--' . esc_attr($status_class) . '">' . $status_text . '</span> ';
+            $status_badge = '<span class="fp-exp-integration-status fp-exp-integration-status--' . esc_attr($status_class) . '">' . $status_text . '</span> ';
         }
 
-        if ('checkbox' === $field['type']) {
-            $checked = ! empty($value);
-            echo '<label><input type="checkbox" name="' . esc_attr($name) . '" value="1" ' . checked($checked, true, false) . ' /> ' . esc_html__('Enabled', 'fp-experiences') . '</label>';
-        } elseif ('number' === $field['type']) {
-            $min = isset($field['min']) ? max(0, (int) $field['min']) : 0;
-            echo '<input type="number" class="small-text" inputmode="numeric" pattern="[0-9]*" step="1" min="' . esc_attr((string) $min) . '" name="' . esc_attr($name) . '" value="' . esc_attr((string) $value) . '" />';
-        } else {
-            $placeholder = $field['placeholder'] ?? '';
-            echo '<input type="text" class="regular-text" name="' . esc_attr($name) . '" value="' . esc_attr((string) $value) . '" placeholder="' . esc_attr((string) $placeholder) . '" />';
+        // Use NestedFieldRenderer for tracking fields
+        // Note: label is empty because WordPress already shows it via add_settings_field
+        $field_html = $this->render_form_field(
+            name: implode('_', $path),
+            type: 'nested_' . $base_type,
+            label: '', // WordPress already shows the label via add_settings_field
+            value: null, // Will be retrieved by NestedFieldRenderer
+            options: [
+                'path' => $path,
+                'base_type' => $base_type,
+                'option_name' => 'fp_exp_tracking',
+                'description' => $field['description'] ?? null,
+                'attributes' => array_merge(
+                    $this->get_field_attributes($type),
+                    $type === 'number' ? ['inputmode' => 'numeric', 'pattern' => '[0-9]*', 'step' => '1'] : []
+                ),
+                'min' => isset($field['min']) ? max(0, (int) $field['min']) : 0,
+                'placeholder' => $field['placeholder'] ?? '',
+            ]
+        );
+
+        // Inject status badge before field if present
+        if ($status_badge) {
+            $field_html = str_replace('<td>', '<td>' . $status_badge, $field_html);
         }
 
-        if (! empty($field['description'])) {
-            echo '<p class="description">' . esc_html($field['description']) . '</p>';
-        }
+        echo $field_html;
     }
 
     public function render_brevo_field(array $field): void
     {
-        $settings = get_option('fp_exp_brevo', []);
+        $settings = $this->getOptions()->get('fp_exp_brevo', []);
         $settings = is_array($settings) ? $settings : [];
         $value = $this->extract_nested_value($settings, $field['key']);
-        $name = $this->build_input_name('fp_exp_brevo', $field['key']);
+        $path = $this->parse_key_segments($field['key'] ?? '');
+        
+        if (empty($path)) {
+            return;
+        }
+
+        $type = $field['type'] ?? 'text';
+        $base_type = match($type) {
+            'checkbox' => 'toggle',
+            'select' => 'select',
+            'number' => 'number',
+            'textarea' => 'textarea',
+            default => 'text',
+        };
 
         // Show status badge for Brevo enabled field
+        $status_badge = '';
         if ($field['key'] === 'enabled') {
             $is_enabled = !empty($value);
             $has_api_key = !empty($settings['api_key'] ?? '');
             
             if ($is_enabled && $has_api_key) {
-                echo '<span class="fp-exp-integration-status fp-exp-integration-status--active">' . esc_html__('Attivo', 'fp-experiences') . '</span> ';
+                $status_badge = '<span class="fp-exp-integration-status fp-exp-integration-status--active">' . esc_html__('Attivo', 'fp-experiences') . '</span> ';
             } elseif ($is_enabled && !$has_api_key) {
-                echo '<span class="fp-exp-integration-status fp-exp-integration-status--warning">' . esc_html__('API key mancante', 'fp-experiences') . '</span> ';
+                $status_badge = '<span class="fp-exp-integration-status fp-exp-integration-status--warning">' . esc_html__('API key mancante', 'fp-experiences') . '</span> ';
             } else {
-                echo '<span class="fp-exp-integration-status fp-exp-integration-status--inactive">' . esc_html__('Non configurato', 'fp-experiences') . '</span> ';
+                $status_badge = '<span class="fp-exp-integration-status fp-exp-integration-status--inactive">' . esc_html__('Non configurato', 'fp-experiences') . '</span> ';
             }
         }
 
-        if ('checkbox' === $field['type']) {
-            $checked = ! empty($value);
-            echo '<label><input type="checkbox" name="' . esc_attr($name) . '" value="1" ' . checked($checked, true, false) . ' /> ' . esc_html__('Enabled', 'fp-experiences') . '</label>';
-        } elseif ('number' === $field['type']) {
-            $min = isset($field['min']) ? max(0, (int) $field['min']) : 0;
-            echo '<input type="number" class="small-text" inputmode="numeric" pattern="[0-9]*" step="1" min="' . esc_attr((string) $min) . '" name="' . esc_attr($name) . '" value="' . esc_attr((string) $value) . '" />';
-        } else {
-            $placeholder = $field['placeholder'] ?? '';
-            echo '<input type="text" class="regular-text" name="' . esc_attr($name) . '" value="' . esc_attr((string) $value) . '" placeholder="' . esc_attr((string) $placeholder) . '" />';
+        // Use NestedFieldRenderer for Brevo fields
+        // Note: label is empty because WordPress already shows it via add_settings_field
+        $field_html = $this->render_form_field(
+            name: implode('_', $path),
+            type: 'nested_' . $base_type,
+            label: '', // WordPress already shows the label via add_settings_field
+            value: null, // Will be retrieved by NestedFieldRenderer
+            options: [
+                'path' => $path,
+                'base_type' => $base_type,
+                'option_name' => 'fp_exp_brevo',
+                'description' => $field['description'] ?? null,
+                'attributes' => array_merge(
+                    $this->get_field_attributes($type),
+                    $type === 'number' ? ['inputmode' => 'numeric', 'pattern' => '[0-9]*', 'step' => '1'] : []
+                ),
+                'choices' => $field['options'] ?? [],
+                'min' => isset($field['min']) ? max(0, (int) $field['min']) : 0,
+                'placeholder' => $field['placeholder'] ?? '',
+            ]
+        );
+
+        // Inject status badge before field if present
+        if ($status_badge) {
+            $field_html = str_replace('<td>', '<td>' . $status_badge, $field_html);
         }
 
-        if (! empty($field['description'])) {
-            echo '<p class="description">' . esc_html($field['description']) . '</p>';
-        }
+        echo $field_html;
     }
 
     public function render_calendar_field(array $field): void
@@ -2888,7 +3030,7 @@ final class SettingsPage
 
     private function render_branding_contrast(): void
     {
-        $branding = get_option('fp_exp_branding', []);
+        $branding = $this->getOptions()->get('fp_exp_branding', []);
         $branding = is_array($branding) ? $branding : [];
         $palette = Theme::resolve_palette($branding);
         $report = Theme::contrast_report($palette);
@@ -3530,7 +3672,7 @@ final class SettingsPage
                 'fp_exp_calendar_action' => 'oauth',
             ], admin_url('admin.php'));
             $settings['redirect_uri'] = $redirect_uri;
-            update_option('fp_exp_google_calendar', $settings, false);
+            $this->getOptions()->set('fp_exp_google_calendar', $settings, false);
         }
 
         $state = wp_generate_password(16, false, false);
@@ -3556,7 +3698,7 @@ final class SettingsPage
     {
         $settings = $this->get_calendar_settings();
         unset($settings['access_token'], $settings['refresh_token'], $settings['expires_at']);
-        update_option('fp_exp_google_calendar', $settings, false);
+        $this->getOptions()->set('fp_exp_google_calendar', $settings, false);
         add_settings_error('fp_exp_settings', 'fp_exp_calendar_disconnected', esc_html__('Google Calendar disconnected.', 'fp-experiences'), 'updated');
         wp_safe_redirect(add_query_arg([
             'page' => $this->menu_slug,
@@ -3624,7 +3766,7 @@ final class SettingsPage
         $settings['access_token'] = (string) $body['access_token'];
         $settings['refresh_token'] = (string) ($body['refresh_token'] ?? ($settings['refresh_token'] ?? ''));
         $settings['expires_at'] = time() + (int) ($body['expires_in'] ?? 3600);
-        update_option('fp_exp_google_calendar', $settings, false);
+        $this->getOptions()->set('fp_exp_google_calendar', $settings, false);
 
         add_settings_error('fp_exp_settings', 'fp_exp_calendar_connected', esc_html__('Google Calendar connected successfully.', 'fp-experiences'), 'updated');
         wp_safe_redirect(add_query_arg([
@@ -3705,7 +3847,7 @@ final class SettingsPage
      */
     private function get_calendar_settings(): array
     {
-        $settings = get_option('fp_exp_google_calendar', []);
+        $settings = $this->getOptions()->get('fp_exp_google_calendar', []);
 
         return is_array($settings) ? $settings : [];
     }
@@ -3808,7 +3950,7 @@ final class SettingsPage
 
         $settings['access_token'] = (string) $body['access_token'];
         $settings['expires_at'] = time() + (int) ($body['expires_in'] ?? 3600);
-        update_option('fp_exp_google_calendar', $settings, false);
+        $this->getOptions()->set('fp_exp_google_calendar', $settings, false);
 
         return $settings['access_token'];
     }
@@ -3851,5 +3993,59 @@ final class SettingsPage
         echo '</a>';
         echo '</p>';
         echo '</div>';
+    }
+
+    /**
+     * Get GetSettingsUseCase from container if available.
+     */
+    private function getGetSettingsUseCase(): ?GetSettingsUseCase
+    {
+        if ($this->getSettingsUseCase !== null) {
+            return $this->getSettingsUseCase;
+        }
+
+        try {
+            $kernel = \FP_Exp\Core\Bootstrap\Bootstrap::kernel();
+            if ($kernel === null) {
+                return null;
+            }
+
+            $container = $kernel->container();
+            if (!$container->has(GetSettingsUseCase::class)) {
+                return null;
+            }
+
+            $this->getSettingsUseCase = $container->make(GetSettingsUseCase::class);
+            return $this->getSettingsUseCase;
+        } catch (\Throwable $e) {
+            return null;
+        }
+    }
+
+    /**
+     * Get UpdateSettingsUseCase from container if available.
+     */
+    private function getUpdateSettingsUseCase(): ?UpdateSettingsUseCase
+    {
+        if ($this->updateSettingsUseCase !== null) {
+            return $this->updateSettingsUseCase;
+        }
+
+        try {
+            $kernel = \FP_Exp\Core\Bootstrap\Bootstrap::kernel();
+            if ($kernel === null) {
+                return null;
+            }
+
+            $container = $kernel->container();
+            if (!$container->has(UpdateSettingsUseCase::class)) {
+                return null;
+            }
+
+            $this->updateSettingsUseCase = $container->make(UpdateSettingsUseCase::class);
+            return $this->updateSettingsUseCase;
+        } catch (\Throwable $e) {
+            return null;
+        }
     }
 }

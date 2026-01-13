@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace FP_Exp\Api;
 
+use FP_Exp\Core\Hook\HookableInterface;
+use FP_Exp\Services\Options\OptionsInterface;
 use FP_Exp\Utils\Helpers;
 use FP_Exp\Utils\Logger;
 use WP_Error;
@@ -32,8 +34,49 @@ use const FP_EXP_VERSION;
 /**
  * Handles webhook endpoints for external integrations.
  */
-final class Webhooks
+final class Webhooks implements HookableInterface
 {
+    private ?OptionsInterface $options = null;
+
+    /**
+     * Webhooks constructor.
+     *
+     * @param OptionsInterface|null $options Optional OptionsInterface (will try to get from container if not provided)
+     */
+    public function __construct(?OptionsInterface $options = null)
+    {
+        $this->options = $options;
+    }
+
+    /**
+     * Get OptionsInterface instance.
+     * Tries container first, falls back to direct instantiation for backward compatibility.
+     */
+    private function getOptions(): OptionsInterface
+    {
+        if ($this->options !== null) {
+            return $this->options;
+        }
+
+        // Try to get from container
+        $kernel = \FP_Exp\Core\Bootstrap\Bootstrap::kernel();
+        if ($kernel !== null) {
+            $container = $kernel->container();
+            if ($container->has(OptionsInterface::class)) {
+                try {
+                    $this->options = $container->make(OptionsInterface::class);
+                    return $this->options;
+                } catch (\Throwable $e) {
+                    // Fall through to direct instantiation
+                }
+            }
+        }
+
+        // Fallback to direct instantiation
+        $this->options = new \FP_Exp\Services\Options\Options();
+        return $this->options;
+    }
+
     public function register_hooks(): void
     {
         add_action('rest_api_init', [$this, 'register_routes']);
@@ -125,7 +168,7 @@ final class Webhooks
 
     private function verify_brevo_signature(WP_REST_Request $request): bool
     {
-        $settings = get_option('fp_exp_brevo', []);
+        $settings = $this->getOptions()->get('fp_exp_brevo', []);
         $secret = isset($settings['webhook_secret']) ? (string) $settings['webhook_secret'] : '';
 
         if ('' === $secret) {

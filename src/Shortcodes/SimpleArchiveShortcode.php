@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace FP_Exp\Shortcodes;
 
+use FP_Exp\Domain\Booking\Repositories\ExperienceRepositoryInterface;
 use FP_Exp\Utils\Theme;
 use WP_Post;
 use WP_Query;
@@ -27,6 +28,8 @@ use function strtoupper;
 
 final class SimpleArchiveShortcode extends BaseShortcode
 {
+    private ?ExperienceRepositoryInterface $experienceRepository = null;
+
     protected string $tag = 'fp_exp_simple_archive';
 
     protected string $template = 'front/simple-archive.php';
@@ -143,7 +146,15 @@ final class SimpleArchiveShortcode extends BaseShortcode
         $title = get_the_title($post);
         $page_links = $this->resolve_page_links($id);
         $thumbnail = get_the_post_thumbnail_url($id, 'large') ?: '';
-        $duration_minutes = absint((string) get_post_meta($id, '_fp_duration_minutes', true));
+        // Try to use repository if available
+        $repo = $this->getExperienceRepository();
+        $duration_minutes = 0;
+        if ($repo !== null) {
+            $duration_minutes = absint((string) $repo->getMeta($id, '_fp_duration_minutes', 0));
+        } else {
+            // Fallback to direct get_post_meta for backward compatibility
+            $duration_minutes = absint((string) get_post_meta($id, '_fp_duration_minutes', true));
+        }
         $price_from = $this->calculate_price_from_meta($id);
         $price_display = null !== $price_from ? number_format_i18n($price_from, 0) : '';
 
@@ -164,7 +175,15 @@ final class SimpleArchiveShortcode extends BaseShortcode
      */
     private function resolve_page_links(int $experience_id): array
     {
-        $page_id = absint((string) get_post_meta($experience_id, '_fp_exp_page_id', true));
+        // Try to use repository if available
+        $repo = $this->getExperienceRepository();
+        $page_id = 0;
+        if ($repo !== null) {
+            $page_id = absint((string) $repo->getMeta($experience_id, '_fp_exp_page_id', 0));
+        } else {
+            // Fallback to direct get_post_meta for backward compatibility
+            $page_id = absint((string) get_post_meta($experience_id, '_fp_exp_page_id', true));
+        }
         $fallback = get_permalink($experience_id) ?: '';
 
         $details = '';
@@ -238,7 +257,21 @@ final class SimpleArchiveShortcode extends BaseShortcode
 
     private function calculate_price_from_meta(int $experience_id): ?float
     {
-        $tickets = get_post_meta($experience_id, '_fp_ticket_types', true);
+        // Try to use repository if available
+        $repo = $this->getExperienceRepository();
+        $tickets = [];
+        if ($repo !== null) {
+            $tickets = $repo->getMeta($experience_id, '_fp_ticket_types', []);
+            if (!is_array($tickets)) {
+                $tickets = [];
+            }
+        } else {
+            // Fallback to direct get_post_meta for backward compatibility
+            $tickets = get_post_meta($experience_id, '_fp_ticket_types', true);
+            if (!is_array($tickets)) {
+                $tickets = [];
+            }
+        }
         if (! is_array($tickets) || empty($tickets)) {
             return null;
         }
@@ -271,5 +304,32 @@ final class SimpleArchiveShortcode extends BaseShortcode
         }
 
         return $min_price;
+    }
+
+    /**
+     * Get ExperienceRepository from container if available.
+     */
+    private function getExperienceRepository(): ?ExperienceRepositoryInterface
+    {
+        if ($this->experienceRepository !== null) {
+            return $this->experienceRepository;
+        }
+
+        try {
+            $kernel = \FP_Exp\Core\Bootstrap\Bootstrap::kernel();
+            if ($kernel === null) {
+                return null;
+            }
+
+            $container = $kernel->container();
+            if (!$container->has(ExperienceRepositoryInterface::class)) {
+                return null;
+            }
+
+            $this->experienceRepository = $container->make(ExperienceRepositoryInterface::class);
+            return $this->experienceRepository;
+        } catch (\Throwable $e) {
+            return null;
+        }
     }
 }

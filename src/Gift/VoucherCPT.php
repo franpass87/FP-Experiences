@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace FP_Exp\Gift;
 
+use FP_Exp\Core\Hook\HookableInterface;
 use FP_Exp\Utils\Helpers;
 use WP_Post;
 
@@ -39,7 +40,7 @@ use function register_post_type;
 
 use const DAY_IN_SECONDS;
 
-final class VoucherCPT
+final class VoucherCPT implements HookableInterface
 {
     public const POST_TYPE = 'fp_exp_gift_voucher';
 

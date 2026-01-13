@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace FP_Exp\MeetingPoints;
 
+use FP_Exp\Core\Hook\HookableInterface;
 use FP_Exp\Utils\Helpers;
 use WP_REST_Request;
 use WP_REST_Response;
@@ -19,7 +20,7 @@ use function sanitize_email;
 use function sanitize_text_field;
 use function sanitize_textarea_field;
 
-final class RestController
+final class RestController implements HookableInterface
 {
     public function register_hooks(): void
     {

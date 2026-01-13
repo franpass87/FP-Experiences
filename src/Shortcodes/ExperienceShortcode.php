@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace FP_Exp\Shortcodes;
 
+use FP_Exp\Application\Settings\GetSettingsUseCase;
+use FP_Exp\Domain\Booking\Repositories\ExperienceRepositoryInterface;
 use FP_Exp\MeetingPoints\Repository;
 use FP_Exp\Utils\Helpers;
 use FP_Exp\Utils\LanguageHelper;
@@ -57,6 +59,9 @@ use function wp_trim_words;
 
 final class ExperienceShortcode extends BaseShortcode
 {
+    private ?ExperienceRepositoryInterface $experienceRepository = null;
+    private ?GetSettingsUseCase $getSettingsUseCase = null;
+
     private const ALLOWED_SECTIONS = [
         'hero',
         'overview',
@@ -163,7 +168,15 @@ final class ExperienceShortcode extends BaseShortcode
         $exclusions = Helpers::get_meta_array($experience_id, '_fp_exclusions');
         $what_to_bring = Helpers::get_meta_array($experience_id, '_fp_what_to_bring');
 
-        $notes_raw = get_post_meta($experience_id, '_fp_notes', true);
+        // Try to use repository if available
+        $repo = $this->getExperienceRepository();
+        $notes_raw = null;
+        if ($repo !== null) {
+            $notes_raw = $repo->getMeta($experience_id, '_fp_notes', null);
+        } else {
+            // Fallback to direct get_post_meta for backward compatibility
+            $notes_raw = get_post_meta($experience_id, '_fp_notes', true);
+        }
         if (is_array($notes_raw)) {
             $notes = array_values(array_filter(array_map('wp_kses_post', array_map('strval', $notes_raw)), static function (string $item): bool {
                 $trimmed = trim($item);
@@ -1126,5 +1139,59 @@ final class ExperienceShortcode extends BaseShortcode
         }
 
         return implode(' ', $parts);
+    }
+
+    /**
+     * Get ExperienceRepository from container if available.
+     */
+    private function getExperienceRepository(): ?ExperienceRepositoryInterface
+    {
+        if ($this->experienceRepository !== null) {
+            return $this->experienceRepository;
+        }
+
+        try {
+            $kernel = \FP_Exp\Core\Bootstrap\Bootstrap::kernel();
+            if ($kernel === null) {
+                return null;
+            }
+
+            $container = $kernel->container();
+            if (!$container->has(ExperienceRepositoryInterface::class)) {
+                return null;
+            }
+
+            $this->experienceRepository = $container->make(ExperienceRepositoryInterface::class);
+            return $this->experienceRepository;
+        } catch (\Throwable $e) {
+            return null;
+        }
+    }
+
+    /**
+     * Get GetSettingsUseCase from container if available.
+     */
+    private function getGetSettingsUseCase(): ?GetSettingsUseCase
+    {
+        if ($this->getSettingsUseCase !== null) {
+            return $this->getSettingsUseCase;
+        }
+
+        try {
+            $kernel = \FP_Exp\Core\Bootstrap\Bootstrap::kernel();
+            if ($kernel === null) {
+                return null;
+            }
+
+            $container = $kernel->container();
+            if (!$container->has(GetSettingsUseCase::class)) {
+                return null;
+            }
+
+            $this->getSettingsUseCase = $container->make(GetSettingsUseCase::class);
+            return $this->getSettingsUseCase;
+        } catch (\Throwable $e) {
+            return null;
+        }
     }
 }

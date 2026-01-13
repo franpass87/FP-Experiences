@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace FP_Exp\Admin;
 
+use FP_Exp\Core\Hook\HookableInterface;
 use FP_Exp\Utils\Helpers;
 
 use function add_action;
@@ -23,7 +24,7 @@ use function wp_die;
 use function wp_enqueue_script;
 use function wp_enqueue_style;
 
-final class EmailsPage
+final class EmailsPage implements HookableInterface
 {
     private SettingsPage $settings_page;
 
@@ -40,7 +41,13 @@ final class EmailsPage
     public function enqueue_assets(): void
     {
         $screen = get_current_screen();
-        if (! $screen || 'fp-exp-dashboard_page_fp_exp_emails' !== $screen->id) {
+        // Verifica anche il hook e il page parameter per maggiore sicurezza
+        $is_emails_page = $screen && (
+            'fp-exp-dashboard_page_fp_exp_emails' === $screen->id ||
+            (isset($_GET['page']) && $_GET['page'] === 'fp_exp_emails')
+        );
+        
+        if (! $is_emails_page) {
             return;
         }
 
