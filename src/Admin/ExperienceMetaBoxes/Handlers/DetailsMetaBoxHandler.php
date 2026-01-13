@@ -466,8 +466,11 @@ final class DetailsMetaBoxHandler extends BaseMetaBoxHandler
         }
         $this->update_or_delete_meta($post_id, 'gallery_ids', !empty($gallery_ids) ? array_unique($gallery_ids) : null);
 
-        // Languages (taxonomy)
-        $languages = $this->sanitize_key_array($raw['languages'] ?? []);
+        // Languages (taxonomy) - MUST use integers for term IDs to avoid creating duplicate terms
+        $languages = isset($raw['languages']) && is_array($raw['languages']) 
+            ? array_values(array_filter(array_map('absint', $raw['languages'])))
+            : [];
+        
         if (!empty($languages)) {
             wp_set_post_terms($post_id, $languages, 'fp_exp_language', false);
         } else {
@@ -489,8 +492,9 @@ final class DetailsMetaBoxHandler extends BaseMetaBoxHandler
                 }
             }
             if (!empty($created_term_ids)) {
-                $all_languages = array_merge($languages, $created_term_ids);
-                wp_set_post_terms($post_id, array_unique($all_languages), 'fp_exp_language', false);
+                // Merge and ensure all are integers
+                $all_languages = array_values(array_unique(array_merge($languages, $created_term_ids)));
+                wp_set_post_terms($post_id, $all_languages, 'fp_exp_language', false);
             }
         }
 
