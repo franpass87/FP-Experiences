@@ -96,6 +96,10 @@ final class Multilanguage implements HookableInterface
 
         // Register string translation domains for WPML/Polylang String Translation
         add_action('init', [$this, 'register_string_translations'], 20);
+        
+        // WPML: Register post type as translatable and show translation columns
+        add_action('wpml_loaded', [$this, 'register_wpml_post_type_translation']);
+        add_filter('wpml_is_translated_post_type', [$this, 'wpml_is_translated_post_type'], 10, 2);
     }
 
     /**
@@ -714,5 +718,59 @@ final class Multilanguage implements HookableInterface
     {
         self::$detected_plugin = null;
         self::$current_language = null;
+    }
+
+    /**
+     * Register fp_experience as translatable post type in WPML.
+     * This ensures WPML shows translation columns in the admin list.
+     */
+    public function register_wpml_post_type_translation(): void
+    {
+        if (!defined('ICL_SITEPRESS_VERSION')) {
+            return;
+        }
+
+        global $sitepress;
+        
+        if (!$sitepress || !method_exists($sitepress, 'get_setting')) {
+            return;
+        }
+
+        // Get current custom post type settings
+        $custom_posts_sync = $sitepress->get_setting('custom_posts_sync_option', []);
+        
+        // Set fp_experience as translatable (1 = translate)
+        // Options: 0 = not translatable, 1 = translate, 2 = translate (use translation editor)
+        $post_types_to_translate = [
+            'fp_experience' => 1,
+            'fp_meeting_point' => 1,
+        ];
+        
+        $updated = false;
+        foreach ($post_types_to_translate as $post_type => $mode) {
+            if (!isset($custom_posts_sync[$post_type]) || $custom_posts_sync[$post_type] !== $mode) {
+                $custom_posts_sync[$post_type] = $mode;
+                $updated = true;
+            }
+        }
+        
+        if ($updated) {
+            $sitepress->set_setting('custom_posts_sync_option', $custom_posts_sync, true);
+        }
+    }
+
+    /**
+     * Filter to tell WPML that fp_experience is a translated post type.
+     *
+     * @param bool   $is_translated Whether the post type is translated
+     * @param string $post_type     Post type name
+     * @return bool
+     */
+    public function wpml_is_translated_post_type(bool $is_translated, string $post_type): bool
+    {
+        if (in_array($post_type, ['fp_experience', 'fp_meeting_point'], true)) {
+            return true;
+        }
+        return $is_translated;
     }
 }
