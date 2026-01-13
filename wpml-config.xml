@@ -77,11 +77,11 @@
         <!-- Manual schema markup -->
         <custom-field action="translate">_fp_schema_manual</custom-field>
         
-        <!-- Ticket types (contains translatable labels) -->
-        <custom-field action="translate">_fp_ticket_types</custom-field>
+        <!-- Ticket types - copy-once allows independent editing per translation -->
+        <custom-field action="copy-once">_fp_ticket_types</custom-field>
         
-        <!-- Addons (contains translatable names/descriptions) -->
-        <custom-field action="translate">_fp_addons</custom-field>
+        <!-- Addons - copy-once allows independent editing per translation -->
+        <custom-field action="copy-once">_fp_addons</custom-field>
         
         <!-- Cognitive biases labels -->
         <custom-field action="translate">_fp_cognitive_biases</custom-field>
