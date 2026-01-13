@@ -101,7 +101,8 @@ final class Multilanguage implements HookableInterface
         add_action('wpml_loaded', [$this, 'register_wpml_post_type_translation']);
         add_filter('wpml_is_translated_post_type', [$this, 'wpml_is_translated_post_type'], 10, 2);
         
-        // WPML: Copy meta fields when creating a translation
+        // WPML: Copy meta fields when creating/saving a translation
+        add_action('save_post_fp_experience', [$this, 'maybe_copy_meta_from_original'], 5, 3);
         add_action('wpml_after_save_post', [$this, 'wpml_copy_experience_meta'], 10, 4);
         add_action('icl_make_duplicate', [$this, 'wpml_copy_meta_on_duplicate'], 10, 4);
     }
@@ -776,6 +777,79 @@ final class Multilanguage implements HookableInterface
             return true;
         }
         return $is_translated;
+    }
+
+    /**
+     * Automatically copy meta from original experience when saving a translation.
+     * This is called on every save_post_fp_experience action.
+     *
+     * @param int      $post_id Post ID
+     * @param \WP_Post $post    Post object
+     * @param bool     $update  Whether this is an update
+     */
+    public function maybe_copy_meta_from_original(int $post_id, \WP_Post $post, bool $update): void
+    {
+        // Skip autosaves and revisions
+        if (wp_is_post_autosave($post_id) || wp_is_post_revision($post_id)) {
+            return;
+        }
+
+        // Only for fp_experience
+        if ($post->post_type !== 'fp_experience') {
+            return;
+        }
+
+        // Check if WPML is active
+        if (!defined('ICL_SITEPRESS_VERSION')) {
+            return;
+        }
+
+        global $sitepress;
+        if (!$sitepress) {
+            return;
+        }
+
+        // Get the default/original language
+        $default_lang = $sitepress->get_default_language();
+        $post_lang = $sitepress->get_language_for_element($post_id, 'post_fp_experience');
+
+        // If this is the original language, no need to copy
+        if ($post_lang === $default_lang) {
+            return;
+        }
+
+        // Check if this translation has empty key meta (meaning it needs copying)
+        $has_pricing = get_post_meta($post_id, '_fp_base_price', true);
+        $has_duration = get_post_meta($post_id, '_fp_duration_minutes', true);
+        
+        // If both are empty, this is likely a new translation that needs meta copied
+        if ($has_pricing === '' && $has_duration === '') {
+            // Get original post ID
+            $trid = $sitepress->get_element_trid($post_id, 'post_fp_experience');
+            if (!$trid) {
+                return;
+            }
+
+            $translations = $sitepress->get_element_translations($trid, 'post_fp_experience');
+            
+            if (isset($translations[$default_lang])) {
+                $original_id = (int) $translations[$default_lang]->element_id;
+                
+                if ($original_id && $original_id !== $post_id) {
+                    $this->copy_experience_meta($original_id, $post_id);
+                    
+                    // Log for debugging
+                    if (defined('WP_DEBUG') && WP_DEBUG) {
+                        error_log(sprintf(
+                            'FP Experiences: Auto-copied meta from #%d to translation #%d (lang: %s)',
+                            $original_id,
+                            $post_id,
+                            $post_lang
+                        ));
+                    }
+                }
+            }
+        }
     }
 
     /**
