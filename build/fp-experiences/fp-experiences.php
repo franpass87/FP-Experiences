@@ -135,6 +135,14 @@ if (is_readable($autoload)) {
     });
 }
 
+// Load admin tools (only in admin)
+if (is_admin()) {
+    $orphan_tool = __DIR__ . '/tools/find-orphan-translations.php';
+    if (is_readable($orphan_tool)) {
+        require_once $orphan_tool;
+    }
+}
+
 use FP_Exp\Activation;
 use FP_Exp\Plugin;
 
