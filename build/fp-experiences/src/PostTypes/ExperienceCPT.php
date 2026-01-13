@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace FP_Exp\PostTypes;
 
+use FP_Exp\Core\Hook\HookableInterface;
+
 use function add_action;
+use function did_action;
 use function register_post_meta;
 use function register_post_type;
 use function register_taxonomy;
@@ -14,7 +17,7 @@ use function sanitize_text_field;
 /**
  * Registers the Experience custom post type, taxonomies, and meta.
  */
-final class ExperienceCPT
+final class ExperienceCPT implements HookableInterface
 {
     /**
      * Tracks hook registration status.
@@ -32,9 +35,19 @@ final class ExperienceCPT
 
         $this->hooks_registered = true;
 
-        add_action('init', [$this, 'register_post_type']);
-        add_action('init', [$this, 'register_taxonomies']);
-        add_action('init', [$this, 'register_meta']);
+        if (did_action('init')) {
+            $this->register_post_type();
+            $this->register_taxonomies();
+            $this->register_meta();
+        } else {
+            add_action('init', [$this, 'register_post_type']);
+            add_action('init', [$this, 'register_taxonomies']);
+            add_action('init', [$this, 'register_meta']);
+        }
+        add_filter('post_row_actions', [$this, 'add_quick_actions'], 10, 2);
+        
+        // Register post type as translatable for WPML
+        add_filter('wpml_translatable_post_types', [$this, 'add_to_wpml_translatable_types']);
     }
 
     /**
@@ -486,5 +499,66 @@ final class ExperienceCPT
             default:
                 return 'string';
         }
+    }
+
+    /**
+     * Add quick actions to experience post rows
+     *
+     * @param array<string, string> $actions
+     * @param \WP_Post $post
+     * @return array<string, string>
+     */
+    public function add_quick_actions(array $actions, $post): array
+    {
+        if ($post->post_type !== 'fp_experience') {
+            return $actions;
+        }
+
+        $new_actions = [];
+
+        // Add "View Live" first
+        if ($post->post_status === 'publish') {
+            $new_actions['view_live'] = '<a href="' . esc_url(get_permalink($post)) . '" target="_blank" aria-label="' . esc_attr__('Visualizza esperienza pubblicata', 'fp-experiences') . '">' . esc_html__('👁️ Vedi Live', 'fp-experiences') . '</a>';
+        }
+
+        // Keep default Edit
+        if (isset($actions['edit'])) {
+            $new_actions['edit'] = $actions['edit'];
+        }
+
+        // Add "Calendar" link
+        $new_actions['calendar'] = '<a href="' . esc_url(admin_url('admin.php?page=fp_exp_calendar')) . '" aria-label="' . esc_attr__('Vai al calendario', 'fp-experiences') . '">' . esc_html__('📅 Calendario', 'fp-experiences') . '</a>';
+
+        // Add "Duplicate" (if user can)
+        if (current_user_can('edit_fp_experiences')) {
+            $new_actions['duplicate'] = '<a href="#" data-post-id="' . esc_attr($post->ID) . '" class="fp-exp-duplicate-experience" aria-label="' . esc_attr__('Duplica esperienza', 'fp-experiences') . '">' . esc_html__('📋 Duplica', 'fp-experiences') . '</a>';
+        }
+
+        // Keep trash/delete
+        if (isset($actions['trash'])) {
+            $new_actions['trash'] = $actions['trash'];
+        }
+        if (isset($actions['delete'])) {
+            $new_actions['delete'] = $actions['delete'];
+        }
+
+        return $new_actions;
+    }
+
+    /**
+     * Add fp_experience to WPML translatable post types.
+     *
+     * This ensures WPML recognizes fp_experience as a translatable post type,
+     * even if wpml-config.xml is not being read correctly.
+     *
+     * @param array<string> $post_types Array of translatable post types
+     * @return array<string>
+     */
+    public function add_to_wpml_translatable_types(array $post_types): array
+    {
+        if (!in_array('fp_experience', $post_types, true)) {
+            $post_types[] = 'fp_experience';
+        }
+        return $post_types;
     }
 }
