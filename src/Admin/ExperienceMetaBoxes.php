@@ -231,6 +231,68 @@ final class ExperienceMetaBoxes implements HookableInterface
         return false;
     }
 
+    /**
+     * Get the source post ID for WPML translations.
+     * 
+     * When creating a new translation, returns the original post ID to pre-populate data.
+     * Otherwise returns the current post ID.
+     *
+     * @param int $post_id Current post ID
+     * @return int Source post ID (original or current)
+     */
+    private function get_wpml_source_post_id(int $post_id): int
+    {
+        // Check if WPML is active
+        if (!defined('ICL_SITEPRESS_VERSION')) {
+            return $post_id;
+        }
+
+        // Check if we're creating a new translation via URL parameters
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+        $trid = isset($_GET['trid']) ? absint($_GET['trid']) : 0;
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended  
+        $source_lang = isset($_GET['source_lang']) ? sanitize_text_field(wp_unslash($_GET['source_lang'])) : '';
+
+        // If trid and source_lang are present, this is a new translation
+        if ($trid > 0 && !empty($source_lang)) {
+            global $sitepress;
+            if ($sitepress) {
+                // Get the original post from the translation group
+                $translations = $sitepress->get_element_translations($trid, 'post_fp_experience');
+                
+                if (isset($translations[$source_lang])) {
+                    $original_id = (int) $translations[$source_lang]->element_id;
+                    if ($original_id > 0) {
+                        return $original_id;
+                    }
+                }
+            }
+        }
+
+        // Check if this post has empty meta (suggesting it needs data from original)
+        $post = get_post($post_id);
+        if ($post && $post->post_status === 'auto-draft') {
+            global $sitepress;
+            if ($sitepress) {
+                $default_lang = $sitepress->get_default_language();
+                $post_lang = $sitepress->get_language_for_element($post_id, 'post_fp_experience');
+                
+                // If this is not the default language, try to get original
+                if ($post_lang && $post_lang !== $default_lang) {
+                    $trid = $sitepress->get_element_trid($post_id, 'post_fp_experience');
+                    if ($trid) {
+                        $translations = $sitepress->get_element_translations($trid, 'post_fp_experience');
+                        if (isset($translations[$default_lang])) {
+                            return (int) $translations[$default_lang]->element_id;
+                        }
+                    }
+                }
+            }
+        }
+
+        return $post_id;
+    }
+
     private const PRICING_NOTICE_KEY = 'fp_exp_pricing_notice_';
 
     public function register_hooks(): void
@@ -454,25 +516,28 @@ final class ExperienceMetaBoxes implements HookableInterface
 
     public function render_meta_box(WP_Post $post): void
     {
+        // For WPML translations, pre-populate from original post if this is a new translation
+        $source_post_id = $this->get_wpml_source_post_id($post->ID);
+        
         // Use DetailsMetaBoxHandler for Details tab
-        $details = $this->details_handler->get($post->ID);
+        $details = $this->details_handler->get($source_post_id);
         // Use PricingMetaBoxHandler for Pricing tab
-        $pricing = $this->pricing_handler->get($post->ID);
+        $pricing = $this->pricing_handler->get($source_post_id);
         // Use CalendarMetaBoxHandler for Calendar tab
-        $availability = $this->calendar_handler->get($post->ID);
+        $availability = $this->calendar_handler->get($source_post_id);
         // Use MeetingPointMetaBoxHandler for Meeting Point tab
-        $meeting_data = $this->meeting_point_handler->get($post->ID);
+        $meeting_data = $this->meeting_point_handler->get($source_post_id);
         $meeting = [
             'primary' => $meeting_data['primary'] ?? 0,
             'alternatives' => $meeting_data['alternatives'] ?? [],
         ];
         $meeting_choices = $meeting_data['choices'] ?? [];
         // Use ExtrasMetaBoxHandler for Extras tab
-        $extras = $this->extras_handler->get($post->ID);
+        $extras = $this->extras_handler->get($source_post_id);
         // Use PolicyMetaBoxHandler for Policy tab
-        $policy = $this->policy_handler->get($post->ID);
+        $policy = $this->policy_handler->get($source_post_id);
         // Use SEOMetaBoxHandler for SEO tab
-        $seo = $this->seo_handler->get($post->ID);
+        $seo = $this->seo_handler->get($source_post_id);
 
         wp_nonce_field('fp_exp_meta_nonce', 'fp_exp_meta_nonce');
         ?>
