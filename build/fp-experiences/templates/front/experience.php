@@ -29,6 +29,14 @@ if (! defined('ABSPATH')) {
     exit;
 }
 
+// DEBUG: Check translation loading
+$debug_wpml_lang = apply_filters('wpml_current_language', 'none');
+$debug_locale = get_locale();
+$debug_test_string = __('Perché prenotare con noi', 'fp-experiences');
+$debug_mo_path = WP_PLUGIN_DIR . '/FP-Experiences/languages/fp-experiences-' . $debug_wpml_lang . '.mo';
+$debug_mo_exists = file_exists($debug_mo_path) ? 'YES' : 'NO';
+echo "<!-- FP_EXP_DEBUG: wpml_lang={$debug_wpml_lang}, locale={$debug_locale}, test_translation={$debug_test_string}, mo_exists={$debug_mo_exists}, mo_path={$debug_mo_path} -->";
+
 $scope_class = $scope_class ?? '';
 $language_sprite = \FP_Exp\Utils\LanguageHelper::get_sprite_url();
 $layout = $layout ?? [
