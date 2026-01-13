@@ -138,6 +138,9 @@ final class Plugin
         // Load translations on init to comply with WP 6.7 timing requirements
         // This is now handled by CoreServiceProvider, but kept here for backward compatibility
         add_action('init', [$this, 'load_textdomain']);
+        
+        // Reload textdomain on 'wp' hook for frontend WPML support (WPML not fully init on 'init')
+        add_action('wp', [$this, 'load_textdomain'], 1);
 
         // Database tables registration is now handled by CoreServiceProvider
         // Role manager and capabilities are handled by LegacyServiceProvider

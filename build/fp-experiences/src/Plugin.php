@@ -231,6 +231,9 @@ final class Plugin
         add_action('plugins_loaded', [$this, 'load_textdomain']);
         add_action('plugins_loaded', [$this, 'register_database_tables']);
         add_action('admin_init', [$this, 'maybe_update_roles']);
+        
+        // Reload textdomain on 'wp' hook for frontend WPML support
+        add_action('wp', [$this, 'load_textdomain'], 1);
         add_filter('map_meta_cap', [$this, 'map_meta_cap_fallback'], 10, 4);
 
         $this->guard([$this->experience_cpt, 'register_hooks'], ExperienceCPT::class, 'register_hooks');
