@@ -1,0 +1,265 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    WPML Configuration File for FP Experiences
+    This file enables full WPML and FP-Multilanguage compatibility
+    
+    @package FP_Experiences
+    @since 1.2.0
+-->
+<wpml-config>
+    
+    <!-- ============================================
+         CUSTOM POST TYPES
+         ============================================ -->
+    <custom-types>
+        <!-- Main Experience CPT - translate mode allows creating separate posts per language -->
+        <custom-type translate="1">fp_experience</custom-type>
+        
+        <!-- Meeting Points - translate for location-specific content -->
+        <custom-type translate="1">fp_meeting_point</custom-type>
+        
+        <!-- Gift Vouchers - do not translate, they reference experience IDs -->
+        <custom-type translate="0">fp_exp_gift_voucher</custom-type>
+    </custom-types>
+    
+    <!-- ============================================
+         TAXONOMIES
+         ============================================ -->
+    <taxonomies>
+        <!-- Experience Languages taxonomy -->
+        <taxonomy translate="1">fp_exp_language</taxonomy>
+    </taxonomies>
+    
+    <!-- ============================================
+         CUSTOM FIELDS (Post Meta)
+         ============================================ -->
+    <custom-fields>
+        
+        <!-- ========== TRANSLATABLE FIELDS ========== -->
+        <!-- These fields contain user-facing text that should be translated -->
+        
+        <!-- Short description -->
+        <custom-field action="translate">_fp_short_desc</custom-field>
+        
+        <!-- Highlights list -->
+        <custom-field action="translate">_fp_highlights</custom-field>
+        
+        <!-- Meeting point description (text) -->
+        <custom-field action="translate">_fp_meeting_point</custom-field>
+        
+        <!-- Inclusions list -->
+        <custom-field action="translate">_fp_inclusions</custom-field>
+        
+        <!-- Exclusions list -->
+        <custom-field action="translate">_fp_exclusions</custom-field>
+        
+        <!-- What to bring text -->
+        <custom-field action="translate">_fp_what_to_bring</custom-field>
+        
+        <!-- Additional notes -->
+        <custom-field action="translate">_fp_notes</custom-field>
+        
+        <!-- FAQ array (question/answer pairs) -->
+        <custom-field action="translate">_fp_faq</custom-field>
+        
+        <!-- Rules for children -->
+        <custom-field action="translate">_fp_rules_children</custom-field>
+        
+        <!-- Cancellation policy -->
+        <custom-field action="translate">_fp_policy_cancel</custom-field>
+        
+        <!-- SEO Meta title -->
+        <custom-field action="translate">_fp_meta_title</custom-field>
+        
+        <!-- SEO Meta description -->
+        <custom-field action="translate">_fp_meta_description</custom-field>
+        
+        <!-- Manual schema markup -->
+        <custom-field action="translate">_fp_schema_manual</custom-field>
+        
+        <!-- Ticket types (contains translatable labels) -->
+        <custom-field action="translate">_fp_ticket_types</custom-field>
+        
+        <!-- Addons (contains translatable names/descriptions) -->
+        <custom-field action="translate">_fp_addons</custom-field>
+        
+        <!-- Cognitive biases labels -->
+        <custom-field action="translate">_fp_cognitive_biases</custom-field>
+        
+        
+        <!-- ========== COPY FIELDS ========== -->
+        <!-- These fields should be copied as-is (same value in all languages) -->
+        
+        <!-- Meeting point ID (reference) -->
+        <custom-field action="copy">_fp_meeting_point_id</custom-field>
+        
+        <!-- Alternative meeting points (IDs) -->
+        <custom-field action="copy">_fp_meeting_point_alt</custom-field>
+        
+        <!-- Age restrictions -->
+        <custom-field action="copy">_fp_age_min</custom-field>
+        <custom-field action="copy">_fp_age_max</custom-field>
+        
+        <!-- Party size -->
+        <custom-field action="copy">_fp_min_party</custom-field>
+        <custom-field action="copy">_fp_capacity_slot</custom-field>
+        
+        <!-- Resources -->
+        <custom-field action="copy">_fp_resources</custom-field>
+        
+        <!-- Schedule rules (time-based, not translatable) -->
+        <custom-field action="copy">_fp_schedule_rules</custom-field>
+        <custom-field action="copy">_fp_schedule_exceptions</custom-field>
+        
+        <!-- Lead time and buffers -->
+        <custom-field action="copy">_fp_lead_time_hours</custom-field>
+        <custom-field action="copy">_fp_buffer_before_minutes</custom-field>
+        <custom-field action="copy">_fp_buffer_after_minutes</custom-field>
+        
+        <!-- Pricing (numeric values) -->
+        <custom-field action="copy">_fp_base_price</custom-field>
+        <custom-field action="copy">_fp_pricing_rules</custom-field>
+        <custom-field action="copy">_fp_exp_pricing</custom-field>
+        
+        <!-- Availability settings -->
+        <custom-field action="copy">_fp_exp_availability</custom-field>
+        
+        <!-- Duration -->
+        <custom-field action="copy">_fp_duration_minutes</custom-field>
+        
+        <!-- Available languages for the experience -->
+        <custom-field action="copy">_fp_languages</custom-field>
+        
+        <!-- Page ID reference -->
+        <custom-field action="copy">_fp_exp_page_id</custom-field>
+        
+        <!-- Gallery (media IDs) -->
+        <custom-field action="copy">_fp_gallery_ids</custom-field>
+        <custom-field action="copy">_fp_gallery_video_url</custom-field>
+        <custom-field action="copy">_fp_hero_image_id</custom-field>
+        
+        <!-- Request-to-Book flag -->
+        <custom-field action="copy">_fp_use_rtb</custom-field>
+        
+        
+        <!-- ========== MEETING POINT META ========== -->
+        <!-- Address should be translated, coordinates copied -->
+        <custom-field action="translate">_fp_mp_address</custom-field>
+        <custom-field action="translate">_fp_mp_instructions</custom-field>
+        <custom-field action="copy">_fp_mp_lat</custom-field>
+        <custom-field action="copy">_fp_mp_lng</custom-field>
+        <custom-field action="copy">_fp_mp_google_place_id</custom-field>
+        
+        
+        <!-- ========== GIFT VOUCHER META (copy only) ========== -->
+        <custom-field action="copy">_fp_exp_gift_experience_id</custom-field>
+        <custom-field action="copy">_fp_exp_gift_recipient</custom-field>
+        <custom-field action="copy">_fp_exp_gift_purchaser</custom-field>
+        <custom-field action="copy">_fp_exp_gift_status</custom-field>
+        <custom-field action="copy">_fp_exp_gift_code</custom-field>
+        <custom-field action="copy">_fp_exp_gift_amount</custom-field>
+        <custom-field action="copy">_fp_exp_gift_valid_until</custom-field>
+        <custom-field action="copy">_fp_exp_gift_order_id</custom-field>
+        
+        
+        <!-- ========== FP-Multilanguage integration ========== -->
+        <!-- Translation pair ID - ignore to avoid conflicts -->
+        <custom-field action="ignore">_fpml_pair_id</custom-field>
+        <custom-field action="ignore">_fpml_language</custom-field>
+        <custom-field action="ignore">_fpml_source_id</custom-field>
+        
+    </custom-fields>
+    
+    <!-- ============================================
+         ADMIN TEXTS (Plugin Options)
+         ============================================ -->
+    <admin-texts>
+        
+        <!-- Branding settings with translatable text -->
+        <key name="fp_exp_branding">
+            <key name="company_name" />
+            <key name="tagline" />
+            <key name="support_text" />
+        </key>
+        
+        <!-- Email branding -->
+        <key name="fp_exp_email_branding">
+            <key name="footer_text" />
+            <key name="signature" />
+        </key>
+        
+        <!-- Email templates - subjects and content are translatable -->
+        <key name="fp_exp_emails">
+            <key name="confirmation_subject" />
+            <key name="confirmation_heading" />
+            <key name="confirmation_intro" />
+            <key name="reminder_subject" />
+            <key name="reminder_heading" />
+            <key name="modification_subject" />
+            <key name="modification_heading" />
+            <key name="cancellation_subject" />
+            <key name="cancellation_heading" />
+            <key name="gift_subject" />
+            <key name="gift_heading" />
+            <key name="gift_message" />
+        </key>
+        
+        <!-- Experience listing labels -->
+        <key name="fp_exp_listing">
+            <key name="page_title" />
+            <key name="no_experiences_text" />
+            <key name="filter_label" />
+            <key name="cta_text" />
+        </key>
+        
+        <!-- Experience layout labels -->
+        <key name="fp_exp_experience_layout">
+            <key name="book_button_text" />
+            <key name="sold_out_text" />
+            <key name="unavailable_text" />
+        </key>
+        
+        <!-- Gift voucher labels -->
+        <key name="fp_exp_gift">
+            <key name="voucher_title" />
+            <key name="voucher_description" />
+            <key name="redeem_button_text" />
+        </key>
+        
+    </admin-texts>
+    
+    <!-- ============================================
+         SHORTCODES
+         ============================================ -->
+    <shortcodes>
+        <!-- These shortcodes may reference post IDs that need translation -->
+        <shortcode>
+            <tag>fp_exp_page</tag>
+            <attributes>
+                <attribute>id</attribute>
+            </attributes>
+        </shortcode>
+        <shortcode>
+            <tag>fp_exp_widget</tag>
+            <attributes>
+                <attribute>id</attribute>
+            </attributes>
+        </shortcode>
+        <shortcode>
+            <tag>fp_exp_calendar</tag>
+            <attributes>
+                <attribute>experience_id</attribute>
+            </attributes>
+        </shortcode>
+    </shortcodes>
+    
+    <!-- ============================================
+         LANGUAGE SWITCHER CONFIGURATION
+         ============================================ -->
+    <language-switcher-settings>
+        <key name="sidebars">
+            <key name="fp-experiences-sidebar">on</key>
+        </key>
+    </language-switcher-settings>
+
+</wpml-config>

@@ -854,14 +854,20 @@ final class Multilanguage implements HookableInterface
 
     /**
      * Copy experience meta fields when WPML creates a translation.
+     * Hook: wpml_after_save_post
      *
-     * @param int    $new_post_id      The new translated post ID
-     * @param array  $fields           Translation fields
-     * @param object $job              Translation job
-     * @param string $target_lang_code Target language code
+     * @param mixed $new_post_id      The new translated post ID
+     * @param mixed $fields           Translation fields
+     * @param mixed $job              Translation job
+     * @param mixed $translator       Translator info
      */
-    public function wpml_copy_experience_meta(int $new_post_id, array $fields, $job, string $target_lang_code): void
+    public function wpml_copy_experience_meta($new_post_id, $fields = null, $job = null, $translator = null): void
     {
+        $new_post_id = (int) $new_post_id;
+        if ($new_post_id <= 0) {
+            return;
+        }
+
         $post = get_post($new_post_id);
         if (!$post || $post->post_type !== 'fp_experience') {
             return;
@@ -878,14 +884,24 @@ final class Multilanguage implements HookableInterface
 
     /**
      * Copy meta fields when WPML duplicates a post.
+     * Hook: icl_make_duplicate
+     * Note: Parameter order may vary between WPML versions
      *
-     * @param int    $original_id Original post ID
-     * @param string $lang        Target language
-     * @param array  $post_array  Post data
-     * @param int    $new_post_id New post ID
+     * @param mixed $master_post_id Master post ID
+     * @param mixed $lang           Target language
+     * @param mixed $post_array     Post data array
+     * @param mixed $id             New post ID
      */
-    public function wpml_copy_meta_on_duplicate(int $original_id, string $lang, array $post_array, int $new_post_id): void
+    public function wpml_copy_meta_on_duplicate($master_post_id, $lang = null, $post_array = null, $id = null): void
     {
+        // icl_make_duplicate passes: $master_post_id, $lang, $post_array, $id
+        $original_id = (int) $master_post_id;
+        $new_post_id = (int) $id;
+
+        if ($original_id <= 0 || $new_post_id <= 0) {
+            return;
+        }
+
         $post = get_post($original_id);
         if (!$post || $post->post_type !== 'fp_experience') {
             return;
