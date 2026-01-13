@@ -454,6 +454,9 @@ final class ExperienceMetaBoxes implements HookableInterface
 
     public function render_meta_box(WP_Post $post): void
     {
+        // Debug: verifica che il rendering inizi
+        echo '<!-- FP_EXP DEBUG: render_meta_box called for post ' . esc_html((string) $post->ID) . ' -->';
+        
         // Use DetailsMetaBoxHandler for Details tab
         $details = $this->details_handler->get($post->ID);
         // Use PricingMetaBoxHandler for Pricing tab
