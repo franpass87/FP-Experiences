@@ -476,6 +476,12 @@ final class ExperienceMetaBoxes implements HookableInterface
 
         wp_nonce_field('fp_exp_meta_nonce', 'fp_exp_meta_nonce');
         ?>
+        <style>
+        /* Fallback: assicura visibilità anche senza CSS esterno */
+        .fp-exp-admin { min-height: 200px; }
+        .fp-exp-tab-panels { display: block !important; }
+        .fp-exp-tab-panel:first-child { display: block !important; }
+        </style>
         <div class="fp-exp-admin" data-fp-exp-admin>
             <div class="fp-exp-tabs" role="tablist" aria-label="<?php echo esc_attr(esc_html__('Sezioni esperienza', 'fp-experiences')); ?>">
                 <?php 
