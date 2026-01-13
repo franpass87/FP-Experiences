@@ -99,37 +99,42 @@ final class CoreServiceProvider extends AbstractServiceProvider
         // Register database tables early on plugins_loaded
         add_action('plugins_loaded', [DatabaseTables::class, 'register'], 5);
         
-        // Load textdomain - use plugin_locale filter for WPML compatibility
-        add_filter('plugin_locale', static function ($locale, $domain) {
-            if ($domain !== 'fp-experiences') {
-                return $locale;
-            }
+        // Load textdomain with WPML compatibility
+        // Priority 1: Try WPML short locale (en, de) on wp_loaded when WPML is fully initialized
+        add_action('wp_loaded', static function (): void {
+            $domain = 'fp-experiences';
+            $plugin_dir = dirname(plugin_basename(FP_EXP_PLUGIN_FILE ?? __FILE__));
+            $languages_path = WP_PLUGIN_DIR . '/' . $plugin_dir . '/languages';
+            
+            // Unload any previously loaded textdomain
+            unload_textdomain($domain);
             
             // Get WPML current language
             $wpml_lang = apply_filters('wpml_current_language', null);
-            if ($wpml_lang && $wpml_lang !== 'all') {
-                // Map WPML language code to WordPress locale
-                $locale_map = [
-                    'en' => 'en_US',
-                    'de' => 'de_DE',
-                    'it' => 'it_IT',
-                    'fr' => 'fr_FR',
-                    'es' => 'es_ES',
-                ];
-                return $locale_map[$wpml_lang] ?? $locale;
+            
+            if ($wpml_lang && $wpml_lang !== 'all' && $wpml_lang !== 'it') {
+                // Try short locale file first (fp-experiences-en.mo)
+                $short_mo = $languages_path . '/' . $domain . '-' . $wpml_lang . '.mo';
+                if (file_exists($short_mo)) {
+                    load_textdomain($domain, $short_mo);
+                    return;
+                }
+                
+                // Try full locale (fp-experiences-en_US.mo)
+                $locale_map = ['en' => 'en_US', 'de' => 'de_DE', 'fr' => 'fr_FR', 'es' => 'es_ES'];
+                $full_locale = $locale_map[$wpml_lang] ?? null;
+                if ($full_locale) {
+                    $full_mo = $languages_path . '/' . $domain . '-' . $full_locale . '.mo';
+                    if (file_exists($full_mo)) {
+                        load_textdomain($domain, $full_mo);
+                        return;
+                    }
+                }
             }
             
-            return $locale;
-        }, 10, 2);
-        
-        // Load textdomain on init
-        add_action('init', static function (): void {
-            load_plugin_textdomain(
-                'fp-experiences',
-                false,
-                dirname(plugin_basename(FP_EXP_PLUGIN_FILE ?? __FILE__)) . '/languages'
-            );
-        });
+            // Fallback: load standard textdomain (Italian is default, no translation needed)
+            load_plugin_textdomain($domain, false, $plugin_dir . '/languages');
+        }, 1);
 
         // Boot Multilanguage Compatibility Layer
         if ($container->has(Multilanguage::class)) {

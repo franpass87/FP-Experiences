@@ -153,32 +153,38 @@ final class Plugin
      */
     public function load_textdomain(): void
     {
-        // Add filter for WPML locale compatibility
-        add_filter('plugin_locale', function ($locale, $domain) {
-            if ($domain !== 'fp-experiences') {
-                return $locale;
-            }
-            
-            $wpml_lang = apply_filters('wpml_current_language', null);
-            if ($wpml_lang && $wpml_lang !== 'all') {
-                $locale_map = [
-                    'en' => 'en_US',
-                    'de' => 'de_DE',
-                    'it' => 'it_IT',
-                    'fr' => 'fr_FR',
-                    'es' => 'es_ES',
-                ];
-                return $locale_map[$wpml_lang] ?? $locale;
-            }
-            
-            return $locale;
-        }, 10, 2);
+        $domain = 'fp-experiences';
+        $plugin_dir = dirname(plugin_basename(FP_EXP_PLUGIN_FILE ?? __FILE__));
+        $languages_path = WP_PLUGIN_DIR . '/' . $plugin_dir . '/languages';
         
-        load_plugin_textdomain(
-            'fp-experiences',
-            false,
-            dirname(plugin_basename(FP_EXP_PLUGIN_FILE ?? __FILE__)) . '/languages'
-        );
+        // Unload any previously loaded textdomain
+        unload_textdomain($domain);
+        
+        // Get WPML current language
+        $wpml_lang = apply_filters('wpml_current_language', null);
+        
+        if ($wpml_lang && $wpml_lang !== 'all' && $wpml_lang !== 'it') {
+            // Try short locale file first (fp-experiences-en.mo)
+            $short_mo = $languages_path . '/' . $domain . '-' . $wpml_lang . '.mo';
+            if (file_exists($short_mo)) {
+                load_textdomain($domain, $short_mo);
+                return;
+            }
+            
+            // Try full locale (fp-experiences-en_US.mo)
+            $locale_map = ['en' => 'en_US', 'de' => 'de_DE', 'fr' => 'fr_FR', 'es' => 'es_ES'];
+            $full_locale = $locale_map[$wpml_lang] ?? null;
+            if ($full_locale) {
+                $full_mo = $languages_path . '/' . $domain . '-' . $full_locale . '.mo';
+                if (file_exists($full_mo)) {
+                    load_textdomain($domain, $full_mo);
+                    return;
+                }
+            }
+        }
+        
+        // Fallback: load standard textdomain
+        load_plugin_textdomain($domain, false, $plugin_dir . '/languages');
     }
 
     /**
