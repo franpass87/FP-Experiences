@@ -26,6 +26,14 @@ use function wp_register_style;
 use function wp_style_is;
 use function rest_url;
 use function str_contains;
+use function apply_filters;
+use function unload_textdomain;
+use function load_textdomain;
+use function file_exists;
+use function plugin_basename;
+use function dirname;
+
+use const WP_PLUGIN_DIR;
 
 final class Assets
 {
@@ -211,28 +219,80 @@ final class Assets
                     'strings' => AutoTranslator::strings(),
                     'plurals' => AutoTranslator::plurals(),
                 ],
-                'i18n' => [
-                    'months' => [
-                        __('Gennaio', 'fp-experiences'),
-                        __('Febbraio', 'fp-experiences'),
-                        __('Marzo', 'fp-experiences'),
-                        __('Aprile', 'fp-experiences'),
-                        __('Maggio', 'fp-experiences'),
-                        __('Giugno', 'fp-experiences'),
-                        __('Luglio', 'fp-experiences'),
-                        __('Agosto', 'fp-experiences'),
-                        __('Settembre', 'fp-experiences'),
-                        __('Ottobre', 'fp-experiences'),
-                        __('Novembre', 'fp-experiences'),
-                        __('Dicembre', 'fp-experiences'),
-                    ],
-                    'loading' => __('Caricamento...', 'fp-experiences'),
-                    'selectAtLeast1Ticket' => __('Seleziona almeno 1 biglietto', 'fp-experiences'),
-                    'selectDateTime' => __('Seleziona data e orario', 'fp-experiences'),
-                    'proceedToPayment' => __('Procedi al pagamento', 'fp-experiences'),
-                ],
+                'i18n' => $this->get_i18n_strings(),
             ]
         );
     }
 
+    /**
+     * Get i18n strings for JavaScript, ensuring the correct textdomain is loaded for WPML.
+     *
+     * @return array<string, mixed>
+     */
+    private function get_i18n_strings(): array
+    {
+        // Force load the correct textdomain for WPML
+        $this->ensure_textdomain_loaded();
+
+        return [
+            'months' => [
+                __('Gennaio', 'fp-experiences'),
+                __('Febbraio', 'fp-experiences'),
+                __('Marzo', 'fp-experiences'),
+                __('Aprile', 'fp-experiences'),
+                __('Maggio', 'fp-experiences'),
+                __('Giugno', 'fp-experiences'),
+                __('Luglio', 'fp-experiences'),
+                __('Agosto', 'fp-experiences'),
+                __('Settembre', 'fp-experiences'),
+                __('Ottobre', 'fp-experiences'),
+                __('Novembre', 'fp-experiences'),
+                __('Dicembre', 'fp-experiences'),
+            ],
+            'loading' => __('Caricamento...', 'fp-experiences'),
+            'selectAtLeast1Ticket' => __('Seleziona almeno 1 biglietto', 'fp-experiences'),
+            'selectDateTime' => __('Seleziona data e orario', 'fp-experiences'),
+            'proceedToPayment' => __('Procedi al pagamento', 'fp-experiences'),
+        ];
+    }
+
+    /**
+     * Ensure the plugin textdomain is loaded for the current WPML language.
+     */
+    private function ensure_textdomain_loaded(): void
+    {
+        $domain = 'fp-experiences';
+        
+        // Get WPML current language
+        $wpml_lang = apply_filters('wpml_current_language', null);
+        
+        // Skip if Italian (default) or no WPML
+        if (!$wpml_lang || $wpml_lang === 'all' || $wpml_lang === 'it') {
+            return;
+        }
+
+        // Build path to the language file
+        $plugin_dir = dirname(plugin_basename(FP_EXP_PLUGIN_FILE ?? __FILE__));
+        $languages_path = WP_PLUGIN_DIR . '/' . $plugin_dir . '/languages';
+
+        // Unload existing textdomain
+        unload_textdomain($domain);
+
+        // Try short locale file first (fp-experiences-en.mo)
+        $short_mo = $languages_path . '/' . $domain . '-' . $wpml_lang . '.mo';
+        if (file_exists($short_mo)) {
+            load_textdomain($domain, $short_mo);
+            return;
+        }
+
+        // Try full locale (fp-experiences-en_US.mo)
+        $locale_map = ['en' => 'en_US', 'de' => 'de_DE', 'fr' => 'fr_FR', 'es' => 'es_ES'];
+        $full_locale = $locale_map[$wpml_lang] ?? null;
+        if ($full_locale) {
+            $full_mo = $languages_path . '/' . $domain . '-' . $full_locale . '.mo';
+            if (file_exists($full_mo)) {
+                load_textdomain($domain, $full_mo);
+            }
+        }
+    }
 }
