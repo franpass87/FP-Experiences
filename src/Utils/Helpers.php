@@ -1546,7 +1546,7 @@ final class Helpers
         if (WP_DEBUG && function_exists('_deprecated_function')) {
             _deprecated_function(
                 __METHOD__,
-                '1.2.0',
+                '1.2.1',
                 'LoggerInterface::log() or LoggerInterface::debug()'
             );
         }
