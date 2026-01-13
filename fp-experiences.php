@@ -40,9 +40,19 @@ if (! defined('FP_EXP_VERSION')) {
     define('FP_EXP_VERSION', '1.2.0');
 }
 
-// Compatibility check using new Bootstrap system
-require_once __DIR__ . '/src/Core/Bootstrap/CompatibilityCheck.php';
-\FP_Exp\Core\Bootstrap\CompatibilityCheck::validate();
+// Compatibility check using new Bootstrap system (if available)
+$compatibility_check = __DIR__ . '/src/Core/Bootstrap/CompatibilityCheck.php';
+if (is_readable($compatibility_check)) {
+    require_once $compatibility_check;
+    if (class_exists('\FP_Exp\Core\Bootstrap\CompatibilityCheck')) {
+        \FP_Exp\Core\Bootstrap\CompatibilityCheck::validate();
+    }
+} else {
+    // Basic compatibility check fallback
+    if (version_compare(PHP_VERSION, '8.0', '<')) {
+        wp_die('FP Experiences richiede PHP >= 8.0. Versione attuale: ' . PHP_VERSION);
+    }
+}
 
 // Ensure HookableInterface is loaded early (critical for all service classes)
 $hookable_interface = __DIR__ . '/src/Core/Hook/HookableInterface.php';
@@ -80,13 +90,17 @@ if (! class_exists(Activation::class) && is_readable(__DIR__ . '/src/Activation.
     require_once __DIR__ . '/src/Activation.php';
 }
 
-// Bootstrap plugin using new architecture
-require_once __DIR__ . '/src/Core/Bootstrap/Bootstrap.php';
-\FP_Exp\Core\Bootstrap\Bootstrap::init();
-
-// Register activation/deactivation hooks (backward compatible)
-register_activation_hook(__FILE__, [\FP_Exp\Core\Bootstrap\Bootstrap::class, 'activate']);
-register_deactivation_hook(__FILE__, [\FP_Exp\Core\Bootstrap\Bootstrap::class, 'deactivate']);
+// Bootstrap plugin using new architecture (if available)
+$bootstrap_file = __DIR__ . '/src/Core/Bootstrap/Bootstrap.php';
+if (is_readable($bootstrap_file)) {
+    require_once $bootstrap_file;
+    if (class_exists('\FP_Exp\Core\Bootstrap\Bootstrap')) {
+        \FP_Exp\Core\Bootstrap\Bootstrap::init();
+        // Register activation/deactivation hooks (backward compatible)
+        register_activation_hook(__FILE__, [\FP_Exp\Core\Bootstrap\Bootstrap::class, 'activate']);
+        register_deactivation_hook(__FILE__, [\FP_Exp\Core\Bootstrap\Bootstrap::class, 'deactivate']);
+    }
+}
 
 // Legacy boot: Keep existing Plugin class boot for backward compatibility
 // This ensures all existing hooks and functionality continue to work
@@ -119,16 +133,24 @@ register_deactivation_hook(__FILE__, [\FP_Exp\Core\Bootstrap\Bootstrap::class, '
 
 	$boot = static function () use ($store_and_hook_notice): void {
 		try {
-			// Kernel architecture handles all boot logic now
-			// Legacy Plugin boot is handled by LegacyServiceProvider
-			// No need to manually boot Plugin here - Kernel does it automatically
-			$kernel = \FP_Exp\Core\Bootstrap\Bootstrap::kernel();
-			if ($kernel === null) {
-				$store_and_hook_notice('FP Experiences: Kernel not initialized. Plugin may not function correctly.');
-				return;
+			// Try new Kernel architecture if available
+			if (class_exists('\FP_Exp\Core\Bootstrap\Bootstrap')) {
+				// Kernel architecture handles all boot logic now
+				// Legacy Plugin boot is handled by LegacyServiceProvider
+				// No need to manually boot Plugin here - Kernel does it automatically
+				$kernel = \FP_Exp\Core\Bootstrap\Bootstrap::kernel();
+				if ($kernel === null) {
+					$store_and_hook_notice('FP Experiences: Kernel not initialized. Plugin may not function correctly.');
+					return;
+				}
+				// Kernel boot is already scheduled in Bootstrap::init()
+				// Just verify it's ready
+			} else {
+				// Fallback to legacy Plugin boot if Bootstrap is not available
+				if (class_exists(Plugin::class)) {
+					Plugin::instance();
+				}
 			}
-			// Kernel boot is already scheduled in Bootstrap::init()
-			// Just verify it's ready
 		} catch (\Throwable $e) {
 			$message = 'Errore in avvio FP Experiences: ' . ($e->getMessage() ?: get_class($e));
 			$context = [
