@@ -633,6 +633,9 @@ msgstr "November"
 msgid "Dicembre"
 msgstr "December"
 
+msgid "Caricamento..."
+msgstr "Loading..."
+
 # Booking widget strings
 msgid "Tipo biglietto"
 msgstr "Ticket type"

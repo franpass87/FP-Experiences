@@ -289,9 +289,18 @@ $dataset = [
                                 <h4 class="fp-exp-calendar-nav__month">
                                     <?php 
                                     $month_names = [
-                                        1 => 'Gennaio', 2 => 'Febbraio', 3 => 'Marzo', 4 => 'Aprile',
-                                        5 => 'Maggio', 6 => 'Giugno', 7 => 'Luglio', 8 => 'Agosto',
-                                        9 => 'Settembre', 10 => 'Ottobre', 11 => 'Novembre', 12 => 'Dicembre'
+                                        1 => __('Gennaio', 'fp-experiences'),
+                                        2 => __('Febbraio', 'fp-experiences'),
+                                        3 => __('Marzo', 'fp-experiences'),
+                                        4 => __('Aprile', 'fp-experiences'),
+                                        5 => __('Maggio', 'fp-experiences'),
+                                        6 => __('Giugno', 'fp-experiences'),
+                                        7 => __('Luglio', 'fp-experiences'),
+                                        8 => __('Agosto', 'fp-experiences'),
+                                        9 => __('Settembre', 'fp-experiences'),
+                                        10 => __('Ottobre', 'fp-experiences'),
+                                        11 => __('Novembre', 'fp-experiences'),
+                                        12 => __('Dicembre', 'fp-experiences'),
                                     ];
                                     $current_month_num = (int) date('n');
                                     echo esc_html($month_names[$current_month_num]);
@@ -307,10 +316,10 @@ $dataset = [
                             </button>
                         </div>
                         
-                        <div class="fp-exp-calendar-nav__content" data-current-month="<?php echo esc_attr(gmdate('Y-m')); ?>">
+                            <div class="fp-exp-calendar-nav__content" data-current-month="<?php echo esc_attr(gmdate('Y-m')); ?>">
                             <div class="fp-exp-calendar-nav__grid">
                                 <div style="grid-column: 1/-1; text-align: center; padding: 2rem; color: var(--fp-color-muted);">
-                                    Caricamento...
+                                    <?php esc_html_e('Caricamento...', 'fp-experiences'); ?>
                                 </div>
                             </div>
                         </div>
