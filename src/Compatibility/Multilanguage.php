@@ -100,6 +100,10 @@ final class Multilanguage implements HookableInterface
         // WPML: Register post type as translatable and show translation columns
         add_action('wpml_loaded', [$this, 'register_wpml_post_type_translation']);
         add_filter('wpml_is_translated_post_type', [$this, 'wpml_is_translated_post_type'], 10, 2);
+        
+        // WPML: Copy meta fields when creating a translation
+        add_action('wpml_after_save_post', [$this, 'wpml_copy_experience_meta'], 10, 4);
+        add_action('icl_make_duplicate', [$this, 'wpml_copy_meta_on_duplicate'], 10, 4);
     }
 
     /**
@@ -772,5 +776,141 @@ final class Multilanguage implements HookableInterface
             return true;
         }
         return $is_translated;
+    }
+
+    /**
+     * Copy experience meta fields when WPML creates a translation.
+     *
+     * @param int    $new_post_id      The new translated post ID
+     * @param array  $fields           Translation fields
+     * @param object $job              Translation job
+     * @param string $target_lang_code Target language code
+     */
+    public function wpml_copy_experience_meta(int $new_post_id, array $fields, $job, string $target_lang_code): void
+    {
+        $post = get_post($new_post_id);
+        if (!$post || $post->post_type !== 'fp_experience') {
+            return;
+        }
+
+        // Get original post ID
+        $original_id = $this->get_original_experience_id($new_post_id);
+        if (!$original_id || $original_id === $new_post_id) {
+            return;
+        }
+
+        $this->copy_experience_meta($original_id, $new_post_id);
+    }
+
+    /**
+     * Copy meta fields when WPML duplicates a post.
+     *
+     * @param int    $original_id Original post ID
+     * @param string $lang        Target language
+     * @param array  $post_array  Post data
+     * @param int    $new_post_id New post ID
+     */
+    public function wpml_copy_meta_on_duplicate(int $original_id, string $lang, array $post_array, int $new_post_id): void
+    {
+        $post = get_post($original_id);
+        if (!$post || $post->post_type !== 'fp_experience') {
+            return;
+        }
+
+        $this->copy_experience_meta($original_id, $new_post_id);
+    }
+
+    /**
+     * Get the original experience ID from a translation.
+     *
+     * @param int $post_id Post ID
+     * @return int|null Original post ID or null
+     */
+    private function get_original_experience_id(int $post_id): ?int
+    {
+        if (!defined('ICL_SITEPRESS_VERSION')) {
+            return null;
+        }
+
+        global $sitepress;
+        if (!$sitepress) {
+            return null;
+        }
+
+        $trid = $sitepress->get_element_trid($post_id, 'post_fp_experience');
+        if (!$trid) {
+            return null;
+        }
+
+        $translations = $sitepress->get_element_translations($trid, 'post_fp_experience');
+        $default_lang = $sitepress->get_default_language();
+
+        if (isset($translations[$default_lang])) {
+            return (int) $translations[$default_lang]->element_id;
+        }
+
+        return null;
+    }
+
+    /**
+     * Copy all experience meta fields from one post to another.
+     *
+     * @param int $source_id Source post ID
+     * @param int $target_id Target post ID
+     */
+    private function copy_experience_meta(int $source_id, int $target_id): void
+    {
+        // Meta fields to copy (these should have the same value across translations)
+        $meta_keys_to_copy = [
+            // Pricing
+            '_fp_base_price',
+            '_fp_pricing_rules',
+            '_fp_exp_pricing',
+            '_fp_ticket_types',
+            '_fp_addons',
+            // Availability & Schedule
+            '_fp_exp_availability',
+            '_fp_schedule_rules',
+            '_fp_schedule_exceptions',
+            '_fp_duration_minutes',
+            '_fp_lead_time_hours',
+            '_fp_buffer_before_minutes',
+            '_fp_buffer_after_minutes',
+            // Capacity
+            '_fp_min_party',
+            '_fp_capacity_slot',
+            '_fp_resources',
+            // Age restrictions
+            '_fp_age_min',
+            '_fp_age_max',
+            // Meeting points
+            '_fp_meeting_point_id',
+            '_fp_meeting_point_alt',
+            // Media
+            '_fp_gallery_ids',
+            '_fp_gallery_video_url',
+            '_fp_hero_image_id',
+            '_thumbnail_id',
+            // Settings
+            '_fp_use_rtb',
+            '_fp_languages',
+            '_fp_exp_page_id',
+        ];
+
+        foreach ($meta_keys_to_copy as $key) {
+            $value = get_post_meta($source_id, $key, true);
+            if ($value !== '' && $value !== null && $value !== false) {
+                update_post_meta($target_id, $key, $value);
+            }
+        }
+
+        // Log for debugging
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log(sprintf(
+                'FP Experiences: Copied meta from experience #%d to translation #%d',
+                $source_id,
+                $target_id
+            ));
+        }
     }
 }
