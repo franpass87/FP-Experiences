@@ -271,9 +271,10 @@ final class Assets
             return;
         }
 
-        // Build path to the language file
-        $plugin_dir = dirname(plugin_basename(FP_EXP_PLUGIN_FILE ?? __FILE__));
-        $languages_path = WP_PLUGIN_DIR . '/' . $plugin_dir . '/languages';
+        // Build path using __DIR__ to get correct path relative to this file
+        // This file is in src/Shortcodes/, so plugin root is 2 levels up
+        $plugin_root = dirname(__DIR__, 2);
+        $languages_path = $plugin_root . '/languages';
 
         // Unload existing textdomain
         unload_textdomain($domain);
