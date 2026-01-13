@@ -99,27 +99,36 @@ final class CoreServiceProvider extends AbstractServiceProvider
         // Register database tables early on plugins_loaded
         add_action('plugins_loaded', [DatabaseTables::class, 'register'], 5);
         
-        // Load textdomain on init (WP 6.7+ timing requirement)
-        // For WPML compatibility, we also load the short locale file (e.g., fp-experiences-en.mo)
+        // Load textdomain - use plugin_locale filter for WPML compatibility
+        add_filter('plugin_locale', static function ($locale, $domain) {
+            if ($domain !== 'fp-experiences') {
+                return $locale;
+            }
+            
+            // Get WPML current language
+            $wpml_lang = apply_filters('wpml_current_language', null);
+            if ($wpml_lang && $wpml_lang !== 'all') {
+                // Map WPML language code to WordPress locale
+                $locale_map = [
+                    'en' => 'en_US',
+                    'de' => 'de_DE',
+                    'it' => 'it_IT',
+                    'fr' => 'fr_FR',
+                    'es' => 'es_ES',
+                ];
+                return $locale_map[$wpml_lang] ?? $locale;
+            }
+            
+            return $locale;
+        }, 10, 2);
+        
+        // Load textdomain on init
         add_action('init', static function (): void {
-            $domain = 'fp-experiences';
-            $plugin_dir = dirname(plugin_basename(FP_EXP_PLUGIN_FILE ?? __FILE__));
-            $languages_path = WP_PLUGIN_DIR . '/' . $plugin_dir . '/languages';
-            
-            // First, try to load WPML-specific locale file (short code like 'en', 'de')
-            $wpml_loaded = false;
-            if (defined('ICL_LANGUAGE_CODE') && ICL_LANGUAGE_CODE) {
-                $wpml_locale = ICL_LANGUAGE_CODE; // e.g., 'en', 'de', 'it'
-                $wpml_mo_file = $languages_path . '/' . $domain . '-' . $wpml_locale . '.mo';
-                if (file_exists($wpml_mo_file)) {
-                    $wpml_loaded = load_textdomain($domain, $wpml_mo_file);
-                }
-            }
-            
-            // Fallback to standard WordPress locale loading if WPML didn't load
-            if (!$wpml_loaded) {
-                load_plugin_textdomain($domain, false, $plugin_dir . '/languages');
-            }
+            load_plugin_textdomain(
+                'fp-experiences',
+                false,
+                dirname(plugin_basename(FP_EXP_PLUGIN_FILE ?? __FILE__)) . '/languages'
+            );
         });
 
         // Boot Multilanguage Compatibility Layer
