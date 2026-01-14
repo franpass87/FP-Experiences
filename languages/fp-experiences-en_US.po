@@ -1595,3 +1595,76 @@ msgstr "Duration"
 
 msgid "Lingue"
 msgstr "Languages"
+
+# Trust badges / Cognitive bias
+msgid "Prenotazione sicura"
+msgstr "Secure booking"
+
+msgid "Transazioni protette"
+msgstr "Protected transactions"
+
+msgid "Pagamenti crittografati e protezione antifrode per ogni transazione."
+msgstr "Encrypted payments and fraud protection for every transaction."
+
+msgid "Checkout protetto"
+msgstr "Secure checkout"
+
+msgid "Paghi come preferisci"
+msgstr "Pay your way"
+
+msgid "Carte e wallet digitali approvati con conferma in tempo reale."
+msgstr "Approved credit cards and digital wallets with real-time confirmation."
+
+msgid "Cancellazione flessibile"
+msgstr "Flexible cancellation"
+
+msgid "Piani che cambiano? Nessun problema"
+msgstr "Plans change? No problem"
+
+msgid "Puoi modificare o annullare entro i termini indicati senza penali."
+msgstr "Modify or cancel within the indicated terms at no charge."
+
+msgid "Conferma immediata"
+msgstr "Instant confirmation"
+
+msgid "Ricevi tutto in pochi secondi"
+msgstr "Get everything in seconds"
+
+msgid "Ricevi subito biglietti e dettagli via e-mail e nell'area riservata."
+msgstr "Receive tickets and details instantly via email and in your account."
+
+msgid "Miglior prezzo garantito"
+msgstr "Best price guaranteed"
+
+msgid "Zero sorprese sul prezzo"
+msgstr "No price surprises"
+
+msgid "Se trovi un prezzo più basso ti rimborsiamo la differenza."
+msgstr "If you find a lower price, we'll refund the difference."
+
+msgid "Esperienza verificata"
+msgstr "Verified experience"
+
+msgid "Partner selezionati"
+msgstr "Selected partners"
+
+msgid "Operatori certificati e recensioni verificate da viaggiatori reali."
+msgstr "Certified operators and verified reviews from real travelers."
+
+msgid "Supporto dedicato"
+msgstr "Dedicated support"
+
+msgid "Siamo con te in ogni fase"
+msgstr "We're with you every step"
+
+msgid "Assistenza multicanale prima, durante e dopo l'esperienza."
+msgstr "Multi-channel assistance before, during and after your experience."
+
+msgid "Perfetta come regalo"
+msgstr "Perfect as a gift"
+
+msgid "Biglietto regalo digitale"
+msgstr "Digital gift voucher"
+
+msgid "Voucher personalizzabili con messaggi e consegna immediata."
+msgstr "Customizable vouchers with messages and instant delivery."

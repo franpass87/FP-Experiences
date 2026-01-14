@@ -1598,3 +1598,76 @@ msgstr "Dauer"
 
 msgid "Lingue"
 msgstr "Sprachen"
+
+# Trust badges / Cognitive bias
+msgid "Prenotazione sicura"
+msgstr "Sichere Buchung"
+
+msgid "Transazioni protette"
+msgstr "Geschützte Transaktionen"
+
+msgid "Pagamenti crittografati e protezione antifrode per ogni transazione."
+msgstr "Verschlüsselte Zahlungen und Betrugsschutz für jede Transaktion."
+
+msgid "Checkout protetto"
+msgstr "Sicherer Checkout"
+
+msgid "Paghi come preferisci"
+msgstr "Bezahlen Sie wie Sie möchten"
+
+msgid "Carte e wallet digitali approvati con conferma in tempo reale."
+msgstr "Zugelassene Kreditkarten und digitale Wallets mit Echtzeit-Bestätigung."
+
+msgid "Cancellazione flessibile"
+msgstr "Flexible Stornierung"
+
+msgid "Piani che cambiano? Nessun problema"
+msgstr "Pläne ändern sich? Kein Problem"
+
+msgid "Puoi modificare o annullare entro i termini indicati senza penali."
+msgstr "Ändern oder stornieren Sie innerhalb der angegebenen Frist ohne Gebühren."
+
+msgid "Conferma immediata"
+msgstr "Sofortige Bestätigung"
+
+msgid "Ricevi tutto in pochi secondi"
+msgstr "Erhalten Sie alles in Sekunden"
+
+msgid "Ricevi subito biglietti e dettagli via e-mail e nell'area riservata."
+msgstr "Erhalten Sie Tickets und Details sofort per E-Mail und in Ihrem Konto."
+
+msgid "Miglior prezzo garantito"
+msgstr "Bestpreis-Garantie"
+
+msgid "Zero sorprese sul prezzo"
+msgstr "Keine Preisüberraschungen"
+
+msgid "Se trovi un prezzo più basso ti rimborsiamo la differenza."
+msgstr "Wenn Sie einen niedrigeren Preis finden, erstatten wir die Differenz."
+
+msgid "Esperienza verificata"
+msgstr "Verifiziertes Erlebnis"
+
+msgid "Partner selezionati"
+msgstr "Ausgewählte Partner"
+
+msgid "Operatori certificati e recensioni verificate da viaggiatori reali."
+msgstr "Zertifizierte Anbieter und verifizierte Bewertungen von echten Reisenden."
+
+msgid "Supporto dedicato"
+msgstr "Engagierter Support"
+
+msgid "Siamo con te in ogni fase"
+msgstr "Wir sind bei jedem Schritt für Sie da"
+
+msgid "Assistenza multicanale prima, durante e dopo l'esperienza."
+msgstr "Mehrkanalige Unterstützung vor, während und nach Ihrem Erlebnis."
+
+msgid "Perfetta come regalo"
+msgstr "Perfekt als Geschenk"
+
+msgid "Biglietto regalo digitale"
+msgstr "Digitaler Geschenkgutschein"
+
+msgid "Voucher personalizzabili con messaggi e consegna immediata."
+msgstr "Personalisierbare Gutscheine mit Nachrichten und sofortiger Lieferung."
