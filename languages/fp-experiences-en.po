@@ -652,6 +652,46 @@ msgstr "Select date and time"
 msgid "Adulto"
 msgstr "Adult"
 
+# Missing booking form strings
+msgid "Scegli una data"
+msgstr "Choose a date"
+
+msgid "Seleziona i biglietti"
+msgstr "Select tickets"
+
+msgid "Seleziona i biglietti per vedere il riepilogo"
+msgstr "Select tickets to see the summary"
+
+msgid "Seleziona una data per vedere le fasce orarie"
+msgstr "Select a date to view time slots"
+
+msgid "Riepilogo"
+msgstr "Summary"
+
+msgid "Prezzo"
+msgstr "Price"
+
+msgid "Quantità"
+msgstr "Quantity"
+
+msgid "minuti"
+msgstr "minutes"
+
+msgid "45 minuti"
+msgstr "45 minutes"
+
+msgid "Riduci"
+msgstr "Decrease"
+
+msgid "Aumenta"
+msgstr "Increase"
+
+msgid "Totale"
+msgstr "Total"
+
+msgid "Procedi al pagamento"
+msgstr "Proceed to payment"
+
 # Frontend - Experience Page
 msgid "Overview"
 msgstr "Overview"
