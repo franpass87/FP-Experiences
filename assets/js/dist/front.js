@@ -86,6 +86,73 @@
     }
 })();
 
+// Inizializza accordion FAQ IMMEDIATAMENTE (standalone, non aspetta jQuery)
+// Usa delegazione eventi su document per funzionare anche con contenuti caricati dinamicamente
+(function initAccordionImmediate() {
+    'use strict';
+    
+    // Delegazione eventi direttamente su document - funziona sempre, anche con contenuti dinamici
+    // Usa capture: true per intercettare il click prima di altri listener
+    document.addEventListener('click', function(ev) {
+        // Cerca il trigger, anche se il click è sull'icona SVG o sul path
+        let trigger = ev.target.closest('[data-fp-accordion-trigger]');
+        
+        // Se non trovato, potrebbe essere un click diretto sull'icona
+        if (!trigger) {
+            const icon = ev.target.closest('.fp-exp-accordion__icon, .fp-exp-accordion__icon svg, .fp-exp-accordion__icon path');
+            if (icon) {
+                trigger = icon.closest('[data-fp-accordion-trigger]');
+            }
+        }
+        
+        // Se ancora non trovato, potrebbe essere un click sul label
+        if (!trigger) {
+            const label = ev.target.closest('.fp-exp-accordion__label');
+            if (label) {
+                trigger = label.closest('[data-fp-accordion-trigger]');
+            }
+        }
+        
+        // Se non è un trigger accordion, esci
+        if (!trigger) return;
+        
+        // Verifica che il trigger sia dentro un accordion container
+        const accordionContainer = trigger.closest('[data-fp-accordion]');
+        if (!accordionContainer) return;
+        
+        
+        ev.preventDefault();
+        ev.stopPropagation();
+        
+        const panelId = trigger.getAttribute('aria-controls');
+        if (!panelId) return;
+        
+        const panel = document.getElementById(panelId);
+        if (!panel) return;
+        
+        const isExpanded = trigger.getAttribute('aria-expanded') === 'true';
+        const icon = trigger.querySelector('.fp-exp-accordion__icon svg path');
+        
+        if (isExpanded) {
+            // Chiudi
+            trigger.setAttribute('aria-expanded', 'false');
+            panel.hidden = true;
+            if (icon) {
+                // Icona "+" (verticale + orizzontale)
+                icon.setAttribute('d', 'M12 5v14m-7-7h14');
+            }
+        } else {
+            // Apri
+            trigger.setAttribute('aria-expanded', 'true');
+            panel.hidden = false;
+            if (icon) {
+                // Icona "-" (solo orizzontale)
+                icon.setAttribute('d', 'M5 12h14');
+            }
+        }
+    }, { capture: true });
+})();
+
 // Carica i moduli frontend necessari
 (function() {
     'use strict';

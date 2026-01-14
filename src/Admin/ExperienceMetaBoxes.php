@@ -679,14 +679,14 @@ final class ExperienceMetaBoxes implements HookableInterface
                         var $tooltip = $(this);
                         var tooltipText = $tooltip.attr("data-tooltip");
                         
-                        // Se non esiste già un elemento content, crealo
-                        if (!$tooltip.next(".fp-exp-tooltip__content").length) {
+                        // Se non esiste già un elemento content, crealo DENTRO il tooltip
+                        if (!$tooltip.find(".fp-exp-tooltip__content").length && !$tooltip.next(".fp-exp-tooltip__content").length) {
                             var $content = $("<span>")
                                 .addClass("fp-exp-tooltip__content")
                                 .attr("role", "tooltip")
                                 .attr("aria-hidden", "true")
                                 .text(tooltipText);
-                            $tooltip.after($content);
+                            $tooltip.append($content);
                         }
                     });
                 }
@@ -700,7 +700,8 @@ final class ExperienceMetaBoxes implements HookableInterface
                     // Usa namespace per evitare conflitti
                     $(document).on("mouseenter.fpExpTooltip focus.fpExpTooltip", ".fp-exp-tooltip[data-tooltip]", function(e) {
                         var $tooltip = $(this);
-                        var $content = $tooltip.next(".fp-exp-tooltip__content");
+                        // Cerca il content sia dentro che fuori (per retrocompatibilità)
+                        var $content = $tooltip.find(".fp-exp-tooltip__content").length ? $tooltip.find(".fp-exp-tooltip__content") : $tooltip.next(".fp-exp-tooltip__content");
                         if ($content.length) {
                             $content.attr("aria-hidden", "false").css("display", "block");
                         }
@@ -708,7 +709,8 @@ final class ExperienceMetaBoxes implements HookableInterface
                     
                     $(document).on("mouseleave.fpExpTooltip blur.fpExpTooltip", ".fp-exp-tooltip[data-tooltip]", function(e) {
                         var $tooltip = $(this);
-                        var $content = $tooltip.next(".fp-exp-tooltip__content");
+                        // Cerca il content sia dentro che fuori (per retrocompatibilità)
+                        var $content = $tooltip.find(".fp-exp-tooltip__content").length ? $tooltip.find(".fp-exp-tooltip__content") : $tooltip.next(".fp-exp-tooltip__content");
                         if ($content.length) {
                             $content.attr("aria-hidden", "true").css("display", "none");
                         }

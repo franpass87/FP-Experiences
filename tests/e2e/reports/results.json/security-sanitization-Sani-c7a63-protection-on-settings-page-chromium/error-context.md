@@ -1,0 +1,953 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - text: "-NoNewline"
+  - generic [ref=e2]:
+    - navigation "Menu principale":
+      - link "Salta al contenuto principale" [ref=e3] [cursor=pointer]:
+        - /url: "#wpbody-content"
+      - link "Vai alla barra degli strumenti" [ref=e4] [cursor=pointer]:
+        - /url: "#wp-toolbar"
+      - list [ref=e7]:
+        - listitem [ref=e8]:
+          - link "Bacheca" [ref=e9] [cursor=pointer]:
+            - /url: index.php
+            - generic [ref=e10]: 
+            - generic [ref=e11]: Bacheca
+          - list [ref=e12]:
+            - listitem [ref=e13]:
+              - link "Home" [ref=e14] [cursor=pointer]:
+                - /url: index.php
+            - listitem [ref=e15]:
+              - link "Aggiornamenti 4" [ref=e16] [cursor=pointer]:
+                - /url: update-core.php
+                - text: Aggiornamenti
+                - generic [ref=e17]: "4"
+        - listitem [ref=e18]:
+          - link "📊 Editorial" [ref=e19] [cursor=pointer]:
+            - /url: admin.php?page=fp-editorial-dashboard
+            - generic [ref=e20]: 
+            - generic [ref=e21]: 📊 Editorial
+        - listitem [ref=e22]
+        - listitem [ref=e24]:
+          - link "Articoli" [ref=e25] [cursor=pointer]:
+            - /url: edit.php
+            - generic [ref=e26]: 
+            - generic [ref=e27]: Articoli
+          - list [ref=e28]:
+            - listitem [ref=e29]:
+              - link "Tutti gli articoli" [ref=e30] [cursor=pointer]:
+                - /url: edit.php
+            - listitem [ref=e31]:
+              - link "Aggiungi articolo" [ref=e32] [cursor=pointer]:
+                - /url: post-new.php
+            - listitem [ref=e33]:
+              - link "Categorie" [ref=e34] [cursor=pointer]:
+                - /url: edit-tags.php?taxonomy=category
+            - listitem [ref=e35]:
+              - link "Tag" [ref=e36] [cursor=pointer]:
+                - /url: edit-tags.php?taxonomy=post_tag
+            - listitem [ref=e37]:
+              - link "Desk Redazionali" [ref=e38] [cursor=pointer]:
+                - /url: edit-tags.php?taxonomy=fp_desk
+            - listitem [ref=e39]:
+              - link "📋 Workflow" [ref=e40] [cursor=pointer]:
+                - /url: edit.php?page=fp-newspaper-workflow
+            - listitem [ref=e41]:
+              - link "📅 Calendario" [ref=e42] [cursor=pointer]:
+                - /url: edit.php?page=fp-newspaper-calendar
+        - listitem [ref=e43]:
+          - link "Portfolio" [ref=e44] [cursor=pointer]:
+            - /url: edit.php?post_type=portfolio
+            - generic [ref=e45]: 
+            - generic [ref=e46]: Portfolio
+          - list [ref=e47]:
+            - listitem [ref=e48]:
+              - link "Portfolio" [ref=e49] [cursor=pointer]:
+                - /url: edit.php?post_type=portfolio
+            - listitem [ref=e50]:
+              - link "Add New Project" [ref=e51] [cursor=pointer]:
+                - /url: post-new.php?post_type=portfolio
+            - listitem [ref=e52]:
+              - link "Project Categories" [ref=e53] [cursor=pointer]:
+                - /url: edit-tags.php?taxonomy=project-type&post_type=portfolio
+            - listitem [ref=e54]:
+              - link "Project Attributes" [ref=e55] [cursor=pointer]:
+                - /url: edit-tags.php?taxonomy=project-attributes&post_type=portfolio
+        - listitem [ref=e56]:
+          - link "Media" [ref=e57] [cursor=pointer]:
+            - /url: upload.php
+            - generic [ref=e58]: 
+            - generic [ref=e59]: Media
+          - list [ref=e60]:
+            - listitem [ref=e61]:
+              - link "Libreria" [ref=e62] [cursor=pointer]:
+                - /url: upload.php
+            - listitem [ref=e63]:
+              - link "Aggiungi file media" [ref=e64] [cursor=pointer]:
+                - /url: media-new.php
+        - listitem [ref=e65]:
+          - link "Home Slider" [ref=e66] [cursor=pointer]:
+            - /url: edit.php?post_type=home_slider
+            - generic [ref=e67]: 
+            - generic [ref=e68]: Home Slider
+          - list [ref=e69]:
+            - listitem [ref=e70]:
+              - link "All Slides" [ref=e71] [cursor=pointer]:
+                - /url: edit.php?post_type=home_slider
+            - listitem [ref=e72]:
+              - link "Add New Slide" [ref=e73] [cursor=pointer]:
+                - /url: post-new.php?post_type=home_slider
+            - listitem [ref=e74]:
+              - link "Order" [ref=e75] [cursor=pointer]:
+                - /url: edit.php?post_type=home_slider&page=slide-order
+        - listitem [ref=e76]:
+          - link "Nectar Slider" [ref=e77] [cursor=pointer]:
+            - /url: edit.php?post_type=nectar_slider
+            - generic [ref=e78]: 
+            - generic [ref=e79]: Nectar Slider
+          - list [ref=e80]:
+            - listitem [ref=e81]:
+              - link "All Slides" [ref=e82] [cursor=pointer]:
+                - /url: edit.php?post_type=nectar_slider
+            - listitem [ref=e83]:
+              - link "Add New Nectar Slide" [ref=e84] [cursor=pointer]:
+                - /url: post-new.php?post_type=nectar_slider
+            - listitem [ref=e85]:
+              - link "Slider Locations" [ref=e86] [cursor=pointer]:
+                - /url: edit-tags.php?taxonomy=slider-locations&post_type=nectar_slider
+            - listitem [ref=e87]:
+              - link "Slide Ordering" [ref=e88] [cursor=pointer]:
+                - /url: edit.php?post_type=nectar_slider&page=nectar-slide-order
+        - listitem [ref=e89]:
+          - link "Pagine" [ref=e90] [cursor=pointer]:
+            - /url: edit.php?post_type=page
+            - generic [ref=e91]: 
+            - generic [ref=e92]: Pagine
+          - list [ref=e93]:
+            - listitem [ref=e94]:
+              - link "Tutte le pagine" [ref=e95] [cursor=pointer]:
+                - /url: edit.php?post_type=page
+            - listitem [ref=e96]:
+              - link "Aggiungi pagina" [ref=e97] [cursor=pointer]:
+                - /url: post-new.php?post_type=page
+        - listitem [ref=e98]:
+          - link "Commenti" [ref=e99] [cursor=pointer]:
+            - /url: edit-comments.php
+            - generic [ref=e100]: 
+            - generic [ref=e101]: Commenti
+        - listitem [ref=e102]:
+          - link "FP Newspaper" [ref=e103] [cursor=pointer]:
+            - /url: admin.php?page=fp-newspaper
+            - generic [ref=e104]: 
+            - generic [ref=e105]: FP Newspaper
+          - list [ref=e106]:
+            - listitem [ref=e107]:
+              - link "FP Newspaper" [ref=e108] [cursor=pointer]:
+                - /url: admin.php?page=fp-newspaper
+            - listitem [ref=e109]:
+              - link "Impostazioni" [ref=e110] [cursor=pointer]:
+                - /url: admin.php?page=fp-newspaper-settings
+            - listitem [ref=e111]:
+              - link "Export/Import" [ref=e112] [cursor=pointer]:
+                - /url: admin.php?page=fp-newspaper-export-import
+            - listitem [ref=e113]:
+              - link "Notifiche Email" [ref=e114] [cursor=pointer]:
+                - /url: admin.php?page=fp-newspaper-notifications
+            - listitem [ref=e115]:
+              - link "Google Analytics" [ref=e116] [cursor=pointer]:
+                - /url: admin.php?page=fp-newspaper-analytics
+        - listitem [ref=e117]:
+          - link "Civic Engagement" [ref=e118] [cursor=pointer]:
+            - /url: edit.php?post_type=fp_proposal
+            - generic [ref=e119]: 
+            - generic [ref=e120]: Civic Engagement
+          - list [ref=e121]:
+            - listitem [ref=e122]:
+              - link "Tutte le Proposte" [ref=e123] [cursor=pointer]:
+                - /url: edit.php?post_type=fp_proposal
+            - listitem [ref=e124]:
+              - link "Tutte le Petizioni" [ref=e125] [cursor=pointer]:
+                - /url: edit.php?post_type=fp_petition
+            - listitem [ref=e126]:
+              - link "Tutti i Sondaggi" [ref=e127] [cursor=pointer]:
+                - /url: edit.php?post_type=fp_poll
+            - listitem [ref=e128]:
+              - link "Dashboard" [ref=e129] [cursor=pointer]:
+                - /url: admin.php?page=fp-civic
+            - listitem [ref=e130]:
+              - link "Trasparenza" [ref=e131] [cursor=pointer]:
+                - /url: admin.php?page=fp-civic-transparency
+            - listitem [ref=e132]:
+              - link "Reputazione" [ref=e133] [cursor=pointer]:
+                - /url: admin.php?page=fp-civic-reputation
+            - listitem [ref=e134]:
+              - link "Impostazioni" [ref=e135] [cursor=pointer]:
+                - /url: admin.php?page=fp-civic-settings
+            - listitem [ref=e136]:
+              - link "Notifiche" [ref=e137] [cursor=pointer]:
+                - /url: admin.php?page=fp-civic-notifications
+        - listitem [ref=e138]:
+          - link "FP Forms" [ref=e139] [cursor=pointer]:
+            - /url: admin.php?page=fp-forms
+            - generic [ref=e140]: 
+            - generic [ref=e141]: FP Forms
+          - list [ref=e142]:
+            - listitem [ref=e143]:
+              - link "Tutti i Form" [ref=e144] [cursor=pointer]:
+                - /url: admin.php?page=fp-forms
+            - listitem [ref=e145]:
+              - link "Nuovo Form" [ref=e146] [cursor=pointer]:
+                - /url: admin.php?page=fp-forms-new
+            - listitem [ref=e147]:
+              - link "Template" [ref=e148] [cursor=pointer]:
+                - /url: admin.php?page=fp-forms-templates
+            - listitem
+            - listitem [ref=e149]:
+              - link "Impostazioni" [ref=e150] [cursor=pointer]:
+                - /url: admin.php?page=fp-forms-settings
+        - listitem [ref=e151]:
+          - link "FP Multilanguage" [ref=e152] [cursor=pointer]:
+            - /url: admin.php?page=fpml-settings
+            - generic [ref=e153]: 
+            - generic [ref=e154]: FP Multilanguage
+          - list [ref=e155]:
+            - listitem [ref=e156]:
+              - link "FP Multilanguage" [ref=e157] [cursor=pointer]:
+                - /url: admin.php?page=fpml-settings
+            - listitem [ref=e158]:
+              - link "FP Multilanguage" [ref=e159] [cursor=pointer]:
+                - /url: admin.php?page=fpml-settings
+            - listitem [ref=e160]:
+              - link "Bulk Translation" [ref=e161] [cursor=pointer]:
+                - /url: admin.php?page=fpml-bulk-translate
+            - listitem
+        - listitem [ref=e162]:
+          - link "FP Multilanguage" [ref=e163] [cursor=pointer]:
+            - /url: admin.php?page=fpml-settings
+            - generic [ref=e164]: 
+            - generic [ref=e165]: FP Multilanguage
+          - list [ref=e166]:
+            - listitem [ref=e167]:
+              - link "FP Multilanguage" [ref=e168] [cursor=pointer]:
+                - /url: admin.php?page=fpml-settings
+            - listitem [ref=e169]:
+              - link "FP Multilanguage" [ref=e170] [cursor=pointer]:
+                - /url: admin.php?page=fpml-settings
+            - listitem [ref=e171]:
+              - link "Bulk Translation" [ref=e172] [cursor=pointer]:
+                - /url: admin.php?page=fpml-bulk-translate
+            - listitem
+        - listitem [ref=e173]:
+          - link "Salient" [ref=e174] [cursor=pointer]:
+            - /url: admin.php?page=Salient&tab=1
+            - generic [ref=e176]: Salient
+          - list [ref=e177]:
+            - listitem [ref=e178]:
+              - link "General Settings" [ref=e179] [cursor=pointer]:
+                - /url: admin.php?page=Salient&tab=1
+            - listitem [ref=e180]:
+              - link "Accent Colors" [ref=e181] [cursor=pointer]:
+                - /url: admin.php?page=Salient&tab=7
+            - listitem [ref=e182]:
+              - link "Boxed Layout" [ref=e183] [cursor=pointer]:
+                - /url: admin.php?page=Salient&tab=8
+            - listitem [ref=e184]:
+              - link "Typography" [ref=e185] [cursor=pointer]:
+                - /url: admin.php?page=Salient&tab=9
+            - listitem [ref=e186]:
+              - link "Header Navigation" [ref=e187] [cursor=pointer]:
+                - /url: admin.php?page=Salient&tab=14
+            - listitem [ref=e188]:
+              - link "Global Sections" [ref=e189] [cursor=pointer]:
+                - /url: admin.php?page=Salient&tab=25
+            - listitem [ref=e190]:
+              - link "Footer" [ref=e191] [cursor=pointer]:
+                - /url: admin.php?page=Salient&tab=26
+            - listitem [ref=e192]:
+              - link "Page Transitions" [ref=e193] [cursor=pointer]:
+                - /url: admin.php?page=Salient&tab=27
+            - listitem [ref=e194]:
+              - link "Page Header" [ref=e195] [cursor=pointer]:
+                - /url: admin.php?page=Salient&tab=28
+            - listitem [ref=e196]:
+              - link "Form Styling" [ref=e197] [cursor=pointer]:
+                - /url: admin.php?page=Salient&tab=29
+            - listitem [ref=e198]:
+              - link "Call To Action" [ref=e199] [cursor=pointer]:
+                - /url: admin.php?page=Salient&tab=30
+            - listitem [ref=e200]:
+              - link "Portfolio" [ref=e201] [cursor=pointer]:
+                - /url: admin.php?page=Salient&tab=31
+            - listitem [ref=e202]:
+              - link "Blog" [ref=e203] [cursor=pointer]:
+                - /url: admin.php?page=Salient&tab=35
+            - listitem [ref=e204]:
+              - link "WooCommerce" [ref=e205] [cursor=pointer]:
+                - /url: admin.php?page=Salient&tab=42
+            - listitem [ref=e206]:
+              - link "General WordPress Pages" [ref=e207] [cursor=pointer]:
+                - /url: admin.php?page=Salient&tab=46
+            - listitem [ref=e208]:
+              - link "Social Media" [ref=e209] [cursor=pointer]:
+                - /url: admin.php?page=Salient&tab=49
+            - listitem [ref=e210]:
+              - link "Home Slider" [ref=e211] [cursor=pointer]:
+                - /url: admin.php?page=Salient&tab=50
+            - listitem [ref=e212]:
+              - link "Demo Importer" [ref=e213] [cursor=pointer]:
+                - /url: admin.php?page=Salient&tab=51
+            - listitem [ref=e214]:
+              - link "Options Object" [ref=e215] [cursor=pointer]:
+                - /url: admin.php?page=Salient&tab=52
+            - listitem [ref=e216]:
+              - link "Import / Export" [ref=e217] [cursor=pointer]:
+                - /url: admin.php?page=Salient&tab=53
+            - listitem [ref=e218]:
+              - link "Custom Branding" [ref=e219] [cursor=pointer]:
+                - /url: admin.php?page=salient-custom-branding
+        - listitem [ref=e220]:
+          - link "Global Sections" [ref=e221] [cursor=pointer]:
+            - /url: edit.php?post_type=salient_g_sections
+            - generic [ref=e222]: 
+            - generic [ref=e223]: Global Sections
+          - list [ref=e224]:
+            - listitem [ref=e225]:
+              - link "Global Sections" [ref=e226] [cursor=pointer]:
+                - /url: edit.php?post_type=salient_g_sections
+            - listitem [ref=e227]:
+              - link "Add New Global Section" [ref=e228] [cursor=pointer]:
+                - /url: post-new.php?post_type=salient_g_sections
+            - listitem [ref=e229]:
+              - link "Global Section Categories" [ref=e230] [cursor=pointer]:
+                - /url: edit-tags.php?taxonomy=salient_g_sections_category&post_type=salient_g_sections
+        - listitem [ref=e231]
+        - listitem [ref=e233]:
+          - link "WooCommerce" [ref=e234] [cursor=pointer]:
+            - /url: admin.php?page=wc-admin
+            - generic [ref=e236]: WooCommerce
+          - list [ref=e237]:
+            - listitem [ref=e238]:
+              - link "Home 2" [ref=e239] [cursor=pointer]:
+                - /url: admin.php?page=wc-admin
+                - text: Home
+                - generic [ref=e240]: "2"
+            - listitem [ref=e241]:
+              - link "Ordini" [ref=e242] [cursor=pointer]:
+                - /url: admin.php?page=wc-orders
+            - listitem [ref=e243]:
+              - link "Clienti" [ref=e244] [cursor=pointer]:
+                - /url: admin.php?page=wc-admin&path=/customers
+            - listitem [ref=e245]:
+              - link "Codici promozionali" [ref=e246] [cursor=pointer]:
+                - /url: admin.php?page=coupons-moved
+            - listitem [ref=e247]:
+              - link "Rapporti" [ref=e248] [cursor=pointer]:
+                - /url: admin.php?page=wc-reports
+            - listitem [ref=e249]:
+              - link "Impostazioni" [ref=e250] [cursor=pointer]:
+                - /url: admin.php?page=wc-settings
+            - listitem [ref=e251]:
+              - link "Stato" [ref=e252] [cursor=pointer]:
+                - /url: admin.php?page=wc-status
+            - listitem [ref=e253]:
+              - link "Estensioni" [ref=e254] [cursor=pointer]:
+                - /url: admin.php?page=wc-admin&path=/extensions
+        - listitem [ref=e255]:
+          - link "Prodotti" [ref=e256] [cursor=pointer]:
+            - /url: edit.php?post_type=product
+            - generic [ref=e257]: 
+            - generic [ref=e258]: Prodotti
+          - list [ref=e259]:
+            - listitem [ref=e260]:
+              - link "Tutti i prodotti" [ref=e261] [cursor=pointer]:
+                - /url: edit.php?post_type=product
+            - listitem [ref=e262]:
+              - link "Aggiungi un nuovo prodotto" [ref=e263] [cursor=pointer]:
+                - /url: post-new.php?post_type=product
+            - listitem [ref=e264]:
+              - link "Marchi" [ref=e265] [cursor=pointer]:
+                - /url: edit-tags.php?taxonomy=product_brand&post_type=product
+            - listitem [ref=e266]:
+              - link "Categorie" [ref=e267] [cursor=pointer]:
+                - /url: edit-tags.php?taxonomy=product_cat&post_type=product
+            - listitem [ref=e268]:
+              - link "Tag" [ref=e269] [cursor=pointer]:
+                - /url: edit-tags.php?taxonomy=product_tag&post_type=product
+            - listitem [ref=e270]:
+              - link "Attributi" [ref=e271] [cursor=pointer]:
+                - /url: edit.php?post_type=product&page=product_attributes
+            - listitem [ref=e272]:
+              - link "Recensioni" [ref=e273] [cursor=pointer]:
+                - /url: edit.php?post_type=product&page=product-reviews
+        - listitem [ref=e274]:
+          - link "Pagamenti" [ref=e275] [cursor=pointer]:
+            - /url: admin.php?page=wc-settings&tab=checkout&from=PAYMENTS_MENU_ITEM
+            - generic [ref=e277]: Pagamenti
+        - listitem [ref=e278]:
+          - link "FP Suite" [ref=e279] [cursor=pointer]:
+            - /url: admin.php?page=fp-dms-dashboard
+            - generic [ref=e280]: 
+            - generic [ref=e281]: FP Suite
+          - list [ref=e282]:
+            - listitem [ref=e283]:
+              - link "Dashboard" [ref=e284] [cursor=pointer]:
+                - /url: admin.php?page=fp-dms-dashboard
+            - listitem [ref=e285]:
+              - link "Overview" [ref=e286] [cursor=pointer]:
+                - /url: admin.php?page=fp-dms-overview
+            - listitem [ref=e287]:
+              - link "Clienti" [ref=e288] [cursor=pointer]:
+                - /url: admin.php?page=fp-dms-clients
+            - listitem [ref=e289]:
+              - link "Connessioni" [ref=e290] [cursor=pointer]:
+                - /url: admin.php?page=fp-dms-datasources
+            - listitem [ref=e291]:
+              - link "Automazione" [ref=e292] [cursor=pointer]:
+                - /url: admin.php?page=fp-dms-schedules
+            - listitem [ref=e293]:
+              - link "↳ QA Automation" [ref=e294] [cursor=pointer]:
+                - /url: admin.php?page=fp-dms-qa
+            - listitem [ref=e295]:
+              - link "Report" [ref=e296] [cursor=pointer]:
+                - /url: admin.php?page=fp-dms-reports
+            - listitem [ref=e297]:
+              - link "↳ Template" [ref=e298] [cursor=pointer]:
+                - /url: admin.php?page=fp-dms-templates
+            - listitem [ref=e299]:
+              - link "↳ Anomalie" [ref=e300] [cursor=pointer]:
+                - /url: admin.php?page=fp-dms-anomalies
+            - listitem [ref=e301]:
+              - link "Impostazioni" [ref=e302] [cursor=pointer]:
+                - /url: admin.php?page=fp-dms-settings
+            - listitem [ref=e303]:
+              - link "↳ System Health" [ref=e304] [cursor=pointer]:
+                - /url: admin.php?page=fp-dms-health
+            - listitem [ref=e305]:
+              - link "↳ Logs" [ref=e306] [cursor=pointer]:
+                - /url: admin.php?page=fp-dms-logs
+            - listitem [ref=e307]:
+              - link "↳ Debug" [ref=e308] [cursor=pointer]:
+                - /url: admin.php?page=fp-dms-debug
+            - listitem [ref=e309]:
+              - link "↳ Debug AI" [ref=e310] [cursor=pointer]:
+                - /url: admin.php?page=fp-dms-debug-ai
+        - listitem [ref=e311]:
+          - link "Dati analizzati" [ref=e312] [cursor=pointer]:
+            - /url: admin.php?page=wc-admin&path=/analytics/overview
+            - generic [ref=e313]: 
+            - generic [ref=e314]: Dati analizzati
+          - list [ref=e315]:
+            - listitem [ref=e316]:
+              - link "Panoramica" [ref=e317] [cursor=pointer]:
+                - /url: admin.php?page=wc-admin&path=/analytics/overview
+            - listitem [ref=e318]:
+              - link "Prodotti" [ref=e319] [cursor=pointer]:
+                - /url: admin.php?page=wc-admin&path=/analytics/products
+            - listitem [ref=e320]:
+              - link "Fatturato" [ref=e321] [cursor=pointer]:
+                - /url: admin.php?page=wc-admin&path=/analytics/revenue
+            - listitem [ref=e322]:
+              - link "Ordini" [ref=e323] [cursor=pointer]:
+                - /url: admin.php?page=wc-admin&path=/analytics/orders
+            - listitem [ref=e324]:
+              - link "Variazioni" [ref=e325] [cursor=pointer]:
+                - /url: admin.php?page=wc-admin&path=/analytics/variations
+            - listitem [ref=e326]:
+              - link "Categorie" [ref=e327] [cursor=pointer]:
+                - /url: admin.php?page=wc-admin&path=/analytics/categories
+            - listitem [ref=e328]:
+              - link "Codici promozionali" [ref=e329] [cursor=pointer]:
+                - /url: admin.php?page=wc-admin&path=/analytics/coupons
+            - listitem [ref=e330]:
+              - link "Imposte" [ref=e331] [cursor=pointer]:
+                - /url: admin.php?page=wc-admin&path=/analytics/taxes
+            - listitem [ref=e332]:
+              - link "Download" [ref=e333] [cursor=pointer]:
+                - /url: admin.php?page=wc-admin&path=/analytics/downloads
+            - listitem [ref=e334]:
+              - link "Magazzino" [ref=e335] [cursor=pointer]:
+                - /url: admin.php?page=wc-admin&path=/analytics/stock
+            - listitem [ref=e336]:
+              - link "Impostazioni" [ref=e337] [cursor=pointer]:
+                - /url: admin.php?page=wc-admin&path=/analytics/settings
+        - listitem [ref=e338]:
+          - link "Marketing" [ref=e339] [cursor=pointer]:
+            - /url: admin.php?page=wc-admin&path=/marketing
+            - generic [ref=e340]: 
+            - generic [ref=e341]: Marketing
+          - list [ref=e342]:
+            - listitem [ref=e343]:
+              - link "Panoramica" [ref=e344] [cursor=pointer]:
+                - /url: admin.php?page=wc-admin&path=/marketing
+            - listitem [ref=e345]:
+              - link "Codici promozionali" [ref=e346] [cursor=pointer]:
+                - /url: edit.php?post_type=shop_coupon
+        - listitem [ref=e347]:
+          - link "FP Publisher" [ref=e348] [cursor=pointer]:
+            - /url: admin.php?page=fp-publisher-clients
+            - generic [ref=e349]: 
+            - generic [ref=e350]: FP Publisher
+          - list [ref=e351]:
+            - listitem [ref=e352]:
+              - link "👥 Clienti" [ref=e353] [cursor=pointer]:
+                - /url: admin.php?page=fp-publisher-clients
+            - listitem [ref=e354]:
+              - link "🔗 Canali Social" [ref=e355] [cursor=pointer]:
+                - /url: admin.php?page=fp-publisher-accounts
+            - listitem [ref=e356]:
+              - link "➕ Nuovo Post" [ref=e357] [cursor=pointer]:
+                - /url: admin.php?page=fp-publisher-plan-editor
+            - listitem [ref=e358]:
+              - link "📋 Plans" [ref=e359] [cursor=pointer]:
+                - /url: admin.php?page=fp-publisher-plans-list
+            - listitem [ref=e360]:
+              - link "📅 Calendar" [ref=e361] [cursor=pointer]:
+                - /url: admin.php?page=fp-publisher-calendar
+            - listitem [ref=e362]:
+              - link "🎬 Video Library" [ref=e363] [cursor=pointer]:
+                - /url: admin.php?page=fp-publisher-vertical-video
+            - listitem [ref=e364]:
+              - link "📝 Templates" [ref=e365] [cursor=pointer]:
+                - /url: admin.php?page=fp-publisher-templates
+            - listitem [ref=e366]:
+              - link "📊 Analytics" [ref=e367] [cursor=pointer]:
+                - /url: admin.php?page=fp-publisher-analytics
+            - listitem [ref=e368]:
+              - link "📄 Reports" [ref=e369] [cursor=pointer]:
+                - /url: admin.php?page=fp-publisher-reports
+            - listitem [ref=e370]:
+              - link "🔔 Alerts" [ref=e371] [cursor=pointer]:
+                - /url: admin.php?page=fp-publisher-alerts
+            - listitem [ref=e372]:
+              - link "⚙️ Settings" [ref=e373] [cursor=pointer]:
+                - /url: admin.php?page=fp-publisher-settings
+            - listitem [ref=e374]:
+              - link "API Docs" [ref=e375] [cursor=pointer]:
+                - /url: admin.php?page=fp-publisher-api-docs
+        - listitem [ref=e376]:
+          - link "FP Updater&Backup" [ref=e377] [cursor=pointer]:
+            - /url: admin.php?page=fpub
+            - generic [ref=e378]: 
+            - generic [ref=e379]: FP Updater&Backup
+          - list [ref=e380]:
+            - listitem [ref=e381]:
+              - link "FP Updater&Backup" [ref=e382] [cursor=pointer]:
+                - /url: admin.php?page=fpub
+            - listitem [ref=e383]:
+              - link "Sites" [ref=e384] [cursor=pointer]:
+                - /url: admin.php?page=fpub-sites
+            - listitem [ref=e385]:
+              - link "Policies" [ref=e386] [cursor=pointer]:
+                - /url: admin.php?page=fpub-policies
+            - listitem [ref=e387]:
+              - link "Jobs" [ref=e388] [cursor=pointer]:
+                - /url: admin.php?page=fpub-jobs
+            - listitem [ref=e389]:
+              - link "Backups" [ref=e390] [cursor=pointer]:
+                - /url: admin.php?page=fpub-backups
+            - listitem [ref=e391]:
+              - link "Tools" [ref=e392] [cursor=pointer]:
+                - /url: admin.php?page=fpub-tools
+        - listitem [ref=e393]:
+          - link "FP Experiences" [ref=e394] [cursor=pointer]:
+            - /url: admin.php?page=fp_exp_dashboard
+            - generic [ref=e395]: 
+            - generic [ref=e396]: FP Experiences
+          - list [ref=e397]:
+            - listitem [ref=e398]:
+              - link "FP Experiences" [ref=e399] [cursor=pointer]:
+                - /url: admin.php?page=fp_exp_dashboard
+            - listitem [ref=e400]:
+              - link "Esperienze" [ref=e401] [cursor=pointer]:
+                - /url: edit.php?post_type=fp_experience
+            - listitem [ref=e402]:
+              - link "Nuova esperienza" [ref=e403] [cursor=pointer]:
+                - /url: post-new.php?post_type=fp_experience
+            - listitem [ref=e404]:
+              - link "Gift voucher" [ref=e405] [cursor=pointer]:
+                - /url: edit.php?post_type=fp_exp_gift_voucher
+            - listitem [ref=e406]:
+              - link "Nuovo voucher" [ref=e407] [cursor=pointer]:
+                - /url: post-new.php?post_type=fp_exp_gift_voucher
+            - listitem [ref=e408]:
+              - link "Importer Esperienze" [ref=e409] [cursor=pointer]:
+                - /url: admin.php?page=fp_exp_importer
+            - listitem [ref=e410]:
+              - link "Calendario" [ref=e411] [cursor=pointer]:
+                - /url: admin.php?page=fp_exp_calendar
+            - listitem [ref=e412]:
+              - link "Richieste" [ref=e413] [cursor=pointer]:
+                - /url: admin.php?page=fp_exp_requests
+            - listitem [ref=e414]:
+              - link "Check-in" [ref=e415] [cursor=pointer]:
+                - /url: admin.php?page=fp_exp_checkin
+            - listitem [ref=e416]:
+              - link "Ordini" [ref=e417] [cursor=pointer]:
+                - /url: admin.php?page=fp_exp_orders
+            - listitem [ref=e418]:
+              - link "Impostazioni" [ref=e419] [cursor=pointer]:
+                - /url: admin.php?page=fp_exp_settings
+            - listitem [ref=e420]:
+              - link "Email" [ref=e421] [cursor=pointer]:
+                - /url: admin.php?page=fp_exp_emails
+            - listitem [ref=e422]:
+              - link "Tools" [ref=e423] [cursor=pointer]:
+                - /url: admin.php?page=fp_exp_tools
+            - listitem [ref=e424]:
+              - link "Logs" [ref=e425] [cursor=pointer]:
+                - /url: admin.php?page=fp_exp_logs
+            - listitem [ref=e426]:
+              - link "Guida & Shortcode" [ref=e427] [cursor=pointer]:
+                - /url: admin.php?page=fp_exp_help
+            - listitem [ref=e428]:
+              - link "Crea pagina esperienza" [ref=e429] [cursor=pointer]:
+                - /url: admin.php?page=fp_exp_create_page
+        - listitem [ref=e430]
+        - listitem [ref=e432]:
+          - link "Privacy e Cookie" [ref=e433] [cursor=pointer]:
+            - /url: admin.php?page=fp-privacy
+            - generic [ref=e434]: 
+            - generic [ref=e435]: Privacy e Cookie
+          - list [ref=e436]:
+            - listitem [ref=e437]:
+              - link "Impostazioni" [ref=e438] [cursor=pointer]:
+                - /url: admin.php?page=fp-privacy
+            - listitem [ref=e439]:
+              - link "Editor policy" [ref=e440] [cursor=pointer]:
+                - /url: admin.php?page=fp-privacy-policy-editor
+            - listitem [ref=e441]:
+              - link "Registro consensi" [ref=e442] [cursor=pointer]:
+                - /url: admin.php?page=fp-privacy-consent-log
+            - listitem [ref=e443]:
+              - link "Analytics" [ref=e444] [cursor=pointer]:
+                - /url: admin.php?page=fp-privacy-analytics
+            - listitem [ref=e445]:
+              - link "Strumenti" [ref=e446] [cursor=pointer]:
+                - /url: admin.php?page=fp-privacy-tools
+            - listitem [ref=e447]:
+              - link "Guida rapida" [ref=e448] [cursor=pointer]:
+                - /url: admin.php?page=fp-privacy-guide
+            - listitem [ref=e449]:
+              - link "Diagnostica" [ref=e450] [cursor=pointer]:
+                - /url: admin.php?page=fp-privacy-diagnostics
+        - listitem [ref=e451]:
+          - link "Aspetto" [ref=e452] [cursor=pointer]:
+            - /url: themes.php
+            - generic [ref=e453]: 
+            - generic [ref=e454]: Aspetto
+          - list [ref=e455]:
+            - listitem [ref=e456]:
+              - link "Temi 3" [ref=e457] [cursor=pointer]:
+                - /url: themes.php
+                - text: Temi
+                - generic [ref=e458]: "3"
+            - listitem [ref=e459]:
+              - link "Design" [ref=e460] [cursor=pointer]:
+                - /url: site-editor.php
+            - listitem [ref=e461]:
+              - link "Personalizza" [ref=e462] [cursor=pointer]:
+                - /url: customize.php?return=%2Fwp-admin%2Fadmin.php%3Fpage%3Dfp_exp_settings
+            - listitem [ref=e463]:
+              - link "Widget" [ref=e464] [cursor=pointer]:
+                - /url: widgets.php
+            - listitem [ref=e465]:
+              - link "Menu" [ref=e466] [cursor=pointer]:
+                - /url: nav-menus.php
+            - listitem [ref=e467]:
+              - link "Editor del tema" [ref=e468] [cursor=pointer]:
+                - /url: theme-editor.php
+        - listitem [ref=e469]:
+          - link "Plugin 1" [ref=e470] [cursor=pointer]:
+            - /url: plugins.php
+            - generic [ref=e471]: 
+            - generic [ref=e472]:
+              - text: Plugin
+              - generic [ref=e473]: "1"
+          - list [ref=e474]:
+            - listitem [ref=e475]:
+              - link "Plugin installati" [ref=e476] [cursor=pointer]:
+                - /url: plugins.php
+            - listitem [ref=e477]:
+              - link "Aggiungi plugin" [ref=e478] [cursor=pointer]:
+                - /url: plugin-install.php
+            - listitem [ref=e479]:
+              - link "Editor del plugin" [ref=e480] [cursor=pointer]:
+                - /url: plugin-editor.php
+        - listitem [ref=e481]:
+          - link "Utenti" [ref=e482] [cursor=pointer]:
+            - /url: users.php
+            - generic [ref=e483]: 
+            - generic [ref=e484]: Utenti
+          - list [ref=e485]:
+            - listitem [ref=e486]:
+              - link "Tutti gli utenti" [ref=e487] [cursor=pointer]:
+                - /url: users.php
+            - listitem [ref=e488]:
+              - link "Aggiungi utente" [ref=e489] [cursor=pointer]:
+                - /url: user-new.php
+            - listitem [ref=e490]:
+              - link "Profilo" [ref=e491] [cursor=pointer]:
+                - /url: profile.php
+        - listitem [ref=e492]:
+          - link "Strumenti" [ref=e493] [cursor=pointer]:
+            - /url: tools.php
+            - generic [ref=e494]: 
+            - generic [ref=e495]: Strumenti
+          - list [ref=e496]:
+            - listitem [ref=e497]:
+              - link "Strumenti disponibili" [ref=e498] [cursor=pointer]:
+                - /url: tools.php
+            - listitem [ref=e499]:
+              - link "Importa" [ref=e500] [cursor=pointer]:
+                - /url: import.php
+            - listitem [ref=e501]:
+              - link "Esporta" [ref=e502] [cursor=pointer]:
+                - /url: export.php
+            - listitem [ref=e503]:
+              - link "Salute del sito 3" [ref=e504] [cursor=pointer]:
+                - /url: site-health.php
+                - text: Salute del sito
+                - generic [ref=e505]: "3"
+            - listitem [ref=e506]:
+              - link "Esporta dati personali" [ref=e507] [cursor=pointer]:
+                - /url: export-personal-data.php
+            - listitem [ref=e508]:
+              - link "Elimina dati personali" [ref=e509] [cursor=pointer]:
+                - /url: erase-personal-data.php
+            - listitem [ref=e510]:
+              - link "Azioni programmate" [ref=e511] [cursor=pointer]:
+                - /url: tools.php?page=action-scheduler
+        - listitem [ref=e512]:
+          - link "WPBakery Page Builder" [ref=e513] [cursor=pointer]:
+            - /url: admin.php?page=vc-general
+            - generic [ref=e515]: WPBakery Page Builder
+          - list [ref=e516]:
+            - listitem [ref=e517]:
+              - link "Impostazioni Generali" [ref=e518] [cursor=pointer]:
+                - /url: admin.php?page=vc-general
+            - listitem [ref=e519]:
+              - link "Module Manager" [ref=e520] [cursor=pointer]:
+                - /url: admin.php?page=vc-modules
+            - listitem [ref=e521]:
+              - link "Role Manager" [ref=e522] [cursor=pointer]:
+                - /url: admin.php?page=vc-roles
+            - listitem [ref=e523]:
+              - link "Color Picker Settings" [ref=e524] [cursor=pointer]:
+                - /url: admin.php?page=vc-color-picker
+            - listitem [ref=e525]:
+              - link "CSS personalizzato" [ref=e526] [cursor=pointer]:
+                - /url: admin.php?page=vc-custom_css
+            - listitem [ref=e527]:
+              - link "Custom JS" [ref=e528] [cursor=pointer]:
+                - /url: admin.php?page=vc-custom_js
+            - listitem [ref=e529]:
+              - link "WPBakery AI" [ref=e530] [cursor=pointer]:
+                - /url: admin.php?page=vc-ai
+            - listitem [ref=e531]:
+              - link "Shortcode Mapper" [ref=e532] [cursor=pointer]:
+                - /url: admin.php?page=vc-automapper
+            - listitem [ref=e533]:
+              - link "About" [ref=e534] [cursor=pointer]:
+                - /url: admin.php?page=vc-welcome
+        - listitem [ref=e535]:
+          - link "Impostazioni" [ref=e536] [cursor=pointer]:
+            - /url: options-general.php
+            - generic [ref=e537]: 
+            - generic [ref=e538]: Impostazioni
+          - list [ref=e539]:
+            - listitem [ref=e540]:
+              - link "Generali" [ref=e541] [cursor=pointer]:
+                - /url: options-general.php
+            - listitem [ref=e542]:
+              - link "Scrittura" [ref=e543] [cursor=pointer]:
+                - /url: options-writing.php
+            - listitem [ref=e544]:
+              - link "Lettura" [ref=e545] [cursor=pointer]:
+                - /url: options-reading.php
+            - listitem [ref=e546]:
+              - link "Discussione" [ref=e547] [cursor=pointer]:
+                - /url: options-discussion.php
+            - listitem [ref=e548]:
+              - link "Media" [ref=e549] [cursor=pointer]:
+                - /url: options-media.php
+            - listitem [ref=e550]:
+              - link "Permalink" [ref=e551] [cursor=pointer]:
+                - /url: options-permalink.php
+            - listitem [ref=e552]:
+              - link "Privacy" [ref=e553] [cursor=pointer]:
+                - /url: options-privacy.php
+        - listitem [ref=e554]:
+          - link "Git Updater" [ref=e555] [cursor=pointer]:
+            - /url: admin.php?page=fp-git-updater
+            - generic [ref=e556]: 
+            - generic [ref=e557]: Git Updater
+          - list [ref=e558]:
+            - listitem [ref=e559]:
+              - link "Impostazioni" [ref=e560] [cursor=pointer]:
+                - /url: admin.php?page=fp-git-updater
+            - listitem [ref=e561]:
+              - link "Backup e Ripristino" [ref=e562] [cursor=pointer]:
+                - /url: admin.php?page=fp-git-updater-backup
+            - listitem [ref=e563]:
+              - link "Log" [ref=e564] [cursor=pointer]:
+                - /url: admin.php?page=fp-git-updater-logs
+        - listitem [ref=e565]:
+          - link "SEO Performance" [ref=e566] [cursor=pointer]:
+            - /url: admin.php?page=fp-seo-performance
+            - generic [ref=e567]: 
+            - generic [ref=e568]: SEO Performance
+          - list [ref=e569]:
+            - listitem [ref=e570]:
+              - link "SEO Performance" [ref=e571] [cursor=pointer]:
+                - /url: admin.php?page=fp-seo-performance
+            - listitem [ref=e572]:
+              - link "Settings" [ref=e573] [cursor=pointer]:
+                - /url: admin.php?page=fp-seo-performance-settings
+            - listitem [ref=e574]:
+              - link "Bulk Auditor" [ref=e575] [cursor=pointer]:
+                - /url: admin.php?page=fp-seo-performance-bulk
+            - listitem [ref=e576]:
+              - link "Performance" [ref=e577] [cursor=pointer]:
+                - /url: admin.php?page=fp-seo-performance-dashboard
+            - listitem [ref=e578]:
+              - link "Schema Markup" [ref=e579] [cursor=pointer]:
+                - /url: admin.php?page=fp-seo-schema
+            - listitem [ref=e580]:
+              - link "Social Media" [ref=e581] [cursor=pointer]:
+                - /url: admin.php?page=fp-seo-social-media
+            - listitem [ref=e582]:
+              - link "Internal Links" [ref=e583] [cursor=pointer]:
+                - /url: admin.php?page=fp-seo-internal-links
+            - listitem [ref=e584]:
+              - link "Multiple Keywords" [ref=e585] [cursor=pointer]:
+                - /url: admin.php?page=fp-seo-multiple-keywords
+            - listitem [ref=e586]:
+              - link "AI Content Optimizer" [ref=e587] [cursor=pointer]:
+                - /url: admin.php?page=fp-seo-content-optimizer
+        - listitem [ref=e588]:
+          - button "Comprimi menu principale" [expanded] [ref=e589] [cursor=pointer]:
+            - generic [ref=e591]: Riduci menu
+    - generic [ref=e592]:
+      - generic [ref=e593]:
+        - navigation "Barra degli strumenti":
+          - menu:
+            - group [ref=e594]:
+              - menuitem "Informazioni su WordPress" [ref=e595] [cursor=pointer]:
+                - generic [ref=e597]: Informazioni su WordPress
+            - group [ref=e598]:
+              - menuitem "FP Development" [ref=e599] [cursor=pointer]
+            - group [ref=e600]:
+              - menuitem "Live" [ref=e601] [cursor=pointer]
+            - group [ref=e602]:
+              - 'menuitem "4: aggiornamenti disponibili" [ref=e603] [cursor=pointer]':
+                - generic [ref=e605]: "4"
+                - generic [ref=e606]: "4: aggiornamenti disponibili"
+            - group [ref=e607]:
+              - menuitem "0 commenti in moderazione" [ref=e608] [cursor=pointer]:
+                - generic [ref=e610]: "0"
+                - generic [ref=e611]: 0 commenti in moderazione
+            - group [ref=e612]:
+              - menuitem "Nuovo" [ref=e613] [cursor=pointer]:
+                - generic [ref=e615]: Nuovo
+            - group [ref=e616]:
+              - menuitem "FP Experiences" [ref=e617] [cursor=pointer]
+            - group [ref=e618]:
+              - menuitem "🇮🇹 Italiano" [ref=e619] [cursor=pointer]
+          - menu [ref=e620]:
+            - group [ref=e621]:
+              - menuitem "Ciao, FranPass87" [ref=e622] [cursor=pointer]
+      - main [ref=e623]:
+        - generic [ref=e628]:
+          - generic [ref=e629]:
+            - navigation "Percorso di navigazione" [ref=e630]:
+              - link "FP Experiences" [ref=e631] [cursor=pointer]:
+                - /url: http://fp-development.local/wp-admin/admin.php?page=fp_exp_dashboard
+              - text: › Impostazioni
+            - heading "Impostazioni FP Experiences" [level=1] [ref=e632]
+            - paragraph [ref=e634]: "Struttura plugin non valida: cartella 'src' mancante. Verifica lo ZIP caricato."
+            - paragraph [ref=e636]: FP Digital Publisher requires at least one integration token configured in the settings.
+            - paragraph [ref=e637]: Configura preferenze, integrazioni e regole operative delle esperienze.
+          - generic [ref=e638]:
+            - link " General" [ref=e639] [cursor=pointer]:
+              - /url: http://fp-development.local/wp-admin/admin.php?page=fp_exp_settings&tab=general
+              - generic [ref=e640]: 
+              - text: General
+            - link " Gift" [ref=e641] [cursor=pointer]:
+              - /url: http://fp-development.local/wp-admin/admin.php?page=fp_exp_settings&tab=gift
+              - generic [ref=e642]: 
+              - text: Gift
+            - link " Branding" [ref=e643] [cursor=pointer]:
+              - /url: http://fp-development.local/wp-admin/admin.php?page=fp_exp_settings&tab=branding
+              - generic [ref=e644]: 
+              - text: Branding
+            - link " Booking Rules" [ref=e645] [cursor=pointer]:
+              - /url: http://fp-development.local/wp-admin/admin.php?page=fp_exp_settings&tab=booking
+              - generic [ref=e646]: 
+              - text: Booking Rules
+            - link " Calendar" [ref=e647] [cursor=pointer]:
+              - /url: http://fp-development.local/wp-admin/admin.php?page=fp_exp_settings&tab=calendar
+              - generic [ref=e648]: 
+              - text: Calendar
+            - link " Tracking" [ref=e649] [cursor=pointer]:
+              - /url: http://fp-development.local/wp-admin/admin.php?page=fp_exp_settings&tab=tracking
+              - generic [ref=e650]: 
+              - text: Tracking
+            - link " RTB" [ref=e651] [cursor=pointer]:
+              - /url: http://fp-development.local/wp-admin/admin.php?page=fp_exp_settings&tab=rtb
+              - generic [ref=e652]: 
+              - text: RTB
+            - link " Vetrina" [ref=e653] [cursor=pointer]:
+              - /url: http://fp-development.local/wp-admin/admin.php?page=fp_exp_settings&tab=listing
+              - generic [ref=e654]: 
+              - text: Vetrina
+            - link " Tools" [ref=e655] [cursor=pointer]:
+              - /url: http://fp-development.local/wp-admin/admin.php?page=fp_exp_settings&tab=tools
+              - generic [ref=e656]: 
+              - text: Tools
+            - link " Logs" [ref=e657] [cursor=pointer]:
+              - /url: http://fp-development.local/wp-admin/admin.php?page=fp_exp_settings&tab=logs
+              - generic [ref=e658]: 
+              - text: Logs
+          - generic [ref=e659]:
+            - heading "General" [level=2] [ref=e660]
+            - text: Meeting points module Enable meeting points management and widgets.
+            - generic [ref=e661]:
+              - checkbox "Enable meeting points management and widgets. Enable meeting points management and widgets." [ref=e662] [cursor=pointer]
+              - text: Enable meeting points management and widgets.
+            - text: Meeting point import Enable meeting point import (advanced).
+            - generic [ref=e663]:
+              - checkbox "Enable meeting point import (advanced). Enable meeting point import (advanced)." [ref=e664] [cursor=pointer]
+              - text: Enable meeting point import (advanced).
+            - paragraph [ref=e665]: Keep disabled unless an operator needs to paste CSV data manually. CLI/REST tools remain available.
+            - heading "Experience Page Layout" [level=2] [ref=e666]
+            - paragraph [ref=e667]: Set the default container width, gutter, and sidebar placement used by the Experience Page shortcode and widget.
+            - text: Container mode
+            - combobox [ref=e668] [cursor=pointer]:
+              - option "Boxed (respect theme container)" [selected]
+              - option "Full width (edge to edge)"
+            - paragraph [ref=e669]: Choose whether the experience layout stays inside the theme container or spans the full viewport width.
+            - text: Maximum width
+            - spinbutton [ref=e670]: "1200"
+            - paragraph [ref=e671]: Desktop max-width in pixels (set 0 to keep the default theme width).
+            - text: Side padding
+            - spinbutton [ref=e672]: "24"
+            - paragraph [ref=e673]: Horizontal padding (gutter) in pixels applied on desktop layouts.
+            - text: Sidebar position
+            - combobox [ref=e674] [cursor=pointer]:
+              - option "Colonna destra" [selected]
+              - option "Colonna sinistra"
+              - option "Nessuna sidebar (colonna singola)"
+            - paragraph [ref=e675]: Default position for the booking widget on desktop.
+            - paragraph [ref=e676]:
+              - button "Salva le modifiche" [ref=e677] [cursor=pointer]
+    - contentinfo [ref=e678]:
+      - paragraph [ref=e679]:
+        - generic [ref=e681]:
+          - text: Grazie per aver creato con
+          - link "WordPress" [ref=e682] [cursor=pointer]:
+            - /url: https://it.wordpress.org/
+          - text: .
+      - paragraph [ref=e683]: Versione 6.9
+```

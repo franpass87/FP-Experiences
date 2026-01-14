@@ -5,8 +5,8 @@ Tags: experiences, booking, wooocommerce, shortcodes, calendar
 Requires at least: 6.0
 Tested up to: 6.4
 Requires PHP: 8.0
-Stable tag: 0.3.7
-Last updated: 2025-10-13
+Stable tag: 1.1.5
+Last updated: 2025-01-27
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 

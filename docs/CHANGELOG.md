@@ -9,6 +9,95 @@ e questo progetto aderisce al [Semantic Versioning](https://semver.org/lang/it/)
 
 ## [Unreleased]
 
+## [1.2.0] - 2025-12-25
+
+### 🏗️ **Migrazione Architetturale Completa - Kernel-based Architecture**
+
+**Priorità:** ALTA  
+**Tipo:** Refactoring Architetturale / Breaking Change (con retrocompatibilità)  
+**Data:** Dicembre 2025
+
+### Added
+
+- **🏗️ Nuova Architettura Kernel-based**
+  - Implementato sistema Kernel con Container per Dependency Injection
+  - Creati Service Providers organizzati per dominio funzionale:
+    - `BookingServiceProvider`: Cart, Orders, Checkout, Emails, Brevo, RequestToBook
+    - `GiftServiceProvider`: VoucherCPT, VoucherManager
+    - `UtilityServiceProvider`: MeetingPointsManager, MigrationRunner, AutoTranslator, Webhooks, RestRoutes
+    - `AdminServiceProvider`: Tutti i servizi admin (AdminMenu, CalendarAdmin, SettingsPage, etc.)
+    - `FrontendServiceProvider`: ExperienceCPT, ShortcodeRegistrar, ElementorWidgetsRegistrar, SingleExperienceRenderer
+    - `IntegrationServiceProvider`: Tutte le integrazioni (Brevo, GA4, GoogleCalendar, GoogleAds, MetaPixel, Clarity, WooCommerce, etc.)
+  - Helper `DatabaseTables` per registrazione tabelle database
+  - Metodi helper `Bootstrap::get()` e `Bootstrap::has()` per accesso semplificato ai servizi
+
+- **📚 Documentazione**
+  - Creato `docs/developer/ARCHITECTURE.md` con documentazione completa dell'architettura
+  - Aggiornato `docs/developer/MIGRATION-GUIDE.md` con guida alla migrazione
+
+### Changed
+
+- **🔄 Refactoring Plugin Legacy**
+  - Convertito `Plugin` in facade minimale che delega al Container
+  - Rimosse tutte le proprietà private dei servizi
+  - Aggiunti metodi getter che delegano a `Bootstrap::get()`
+  - Metodo `boot()` ora è un no-op (servizi bootati dai Service Providers)
+  - Metodo `register_database_tables()` ora delega a `DatabaseTables::register()`
+
+- **🔧 Service Providers**
+  - `CoreServiceProvider`: Gestisce database tables registration e text domain loading
+  - `LegacyServiceProvider`: Semplificato, rimossa logica di boot completo Plugin
+  - Tutti i Service Providers ora gestiscono autonomamente i propri hook
+
+### Deprecated
+
+- **⚠️ Plugin::instance()**
+  - Deprecato dalla v1.2.0
+  - Usare `Bootstrap::kernel()` o `Bootstrap::get()` invece
+  - Mantenuto per retrocompatibilità, sarà rimosso in v2.0.0
+
+- **⚠️ Accesso diretto alle proprietà Plugin**
+  - `$plugin->cart`, `$plugin->orders`, etc. non più disponibili
+  - Usare metodi getter: `$plugin->cart()`, `$plugin->orders()`, etc.
+  - Oppure usare direttamente: `Bootstrap::get(Cart::class)`
+
+### Fixed
+
+- **🔧 Dipendenze Circolari**
+  - Risolte dipendenze circolari tra Brevo e Emails tramite setter injection
+  - Gestite correttamente tutte le dipendenze opzionali
+
+### Technical Details
+
+**File Modificati:**
+- `src/Plugin.php`: Refactoring completo in facade minimale
+- `src/Core/Bootstrap/Bootstrap.php`: Aggiunto BookingServiceProvider, GiftServiceProvider, UtilityServiceProvider
+- `src/Providers/BookingServiceProvider.php`: NUOVO
+- `src/Providers/GiftServiceProvider.php`: NUOVO
+- `src/Providers/UtilityServiceProvider.php`: NUOVO
+- `src/Utils/DatabaseTables.php`: NUOVO
+- `src/Presentation/Admin/Providers/AdminServiceProvider.php`: Esteso con tutti i servizi admin
+- `src/Presentation/Frontend/Providers/FrontendServiceProvider.php`: Esteso con tutti i servizi frontend
+- `src/Integrations/Providers/IntegrationServiceProvider.php`: Esteso con tutte le integrazioni
+- `src/Providers/LegacyServiceProvider.php`: Semplificato
+- `tools/wp-seed-experience.sh`: Aggiornato per usare `DatabaseTables::register()`
+
+**Metriche:**
+- ✅ 0 istanziazioni dirette di servizi nel Plugin legacy
+- ✅ Tutti i servizi accessibili tramite container
+- ✅ Tutti gli hook registrati dai Service Providers
+- ✅ Plugin legacy ridotto a facade minimale (~600 righe vs ~900 originali)
+- ✅ Retrocompatibilità completa mantenuta
+
+**Breaking Changes:**
+- Nessuno (retrocompatibilità mantenuta tramite facade Plugin)
+- I metodi getter del Plugin ora lanciano `RuntimeException` se il servizio non è disponibile (invece di restituire null)
+
+**Migration Path:**
+Vedi `docs/developer/MIGRATION-GUIDE.md` per dettagli completi sulla migrazione.
+
+---
+
 ## [1.0.1] - 2025-11-01
 
 ### 🔧 **Fix Preventivo - URL REST API Dinamici**

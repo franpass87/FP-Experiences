@@ -20,9 +20,27 @@
 
 .fp-exp-field {
     display: flex;
-    flex-direction: column;
+    flex-wrap: wrap;
+    align-items: baseline;
     gap: 6px;
     margin-bottom: 16px;
+}
+
+.fp-exp-field > .fp-exp-field__label {
+    flex-basis: 100%;
+}
+
+.fp-exp-field > .fp-exp-field__description {
+    flex-basis: 100%;
+}
+
+/* Input con suffisso (es. €) - rimane sulla stessa riga */
+.fp-exp-field__suffix {
+    display: inline-flex;
+    align-items: center;
+    font-weight: 600;
+    color: var(--fp-exp-color-text, #1f1f1f);
+    flex-shrink: 0;
 }
 
 .fp-exp-field--columns {
@@ -137,6 +155,12 @@
 .fp-exp-tab-panel select,
 .fp-exp-tab-panel textarea {
     width: 100%;
+}
+
+/* Override: quando c'è un suffisso (es. €), l'input non deve occupare il 100% */
+.fp-exp-tab-panel .fp-exp-field:has(.fp-exp-field__suffix) input[type="number"] {
+    width: auto;
+    flex: 0 0 auto;
 }
 
 /* Dark mode forms */

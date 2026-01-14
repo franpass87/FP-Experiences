@@ -54,7 +54,12 @@ final class PricingMetaBoxHandler extends BaseMetaBoxHandler
                 
                 <div class="fp-exp-field">
                     <label class="fp-exp-field__label" for="fp-exp-base-price">
-                        <?php esc_html_e('Prezzo base', 'fp-experiences'); ?>
+                        <?php 
+                        printf(
+                            esc_html__('Prezzo base (%s)', 'fp-experiences'),
+                            esc_html(get_woocommerce_currency_symbol())
+                        ); 
+                        ?>
                     </label>
                     <input
                         type="number"
@@ -65,7 +70,6 @@ final class PricingMetaBoxHandler extends BaseMetaBoxHandler
                         step="0.01"
                         class="small-text"
                     />
-                    <span class="fp-exp-field__suffix"><?php echo esc_html(get_woocommerce_currency_symbol()); ?></span>
                     <p class="fp-exp-field__description">
                         <?php esc_html_e('Prezzo base per persona. Se vuoto, verrà usato il prezzo del primo biglietto.', 'fp-experiences'); ?>
                     </p>
@@ -177,7 +181,12 @@ final class PricingMetaBoxHandler extends BaseMetaBoxHandler
                 <div class="fp-exp-field fp-exp-field--columns">
                     <div>
                         <label class="fp-exp-field__label" for="fp-exp-ticket-price-<?php echo esc_attr($index); ?>">
-                            <?php esc_html_e('Prezzo', 'fp-experiences'); ?>
+                            <?php 
+                            printf(
+                                esc_html__('Prezzo (%s)', 'fp-experiences'),
+                                esc_html(get_woocommerce_currency_symbol())
+                            ); 
+                            ?>
                         </label>
                         <input
                             type="number"
@@ -189,7 +198,6 @@ final class PricingMetaBoxHandler extends BaseMetaBoxHandler
                             class="small-text"
                             <?php echo $is_template ? 'data-repeater-field="price"' : ''; ?>
                         />
-                        <span class="fp-exp-field__suffix"><?php echo esc_html(get_woocommerce_currency_symbol()); ?></span>
                     </div>
 
                     <div>
@@ -260,7 +268,12 @@ final class PricingMetaBoxHandler extends BaseMetaBoxHandler
             <div class="fp-exp-field fp-exp-field--columns">
                 <div>
                     <label class="fp-exp-field__label" for="fp-exp-group-price">
-                        <?php esc_html_e('Prezzo gruppo', 'fp-experiences'); ?>
+                        <?php 
+                        printf(
+                            esc_html__('Prezzo gruppo (%s)', 'fp-experiences'),
+                            esc_html(get_woocommerce_currency_symbol())
+                        ); 
+                        ?>
                     </label>
                     <input
                         type="number"
@@ -271,7 +284,6 @@ final class PricingMetaBoxHandler extends BaseMetaBoxHandler
                         step="0.01"
                         class="small-text"
                     />
-                    <span class="fp-exp-field__suffix"><?php echo esc_html(get_woocommerce_currency_symbol()); ?></span>
                 </div>
 
                 <div>
@@ -365,7 +377,12 @@ final class PricingMetaBoxHandler extends BaseMetaBoxHandler
                 <div class="fp-exp-field fp-exp-field--columns">
                     <div>
                         <label class="fp-exp-field__label" for="fp-exp-addon-price-<?php echo esc_attr($index); ?>">
-                            <?php esc_html_e('Prezzo', 'fp-experiences'); ?>
+                            <?php 
+                            printf(
+                                esc_html__('Prezzo (%s)', 'fp-experiences'),
+                                esc_html(get_woocommerce_currency_symbol())
+                            ); 
+                            ?>
                         </label>
                         <input
                             type="number"
@@ -377,7 +394,6 @@ final class PricingMetaBoxHandler extends BaseMetaBoxHandler
                             class="small-text"
                             <?php echo $is_template ? 'data-repeater-field="price"' : ''; ?>
                         />
-                        <span class="fp-exp-field__suffix"><?php echo esc_html(get_woocommerce_currency_symbol()); ?></span>
                     </div>
 
                     <div>

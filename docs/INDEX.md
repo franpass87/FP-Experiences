@@ -1,6 +1,9 @@
 # 📚 Indice Documentazione - FP Experiences
 
-Ultimo aggiornamento: 25 Ottobre 2025
+**Versione Plugin:** 1.2.0  
+**Ultimo aggiornamento:** Dicembre 2025
+
+> ⚠️ **Nota:** Questo è un indice alternativo. Per la documentazione principale, consulta [README.md](README.md)
 
 ---
 

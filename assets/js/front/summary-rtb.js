@@ -103,7 +103,17 @@
             _ctx.ctaBtn.disabled = !(anyTicket && slotOk);
         }
 
+        // Try to get experienceId from config, form, or window config
         var experienceId = (_ctx.config && _ctx.config.experienceId) || 0;
+        if (!experienceId && _ctx.rtbForm) {
+            var expIdInput = _ctx.rtbForm.querySelector('input[name="experience_id"]');
+            if (expIdInput) {
+                experienceId = parseInt(expIdInput.value, 10) || 0;
+            }
+        }
+        if (!experienceId && window.FPFront && window.FPFront.config && window.FPFront.config.experienceId) {
+            experienceId = parseInt(window.FPFront.config.experienceId, 10) || 0;
+        }
         var quoteUrl = (function() {
             var base = (window.fpExpApiBase && typeof window.fpExpApiBase === 'string')
                 ? window.fpExpApiBase
@@ -128,14 +138,25 @@
                 return;
             }
 
+            // Verifica che ci sia un orario selezionato prima di fare la richiesta
+            var start = _ctx.startInput ? _ctx.startInput.value.trim() : '';
+            var end = _ctx.endInput ? _ctx.endInput.value.trim() : '';
+            if (!start || !end) {
+                // Non fare la richiesta se manca l'orario, ma non mostrare errore
+                // Il messaggio verrà mostrato dal controllo del pulsante submit
+                setStatus(emptyLabel);
+                updateCtaState();
+                return;
+            }
+
             setStatus(loadingLabel);
 
             var payload = {
                 nonce: (_ctx.config && (_ctx.config.rtbNonce || _ctx.config.nonce)) || (_ctx.rtbForm ? _ctx.rtbForm.getAttribute('data-nonce') : ''),
                 experience_id: experienceId,
                 slot_id: 0,
-                start: _ctx.startInput ? _ctx.startInput.value : '',
-                end: _ctx.endInput ? _ctx.endInput.value : '',
+                start: start,
+                end: end,
                 tickets: tickets,
                 addons: addons
             };

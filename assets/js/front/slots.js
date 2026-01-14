@@ -23,12 +23,16 @@
         items.forEach(function(slot) {
             var li = document.createElement('li');
             li.className = 'fp-exp-slots__item';
-            var startVal = (slot && (slot.start || slot.start_iso)) || '';
-            var endVal = (slot && (slot.end || slot.end_iso)) || '';
+            // Preferisci sempre start_iso e end_iso se disponibili
+            var startVal = (slot && slot.start_iso) || (slot && slot.start) || '';
+            var endVal = (slot && slot.end_iso) || (slot && slot.end) || '';
             var label = (slot && slot.label) || '';
             li.textContent = label || 'Slot';
             li.setAttribute('data-start', String(startVal));
             li.setAttribute('data-end', String(endVal));
+            if (slot && slot.id) {
+                li.setAttribute('data-slot-id', String(slot.id));
+            }
             list.appendChild(li);
         });
         _slotsEl.innerHTML = '';

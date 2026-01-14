@@ -1,6 +1,8 @@
 # 📁 Organizzazione Plugin - FP Experiences
 
-Data riorganizzazione: 25 Ottobre 2025
+**Data riorganizzazione:** 25 Ottobre 2025  
+**Ultimo aggiornamento:** Novembre 2025  
+**Versione plugin:** 1.1.5
 
 ---
 

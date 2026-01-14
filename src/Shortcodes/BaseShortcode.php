@@ -9,10 +9,14 @@ use FP_Exp\Utils\Theme;
 use WP_Error;
 
 use function add_shortcode;
+use function apply_filters;
 use function esc_html;
-use function shortcode_atts;
+use function file_exists;
 use function header;
 use function headers_sent;
+use function load_textdomain;
+use function shortcode_atts;
+use function unload_textdomain;
 
 abstract class BaseShortcode
 {
@@ -41,6 +45,9 @@ abstract class BaseShortcode
      */
     public function render($atts = [], ?string $content = null, string $shortcode_tag = ''): string
     {
+        // Ensure textdomain is loaded for current language (WPML integration)
+        $this->ensure_textdomain_loaded();
+        
         $atts = is_array($atts) ? $atts : [];
         $attributes = shortcode_atts($this->defaults, $atts, $shortcode_tag ?: $this->tag);
 
@@ -101,5 +108,43 @@ abstract class BaseShortcode
         header('Pragma: no-cache');
 
         self::$sent_no_store_header = true;
+    }
+
+    /**
+     * Ensure the plugin textdomain is loaded for the current language.
+     * This is needed because WPML may change the language after the initial textdomain load.
+     */
+    private function ensure_textdomain_loaded(): void
+    {
+        $domain = 'fp-experiences';
+        
+        // Get WPML current language
+        $wpml_lang = apply_filters('wpml_current_language', null);
+        
+        if (!$wpml_lang || $wpml_lang === 'all' || $wpml_lang === 'it') {
+            return; // Italian is the source language, no translation needed
+        }
+        
+        // Unload and reload textdomain for the current language
+        unload_textdomain($domain);
+        
+        $plugin_dir = \WP_PLUGIN_DIR . '/FP-Experiences/languages';
+        
+        // Try short locale file first (fp-experiences-de.mo)
+        $short_mo = $plugin_dir . '/' . $domain . '-' . $wpml_lang . '.mo';
+        if (file_exists($short_mo)) {
+            load_textdomain($domain, $short_mo);
+            return;
+        }
+        
+        // Try full locale (fp-experiences-de_DE.mo)
+        $locale_map = ['en' => 'en_US', 'de' => 'de_DE', 'fr' => 'fr_FR', 'es' => 'es_ES'];
+        $full_locale = $locale_map[$wpml_lang] ?? null;
+        if ($full_locale) {
+            $full_mo = $plugin_dir . '/' . $domain . '-' . $full_locale . '.mo';
+            if (file_exists($full_mo)) {
+                load_textdomain($domain, $full_mo);
+            }
+        }
     }
 }

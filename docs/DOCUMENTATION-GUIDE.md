@@ -440,6 +440,7 @@ Grazie a tutti coloro che contribuiscono a migliorare la documentazione!
 
 ---
 
-**Versione guida:** 1.0  
-**Ultimo aggiornamento:** 7 Ottobre 2025  
+**Versione guida:** 1.1  
+**Ultimo aggiornamento:** Novembre 2025  
+**Versione plugin:** 1.1.5  
 **Maintainer:** Documentation Team

@@ -32,7 +32,8 @@ wp post meta update "$post_id" _fp_addons "$addons" --allow-root
 
 php -d detect_unicode=0 -r '
 require_once "/var/www/html/wp-load.php";
-\FP_Exp\Plugin::instance()->register_database_tables();
+// Use new DatabaseTables helper instead of Plugin::instance()
+\FP_Exp\Utils\DatabaseTables::register();
 $tz = wp_timezone();
 $tomorrow = new DateTimeImmutable("tomorrow", $tz);
 foreach (["10:00","15:00"] as $time) {
