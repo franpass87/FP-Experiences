@@ -692,6 +692,23 @@ msgstr "Erhöhen"
 msgid "Totale"
 msgstr "Gesamt"
 
+# Ticket quantity buttons (with placeholder)
+msgid "Riduci %s"
+msgstr "%s verringern"
+
+msgid "Aumenta %s"
+msgstr "%s erhöhen"
+
+msgid "Quantità %s"
+msgstr "Menge %s"
+
+# Duration
+msgid "%d minuti"
+msgstr "%d Minuten"
+
+msgid "%dh %02dm"
+msgstr "%dh %02dm"
+
 # Frontend - Experience Page
 msgid "Overview"
 msgstr "Überblick"

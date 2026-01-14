@@ -689,6 +689,23 @@ msgstr "Increase"
 msgid "Totale"
 msgstr "Total"
 
+# Ticket quantity buttons (with placeholder)
+msgid "Riduci %s"
+msgstr "Decrease %s"
+
+msgid "Aumenta %s"
+msgstr "Increase %s"
+
+msgid "Quantità %s"
+msgstr "Quantity %s"
+
+# Duration
+msgid "%d minuti"
+msgstr "%d minutes"
+
+msgid "%dh %02dm"
+msgstr "%dh %02dm"
+
 msgid "Procedi al pagamento"
 msgstr "Proceed to payment"
 
