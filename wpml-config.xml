@@ -35,47 +35,48 @@
          ============================================ -->
     <custom-fields>
         
-        <!-- ========== TRANSLATABLE FIELDS ========== -->
-        <!-- These fields contain user-facing text that should be translated -->
+        <!-- ========== TRANSLATABLE FIELDS (copy-once) ========== -->
+        <!-- These fields contain user-facing text - using copy-once so they can be 
+             edited independently per translation without risk of being overwritten -->
         
         <!-- Short description -->
-        <custom-field action="translate">_fp_short_desc</custom-field>
+        <custom-field action="copy-once">_fp_short_desc</custom-field>
         
         <!-- Highlights list -->
-        <custom-field action="translate">_fp_highlights</custom-field>
+        <custom-field action="copy-once">_fp_highlights</custom-field>
         
         <!-- Meeting point description (text) -->
-        <custom-field action="translate">_fp_meeting_point</custom-field>
+        <custom-field action="copy-once">_fp_meeting_point</custom-field>
         
         <!-- Inclusions list -->
-        <custom-field action="translate">_fp_inclusions</custom-field>
+        <custom-field action="copy-once">_fp_inclusions</custom-field>
         
         <!-- Exclusions list -->
-        <custom-field action="translate">_fp_exclusions</custom-field>
+        <custom-field action="copy-once">_fp_exclusions</custom-field>
         
         <!-- What to bring text -->
-        <custom-field action="translate">_fp_what_to_bring</custom-field>
+        <custom-field action="copy-once">_fp_what_to_bring</custom-field>
         
         <!-- Additional notes -->
-        <custom-field action="translate">_fp_notes</custom-field>
+        <custom-field action="copy-once">_fp_notes</custom-field>
         
         <!-- FAQ array (question/answer pairs) -->
-        <custom-field action="translate">_fp_faq</custom-field>
+        <custom-field action="copy-once">_fp_faq</custom-field>
         
         <!-- Rules for children -->
-        <custom-field action="translate">_fp_rules_children</custom-field>
+        <custom-field action="copy-once">_fp_rules_children</custom-field>
         
         <!-- Cancellation policy -->
-        <custom-field action="translate">_fp_policy_cancel</custom-field>
+        <custom-field action="copy-once">_fp_policy_cancel</custom-field>
         
         <!-- SEO Meta title -->
-        <custom-field action="translate">_fp_meta_title</custom-field>
+        <custom-field action="copy-once">_fp_meta_title</custom-field>
         
         <!-- SEO Meta description -->
-        <custom-field action="translate">_fp_meta_description</custom-field>
+        <custom-field action="copy-once">_fp_meta_description</custom-field>
         
         <!-- Manual schema markup -->
-        <custom-field action="translate">_fp_schema_manual</custom-field>
+        <custom-field action="copy-once">_fp_schema_manual</custom-field>
         
         <!-- Ticket types - copy-once allows independent editing per translation -->
         <custom-field action="copy-once">_fp_ticket_types</custom-field>
@@ -84,7 +85,7 @@
         <custom-field action="copy-once">_fp_addons</custom-field>
         
         <!-- Cognitive biases labels -->
-        <custom-field action="translate">_fp_cognitive_biases</custom-field>
+        <custom-field action="copy-once">_fp_cognitive_biases</custom-field>
         
         
         <!-- ========== COPY FIELDS ========== -->
@@ -143,9 +144,9 @@
         
         
         <!-- ========== MEETING POINT META ========== -->
-        <!-- Address should be translated, coordinates copied -->
-        <custom-field action="translate">_fp_mp_address</custom-field>
-        <custom-field action="translate">_fp_mp_instructions</custom-field>
+        <!-- Address should be editable per translation, coordinates copied -->
+        <custom-field action="copy-once">_fp_mp_address</custom-field>
+        <custom-field action="copy-once">_fp_mp_instructions</custom-field>
         <custom-field action="copy">_fp_mp_lat</custom-field>
         <custom-field action="copy">_fp_mp_lng</custom-field>
         <custom-field action="copy">_fp_mp_google_place_id</custom-field>
