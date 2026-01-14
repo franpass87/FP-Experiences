@@ -1567,3 +1567,31 @@ msgid "%dh"
 msgid_plural "%dh"
 msgstr[0] "%dh"
 msgstr[1] "%dh"
+
+# Frontend list/archive texts
+msgid "Leggi di più"
+msgstr "Read more"
+
+msgid "Mostra meno"
+msgstr "Show less"
+
+msgid "Dettagli"
+msgstr "Details"
+
+msgid "Da %s"
+msgstr "From %s"
+
+msgid "a persona"
+msgstr "per person"
+
+msgid "Prenota"
+msgstr "Book now"
+
+msgid "Esperienza"
+msgstr "Experience"
+
+msgid "Durata"
+msgstr "Duration"
+
+msgid "Lingue"
+msgstr "Languages"
