@@ -745,7 +745,8 @@ final class ListShortcode extends BaseShortcode
         }
 
         // Use simple __ instead of _n to avoid issues with .mo plural compilation
-        return sprintf(__('%d minutes', 'fp-experiences'), $minutes);
+        // Note: We use Italian 'minuti' as source string because that's our msgid in .po files
+        return sprintf(__('%d minuti', 'fp-experiences'), $minutes);
     }
 
     /**
