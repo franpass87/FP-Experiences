@@ -2,7 +2,7 @@
 /**
  * Plugin Name: FP Experiences
  * Description: Booking esperienze stile GetYourGuide — shortcode/Elementor only, carrello/checkout isolati, Brevo opzionale, Google Calendar opzionale, tracking marketing opzionale.
- * Version: 1.2.11
+ * Version: 1.2.12
  * Requires at least: 6.2
  * Requires PHP: 8.0
  * Author: Francesco Passeri
@@ -37,7 +37,7 @@ if (! defined('FP_EXP_PLUGIN_URL')) {
 }
 
 if (! defined('FP_EXP_VERSION')) {
-    define('FP_EXP_VERSION', '1.2.11');
+    define('FP_EXP_VERSION', '1.2.12');
 }
 
 // Compatibility check using new Bootstrap system (if available)

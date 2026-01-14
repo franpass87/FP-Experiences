@@ -737,14 +737,15 @@ final class ListShortcode extends BaseShortcode
         $remaining = $minutes % 60;
 
         if ($hours > 0 && $remaining > 0) {
-            return sprintf(__('%1$dh %2$dmin', 'fp-experiences'), $hours, $remaining);
+            return sprintf(__('%dh %02dm', 'fp-experiences'), $hours, $remaining);
         }
 
         if ($hours > 0) {
-            return sprintf(_n('%dh', '%dh', $hours, 'fp-experiences'), $hours);
+            return sprintf(__('%dh', 'fp-experiences'), $hours);
         }
 
-        return sprintf(_n('%d minute', '%d minutes', $minutes, 'fp-experiences'), $minutes);
+        // Use simple __ instead of _n to avoid issues with .mo plural compilation
+        return sprintf(__('%d minutes', 'fp-experiences'), $minutes);
     }
 
     /**
