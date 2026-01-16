@@ -2334,6 +2334,79 @@
         loadMonth(currentMonth);
     }
 
+    // Fix per assicurare che gli eventi della tastiera funzionino correttamente
+    // Questo risolve problemi con conflitti di altri plugin o con l'editor WordPress
+    // In particolare, risolve il problema delle tab ARIA che intercettano gli eventi
+    // FUNZIONA PER TUTTE LE TABLIST ARIA (Yoast, FP-Experiences, ecc.) - anche quelle create dinamicamente
+    function ensureKeyboardEventsWork() {
+        // Fix CRITICO: WordPress core, jQuery UI e altri script intercettano keydown sulle tab ARIA
+        // Questo può bloccare gli eventi anche quando il focus è su input/textarea
+        // Aggiungiamo un listener GLOBALE su document che ripristina eventi bloccati
+        // su QUALSIASI tablist ARIA nella pagina (anche quelle create dinamicamente)
+        
+        // Listener globale su document in bubble phase per intercettare eventi bloccati
+        // su QUALSIASI tablist ARIA nella pagina
+        document.addEventListener('keydown', (e) => {
+            const activeElement = document.activeElement;
+            
+            // Se il focus è su un input, textarea o elemento contenteditable
+            if (activeElement && (
+                activeElement.tagName === 'INPUT' || 
+                activeElement.tagName === 'TEXTAREA' || 
+                activeElement.isContentEditable === true ||
+                activeElement.contentEditable === 'true'
+            )) {
+                // Per caratteri normali (non tasti speciali)
+                if (e.key && e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
+                    // Se l'evento è stato preventDefault, significa che un altro listener
+                    // (probabilmente WordPress core, jQuery UI o plugin) lo ha bloccato
+                    if (e.defaultPrevented && e.target === activeElement) {
+                        // Salva il valore corrente e la posizione del cursore
+                        const valueBefore = activeElement.value || '';
+                        const selectionStart = activeElement.selectionStart !== null ? activeElement.selectionStart : valueBefore.length;
+                        const selectionEnd = activeElement.selectionEnd !== null ? activeElement.selectionEnd : valueBefore.length;
+                        
+                        // Aspetta un breve momento per vedere se il valore è cambiato
+                        setTimeout(() => {
+                            const valueAfter = activeElement.value || '';
+                            
+                            // Se il valore non è cambiato, significa che l'evento è stato bloccato
+                            // Ripristinalo impostando direttamente il valore
+                            if (valueAfter === valueBefore) {
+                                if (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA') {
+                                    // Per input e textarea, imposta direttamente il valore
+                                    const newValue = valueBefore.slice(0, selectionStart) + e.key + valueBefore.slice(selectionEnd);
+                                    activeElement.value = newValue;
+                                    
+                                    // Ripristina la posizione del cursore
+                                    const newPosition = selectionStart + 1;
+                                    activeElement.setSelectionRange(newPosition, newPosition);
+                                    
+                                    // Dispatch evento input per notificare il cambio
+                                    activeElement.dispatchEvent(new Event('input', { bubbles: true }));
+                                    activeElement.dispatchEvent(new Event('change', { bubbles: true }));
+                                } else if (activeElement.isContentEditable) {
+                                    // Per elementi contenteditable, inserisci il testo
+                                    const selection = window.getSelection();
+                                    if (selection && selection.rangeCount > 0) {
+                                        const range = selection.getRangeAt(0);
+                                        range.deleteContents();
+                                        const textNode = document.createTextNode(e.key);
+                                        range.insertNode(textNode);
+                                        range.setStartAfter(textNode);
+                                        range.collapse(true);
+                                        selection.removeAllRanges();
+                                        selection.addRange(range);
+                                    }
+                                }
+                            }
+                        }, 10); // Breve timeout per verificare se il valore è cambiato
+                    }
+                }
+            }
+        }, { capture: false }); // Bubble phase per intercettare DOPO che l'evento ha raggiunto l'input
+    }
+
     ready(() => {
         const html = document.documentElement;
         if (html) {
@@ -2343,6 +2416,9 @@
         if (document.body) {
             document.body.classList.add('fp-exp-admin-shell');
         }
+
+        // Inizializza il fix per gli eventi della tastiera
+        ensureKeyboardEventsWork();
 
         const root = document.querySelector('[data-fp-exp-admin]');
         if (root) {
