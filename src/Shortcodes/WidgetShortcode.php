@@ -235,6 +235,10 @@ final class WidgetShortcode extends BaseShortcode
 
         $modified = get_post_modified_time('U', true, $post);
 
+        // Calculate price_from using the same method as ExperienceShortcode
+        $price_from = $this->calculate_price_from_meta($experience_id);
+        $price_from_display = null !== $price_from && $price_from > 0 ? number_format_i18n($price_from, 0) : '';
+
         $context = [
             'theme' => $theme,
             'scope_class' => $scope,
@@ -249,6 +253,8 @@ final class WidgetShortcode extends BaseShortcode
                 'duration' => $duration,
                 'languages' => $languages,
                 'language_badges' => $language_badges,
+                'price_from' => $price_from,
+                'price_from_display' => $price_from_display,
             ],
             'tickets' => $tickets,
             'addons' => $addons,
@@ -424,13 +430,20 @@ final class WidgetShortcode extends BaseShortcode
             $price = isset($ticket['price']) ? (float) $ticket['price'] : 0.0;
             $cap = isset($ticket['cap']) ? absint($ticket['cap']) : null;
 
-            $tickets[] = [
+            $ticket_data = [
                 'slug' => $slug,
                 'label' => sanitize_text_field((string) ($ticket['label'] ?? '')),
                 'description' => sanitize_text_field((string) ($ticket['description'] ?? '')),
                 'price' => $price,
                 'cap' => $cap,
             ];
+            
+            // Include use_as_price_from flag if present
+            if (isset($ticket['use_as_price_from']) && !empty($ticket['use_as_price_from'])) {
+                $ticket_data['use_as_price_from'] = true;
+            }
+            
+            $tickets[] = $ticket_data;
         }
 
         return $tickets;
@@ -693,5 +706,126 @@ final class WidgetShortcode extends BaseShortcode
         } catch (\Throwable $e) {
             return null;
         }
+    }
+
+    /**
+     * Calculate price from meta, using the same logic as ExperienceShortcode.
+     * This ensures consistency across all shortcodes.
+     *
+     * @param int $experience_id
+     * @return float|null
+     */
+    private function calculate_price_from_meta(int $experience_id): ?float
+    {
+        // Try to read from _fp_ticket_types first (legacy)
+        $tickets = get_post_meta($experience_id, '_fp_ticket_types', true);
+        
+        // If _fp_ticket_types doesn't have the flag, try reading from _fp_exp_pricing
+        $pricing_meta = null;
+        if (!is_array($tickets) || empty($tickets)) {
+            $pricing_meta = get_post_meta($experience_id, '_fp_exp_pricing', true);
+            if (is_array($pricing_meta) && isset($pricing_meta['tickets']) && is_array($pricing_meta['tickets'])) {
+                $tickets = $pricing_meta['tickets'];
+            }
+        }
+        
+        // Also check if tickets from _fp_ticket_types don't have use_as_price_from flag
+        // If so, try to get it from _fp_exp_pricing
+        $has_primary_flag = false;
+        if (is_array($tickets) && !empty($tickets)) {
+            foreach ($tickets as $ticket) {
+                if (is_array($ticket) && isset($ticket['use_as_price_from'])) {
+                    $has_primary_flag = true;
+                    break;
+                }
+            }
+        }
+        
+        // If no flag found in _fp_ticket_types, try _fp_exp_pricing
+        if (!$has_primary_flag && $pricing_meta === null) {
+            $pricing_meta = get_post_meta($experience_id, '_fp_exp_pricing', true);
+            if (is_array($pricing_meta) && isset($pricing_meta['tickets']) && is_array($pricing_meta['tickets'])) {
+                // Merge tickets from _fp_exp_pricing, prioritizing those with use_as_price_from
+                $pricing_tickets = $pricing_meta['tickets'];
+                if (is_array($tickets) && !empty($tickets)) {
+                    // Update existing tickets with flag from pricing meta
+                    foreach ($pricing_tickets as $pricing_ticket) {
+                        if (!is_array($pricing_ticket)) {
+                            continue;
+                        }
+                        // Find matching ticket by label or slug
+                        foreach ($tickets as $index => $ticket) {
+                            if (!is_array($ticket)) {
+                                continue;
+                            }
+                            $match = false;
+                            if (isset($pricing_ticket['label']) && isset($ticket['label']) && $pricing_ticket['label'] === $ticket['label']) {
+                                $match = true;
+                            } elseif (isset($pricing_ticket['slug']) && isset($ticket['slug']) && $pricing_ticket['slug'] === $ticket['slug']) {
+                                $match = true;
+                            }
+                            if ($match && isset($pricing_ticket['use_as_price_from'])) {
+                                $tickets[$index]['use_as_price_from'] = $pricing_ticket['use_as_price_from'];
+                                $has_primary_flag = true;
+                            }
+                        }
+                    }
+                } else {
+                    // Use tickets from pricing meta directly
+                    $tickets = $pricing_tickets;
+                }
+            }
+        }
+        
+        if (! is_array($tickets) || empty($tickets)) {
+            return null;
+        }
+
+        // First, look for a ticket marked as "use_as_price_from"
+        // Check both boolean true and string "1" for compatibility
+        foreach ($tickets as $ticket) {
+            if (! is_array($ticket) || ! isset($ticket['price'])) {
+                continue;
+            }
+
+            // Check if this ticket is marked as primary price display
+            // WordPress may serialize boolean as string, so check multiple formats
+            $use_as_price_from = $ticket['use_as_price_from'] ?? false;
+            $is_primary = false;
+            
+            if (isset($ticket['use_as_price_from'])) {
+                // Check various formats that WordPress might use
+                if ($use_as_price_from === true 
+                    || $use_as_price_from === '1' 
+                    || $use_as_price_from === 1
+                    || (is_string($use_as_price_from) && strtolower(trim($use_as_price_from)) === 'true')
+                    || (is_string($use_as_price_from) && strtolower(trim($use_as_price_from)) === 'yes')
+                ) {
+                    $is_primary = true;
+                }
+            }
+
+            if ($is_primary) {
+                $price = (float) $ticket['price'];
+                if ($price > 0) {
+                    return $price;
+                }
+            }
+        }
+
+        // If no ticket is marked, fall back to the lowest price
+        $min_price = null;
+        foreach ($tickets as $ticket) {
+            if (! is_array($ticket) || ! isset($ticket['price'])) {
+                continue;
+            }
+
+            $price = (float) $ticket['price'];
+            if ($price > 0 && (null === $min_price || $price < $min_price)) {
+                $min_price = $price;
+            }
+        }
+
+        return $min_price;
     }
 }
