@@ -1022,18 +1022,21 @@ final class DetailsMetaBoxHandler extends BaseMetaBoxHandler
         // So we need to check if the field exists, and if not, treat it as empty array
         $cognitive_biases = [];
         if (isset($raw['cognitive_biases']) && is_array($raw['cognitive_biases'])) {
-            $cognitive_biases = array_values(array_filter(array_map('sanitize_key', $raw['cognitive_biases'])));
+            // Sanitize and filter out empty values
+            foreach ($raw['cognitive_biases'] as $bias) {
+                $bias = sanitize_key((string) $bias);
+                if ($bias !== '' && $bias !== null) {
+                    $cognitive_biases[] = $bias;
+                }
+            }
         }
         $cognitive_biases = array_values(array_unique($cognitive_biases));
         $cognitive_biases = array_slice($cognitive_biases, 0, Helpers::cognitive_bias_max_selection());
+        
         // Save cognitive biases directly (the key is already prefixed with _fp in the meta key)
         // Note: get_meta_key() returns '_fp', so the full key will be '_fp_cognitive_biases'
-        if (!empty($cognitive_biases)) {
-            update_post_meta($post_id, '_fp_cognitive_biases', $cognitive_biases);
-        } else {
-            // Clear previous selections by deleting the meta
-            delete_post_meta($post_id, '_fp_cognitive_biases');
-        }
+        // Always save, even if empty array (to clear previous selections when all are unchecked)
+        update_post_meta($post_id, '_fp_cognitive_biases', $cognitive_biases);
 
         // Taxonomies (categories, tags, difficulty, age_restrictions, location)
         $this->save_taxonomy_terms($post_id, $raw['categories'] ?? [], 'fp_exp_category');

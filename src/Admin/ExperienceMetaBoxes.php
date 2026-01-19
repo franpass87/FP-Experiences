@@ -864,6 +864,11 @@ final class ExperienceMetaBoxes implements HookableInterface
 
         $raw = wp_unslash($_POST);
 
+        // Debug: log raw POST data for cognitive biases (temporaneo)
+        if (defined('WP_DEBUG') && WP_DEBUG && isset($raw['fp_exp_details']['cognitive_biases'])) {
+            error_log('[FP-EXP-DEBUG] Cognitive biases in POST: ' . print_r($raw['fp_exp_details']['cognitive_biases'], true));
+        }
+
         // Protezione contro output non intenzionale che causa corruzione dati 'Array'
         ob_start();
 
