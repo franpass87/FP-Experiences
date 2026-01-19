@@ -101,6 +101,10 @@ final class PolicyMetaBoxHandler extends BaseMetaBoxHandler
         $faqs = [];
 
         if (is_array($faqs_raw)) {
+            // Usa array_values per assicurarsi che gli indici siano sequenziali
+            // Questo risolve il problema quando gli indici non sono sequenziali (es. 0, 2, 3)
+            $faqs_raw = array_values($faqs_raw);
+            
             foreach ($faqs_raw as $faq) {
                 if (!is_array($faq)) {
                     continue;
@@ -170,7 +174,7 @@ final class PolicyMetaBoxHandler extends BaseMetaBoxHandler
         $answer = $faq['answer'] ?? '';
         $field_name = $this->field_name_attribute('faqs', $is_template);
         ?>
-        <div class="fp-exp-repeater__item" <?php echo $is_template ? 'data-template="faq"' : ''; ?>>
+        <div class="fp-exp-repeater__item" data-repeater-item <?php echo $is_template ? 'data-template="faq"' : ''; ?>>
             <div class="fp-exp-repeater__item-header">
                 <span class="fp-exp-repeater__item-number"><?php echo esc_html($is_template ? '#' : ((int) $index + 1)); ?></span>
                 <button type="button" class="fp-exp-repeater__item-remove" aria-label="<?php esc_attr_e('Rimuovi FAQ', 'fp-experiences'); ?>">

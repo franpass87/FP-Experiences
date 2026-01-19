@@ -628,14 +628,44 @@
                 });
             }
 
+            function reindexItems() {
+                // Usa la classe come selettore se data-repeater-item non esiste
+                const items = Array.from(itemsContainer.querySelectorAll('[data-repeater-item], .fp-exp-repeater__item'));
+                items.forEach((item, newIndex) => {
+                    // Aggiorna tutti i campi name con il nuovo indice
+                    item.querySelectorAll('[name]').forEach((field) => {
+                        const name = field.getAttribute('name');
+                        if (!name) {
+                            return;
+                        }
+                        // Sostituisce l'indice vecchio con quello nuovo nel name
+                        // Esempio: fp_exp_policy[faqs][2][question] -> fp_exp_policy[faqs][0][question]
+                        // Gestisce sia fp_exp_policy[faqs][index][field] che altri pattern
+                        const newName = name.replace(/\[(\d+)\](\[question\]|\[answer\])/g, `[${newIndex}]$2`);
+                        if (newName !== name) {
+                            field.setAttribute('name', newName);
+                        }
+                    });
+                    // Aggiorna il numero visualizzato
+                    const numberSpan = item.querySelector('.fp-exp-repeater__item-number');
+                    if (numberSpan) {
+                        numberSpan.textContent = newIndex + 1;
+                    }
+                });
+                // Aggiorna il nextIndex per le nuove aggiunte
+                repeater.dataset.repeaterNextIndex = String(items.length);
+            }
+
             function bindRemoveButtons(scope) {
                 Array.from(scope.querySelectorAll('[data-repeater-remove]')).forEach((button) => {
                     button.addEventListener('click', () => {
-                        const row = button.closest('[data-repeater-item]');
+                        // Cerca sia l'attributo data-repeater-item che la classe
+                        const row = button.closest('[data-repeater-item], .fp-exp-repeater__item');
                         if (!row) {
                             return;
                         }
                         row.remove();
+                        reindexItems();
                         updateHint();
                     });
                 });
@@ -645,7 +675,7 @@
                 if (!hint || repeater.dataset.repeater !== 'tickets') {
                     return;
                 }
-                const rows = Array.from(itemsContainer.querySelectorAll('[data-repeater-item]'));
+                const rows = Array.from(itemsContainer.querySelectorAll('[data-repeater-item], .fp-exp-repeater__item'));
                 const hasValid = rows.some((row) => {
                     const label = row.querySelector('input[name*="[label]"]');
                     const price = row.querySelector('input[name*="[price]"]');
