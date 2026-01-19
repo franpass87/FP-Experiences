@@ -10,7 +10,7 @@ use FP_Exp\Admin\ExperienceMetaBoxes\Traits\MetaBoxHelpers;
 use function absint;
 use function esc_attr;
 use function esc_html;
-use function get_woocommerce_currency_symbol;
+use function function_exists;
 use function sanitize_key;
 use function sanitize_text_field;
 
@@ -29,6 +29,19 @@ final class PricingMetaBoxHandler extends BaseMetaBoxHandler
     protected function get_meta_key(): string
     {
         return '_fp'; // Base prefix for meta keys
+    }
+
+    /**
+     * Get currency symbol with fallback if WooCommerce is not available.
+     */
+    private function get_currency_symbol(): string
+    {
+        if (function_exists('get_woocommerce_currency_symbol')) {
+            return get_woocommerce_currency_symbol();
+        }
+        
+        // Fallback to Euro if WooCommerce is not available
+        return '€';
     }
 
     protected function render_tab_content(array $data, int $post_id): void
@@ -57,7 +70,7 @@ final class PricingMetaBoxHandler extends BaseMetaBoxHandler
                         <?php 
                         printf(
                             esc_html__('Prezzo base (%s)', 'fp-experiences'),
-                            esc_html(get_woocommerce_currency_symbol())
+                            esc_html($this->get_currency_symbol())
                         ); 
                         ?>
                     </label>
@@ -82,14 +95,16 @@ final class PricingMetaBoxHandler extends BaseMetaBoxHandler
                     <select id="fp-exp-tax-class" name="fp_exp_pricing[tax_class]">
                         <option value=""><?php esc_html_e('Standard', 'fp-experiences'); ?></option>
                         <?php
-                        $tax_classes = \WC_Tax::get_tax_classes();
-                        foreach ($tax_classes as $class) {
-                            $class_slug = sanitize_title($class);
-                            ?>
-                            <option value="<?php echo esc_attr($class_slug); ?>" <?php selected($tax_class, $class_slug, true); ?>>
-                                <?php echo esc_html($class); ?>
-                            </option>
-                            <?php
+                        if (class_exists('\WC_Tax')) {
+                            $tax_classes = \WC_Tax::get_tax_classes();
+                            foreach ($tax_classes as $class) {
+                                $class_slug = sanitize_title($class);
+                                ?>
+                                <option value="<?php echo esc_attr($class_slug); ?>" <?php selected($tax_class, $class_slug, true); ?>>
+                                    <?php echo esc_html($class); ?>
+                                </option>
+                                <?php
+                            }
                         }
                         ?>
                     </select>
@@ -152,6 +167,7 @@ final class PricingMetaBoxHandler extends BaseMetaBoxHandler
         $capacity = $ticket['capacity'] ?? 0;
         $min = $ticket['min'] ?? 0;
         $max = $ticket['max'] ?? 0;
+        $use_as_price_from = isset($ticket['use_as_price_from']) && !empty($ticket['use_as_price_from']);
         ?>
         <div class="fp-exp-repeater__item" data-repeater-item>
             <div class="fp-exp-repeater__item-header">
@@ -184,7 +200,7 @@ final class PricingMetaBoxHandler extends BaseMetaBoxHandler
                             <?php 
                             printf(
                                 esc_html__('Prezzo (%s)', 'fp-experiences'),
-                                esc_html(get_woocommerce_currency_symbol())
+                                esc_html($this->get_currency_symbol())
                             ); 
                             ?>
                         </label>
@@ -250,6 +266,23 @@ final class PricingMetaBoxHandler extends BaseMetaBoxHandler
                         />
                     </div>
                 </div>
+
+                <div class="fp-exp-field">
+                    <label class="fp-exp-field__label">
+                        <input
+                            type="checkbox"
+                            name="<?php echo esc_attr($field_name . '[' . $index . '][use_as_price_from]'); ?>"
+                            value="1"
+                            <?php checked($use_as_price_from, true); ?>
+                            <?php echo $is_template ? 'data-repeater-field="use_as_price_from"' : ''; ?>
+                        />
+                        <span><?php esc_html_e('Usa come prezzo "a partire da"', 'fp-experiences'); ?></span>
+                        <?php $this->render_tooltip('fp-exp-ticket-primary-help-' . $index, esc_html__('Seleziona questo biglietto come riferimento per il prezzo "a partire da" mostrato nelle liste e nei widget. Se nessun biglietto è selezionato, verrà usato il prezzo più basso.', 'fp-experiences')); ?>
+                    </label>
+                    <p class="fp-exp-field__description" id="fp-exp-ticket-primary-help-<?php echo esc_attr($index); ?>">
+                        <?php esc_html_e('Utile per evitare che il prezzo bambino venga mostrato come principale quando è più basso del prezzo adulto.', 'fp-experiences'); ?>
+                    </p>
+                </div>
             </div>
         </div>
         <?php
@@ -271,7 +304,7 @@ final class PricingMetaBoxHandler extends BaseMetaBoxHandler
                         <?php 
                         printf(
                             esc_html__('Prezzo gruppo (%s)', 'fp-experiences'),
-                            esc_html(get_woocommerce_currency_symbol())
+                            esc_html($this->get_currency_symbol())
                         ); 
                         ?>
                     </label>
@@ -380,7 +413,7 @@ final class PricingMetaBoxHandler extends BaseMetaBoxHandler
                             <?php 
                             printf(
                                 esc_html__('Prezzo (%s)', 'fp-experiences'),
-                                esc_html(get_woocommerce_currency_symbol())
+                                esc_html($this->get_currency_symbol())
                             ); 
                             ?>
                         </label>
@@ -439,13 +472,14 @@ final class PricingMetaBoxHandler extends BaseMetaBoxHandler
                 $capacity = isset($ticket['capacity']) ? absint((string) $ticket['capacity']) : 0;
                 $min = isset($ticket['min']) ? absint((string) $ticket['min']) : 0;
                 $max = isset($ticket['max']) ? absint((string) $ticket['max']) : 0;
+                $use_as_price_from = isset($ticket['use_as_price_from']) && !empty($ticket['use_as_price_from']);
 
                 if ($label === '') {
                     continue;
                 }
 
                 $slug = sanitize_key($label);
-                $tickets[] = [
+                $ticket_data = [
                     'slug' => $slug,
                     'label' => $label,
                     'price' => $price,
@@ -453,6 +487,13 @@ final class PricingMetaBoxHandler extends BaseMetaBoxHandler
                     'min' => $min,
                     'max' => $max,
                 ];
+                
+                // Add use_as_price_from if checked
+                if ($use_as_price_from) {
+                    $ticket_data['use_as_price_from'] = true;
+                }
+                
+                $tickets[] = $ticket_data;
             }
         }
 

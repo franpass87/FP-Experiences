@@ -90,12 +90,14 @@ final class ExtrasMetaBoxHandler extends BaseMetaBoxHandler
 
     protected function save_meta_data(int $post_id, array $raw): void
     {
-        // Convert textarea lines to arrays (matching existing code)
+        // Convert textarea lines to arrays (for multi-line fields)
         $highlights = isset($raw['highlights']) ? $this->lines_to_array($raw['highlights']) : [];
         $inclusions = isset($raw['inclusions']) ? $this->lines_to_array($raw['inclusions']) : [];
         $exclusions = isset($raw['exclusions']) ? $this->lines_to_array($raw['exclusions']) : [];
-        $what_to_bring = isset($raw['what_to_bring']) ? $this->lines_to_array($raw['what_to_bring']) : [];
-        $notes = isset($raw['notes']) ? $this->lines_to_array($raw['notes']) : [];
+        
+        // Save as simple strings (not arrays) for free text fields
+        $what_to_bring = isset($raw['what_to_bring']) ? $this->sanitize_textarea((string) $raw['what_to_bring']) : '';
+        $notes = isset($raw['notes']) ? $this->sanitize_textarea((string) $raw['notes']) : '';
 
         $this->update_or_delete_meta($post_id, 'highlights', $highlights);
         $this->update_or_delete_meta($post_id, 'inclusions', $inclusions);
@@ -106,19 +108,34 @@ final class ExtrasMetaBoxHandler extends BaseMetaBoxHandler
 
     protected function get_meta_data(int $post_id): array
     {
-        // Get meta values and convert arrays to lines (matching existing code)
+        // Get meta values and convert arrays to lines (for multi-line fields)
         $highlights = get_post_meta($post_id, '_fp_highlights', true);
         $inclusions = get_post_meta($post_id, '_fp_inclusions', true);
         $exclusions = get_post_meta($post_id, '_fp_exclusions', true);
+        
+        // Get as simple strings (handle legacy array format if present)
         $what_to_bring = get_post_meta($post_id, '_fp_what_to_bring', true);
         $notes = get_post_meta($post_id, '_fp_notes', true);
+        
+        // Convert from array to string if legacy data exists
+        if (is_array($what_to_bring)) {
+            $what_to_bring = $this->array_to_lines($what_to_bring);
+        } elseif (!is_string($what_to_bring)) {
+            $what_to_bring = '';
+        }
+        
+        if (is_array($notes)) {
+            $notes = $this->array_to_lines($notes);
+        } elseif (!is_string($notes)) {
+            $notes = '';
+        }
 
         return [
             'highlights' => $this->array_to_lines($highlights),
             'inclusions' => $this->array_to_lines($inclusions),
             'exclusions' => $this->array_to_lines($exclusions),
-            'what_to_bring' => $this->array_to_lines($what_to_bring),
-            'notes' => $this->array_to_lines($notes),
+            'what_to_bring' => $what_to_bring,
+            'notes' => $notes,
         ];
     }
 }
