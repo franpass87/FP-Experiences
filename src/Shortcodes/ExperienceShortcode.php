@@ -488,7 +488,66 @@ final class ExperienceShortcode extends BaseShortcode
 
     private function calculate_price_from_meta(int $experience_id): ?float
     {
+        // Try to read from _fp_ticket_types first (legacy)
         $tickets = get_post_meta($experience_id, '_fp_ticket_types', true);
+        
+        // If _fp_ticket_types doesn't have the flag, try reading from _fp_exp_pricing
+        $pricing_meta = null;
+        if (!is_array($tickets) || empty($tickets)) {
+            $pricing_meta = get_post_meta($experience_id, '_fp_exp_pricing', true);
+            if (is_array($pricing_meta) && isset($pricing_meta['tickets']) && is_array($pricing_meta['tickets'])) {
+                $tickets = $pricing_meta['tickets'];
+            }
+        }
+        
+        // Also check if tickets from _fp_ticket_types don't have use_as_price_from flag
+        // If so, try to get it from _fp_exp_pricing
+        $has_primary_flag = false;
+        if (is_array($tickets) && !empty($tickets)) {
+            foreach ($tickets as $ticket) {
+                if (is_array($ticket) && isset($ticket['use_as_price_from'])) {
+                    $has_primary_flag = true;
+                    break;
+                }
+            }
+        }
+        
+        // If no flag found in _fp_ticket_types, try _fp_exp_pricing
+        if (!$has_primary_flag && $pricing_meta === null) {
+            $pricing_meta = get_post_meta($experience_id, '_fp_exp_pricing', true);
+            if (is_array($pricing_meta) && isset($pricing_meta['tickets']) && is_array($pricing_meta['tickets'])) {
+                // Merge tickets from _fp_exp_pricing, prioritizing those with use_as_price_from
+                $pricing_tickets = $pricing_meta['tickets'];
+                if (is_array($tickets) && !empty($tickets)) {
+                    // Update existing tickets with flag from pricing meta
+                    foreach ($pricing_tickets as $pricing_ticket) {
+                        if (!is_array($pricing_ticket)) {
+                            continue;
+                        }
+                        // Find matching ticket by label or slug
+                        foreach ($tickets as $index => $ticket) {
+                            if (!is_array($ticket)) {
+                                continue;
+                            }
+                            $match = false;
+                            if (isset($pricing_ticket['label']) && isset($ticket['label']) && $pricing_ticket['label'] === $ticket['label']) {
+                                $match = true;
+                            } elseif (isset($pricing_ticket['slug']) && isset($ticket['slug']) && $pricing_ticket['slug'] === $ticket['slug']) {
+                                $match = true;
+                            }
+                            if ($match && isset($pricing_ticket['use_as_price_from'])) {
+                                $tickets[$index]['use_as_price_from'] = $pricing_ticket['use_as_price_from'];
+                                $has_primary_flag = true;
+                            }
+                        }
+                    }
+                } else {
+                    // Use tickets from pricing meta directly
+                    $tickets = $pricing_tickets;
+                }
+            }
+        }
+        
         if (! is_array($tickets) || empty($tickets)) {
             return null;
         }
