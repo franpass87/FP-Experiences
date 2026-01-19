@@ -40,6 +40,11 @@ if (! defined('FP_EXP_VERSION')) {
     define('FP_EXP_VERSION', '1.2.15');
 }
 
+// Force OPcache invalidation on version update
+if (function_exists('opcache_invalidate') && defined('FP_EXP_PLUGIN_FILE')) {
+    opcache_invalidate(FP_EXP_PLUGIN_FILE, true);
+}
+
 // Compatibility check using new Bootstrap system (if available)
 $compatibility_check = __DIR__ . '/src/Core/Bootstrap/CompatibilityCheck.php';
 if (is_readable($compatibility_check)) {
