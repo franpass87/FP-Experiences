@@ -291,8 +291,13 @@ final class ExperienceShortcode extends BaseShortcode
                 }
                 $cid = isset($entry['id']) ? sanitize_key((string) $entry['id']) : '';
                 $clabel = isset($entry['label']) ? sanitize_text_field((string) $entry['label']) : '';
-                if ('' === $cid || '' === $clabel) {
+                // Accetta badge se ha almeno il label (id può essere vuoto per badge nuovi)
+                if ('' === $clabel) {
                     continue;
+                }
+                // Se id è vuoto, genera uno slug dal label
+                if ('' === $cid) {
+                    $cid = sanitize_key($clabel);
                 }
                 $cdesc = isset($entry['description']) ? sanitize_text_field((string) $entry['description']) : '';
                 $experience_badges[] = [
