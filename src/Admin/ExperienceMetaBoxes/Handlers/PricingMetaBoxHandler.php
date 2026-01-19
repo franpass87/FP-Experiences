@@ -559,22 +559,27 @@ final class PricingMetaBoxHandler extends BaseMetaBoxHandler
         $this->update_or_delete_meta($post_id, 'exp_pricing', !empty($tickets) || !empty($group_data) || !empty($addons) ? $pricing_data : null);
 
         // Legacy support: also save to _fp_ticket_types and _fp_addons for backward compatibility
+        // IMPORTANT: This must include ALL fields, especially use_as_price_from, for calculate_price_from_meta to work
         if (!empty($tickets)) {
             $legacy_tickets = [];
             foreach ($tickets as $ticket) {
                 $legacy_ticket = [
-                    'slug' => $ticket['slug'],
-                    'label' => $ticket['label'],
-                    'price' => $ticket['price'],
-                    'capacity' => $ticket['capacity'],
+                    'slug' => $ticket['slug'] ?? '',
+                    'label' => $ticket['label'] ?? '',
+                    'price' => $ticket['price'] ?? 0,
+                    'capacity' => $ticket['capacity'] ?? 0,
+                    'min' => $ticket['min'] ?? 0,
+                    'max' => $ticket['max'] ?? 0,
                 ];
-                // Include use_as_price_from flag for legacy compatibility
-                if (isset($ticket['use_as_price_from'])) {
-                    $legacy_ticket['use_as_price_from'] = $ticket['use_as_price_from'];
+                // CRITICAL: Include use_as_price_from flag for legacy compatibility
+                // This is used by calculate_price_from_meta() which reads from _fp_ticket_types
+                if (isset($ticket['use_as_price_from']) && $ticket['use_as_price_from']) {
+                    $legacy_ticket['use_as_price_from'] = true;
                 }
                 $legacy_tickets[] = $legacy_ticket;
             }
-            $this->update_or_delete_meta($post_id, 'ticket_types', $legacy_tickets);
+            // Use update_post_meta directly to ensure it's saved correctly
+            update_post_meta($post_id, '_fp_ticket_types', $legacy_tickets);
         } else {
             delete_post_meta($post_id, '_fp_ticket_types');
         }
