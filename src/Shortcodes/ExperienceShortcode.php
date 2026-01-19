@@ -493,24 +493,53 @@ final class ExperienceShortcode extends BaseShortcode
             return null;
         }
 
+        // Debug: log tickets data (only if WP_DEBUG is enabled)
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('[FP-EXP] calculate_price_from_meta - Tickets: ' . print_r($tickets, true));
+        }
+
         // First, look for a ticket marked as "use_as_price_from"
         // Check both boolean true and string "1" for compatibility
-        foreach ($tickets as $ticket) {
+        foreach ($tickets as $index => $ticket) {
             if (! is_array($ticket) || ! isset($ticket['price'])) {
                 continue;
             }
 
             // Check if this ticket is marked as primary price display
-            $is_primary = isset($ticket['use_as_price_from']) && (
-                $ticket['use_as_price_from'] === true 
-                || $ticket['use_as_price_from'] === '1' 
-                || $ticket['use_as_price_from'] === 1
-                || (is_string($ticket['use_as_price_from']) && strtolower($ticket['use_as_price_from']) === 'true')
-            );
+            // WordPress may serialize boolean as string, so check multiple formats
+            $use_as_price_from = $ticket['use_as_price_from'] ?? false;
+            $is_primary = false;
+            
+            if (isset($ticket['use_as_price_from'])) {
+                // Check various formats that WordPress might use
+                if ($use_as_price_from === true 
+                    || $use_as_price_from === '1' 
+                    || $use_as_price_from === 1
+                    || (is_string($use_as_price_from) && strtolower(trim($use_as_price_from)) === 'true')
+                    || (is_string($use_as_price_from) && strtolower(trim($use_as_price_from)) === 'yes')
+                ) {
+                    $is_primary = true;
+                }
+            }
+
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log(sprintf(
+                    '[FP-EXP] Ticket %d: label=%s, price=%s, use_as_price_from=%s (type: %s), is_primary=%s',
+                    $index,
+                    $ticket['label'] ?? 'N/A',
+                    $ticket['price'] ?? 'N/A',
+                    var_export($use_as_price_from, true),
+                    gettype($use_as_price_from),
+                    $is_primary ? 'YES' : 'NO'
+                ));
+            }
 
             if ($is_primary) {
                 $price = (float) $ticket['price'];
                 if ($price > 0) {
+                    if (defined('WP_DEBUG') && WP_DEBUG) {
+                        error_log(sprintf('[FP-EXP] Using primary ticket price: %s (from ticket: %s)', $price, $ticket['label'] ?? 'N/A'));
+                    }
                     return $price;
                 }
             }
@@ -518,6 +547,7 @@ final class ExperienceShortcode extends BaseShortcode
 
         // If no ticket is marked, fall back to the lowest price
         $min_price = null;
+        $min_ticket_label = '';
         foreach ($tickets as $ticket) {
             if (! is_array($ticket) || ! isset($ticket['price'])) {
                 continue;
@@ -526,7 +556,12 @@ final class ExperienceShortcode extends BaseShortcode
             $price = (float) $ticket['price'];
             if ($price > 0 && (null === $min_price || $price < $min_price)) {
                 $min_price = $price;
+                $min_ticket_label = $ticket['label'] ?? 'N/A';
             }
+        }
+
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log(sprintf('[FP-EXP] No primary ticket found, using min price: %s (from ticket: %s)', $min_price ?? 'N/A', $min_ticket_label));
         }
 
         return $min_price;
