@@ -272,7 +272,65 @@ final class SimpleArchiveShortcode extends BaseShortcode
                 $tickets = [];
             }
         }
-        if (! is_array($tickets) || empty($tickets)) {
+        
+        // If _fp_ticket_types doesn't have the flag, try reading from _fp_exp_pricing
+        $pricing_meta = null;
+        if (empty($tickets)) {
+            $pricing_meta = get_post_meta($experience_id, '_fp_exp_pricing', true);
+            if (is_array($pricing_meta) && isset($pricing_meta['tickets']) && is_array($pricing_meta['tickets'])) {
+                $tickets = $pricing_meta['tickets'];
+            }
+        }
+        
+        // Also check if tickets from _fp_ticket_types don't have use_as_price_from flag
+        // If so, try to get it from _fp_exp_pricing
+        $has_primary_flag = false;
+        if (!empty($tickets)) {
+            foreach ($tickets as $ticket) {
+                if (is_array($ticket) && isset($ticket['use_as_price_from'])) {
+                    $has_primary_flag = true;
+                    break;
+                }
+            }
+        }
+        
+        // If no flag found in _fp_ticket_types, try _fp_exp_pricing
+        if (!$has_primary_flag && $pricing_meta === null) {
+            $pricing_meta = get_post_meta($experience_id, '_fp_exp_pricing', true);
+            if (is_array($pricing_meta) && isset($pricing_meta['tickets']) && is_array($pricing_meta['tickets'])) {
+                // Merge tickets from _fp_exp_pricing, prioritizing those with use_as_price_from
+                $pricing_tickets = $pricing_meta['tickets'];
+                if (!empty($tickets)) {
+                    // Update existing tickets with flag from pricing meta
+                    foreach ($pricing_tickets as $pricing_ticket) {
+                        if (!is_array($pricing_ticket)) {
+                            continue;
+                        }
+                        // Find matching ticket by label or slug
+                        foreach ($tickets as $index => $ticket) {
+                            if (!is_array($ticket)) {
+                                continue;
+                            }
+                            $match = false;
+                            if (isset($pricing_ticket['label']) && isset($ticket['label']) && $pricing_ticket['label'] === $ticket['label']) {
+                                $match = true;
+                            } elseif (isset($pricing_ticket['slug']) && isset($ticket['slug']) && $pricing_ticket['slug'] === $ticket['slug']) {
+                                $match = true;
+                            }
+                            if ($match && isset($pricing_ticket['use_as_price_from'])) {
+                                $tickets[$index]['use_as_price_from'] = $pricing_ticket['use_as_price_from'];
+                                $has_primary_flag = true;
+                            }
+                        }
+                    }
+                } else {
+                    // Use tickets from pricing meta directly
+                    $tickets = $pricing_tickets;
+                }
+            }
+        }
+        
+        if (empty($tickets)) {
             return null;
         }
 
@@ -288,7 +346,8 @@ final class SimpleArchiveShortcode extends BaseShortcode
                 $ticket['use_as_price_from'] === true 
                 || $ticket['use_as_price_from'] === '1' 
                 || $ticket['use_as_price_from'] === 1
-                || (is_string($ticket['use_as_price_from']) && strtolower($ticket['use_as_price_from']) === 'true')
+                || (is_string($ticket['use_as_price_from']) && strtolower(trim($ticket['use_as_price_from'])) === 'true')
+                || (is_string($ticket['use_as_price_from']) && strtolower(trim($ticket['use_as_price_from'])) === 'yes')
             );
 
             if ($is_primary) {
