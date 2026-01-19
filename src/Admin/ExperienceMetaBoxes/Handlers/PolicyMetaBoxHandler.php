@@ -203,6 +203,16 @@ final class PolicyMetaBoxHandler extends BaseMetaBoxHandler
         $question = $faq['question'] ?? '';
         $answer = $faq['answer'] ?? '';
         $field_name = $this->field_name_attribute('faqs', $is_template);
+        
+        // Per il template, il field_name è già fp_exp_policy[faqs][__INDEX__]
+        // Per i campi esistenti, il field_name è fp_exp_policy[faqs] e dobbiamo aggiungere [$index]
+        if ($is_template) {
+            $question_name = $field_name . '[question]';
+            $answer_name = $field_name . '[answer]';
+        } else {
+            $question_name = $field_name . '[' . $index . '][question]';
+            $answer_name = $field_name . '[' . $index . '][answer]';
+        }
         ?>
         <div class="fp-exp-repeater__item" data-repeater-item <?php echo $is_template ? 'data-template="faq"' : ''; ?>>
             <div class="fp-exp-repeater__item-header">
@@ -218,7 +228,7 @@ final class PolicyMetaBoxHandler extends BaseMetaBoxHandler
                     </label>
                     <input
                         type="text"
-                        name="<?php echo esc_attr($field_name . '[' . $index . '][question]'); ?>"
+                        name="<?php echo esc_attr($question_name); ?>"
                         value="<?php echo esc_attr($question); ?>"
                         class="regular-text"
                         placeholder="<?php echo esc_attr__('Es. Qual è la durata dell\'esperienza?', 'fp-experiences'); ?>"
@@ -230,7 +240,7 @@ final class PolicyMetaBoxHandler extends BaseMetaBoxHandler
                         <?php esc_html_e('Risposta', 'fp-experiences'); ?>
                     </label>
                     <textarea
-                        name="<?php echo esc_attr($field_name . '[' . $index . '][answer]'); ?>"
+                        name="<?php echo esc_attr($answer_name); ?>"
                         rows="3"
                         class="large-text"
                         placeholder="<?php echo esc_attr__('Risposta alla domanda...', 'fp-experiences'); ?>"
