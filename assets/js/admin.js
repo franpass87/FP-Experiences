@@ -700,6 +700,13 @@
                 assignTemplateNames(newNode);
                 bindRemoveButtons(newNode);
                 itemsContainer.appendChild(newNode);
+                
+                // Aggiorna il numero visualizzato (sostituisce "#" con il numero corretto)
+                const numberSpan = newNode.querySelector('.fp-exp-repeater__item-number');
+                if (numberSpan) {
+                    numberSpan.textContent = nextIndex + 1;
+                }
+                
                 initMediaControls(newNode);
                 initGalleryControls(newNode);
                 initRecurrenceTimeSets(newNode);
