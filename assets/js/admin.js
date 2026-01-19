@@ -690,7 +690,9 @@
 
             function addRow() {
                 const nextIndex = parseInt(repeater.dataset.repeaterNextIndex || itemsContainer.children.length, 10) || 0;
-                const html = template.innerHTML.replace(/__INDEX__/g, String(nextIndex));
+                // Sostituisce sia __INDEX__ che __INDEX_PLUS_1__ nel template
+                let html = template.innerHTML.replace(/__INDEX__/g, String(nextIndex));
+                html = html.replace(/__INDEX_PLUS_1__/g, String(nextIndex + 1));
                 const wrapper = document.createElement('div');
                 wrapper.innerHTML = html;
                 const newNode = wrapper.firstElementChild;
@@ -700,12 +702,6 @@
                 assignTemplateNames(newNode);
                 bindRemoveButtons(newNode);
                 itemsContainer.appendChild(newNode);
-                
-                // Aggiorna il numero visualizzato (sostituisce "#" con il numero corretto)
-                const numberSpan = newNode.querySelector('.fp-exp-repeater__item-number');
-                if (numberSpan) {
-                    numberSpan.textContent = nextIndex + 1;
-                }
                 
                 initMediaControls(newNode);
                 initGalleryControls(newNode);

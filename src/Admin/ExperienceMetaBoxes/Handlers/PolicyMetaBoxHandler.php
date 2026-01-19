@@ -101,12 +101,21 @@ final class PolicyMetaBoxHandler extends BaseMetaBoxHandler
         $faqs = [];
 
         if (is_array($faqs_raw)) {
+            // Debug temporaneo
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('[FP-EXP-FAQ] Raw FAQs received: ' . print_r($faqs_raw, true));
+                error_log('[FP-EXP-FAQ] FAQs count before processing: ' . count($faqs_raw));
+            }
+            
             // Usa array_values per assicurarsi che gli indici siano sequenziali
             // Questo risolve il problema quando gli indici non sono sequenziali (es. 0, 2, 3)
             $faqs_raw = array_values($faqs_raw);
             
-            foreach ($faqs_raw as $faq) {
+            foreach ($faqs_raw as $index => $faq) {
                 if (!is_array($faq)) {
+                    if (defined('WP_DEBUG') && WP_DEBUG) {
+                        error_log('[FP-EXP-FAQ] Skipping FAQ at index ' . $index . ' - not an array');
+                    }
                     continue;
                 }
 
@@ -115,6 +124,9 @@ final class PolicyMetaBoxHandler extends BaseMetaBoxHandler
 
                 // Skip only if both are empty (allow FAQ with only question or only answer)
                 if ($question === '' && $answer === '') {
+                    if (defined('WP_DEBUG') && WP_DEBUG) {
+                        error_log('[FP-EXP-FAQ] Skipping FAQ at index ' . $index . ' - both empty');
+                    }
                     continue;
                 }
 
@@ -122,6 +134,14 @@ final class PolicyMetaBoxHandler extends BaseMetaBoxHandler
                     'question' => $question,
                     'answer' => $answer,
                 ];
+                
+                if (defined('WP_DEBUG') && WP_DEBUG) {
+                    error_log('[FP-EXP-FAQ] Added FAQ: ' . substr($question, 0, 50));
+                }
+            }
+            
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('[FP-EXP-FAQ] Final FAQs count: ' . count($faqs));
             }
         }
 
@@ -176,7 +196,7 @@ final class PolicyMetaBoxHandler extends BaseMetaBoxHandler
         ?>
         <div class="fp-exp-repeater__item" data-repeater-item <?php echo $is_template ? 'data-template="faq"' : ''; ?>>
             <div class="fp-exp-repeater__item-header">
-                <span class="fp-exp-repeater__item-number"><?php echo esc_html($is_template ? '#' : ((int) $index + 1)); ?></span>
+                <span class="fp-exp-repeater__item-number"><?php echo esc_html($is_template ? '__INDEX_PLUS_1__' : ((int) $index + 1)); ?></span>
                 <button type="button" class="fp-exp-repeater__item-remove" aria-label="<?php esc_attr_e('Rimuovi FAQ', 'fp-experiences'); ?>">
                     <span class="dashicons dashicons-trash"></span>
                 </button>
