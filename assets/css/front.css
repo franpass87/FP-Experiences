@@ -1789,6 +1789,13 @@
     }
 }
 
+.fp-exp-calendar-nav__day-empty {
+    /* Cella vuota per allineare il primo giorno del mese alla colonna corretta */
+    /* In questo modo la domenica sarà sempre nella colonna più a destra */
+    visibility: hidden;
+    pointer-events: none;
+}
+
 .fp-exp-calendar-nav__day {
     border: 1px solid rgba(15, 23, 42, 0.1);
     border-radius: 8px;

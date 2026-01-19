@@ -461,8 +461,25 @@
                     // Get fresh reference to calendarMap after prefetch
                     calendarMap = getCalendarMap();
                     
+                    // Calcola il giorno della settimana del primo giorno del mese
+                    // 0 = Domenica, 1 = Lunedì, ..., 6 = Sabato
+                    const firstDayOfMonth = new Date(date.getFullYear(), date.getMonth(), 1);
+                    // getDay() restituisce 0 (Domenica) - 6 (Sabato)
+                    // Convertiamo in formato Lunedì=0, Martedì=1, ..., Domenica=6
+                    let firstDayOfWeek = firstDayOfMonth.getDay();
+                    // Converti: Domenica (0) diventa 6, Lunedì (1) diventa 0, etc.
+                    firstDayOfWeek = firstDayOfWeek === 0 ? 6 : firstDayOfWeek - 1;
+                    
                     // Genera tutti i giorni del mese
                     const dayButtons = [];
+                    
+                    // Aggiungi celle vuote all'inizio per allineare il primo giorno alla colonna corretta
+                    // In questo modo la domenica sarà sempre nella colonna più a destra (7)
+                    for (let i = 0; i < firstDayOfWeek; i++) {
+                        const emptyCell = document.createElement('div');
+                        emptyCell.className = 'fp-exp-calendar-nav__day-empty';
+                        dayButtons.push(emptyCell);
+                    }
                     
                     for (let day = 1; day <= daysInMonth; day++) {
                         const dateKey = monthKey + '-' + String(day).padStart(2, '0');
