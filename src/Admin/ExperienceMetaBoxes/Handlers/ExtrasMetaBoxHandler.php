@@ -15,6 +15,8 @@ use function esc_textarea;
  * Handler for Extras tab in Experience Meta Box.
  * 
  * Handles extra services, add-ons, and additional options for experiences.
+ * 
+ * @version 1.2.15
  */
 final class ExtrasMetaBoxHandler extends BaseMetaBoxHandler
 {

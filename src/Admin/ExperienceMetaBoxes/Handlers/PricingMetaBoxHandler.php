@@ -21,6 +21,8 @@ use function sanitize_text_field;
  * 
  * NOTE: This is a complex handler due to legacy support and multiple pricing structures.
  * The handler manages both new and legacy pricing formats for backward compatibility.
+ * 
+ * @version 1.2.15
  */
 final class PricingMetaBoxHandler extends BaseMetaBoxHandler
 {
