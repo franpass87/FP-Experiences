@@ -562,12 +562,17 @@ final class PricingMetaBoxHandler extends BaseMetaBoxHandler
         if (!empty($tickets)) {
             $legacy_tickets = [];
             foreach ($tickets as $ticket) {
-                $legacy_tickets[] = [
+                $legacy_ticket = [
                     'slug' => $ticket['slug'],
                     'label' => $ticket['label'],
                     'price' => $ticket['price'],
                     'capacity' => $ticket['capacity'],
                 ];
+                // Include use_as_price_from flag for legacy compatibility
+                if (isset($ticket['use_as_price_from'])) {
+                    $legacy_ticket['use_as_price_from'] = $ticket['use_as_price_from'];
+                }
+                $legacy_tickets[] = $legacy_ticket;
             }
             $this->update_or_delete_meta($post_id, 'ticket_types', $legacy_tickets);
         } else {
