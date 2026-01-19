@@ -277,12 +277,21 @@ final class SimpleArchiveShortcode extends BaseShortcode
         }
 
         // First, look for a ticket marked as "use_as_price_from"
+        // Check both boolean true and string "1" for compatibility
         foreach ($tickets as $ticket) {
             if (! is_array($ticket) || ! isset($ticket['price'])) {
                 continue;
             }
 
-            if (! empty($ticket['use_as_price_from'])) {
+            // Check if this ticket is marked as primary price display
+            $is_primary = isset($ticket['use_as_price_from']) && (
+                $ticket['use_as_price_from'] === true 
+                || $ticket['use_as_price_from'] === '1' 
+                || $ticket['use_as_price_from'] === 1
+                || (is_string($ticket['use_as_price_from']) && strtolower($ticket['use_as_price_from']) === 'true')
+            );
+
+            if ($is_primary) {
                 $price = (float) $ticket['price'];
                 if ($price > 0) {
                     return $price;
