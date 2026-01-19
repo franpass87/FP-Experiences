@@ -211,7 +211,7 @@ final class Orders implements HookableInterface
         $order_item->set_subtotal($subtotal);
         $order_item->set_total($total);
 
-        if ($tax_class) {
+        if ($tax_class && class_exists('\WC_Tax')) {
             $rates = WC_Tax::get_rates($tax_class);
 
             if (! empty($rates)) {

@@ -81,7 +81,7 @@
     function initTabs(root) {
         const tabs = Array.from(root.querySelectorAll('.fp-exp-tab'));
         const panels = Array.from(root.querySelectorAll('.fp-exp-tab-panel'));
-        if (!tabs.length || !panels.length) {
+        if (!tabs.length) {
             return;
         }
 
@@ -89,10 +89,12 @@
             tabs.forEach((tab) => {
                 const isActive = tab.dataset.tab === targetSlug;
                 tab.setAttribute('aria-selected', isActive ? 'true' : 'false');
+                tab.classList.toggle('is-active', isActive);
             });
             panels.forEach((panel) => {
                 const isActive = panel.dataset.tabPanel === targetSlug;
                 panel.toggleAttribute('hidden', !isActive);
+                panel.classList.toggle('is-active', isActive);
                 if (isActive && focus) {
                     const focusable = panel.querySelector('input, select, textarea, button');
                     if (focusable) {
