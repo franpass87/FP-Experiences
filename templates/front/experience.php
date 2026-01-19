@@ -550,9 +550,6 @@ $sticky_price_display = '' !== $price_from_display ? $format_currency($price_fro
                                     loading="lazy"
                                     decoding="async"
                                 />
-                                <?php if ('' !== $caption) : ?>
-                                    <figcaption class="fp-exp-gallery__caption"><?php echo esc_html($caption); ?></figcaption>
-                                <?php endif; ?>
                             </figure>
                         <?php endforeach; ?>
                     </div>
