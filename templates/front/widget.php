@@ -119,23 +119,30 @@ if ($duration_minutes > 0) {
         : sprintf(esc_html__('%d minuti', 'fp-experiences'), $minutes);
 }
 
-$price_from_value = null;
+// Use the price_from already calculated by calculate_price_from_meta() in ExperienceShortcode
+// This ensures we use the ticket with use_as_price_from flag, not just the minimum
+$price_from_value = isset($experience['price_from']) && $experience['price_from'] > 0 
+    ? (float) $experience['price_from'] 
+    : null;
 
-foreach ($slots as $slot) {
-    if (! is_array($slot)) {
-        continue;
+// Fallback: if price_from not available from experience, check slots
+if (null === $price_from_value) {
+    foreach ($slots as $slot) {
+        if (! is_array($slot)) {
+            continue;
+        }
+
+        $price = isset($slot['price_from']) ? (float) $slot['price_from'] : 0.0;
+
+        if ($price <= 0) {
+            continue;
+        }
+
+        $price_from_value = null === $price_from_value ? $price : min($price_from_value, $price);
     }
-
-    $price = isset($slot['price_from']) ? (float) $slot['price_from'] : 0.0;
-
-    if ($price <= 0) {
-        continue;
-    }
-
-    $price_from_value = null === $price_from_value ? $price : min($price_from_value, $price);
 }
 
-// If no slot prices available, look for tickets
+// Final fallback: if still no price, look for tickets (but prefer use_as_price_from)
 if (null === $price_from_value) {
     // First, check for a ticket marked as "use_as_price_from"
     foreach ($tickets as $ticket) {
