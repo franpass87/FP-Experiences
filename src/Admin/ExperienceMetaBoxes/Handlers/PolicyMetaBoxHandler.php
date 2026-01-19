@@ -97,7 +97,17 @@ final class PolicyMetaBoxHandler extends BaseMetaBoxHandler
         // FAQs - uses wp_kses_post for answer HTML support
         // The field name is fp_exp_policy[faqs][index][question/answer]
         // So data comes in $raw['faqs'] (since $raw is already fp_exp_policy array)
+        // Prova anche direttamente da $_POST per evitare problemi di filtri WordPress
         $faqs_raw = $raw['faqs'] ?? $raw['faq'] ?? [];
+        
+        // Fallback: leggi direttamente da $_POST se $raw non contiene i dati
+        if (empty($faqs_raw) && isset($_POST['fp_exp_policy']['faqs']) && is_array($_POST['fp_exp_policy']['faqs'])) {
+            $faqs_raw = wp_unslash($_POST['fp_exp_policy']['faqs']);
+        }
+        if (empty($faqs_raw) && isset($_POST['fp_exp_policy']['faq']) && is_array($_POST['fp_exp_policy']['faq'])) {
+            $faqs_raw = wp_unslash($_POST['fp_exp_policy']['faq']);
+        }
+        
         $faqs = [];
 
         if (is_array($faqs_raw)) {

@@ -703,6 +703,19 @@
                 bindRemoveButtons(newNode);
                 itemsContainer.appendChild(newNode);
                 
+                // Fallback: assicurati che il numero visualizzato sia corretto
+                const numberSpan = newNode.querySelector('.fp-exp-repeater__item-number');
+                if (numberSpan) {
+                    // Se contiene ancora __INDEX_PLUS_1__, sostituiscilo
+                    if (numberSpan.textContent.includes('__INDEX_PLUS_1__')) {
+                        numberSpan.textContent = String(nextIndex + 1);
+                    }
+                    // Se contiene __INDEX__, sostituiscilo con nextIndex + 1
+                    if (numberSpan.textContent.includes('__INDEX__')) {
+                        numberSpan.textContent = String(nextIndex + 1);
+                    }
+                }
+                
                 initMediaControls(newNode);
                 initGalleryControls(newNode);
                 initRecurrenceTimeSets(newNode);
