@@ -95,7 +95,9 @@ final class PolicyMetaBoxHandler extends BaseMetaBoxHandler
         $this->update_or_delete_meta($post_id, 'policy_cancel', $cancel);
 
         // FAQs - uses wp_kses_post for answer HTML support
-        $faqs_raw = $raw['faq'] ?? [];
+        // The field name is fp_exp_policy[faqs][index][question/answer]
+        // So data comes in $raw['faqs'] (since $raw is already fp_exp_policy array)
+        $faqs_raw = $raw['faqs'] ?? $raw['faq'] ?? [];
         $faqs = [];
 
         if (is_array($faqs_raw)) {
@@ -107,8 +109,8 @@ final class PolicyMetaBoxHandler extends BaseMetaBoxHandler
                 $question = $this->sanitize_text($faq['question'] ?? '');
                 $answer = isset($faq['answer']) ? wp_kses_post((string) $faq['answer']) : '';
 
-                // Original code requires both question and answer
-                if ($question === '' || $answer === '') {
+                // Skip only if both are empty (allow FAQ with only question or only answer)
+                if ($question === '' && $answer === '') {
                     continue;
                 }
 
@@ -119,7 +121,15 @@ final class PolicyMetaBoxHandler extends BaseMetaBoxHandler
             }
         }
 
-        $this->update_or_delete_meta($post_id, 'faq', !empty($faqs) ? $faqs : null);
+        // Always save FAQ array, even if empty (to allow clearing all FAQs)
+        // Use update_post_meta directly to ensure it saves correctly
+        $meta_key = $this->get_meta_key() . '_faq';
+        if (!empty($faqs)) {
+            update_post_meta($post_id, $meta_key, $faqs);
+        } else {
+            // Clear FAQs if array is empty
+            delete_post_meta($post_id, $meta_key);
+        }
     }
 
     protected function get_meta_data(int $post_id): array
@@ -203,8 +213,8 @@ final class PolicyMetaBoxHandler extends BaseMetaBoxHandler
      */
     private function field_name_attribute(string $name, bool $is_template): string
     {
-        $base = $this->get_meta_key();
-        return $is_template ? $base . '_' . $name . '_template' : $base . '[' . $name . ']';
+        // Use fp_exp_policy to match the form structure (same as cancel field)
+        return $is_template ? 'fp_exp_policy[' . $name . '][__INDEX__]' : 'fp_exp_policy[' . $name . ']';
     }
 }
 
