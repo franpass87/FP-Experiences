@@ -87,6 +87,11 @@
         <!-- Cognitive biases labels -->
         <custom-field action="copy-once">_fp_cognitive_biases</custom-field>
         
+        <!-- Experience badges - copy-once allows independent editing per translation -->
+        <custom-field action="copy-once">_fp_experience_badges</custom-field>
+        <custom-field action="copy-once">_fp_experience_badge_overrides</custom-field>
+        <custom-field action="copy-once">_fp_experience_badge_custom</custom-field>
+        
         
         <!-- ========== COPY FIELDS ========== -->
         <!-- These fields should be copied as-is (same value in all languages) -->

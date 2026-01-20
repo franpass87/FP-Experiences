@@ -163,15 +163,23 @@ final class ExperienceMetaBoxes implements HookableInterface
                 : new MeetingPointMetaBoxHandler());
     }
 
-    private const TAB_LABELS = [
-        'details' => 'Dettagli',
-        'pricing' => 'Biglietti & Prezzi',
-        'calendar' => 'Calendario & Slot',
-        'meeting-point' => 'Meeting Point',
-        'extras' => 'Extra',
-        'policy' => 'Policy/FAQ',
-        'seo' => 'SEO/Schema',
-    ];
+    /**
+     * Etichette dei tab traducibili
+     * 
+     * @return array<string, string>
+     */
+    private function get_tab_labels(): array
+    {
+        return [
+            'details' => esc_html__('Dettagli', 'fp-experiences'),
+            'pricing' => esc_html__('Biglietti & Prezzi', 'fp-experiences'),
+            'calendar' => esc_html__('Calendario & Slot', 'fp-experiences'),
+            'meeting-point' => esc_html__('Meeting Point', 'fp-experiences'),
+            'extras' => esc_html__('Extra', 'fp-experiences'),
+            'policy' => esc_html__('Policy/FAQ', 'fp-experiences'),
+            'seo' => esc_html__('SEO/Schema', 'fp-experiences'),
+        ];
+    }
 
     /**
      * Verifica se un plugin SEO è attivo
@@ -783,7 +791,7 @@ final class ExperienceMetaBoxes implements HookableInterface
             <div class="fp-exp-tabs" role="tablist" aria-label="<?php echo esc_attr(esc_html__('Sezioni esperienza', 'fp-experiences')); ?>">
                 <?php 
                 $seo_plugin_active = $this->is_seo_plugin_active();
-                foreach (self::TAB_LABELS as $slug => $label) : 
+                foreach ($this->get_tab_labels() as $slug => $label) : 
                     // Nascondi il tab SEO se un plugin SEO è attivo
                     if ($slug === 'seo' && $seo_plugin_active) {
                         continue;
@@ -799,7 +807,7 @@ final class ExperienceMetaBoxes implements HookableInterface
                         aria-selected="<?php echo 'details' === $slug ? 'true' : 'false'; ?>"
                         data-tab="<?php echo esc_attr($slug); ?>"
                     >
-                        <?php echo esc_html__($label, 'fp-experiences'); ?>
+                        <?php echo $label; ?>
                     </button>
                 <?php endforeach; ?>
             </div>
