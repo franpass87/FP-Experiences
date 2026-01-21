@@ -2884,7 +2884,7 @@ final class SettingsPage implements HookableInterface
 
         // Show status badge for key tracking fields
         $status_badge = '';
-        if (in_array($field['key'], ['ga4.enabled', 'meta_pixel.enabled', 'google_ads.enabled', 'clarity.enabled'], true)) {
+        if (in_array($field['key'], ['ga4[enabled]', 'meta_pixel[enabled]', 'google_ads[enabled]', 'clarity[enabled]'], true)) {
             $is_enabled = !empty($value);
             $status_class = $is_enabled ? 'active' : 'inactive';
             $status_text = $is_enabled ? esc_html__('Attivo', 'fp-experiences') : esc_html__('Non configurato', 'fp-experiences');
@@ -2914,7 +2914,13 @@ final class SettingsPage implements HookableInterface
 
         // Inject status badge before field if present
         if ($status_badge) {
-            $field_html = str_replace('<td>', '<td>' . $status_badge, $field_html);
+            // Handle both <td> and <td colspan="2"> cases
+            $field_html = preg_replace(
+                '/(<td(?:\s+[^>]*)?>)/',
+                '$1' . $status_badge,
+                $field_html,
+                1 // Only replace the first occurrence
+            );
         }
 
         echo $field_html;
@@ -2979,7 +2985,13 @@ final class SettingsPage implements HookableInterface
 
         // Inject status badge before field if present
         if ($status_badge) {
-            $field_html = str_replace('<td>', '<td>' . $status_badge, $field_html);
+            // Handle both <td> and <td colspan="2"> cases
+            $field_html = preg_replace(
+                '/(<td(?:\s+[^>]*)?>)/',
+                '$1' . $status_badge,
+                $field_html,
+                1 // Only replace the first occurrence
+            );
         }
 
         echo $field_html;

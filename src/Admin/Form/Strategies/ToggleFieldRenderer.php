@@ -38,7 +38,7 @@ final class ToggleFieldRenderer implements FieldRenderer
             esc_attr($input_name),
             checked($is_checked, true, false)
         );
-        $html .= '<span class="fp-exp-toggle__slider"></span>';
+        $html .= '<span class="fp-exp-toggle__switch"></span>';
         
         // Add label text if provided in options
         if ($field->hasOption('label_text')) {
