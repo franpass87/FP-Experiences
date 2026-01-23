@@ -1038,6 +1038,27 @@ msgstr "Wir haben Ihre Erlebnisanfrage erhalten"
 msgid "Thank you for your request. Our team will get back to you shortly."
 msgstr "Vielen Dank für Ihre Anfrage. Unser Team wird sich in Kürze bei Ihnen melden."
 
+msgid "Your experience request has been approved"
+msgstr "Ihre Erlebnisanfrage wurde genehmigt"
+
+msgid "Update on your experience request"
+msgstr "Aktualisierung zu Ihrer Erlebnisanfrage"
+
+msgid "Payment required for your experience booking"
+msgstr "Zahlung für Ihre Erlebnisbuchung erforderlich"
+
+msgid "Thank you for your request. Our team will review it and get back to you shortly."
+msgstr "Vielen Dank für Ihre Anfrage. Unser Team wird sie prüfen und sich in Kürze bei Ihnen melden."
+
+msgid "Great news! Your experience request has been approved. We look forward to welcoming you."
+msgstr "Gute Nachrichten! Ihre Erlebnisanfrage wurde genehmigt. Wir freuen uns darauf, Sie willkommen zu heißen."
+
+msgid "We regret to inform you that we are unable to accommodate your experience request at this time."
+msgstr "Wir bedauern, Ihnen mitteilen zu müssen, dass wir Ihre Erlebnisanfrage derzeit nicht erfüllen können."
+
+msgid "Your experience request has been approved. Please complete your payment using the link below."
+msgstr "Ihre Erlebnisanfrage wurde genehmigt. Bitte schließen Sie Ihre Zahlung über den untenstehenden Link ab."
+
 # Permission Errors
 msgid "You do not have permission to manage FP Experiences bookings."
 msgstr "Sie haben keine Berechtigung, FP Experiences Buchungen zu verwalten."

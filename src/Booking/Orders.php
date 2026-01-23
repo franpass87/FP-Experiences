@@ -288,6 +288,10 @@ final class Orders implements HookableInterface
         $slot_id = absint($item['slot_id'] ?? 0);
         $tickets = $item['tickets'] ?? [];
         
+        // Rileva la locale: prima dal plugin multilingua, poi dal prefisso telefonico come fallback
+        $phone_number = $order->get_billing_phone();
+        $detected_locale = \FP_Exp\Compatibility\Multilanguage::get_current_locale(null, $phone_number);
+        
         $reservation_id = Reservations::create([
             'order_id' => $order->get_id(),
             'experience_id' => absint($item['experience_id'] ?? 0),
@@ -296,7 +300,7 @@ final class Orders implements HookableInterface
             'pax' => $tickets,
             'addons' => $item['addons'] ?? [],
             'utm' => $utm,
-            'locale' => get_locale(),
+            'locale' => $detected_locale,
             'total_gross' => (float) ($item['totals']['total'] ?? 0.0),
             'tax_total' => (float) ($item['totals']['tax'] ?? 0.0),
         ]);

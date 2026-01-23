@@ -1893,6 +1893,15 @@ final class SettingsPage implements HookableInterface
     public function render_rtb_help(): void
     {
         echo '<p>' . esc_html__('Request-to-book holds slots for a short time while staff review the inquiry. Configure the global workflow here and enable it per experience.', 'fp-experiences') . '</p>';
+        $requests_url = admin_url('admin.php?page=fp_exp_requests');
+        $link         = '<a href="' . esc_url($requests_url) . '">' . esc_html__('Richieste', 'fp-experiences') . '</a>';
+        echo '<p><strong>' . esc_html__('Conferma manuale prima dell\'addebito', 'fp-experiences') . '</strong> &mdash; ';
+        echo sprintf(
+            /* translators: %s: link to Requests page. */
+            esc_html__('Con la modalità "Conferma manuale, poi richiedi pagamento" potete approvare o rifiutare ogni richiesta dalla pagina %s prima che il cliente paghi. L\'addebito avviene solo dopo la vostra approvazione e il completamento del pagamento da parte del cliente. Potete così non accettare richieste in momenti particolari (es. sovraccarico, chiusure).', 'fp-experiences'),
+            $link
+        );
+        echo '</p>';
     }
 
     public function render_brevo_help(): void
@@ -2319,9 +2328,9 @@ final class SettingsPage implements HookableInterface
                 'options' => [
                     'off' => esc_html__('Disabled', 'fp-experiences'),
                     'confirm' => esc_html__('Confirm without payment', 'fp-experiences'),
-                    'pay_later' => esc_html__('Confirm and request payment later', 'fp-experiences'),
+                    'pay_later' => esc_html__('Conferma manuale, poi richiedi pagamento', 'fp-experiences'),
                 ],
-                'description' => esc_html__('Choose how request-to-book approvals are processed globally.', 'fp-experiences'),
+                'description' => esc_html__('Con "Conferma manuale, poi richiedi pagamento" le richieste restano in attesa nella pagina Richieste: voi approvate o rifiutate. Solo dopo l\'approvazione il cliente riceve il link di pagamento; l\'addebito avviene al pagamento. Potete rifiutare richieste quando preferite.', 'fp-experiences'),
             ],
             [
                 'key' => 'timeout',

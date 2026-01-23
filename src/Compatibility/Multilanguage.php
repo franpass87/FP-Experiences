@@ -244,9 +244,10 @@ final class Multilanguage implements HookableInterface
      * Get full locale from language code.
      *
      * @param string|null $lang_code Optional language code, uses current if not provided
+     * @param string|null $phone_number Optional phone number to detect language from prefix
      * @return string Full locale (e.g., 'it_IT', 'en_US')
      */
-    public static function get_current_locale(?string $lang_code = null): string
+    public static function get_current_locale(?string $lang_code = null, ?string $phone_number = null): string
     {
         if ($lang_code === null) {
             $lang_code = self::get_current_language();
@@ -258,7 +259,77 @@ final class Multilanguage implements HookableInterface
         }
 
         // Map short code to full locale
-        return self::LOCALE_MAP[$lang_code] ?? $lang_code . '_' . strtoupper($lang_code);
+        $locale = self::LOCALE_MAP[$lang_code] ?? $lang_code . '_' . strtoupper($lang_code);
+
+        // Fallback: try to detect from phone prefix if provided
+        // Il prefisso telefonico ha priorità solo se la lingua rilevata è quella di default (italiano)
+        // o se non è stata rilevata una lingua specifica
+        if ($phone_number) {
+            $detected = self::detect_locale_from_phone_prefix($phone_number);
+            if ($detected) {
+                // Usa il prefisso telefonico se:
+                // 1. La locale rilevata è quella di default (it_IT) - potrebbe essere un fallback
+                // 2. La locale è vuota o non valida
+                // 3. Il prefisso rilevato è diverso dalla locale corrente (il cliente potrebbe essere in un'altra lingua)
+                if ($locale === 'it_IT' || empty($lang_code) || $detected !== $locale) {
+                    return $detected;
+                }
+            }
+        }
+
+        return $locale;
+    }
+
+    /**
+     * Detect locale from phone number prefix.
+     *
+     * @param string $phone_number Phone number (e.g., '+39 055 1234567', '+44 20 1234 5678')
+     * @return string|null Detected locale or null if not detected
+     */
+    public static function detect_locale_from_phone_prefix(string $phone_number): ?string
+    {
+        $phone = preg_replace('/[^0-9+]/', '', $phone_number);
+        $phone = trim($phone);
+
+        if (empty($phone)) {
+            return null;
+        }
+
+        // Mappa prefissi telefonici a locale
+        $prefix_map = [
+            // Italiano
+            '39' => 'it_IT', // Italia
+            // Inglese
+            '44' => 'en_US', // UK
+            '1' => 'en_US',  // USA/Canada
+            // Tedesco
+            '49' => 'de_DE', // Germania
+            '43' => 'de_DE', // Austria
+            '41' => 'de_DE', // Svizzera (tedesco)
+        ];
+
+        // Rimuovi il + iniziale se presente
+        if (strpos($phone, '+') === 0) {
+            $phone = substr($phone, 1);
+        }
+
+        // Prova prefissi a 2 cifre (più comuni)
+        if (strlen($phone) >= 2) {
+            $two_digit = substr($phone, 0, 2);
+            if (isset($prefix_map[$two_digit])) {
+                return $prefix_map[$two_digit];
+            }
+        }
+
+        // Prova prefisso a 1 cifra (USA/Canada)
+        if (strlen($phone) >= 1) {
+            $one_digit = substr($phone, 0, 1);
+            if (isset($prefix_map[$one_digit])) {
+                return $prefix_map[$one_digit];
+            }
+        }
+
+        return null;
     }
 
     /**

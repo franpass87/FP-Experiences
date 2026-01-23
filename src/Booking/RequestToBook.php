@@ -240,9 +240,12 @@ final class RequestToBook implements HookableInterface
         $hold_expires = current_time('timestamp', true) + ($timeout_minutes * MINUTE_IN_SECONDS);
 
         // Rileva la lingua con cui il cliente sta navigando
-        $customer_locale = $this->detect_customer_locale();
+        // Usa il prefisso telefonico come fallback se il plugin multilingua non rileva la lingua
+        $phone_number = $contact['phone'] ?? '';
+        $customer_locale = $this->detect_customer_locale($phone_number);
         $this->debug_log('RTB customer locale detected', [
             'locale' => $customer_locale,
+            'phone' => $phone_number ? 'present' : 'missing',
         ]);
 
         $reservation_id = Reservations::create([
@@ -1029,8 +1032,23 @@ final class RequestToBook implements HookableInterface
         $fallbacks = $settings['fallback'] ?? [];
         $message = $fallbacks[$stage] ?? [];
 
-        $subject = ! empty($message['subject']) ? $message['subject'] : __('We received your experience request', 'fp-experiences');
-        $body = ! empty($message['body']) ? $message['body'] : __('Grazie per la richiesta. Il nostro team ti ricontatterà a breve.', 'fp-experiences');
+        // Testi di default traducibili per ogni stage
+        $default_subjects = [
+            'request' => __('We received your experience request', 'fp-experiences'),
+            'approved' => __('Your experience request has been approved', 'fp-experiences'),
+            'declined' => __('Update on your experience request', 'fp-experiences'),
+            'payment' => __('Payment required for your experience booking', 'fp-experiences'),
+        ];
+
+        $default_bodies = [
+            'request' => __('Thank you for your request. Our team will review it and get back to you shortly.', 'fp-experiences'),
+            'approved' => __('Great news! Your experience request has been approved. We look forward to welcoming you.', 'fp-experiences'),
+            'declined' => __('We regret to inform you that we are unable to accommodate your experience request at this time.', 'fp-experiences'),
+            'payment' => __('Your experience request has been approved. Please complete your payment using the link below.', 'fp-experiences'),
+        ];
+
+        $subject = ! empty($message['subject']) ? $message['subject'] : ($default_subjects[$stage] ?? __('We received your experience request', 'fp-experiences'));
+        $body = ! empty($message['body']) ? $message['body'] : ($default_bodies[$stage] ?? __('Thank you for your request. Our team will review it and get back to you shortly.', 'fp-experiences'));
 
         $payload = $this->replace_tokens($subject, $body, $context);
 
@@ -1144,13 +1162,15 @@ final class RequestToBook implements HookableInterface
     /**
      * Rileva la lingua con cui il cliente sta navigando.
      * Usa il layer di compatibilità multilingua unificato.
+     * Se disponibile, usa anche il prefisso telefonico come fallback.
      *
+     * @param string|null $phone_number Optional phone number to detect language from prefix
      * @see \FP_Exp\Compatibility\Multilanguage
      */
-    private function detect_customer_locale(): string
+    private function detect_customer_locale(?string $phone_number = null): string
     {
-        // Usa la classe di compatibilità unificata
-        return \FP_Exp\Compatibility\Multilanguage::get_current_locale();
+        // Usa la classe di compatibilità unificata con fallback al prefisso telefonico
+        return \FP_Exp\Compatibility\Multilanguage::get_current_locale(null, $phone_number);
     }
 
     /**
