@@ -320,18 +320,33 @@ final class Cart implements HookableInterface
 
         $wc_cart = $container->cart;
 
-        if (! $wc_cart || ! method_exists($wc_cart, 'get_cart_contents_count')) {
+        if (! $wc_cart || ! method_exists($wc_cart, 'get_cart_contents_count') || ! method_exists($wc_cart, 'get_cart')) {
             return null;
         }
 
+        // Only block if WooCommerce cart has normal products (not experiences)
         if ((int) $wc_cart->get_cart_contents_count() > 0) {
-            return new WP_Error(
-                'fp_exp_cart_conflict',
-                __('Svuota il carrello di WooCommerce prima di prenotare un’esperienza.', 'fp-experiences'),
-                [
-                    'status' => 409, // Conflict
-                ]
-            );
+            $cart_contents = $wc_cart->get_cart();
+            $has_normal_products = false;
+            
+            foreach ($cart_contents as $cart_item) {
+                // Check if this is NOT an experience item
+                if (empty($cart_item['fp_exp_item'])) {
+                    $has_normal_products = true;
+                    break;
+                }
+            }
+            
+            // Only return error if there are normal products
+            if ($has_normal_products) {
+                return new WP_Error(
+                    'fp_exp_cart_conflict',
+                    __('Svuota il carrello di WooCommerce prima di prenotare un\'esperienza.', 'fp-experiences'),
+                    [
+                        'status' => 409, // Conflict
+                    ]
+                );
+            }
         }
 
         return null;
@@ -343,15 +358,58 @@ final class Cart implements HookableInterface
             return $passed;
         }
 
-        if (! $this->has_items()) {
-            return $passed;
+        // Get the virtual product ID for experiences
+        $virtual_product_id = \FP_Exp\Integrations\ExperienceProduct::get_product_id();
+        
+        // Check if the product being added is the experience virtual product
+        $is_experience_product = ($virtual_product_id > 0 && absint($product_id) === $virtual_product_id);
+        
+        // If it's a normal product (not experience), check if experience cart is empty or locked
+        if (! $is_experience_product) {
+            // First, check if WooCommerce cart already has experience items
+            if (function_exists('WC') && WC()->cart && !WC()->cart->is_empty()) {
+                $cart_contents = WC()->cart->get_cart();
+                foreach ($cart_contents as $cart_item) {
+                    if (!empty($cart_item['fp_exp_item'])) {
+                        // WooCommerce cart has experiences, block normal products
+                        if (function_exists('wc_add_notice')) {
+                            wc_add_notice(__('Le esperienze non possono essere acquistate insieme ad altri prodotti. Completa prima la prenotazione o svuota il carrello.', 'fp-experiences'), 'error');
+                        }
+                        return false;
+                    }
+                }
+            }
+            
+            // Allow normal products if experience custom cart is empty or locked
+            if (! $this->has_items() || $this->is_locked()) {
+                return $passed;
+            }
+            
+            // If experience cart has items and is not locked, block normal products
+            if (function_exists('wc_add_notice')) {
+                wc_add_notice(__('Le esperienze non possono essere acquistate insieme ad altri prodotti. Completa prima la prenotazione.', 'fp-experiences'), 'error');
+            }
+            
+            return false;
+        }
+        
+        // If it's an experience product, check if WooCommerce cart has normal products
+        if ($is_experience_product && function_exists('WC') && WC()->cart) {
+            $wc_cart = WC()->cart;
+            $cart_contents = $wc_cart->get_cart();
+            
+            foreach ($cart_contents as $cart_item) {
+                // Check if this is NOT an experience item (normal product)
+                if (empty($cart_item['fp_exp_item'])) {
+                    if (function_exists('wc_add_notice')) {
+                        wc_add_notice(__('Le esperienze non possono essere acquistate insieme ad altri prodotti. Svuota il carrello prima di prenotare un\'esperienza.', 'fp-experiences'), 'error');
+                    }
+                    return false;
+                }
+            }
         }
 
-        if (function_exists('wc_add_notice')) {
-            wc_add_notice(__('Le esperienze non possono essere acquistate insieme ad altri prodotti. Completa prima la prenotazione.', 'fp-experiences'), 'error');
-        }
-
-        return false;
+        return $passed;
     }
 
     private function can_mix_with_woocommerce(): bool
@@ -501,9 +559,29 @@ final class Cart implements HookableInterface
 
         $log('[FP-EXP-CART] ✅ Starting sync of ' . count($custom_cart['items']) . ' items to WooCommerce cart');
 
-        // Clear WooCommerce cart (prevent mixed carts)
+        // Check if WooCommerce cart has normal products (not experiences)
+        $wc_cart = WC()->cart;
+        $has_normal_products = false;
+        if (!$wc_cart->is_empty()) {
+            $cart_contents = $wc_cart->get_cart();
+            foreach ($cart_contents as $cart_item) {
+                // Check if this is NOT an experience item (normal product)
+                if (empty($cart_item['fp_exp_item'])) {
+                    $has_normal_products = true;
+                    break;
+                }
+            }
+        }
+
+        // If there are normal products in WooCommerce cart, don't sync experiences
+        if ($has_normal_products) {
+            $log('[FP-EXP-CART] ⚠️ WooCommerce cart contains normal products, skipping sync to prevent mixed carts');
+            return;
+        }
+
+        // Clear WooCommerce cart only if it contains experience items or is empty
         if (!WC()->cart->is_empty()) {
-            $log('[FP-EXP-CART] Clearing WooCommerce cart before sync');
+            $log('[FP-EXP-CART] Clearing WooCommerce cart before sync (contains only experience items)');
             WC()->cart->empty_cart();
         }
 
