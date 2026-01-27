@@ -2465,6 +2465,25 @@ html.fp-exp-dark body.fp-exp-admin-shell .wrap .notice {
     box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.25);
 }
 
+.fp-exp-email-previews__empty {
+    padding: 16px;
+    color: #64748b;
+    font-style: italic;
+    text-align: center;
+    background: #f8fafc;
+    border-radius: 8px;
+    margin: 0;
+}
+
+.fp-exp-email-previews__error {
+    padding: 12px 16px;
+    color: #d63638;
+    background: #fcf0f1;
+    border-radius: 8px;
+    border: 1px solid #f5c6cb;
+    margin-bottom: 16px;
+}
+
 /* Importer Page Styles */
 .fp-exp-card {
     background: #ffffff;
@@ -2669,20 +2688,31 @@ html.fp-exp-dark body.fp-exp-admin-shell .wrap .notice {
 }
 
 /* Toggle Switch Moderno */
-.fp-exp-toggle {
+.fp-exp-toggle,
+.fp-exp-settings__toggle {
     display: inline-flex;
     align-items: center;
     gap: 12px;
     cursor: pointer;
-    width: auto;
-    min-width: 44px;
-    height: 24px;
+    position: relative;
 }
 
-.fp-exp-toggle input[type="checkbox"] {
-    position: absolute;
-    opacity: 0;
-    pointer-events: none;
+/* Hide checkbox inputs in toggle switches - use display:none since label[for] handles clicks */
+.fp-exp-toggle input[type="checkbox"],
+.fp-exp-settings__toggle input[type="checkbox"],
+input.fp-exp-toggle__input,
+.fp-exp-toggle__input,
+label.fp-exp-settings__toggle input[type="checkbox"],
+label.fp-exp-toggle input[type="checkbox"] {
+    display: none !important;
+}
+
+/* Ensure hidden inputs are never visible */
+input[type="hidden"][name*="fp_exp_"] {
+    display: none !important;
+    visibility: hidden !important;
+    position: absolute !important;
+    left: -9999px !important;
 }
 
 .fp-exp-toggle__switch {
@@ -2693,7 +2723,6 @@ html.fp-exp-dark body.fp-exp-admin-shell .wrap .notice {
     background: #cbd5e1;
     border-radius: 24px;
     transition: background 0.3s ease;
-    cursor: pointer;
     flex-shrink: 0;
 }
 
@@ -2710,15 +2739,23 @@ html.fp-exp-dark body.fp-exp-admin-shell .wrap .notice {
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
-.fp-exp-toggle input[type="checkbox"]:checked + .fp-exp-toggle__switch {
-    background: #2563eb;
+/* Toggle checked states - need both class variants */
+.fp-exp-toggle input[type="checkbox"]:checked + .fp-exp-toggle__switch,
+.fp-exp-settings__toggle input[type="checkbox"]:checked + .fp-exp-toggle__switch,
+label.fp-exp-toggle input:checked + .fp-exp-toggle__switch,
+label.fp-exp-settings__toggle input:checked + .fp-exp-toggle__switch {
+    background: #2563eb !important;
 }
 
-.fp-exp-toggle input[type="checkbox"]:checked + .fp-exp-toggle__switch::after {
-    transform: translateX(20px);
+.fp-exp-toggle input[type="checkbox"]:checked + .fp-exp-toggle__switch::after,
+.fp-exp-settings__toggle input[type="checkbox"]:checked + .fp-exp-toggle__switch::after,
+label.fp-exp-toggle input:checked + .fp-exp-toggle__switch::after,
+label.fp-exp-settings__toggle input:checked + .fp-exp-toggle__switch::after {
+    transform: translateX(20px) !important;
 }
 
-.fp-exp-toggle input[type="checkbox"]:focus + .fp-exp-toggle__switch {
+.fp-exp-toggle input[type="checkbox"]:focus + .fp-exp-toggle__switch,
+.fp-exp-settings__toggle input[type="checkbox"]:focus + .fp-exp-toggle__switch {
     outline: 2px solid #2563eb;
     outline-offset: 2px;
 }
@@ -3592,6 +3629,273 @@ html.fp-exp-dark body.fp-exp-admin-shell .wrap .notice {
     border-left-color: #3b82f6;
 }
 
+/* ============================================
+   MIGLIORAMENTI ESTETICI AVANZATI
+   ============================================ */
+
+/* Header con gradiente più elegante e icona */
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-admin__header {
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 50%, #e2e8f0 100%) !important;
+    position: relative;
+    overflow: hidden;
+}
+
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-admin__header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 200px;
+    height: 200px;
+    background: radial-gradient(circle, rgba(37, 99, 235, 0.08) 0%, transparent 70%);
+    border-radius: 50%;
+    transform: translate(30%, -30%);
+    pointer-events: none;
+}
+
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-admin__title {
+    position: relative;
+    z-index: 1;
+}
+
+/* Tab con animazioni più fluide e icone più visibili */
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-tabs .nav-tab {
+    position: relative;
+    overflow: hidden;
+}
+
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-tabs .nav-tab::before {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--fp-exp-color-primary) 0%, #3b82f6 100%);
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border-radius: 3px 3px 0 0;
+}
+
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-tabs .nav-tab:hover::before {
+    width: 100%;
+}
+
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-tabs .nav-tab.nav-tab-active::before {
+    width: 100%;
+}
+
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-tabs .nav-tab .dashicons {
+    transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-tabs .nav-tab:hover .dashicons {
+    transform: scale(1.1);
+    color: var(--fp-exp-color-primary);
+}
+
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-tabs .nav-tab.nav-tab-active .dashicons {
+    color: var(--fp-exp-color-primary);
+    transform: scale(1.05);
+}
+
+/* Form table con card effect più pronunciato */
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form .form-table {
+    background: linear-gradient(to bottom, #ffffff 0%, #fafbfc 100%) !important;
+    box-shadow: 
+        0 1px 3px rgba(0, 0, 0, 0.04),
+        0 0 0 1px rgba(0, 0, 0, 0.02) !important;
+    transition: box-shadow 0.3s ease !important;
+}
+
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form .form-table:hover {
+    box-shadow: 
+        0 4px 12px rgba(0, 0, 0, 0.06),
+        0 0 0 1px rgba(0, 0, 0, 0.04) !important;
+}
+
+/* Righe del form con hover più elegante */
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form .form-table tr {
+    position: relative;
+    border-radius: 6px;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form .form-table tr::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 0;
+    background: linear-gradient(180deg, var(--fp-exp-color-primary) 0%, #3b82f6 100%);
+    transition: width 0.2s ease;
+    border-radius: 0 3px 3px 0;
+}
+
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form .form-table tr:hover::before {
+    width: 3px;
+}
+
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form .form-table tr:hover {
+    background: linear-gradient(to right, #fafbfc 0%, #ffffff 100%) !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03) !important;
+    transform: translateX(2px);
+}
+
+/* Input fields con focus ring più moderno */
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form input[type="text"]:focus,
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form input[type="email"]:focus,
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form input[type="number"]:focus,
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form input[type="url"]:focus,
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form textarea:focus,
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form select:focus {
+    border-color: var(--fp-exp-color-primary) !important;
+    box-shadow: 
+        0 0 0 3px rgba(37, 99, 235, 0.1),
+        0 2px 4px rgba(0, 0, 0, 0.05) !important;
+    transform: translateY(-1px);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* Toggle switches con animazione più fluida */
+.fp-exp-toggle__switch,
+.fp-exp-settings__toggle .fp-exp-toggle__switch {
+    box-shadow: 
+        inset 0 2px 4px rgba(0, 0, 0, 0.1),
+        0 1px 2px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.fp-exp-toggle__switch::after,
+.fp-exp-settings__toggle .fp-exp-toggle__switch::after {
+    box-shadow: 
+        0 2px 4px rgba(0, 0, 0, 0.2),
+        0 1px 2px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.fp-exp-toggle input[type="checkbox"]:checked + .fp-exp-toggle__switch,
+.fp-exp-settings__toggle input[type="checkbox"]:checked + .fp-exp-toggle__switch {
+    box-shadow: 
+        inset 0 2px 4px rgba(37, 99, 235, 0.2),
+        0 0 0 2px rgba(37, 99, 235, 0.1);
+}
+
+/* Description con icona e stile migliorato */
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form .form-table .description::before {
+    content: 'ℹ';
+    display: inline-block;
+    margin-right: 6px;
+    font-size: 12px;
+    opacity: 0.6;
+    vertical-align: middle;
+}
+
+/* Submit button con gradiente e animazione */
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form .button-primary {
+    background: linear-gradient(135deg, var(--fp-exp-color-primary) 0%, #3b82f6 100%) !important;
+    border: none !important;
+    position: relative;
+    overflow: hidden;
+}
+
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form .button-primary::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s ease;
+}
+
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form .button-primary:hover::before {
+    left: 100%;
+}
+
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form .button-primary:hover {
+    background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%) !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 
+        0 8px 16px rgba(37, 99, 235, 0.3),
+        0 0 0 1px rgba(37, 99, 235, 0.1) !important;
+}
+
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form .button-primary:active {
+    transform: translateY(0) !important;
+}
+
+/* Tools cards con effetto glassmorphism */
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-tools__card {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.95) 100%) !important;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.8) !important;
+    position: relative;
+    overflow: hidden;
+}
+
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-tools__card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--fp-exp-color-primary), #3b82f6, #8b5cf6);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.3s ease;
+}
+
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-tools__card:hover::before {
+    transform: scaleX(1);
+}
+
+/* Notice con animazione di entrata */
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-admin__body .notice {
+    animation: slideInFromTop 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+}
+
+@keyframes slideInFromTop {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Breadcrumb con separatori più eleganti */
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-admin__breadcrumb span[aria-hidden="true"] {
+    color: rgba(0, 0, 0, 0.2);
+    margin: 0 8px;
+    font-weight: 300;
+}
+
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-admin__breadcrumb a {
+    transition: color 0.2s ease, text-decoration 0.2s ease;
+    text-decoration: none;
+}
+
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-admin__breadcrumb a:hover {
+    color: var(--fp-exp-color-primary);
+    text-decoration: underline;
+}
+
+/* Miglioramenti per sezioni con molti campi */
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form .form-table tr:first-child {
+    padding-top: 0 !important;
+}
+
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form .form-table tr:last-child {
+    padding-bottom: 0 !important;
+    border-bottom: none !important;
+}
+
 /* Responsive improvements */
 @media (max-width: 782px) {
     .fp-exp-admin__header {
@@ -3615,5 +3919,12 @@ html.fp-exp-dark body.fp-exp-admin-shell .wrap .notice {
     .fp-exp-settings__form .form-table th {
         padding-right: 0;
         margin-bottom: 8px;
+    }
+    
+    .fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form .form-table tr:hover {
+        transform: none;
+        margin: 0;
+        padding-left: 0;
+        padding-right: 0;
     }
 }

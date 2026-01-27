@@ -197,7 +197,10 @@ final class SettingsPage implements HookableInterface
 
             echo '<form action="options.php" method="post" class="fp-exp-settings__form">';
 
-            if ('branding' === $active_tab) {
+            if ('emails' === $active_tab) {
+                settings_fields('fp_exp_settings_emails');
+                do_settings_sections('fp_exp_settings_emails');
+            } elseif ('branding' === $active_tab) {
                 settings_fields('fp_exp_settings_branding');
                 do_settings_sections('fp_exp_settings_branding');
                 $this->render_branding_contrast();
@@ -545,6 +548,14 @@ final class SettingsPage implements HookableInterface
                 ]
             );
         }
+
+        // Sezione: Anteprime email
+        add_settings_section(
+            'fp_exp_section_email_previews',
+            esc_html__('Anteprime email', 'fp-experiences'),
+            [$this, 'render_email_previews_section'],
+            'fp_exp_settings_emails'
+        );
     }
 
     private function register_general_settings(): void
@@ -1055,6 +1066,11 @@ final class SettingsPage implements HookableInterface
      */
     public function sanitize_emails_settings($value): array
     {
+        // Debug logging per tracciare i valori ricevuti dal form
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('[FP-Exp Emails] sanitize_emails_settings() called with value: ' . print_r($value, true));
+        }
+
         $value = is_array($value) ? $value : [];
 
         // mittenti
@@ -1103,7 +1119,7 @@ final class SettingsPage implements HookableInterface
             $subjects_sanitized[$key] = sanitize_text_field((string) ($subjects[$key] ?? ''));
         }
 
-        return [
+        $result = [
             'sender' => [
                 'structure' => $structure,
                 'webmaster' => $webmaster,
@@ -1116,6 +1132,13 @@ final class SettingsPage implements HookableInterface
             'schedule' => $schedule_sanitized,
             'subjects' => $subjects_sanitized,
         ];
+
+        // Debug logging per il valore finale che viene salvato
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('[FP-Exp Emails] Final sanitized value to save: ' . print_r($result, true));
+        }
+
+        return $result;
     }
 
     private function sanitize_yes_no($value): string
@@ -1329,6 +1352,7 @@ final class SettingsPage implements HookableInterface
     {
         $tabs = [
             'general' => '<span class="dashicons dashicons-admin-settings"></span> ' . esc_html__('General', 'fp-experiences'),
+            'emails' => '<span class="dashicons dashicons-email-alt"></span> ' . esc_html__('Email', 'fp-experiences'),
             'gift' => '<span class="dashicons dashicons-tickets-alt"></span> ' . esc_html__('Gift', 'fp-experiences'),
             'branding' => '<span class="dashicons dashicons-art"></span> ' . esc_html__('Branding', 'fp-experiences'),
             'booking' => '<span class="dashicons dashicons-calendar-alt"></span> ' . esc_html__('Booking Rules', 'fp-experiences'),
@@ -1672,18 +1696,45 @@ final class SettingsPage implements HookableInterface
     public function render_email_branding_help(): void
     {
         echo '<p>' . esc_html__('Personalizza intestazione e footer delle email transazionali con logo e messaggi di cortesia.', 'fp-experiences') . '</p>';
+    }
+
+    /**
+     * Render email previews section with all email templates.
+     */
+    public function render_email_previews_section(): void
+    {
+        echo '<p>' . esc_html__('Visualizza le anteprime delle email transazionali. Clicca su ogni tipo per espandere.', 'fp-experiences') . '</p>';
+
+        // Verifica che FP_EXP_PLUGIN_DIR sia definita
+        if (! defined('FP_EXP_PLUGIN_DIR')) {
+            echo '<p class="fp-exp-email-previews__error" style="color: #d63638;">';
+            echo esc_html__('Errore: FP_EXP_PLUGIN_DIR non definita. Le anteprime non possono essere caricate.', 'fp-experiences');
+            echo '</p>';
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('[FP-Exp Email Previews] FP_EXP_PLUGIN_DIR is not defined');
+            }
+            return;
+        }
 
         $emails = new Emails();
         $templates = [
-            'customer-confirmation' => esc_html__('Customer confirmation', 'fp-experiences'),
-            'customer-reminder' => esc_html__('Customer reminder', 'fp-experiences'),
-            'customer-post-experience' => esc_html__('Post-experience follow-up', 'fp-experiences'),
-            'staff-notification' => esc_html__('Staff notification', 'fp-experiences'),
+            'customer-confirmation' => esc_html__('Conferma cliente', 'fp-experiences'),
+            'customer-reminder' => esc_html__('Promemoria cliente', 'fp-experiences'),
+            'customer-post-experience' => esc_html__('Follow-up post-esperienza', 'fp-experiences'),
+            'staff-notification' => esc_html__('Notifica staff', 'fp-experiences'),
         ];
         $languages = [
             EmailTranslator::LANGUAGE_IT => esc_html__('Italiano', 'fp-experiences'),
             EmailTranslator::LANGUAGE_EN => esc_html__('English', 'fp-experiences'),
         ];
+
+        // Debug: verifica percorso template
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            $test_path = FP_EXP_PLUGIN_DIR . 'templates/emails/customer-confirmation.php';
+            error_log('[FP-Exp Email Previews] FP_EXP_PLUGIN_DIR: ' . FP_EXP_PLUGIN_DIR);
+            error_log('[FP-Exp Email Previews] Test template path: ' . $test_path);
+            error_log('[FP-Exp Email Previews] Template exists: ' . (file_exists($test_path) ? 'YES' : 'NO'));
+        }
 
         echo '<div class="fp-exp-email-previews">';
 
@@ -1692,19 +1743,40 @@ final class SettingsPage implements HookableInterface
             echo '<summary class="fp-exp-email-previews__summary">' . esc_html($label) . '</summary>';
             echo '<div class="fp-exp-email-previews__body">';
 
+            $has_previews = false;
             foreach ($languages as $code => $language_label) {
                 $preview = $emails->render_preview($template, $code);
+
+                // Debug logging per ogni preview
+                if (defined('WP_DEBUG') && WP_DEBUG) {
+                    $preview_length = strlen(trim($preview));
+                    error_log('[FP-Exp Email Previews] Template: ' . $template . ', Language: ' . $code . ', Preview length: ' . $preview_length);
+                }
 
                 if ('' === trim($preview)) {
                     continue;
                 }
 
+                $has_previews = true;
                 echo '<div class="fp-exp-email-previews__preview" data-language="' . esc_attr($code) . '">';
                 echo '<h4 class="fp-exp-email-previews__label">' . esc_html($language_label) . '</h4>';
                 echo '<div class="fp-exp-email-previews__frame">';
                 echo $preview; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
                 echo '</div>';
                 echo '</div>';
+            }
+
+            if (! $has_previews) {
+                // Mostra messaggio più dettagliato
+                $template_path = FP_EXP_PLUGIN_DIR . 'templates/emails/' . $template . '.php';
+                $template_exists = file_exists($template_path);
+                echo '<p class="fp-exp-email-previews__empty">';
+                if (! $template_exists) {
+                    echo esc_html__('Template non trovato: ', 'fp-experiences') . esc_html($template_path);
+                } else {
+                    echo esc_html__('Nessuna anteprima disponibile per questo template.', 'fp-experiences');
+                }
+                echo '</p>';
             }
 
             echo '</div>';
@@ -3610,10 +3682,24 @@ final class SettingsPage implements HookableInterface
 
     public function sanitize_rtb($value): array
     {
+        // Debug logging per tracciare i valori ricevuti dal form
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('[FP-Exp RTB] sanitize_rtb() called with value: ' . print_r($value, true));
+        }
+
         $value = is_array($value) ? $value : [];
 
         $mode = isset($value['mode']) ? sanitize_key((string) $value['mode']) : 'off';
+        
+        // Debug logging per il mode ricevuto
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('[FP-Exp RTB] Mode received: ' . ($value['mode'] ?? 'NOT SET') . ' -> sanitized to: ' . $mode);
+        }
+
         if (! in_array($mode, ['off', 'confirm', 'pay_later'], true)) {
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('[FP-Exp RTB] Mode "' . $mode . '" not in allowed values, defaulting to "off"');
+            }
             $mode = 'off';
         }
 
@@ -3649,6 +3735,11 @@ final class SettingsPage implements HookableInterface
                     'body' => sanitize_textarea_field((string) $body),
                 ];
             }
+        }
+
+        // Debug logging per il valore finale che viene salvato
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('[FP-Exp RTB] Final sanitized value to save: ' . print_r($clean, true));
         }
 
         return $clean;

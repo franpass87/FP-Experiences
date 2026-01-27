@@ -153,6 +153,8 @@ final class Checkout implements HookableInterface
 
                         $tickets = $request->get_param('tickets');
                         $addons = $request->get_param('addons');
+                        $language = sanitize_text_field((string) $request->get_param('language'));
+                        $special_requests = sanitize_textarea_field((string) $request->get_param('special_requests'));
                         $tickets = is_array($tickets) ? $tickets : [];
                         $addons = is_array($addons) ? $addons : [];
 
@@ -185,6 +187,16 @@ final class Checkout implements HookableInterface
                         if ($slot_start && $slot_end) {
                             $item['slot_start'] = $slot_start;
                             $item['slot_end'] = $slot_end;
+                        }
+
+                        // Aggiungi lingua selezionata
+                        if ($language) {
+                            $item['language'] = $language;
+                        }
+
+                        // Aggiungi richieste speciali
+                        if ($special_requests) {
+                            $item['special_requests'] = $special_requests;
                         }
 
                         $items = [$item];
@@ -592,6 +604,29 @@ final class Checkout implements HookableInterface
         }
 
         $cart = $this->cart->get_data();
+
+        // Recupera lingua e richieste speciali dal carrello se presenti e aggiungile al payload contact
+        if (!empty($cart['items']) && is_array($cart['items'])) {
+            foreach ($cart['items'] as $item) {
+                if (!is_array($payload['contact'])) {
+                    $payload['contact'] = [];
+                }
+                
+                // Recupera lingua
+                if (!empty($item['language']) && empty($payload['contact']['language'])) {
+                    $payload['contact']['language'] = sanitize_text_field((string) $item['language']);
+                }
+                
+                // Recupera richieste speciali
+                if (!empty($item['special_requests']) && empty($payload['contact']['special_requests'])) {
+                    $payload['contact']['special_requests'] = sanitize_textarea_field((string) $item['special_requests']);
+                }
+                
+                if (!empty($item['language']) || !empty($item['special_requests'])) {
+                    break; // Prendi i dati dal primo item trovato
+                }
+            }
+        }
 
         $this->debug_log('checkout_process', 'Cart snapshot before validation', [
             'items' => array_map([$this, 'summarize_cart_item'], $cart['items']),

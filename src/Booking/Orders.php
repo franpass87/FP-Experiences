@@ -169,6 +169,12 @@ final class Orders implements HookableInterface
         $order->update_meta_data('_fp_exp_contact', $contact);
         $order->update_meta_data('_fp_exp_billing', $billing);
         $order->update_meta_data('_fp_exp_consent_marketing', ! empty($payload['consent']['marketing']) ? 'yes' : 'no');
+        if (!empty($contact['language'])) {
+            $order->update_meta_data('_fp_exp_tour_language', $contact['language']);
+        }
+        if (!empty($contact['special_requests'])) {
+            $order->update_meta_data('_fp_exp_special_requests', $contact['special_requests']);
+        }
         if (! empty($utm_data)) {
             $order->update_meta_data('_fp_exp_utm', $utm_data);
         }
@@ -287,16 +293,28 @@ final class Orders implements HookableInterface
     {
         $slot_id = absint($item['slot_id'] ?? 0);
         $tickets = $item['tickets'] ?? [];
+        $experience_id = absint($item['experience_id'] ?? 0);
         
         // Rileva la locale: prima dal plugin multilingua, poi dal prefisso telefonico come fallback
         $phone_number = $order->get_billing_phone();
         $detected_locale = \FP_Exp\Compatibility\Multilanguage::get_current_locale(null, $phone_number);
         
+        // Determina lo stato iniziale: se l'esperienza usa RTB, usa STATUS_PENDING_REQUEST
+        // altrimenti usa STATUS_PENDING (per ordini normali)
+        $initial_status = Reservations::STATUS_PENDING;
+        if ($experience_id > 0 && Helpers::experience_uses_rtb($experience_id)) {
+            $rtb_mode = Helpers::rtb_mode_for_experience($experience_id);
+            // Se RTB è attivo (non 'off'), usa STATUS_PENDING_REQUEST
+            if ($rtb_mode !== 'off') {
+                $initial_status = Reservations::STATUS_PENDING_REQUEST;
+            }
+        }
+        
         $reservation_id = Reservations::create([
             'order_id' => $order->get_id(),
-            'experience_id' => absint($item['experience_id'] ?? 0),
+            'experience_id' => $experience_id,
             'slot_id' => $slot_id,
-            'status' => Reservations::STATUS_PENDING,
+            'status' => $initial_status,
             'pax' => $tickets,
             'addons' => $item['addons'] ?? [],
             'utm' => $utm,
@@ -419,6 +437,8 @@ final class Orders implements HookableInterface
             'last_name' => sanitize_text_field((string) ($data['last_name'] ?? '')),
             'email' => sanitize_email((string) ($data['email'] ?? '')),
             'phone' => sanitize_text_field((string) ($data['phone'] ?? '')),
+            'language' => sanitize_text_field((string) ($data['language'] ?? '')),
+            'special_requests' => sanitize_textarea_field((string) ($data['special_requests'] ?? '')),
         ];
     }
 

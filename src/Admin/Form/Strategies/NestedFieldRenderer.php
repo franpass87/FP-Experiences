@@ -95,6 +95,11 @@ final class NestedFieldRenderer implements FieldRenderer
             $field_name .= '[' . esc_attr((string) $segment) . ']';
         }
 
+        // Debug logging per verificare il nome del campo generato
+        if (defined('WP_DEBUG') && WP_DEBUG && $option_name === 'fp_exp_rtb') {
+            error_log('[FP-Exp NestedFieldRenderer] Field name: ' . $field_name . ', base_type: ' . $base_type . ', value: ' . print_r($value, true));
+        }
+
         // Get the base renderer for the actual field type
         try {
             $base_renderer = $this->getFactory()->getRenderer($base_type);

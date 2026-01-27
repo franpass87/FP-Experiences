@@ -4,17 +4,23 @@ declare(strict_types=1);
 
 namespace FP_Exp\Admin\ExperienceMetaBoxes\Handlers;
 
+use DateTimeImmutable;
 use FP_Exp\Admin\ExperienceMetaBoxes\BaseMetaBoxHandler;
 use FP_Exp\Admin\ExperienceMetaBoxes\Traits\MetaBoxHelpers;
 use FP_Exp\Booking\Recurrence;
 use FP_Exp\Booking\Slots;
+use FP_Exp\Booking\Slot\Repository\SlotRepository;
+use FP_Exp\Booking\Slot\Services\SlotManager;
+use FP_Exp\Booking\Slot\ValueObjects\TimeRange;
 
 use function absint;
 use function checked;
 use function esc_attr;
 use function esc_html;
 use function esc_textarea;
+use function get_post_meta;
 use function rest_url;
+use function wp_timezone;
 
 /**
  * Handler for Calendar/Availability tab in Experience Meta Box.
@@ -426,6 +432,13 @@ final class CalendarMetaBoxHandler extends BaseMetaBoxHandler
         $this->update_or_delete_meta($post_id, 'buffer_after_minutes', $buffer_after_minutes > 0 ? $buffer_after_minutes : null);
         $this->update_or_delete_meta($post_id, 'slot_capacity', $slot_capacity > 0 ? $slot_capacity : null);
 
+        $is_event = (bool) get_post_meta($post_id, '_fp_is_event', true);
+        if ($is_event) {
+            $this->generate_event_slot($post_id, $duration);
+            delete_post_meta($post_id, '_fp_exp_recurrence');
+            return;
+        }
+
         // Save recurrence if has actionable data
         $has_data = !empty($recurrence_meta['days']) && !empty($recurrence_meta['time_slots']);
         if ($has_data) {
@@ -450,6 +463,41 @@ final class CalendarMetaBoxHandler extends BaseMetaBoxHandler
         } else {
             delete_post_meta($post_id, '_fp_exp_recurrence');
         }
+    }
+
+    private function generate_event_slot(int $post_id, int $duration_minutes): void
+    {
+        $event_datetime = (string) get_post_meta($post_id, '_fp_event_datetime', true);
+        if ($event_datetime === '') {
+            return;
+        }
+
+        $timezone = wp_timezone();
+        $start = DateTimeImmutable::createFromFormat('Y-m-d H:i', $event_datetime, $timezone);
+        if ($start === false) {
+            $start = DateTimeImmutable::createFromFormat('Y-m-d\TH:i', $event_datetime, $timezone);
+        }
+        if ($start === false) {
+            return;
+        }
+
+        $stored_duration = absint((string) get_post_meta($post_id, '_fp_duration_minutes', true));
+        $duration = $stored_duration > 0 ? $stored_duration : ($duration_minutes > 0 ? $duration_minutes : 60);
+        $end = $start->modify('+' . $duration . ' minutes');
+        if ($end === false) {
+            return;
+        }
+
+        $time_range = new TimeRange($start, $end);
+
+        $repository = new SlotRepository();
+        $existing_slots = $repository->findByExperienceId($post_id);
+        foreach ($existing_slots as $slot) {
+            $repository->delete($slot->getId());
+        }
+
+        $manager = new SlotManager($repository);
+        $manager->ensureSlotForOccurrence($post_id, $time_range);
     }
 
     /**

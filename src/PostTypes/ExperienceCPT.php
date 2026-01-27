@@ -373,6 +373,14 @@ final class ExperienceCPT implements HookableInterface
                 'type' => 'boolean',
                 'default' => false,
             ],
+            '_fp_is_event' => [
+                'type' => 'boolean',
+                'default' => false,
+            ],
+            '_fp_event_datetime' => [
+                'type' => 'string',
+                'default' => '',
+            ],
         ];
     }
 

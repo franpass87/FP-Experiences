@@ -1040,10 +1040,22 @@ final class Emails implements HookableInterface
 
     private function render_template(string $template, array $context, ?string $language = null): string
     {
+        // Debug logging per verificare il rendering dei template
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('[FP-Exp Emails] render_template() called for: ' . $template);
+        }
+
         $path = FP_EXP_PLUGIN_DIR . 'templates/emails/' . $template . '.php';
 
         if (! file_exists($path)) {
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('[FP-Exp Emails] Template NOT FOUND: ' . $path);
+            }
             return '';
+        }
+
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('[FP-Exp Emails] Template found: ' . $path);
         }
 
         $language = $this->resolve_language($context, $language);
@@ -1054,6 +1066,10 @@ final class Emails implements HookableInterface
         include $path;
 
         $message = (string) ob_get_clean();
+
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('[FP-Exp Emails] Message length after include: ' . strlen($message));
+        }
 
         return $this->apply_branding($message, $language);
     }

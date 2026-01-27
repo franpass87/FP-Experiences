@@ -1107,13 +1107,39 @@
                     const setCartUrl = new URL(restBaseUrl + 'cart/set', window.location.origin);
                     console.log('FP-EXP: URL finale:', setCartUrl.toString());
                     
+                    // Raccogli lingua selezionata
+                    const languageSelect = widget.querySelector('[data-fp-language-select]');
+                    const selectedLanguage = languageSelect ? languageSelect.value : '';
+                    
+                    // Raccogli richieste speciali (checkbox + textarea)
+                    const specialRequestsOptions = [];
+                    widget.querySelectorAll('[data-fp-special-request-option]:checked').forEach(function(checkbox) {
+                        specialRequestsOptions.push(checkbox.value);
+                    });
+                    
+                    const specialRequestsField = widget.querySelector('[data-fp-special-requests]');
+                    const specialRequestsText = specialRequestsField ? specialRequestsField.value.trim() : '';
+                    
+                    // Combina checkbox selezionate e testo libero
+                    let specialRequests = '';
+                    if (specialRequestsOptions.length > 0) {
+                        specialRequests = specialRequestsOptions.join(', ');
+                        if (specialRequestsText) {
+                            specialRequests += '. ' + specialRequestsText;
+                        }
+                    } else {
+                        specialRequests = specialRequestsText;
+                    }
+                    
                     const cartData = {
                         experience_id: experienceId,
                         slot_id: 0,
                         slot_start: start,
                         slot_end: end,
                         tickets: tickets,
-                        addons: (typeof collectAddons === 'function' ? collectAddons() : {})
+                        addons: (typeof collectAddons === 'function' ? collectAddons() : {}),
+                        language: selectedLanguage || '',
+                        special_requests: specialRequests || ''
                     };
                     
                     console.log('FP-EXP: Dati carrello preparati:', cartData);
@@ -1603,6 +1629,34 @@
                             name: nameInput.value.trim(),
                             email: emailInput.value.trim(),
                             phone: phoneInput ? phoneInput.value.trim() : '',
+                            language: (() => {
+                                const langSelect = widget.querySelector('[data-fp-language-select]');
+                                return langSelect ? langSelect.value : '';
+                            })(),
+                            special_requests: (() => {
+                                // Raccogli checkbox selezionate
+                                const specialRequestsOptions = [];
+                                widget.querySelectorAll('[data-fp-special-request-option]:checked').forEach(function(checkbox) {
+                                    specialRequestsOptions.push(checkbox.value);
+                                });
+                                
+                                // Raccogli testo libero
+                                const specialRequestsField = widget.querySelector('[data-fp-special-requests]');
+                                const specialRequestsText = specialRequestsField ? specialRequestsField.value.trim() : '';
+                                
+                                // Combina checkbox e testo
+                                let result = '';
+                                if (specialRequestsOptions.length > 0) {
+                                    result = specialRequestsOptions.join(', ');
+                                    if (specialRequestsText) {
+                                        result += '. ' + specialRequestsText;
+                                    }
+                                } else {
+                                    result = specialRequestsText;
+                                }
+                                
+                                return result;
+                            })(),
                         },
                         notes: rtbForm.querySelector('[name="notes"]')?.value || '',
                         consent: {

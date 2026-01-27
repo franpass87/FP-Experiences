@@ -86,6 +86,7 @@ final class ListShortcode extends BaseShortcode
         'search' => '',
         'view' => '',
         'show_map' => '0',
+        'event_only' => '0',
         'cta' => 'page',
         'badge_lang' => '1',
         'badge_duration' => '1',
@@ -195,6 +196,7 @@ final class ListShortcode extends BaseShortcode
             $state['view'] = 'grid';
         }
 
+        $state['event_only'] = $this->normalize_bool($attributes['event_only'] ?? '0', false);
         $query_args = $this->build_query_args($state, $order, $orderby);
         $query = new WP_Query($query_args);
 
@@ -213,6 +215,39 @@ final class ListShortcode extends BaseShortcode
         if ('price' === $orderby) {
             $experience_ids = $this->sort_by_price($experience_ids, $prices, $order);
         }
+
+        // Separate events from regular experiences
+        $event_ids = [];
+        $regular_ids = [];
+        foreach ($experience_ids as $id) {
+            $is_event = (bool) get_post_meta($id, '_fp_is_event', true);
+            if ($is_event) {
+                $event_ids[] = $id;
+            } else {
+                $regular_ids[] = $id;
+            }
+        }
+
+        // Sort events by event_datetime (ascending)
+        if (!empty($event_ids)) {
+            usort($event_ids, function ($a, $b) {
+                $date_a = (string) get_post_meta($a, '_fp_event_datetime', true);
+                $date_b = (string) get_post_meta($b, '_fp_event_datetime', true);
+                if ($date_a === '' && $date_b === '') {
+                    return 0;
+                }
+                if ($date_a === '') {
+                    return 1;
+                }
+                if ($date_b === '') {
+                    return -1;
+                }
+                return strcmp($date_a, $date_b);
+            });
+        }
+
+        // Put events first
+        $experience_ids = array_merge($event_ids, $regular_ids);
 
         $total = count($experience_ids);
         $used_fallback = false;
@@ -379,6 +414,14 @@ final class ListShortcode extends BaseShortcode
             ];
         }
 
+        if (! empty($state['event_only'])) {
+            $meta_query[] = [
+                'key' => '_fp_is_event',
+                'value' => '1',
+                'compare' => '=',
+            ];
+        }
+
         if (! empty($tax_query)) {
             $args['tax_query'] = $tax_query;
         }
@@ -538,6 +581,8 @@ final class ListShortcode extends BaseShortcode
 
         $experience_badges = Helpers::experience_badge_payload($experience_badge_slugs);
         $duration_label = $this->format_duration($duration_minutes);
+        $is_event = (bool) get_post_meta($id, '_fp_is_event', true);
+        $event_datetime = $is_event ? (string) get_post_meta($id, '_fp_event_datetime', true) : '';
         $badges = [];
         $language_labels = [];
 
@@ -633,6 +678,8 @@ final class ListShortcode extends BaseShortcode
             'language_labels' => $language_labels,
             'primary_theme' => $primary_theme,
             'terms' => $terms,
+            'is_event' => $is_event,
+            'event_datetime' => $event_datetime,
         ];
     }
 

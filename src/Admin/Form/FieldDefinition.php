@@ -49,11 +49,16 @@ final class FieldDefinition
 
     /**
      * Get field ID attribute.
+     * Sanitizes the name to ensure valid HTML ID (replaces [ and ] with _).
      */
     public function getFieldId(string $option_group = ''): string
     {
         $prefix = empty($option_group) ? '' : $option_group . '_';
-        return $prefix . $this->name;
+        // Sanitize name for HTML ID: replace [ and ] with _ to make it valid
+        $sanitized_name = str_replace(['[', ']'], '_', $this->name);
+        // Remove trailing underscores from nested arrays (e.g., "array_key_" -> "array_key")
+        $sanitized_name = rtrim($sanitized_name, '_');
+        return $prefix . $sanitized_name;
     }
 
     /**

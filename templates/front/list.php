@@ -113,9 +113,16 @@ $format_currency = static function (string $amount) use ($currency_symbol, $curr
                 }
                 $short_description = ! empty($experience['short_description']) ? (string) $experience['short_description'] : '';
                 ?>
+                <?php
+                $is_event = isset($experience['is_event']) && $experience['is_event'];
+                $card_classes = $is_cards_variant ? 'fp-listing__card fp-listing__card--gyg' : 'fp-listing__card';
+                if ($is_event) {
+                    $card_classes .= ' fp-listing__card--event fp-listing__card--full-width';
+                }
+                ?>
                 <?php if ($is_cards_variant) : ?>
                     <article
-                        class="fp-listing__card fp-listing__card--gyg"
+                        class="<?php echo esc_attr($card_classes); ?>"
                         data-experience-id="<?php echo esc_attr((string) $experience['id']); ?>"
                         data-experience-name="<?php echo esc_attr($experience['title']); ?>"
                         data-experience-price="<?php echo esc_attr((string) ($experience['price_from'] ?? '')); ?>"
@@ -202,7 +209,7 @@ $format_currency = static function (string $amount) use ($currency_symbol, $curr
                     </article>
                 <?php else : ?>
                     <article
-                        class="fp-listing__card"
+                        class="<?php echo esc_attr($card_classes); ?>"
                         data-experience-id="<?php echo esc_attr((string) $experience['id']); ?>"
                         data-experience-name="<?php echo esc_attr($experience['title']); ?>"
                         data-experience-price="<?php echo esc_attr((string) ($experience['price_from'] ?? '')); ?>"

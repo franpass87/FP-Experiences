@@ -40,6 +40,9 @@ final class DetailsMetaBoxHandler extends BaseMetaBoxHandler
         $panel_id = 'fp-exp-tab-details-panel';
         $short_desc = $data['short_desc'] ?? '';
         $duration_minutes = $data['duration_minutes'] ?? 0;
+        $is_event = !empty($data['is_event']);
+        $event_datetime = $data['event_datetime'] ?? '';
+        $event_datetime_input = $this->format_event_datetime_for_input((string) $event_datetime);
         $hero_image = $data['hero_image'] ?? ['id' => 0, 'url' => '', 'width' => 0, 'height' => 0];
         $gallery = $data['gallery'] ?? ['items' => [], 'ids' => []];
         $language_details = $data['languages'] ?? [];
@@ -88,6 +91,33 @@ final class DetailsMetaBoxHandler extends BaseMetaBoxHandler
                             aria-describedby="fp-exp-duration-help"
                         />
                         <p class="fp-exp-field__description" id="fp-exp-duration-help"><?php esc_html_e('Inserisci solo numeri interi.', 'fp-experiences'); ?></p>
+                    </div>
+                    <div>
+                        <span class="fp-exp-field__label">
+                            <?php esc_html_e('Tipo esperienza', 'fp-experiences'); ?>
+                            <?php $this->render_tooltip('fp-exp-event-help', esc_html__('Se attivi questa opzione, l’esperienza diventa un evento con data/ora fissa e viene generato un solo slot.', 'fp-experiences')); ?>
+                        </span>
+                        <label class="fp-exp-field__checkbox">
+                            <input
+                                type="checkbox"
+                                name="fp_exp_details[is_event]"
+                                value="1"
+                                <?php checked($is_event); ?>
+                            />
+                            <span><?php esc_html_e('Evento a data fissa', 'fp-experiences'); ?></span>
+                        </label>
+                        <label class="fp-exp-field__label" for="fp-exp-event-datetime">
+                            <?php esc_html_e('Data e ora evento', 'fp-experiences'); ?>
+                        </label>
+                        <input
+                            type="datetime-local"
+                            id="fp-exp-event-datetime"
+                            name="fp_exp_details[event_datetime]"
+                            value="<?php echo esc_attr((string) $event_datetime_input); ?>"
+                            class="regular-text"
+                            aria-describedby="fp-exp-event-help"
+                        />
+                        <p class="fp-exp-field__description" id="fp-exp-event-help"><?php esc_html_e('Seleziona data e ora di partenza dell’evento.', 'fp-experiences'); ?></p>
                     </div>
                     <div>
                         <span class="fp-exp-field__label">
@@ -920,6 +950,18 @@ final class DetailsMetaBoxHandler extends BaseMetaBoxHandler
         $duration_minutes = isset($raw['duration_minutes']) ? absint((string) $raw['duration_minutes']) : 0;
         $this->update_or_delete_meta($post_id, 'duration_minutes', $duration_minutes > 0 ? $duration_minutes : null);
 
+        // Event flags
+        $is_event = !empty($raw['is_event']);
+        $this->update_or_delete_meta($post_id, 'is_event', $is_event);
+
+        $event_datetime_raw = $this->sanitize_text($raw['event_datetime'] ?? '');
+        $event_datetime = $this->normalize_event_datetime($event_datetime_raw);
+        if ($is_event && $event_datetime !== '') {
+            $this->update_or_delete_meta($post_id, 'event_datetime', $event_datetime);
+        } else {
+            $this->update_or_delete_meta($post_id, 'event_datetime', null);
+        }
+
         // Hero image
         $hero_image_id = isset($raw['hero_image_id']) ? absint((string) $raw['hero_image_id']) : 0;
         if ($hero_image_id > 0 && wp_attachment_is_image($hero_image_id)) {
@@ -1134,6 +1176,8 @@ final class DetailsMetaBoxHandler extends BaseMetaBoxHandler
         return [
             'short_desc' => $short_desc,
             'duration_minutes' => $duration_minutes,
+            'is_event' => $is_event,
+            'event_datetime' => $event_datetime,
             'hero_image' => $hero_image,
             'gallery' => $gallery,
             'gallery_video_url' => $gallery_video_url,
@@ -1158,6 +1202,31 @@ final class DetailsMetaBoxHandler extends BaseMetaBoxHandler
             'age_max' => $age_max,
             'rules_children' => $rules_children,
         ];
+    }
+
+    private function normalize_event_datetime(string $raw): string
+    {
+        $value = trim($raw);
+        if ($value === '') {
+            return '';
+        }
+
+        $value = str_replace('T', ' ', $value);
+        if (!preg_match('/^\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}$/', $value)) {
+            return '';
+        }
+
+        return $value;
+    }
+
+    private function format_event_datetime_for_input(string $value): string
+    {
+        $normalized = $this->normalize_event_datetime($value);
+        if ($normalized === '') {
+            return '';
+        }
+
+        return str_replace(' ', 'T', $normalized);
     }
 
     /**

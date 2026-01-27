@@ -27,6 +27,11 @@ final class SelectFieldRenderer implements FieldRenderer
         $input_name = $field->getInputName($option_group);
         $value = $field->value ?? '';
         $choices = $field->getOption('choices', []);
+
+        // Debug logging per verificare le choices del select
+        if (defined('WP_DEBUG') && WP_DEBUG && strpos($input_name, 'fp_exp_rtb') !== false) {
+            error_log('[FP-Exp SelectFieldRenderer] input_name: ' . $input_name . ', value: ' . print_r($value, true) . ', choices: ' . print_r($choices, true));
+        }
         
         if (!is_array($choices) || empty($choices)) {
             return '<p class="description">' . esc_html__('Nessuna opzione disponibile', 'fp-experiences') . '</p>';

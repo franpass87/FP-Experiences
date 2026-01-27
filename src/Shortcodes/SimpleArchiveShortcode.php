@@ -42,6 +42,7 @@ final class SimpleArchiveShortcode extends BaseShortcode
         'columns' => '3',
         'order' => 'menu_order',
         'order_direction' => 'ASC',
+        'event_only' => '0',
     ];
 
     /**
@@ -57,8 +58,9 @@ final class SimpleArchiveShortcode extends BaseShortcode
         $columns = $this->normalize_columns((string) ($attributes['columns'] ?? '3'));
         $order_by = $this->normalize_order((string) ($attributes['order'] ?? 'menu_order'));
         $order_direction = $this->normalize_direction((string) ($attributes['order_direction'] ?? 'ASC'));
+        $event_only = $this->normalize_bool((string) ($attributes['event_only'] ?? '0'));
 
-        $posts = $this->query_experiences($order_by, $order_direction);
+        $posts = $this->query_experiences($order_by, $order_direction, $event_only);
 
         $experiences = array_map(function (WP_Post $post): array {
             return $this->map_experience($post);
@@ -111,12 +113,18 @@ final class SimpleArchiveShortcode extends BaseShortcode
         return in_array($value, ['ASC', 'DESC'], true) ? $value : 'ASC';
     }
 
+    private function normalize_bool(string $value): bool
+    {
+        $value = strtolower(sanitize_text_field($value));
+        return in_array($value, ['1', 'true', 'yes', 'on'], true);
+    }
+
     /**
      * @return array<int, WP_Post>
      */
-    private function query_experiences(string $order_by, string $direction): array
+    private function query_experiences(string $order_by, string $direction, bool $event_only): array
     {
-        $query = new WP_Query([
+        $args = [
             'post_type' => 'fp_experience',
             'post_status' => 'publish',
             'posts_per_page' => -1,
@@ -124,7 +132,19 @@ final class SimpleArchiveShortcode extends BaseShortcode
             'order' => $direction,
             'no_found_rows' => true,
             'ignore_sticky_posts' => true,
-        ]);
+        ];
+
+        if ($event_only) {
+            $args['meta_query'] = [
+                [
+                    'key' => '_fp_is_event',
+                    'value' => '1',
+                    'compare' => '=',
+                ],
+            ];
+        }
+
+        $query = new WP_Query($args);
 
         $posts = [];
 

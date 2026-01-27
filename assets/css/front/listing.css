@@ -634,3 +634,21 @@
         grid-template-columns: repeat(var(--fp-listing-cols-desktop, var(--fp-listing-cols-tablet, 1)), minmax(0, 1fr));
     }
 }
+
+/* Event cards: full width (span all columns) */
+.fp-listing__card--full-width {
+    grid-column: 1 / -1;
+}
+
+/* Ensure event cards maintain proper layout on all breakpoints */
+@media (min-width: 768px) {
+    .fp-listing__grid--grid .fp-listing__card--full-width {
+        grid-column: 1 / -1;
+    }
+}
+
+@media (min-width: 1024px) {
+    .fp-listing__grid--grid .fp-listing__card--full-width {
+        grid-column: 1 / -1;
+    }
+}

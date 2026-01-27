@@ -394,10 +394,50 @@ $dataset = [
                     </table>
                 </div>
             </li>
+            <?php 
+            $has_multiple_languages = !empty($experience['languages']) && is_array($experience['languages']) && count($experience['languages']) > 1;
+            $language_step_num = empty($addons) ? '3' : '4';
+            ?>
+            <?php if ($has_multiple_languages) : ?>
+                <li class="fp-exp-step fp-exp-step--language" data-fp-step="language">
+                    <header>
+                        <span class="fp-exp-step__number"><?php echo esc_html($language_step_num); ?></span>
+                        <h3 class="fp-exp-step__title"><?php echo esc_html__('Scegli la lingua del tour', 'fp-experiences'); ?></h3>
+                    </header>
+                    <div class="fp-exp-step__content">
+                        <div class="fp-exp-field">
+                            <label class="fp-exp-label" for="fp-exp-language-<?php echo esc_attr($scope_class); ?>">
+                                <?php echo esc_html__('Lingua del tour', 'fp-experiences'); ?>
+                            </label>
+                            <select 
+                                id="fp-exp-language-<?php echo esc_attr($scope_class); ?>" 
+                                name="tour_language" 
+                                class="fp-exp-select"
+                                data-fp-language-select
+                            >
+                                <option value=""><?php echo esc_html__('-- Seleziona lingua --', 'fp-experiences'); ?></option>
+                                <?php foreach ($experience['languages'] as $lang) : ?>
+                                    <?php
+                                    $lang_label = is_string($lang) ? $lang : '';
+                                    if ('' === $lang_label) {
+                                        continue;
+                                    }
+                                    ?>
+                                    <option value="<?php echo esc_attr($lang_label); ?>"><?php echo esc_html($lang_label); ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                            <p class="fp-exp-field__description"><?php echo esc_html__('Seleziona la lingua in cui preferisci svolgere il tour.', 'fp-experiences'); ?></p>
+                        </div>
+                    </div>
+                </li>
+            <?php endif; ?>
+            <?php 
+            $addons_step_num = $has_multiple_languages ? '4' : '3';
+            ?>
             <?php if (! empty($addons)) : ?>
                 <li class="fp-exp-step fp-exp-step--addons" data-fp-step="addons">
                     <header>
-                        <span class="fp-exp-step__number">3</span>
+                        <span class="fp-exp-step__number"><?php echo esc_html($addons_step_num); ?></span>
                         <h3 class="fp-exp-step__title"><?php echo esc_html__('Extra', 'fp-experiences'); ?></h3>
                     </header>
                     <div class="fp-exp-step__content">
@@ -491,9 +531,156 @@ $dataset = [
                     </div>
                 </li>
             <?php endif; ?>
+            <?php 
+            // Calcola il numero dello step per le richieste speciali
+            $special_requests_step_num = 3;
+            if (!empty($addons)) {
+                $special_requests_step_num++;
+            }
+            if ($has_multiple_languages) {
+                $special_requests_step_num++;
+            }
+            ?>
+            <li class="fp-exp-step fp-exp-step--special-requests" data-fp-step="special-requests">
+                <header>
+                    <span class="fp-exp-step__number"><?php echo esc_html((string) $special_requests_step_num); ?></span>
+                    <h3 class="fp-exp-step__title"><?php echo esc_html__('Richieste speciali', 'fp-experiences'); ?></h3>
+                </header>
+                <div class="fp-exp-step__content">
+                    <div class="fp-exp-field">
+                        <label class="fp-exp-label">
+                            <?php echo esc_html__('Richieste speciali', 'fp-experiences'); ?>
+                            <span class="fp-exp-field__optional"><?php echo esc_html__('(opzionale)', 'fp-experiences'); ?></span>
+                        </label>
+                        
+                        <div class="fp-exp-special-requests__options">
+                            <div class="fp-exp-special-requests__group">
+                                <p class="fp-exp-special-requests__group-title"><?php echo esc_html__('Richieste alimentari', 'fp-experiences'); ?></p>
+                                <div class="fp-exp-field fp-exp-field--checkbox">
+                                    <label for="fp-exp-request-vegan-<?php echo esc_attr($scope_class); ?>">
+                                        <input 
+                                            type="checkbox" 
+                                            id="fp-exp-request-vegan-<?php echo esc_attr($scope_class); ?>" 
+                                            name="special_requests_options[]" 
+                                            value="vegano"
+                                            data-fp-special-request-option
+                                        />
+                                        <span><?php echo esc_html__('Dieta vegana', 'fp-experiences'); ?></span>
+                                    </label>
+                                </div>
+                                
+                                <div class="fp-exp-field fp-exp-field--checkbox">
+                                    <label for="fp-exp-request-vegetarian-<?php echo esc_attr($scope_class); ?>">
+                                        <input 
+                                            type="checkbox" 
+                                            id="fp-exp-request-vegetarian-<?php echo esc_attr($scope_class); ?>" 
+                                            name="special_requests_options[]" 
+                                            value="vegetariano"
+                                            data-fp-special-request-option
+                                        />
+                                        <span><?php echo esc_html__('Dieta vegetariana', 'fp-experiences'); ?></span>
+                                    </label>
+                                </div>
+                                
+                                <div class="fp-exp-field fp-exp-field--checkbox">
+                                    <label for="fp-exp-request-celiac-<?php echo esc_attr($scope_class); ?>">
+                                        <input 
+                                            type="checkbox" 
+                                            id="fp-exp-request-celiac-<?php echo esc_attr($scope_class); ?>" 
+                                            name="special_requests_options[]" 
+                                            value="celiaco"
+                                            data-fp-special-request-option
+                                        />
+                                        <span><?php echo esc_html__('Celiaco / Intolleranza al glutine', 'fp-experiences'); ?></span>
+                                    </label>
+                                </div>
+                                
+                                <div class="fp-exp-field fp-exp-field--checkbox">
+                                    <label for="fp-exp-request-allergies-<?php echo esc_attr($scope_class); ?>">
+                                        <input 
+                                            type="checkbox" 
+                                            id="fp-exp-request-allergies-<?php echo esc_attr($scope_class); ?>" 
+                                            name="special_requests_options[]" 
+                                            value="allergie"
+                                            data-fp-special-request-option
+                                        />
+                                        <span><?php echo esc_html__('Allergie alimentari', 'fp-experiences'); ?></span>
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <div class="fp-exp-special-requests__group">
+                                <p class="fp-exp-special-requests__group-title"><?php echo esc_html__('Accessibilità', 'fp-experiences'); ?></p>
+                                <div class="fp-exp-field fp-exp-field--checkbox">
+                                    <label for="fp-exp-request-mobility-<?php echo esc_attr($scope_class); ?>">
+                                        <input 
+                                            type="checkbox" 
+                                            id="fp-exp-request-mobility-<?php echo esc_attr($scope_class); ?>" 
+                                            name="special_requests_options[]" 
+                                            value="mobilita_ridotta"
+                                            data-fp-special-request-option
+                                        />
+                                        <span><?php echo esc_html__('Mobilità ridotta / Accesso facilitato', 'fp-experiences'); ?></span>
+                                    </label>
+                                </div>
+                                
+                                <div class="fp-exp-field fp-exp-field--checkbox">
+                                    <label for="fp-exp-request-pregnancy-<?php echo esc_attr($scope_class); ?>">
+                                        <input 
+                                            type="checkbox" 
+                                            id="fp-exp-request-pregnancy-<?php echo esc_attr($scope_class); ?>" 
+                                            name="special_requests_options[]" 
+                                            value="gravidanza"
+                                            data-fp-special-request-option
+                                        />
+                                        <span><?php echo esc_html__('Gravidanza', 'fp-experiences'); ?></span>
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <div class="fp-exp-special-requests__group">
+                                <p class="fp-exp-special-requests__group-title"><?php echo esc_html__('Celebrazioni', 'fp-experiences'); ?></p>
+                                <div class="fp-exp-field fp-exp-field--checkbox">
+                                    <label for="fp-exp-request-celebration-<?php echo esc_attr($scope_class); ?>">
+                                        <input 
+                                            type="checkbox" 
+                                            id="fp-exp-request-celebration-<?php echo esc_attr($scope_class); ?>" 
+                                            name="special_requests_options[]" 
+                                            value="celebrazione"
+                                            data-fp-special-request-option
+                                        />
+                                        <span><?php echo esc_html__('Compleanno / Anniversario / Evento speciale', 'fp-experiences'); ?></span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="fp-exp-field" style="margin-top: 1.5rem;">
+                            <label class="fp-exp-label" for="fp-exp-special-requests-<?php echo esc_attr($scope_class); ?>">
+                                <?php echo esc_html__('Altre richieste o note', 'fp-experiences'); ?>
+                            </label>
+                            <textarea 
+                                id="fp-exp-special-requests-<?php echo esc_attr($scope_class); ?>" 
+                                name="special_requests" 
+                                class="fp-exp-textarea"
+                                rows="3"
+                                placeholder="<?php echo esc_attr__('Specifica eventuali dettagli aggiuntivi...', 'fp-experiences'); ?>"
+                                data-fp-special-requests
+                            ></textarea>
+                        </div>
+                        
+                        <p class="fp-exp-field__description">
+                            <?php echo esc_html__('Indica eventuali richieste o esigenze particolari che dovremmo conoscere per organizzare al meglio la tua esperienza.', 'fp-experiences'); ?>
+                        </p>
+                    </div>
+                </div>
+            </li>
             <li class="fp-exp-step fp-exp-step--summary" data-fp-step="summary">
                 <header>
-                    <span class="fp-exp-step__number"><?php echo esc_html(empty($addons) ? '3' : '4'); ?></span>
+                    <span class="fp-exp-step__number"><?php 
+                        $step_num = $special_requests_step_num + 1;
+                        echo esc_html((string) $step_num); 
+                    ?></span>
                     <h3 class="fp-exp-step__title"><?php echo esc_html__('Riepilogo', 'fp-experiences'); ?></h3>
                 </header>
                 <div class="fp-exp-step__content">
