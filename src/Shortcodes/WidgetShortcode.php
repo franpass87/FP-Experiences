@@ -190,7 +190,17 @@ final class WidgetShortcode extends BaseShortcode
 
         $rtb_settings = Helpers::rtb_settings();
         $experience_rtb_mode = Helpers::rtb_mode_for_experience($experience_id);
-        $rtb_enabled = ('off' !== $experience_rtb_mode) && Helpers::experience_uses_rtb($experience_id);
+        $experience_uses_rtb = Helpers::experience_uses_rtb($experience_id);
+        $rtb_enabled = ('off' !== $experience_rtb_mode) && $experience_uses_rtb;
+
+        // Debug logging per tracciare le impostazioni RTB nel widget
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('[FP-Exp Widget] Experience ID: ' . $experience_id);
+            error_log('[FP-Exp Widget] RTB Settings: ' . print_r($rtb_settings, true));
+            error_log('[FP-Exp Widget] experience_rtb_mode: ' . $experience_rtb_mode);
+            error_log('[FP-Exp Widget] experience_uses_rtb(): ' . ($experience_uses_rtb ? 'true' : 'false'));
+            error_log('[FP-Exp Widget] rtb_enabled (final): ' . ($rtb_enabled ? 'true' : 'false'));
+        }
 
         if ($rtb_forced) {
             $rtb_enabled = true;
