@@ -165,15 +165,16 @@ final class RequestToBook implements HookableInterface
         $this->debug_log('RTB handle_request invoked');
         nocache_headers();
 
-        $nonce = (string) $request->get_param('nonce');
-        $this->debug_log('RTB request nonce received', [
-            'nonce_prefix' => substr($nonce, 0, 10),
-        ]);
-
-        if (! wp_verify_nonce($nonce, 'fp-exp-rtb')) {
-            return new WP_Error('fp_exp_rtb_nonce', __('La sessione è scaduta. Aggiorna la pagina e riprova.', 'fp-experiences'), ['status' => 403]);
+        // Verifica referer per protezione CSRF base
+        $referer = $request->get_header('referer');
+        $referer_host = $referer ? wp_parse_url($referer, PHP_URL_HOST) : '';
+        $home_host = wp_parse_url(home_url(), PHP_URL_HOST);
+        if ($referer_host && $referer_host !== $home_host) {
+            $this->debug_log('RTB request denied: invalid referer', ['referer' => $referer]);
+            return new WP_Error('fp_exp_rtb_invalid_referer', __('Richiesta non valida. Ricarica la pagina e riprova.', 'fp-experiences'), ['status' => 403]);
         }
 
+        // Rate limiting per prevenire abusi
         if (Helpers::hit_rate_limit('rtb_' . Helpers::client_fingerprint(), 5, MINUTE_IN_SECONDS)) {
             return new WP_Error('fp_exp_rtb_rate_limited', __('Attendi prima di inviare un’altra richiesta.', 'fp-experiences'), ['status' => 429]);
         }
