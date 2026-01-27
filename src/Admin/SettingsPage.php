@@ -3682,9 +3682,15 @@ final class SettingsPage implements HookableInterface
 
     public function sanitize_rtb($value): array
     {
-        // Debug logging per tracciare i valori ricevuti dal form
+        // Debug logging dettagliato per diagnosticare il problema di salvataggio
         if (defined('WP_DEBUG') && WP_DEBUG) {
-            error_log('[FP-Exp RTB] sanitize_rtb() called with value: ' . print_r($value, true));
+            error_log('[FP-Exp RTB] ========== SANITIZE_RTB CHIAMATO ==========');
+            error_log('[FP-Exp RTB] Valore ricevuto: ' . print_r($value, true));
+            error_log('[FP-Exp RTB] $_POST[fp_exp_rtb] presente: ' . (isset($_POST['fp_exp_rtb']) ? 'SI' : 'NO'));
+            if (isset($_POST['fp_exp_rtb'])) {
+                error_log('[FP-Exp RTB] $_POST[fp_exp_rtb]: ' . print_r($_POST['fp_exp_rtb'], true));
+            }
+            error_log('[FP-Exp RTB] Valore attuale in DB: ' . print_r(get_option('fp_exp_rtb', []), true));
         }
 
         $value = is_array($value) ? $value : [];
