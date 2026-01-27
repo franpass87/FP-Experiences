@@ -1438,10 +1438,8 @@
                     addons: addons,
                 };
 
+                // Non inviamo X-WP-Nonce header perché usiamo un nonce custom nel payload
                 const quoteHeaders = { 'Content-Type': 'application/json' };
-                if (typeof fpExpConfig !== 'undefined' && fpExpConfig.restNonce) {
-                    quoteHeaders['X-WP-Nonce'] = fpExpConfig.restNonce;
-                }
                 
                 fetch(quoteUrl, {
                     method: 'POST',
