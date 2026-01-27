@@ -2917,42 +2917,62 @@ final class SettingsPage implements HookableInterface
     {
         $settings = $this->getOptions()->get('fp_exp_rtb', []);
         $settings = is_array($settings) ? $settings : [];
-        $value = $this->extract_nested_value($settings, $field['key']);
-        $path = $this->parse_key_segments($field['key'] ?? '');
+        $key = $field['key'] ?? '';
+        $type = $field['type'] ?? 'text';
+        $description = $field['description'] ?? '';
         
+        // Get nested value
+        $value = $this->extract_nested_value($settings, $key);
+        
+        // Build field name for nested option
+        $path = $this->parse_key_segments($key);
         if (empty($path)) {
             return;
         }
-
-        $type = $field['type'] ?? 'text';
-        $base_type = match($type) {
-            'checkbox' => 'toggle',
-            'select' => 'select',
-            'number' => 'number',
-            'textarea' => 'textarea',
-            default => 'text',
-        };
-
-        // Use NestedFieldRenderer for RTB fields
-        // Note: label is empty because WordPress already shows it via add_settings_field
-        $field_html = $this->render_form_field(
-            name: implode('_', $path),
-            type: 'nested_' . $base_type,
-            label: '', // WordPress already shows the label via add_settings_field
-            value: null, // Will be retrieved by NestedFieldRenderer
-            options: [
-                'path' => $path,
-                'base_type' => $base_type,
-                'option_name' => 'fp_exp_rtb',
-                'description' => $field['description'] ?? null,
-                'attributes' => $this->get_field_attributes($type),
-                'choices' => $field['options'] ?? [],
-                'min' => $field['min'] ?? 0,
-                'placeholder' => $field['placeholder'] ?? '',
-            ]
-        );
-
-        echo $field_html;
+        
+        $field_name = 'fp_exp_rtb';
+        foreach ($path as $segment) {
+            $field_name .= '[' . esc_attr($segment) . ']';
+        }
+        
+        $field_id = 'fp_exp_rtb_' . implode('_', $path);
+        
+        // Debug logging
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('[FP-Exp render_rtb_field] key=' . $key . ', field_name=' . $field_name . ', value=' . print_r($value, true));
+        }
+        
+        // Render based on type
+        switch ($type) {
+            case 'select':
+                $options = $field['options'] ?? [];
+                echo '<select id="' . esc_attr($field_id) . '" name="' . esc_attr($field_name) . '" class="regular-text">';
+                foreach ($options as $opt_value => $opt_label) {
+                    $selected = ($value === $opt_value) ? ' selected="selected"' : '';
+                    echo '<option value="' . esc_attr($opt_value) . '"' . $selected . '>' . esc_html($opt_label) . '</option>';
+                }
+                echo '</select>';
+                break;
+                
+            case 'number':
+                $min = $field['min'] ?? 0;
+                echo '<input type="number" id="' . esc_attr($field_id) . '" name="' . esc_attr($field_name) . '" value="' . esc_attr((string) $value) . '" min="' . esc_attr((string) $min) . '" class="small-text" />';
+                break;
+                
+            case 'checkbox':
+                // Hidden field to ensure value is always sent
+                echo '<input type="hidden" name="' . esc_attr($field_name) . '" value="no" />';
+                $checked = ($value === 'yes' || $value === '1' || $value === true || $value === 1) ? ' checked="checked"' : '';
+                echo '<input type="checkbox" id="' . esc_attr($field_id) . '" name="' . esc_attr($field_name) . '" value="yes"' . $checked . ' />';
+                break;
+                
+            default:
+                echo '<input type="text" id="' . esc_attr($field_id) . '" name="' . esc_attr($field_name) . '" value="' . esc_attr((string) $value) . '" class="regular-text" />';
+        }
+        
+        if ($description) {
+            echo '<p class="description">' . esc_html($description) . '</p>';
+        }
     }
 
     /**
