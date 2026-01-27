@@ -68,8 +68,11 @@ final class WooCommerceProduct implements HookableInterface
         // Display order item meta with timezone conversion
         add_filter('woocommerce_order_item_display_meta_value', [$this, 'format_order_item_meta_value'], 10, 3);
 
-        // Hide technical meta keys from order display (frontend and admin)
+        // Hide technical meta keys from order display (admin)
         add_filter('woocommerce_hidden_order_itemmeta', [$this, 'hide_technical_order_meta']);
+
+        // Hide technical meta keys from order display (frontend - thank you page, order details)
+        add_filter('woocommerce_order_item_get_formatted_meta_data', [$this, 'filter_order_item_meta_frontend'], 10, 2);
 
         // Format order item meta keys with human-readable labels
         add_filter('woocommerce_order_item_display_meta_key', [$this, 'format_order_item_meta_key'], 10, 3);
@@ -230,7 +233,7 @@ final class WooCommerceProduct implements HookableInterface
     }
 
     /**
-     * Hide technical meta keys from order item display
+     * Hide technical meta keys from order item display (admin)
      * These are internal identifiers that shouldn't be shown to customers
      *
      * @param array $hidden_meta Array of meta keys to hide
@@ -238,7 +241,57 @@ final class WooCommerceProduct implements HookableInterface
      */
     public function hide_technical_order_meta(array $hidden_meta): array
     {
-        $fp_hidden_keys = [
+        $fp_hidden_keys = $this->get_hidden_meta_keys();
+
+        return array_merge($hidden_meta, $fp_hidden_keys);
+    }
+
+    /**
+     * Filter order item meta for frontend display (thank you page, order details)
+     * Removes technical meta and formats labels
+     *
+     * @param array $formatted_meta Array of formatted meta data
+     * @param \WC_Order_Item $item The order item
+     * @return array
+     */
+    public function filter_order_item_meta_frontend(array $formatted_meta, $item): array
+    {
+        $hidden_keys = $this->get_hidden_meta_keys();
+        
+        // Labels for meta keys that should be shown with nice names
+        $key_labels = [
+            'fp_exp_slot_start' => __('Data e ora inizio', 'fp-experiences'),
+            'fp_exp_slot_end' => __('Data e ora fine', 'fp-experiences'),
+            '_fp_exp_slot_start' => __('Data e ora inizio', 'fp-experiences'),
+            '_fp_exp_slot_end' => __('Data e ora fine', 'fp-experiences'),
+        ];
+
+        foreach ($formatted_meta as $meta_id => $meta) {
+            $key = $meta->key ?? '';
+            
+            // Remove hidden meta
+            if (in_array($key, $hidden_keys, true)) {
+                unset($formatted_meta[$meta_id]);
+                continue;
+            }
+            
+            // Format display key with nice label
+            if (isset($key_labels[$key])) {
+                $meta->display_key = $key_labels[$key];
+            }
+        }
+
+        return $formatted_meta;
+    }
+
+    /**
+     * Get list of meta keys that should be hidden from display
+     *
+     * @return array
+     */
+    private function get_hidden_meta_keys(): array
+    {
+        return [
             'fp_exp_experience_id',
             'fp_exp_slot_id',
             'fp_exp_item',
@@ -249,8 +302,6 @@ final class WooCommerceProduct implements HookableInterface
             '_fp_exp_addons',
             '_reduced_stock',
         ];
-
-        return array_merge($hidden_meta, $fp_hidden_keys);
     }
 
     /**
