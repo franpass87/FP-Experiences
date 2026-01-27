@@ -1042,7 +1042,7 @@ final class RequestToBook implements HookableInterface
             'request' => __('Thank you for your request. Our team will review it and get back to you shortly.', 'fp-experiences'),
             'approved' => __('Great news! Your experience request has been approved. We look forward to welcoming you.', 'fp-experiences'),
             'declined' => __('We regret to inform you that we are unable to accommodate your experience request at this time.', 'fp-experiences'),
-            'payment' => __('Your experience request has been approved. Please complete your payment using the link below.', 'fp-experiences'),
+            'payment' => __('Your experience request has been approved. Please complete your payment using the link below.', 'fp-experiences') . "\n\n{payment_url}",
         ];
 
         $subject = ! empty($message['subject']) ? $message['subject'] : ($default_subjects[$stage] ?? __('We received your experience request', 'fp-experiences'));
