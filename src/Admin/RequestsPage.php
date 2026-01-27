@@ -222,7 +222,7 @@ final class RequestsPage implements HookableInterface
                 esc_html__('Configura Request to Book', 'fp-experiences')
             );
         } else {
-            echo '<table class="widefat fixed striped">';
+            echo '<table class="widefat fixed striped fp-exp-requests__table">';
             echo '<thead><tr>';
             echo '<th>' . esc_html__('Esperienza', 'fp-experiences') . '</th>';
             echo '<th>' . esc_html__('Slot', 'fp-experiences') . '</th>';

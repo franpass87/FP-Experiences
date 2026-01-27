@@ -2026,6 +2026,28 @@ html.fp-exp-dark body.fp-exp-admin-shell .wrap .notice {
     font-weight: 500;
 }
 
+/* Tabella richieste RTB */
+.fp-exp-requests__table {
+    table-layout: fixed;
+    width: 100%;
+}
+
+.fp-exp-requests__table th:last-child,
+.fp-exp-requests__table td:last-child {
+    width: 200px;
+    min-width: 200px;
+}
+
+.fp-exp-requests__action .button {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.fp-exp-requests__action input[type="text"] {
+    width: 100%;
+    box-sizing: border-box;
+}
+
 .fp-exp-settings__panel {
     background: #ffffff;
     border-radius: var(--fp-exp-admin-radius);
