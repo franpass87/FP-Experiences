@@ -48,20 +48,42 @@ final class NestedFieldRenderer implements FieldRenderer
         $settings = get_option($option_name, []);
         $settings = is_array($settings) ? $settings : [];
         
-        // Navigate through the path without creating empty arrays
+        // Navigate through the path to get the value
         $cursor = $settings;
         $path_exists = true;
+        $path_count = count($path);
+        $current_index = 0;
+        
         foreach ($path as $segment) {
-            if (!isset($cursor[$segment]) || !is_array($cursor[$segment])) {
-                // If the path doesn't exist or the segment is not an array, the value doesn't exist
+            $current_index++;
+            $is_last_segment = ($current_index === $path_count);
+            
+            if (!isset($cursor[$segment])) {
+                // If the path doesn't exist, the value doesn't exist
                 $path_exists = false;
                 break;
             }
-            $cursor = $cursor[$segment];
+            
+            // If this is the last segment, the value can be any type (string, number, etc.)
+            // Otherwise, it must be an array to continue navigating
+            if ($is_last_segment) {
+                // Last segment - value can be any type
+                $cursor = $cursor[$segment];
+            } else {
+                // Not the last segment - must be an array to continue
+                if (!is_array($cursor[$segment])) {
+                    $path_exists = false;
+                    break;
+                }
+                $cursor = $cursor[$segment];
+            }
         }
         
-        // If path doesn't exist or cursor is an array, use empty string (prevents "Array" being displayed in inputs)
-        if (!$path_exists || is_array($cursor)) {
+        // If path doesn't exist, use empty string or field value
+        if (!$path_exists) {
+            $value = $field->value ?? '';
+        } elseif (is_array($cursor)) {
+            // If cursor is an array, use empty string (prevents "Array" being displayed in inputs)
             $value = '';
         } else {
             $value = $cursor ?? ($field->value ?? '');
@@ -114,7 +136,22 @@ final class NestedFieldRenderer implements FieldRenderer
         );
 
         // Render using base renderer but with nested name
-        return $base_renderer->render($nested_field, '');
+        $rendered = $base_renderer->render($nested_field, '');
+
+        // For toggle nested fields (single, not arrays), add hidden input to ensure value is always sent
+        // This is important because unchecked checkboxes don't send any value in POST
+        // Note: We only add hidden input for single toggles, not for array checkboxes (which use [])
+        if ($base_type === 'toggle') {
+            // Check if this is an array field (ends with []) - if so, don't add hidden input
+            // Use substr for PHP 7.4+ compatibility (str_ends_with requires PHP 8.0+)
+            $is_array_field = substr($field_name, -2) === '[]';
+            if (!$is_array_field) {
+                $hidden_name = $field_name;
+                $rendered = '<input type="hidden" name="' . esc_attr($hidden_name) . '" value="no" />' . $rendered;
+            }
+        }
+
+        return $rendered;
     }
 }
 

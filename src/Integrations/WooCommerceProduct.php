@@ -6,6 +6,10 @@ namespace FP_Exp\Integrations;
 
 use FP_Exp\Core\Hook\HookableInterface;
 
+use DateTimeImmutable;
+use DateTimeZone;
+use FP_Exp\Utils\Helpers;
+
 use function absint;
 use function add_filter;
 use function add_action;
@@ -22,6 +26,9 @@ use function esc_html__;
 use function ucfirst;
 use function wc_price;
 use function wp_doing_ajax;
+use function wp_date;
+use function wp_timezone;
+use function get_option;
 
 /**
  * Customizes WooCommerce cart/checkout display for experience items
@@ -57,6 +64,9 @@ final class WooCommerceProduct implements HookableInterface
         
         // Customize order item display
         add_filter('woocommerce_order_item_name', [$this, 'customize_order_item_name'], 10, 2);
+        
+        // Display order item meta with timezone conversion
+        add_filter('woocommerce_order_item_display_meta_value', [$this, 'format_order_item_meta_value'], 10, 3);
     }
 
     /**
@@ -253,11 +263,14 @@ final class WooCommerceProduct implements HookableInterface
             return $item_data;
         }
 
-        // Display slot date/time
+        // Display slot date/time (convert from UTC to local timezone)
         if (!empty($cart_item['fp_exp_slot_start'])) {
+            $slot_start_utc = $cart_item['fp_exp_slot_start'];
+            $formatted_time = $this->format_datetime_for_display($slot_start_utc);
+            
             $item_data[] = [
                 'key' => __('Data e ora', 'fp-experiences'),
-                'value' => $cart_item['fp_exp_slot_start'],
+                'value' => $formatted_time,
             ];
         }
 
@@ -303,6 +316,56 @@ final class WooCommerceProduct implements HookableInterface
         }
 
         error_log('[FP-EXP-WC] Saved order item meta for experience: ' . ($values['fp_exp_experience_id'] ?? 'unknown'));
+    }
+
+    /**
+     * Format order item meta value with timezone conversion
+     * 
+     * @param mixed $value Meta value
+     * @param object $meta Meta object
+     * @param object $item Order item object
+     * @return string Formatted value
+     */
+    public function format_order_item_meta_value($value, $meta, $item)
+    {
+        // Only process slot_start and slot_end meta keys
+        if (!in_array($meta->key, ['fp_exp_slot_start', 'slot_start', 'fp_exp_slot_end', 'slot_end'], true)) {
+            return $value;
+        }
+
+        // Convert from UTC to local timezone
+        return $this->format_datetime_for_display((string) $value);
+    }
+
+    /**
+     * Format datetime string from UTC to local timezone for display
+     * 
+     * @param string $datetime_utc Datetime string in UTC (format: Y-m-d H:i:s)
+     * @return string Formatted datetime in local timezone
+     */
+    private function format_datetime_for_display(string $datetime_utc): string
+    {
+        if (empty($datetime_utc)) {
+            return '';
+        }
+
+        try {
+            // Parse UTC datetime
+            $utc_datetime = new DateTimeImmutable($datetime_utc, new DateTimeZone('UTC'));
+            
+            // Convert to local timezone
+            $timezone = wp_timezone();
+            $local_datetime = $utc_datetime->setTimezone($timezone);
+            
+            // Format using WordPress date/time format settings
+            $date_format = get_option('date_format', 'F j, Y');
+            $time_format = get_option('time_format', 'H:i');
+            
+            return wp_date($date_format . ' ' . $time_format, $local_datetime->getTimestamp());
+        } catch (\Exception $e) {
+            // Fallback: return original value if conversion fails
+            return $datetime_utc;
+        }
     }
 }
 

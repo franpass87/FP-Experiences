@@ -165,14 +165,23 @@ final class Emails implements HookableInterface
         $emails_settings = is_array($emails_settings) ? $emails_settings : [];
         $types = isset($emails_settings['types']) && is_array($emails_settings['types']) ? $emails_settings['types'] : [];
 
-        // Send customer confirmation
-        if ('no' !== ($types['customer_confirmation'] ?? 'yes')) {
+        // Normalize types: ensure empty strings are treated as 'no'
+        foreach (['customer_confirmation', 'staff_notification', 'customer_reminder', 'customer_post_experience'] as $key) {
+            if (isset($types[$key]) && ($types[$key] === '' || $types[$key] === null)) {
+                $types[$key] = 'no';
+            }
+        }
+
+        // Send customer confirmation (default: 'yes' if not set)
+        $customer_confirmation = $types['customer_confirmation'] ?? 'yes';
+        if ($customer_confirmation !== 'no') {
             $template = new BookingConfirmationTemplate();
             $this->customer_sender->send($template, $context);
         }
 
-        // Send staff notification
-        if ('no' !== ($types['staff_notification'] ?? 'yes')) {
+        // Send staff notification (default: 'yes' if not set)
+        $staff_notification = $types['staff_notification'] ?? 'yes';
+        if ($staff_notification !== 'no') {
             $template = new StaffNotificationTemplate(false);
             $this->staff_sender->send($template, $context);
         }
@@ -202,8 +211,16 @@ final class Emails implements HookableInterface
         $emails_settings = is_array($emails_settings) ? $emails_settings : [];
         $types = isset($emails_settings['types']) && is_array($emails_settings['types']) ? $emails_settings['types'] : [];
 
-        // Send staff notification for cancellation
-        if ('no' !== ($types['staff_notification'] ?? 'yes')) {
+        // Normalize types: ensure empty strings are treated as 'no'
+        foreach (['customer_confirmation', 'staff_notification', 'customer_reminder', 'customer_post_experience'] as $key) {
+            if (isset($types[$key]) && ($types[$key] === '' || $types[$key] === null)) {
+                $types[$key] = 'no';
+            }
+        }
+
+        // Send staff notification for cancellation (default: 'yes' if not set)
+        $staff_notification = $types['staff_notification'] ?? 'yes';
+        if ($staff_notification !== 'no') {
             $template = new StaffNotificationTemplate(true);
             $this->staff_sender->send($template, $context);
         }

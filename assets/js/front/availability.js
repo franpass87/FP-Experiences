@@ -36,8 +36,13 @@
             var startDate = _parseUtc(String(startIso));
             var endDate = _parseUtc(String(endIso));
             if (!startDate || !endDate) throw new Error('Invalid date');
+            // Use timezone from config, or fallback to browser timezone
             var tz = (_config && _config.timezone) || undefined;
-            var opts = { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: tz };
+            // If timezone is provided, use it; otherwise use browser default
+            var opts = { hour: '2-digit', minute: '2-digit', hour12: false };
+            if (tz) {
+                opts.timeZone = tz;
+            }
             var fmt = new Intl.DateTimeFormat(undefined, opts);
             return fmt.format(startDate) + ' - ' + fmt.format(endDate);
         } catch (e) {

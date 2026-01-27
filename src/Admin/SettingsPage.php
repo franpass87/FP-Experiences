@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace FP_Exp\Admin;
 
 use FP_Exp\Admin\Traits\FormFieldRenderer;
+use FP_Exp\Admin\Form\FieldDefinition;
 use FP_Exp\Core\Hook\HookableInterface;
 use FP_Exp\Admin\Traits\FormSanitizer;
 use FP_Exp\Application\Settings\GetSettingsUseCase;
@@ -737,7 +738,9 @@ final class SettingsPage implements HookableInterface
     {
         $value = is_array($value) ? $value : [];
 
-        $enabled = ! empty($value['enabled']) ? 'yes' : 'no';
+        // Handle both 'yes'/'no' from toggle and 1/0 from legacy checkbox
+        $enabled_raw = $value['enabled'] ?? 'no';
+        $enabled = in_array($enabled_raw, ['yes', '1', 1, true, 'true'], true) ? 'yes' : 'no';
         $validity = isset($value['validity_days']) ? absint((string) $value['validity_days']) : Helpers::gift_validity_days();
         if ($validity <= 0) {
             $validity = Helpers::gift_validity_days();
@@ -789,12 +792,29 @@ final class SettingsPage implements HookableInterface
     public function render_gift_toggle(): void
     {
         $settings = Helpers::gift_settings();
-        $enabled = ! empty($settings['enabled']);
+        // Handle both 'yes'/'no' and legacy 1/0 values
+        $enabled_raw = $settings['enabled'] ?? 'no';
+        $enabled = in_array($enabled_raw, ['yes', '1', 1, true, 'true'], true);
+        $toggle_value = $enabled ? 'yes' : 'no';
 
-        echo '<label for="fp-exp-gift-enabled">';
-        echo '<input type="checkbox" id="fp-exp-gift-enabled" name="fp_exp_gift[enabled]" value="1" ' . checked($enabled, true, false) . ' /> ';
-        esc_html_e('Allow customers to purchase gift vouchers and send them via email.', 'fp-experiences');
-        echo '</label>';
+        // Use Field Renderer Strategy for consistent toggle styling
+        $field = new FieldDefinition(
+            name: 'fp_exp_gift[enabled]',
+            type: 'toggle',
+            label: '', // Empty label - WordPress shows it via add_settings_field
+            value: $toggle_value,
+            options: [
+                'toggle_class' => 'fp-exp-settings__toggle',
+                'add_hidden_input' => true, // Ensure value is sent even when unchecked
+                'label_text' => esc_html__('Allow customers to purchase gift vouchers and send them via email.', 'fp-experiences'),
+            ],
+            description: null,
+            required: false,
+            attributes: []
+        );
+
+        $renderer = $this->getFieldRendererFactory()->getRenderer('toggle');
+        echo $renderer->render($field, '');
     }
 
     public function render_gift_validity_field(): void
@@ -973,21 +993,29 @@ final class SettingsPage implements HookableInterface
         // Convert to toggle format (yes/no)
         $toggle_value = in_array($value, ['yes', '1', 'true', 1, true], true) ? 'yes' : 'no';
 
-        // Add hidden input for form submission (WordPress settings API requirement)
-        echo '<input type="hidden" name="' . esc_attr($option) . '" value="no" />';
-
         // Use Field Renderer Strategy
-        echo $this->render_form_field(
+        // Note: For toggles, we skip the label in <th> and put it in the toggle itself
+        // to avoid double labels (one in <th> and one in toggle)
+        $field = new FieldDefinition(
             name: $option,
             type: 'toggle',
-            label: $label,
+            label: '', // Empty label - we'll put it in the toggle
             value: $toggle_value,
             options: [
                 'description' => $args['description'] ?? null,
                 'toggle_class' => 'fp-exp-settings__toggle',
-                'label_text' => $label, // Pass label as text inside toggle
-            ]
+                'add_hidden_input' => true, // Tell renderer to add hidden input
+                'label_text' => $label, // Put label text in the toggle
+            ],
+            description: $args['description'] ?? null,
+            required: false,
+            attributes: []
         );
+
+        $renderer = $this->getFieldRendererFactory()->getRenderer('toggle');
+        
+        // Output the toggle field directly - WordPress Settings API already handles <tr><th><td> wrapper
+        echo $renderer->render($field, '');
     }
 
     /**
@@ -1047,7 +1075,12 @@ final class SettingsPage implements HookableInterface
         $types = isset($value['types']) && is_array($value['types']) ? $value['types'] : [];
         $types_sanitized = [];
         foreach (['customer_confirmation', 'staff_notification', 'customer_reminder', 'customer_post_experience'] as $key) {
+            // Get raw value - if not set or empty, default to 'no' (toggle off)
             $raw = $types[$key] ?? '';
+            // If empty string or not set, treat as 'no' (disabled)
+            if ($raw === '' || $raw === null) {
+                $raw = 'no';
+            }
             $types_sanitized[$key] = $this->sanitize_yes_no($raw);
         }
 
@@ -1679,32 +1712,6 @@ final class SettingsPage implements HookableInterface
         }
 
         echo '</div>';
-    }
-
-    public function render_email_branding_field(array $args): void
-    {
-        // legacy accessor per opzione separata
-        $settings = $this->getOptions()->get('fp_exp_email_branding', []);
-        $settings = is_array($settings) ? $settings : [];
-        $key = $args['key'] ?? '';
-
-        if (! $key) {
-            return;
-        }
-
-        $value = $settings[$key] ?? '';
-        $placeholder = isset($args['placeholder']) ? (string) $args['placeholder'] : '';
-        $type = $args['type'] ?? 'text';
-
-        if ('textarea' === $type) {
-            echo '<textarea name="fp_exp_email_branding[' . esc_attr($key) . ']" rows="4" class="large-text" placeholder="' . esc_attr($placeholder) . '">' . esc_textarea((string) $value) . '</textarea>';
-        } else {
-            echo '<input type="text" class="regular-text" name="fp_exp_email_branding[' . esc_attr($key) . ']" value="' . esc_attr((string) $value) . '" placeholder="' . esc_attr($placeholder) . '" />';
-        }
-
-        if (! empty($args['description'])) {
-            echo '<p class="description">' . esc_html((string) $args['description']) . '</p>';
-        }
     }
 
     public function render_emails_branding_field(array $args): void
@@ -2740,11 +2747,28 @@ final class SettingsPage implements HookableInterface
 
             echo '</div>';
         } elseif ('toggle' === $field['type']) {
-            $checked = ! empty($value);
-            echo '<label class="fp-exp-settings__toggle">';
-            echo '<input type="checkbox" name="fp_exp_listing[' . esc_attr($key) . ']" value="1" ' . checked($checked, true, false) . ' />';
-            echo ' <span>' . esc_html__('Enabled', 'fp-experiences') . '</span>';
-            echo '</label>';
+            // Use Field Renderer Strategy for consistent toggle styling
+            // Handle both boolean and 'yes'/'no' values
+            $toggle_value = in_array($value, [true, 1, '1', 'yes', 'true'], true) ? 'yes' : 'no';
+            $field_name = 'fp_exp_listing[' . esc_attr($key) . ']';
+            
+            $field_def = new FieldDefinition(
+                name: $field_name,
+                type: 'toggle',
+                label: '', // Empty label - WordPress shows it via add_settings_field
+                value: $toggle_value,
+                options: [
+                    'toggle_class' => 'fp-exp-settings__toggle',
+                    'add_hidden_input' => true, // Ensure value is sent even when unchecked
+                    'label_text' => esc_html__('Enabled', 'fp-experiences'),
+                ],
+                description: null,
+                required: false,
+                attributes: []
+            );
+
+            $renderer = $this->getFieldRendererFactory()->getRenderer('toggle');
+            echo $renderer->render($field_def, '');
         }
 
         if (! empty($field['description'])) {
@@ -3395,7 +3419,9 @@ final class SettingsPage implements HookableInterface
             $orderby = $defaults['orderby'];
         }
 
-        $show_price_from = ! empty($value['show_price_from']);
+        // Handle both 'yes'/'no' from toggle and 1/0 from legacy checkbox
+        $show_price_from_raw = $value['show_price_from'] ?? false;
+        $show_price_from = in_array($show_price_from_raw, ['yes', '1', 1, true, 'true'], true);
 
         $experience_badges = $this->sanitize_experience_badge_settings($value['experience_badges'] ?? []);
 
