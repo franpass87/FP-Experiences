@@ -236,6 +236,79 @@ final class EmailTranslator
             'en' => 'If you have any questions or need assistance, reply to this email and we will be happy to help.',
             'de' => 'Bei Fragen oder wenn Sie Hilfe benötigen, antworten Sie auf diese E-Mail und wir helfen Ihnen gerne.',
         ],
+        // RTB Request Received
+        'rtb_request.heading' => [
+            'it' => 'Abbiamo ricevuto la tua richiesta per %s',
+            'en' => 'We received your request for %s',
+            'de' => 'Wir haben Ihre Anfrage für %s erhalten',
+        ],
+        'rtb_request.intro' => [
+            'it' => 'Grazie per la tua richiesta di prenotazione. Il nostro team la esaminerà e ti risponderà a breve.',
+            'en' => 'Thank you for your booking request. Our team will review it and get back to you shortly.',
+            'de' => 'Vielen Dank für Ihre Buchungsanfrage. Unser Team wird sie prüfen und sich in Kürze bei Ihnen melden.',
+        ],
+        'rtb_request.status_pending' => [
+            'it' => 'La tua richiesta è in attesa di approvazione. Ti contatteremo presto!',
+            'en' => 'Your request is pending approval. We will contact you soon!',
+            'de' => 'Ihre Anfrage wartet auf Genehmigung. Wir werden uns bald bei Ihnen melden!',
+        ],
+        'rtb_request.footer_note' => [
+            'it' => 'Se hai domande, rispondi a questa email e saremo felici di aiutarti.',
+            'en' => 'If you have any questions, reply to this email and we will be happy to help.',
+            'de' => 'Bei Fragen antworten Sie auf diese E-Mail und wir helfen Ihnen gerne.',
+        ],
+        // RTB Approved
+        'rtb_approved.heading' => [
+            'it' => 'La tua richiesta per %s è stata approvata!',
+            'en' => 'Your request for %s has been approved!',
+            'de' => 'Ihre Anfrage für %s wurde genehmigt!',
+        ],
+        'rtb_approved.intro' => [
+            'it' => 'Ottime notizie! La tua richiesta di prenotazione è stata approvata. Non vediamo l\'ora di accoglierti.',
+            'en' => 'Great news! Your booking request has been approved. We look forward to welcoming you.',
+            'de' => 'Tolle Neuigkeiten! Ihre Buchungsanfrage wurde genehmigt. Wir freuen uns, Sie begrüßen zu dürfen.',
+        ],
+        'rtb_approved.status_approved' => [
+            'it' => 'Prenotazione confermata',
+            'en' => 'Booking confirmed',
+            'de' => 'Buchung bestätigt',
+        ],
+        'rtb_approved.footer_note' => [
+            'it' => 'Se hai domande, rispondi a questa email e saremo felici di aiutarti.',
+            'en' => 'If you have any questions, reply to this email and we will be happy to help.',
+            'de' => 'Bei Fragen antworten Sie auf diese E-Mail und wir helfen Ihnen gerne.',
+        ],
+        // RTB Declined
+        'rtb_declined.heading' => [
+            'it' => 'Aggiornamento sulla tua richiesta per %s',
+            'en' => 'Update on your request for %s',
+            'de' => 'Aktualisierung zu Ihrer Anfrage für %s',
+        ],
+        'rtb_declined.intro' => [
+            'it' => 'Purtroppo non siamo in grado di accogliere la tua richiesta di prenotazione in questo momento.',
+            'en' => 'We regret to inform you that we are unable to accommodate your booking request at this time.',
+            'de' => 'Leider können wir Ihre Buchungsanfrage derzeit nicht annehmen.',
+        ],
+        'rtb_declined.status_declined' => [
+            'it' => 'Richiesta non disponibile',
+            'en' => 'Request not available',
+            'de' => 'Anfrage nicht verfügbar',
+        ],
+        'rtb_declined.reason' => [
+            'it' => 'Motivo',
+            'en' => 'Reason',
+            'de' => 'Grund',
+        ],
+        'rtb_declined.alternative' => [
+            'it' => 'Ti invitiamo a verificare altre date disponibili o a contattarci per trovare un\'alternativa.',
+            'en' => 'We invite you to check other available dates or contact us to find an alternative.',
+            'de' => 'Wir laden Sie ein, andere verfügbare Termine zu prüfen oder uns zu kontaktieren, um eine Alternative zu finden.',
+        ],
+        'rtb_declined.footer_note' => [
+            'it' => 'Se hai domande, rispondi a questa email e saremo felici di aiutarti.',
+            'en' => 'If you have any questions, reply to this email and we will be happy to help.',
+            'de' => 'Bei Fragen antworten Sie auf diese E-Mail und wir helfen Ihnen gerne.',
+        ],
         'common.date' => [
             'it' => 'Data',
             'en' => 'Date',
