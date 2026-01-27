@@ -370,8 +370,8 @@ final class ExperienceCPT implements HookableInterface
                 'default' => 0,
             ],
             '_fp_use_rtb' => [
-                'type' => 'boolean',
-                'default' => false,
+                'type' => 'string',  // Usato come 'yes'/'no'/'' (vuoto = usa globale)
+                'default' => '',     // Stringa vuota = usa impostazione globale RTB
             ],
             '_fp_is_event' => [
                 'type' => 'boolean',

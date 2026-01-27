@@ -1252,17 +1252,27 @@ final class Helpers
         $global_rtb_enabled = ('off' !== $global_rtb_mode);
 
         // Controlla se l'esperienza ha un override specifico
+        // IMPORTANTE: usa metadata_exists() per distinguere tra "mai impostato" e "impostato a false"
+        $meta_exists = metadata_exists('post', $experience_id, '_fp_use_rtb');
         $value = get_post_meta($experience_id, '_fp_use_rtb', true);
 
         // Debug logging per tracciare la decisione RTB
         if (defined('WP_DEBUG') && WP_DEBUG) {
-            error_log('[FP-Exp Helpers] experience_uses_rtb(' . $experience_id . '): global_mode=' . $global_rtb_mode . ', global_enabled=' . ($global_rtb_enabled ? 'true' : 'false') . ', exp_meta=' . print_r($value, true));
+            error_log('[FP-Exp Helpers] experience_uses_rtb(' . $experience_id . '): global_mode=' . $global_rtb_mode . ', global_enabled=' . ($global_rtb_enabled ? 'true' : 'false') . ', meta_exists=' . ($meta_exists ? 'true' : 'false') . ', exp_meta=' . print_r($value, true));
         }
 
-        // Se il meta field non è impostato (vuoto/null), usa l'impostazione globale
-        if (empty($value) && ! is_numeric($value) && ! is_bool($value)) {
+        // Se il meta field non esiste nel database, usa l'impostazione globale
+        if (! $meta_exists) {
             if (defined('WP_DEBUG') && WP_DEBUG) {
-                error_log('[FP-Exp Helpers] experience_uses_rtb(' . $experience_id . '): Using global setting -> ' . ($global_rtb_enabled ? 'true' : 'false'));
+                error_log('[FP-Exp Helpers] experience_uses_rtb(' . $experience_id . '): Meta not exists, using global setting -> ' . ($global_rtb_enabled ? 'true' : 'false'));
+            }
+            return $global_rtb_enabled;
+        }
+
+        // Se il meta field è vuoto/null ma esiste, considera come "usa globale"
+        if ($value === '' || $value === null) {
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('[FP-Exp Helpers] experience_uses_rtb(' . $experience_id . '): Meta is empty, using global setting -> ' . ($global_rtb_enabled ? 'true' : 'false'));
             }
             return $global_rtb_enabled;
         }
