@@ -310,14 +310,25 @@ final class WooCommerceProduct implements HookableInterface
     private function get_hidden_meta_keys(): array
     {
         return [
+            // With fp_exp_ prefix
             'fp_exp_experience_id',
+            'fp_exp_experience_title',
             'fp_exp_slot_id',
             'fp_exp_item',
+            // With _fp_exp_ prefix
             '_fp_exp_experience_id',
+            '_fp_exp_experience_title',
             '_fp_exp_slot_id',
             '_fp_exp_item',
             '_fp_exp_tickets',
             '_fp_exp_addons',
+            // Without prefix (legacy/alternate format)
+            'experience_id',
+            'experience_title',
+            'slot_id',
+            'slot_start',
+            'slot_end',
+            // WooCommerce internal
             '_reduced_stock',
         ];
     }
