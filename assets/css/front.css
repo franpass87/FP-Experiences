@@ -2594,6 +2594,46 @@
     color: #b91c1c;
 }
 
+/* Special Requests - Richieste speciali */
+.fp-exp-special-requests__options {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.fp-exp-special-requests__group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.fp-exp-special-requests__group-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--fp-color-text, #0f172a);
+    margin: 0 0 0.25rem 0;
+}
+
+.fp-exp-special-requests__group .fp-exp-field--checkbox {
+    margin: 0;
+    padding: 0.2rem 0;
+}
+
+.fp-exp-special-requests__group .fp-exp-field--checkbox label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+    cursor: pointer;
+}
+
+.fp-exp-special-requests__group .fp-exp-field--checkbox input[type="checkbox"] {
+    width: 1rem;
+    height: 1rem;
+    margin: 0;
+    accent-color: var(--fp-color-primary);
+}
+
 /* CSS semplificato - input date nativo */
 
 /* Checkout */
