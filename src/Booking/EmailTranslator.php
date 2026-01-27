@@ -205,6 +205,37 @@ final class EmailTranslator
             'en' => 'Customer notes',
             'de' => 'Kundennotizen',
         ],
+        // RTB Payment Request
+        'rtb_payment.heading' => [
+            'it' => 'Completa il pagamento per %s',
+            'en' => 'Complete your payment for %s',
+            'de' => 'Schließen Sie Ihre Zahlung für %s ab',
+        ],
+        'rtb_payment.intro' => [
+            'it' => 'Ottima notizia! La tua richiesta di prenotazione è stata approvata. Completa il pagamento per confermare la tua partecipazione.',
+            'en' => 'Great news! Your booking request has been approved. Complete the payment to confirm your participation.',
+            'de' => 'Tolle Neuigkeiten! Ihre Buchungsanfrage wurde genehmigt. Schließen Sie die Zahlung ab, um Ihre Teilnahme zu bestätigen.',
+        ],
+        'rtb_payment.total_to_pay' => [
+            'it' => 'Totale da pagare',
+            'en' => 'Total to pay',
+            'de' => 'Zu zahlender Betrag',
+        ],
+        'rtb_payment.pay_now_button' => [
+            'it' => 'Paga ora',
+            'en' => 'Pay now',
+            'de' => 'Jetzt bezahlen',
+        ],
+        'rtb_payment.link_fallback' => [
+            'it' => 'Oppure copia questo link nel tuo browser',
+            'en' => 'Or copy this link to your browser',
+            'de' => 'Oder kopieren Sie diesen Link in Ihren Browser',
+        ],
+        'rtb_payment.footer_note' => [
+            'it' => 'Se hai domande o necessiti di assistenza, rispondi a questa email e saremo felici di aiutarti.',
+            'en' => 'If you have any questions or need assistance, reply to this email and we will be happy to help.',
+            'de' => 'Bei Fragen oder wenn Sie Hilfe benötigen, antworten Sie auf diese E-Mail und wir helfen Ihnen gerne.',
+        ],
         'common.date' => [
             'it' => 'Data',
             'en' => 'Date',

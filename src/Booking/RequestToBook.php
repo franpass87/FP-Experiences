@@ -6,6 +6,8 @@ namespace FP_Exp\Booking;
 
 use Exception;
 use FP_Exp\Core\Hook\HookableInterface;
+use FP_Exp\Booking\Email\Senders\CustomerEmailSender;
+use FP_Exp\Booking\Email\Templates\RtbPaymentRequestTemplate;
 use FP_Exp\Integrations\Brevo;
 use FP_Exp\Services\Options\OptionsInterface;
 use Throwable;
@@ -1027,6 +1029,20 @@ final class RequestToBook implements HookableInterface
             }
         }
 
+        // Per lo stage 'payment' usa il template HTML strutturato
+        if ('payment' === $stage) {
+            $context['language'] = $customer_locale ?: 'it';
+            $template = new RtbPaymentRequestTemplate();
+            $sender = new CustomerEmailSender($this->brevo);
+            $sender->send($template, $context, true); // force_send=true per bypassare Brevo e usare sempre il template locale
+            
+            // Ripristina la locale originale
+            if (function_exists('restore_current_locale') && $customer_locale && $customer_locale !== $original_locale) {
+                restore_current_locale();
+            }
+            return;
+        }
+
         $fallbacks = $settings['fallback'] ?? [];
         $message = $fallbacks[$stage] ?? [];
 
@@ -1035,14 +1051,12 @@ final class RequestToBook implements HookableInterface
             'request' => __('We received your experience request', 'fp-experiences'),
             'approved' => __('Your experience request has been approved', 'fp-experiences'),
             'declined' => __('Update on your experience request', 'fp-experiences'),
-            'payment' => __('Payment required for your experience booking', 'fp-experiences'),
         ];
 
         $default_bodies = [
             'request' => __('Thank you for your request. Our team will review it and get back to you shortly.', 'fp-experiences'),
             'approved' => __('Great news! Your experience request has been approved. We look forward to welcoming you.', 'fp-experiences'),
             'declined' => __('We regret to inform you that we are unable to accommodate your experience request at this time.', 'fp-experiences'),
-            'payment' => __('Your experience request has been approved. Please complete your payment using the link below.', 'fp-experiences') . "\n\n{payment_url}",
         ];
 
         $subject = ! empty($message['subject']) ? $message['subject'] : ($default_subjects[$stage] ?? __('We received your experience request', 'fp-experiences'));
