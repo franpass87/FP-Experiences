@@ -2034,8 +2034,21 @@ html.fp-exp-dark body.fp-exp-admin-shell .wrap .notice {
 
 .fp-exp-requests__table th:last-child,
 .fp-exp-requests__table td:last-child {
-    width: 200px;
-    min-width: 200px;
+    width: 180px;
+    min-width: 180px;
+    vertical-align: top;
+    padding: 12px 8px !important;
+}
+
+.fp-exp-requests__table td:last-child .button,
+.fp-exp-requests__table td:last-child .button-secondary,
+.fp-exp-requests__table td:last-child .button-primary {
+    width: 100%;
+    box-sizing: border-box;
+    text-align: center;
+    white-space: nowrap;
+    padding: 6px 10px !important;
+    font-size: 12px !important;
 }
 
 .fp-exp-requests__action .button {
@@ -2046,6 +2059,8 @@ html.fp-exp-dark body.fp-exp-admin-shell .wrap .notice {
 .fp-exp-requests__action input[type="text"] {
     width: 100%;
     box-sizing: border-box;
+    font-size: 12px;
+    padding: 4px 8px;
 }
 
 .fp-exp-settings__panel {
