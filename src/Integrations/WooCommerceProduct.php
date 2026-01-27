@@ -79,6 +79,39 @@ final class WooCommerceProduct implements HookableInterface
 
         // Customize order totals display for RTB
         add_filter('woocommerce_get_order_item_totals', [$this, 'customize_rtb_order_totals'], 10, 3);
+
+        // Disable WooCommerce emails for experience orders (FP-Experiences sends its own emails)
+        add_filter('woocommerce_email_enabled_new_order', [$this, 'maybe_disable_wc_email'], 10, 2);
+        add_filter('woocommerce_email_enabled_customer_processing_order', [$this, 'maybe_disable_wc_email'], 10, 2);
+        add_filter('woocommerce_email_enabled_customer_completed_order', [$this, 'maybe_disable_wc_email'], 10, 2);
+        add_filter('woocommerce_email_enabled_customer_on_hold_order', [$this, 'maybe_disable_wc_email'], 10, 2);
+    }
+
+    /**
+     * Disable WooCommerce emails for orders containing experiences
+     * FP-Experiences has its own email system with customized templates
+     *
+     * @param bool $enabled Whether the email is enabled
+     * @param \WC_Order|null $order The order object
+     * @return bool
+     */
+    public function maybe_disable_wc_email(bool $enabled, $order): bool
+    {
+        if (! $enabled || ! $order instanceof \WC_Order) {
+            return $enabled;
+        }
+
+        // Check if order contains experience items
+        foreach ($order->get_items() as $item) {
+            $experience_id = $item->get_meta('fp_exp_experience_id');
+            if ($experience_id) {
+                // This is an experience order - disable WC email
+                // FP-Experiences will send its own email via the Emails class
+                return false;
+            }
+        }
+
+        return $enabled;
     }
 
     /**
