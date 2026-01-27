@@ -106,12 +106,16 @@ final class RequestToBook implements HookableInterface
     {
         $this->debug_log('Registering RTB endpoints');
         
+        // Usiamo __return_true come permission_callback perché:
+        // 1. WordPress REST middleware controlla i cookie PRIMA del permission_callback
+        // 2. Se l'utente è loggato, WP si aspetta un nonce wp_rest nell'header
+        // 3. Noi usiamo un nonce custom nel body, verificato nell'handler
         register_rest_route(
             'fp-exp/v1',
             '/rtb/request',
             [
                 'methods' => 'POST',
-                'permission_callback' => [$this, 'check_rtb_permission'],
+                'permission_callback' => '__return_true',
                 'callback' => [$this, 'handle_request'],
             ]
         );
@@ -123,7 +127,7 @@ final class RequestToBook implements HookableInterface
             '/rtb/quote',
             [
                 'methods' => 'POST',
-                'permission_callback' => [$this, 'check_rtb_permission'],
+                'permission_callback' => '__return_true',
                 'callback' => [$this, 'handle_quote'],
             ]
         );
