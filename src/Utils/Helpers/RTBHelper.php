@@ -24,6 +24,11 @@ final class RTBHelper
     {
         $settings = get_option('fp_exp_rtb', []);
 
+        // Debug logging per tracciare le impostazioni RTB
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('[FP-Exp RTBHelper] getSettings() returned: ' . print_r($settings, true));
+        }
+
         return is_array($settings) ? $settings : [];
     }
 
@@ -34,7 +39,8 @@ final class RTBHelper
     {
         $settings = self::getSettings();
 
-        return $settings['mode'] ?? 'disabled';
+        // Usa 'off' come default per coerenza con sanitize_rtb() e Helpers::rtb_mode()
+        return $settings['mode'] ?? 'off';
     }
 
     /**
@@ -71,7 +77,8 @@ final class RTBHelper
     {
         $mode = self::getModeForExperience($experience_id);
 
-        return $mode !== 'disabled';
+        // Usa 'off' per coerenza con il resto del codice
+        return $mode !== 'off';
     }
 
     /**
@@ -81,7 +88,7 @@ final class RTBHelper
     {
         $mode = self::getModeForExperience($experience_id);
 
-        if ($mode === 'disabled') {
+        if ($mode === 'off') {
             return false;
         }
 
