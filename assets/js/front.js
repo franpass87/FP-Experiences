@@ -1681,11 +1681,13 @@
                             || (window.wpApiSettings && wpApiSettings.root) 
                             || (window.location.origin + '/wp-json/fp-exp/v1/');
 
+                        // Non inviamo X-WP-Nonce header perché usiamo un nonce custom nel payload
+                        // WordPress REST middleware controlla l'header prima del permission_callback
+                        // e fallirebbe con rest_cookie_invalid_nonce perché il nonce non è per wp_rest action
                         const response = await fetch(restBaseUrl + 'rtb/request', {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
-                                'X-WP-Nonce': (typeof fpExpConfig !== 'undefined' && fpExpConfig.rtbNonce) || '',
                             },
                             credentials: 'same-origin',
                             body: JSON.stringify(payload),

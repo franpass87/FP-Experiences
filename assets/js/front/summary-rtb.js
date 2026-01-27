@@ -161,10 +161,9 @@
                 addons: addons
             };
 
+            // Non inviamo X-WP-Nonce header perché usiamo un nonce custom nel payload
+            // WordPress REST middleware controlla l'header prima del permission_callback
             var quoteHeaders = { 'Content-Type': 'application/json' };
-            if (typeof fpExpConfig !== 'undefined' && fpExpConfig.restNonce) {
-                quoteHeaders['X-WP-Nonce'] = fpExpConfig.restNonce;
-            }
             
             fetch(quoteUrl, {
                 method: 'POST',
