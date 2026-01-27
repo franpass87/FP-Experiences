@@ -67,6 +67,179 @@ final class WooCommerceProduct implements HookableInterface
         
         // Display order item meta with timezone conversion
         add_filter('woocommerce_order_item_display_meta_value', [$this, 'format_order_item_meta_value'], 10, 3);
+
+        // Hide technical meta keys from order display (frontend and admin)
+        add_filter('woocommerce_hidden_order_itemmeta', [$this, 'hide_technical_order_meta']);
+
+        // Format order item meta keys with human-readable labels
+        add_filter('woocommerce_order_item_display_meta_key', [$this, 'format_order_item_meta_key'], 10, 3);
+
+        // Show RTB notice on thank you page
+        add_action('woocommerce_thankyou', [$this, 'show_rtb_thankyou_notice'], 5, 1);
+
+        // Customize order totals display for RTB
+        add_filter('woocommerce_get_order_item_totals', [$this, 'customize_rtb_order_totals'], 10, 3);
+    }
+
+    /**
+     * Show informative notice on thank you page for RTB orders
+     *
+     * @param int $order_id The order ID
+     */
+    public function show_rtb_thankyou_notice(int $order_id): void
+    {
+        if (! $order_id) {
+            return;
+        }
+
+        $order = wc_get_order($order_id);
+        if (! $order) {
+            return;
+        }
+
+        // Check if this is an RTB order
+        $is_rtb = $order->get_meta('_fp_exp_rtb_mode');
+        $created_via = $order->get_created_via();
+
+        if (! $is_rtb && $created_via !== 'fp-exp-rtb') {
+            return;
+        }
+
+        // Get reservation status
+        $reservation_id = $order->get_meta('_fp_exp_reservation_id');
+        $status_message = '';
+
+        if ($reservation_id) {
+            $reservation = \FP_Exp\Booking\Reservations::get_by_id((int) $reservation_id);
+            if ($reservation) {
+                $status = $reservation['status'] ?? '';
+                switch ($status) {
+                    case \FP_Exp\Booking\Reservations::STATUS_PENDING_REQUEST:
+                        $status_message = __('In attesa di conferma dal nostro team.', 'fp-experiences');
+                        break;
+                    case \FP_Exp\Booking\Reservations::STATUS_APPROVED_PENDING_PAYMENT:
+                        $status_message = __('Approvata! Completa il pagamento per confermare.', 'fp-experiences');
+                        break;
+                    case \FP_Exp\Booking\Reservations::STATUS_APPROVED_CONFIRMED:
+                        $status_message = __('Confermata! Ti aspettiamo.', 'fp-experiences');
+                        break;
+                }
+            }
+        }
+
+        echo '<div class="woocommerce-info fp-exp-rtb-notice" style="margin-bottom: 20px; padding: 15px; background: #f0f9ff; border-left: 4px solid #0073aa;">';
+        echo '<strong>' . esc_html__('Richiesta di prenotazione', 'fp-experiences') . '</strong><br>';
+        echo esc_html__('La tua richiesta è stata ricevuta. Il nostro team la esaminerà e ti contatterà per confermare la disponibilità.', 'fp-experiences');
+        if ($status_message) {
+            echo '<br><em>' . esc_html($status_message) . '</em>';
+        }
+        echo '</div>';
+    }
+
+    /**
+     * Customize order totals display for RTB orders
+     *
+     * @param array $total_rows Order total rows
+     * @param \WC_Order $order The order object
+     * @param string $tax_display Tax display mode
+     * @return array
+     */
+    public function customize_rtb_order_totals(array $total_rows, $order, string $tax_display): array
+    {
+        if (! $order) {
+            return $total_rows;
+        }
+
+        // Check if this is an RTB order
+        $is_rtb = $order->get_meta('_fp_exp_rtb_mode');
+        $created_via = $order->get_created_via();
+
+        if (! $is_rtb && $created_via !== 'fp-exp-rtb') {
+            return $total_rows;
+        }
+
+        // Get total from reservation meta if available
+        $reservation_id = $order->get_meta('_fp_exp_reservation_id');
+        $expected_total = 0;
+
+        if ($reservation_id) {
+            $reservation = \FP_Exp\Booking\Reservations::get_by_id((int) $reservation_id);
+            if ($reservation && isset($reservation['total_gross'])) {
+                $expected_total = (float) $reservation['total_gross'];
+            }
+        }
+
+        // If order total is 0 but we have an expected total, show it differently
+        $order_total = (float) $order->get_total();
+
+        if ($order_total <= 0 && $expected_total > 0) {
+            // Modify the total row to show expected amount
+            if (isset($total_rows['order_total'])) {
+                $total_rows['order_total']['value'] = sprintf(
+                    '<del>%s</del> <span style="color: #666;">%s</span>',
+                    wc_price(0),
+                    sprintf(
+                        /* translators: %s: expected total amount */
+                        __('Da pagare dopo conferma: %s', 'fp-experiences'),
+                        wc_price($expected_total)
+                    )
+                );
+            }
+        } elseif ($order_total <= 0) {
+            // No expected total, just show pending message
+            if (isset($total_rows['order_total'])) {
+                $total_rows['order_total']['value'] = '<span style="color: #666;">' . 
+                    esc_html__('In attesa di conferma', 'fp-experiences') . '</span>';
+            }
+        }
+
+        return $total_rows;
+    }
+
+    /**
+     * Hide technical meta keys from order item display
+     * These are internal identifiers that shouldn't be shown to customers
+     *
+     * @param array $hidden_meta Array of meta keys to hide
+     * @return array
+     */
+    public function hide_technical_order_meta(array $hidden_meta): array
+    {
+        $fp_hidden_keys = [
+            'fp_exp_experience_id',
+            'fp_exp_slot_id',
+            'fp_exp_item',
+            '_fp_exp_experience_id',
+            '_fp_exp_slot_id',
+            '_fp_exp_item',
+            '_fp_exp_tickets',
+            '_fp_exp_addons',
+            '_reduced_stock',
+        ];
+
+        return array_merge($hidden_meta, $fp_hidden_keys);
+    }
+
+    /**
+     * Format order item meta keys with human-readable labels
+     *
+     * @param string $display_key The meta key to display
+     * @param \WC_Meta_Data $meta The meta data object
+     * @param \WC_Order_Item $item The order item
+     * @return string
+     */
+    public function format_order_item_meta_key(string $display_key, $meta, $item): string
+    {
+        $key_labels = [
+            'fp_exp_slot_start' => __('Data e ora inizio', 'fp-experiences'),
+            'fp_exp_slot_end' => __('Data e ora fine', 'fp-experiences'),
+            '_fp_exp_slot_start' => __('Data e ora inizio', 'fp-experiences'),
+            '_fp_exp_slot_end' => __('Data e ora fine', 'fp-experiences'),
+        ];
+
+        $meta_key = $meta->key ?? $display_key;
+
+        return $key_labels[$meta_key] ?? $display_key;
     }
 
     /**
