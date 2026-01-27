@@ -2609,9 +2609,9 @@
 
 .fp-exp-special-requests__group-title {
     font-size: 0.9rem;
-    font-weight: 600;
+    font-weight: 700;
     color: var(--fp-color-text, #0f172a);
-    margin: 0 0 0.25rem 0;
+    margin: 0 0 0.35rem 0;
 }
 
 .fp-exp-special-requests__group .fp-exp-field--checkbox {

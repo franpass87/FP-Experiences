@@ -546,11 +546,6 @@ $dataset = [
                 </header>
                 <div class="fp-exp-step__content">
                     <div class="fp-exp-field">
-                        <label class="fp-exp-label">
-                            <?php echo esc_html__('Richieste speciali', 'fp-experiences'); ?>
-                            <span class="fp-exp-field__optional"><?php echo esc_html__('(opzionale)', 'fp-experiences'); ?></span>
-                        </label>
-                        
                         <div class="fp-exp-special-requests__options">
                             <div class="fp-exp-special-requests__group">
                                 <p class="fp-exp-special-requests__group-title"><?php echo esc_html__('Richieste alimentari', 'fp-experiences'); ?></p>
