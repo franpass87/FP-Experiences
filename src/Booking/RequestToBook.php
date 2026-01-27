@@ -334,11 +334,26 @@ final class RequestToBook implements HookableInterface
         nocache_headers();
 
         $nonce = (string) $request->get_param('nonce');
+        
+        // Debug logging per nonce
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('[FP-Exp RTB Quote] Nonce ricevuto: ' . ($nonce ? substr($nonce, 0, 10) . '...' : 'VUOTO'));
+            error_log('[FP-Exp RTB Quote] User ID: ' . get_current_user_id());
+            error_log('[FP-Exp RTB Quote] Params: ' . print_r($request->get_params(), true));
+        }
 
         if (! wp_verify_nonce($nonce, 'fp-exp-rtb')) {
             $this->debug_log('RTB quote denied: nonce verification failed', [
                 'nonce_prefix' => substr($nonce, 0, 10),
+                'nonce_empty' => empty($nonce),
             ]);
+            
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('[FP-Exp RTB Quote] NONCE VERIFICATION FAILED!');
+                error_log('[FP-Exp RTB Quote] Nonce completo: ' . $nonce);
+                error_log('[FP-Exp RTB Quote] Expected action: fp-exp-rtb');
+            }
+            
             return new WP_Error('fp_exp_rtb_nonce', __('La sessione è scaduta. Aggiorna la pagina e riprova.', 'fp-experiences'), ['status' => 403]);
         }
 
