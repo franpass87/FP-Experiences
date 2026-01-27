@@ -88,7 +88,6 @@ final class AutoTranslator implements HookableInterface
         'Disponibilità di %s' => '%s availability',
         'Da %s' => 'From %s',
         'Indirizzo' => 'Address',
-        'Invia approvazione con link di pagamento' => 'Send approval with payment link',
         'Invia richiesta di prenotazione' => 'Send booking request',
         'I metodi di pagamento saranno caricati qui dai gateway WooCommerce.' => 'Payment methods will load here from WooCommerce gateways.',
         'La tua selezione di esperienze apparirà qui.' => 'Your experience selection will appear here.',

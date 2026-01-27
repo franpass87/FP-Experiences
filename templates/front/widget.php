@@ -61,9 +61,7 @@ $container_class = 'fp-exp fp-exp-widget ' . esc_attr($scope_class);
 $rtb_enabled = ! empty($rtb['enabled']);
 $rtb_mode = isset($rtb['mode']) ? (string) $rtb['mode'] : 'off';
 $rtb_forced = ! empty($rtb['forced']);
-$rtb_submit_label = 'pay_later' === $rtb_mode
-    ? esc_html__('Invia approvazione con link di pagamento', 'fp-experiences')
-    : esc_html__('Invia richiesta di prenotazione', 'fp-experiences');
+$rtb_submit_label = esc_html__('Invia richiesta di prenotazione', 'fp-experiences');
 $currency_symbol = function_exists('get_woocommerce_currency_symbol')
     ? get_woocommerce_currency_symbol($currency_code)
     : $currency_code;
