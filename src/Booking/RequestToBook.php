@@ -867,13 +867,14 @@ final class RequestToBook implements HookableInterface
         $item->add_meta_data('_fp_exp_item_type', 'rtb', true);
 
         $slot = $context['slot'] ?? [];
-        $item->add_meta_data('experience_id', absint($context['experience']['id'] ?? 0), true);
-        $item->add_meta_data('experience_title', sanitize_text_field((string) ($context['experience']['title'] ?? '')), true);
-        $item->add_meta_data('slot_id', absint($reservation['slot_id'] ?? 0), true);
-        $item->add_meta_data('slot_start', sanitize_text_field((string) ($slot['start_datetime'] ?? '')), true);
-        $item->add_meta_data('slot_end', sanitize_text_field((string) ($slot['end_datetime'] ?? '')), true);
-        $item->add_meta_data('tickets', $context['tickets'] ?? [], true);
-        $item->add_meta_data('addons', $context['addons'] ?? [], true);
+        // Use underscore prefix so WooCommerce hides these automatically from frontend
+        $item->add_meta_data('_experience_id', absint($context['experience']['id'] ?? 0), true);
+        $item->add_meta_data('_experience_title', sanitize_text_field((string) ($context['experience']['title'] ?? '')), true);
+        $item->add_meta_data('_slot_id', absint($reservation['slot_id'] ?? 0), true);
+        $item->add_meta_data('_slot_start', sanitize_text_field((string) ($slot['start_datetime'] ?? '')), true);
+        $item->add_meta_data('_slot_end', sanitize_text_field((string) ($slot['end_datetime'] ?? '')), true);
+        $item->add_meta_data('_tickets', $context['tickets'] ?? [], true);
+        $item->add_meta_data('_addons', $context['addons'] ?? [], true);
 
         $order->add_item($item);
 

@@ -71,8 +71,8 @@ final class WooCommerceProduct implements HookableInterface
         // Hide technical meta keys from order display (admin)
         add_filter('woocommerce_hidden_order_itemmeta', [$this, 'hide_technical_order_meta']);
 
-        // Hide technical meta keys from order display (frontend - thank you page, order details)
-        add_filter('woocommerce_order_item_get_formatted_meta_data', [$this, 'filter_order_item_meta_frontend'], 10, 2);
+        // Hide technical meta keys from order display (frontend - thank you page, order details, order-pay)
+        add_filter('woocommerce_order_item_get_formatted_meta_data', [$this, 'filter_order_item_meta_frontend'], 99, 2);
 
         // Format order item meta keys with human-readable labels
         add_filter('woocommerce_order_item_display_meta_key', [$this, 'format_order_item_meta_key'], 10, 3);
@@ -314,20 +314,37 @@ final class WooCommerceProduct implements HookableInterface
             'fp_exp_experience_id',
             'fp_exp_experience_title',
             'fp_exp_slot_id',
+            'fp_exp_slot_start',
+            'fp_exp_slot_end',
             'fp_exp_item',
+            'fp_exp_tickets',
+            'fp_exp_addons',
             // With _fp_exp_ prefix
             '_fp_exp_experience_id',
             '_fp_exp_experience_title',
             '_fp_exp_slot_id',
+            '_fp_exp_slot_start',
+            '_fp_exp_slot_end',
             '_fp_exp_item',
+            '_fp_exp_item_type',
             '_fp_exp_tickets',
             '_fp_exp_addons',
-            // Without prefix (legacy/alternate format)
+            // Without prefix (legacy RTB orders)
             'experience_id',
             'experience_title',
             'slot_id',
             'slot_start',
             'slot_end',
+            'tickets',
+            'addons',
+            // With underscore prefix only (new RTB orders)
+            '_experience_id',
+            '_experience_title',
+            '_slot_id',
+            '_slot_start',
+            '_slot_end',
+            '_tickets',
+            '_addons',
             // WooCommerce internal
             '_reduced_stock',
         ];
