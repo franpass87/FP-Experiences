@@ -548,7 +548,7 @@ $dataset = [
                     <div class="fp-exp-field">
                         <div class="fp-exp-special-requests__options">
                             <div class="fp-exp-special-requests__group">
-                                <p class="fp-exp-special-requests__group-title"><?php echo esc_html__('Richieste alimentari', 'fp-experiences'); ?></p>
+                                <p class="fp-exp-special-requests__group-title" style="padding-bottom: 0 !important; font-weight: bold !important; margin-bottom: 0.35rem !important;"><?php echo esc_html__('Richieste alimentari', 'fp-experiences'); ?></p>
                                 <div class="fp-exp-field fp-exp-field--checkbox">
                                     <label for="fp-exp-request-vegan-<?php echo esc_attr($scope_class); ?>">
                                         <input 
@@ -603,7 +603,7 @@ $dataset = [
                             </div>
                             
                             <div class="fp-exp-special-requests__group">
-                                <p class="fp-exp-special-requests__group-title"><?php echo esc_html__('Accessibilità', 'fp-experiences'); ?></p>
+                                <p class="fp-exp-special-requests__group-title" style="padding-bottom: 0 !important; font-weight: bold !important; margin-bottom: 0.35rem !important;"><?php echo esc_html__('Accessibilità', 'fp-experiences'); ?></p>
                                 <div class="fp-exp-field fp-exp-field--checkbox">
                                     <label for="fp-exp-request-mobility-<?php echo esc_attr($scope_class); ?>">
                                         <input 
@@ -632,7 +632,7 @@ $dataset = [
                             </div>
                             
                             <div class="fp-exp-special-requests__group">
-                                <p class="fp-exp-special-requests__group-title"><?php echo esc_html__('Celebrazioni', 'fp-experiences'); ?></p>
+                                <p class="fp-exp-special-requests__group-title" style="padding-bottom: 0 !important; font-weight: bold !important; margin-bottom: 0.35rem !important;"><?php echo esc_html__('Celebrazioni', 'fp-experiences'); ?></p>
                                 <div class="fp-exp-field fp-exp-field--checkbox">
                                     <label for="fp-exp-request-celebration-<?php echo esc_attr($scope_class); ?>">
                                         <input 
