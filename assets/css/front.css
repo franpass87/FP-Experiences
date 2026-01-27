@@ -2608,13 +2608,14 @@
 }
 
 .fp-exp-special-requests__group-title,
-p.fp-exp-special-requests__group-title {
-    font-size: 0.9rem;
-    font-weight: bold;
-    color: var(--fp-color-text, #0f172a);
-    margin: 0 0 0.35rem 0;
-    padding: 0;
-    padding-bottom: 0;
+p.fp-exp-special-requests__group-title,
+.fp-exp-special-requests__group > p {
+    font-size: 0.9rem !important;
+    font-weight: bold !important;
+    color: var(--fp-color-text, #0f172a) !important;
+    margin: 0 0 0.35rem 0 !important;
+    padding: 0 !important;
+    padding-bottom: 0 !important;
 }
 
 .fp-exp-special-requests__group .fp-exp-field--checkbox {
