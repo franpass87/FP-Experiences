@@ -173,7 +173,7 @@ final class WooCommerceProduct implements HookableInterface
     }
 
     /**
-     * Customize order totals display for RTB orders
+     * Customize order totals display for RTB orders or experience orders with 0 total
      *
      * @param array $total_rows Order total rows
      * @param \WC_Order $order The order object
@@ -186,12 +186,31 @@ final class WooCommerceProduct implements HookableInterface
             return $total_rows;
         }
 
-        // Check if this is an RTB order
+        // Check if order contains experience items
+        $has_experience = false;
+        $experience_id = 0;
+        foreach ($order->get_items() as $item) {
+            $exp_id = $item->get_meta('fp_exp_experience_id');
+            if ($exp_id) {
+                $has_experience = true;
+                $experience_id = (int) $exp_id;
+                break;
+            }
+        }
+
+        // If not an experience order, return unchanged
+        if (! $has_experience) {
+            return $total_rows;
+        }
+
+        // Check if this is an RTB order (via meta or created_via)
         $is_rtb = $order->get_meta('_fp_exp_rtb_mode');
         $created_via = $order->get_created_via();
+        $is_rtb_order = $is_rtb || $created_via === 'fp-exp-rtb';
 
-        if (! $is_rtb && $created_via !== 'fp-exp-rtb') {
-            return $total_rows;
+        // Also check if experience uses RTB globally
+        if (! $is_rtb_order && $experience_id > 0) {
+            $is_rtb_order = Helpers::experience_uses_rtb($experience_id);
         }
 
         // Get total from reservation meta if available
@@ -205,15 +224,14 @@ final class WooCommerceProduct implements HookableInterface
             }
         }
 
-        // If order total is 0 but we have an expected total, show it differently
+        // If order total is 0, show appropriate message
         $order_total = (float) $order->get_total();
 
         if ($order_total <= 0 && $expected_total > 0) {
             // Modify the total row to show expected amount
             if (isset($total_rows['order_total'])) {
                 $total_rows['order_total']['value'] = sprintf(
-                    '<del>%s</del> <span style="color: #666;">%s</span>',
-                    wc_price(0),
+                    '<span style="color: #666;">%s</span>',
                     sprintf(
                         /* translators: %s: expected total amount */
                         __('Da pagare dopo conferma: %s', 'fp-experiences'),
