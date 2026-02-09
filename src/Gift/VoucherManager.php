@@ -196,8 +196,9 @@ final class VoucherManager implements HookableInterface
         add_action('wp_footer', [$this, 'output_gift_checkout_script'], 999);
         add_filter('woocommerce_cart_item_name', [$this, 'customize_gift_cart_name'], 99, 3);
         add_filter('woocommerce_cart_item_price', [$this, 'set_gift_cart_price'], 10, 3);
-        add_filter('woocommerce_cart_item_permalink', '__return_null', 999);
-        add_filter('woocommerce_order_item_permalink', '__return_null', 999);
+        // FIX: Usa il metodo condizionale invece di __return_null che colpiva TUTTI i prodotti
+        add_filter('woocommerce_cart_item_permalink', [$this, 'remove_gift_product_link'], 999, 3);
+        add_filter('woocommerce_order_item_permalink', [$this, 'remove_gift_order_link'], 999, 2);
         add_filter('woocommerce_add_cart_item_data', [$this, 'add_gift_price_to_cart_data'], 10, 3);
         add_filter('woocommerce_add_cart_item', [$this, 'set_gift_price_on_add'], 10, 2);
         add_filter('woocommerce_get_cart_item_from_session', [$this, 'set_gift_price_from_session'], 10, 3);
@@ -1517,6 +1518,23 @@ final class VoucherManager implements HookableInterface
     {
         if (is_array($cart_item) && ($cart_item['_fp_exp_item_type'] ?? '') === 'gift') {
             return ''; // Ritorna stringa vuota per rimuovere il link
+        }
+
+        return $permalink;
+    }
+
+    /**
+     * Rimuove link al prodotto gift negli ordini
+     */
+    public function remove_gift_order_link($permalink, $item)
+    {
+        $item_type = '';
+        if (is_object($item) && method_exists($item, 'get_meta')) {
+            $item_type = $item->get_meta('_fp_exp_item_type');
+        }
+
+        if ($item_type === 'gift') {
+            return '';
         }
 
         return $permalink;

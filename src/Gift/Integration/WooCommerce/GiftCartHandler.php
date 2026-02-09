@@ -32,12 +32,51 @@ final class GiftCartHandler implements HookableInterface
     {
         add_filter('woocommerce_cart_item_name', [$this, 'customizeCartName'], 99, 3);
         add_filter('woocommerce_cart_item_price', [$this, 'setCartPrice'], 10, 3);
-        add_filter('woocommerce_cart_item_permalink', '__return_null', 999);
-        add_filter('woocommerce_order_item_permalink', '__return_null', 999);
+        // FIX: Applica __return_null solo ai gift voucher, non a TUTTI i prodotti
+        add_filter('woocommerce_cart_item_permalink', [$this, 'maybeRemovePermalink'], 999, 3);
+        add_filter('woocommerce_order_item_permalink', [$this, 'maybeRemoveOrderPermalink'], 999, 2);
         add_filter('woocommerce_add_cart_item_data', [$this, 'addGiftPriceToCartData'], 10, 3);
         add_filter('woocommerce_add_cart_item', [$this, 'setGiftPriceOnAdd'], 10, 2);
         add_filter('woocommerce_get_cart_item_from_session', [$this, 'setGiftPriceFromSession'], 10, 3);
         add_action('woocommerce_before_calculate_totals', [$this, 'setDynamicGiftPrice'], 10, 1);
+    }
+
+    /**
+     * Remove permalink only for gift voucher cart items.
+     *
+     * @param string $permalink Product permalink
+     * @param array  $cart_item Cart item data
+     * @param string $cart_item_key Cart item key
+     * @return string|null Null for gift items, original permalink for all others
+     */
+    public function maybeRemovePermalink($permalink, $cart_item, $cart_item_key)
+    {
+        if (($cart_item[self::ITEM_TYPE_KEY] ?? '') === 'gift' || !empty($cart_item['fp_exp_item'])) {
+            return null;
+        }
+
+        return $permalink;
+    }
+
+    /**
+     * Remove permalink only for gift voucher order items.
+     *
+     * @param string $permalink Product permalink
+     * @param object $item Order item
+     * @return string|null Null for gift items, original permalink for all others
+     */
+    public function maybeRemoveOrderPermalink($permalink, $item)
+    {
+        $item_type = '';
+        if (method_exists($item, 'get_meta')) {
+            $item_type = $item->get_meta(self::ITEM_TYPE_KEY);
+        }
+
+        if ($item_type === 'gift') {
+            return null;
+        }
+
+        return $permalink;
     }
 
     /**

@@ -106,11 +106,17 @@ final class Cart implements HookableInterface
 
         if ($cookie && $this->is_valid_session($cookie)) {
             $this->session_id = $cookie;
+            // FIX: Rinnova il cookie solo se esiste già (cliente che ha già interagito con esperienze).
+            // NON impostare un nuovo cookie per ogni visitatore del sito, perché l'header Set-Cookie
+            // può interferire con i sistemi di cache del server (Varnish, Cloudflare, LiteSpeed, ecc.)
+            // causando lo strip di TUTTI i Set-Cookie, incluso quello di sessione WooCommerce.
+            $this->persist_cookie($this->session_id);
         } else {
+            // Genera un session ID in memoria ma NON impostare il cookie ancora.
+            // Il cookie verrà impostato solo quando il cliente effettivamente aggiunge
+            // qualcosa al carrello esperienze (vedi set_items()).
             $this->session_id = wp_generate_uuid4();
         }
-
-        $this->persist_cookie($this->session_id);
     }
 
     public function get_session_id(): string
@@ -217,6 +223,10 @@ final class Cart implements HookableInterface
         if ('' === $session_id) {
             return;
         }
+
+        // FIX: Imposta il cookie solo quando si scrive effettivamente nel carrello esperienze.
+        // Questo evita di inviare Set-Cookie su ogni richiesta, che può interferire con i cache server.
+        $this->persist_cookie($session_id);
 
         set_transient(self::TRANSIENT_PREFIX . $session_id, $data, self::SESSION_TTL);
     }
@@ -368,15 +378,32 @@ final class Cart implements HookableInterface
         if (! $is_experience_product) {
             // First, check if WooCommerce cart already has experience items
             if (function_exists('WC') && WC()->cart && !WC()->cart->is_empty()) {
+                $has_exp_items = false;
+                $exp_keys = [];
                 $cart_contents = WC()->cart->get_cart();
-                foreach ($cart_contents as $cart_item) {
+                foreach ($cart_contents as $key => $cart_item) {
                     if (!empty($cart_item['fp_exp_item'])) {
-                        // WooCommerce cart has experiences, block normal products
-                        if (function_exists('wc_add_notice')) {
-                            wc_add_notice(__('Le esperienze non possono essere acquistate insieme ad altri prodotti. Completa prima la prenotazione o svuota il carrello.', 'fp-experiences'), 'error');
-                        }
-                        return false;
+                        $has_exp_items = true;
+                        $exp_keys[] = $key;
                     }
+                }
+                
+                if ($has_exp_items) {
+                    // FIX: Se il carrello custom FP è vuoto, gli item esperienza nel carrello WC
+                    // sono "stalli" (residui di una sync precedente). Li rimuoviamo invece di bloccare.
+                    if (! $this->has_items()) {
+                        foreach ($exp_keys as $key) {
+                            WC()->cart->remove_cart_item($key);
+                        }
+                        // Carrello WC pulito, permetti l'aggiunta del prodotto normale
+                        return $passed;
+                    }
+                    
+                    // Il carrello custom FP ha ancora item → blocco legittimo
+                    if (function_exists('wc_add_notice')) {
+                        wc_add_notice(__('Le esperienze non possono essere acquistate insieme ad altri prodotti. Completa prima la prenotazione o svuota il carrello.', 'fp-experiences'), 'error');
+                    }
+                    return false;
                 }
             }
             
@@ -544,16 +571,54 @@ final class Cart implements HookableInterface
         $session_id = $this->get_session_id();
         $last_synced_hash = WC()->session ? WC()->session->get('fp_exp_cart_hash_' . $session_id, '') : '';
         
-        // Skip sync if cart content hasn't changed
-        if ($last_synced_hash === $cart_hash && !empty($last_synced_hash)) {
-            $log('[FP-EXP-CART] Cart content unchanged (hash: ' . $cart_hash . '), skip sync');
+        // Skip sync if cart content hasn't changed AND WooCommerce cart actually has experience items
+        // FIX: Verifica anche che il carrello WC contenga effettivamente item esperienza,
+        // perché la sessione WC potrebbe essere stata resettata/svuotata perdendo gli item
+        $wc_has_exp_items = false;
+        if (!WC()->cart->is_empty()) {
+            foreach (WC()->cart->get_cart() as $cart_item) {
+                if (!empty($cart_item['fp_exp_item'])) {
+                    $wc_has_exp_items = true;
+                    break;
+                }
+            }
+        }
+        
+        if ($last_synced_hash === $cart_hash && !empty($last_synced_hash) && $wc_has_exp_items) {
+            $log('[FP-EXP-CART] Cart content unchanged (hash: ' . $cart_hash . ') and WC cart has items, skip sync');
             return;
+        }
+        
+        if ($last_synced_hash === $cart_hash && !empty($last_synced_hash) && !$wc_has_exp_items) {
+            $log('[FP-EXP-CART] ⚠️ Hash matches but WC cart is empty/missing experience items — forcing re-sync');
         }
         
         $log('[FP-EXP-CART] Cart content changed or first sync (hash: ' . $cart_hash . '), syncing...');
         
         if (empty($custom_cart['items'])) {
             $log('[FP-EXP-CART] Custom cart empty, nothing to sync');
+            
+            // FIX: Pulisci eventuali item esperienza "stalli" rimasti nel carrello WooCommerce
+            // (es. da una sync precedente il cui transient FP è scaduto o è stato cancellato)
+            if (!WC()->cart->is_empty()) {
+                $stale_keys = [];
+                foreach (WC()->cart->get_cart() as $key => $cart_item) {
+                    if (!empty($cart_item['fp_exp_item'])) {
+                        $stale_keys[] = $key;
+                    }
+                }
+                if (!empty($stale_keys)) {
+                    $log('[FP-EXP-CART] ⚠️ Removing ' . count($stale_keys) . ' stale experience items from WooCommerce cart');
+                    foreach ($stale_keys as $key) {
+                        WC()->cart->remove_cart_item($key);
+                    }
+                    // Invalida l'hash per evitare problemi futuri
+                    if (WC()->session) {
+                        WC()->session->set('fp_exp_cart_hash_' . $session_id, '');
+                    }
+                }
+            }
+            
             return;
         }
 
