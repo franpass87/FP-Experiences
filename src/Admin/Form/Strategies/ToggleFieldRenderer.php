@@ -36,7 +36,7 @@ final class ToggleFieldRenderer implements FieldRenderer
         // Add hidden input if requested (for WordPress settings API)
         // This ensures the value is sent even when checkbox is unchecked
         if ($field->getOption('add_hidden_input', false)) {
-            $html .= '<input type="hidden" name="' . esc_attr($input_name) . '" value="no" />';
+            $html .= '<input type="hidden" name="' . esc_attr($input_name) . '" value="0" />';
         }
         
         // Structure:

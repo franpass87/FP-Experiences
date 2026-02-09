@@ -2961,7 +2961,7 @@ final class SettingsPage implements HookableInterface
                 
             case 'checkbox':
                 // Hidden field to ensure value is always sent
-                echo '<input type="hidden" name="' . esc_attr($field_name) . '" value="no" />';
+                echo '<input type="hidden" name="' . esc_attr($field_name) . '" value="0" />';
                 $checked = ($value === 'yes' || $value === '1' || $value === true || $value === 1) ? ' checked="checked"' : '';
                 echo '<input type="checkbox" id="' . esc_attr($field_id) . '" name="' . esc_attr($field_name) . '" value="yes"' . $checked . ' />';
                 break;

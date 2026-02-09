@@ -152,7 +152,7 @@ final class NestedFieldRenderer implements FieldRenderer
             $is_array_field = substr($field_name, -2) === '[]';
             if (!$is_array_field) {
                 $hidden_name = $field_name;
-                $rendered = '<input type="hidden" name="' . esc_attr($hidden_name) . '" value="no" />' . $rendered;
+                $rendered = '<input type="hidden" name="' . esc_attr($hidden_name) . '" value="0" />' . $rendered;
             }
         }
 
