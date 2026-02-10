@@ -283,6 +283,60 @@ final class RouteRegistry
             return;
         }
 
+        // Public: purchase a gift voucher (frontend form)
+        register_rest_route(
+            'fp-exp/v1',
+            '/gift/purchase',
+            [
+                'methods' => 'POST',
+                'permission_callback' => [AuthenticationMiddleware::class, 'publicEndpoint'],
+                'callback' => [$this->gift_controller, 'purchase'],
+                'args' => [
+                    'experience_id' => [
+                        'required' => true,
+                        'sanitize_callback' => 'absint',
+                    ],
+                    'quantity' => [
+                        'required' => false,
+                        'sanitize_callback' => 'absint',
+                    ],
+                ],
+            ]
+        );
+
+        // Public: get voucher info by code
+        register_rest_route(
+            'fp-exp/v1',
+            '/gift/voucher/(?P<code>[A-Za-z0-9\-]+)',
+            [
+                'methods' => 'GET',
+                'permission_callback' => [AuthenticationMiddleware::class, 'publicEndpoint'],
+                'callback' => [$this->gift_controller, 'getVoucher'],
+            ]
+        );
+
+        // Public: redeem a voucher (legacy URL used by frontend)
+        register_rest_route(
+            'fp-exp/v1',
+            '/gift/redeem',
+            [
+                'methods' => 'POST',
+                'permission_callback' => [AuthenticationMiddleware::class, 'publicEndpoint'],
+                'callback' => [$this->gift_controller, 'redeem'],
+                'args' => [
+                    'code' => [
+                        'required' => true,
+                        'sanitize_callback' => 'sanitize_text_field',
+                    ],
+                    'slot_id' => [
+                        'required' => true,
+                        'sanitize_callback' => 'absint',
+                    ],
+                ],
+            ]
+        );
+
+        // Admin: create voucher manually
         register_rest_route(
             'fp-exp/v1',
             '/gift/voucher',
@@ -293,6 +347,7 @@ final class RouteRegistry
             ]
         );
 
+        // Public: redeem voucher (new URL pattern)
         register_rest_route(
             'fp-exp/v1',
             '/gift/voucher/(?P<code>[a-zA-Z0-9-]+)/redeem',
