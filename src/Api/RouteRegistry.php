@@ -223,6 +223,13 @@ final class RouteRegistry
             'fix-corrupted-arrays' => 'tool_fix_corrupted_arrays',
             'backup-branding' => 'tool_backup_branding',
             'restore-branding' => 'tool_restore_branding',
+            'cleanup-duplicate-page-ids' => 'tool_cleanup_duplicate_page_ids',
+            'cleanup-old-slots' => 'tool_cleanup_old_slots',
+            'rebuild-availability-meta' => 'tool_rebuild_availability_meta',
+            'recreate-virtual-product' => 'tool_recreate_virtual_product',
+            'fix-virtual-product-quantity' => 'tool_fix_virtual_product_quantity',
+            'fix-experience-prices' => 'tool_fix_experience_prices',
+            'create-tables' => 'tool_create_tables',
         ];
 
         foreach ($legacy_tools as $route => $method) {
