@@ -231,6 +231,8 @@ final class ExperienceShortcode extends BaseShortcode
                     [
                         'item_id' => (string) $experience_id,
                         'item_name' => $post->post_title,
+                        'price' => $base_price,
+                        'quantity' => 1,
                     ],
                 ],
             ],

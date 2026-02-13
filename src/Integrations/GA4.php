@@ -88,11 +88,16 @@ final class GA4 implements HookableInterface
                 continue;
             }
 
+            $qty = (int) $item->get_meta('quantity');
+            if ($qty < 1) {
+                $qty = 1;
+            }
+
             $items[] = [
                 'item_id' => (string) $item->get_meta('experience_id'),
                 'item_name' => (string) $item->get_meta('experience_title'),
                 'price' => (float) $item->get_total(),
-                'quantity' => 1,
+                'quantity' => $qty,
             ];
         }
 

@@ -150,4 +150,31 @@ $container_class = 'fp-exp fp-exp-checkout ' . esc_attr($scope_class);
             <?php echo wp_kses_post($schema_json); ?>
         </script>
     <?php endif; ?>
+    <?php if (! empty($cart_items)) : ?>
+        <script>
+        (function () {
+            if (typeof window.FPFront === 'undefined' || !window.FPFront.tracking || !window.FPFront.tracking.isEnabled()) return;
+            var items = <?php
+                $tracking_items = [];
+                $total_value = 0;
+                foreach ($cart_items as $ci) {
+                    $item_total = isset($ci['total']) ? (float) $ci['total'] : 0;
+                    $total_value += $item_total;
+                    $tracking_items[] = [
+                        'item_id' => isset($ci['experience_id']) ? (string) $ci['experience_id'] : '',
+                        'item_name' => isset($ci['title']) ? $ci['title'] : '',
+                        'price' => $item_total,
+                        'quantity' => isset($ci['quantity']) ? (int) $ci['quantity'] : 1,
+                    ];
+                }
+                echo wp_json_encode($tracking_items);
+            ?>;
+            window.FPFront.tracking.beginCheckout({
+                items: items,
+                value: <?php echo (float) $total_value; ?>,
+                currency: <?php echo wp_json_encode($currency); ?>
+            });
+        })();
+        </script>
+    <?php endif; ?>
 </section>

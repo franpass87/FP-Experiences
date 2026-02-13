@@ -86,6 +86,64 @@
     }
 })();
 
+// Tracking: view_item_list + select_item per la lista esperienze
+(function initListingTracking() {
+    'use strict';
+
+    function setup() {
+        var listing = document.querySelector('[data-fp-shortcode="list"]');
+        if (!listing) return;
+
+        var tracking = window.FPFront && window.FPFront.tracking;
+        if (!tracking || !tracking.isEnabled()) return;
+
+        // view_item_list: parse data-fp-items and push
+        var itemsJson = listing.getAttribute('data-fp-items');
+        if (itemsJson) {
+            try {
+                var items = JSON.parse(itemsJson);
+                if (items && items.length) {
+                    tracking.viewItemList(items);
+                }
+            } catch (e) {
+                // Invalid JSON in data-fp-items
+            }
+        }
+
+        // select_item: delegated click on card links
+        listing.addEventListener('click', function (ev) {
+            var link = ev.target.closest('.fp-listing__card a[href]');
+            if (!link) return;
+
+            var card = link.closest('.fp-listing__card');
+            if (!card) return;
+
+            // Find the item data from the parsed items
+            var cardIndex = Array.prototype.indexOf.call(
+                listing.querySelectorAll('.fp-listing__card'),
+                card
+            );
+
+            if (itemsJson) {
+                try {
+                    var allItems = JSON.parse(itemsJson);
+                    if (allItems && allItems[cardIndex]) {
+                        tracking.selectItem(allItems[cardIndex]);
+                    }
+                } catch (e) {
+                    // Ignore
+                }
+            }
+        });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', setup);
+    } else {
+        setup();
+    }
+})();
+
 // Inizializza accordion FAQ IMMEDIATAMENTE (standalone, non aspetta jQuery)
 // Usa delegazione eventi su document per funzionare anche con contenuti caricati dinamicamente
 (function initAccordionImmediate() {
@@ -1170,6 +1228,18 @@
                         throw new Error(errorData.message || `Errore aggiunta al carrello (${setCartResponse.status})`);
                     }
 
+                    // Tracking: add_to_cart
+                    if (window.FPFront && window.FPFront.tracking) {
+                        var expTitle = '';
+                        try { expTitle = document.querySelector('.fp-exp-hero__content h1, .fp-exp-section h1')?.textContent || ''; } catch (e) { /* ignore */ }
+                        window.FPFront.tracking.addToCart({
+                            item_id: experienceId,
+                            item_name: expTitle,
+                            quantity: Object.values(tickets).reduce(function (s, v) { return s + (parseInt(v, 10) || 0); }, 0) || 1,
+                            currency: (typeof fpExpConfig !== 'undefined' && fpExpConfig.currency) || 'EUR'
+                        });
+                    }
+
                     // ✅ v0.5.0: Redirect to WooCommerce checkout page
                     // Cart will be automatically synced via template_redirect hook
                     ctaBtn.textContent = 'Reindirizzamento...';
@@ -1674,6 +1744,14 @@
                         statusEl.className = 'fp-exp-rtb-form__status';
                     }
 
+                    // Tracking: rtbSubmit
+                    if (window.FPFront && window.FPFront.tracking) {
+                        window.FPFront.tracking.rtbSubmit({
+                            experience_id: payload.experience_id,
+                            mode: payload.mode || 'rtb'
+                        });
+                    }
+
                     try {
                         const restBaseUrl = (typeof fpExpConfig !== 'undefined' && fpExpConfig.restUrl) 
                             || (window.wpApiSettings && wpApiSettings.root) 
@@ -1698,6 +1776,14 @@
                         if (!response.ok || result.success !== true) {
                             console.error('❌ RTB Request failed:', result);
                             throw new Error(result.message || 'Errore durante l\'invio della richiesta.');
+                        }
+
+                        // Tracking: rtbSuccess
+                        if (window.FPFront && window.FPFront.tracking) {
+                            window.FPFront.tracking.rtbSuccess({
+                                experience_id: payload.experience_id,
+                                request_id: result.request_id || ''
+                            });
                         }
 
                         // Successo!
@@ -1728,6 +1814,14 @@
                         }, 3000);
 
                     } catch (error) {
+                        // Tracking: rtbError
+                        if (window.FPFront && window.FPFront.tracking) {
+                            window.FPFront.tracking.rtbError({
+                                experience_id: payload.experience_id,
+                                error: error.message || 'unknown'
+                            });
+                        }
+
                         // Errore
                         if (statusEl) {
                             statusEl.className = 'fp-exp-rtb-form__status fp-exp-rtb-form__status--error';
@@ -1907,6 +2001,16 @@
 
                         // Check for payment_url or checkout_url
                         const checkoutUrl = result.payment_url || result.checkout_url || (result.data && result.data.payment_url);
+
+                        // Tracking: gift_purchase
+                        if (window.FPFront && window.FPFront.tracking) {
+                            window.FPFront.tracking.giftPurchase({
+                                experience_id: data.experience_id,
+                                experience_name: (giftConfig && giftConfig.experienceTitle) || '',
+                                quantity: data.quantity || 1,
+                                currency: (typeof fpExpConfig !== 'undefined' && fpExpConfig.currency) || 'EUR'
+                            });
+                        }
 
                         if (checkoutUrl) {
                             // Redirect to checkout

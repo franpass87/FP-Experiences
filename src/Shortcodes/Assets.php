@@ -160,6 +160,16 @@ final class Assets
             }
         }
 
+        // Tracking module — loaded before front.js so FPFront.tracking is available
+        wp_register_script(
+            'fp-exp-tracking',
+            trailingslashit(FP_EXP_PLUGIN_URL) . 'assets/js/front/tracking.js',
+            [],
+            Helpers::asset_version('assets/js/front/tracking.js'),
+            true
+        );
+        $front_deps[] = 'fp-exp-tracking';
+
         wp_register_script(
             'fp-exp-front',
             $front_js,
