@@ -11,6 +11,7 @@ use WC_Order;
 use WC_Order_Item;
 
 use function add_action;
+use function apply_filters;
 use function esc_html;
 use function is_array;
 use function wp_json_encode;
@@ -114,6 +115,9 @@ final class GA4 implements HookableInterface
                 'items' => $items,
             ],
         ];
+
+        /** This filter is documented in readme.txt (fp_exp_datalayer_purchase). */
+        $payload = apply_filters('fp_exp_datalayer_purchase', $payload, $order);
 
         echo '<script>window.dataLayer = window.dataLayer || [];window.dataLayer.push(' . wp_json_encode($payload) . ');</script>';
     }

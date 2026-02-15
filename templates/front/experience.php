@@ -325,8 +325,11 @@ $sticky_price_display = '' !== $price_from_display ? $format_currency($price_fro
 >
     <?php if (! empty($data_layer)) : ?>
         <script>
-            window.dataLayer = window.dataLayer || [];
-            window.dataLayer.push(<?php echo wp_kses_post($data_layer); ?>);
+            (function () {
+                if (typeof window.FPFront === 'undefined' || !window.FPFront.tracking || !window.FPFront.tracking.isEnabled()) return;
+                window.dataLayer = window.dataLayer || [];
+                window.dataLayer.push(<?php echo wp_kses_post($data_layer); ?>);
+            })();
         </script>
     <?php endif; ?>
 

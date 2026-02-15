@@ -1232,10 +1232,14 @@
                     if (window.FPFront && window.FPFront.tracking) {
                         var expTitle = '';
                         try { expTitle = document.querySelector('.fp-exp-hero__content h1, .fp-exp-section h1')?.textContent || ''; } catch (e) { /* ignore */ }
+                        var qty = Object.values(tickets).reduce(function (s, v) { return s + (parseInt(v, 10) || 0); }, 0) || 1;
+                        var priceNum = (config && config.priceFrom != null) ? parseFloat(config.priceFrom) : 0;
+                        var price = (typeof priceNum === 'number' && !isNaN(priceNum)) ? priceNum : 0;
                         window.FPFront.tracking.addToCart({
                             item_id: experienceId,
                             item_name: expTitle,
-                            quantity: Object.values(tickets).reduce(function (s, v) { return s + (parseInt(v, 10) || 0); }, 0) || 1,
+                            quantity: qty,
+                            price: price,
                             currency: (typeof fpExpConfig !== 'undefined' && fpExpConfig.currency) || 'EUR'
                         });
                     }
@@ -2004,10 +2008,14 @@
 
                         // Tracking: gift_purchase
                         if (window.FPFront && window.FPFront.tracking) {
+                            var giftQty = data.quantity || 1;
+                            var giftValueRaw = (result && result.value != null) ? parseFloat(result.value) : (result && result.data && result.data.total != null) ? parseFloat(result.data.total) : (giftConfig && giftConfig.priceFrom != null) ? parseFloat(giftConfig.priceFrom) * giftQty : 0;
+                            var giftValue = (typeof giftValueRaw === 'number' && !isNaN(giftValueRaw)) ? giftValueRaw : 0;
                             window.FPFront.tracking.giftPurchase({
                                 experience_id: data.experience_id,
                                 experience_name: (giftConfig && giftConfig.experienceTitle) || '',
-                                quantity: data.quantity || 1,
+                                quantity: giftQty,
+                                value: giftValue,
                                 currency: (typeof fpExpConfig !== 'undefined' && fpExpConfig.currency) || 'EUR'
                             });
                         }
