@@ -21,10 +21,12 @@ use function absint;
 use function array_map;
 use function get_current_user_id;
 use function is_array;
+use function maybe_unserialize;
 use function rest_ensure_response;
 use function sanitize_key;
 use function get_the_title;
 use function sanitize_text_field;
+use function wc_get_order;
 
 use const MINUTE_IN_SECONDS;
 
@@ -91,6 +93,42 @@ final class CalendarController
                     $title = get_the_title($exp_id);
                 }
 
+                $reservations_raw = isset($slot['reservations']) && is_array($slot['reservations']) ? $slot['reservations'] : [];
+                $reservations_out = [];
+                foreach ($reservations_raw as $res) {
+                    $status = (string) ($res['status'] ?? 'pending');
+                    if ($status === 'cancelled') {
+                        continue;
+                    }
+                    $order_id = (int) ($res['order_id'] ?? 0);
+                    $customer_name = '';
+                    if ($order_id > 0) {
+                        $order = wc_get_order($order_id);
+                        if ($order instanceof \WC_Order) {
+                            $customer_name = trim(
+                                $order->get_billing_first_name() . ' ' . $order->get_billing_last_name()
+                            );
+                        }
+                    }
+                    $pax = $res['pax'] ?? [];
+                    if (is_string($pax)) {
+                        $pax = maybe_unserialize($pax);
+                    }
+                    $pax_sanitized = [];
+                    if (is_array($pax)) {
+                        foreach ($pax as $type => $qty) {
+                            $pax_sanitized[sanitize_key((string) $type)] = (int) $qty;
+                        }
+                    }
+                    $reservations_out[] = [
+                        'id' => (int) ($res['id'] ?? 0),
+                        'customer_name' => sanitize_text_field($customer_name),
+                        'pax' => $pax_sanitized,
+                        'status' => sanitize_key($status),
+                        'order_id' => $order_id,
+                    ];
+                }
+
                 return [
                     'id' => (int) ($slot['id'] ?? 0),
                     'experience_id' => $exp_id,
@@ -102,6 +140,7 @@ final class CalendarController
                     'remaining' => (int) ($slot['remaining'] ?? 0),
                     'reserved' => (int) ($slot['reserved_total'] ?? 0),
                     'duration' => sanitize_text_field((string) ($slot['duration'] ?? '')),
+                    'reservations' => $reservations_out,
                 ];
             },
             $slots

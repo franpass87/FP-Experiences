@@ -2000,6 +2000,52 @@
 
                     item.appendChild(capacityWrapper);
 
+                    // Reservation details
+                    if (slot.reservations && slot.reservations.length > 0) {
+                        const resList = document.createElement('div');
+                        resList.className = 'fp-exp-calendar__reservations';
+
+                        slot.reservations.forEach((res) => {
+                            const row = document.createElement('div');
+                            row.className = 'fp-exp-calendar__reservation-row';
+
+                            const name = document.createElement('span');
+                            name.className = 'fp-exp-calendar__reservation-name';
+                            name.textContent = res.customer_name || '—';
+                            row.appendChild(name);
+
+                            const paxParts = [];
+                            if (res.pax && typeof res.pax === 'object') {
+                                Object.entries(res.pax).forEach(([type, qty]) => {
+                                    if (qty > 0) { paxParts.push(`${type}: ${qty}`); }
+                                });
+                            }
+                            if (paxParts.length) {
+                                const pax = document.createElement('span');
+                                pax.className = 'fp-exp-calendar__reservation-pax';
+                                pax.textContent = paxParts.join(', ');
+                                row.appendChild(pax);
+                            }
+
+                            const statusBadge = document.createElement('span');
+                            statusBadge.className = 'fp-exp-calendar__reservation-status is-' + (res.status || 'pending');
+                            const statusLabels = {
+                                paid: 'Pagato',
+                                pending: 'In attesa',
+                                pending_request: 'Richiesta',
+                                approved_confirmed: 'Confermato',
+                                approved_pending_payment: 'Da pagare',
+                                checked_in: 'Check-in',
+                            };
+                            statusBadge.textContent = statusLabels[res.status] || res.status || '';
+                            row.appendChild(statusBadge);
+
+                            resList.appendChild(row);
+                        });
+
+                        item.appendChild(resList);
+                    }
+
                     // Drag handlers
                     item.addEventListener('dragstart', (ev) => {
                         ev.dataTransfer && ev.dataTransfer.setData('text/plain', JSON.stringify({
@@ -2115,6 +2161,18 @@
                             badge.textContent = (calendarConfig.i18n && calendarConfig.i18n.lowLabel) ? calendarConfig.i18n.lowLabel : 'Pochi posti';
                             cell.appendChild(badge);
                         }
+                    }
+                    let bookedCount = 0;
+                    daySlots.forEach((s) => {
+                        if (s.reservations && s.reservations.length) {
+                            bookedCount += s.reservations.length;
+                        }
+                    });
+                    if (bookedCount > 0) {
+                        const bookedBadge = document.createElement('div');
+                        bookedBadge.className = 'fp-exp-calendar__grid-booked';
+                        bookedBadge.textContent = bookedCount + ' prenotaz.';
+                        cell.appendChild(bookedBadge);
                     }
                 } else {
                     const empty = document.createElement('div');

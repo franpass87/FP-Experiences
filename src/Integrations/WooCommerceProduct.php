@@ -158,13 +158,6 @@ final class WooCommerceProduct implements HookableInterface
             return;
         }
 
-        $isolated = $order->get_meta('_fp_exp_isolated_checkout');
-
-        if ('yes' !== $isolated && 'fp-exp' !== $order->get_created_via() && 'fp-exp-rtb' !== $order->get_created_via()) {
-            echo '<p style="color:#64748b;">' . esc_html__('Questo ordine non contiene esperienze.', 'fp-experiences') . '</p>';
-            return;
-        }
-
         $reservation_ids = \FP_Exp\Booking\Reservations::get_ids_by_order($order_id);
 
         if (empty($reservation_ids)) {

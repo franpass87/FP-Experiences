@@ -83,7 +83,15 @@ final class CheckoutShortcode extends BaseShortcode
             return $conflict;
         }
 
-        $cart_items = $this->prepare_items_for_display($cart->get_items());
+        $useCase = $this->getGetSettingsUseCase();
+        $currency = 'EUR';
+        if ($useCase !== null) {
+            $currency = (string) $useCase->get('woocommerce_currency', 'EUR');
+        } else {
+            $currency = get_option('woocommerce_currency', 'EUR');
+        }
+
+        $cart_items = $this->prepare_items_for_display($cart->get_items(), $currency);
         $totals = $cart->get_totals();
         $total_formatted = $this->format_money((float) $totals['total'], (string) $totals['currency']);
 
@@ -95,16 +103,6 @@ final class CheckoutShortcode extends BaseShortcode
             'submit' => esc_html__('Conferma e paga', 'fp-experiences'),
             'cart_locked' => esc_html__('Il carrello è bloccato mentre completi il pagamento.', 'fp-experiences'),
         ];
-
-        // Try to use new use case if available
-        $useCase = $this->getGetSettingsUseCase();
-        $currency = 'EUR';
-        if ($useCase !== null) {
-            $currency = (string) $useCase->get('woocommerce_currency', 'EUR');
-        } else {
-            // Fallback to direct get_option for backward compatibility
-            $currency = get_option('woocommerce_currency', 'EUR');
-        }
 
         return [
             'theme' => $theme,
@@ -142,7 +140,7 @@ final class CheckoutShortcode extends BaseShortcode
      *
      * @return array<int, array<string, mixed>>
      */
-    private function prepare_items_for_display(array $items): array
+    private function prepare_items_for_display(array $items, string $currency = 'EUR'): array
     {
         $prepared = [];
 

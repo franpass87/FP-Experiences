@@ -72,6 +72,7 @@ final class GetSlotsUseCase
             $result[] = array_merge($slot, [
                 'remaining' => $remaining,
                 'reserved_total' => $booked,
+                'reservations' => $reservations,
             ]);
         }
 

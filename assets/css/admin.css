@@ -2423,6 +2423,61 @@ html.fp-exp-dark body.fp-exp-admin-shell .wrap .notice {
     color: #1f2933;
 }
 
+.fp-exp-calendar__reservations {
+    margin-top: 8px;
+    padding: 8px 10px;
+    background: #f0f6fc;
+    border-radius: 4px;
+    font-size: 12px;
+}
+
+.fp-exp-calendar__reservation-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 0;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.fp-exp-calendar__reservation-row:last-child {
+    border-bottom: 0;
+}
+
+.fp-exp-calendar__reservation-name {
+    font-weight: 600;
+    color: #1f2933;
+}
+
+.fp-exp-calendar__reservation-pax {
+    color: #50575e;
+}
+
+.fp-exp-calendar__reservation-status {
+    display: inline-block;
+    padding: 1px 8px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #fff;
+    background: #64748b;
+    margin-left: auto;
+}
+
+.fp-exp-calendar__reservation-status.is-paid { background: #16a34a; }
+.fp-exp-calendar__reservation-status.is-approved_confirmed { background: #16a34a; }
+.fp-exp-calendar__reservation-status.is-checked_in { background: #0b7285; }
+.fp-exp-calendar__reservation-status.is-pending { background: #d97706; }
+.fp-exp-calendar__reservation-status.is-pending_request { background: #9333ea; }
+.fp-exp-calendar__reservation-status.is-approved_pending_payment { background: #ea580c; }
+
+.fp-exp-calendar__grid-booked {
+    font-size: 10px;
+    font-weight: 600;
+    color: #0b7285;
+    margin-top: 2px;
+}
+
 .fp-exp-calendar__empty {
     padding: 12px 16px;
     color: #50575e;
