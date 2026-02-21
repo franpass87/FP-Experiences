@@ -47,6 +47,15 @@ interface SlotRepositoryInterface
     public function update(int $slot_id, array $data): bool;
 
     /**
+     * Find all slots within a date range (all experiences).
+     *
+     * @param DateTimeInterface $start Start date
+     * @param DateTimeInterface $end End date
+     * @return array<int, array<string, mixed>> Array of slot data
+     */
+    public function findByDateRange(DateTimeInterface $start, DateTimeInterface $end): array;
+
+    /**
      * Delete a slot.
      *
      * @param int $slot_id Slot ID

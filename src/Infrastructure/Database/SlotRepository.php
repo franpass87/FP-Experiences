@@ -59,28 +59,38 @@ final class SlotRepository implements SlotRepositoryInterface
     public function findByExperienceAndDateRange(int $experience_id, DateTimeInterface $start, DateTimeInterface $end): array
     {
         $table = $this->getTableName();
-        $sql = "SELECT * FROM {$table} WHERE experience_id = %d AND start_datetime >= %s AND start_datetime < %s ORDER BY start_datetime ASC";
-        
+        $posts = $this->database->getPrefix() . 'posts';
+
+        $sql = "SELECT s.*, p.post_title AS experience_title FROM {$table} s "
+            . "LEFT JOIN {$posts} p ON p.ID = s.experience_id "
+            . "WHERE s.experience_id = %d AND s.start_datetime >= %s AND s.start_datetime < %s "
+            . "ORDER BY s.start_datetime ASC";
+
         $rows = $this->database->getResults($sql, [
             $experience_id,
             $start->format('Y-m-d H:i:s'),
             $end->format('Y-m-d H:i:s'),
         ]);
 
-        // Unserialize serialized fields
-        foreach ($rows as &$row) {
-            if (isset($row['capacity_per_type'])) {
-                $row['capacity_per_type'] = maybe_unserialize($row['capacity_per_type']);
-            }
-            if (isset($row['resource_lock'])) {
-                $row['resource_lock'] = maybe_unserialize($row['resource_lock']);
-            }
-            if (isset($row['price_rules'])) {
-                $row['price_rules'] = maybe_unserialize($row['price_rules']);
-            }
-        }
+        return $this->unserializeRows($rows);
+    }
 
-        return $rows;
+    public function findByDateRange(DateTimeInterface $start, DateTimeInterface $end): array
+    {
+        $table = $this->getTableName();
+        $posts = $this->database->getPrefix() . 'posts';
+
+        $sql = "SELECT s.*, p.post_title AS experience_title FROM {$table} s "
+            . "LEFT JOIN {$posts} p ON p.ID = s.experience_id "
+            . "WHERE s.start_datetime >= %s AND s.start_datetime < %s "
+            . "ORDER BY s.start_datetime ASC";
+
+        $rows = $this->database->getResults($sql, [
+            $start->format('Y-m-d H:i:s'),
+            $end->format('Y-m-d H:i:s'),
+        ]);
+
+        return $this->unserializeRows($rows);
     }
 
     public function create(array $data): int
@@ -138,6 +148,26 @@ final class SlotRepository implements SlotRepositoryInterface
             'status' => $this->normalizeStatus((string) ($data['status'] ?? 'open')),
             'price_rules' => maybe_serialize($data['price_rules']),
         ];
+    }
+
+    /**
+     * @param array<int, array<string, mixed>> $rows
+     * @return array<int, array<string, mixed>>
+     */
+    private function unserializeRows(array $rows): array
+    {
+        foreach ($rows as &$row) {
+            if (isset($row['capacity_per_type'])) {
+                $row['capacity_per_type'] = maybe_unserialize($row['capacity_per_type']);
+            }
+            if (isset($row['resource_lock'])) {
+                $row['resource_lock'] = maybe_unserialize($row['resource_lock']);
+            }
+            if (isset($row['price_rules'])) {
+                $row['price_rules'] = maybe_unserialize($row['price_rules']);
+            }
+        }
+        return $rows;
     }
 
     private function normalizeStatus(string $status): string

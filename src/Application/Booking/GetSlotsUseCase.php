@@ -41,9 +41,7 @@ final class GetSlotsUseCase
         if ($experience_id > 0) {
             $slots = $this->slotRepository->findByExperienceAndDateRange($experience_id, $start, $end);
         } else {
-            // If no experience filter, we need to get all slots
-            // This is a simplified version - in production, you might want a different repository method
-            $slots = [];
+            $slots = $this->slotRepository->findByDateRange($start, $end);
         }
 
         // Enrich slots with availability data

@@ -16,14 +16,14 @@ use function current_user_can;
 use function esc_html__;
 use function is_admin;
 use function sanitize_key;
-use function strpos;
 use function wp_die;
 use function wp_safe_redirect;
 use function wp_unslash;
 
 final class OrdersPage implements HookableInterface
 {
-    private const ORDER_ITEM_TYPE = 'fp_experience_item';
+    private const FILTER_KEY = 'fp_exp_filter';
+    private const FILTER_VALUE = 'experiences';
 
     public function register_hooks(): void
     {
@@ -39,7 +39,7 @@ final class OrdersPage implements HookableInterface
         $url = add_query_arg(
             [
                 'post_type' => 'shop_order',
-                'fp_exp_order_item_type' => self::ORDER_ITEM_TYPE,
+                self::FILTER_KEY => self::FILTER_VALUE,
             ],
             admin_url('edit.php')
         );
@@ -58,74 +58,19 @@ final class OrdersPage implements HookableInterface
             return;
         }
 
-        $requested = isset($_GET['fp_exp_order_item_type']) ? sanitize_key((string) wp_unslash($_GET['fp_exp_order_item_type'])) : '';
+        $requested = isset($_GET[self::FILTER_KEY])
+            ? sanitize_key((string) wp_unslash($_GET[self::FILTER_KEY]))
+            : '';
 
-        if (self::ORDER_ITEM_TYPE !== $requested) {
+        if (self::FILTER_VALUE !== $requested) {
             return;
         }
 
-        $query->set('fp_exp_order_item_type', self::ORDER_ITEM_TYPE);
-
-        add_filter('posts_join', [$this, 'filter_orders_join'], 10, 2);
-        add_filter('posts_where', [$this, 'filter_orders_where'], 10, 2);
-        add_filter('posts_distinct', [$this, 'filter_orders_distinct'], 10, 2);
-    }
-
-    public function filter_orders_join(string $join, WP_Query $query): string
-    {
-        if (self::ORDER_ITEM_TYPE !== $query->get('fp_exp_order_item_type')) {
-            return $join;
-        }
-
-        // Try to get prefix and posts table from DatabaseInterface if available
-        $kernel = \FP_Exp\Core\Bootstrap\Bootstrap::kernel();
-        $prefix = 'wp_';
-        $posts_table = 'wp_posts';
-        
-        if ($kernel !== null) {
-            $container = $kernel->container();
-            if ($container->has(\FP_Exp\Services\Database\DatabaseInterface::class)) {
-                try {
-                    $database = $container->make(\FP_Exp\Services\Database\DatabaseInterface::class);
-                    $prefix = $database->getPrefix();
-                    $posts_table = $prefix . 'posts';
-                } catch (\Throwable $e) {
-                    // Fall through to global $wpdb
-                }
-            }
-        }
-        
-        // Fallback to global $wpdb for backward compatibility
-        if ($prefix === 'wp_' || $posts_table === 'wp_posts') {
-            global $wpdb;
-            $prefix = $wpdb->prefix;
-            $posts_table = $wpdb->posts;
-        }
-
-        if (false === strpos($join, 'fp_exp_items')) {
-            $join .= " INNER JOIN {$prefix}woocommerce_order_items fp_exp_items ON fp_exp_items.order_id = {$posts_table}.ID";
-        }
-
-        return $join;
-    }
-
-    public function filter_orders_where(string $where, WP_Query $query): string
-    {
-        if (self::ORDER_ITEM_TYPE !== $query->get('fp_exp_order_item_type')) {
-            return $where;
-        }
-
-        // Use wpdb->prepare for backward compatibility (prepare requires wpdb instance)
-        global $wpdb;
-        return $where . $wpdb->prepare(' AND fp_exp_items.order_item_type = %s', self::ORDER_ITEM_TYPE);
-    }
-
-    public function filter_orders_distinct(string $distinct, WP_Query $query): string
-    {
-        if (self::ORDER_ITEM_TYPE !== $query->get('fp_exp_order_item_type')) {
-            return $distinct;
-        }
-
-        return 'DISTINCT';
+        $query->set('meta_query', [
+            [
+                'key' => '_fp_exp_isolated_checkout',
+                'value' => 'yes',
+            ],
+        ]);
     }
 }

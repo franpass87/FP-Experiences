@@ -141,10 +141,41 @@ final class Emails implements HookableInterface
 
     public function register_hooks(): void
     {
+        add_action('fp_exp_reservation_created', [$this, 'handle_reservation_created'], 10, 2);
         add_action('fp_exp_reservation_paid', [$this, 'handle_reservation_paid'], 10, 2);
         add_action('fp_exp_reservation_cancelled', [$this, 'handle_reservation_cancelled'], 10, 2);
         add_action(self::REMINDER_HOOK, [$this, 'handle_reminder_dispatch'], 10, 2);
         add_action(self::FOLLOWUP_HOOK, [$this, 'handle_followup_dispatch'], 10, 2);
+    }
+
+    /**
+     * Handle reservation created — sends immediate staff notification so
+     * the team knows about the booking even before payment completes.
+     */
+    public function handle_reservation_created(int $reservation_id, int $order_id): void
+    {
+        $this->initServices();
+        $context = $this->get_context($reservation_id, $order_id);
+
+        if (! $context) {
+            return;
+        }
+
+        $emails_settings = $this->getOptions()->get('fp_exp_emails', []);
+        $emails_settings = is_array($emails_settings) ? $emails_settings : [];
+        $types = isset($emails_settings['types']) && is_array($emails_settings['types']) ? $emails_settings['types'] : [];
+
+        foreach (['customer_confirmation', 'staff_notification', 'customer_reminder', 'customer_post_experience'] as $key) {
+            if (isset($types[$key]) && ($types[$key] === '' || $types[$key] === null)) {
+                $types[$key] = 'no';
+            }
+        }
+
+        $staff_notification = $types['staff_notification'] ?? 'yes';
+        if ($staff_notification !== 'no') {
+            $template = new StaffNotificationTemplate(false);
+            $this->staff_sender->send($template, $context);
+        }
     }
 
     /**
@@ -179,12 +210,8 @@ final class Emails implements HookableInterface
             $this->customer_sender->send($template, $context);
         }
 
-        // Send staff notification (default: 'yes' if not set)
-        $staff_notification = $types['staff_notification'] ?? 'yes';
-        if ($staff_notification !== 'no') {
-            $template = new StaffNotificationTemplate(false);
-            $this->staff_sender->send($template, $context);
-        }
+        // Staff notification is already sent on reservation_created;
+        // no duplicate here to avoid double emails on instant payments.
 
         $this->queue_automations($context);
     }

@@ -13,6 +13,12 @@ use FP_Exp\Utils\Helpers;
 use function absint;
 use function add_filter;
 use function add_action;
+use function add_meta_box;
+use function esc_attr;
+use function esc_html;
+use function esc_url;
+use function get_current_screen;
+use function get_edit_post_link;
 use function get_post_meta;
 use function get_the_post_thumbnail;
 use function get_the_title;
@@ -20,7 +26,10 @@ use function has_post_thumbnail;
 use function is_admin;
 use function is_array;
 use function is_numeric;
+use function sanitize_key;
 use function sanitize_text_field;
+use function wc_get_order;
+use function wp_kses_post;
 use function __;
 use function esc_html__;
 use function ucfirst;
@@ -88,6 +97,290 @@ final class WooCommerceProduct implements HookableInterface
         add_filter('woocommerce_email_enabled_customer_processing_order', [$this, 'maybe_disable_wc_email'], 10, 2);
         add_filter('woocommerce_email_enabled_customer_completed_order', [$this, 'maybe_disable_wc_email'], 10, 2);
         add_filter('woocommerce_email_enabled_customer_on_hold_order', [$this, 'maybe_disable_wc_email'], 10, 2);
+
+        // Meta box with booking details on the WooCommerce order page
+        add_action('add_meta_boxes', [$this, 'register_booking_meta_box']);
+    }
+
+    /**
+     * Register meta box on WooCommerce order edit page.
+     */
+    public function register_booking_meta_box(): void
+    {
+        $screen = get_current_screen();
+
+        if (! $screen) {
+            return;
+        }
+
+        $allowed = ['shop_order', 'woocommerce_page_wc-orders'];
+
+        if (! in_array($screen->id, $allowed, true) && 'shop_order' !== $screen->post_type) {
+            return;
+        }
+
+        add_meta_box(
+            'fp_exp_booking_details',
+            __('Dettagli Prenotazione Esperienza', 'fp-experiences'),
+            [$this, 'render_booking_meta_box'],
+            $screen->id,
+            'side',
+            'high'
+        );
+    }
+
+    /**
+     * Render the booking details meta box.
+     *
+     * @param \WP_Post|object $post_or_order
+     */
+    public function render_booking_meta_box($post_or_order): void
+    {
+        $order_id = 0;
+
+        if ($post_or_order instanceof \WC_Order) {
+            $order_id = $post_or_order->get_id();
+        } elseif ($post_or_order instanceof \WP_Post) {
+            $order_id = $post_or_order->ID;
+        } elseif (isset($_GET['id'])) {
+            $order_id = absint($_GET['id']);
+        }
+
+        if ($order_id <= 0) {
+            echo '<p>' . esc_html__('Ordine non trovato.', 'fp-experiences') . '</p>';
+            return;
+        }
+
+        $order = wc_get_order($order_id);
+
+        if (! $order instanceof \WC_Order) {
+            echo '<p>' . esc_html__('Ordine non valido.', 'fp-experiences') . '</p>';
+            return;
+        }
+
+        $isolated = $order->get_meta('_fp_exp_isolated_checkout');
+
+        if ('yes' !== $isolated && 'fp-exp' !== $order->get_created_via() && 'fp-exp-rtb' !== $order->get_created_via()) {
+            echo '<p style="color:#64748b;">' . esc_html__('Questo ordine non contiene esperienze.', 'fp-experiences') . '</p>';
+            return;
+        }
+
+        $reservation_ids = \FP_Exp\Booking\Reservations::get_ids_by_order($order_id);
+
+        if (empty($reservation_ids)) {
+            echo '<p style="color:#64748b;">' . esc_html__('Nessuna prenotazione collegata a questo ordine.', 'fp-experiences') . '</p>';
+            return;
+        }
+
+        $status_labels = [
+            'pending' => __('In attesa pagamento', 'fp-experiences'),
+            'pending_request' => __('In attesa conferma (RTB)', 'fp-experiences'),
+            'approved_confirmed' => __('Approvata e confermata', 'fp-experiences'),
+            'approved_pending_payment' => __('Approvata, pagamento in attesa', 'fp-experiences'),
+            'declined' => __('Rifiutata', 'fp-experiences'),
+            'paid' => __('Pagata', 'fp-experiences'),
+            'cancelled' => __('Cancellata', 'fp-experiences'),
+            'checked_in' => __('Check-in effettuato', 'fp-experiences'),
+        ];
+
+        $status_colors = [
+            'pending' => '#f59e0b',
+            'pending_request' => '#f59e0b',
+            'approved_confirmed' => '#10b981',
+            'approved_pending_payment' => '#3b82f6',
+            'declined' => '#ef4444',
+            'paid' => '#10b981',
+            'cancelled' => '#ef4444',
+            'checked_in' => '#8b5cf6',
+        ];
+
+        foreach ($reservation_ids as $rid) {
+            $reservation = \FP_Exp\Booking\Reservations::get($rid);
+
+            if (! $reservation) {
+                continue;
+            }
+
+            $experience_id = absint($reservation['experience_id'] ?? 0);
+            $slot_id = absint($reservation['slot_id'] ?? 0);
+            $status = $reservation['status'] ?? 'pending';
+            $pax = is_array($reservation['pax'] ?? null) ? $reservation['pax'] : [];
+            $addons = is_array($reservation['addons'] ?? null) ? $reservation['addons'] : [];
+            $meta = is_array($reservation['meta'] ?? null) ? $reservation['meta'] : [];
+
+            $experience_title = $experience_id ? get_the_title($experience_id) : __('Esperienza rimossa', 'fp-experiences');
+            $slot = $slot_id ? \FP_Exp\Booking\Slots::get_slot($slot_id) : null;
+
+            $color = $status_colors[$status] ?? '#64748b';
+            $label = $status_labels[$status] ?? ucfirst(str_replace('_', ' ', $status));
+
+            echo '<div style="border:1px solid #e2e8f0;border-radius:8px;padding:12px;margin-bottom:12px;background:#f8fafc;">';
+
+            // Status badge
+            echo '<div style="margin-bottom:8px;">';
+            echo '<span style="display:inline-block;padding:2px 10px;border-radius:12px;font-size:12px;font-weight:600;color:#fff;background:' . esc_attr($color) . ';">';
+            echo esc_html($label);
+            echo '</span>';
+            echo ' <span style="color:#94a3b8;font-size:12px;">#' . esc_html((string) $rid) . '</span>';
+            echo '</div>';
+
+            // Experience title
+            echo '<p style="margin:0 0 6px;font-weight:600;">';
+            if ($experience_id) {
+                echo '<a href="' . esc_url(get_edit_post_link($experience_id) ?: '') . '" style="color:#0b7285;text-decoration:none;">';
+                echo esc_html($experience_title);
+                echo '</a>';
+            } else {
+                echo esc_html($experience_title);
+            }
+            echo '</p>';
+
+            // Slot date/time
+            if ($slot) {
+                $start_utc = $slot['start_datetime'] ?? '';
+                $end_utc = $slot['end_datetime'] ?? '';
+
+                if ($start_utc) {
+                    $formatted = $this->format_datetime_for_display($start_utc);
+                    echo '<p style="margin:0 0 4px;font-size:13px;color:#334155;">';
+                    echo '<strong>' . esc_html__('Data:', 'fp-experiences') . '</strong> ' . esc_html($formatted);
+                    echo '</p>';
+                }
+
+                if ($end_utc && $start_utc !== $end_utc) {
+                    try {
+                        $end_dt = new DateTimeImmutable($end_utc, new DateTimeZone('UTC'));
+                        $local_end = $end_dt->setTimezone(wp_timezone());
+                        $time_format = get_option('time_format', 'H:i');
+                        echo '<p style="margin:0 0 4px;font-size:13px;color:#334155;">';
+                        echo '<strong>' . esc_html__('Fine:', 'fp-experiences') . '</strong> ' . esc_html(wp_date($time_format, $local_end->getTimestamp()));
+                        echo '</p>';
+                    } catch (\Exception $e) {
+                        // ignore
+                    }
+                }
+            }
+
+            // Meeting point
+            $meeting_point = \FP_Exp\MeetingPoints\Repository::get_primary_summary_for_experience($experience_id);
+            if ($meeting_point) {
+                echo '<p style="margin:0 0 4px;font-size:13px;color:#334155;">';
+                echo '<strong>' . esc_html__('Punto ritrovo:', 'fp-experiences') . '</strong> ' . esc_html($meeting_point);
+                echo '</p>';
+            }
+
+            // Tickets
+            if ($pax) {
+                $ticket_labels = $this->get_ticket_labels_for_experience($experience_id);
+                echo '<p style="margin:8px 0 4px;font-size:13px;font-weight:600;color:#334155;">' . esc_html__('Partecipanti:', 'fp-experiences') . '</p>';
+                echo '<ul style="margin:0 0 4px 16px;padding:0;font-size:13px;color:#475569;">';
+                foreach ($pax as $type => $qty) {
+                    $qty = absint($qty);
+                    if ($qty <= 0) {
+                        continue;
+                    }
+                    $type_label = $ticket_labels[sanitize_key($type)] ?? ucfirst(str_replace('_', ' ', $type));
+                    echo '<li>' . esc_html($type_label) . ': <strong>' . esc_html((string) $qty) . '</strong></li>';
+                }
+                echo '</ul>';
+            }
+
+            // Addons
+            if ($addons) {
+                $addon_labels = $this->get_addon_labels_for_experience($experience_id);
+                echo '<p style="margin:8px 0 4px;font-size:13px;font-weight:600;color:#334155;">' . esc_html__('Extra:', 'fp-experiences') . '</p>';
+                echo '<ul style="margin:0 0 4px 16px;padding:0;font-size:13px;color:#475569;">';
+                foreach ($addons as $key => $addon) {
+                    $qty = absint(is_array($addon) ? ($addon['quantity'] ?? 0) : $addon);
+                    if ($qty <= 0) {
+                        continue;
+                    }
+                    $addon_label = $addon_labels[sanitize_key((string) $key)] ?? ucfirst(str_replace('_', ' ', (string) $key));
+                    echo '<li>' . esc_html($addon_label) . ': <strong>' . esc_html((string) $qty) . '</strong></li>';
+                }
+                echo '</ul>';
+            }
+
+            // Total
+            echo '<p style="margin:8px 0 4px;font-size:13px;color:#334155;">';
+            echo '<strong>' . esc_html__('Totale:', 'fp-experiences') . '</strong> ';
+            echo wp_kses_post(wc_price((float) ($reservation['total_gross'] ?? 0)));
+            echo '</p>';
+
+            // Contact from meta (RTB reservations store contact in meta)
+            $contact = $meta['contact'] ?? null;
+            if (is_array($contact) && ! empty($contact['email'])) {
+                echo '<p style="margin:8px 0 2px;font-size:12px;font-weight:600;color:#64748b;">' . esc_html__('Contatto:', 'fp-experiences') . '</p>';
+                echo '<p style="margin:0 0 2px;font-size:12px;color:#475569;">';
+                if (! empty($contact['name'])) {
+                    echo esc_html($contact['name']) . '<br>';
+                }
+                echo '<a href="mailto:' . esc_attr($contact['email']) . '">' . esc_html($contact['email']) . '</a>';
+                if (! empty($contact['phone'])) {
+                    echo '<br>' . esc_html($contact['phone']);
+                }
+                echo '</p>';
+            }
+
+            // Special requests
+            $special = $order->get_meta('_fp_exp_special_requests');
+            if ($special) {
+                echo '<div style="margin-top:8px;padding:8px;background:#fef3c7;border-radius:4px;font-size:12px;color:#78350f;">';
+                echo '<strong>' . esc_html__('Richieste speciali:', 'fp-experiences') . '</strong><br>';
+                echo esc_html($special);
+                echo '</div>';
+            }
+
+            echo '</div>';
+        }
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function get_ticket_labels_for_experience(int $experience_id): array
+    {
+        $meta = get_post_meta($experience_id, '_fp_ticket_types', true);
+
+        if (! is_array($meta)) {
+            return [];
+        }
+
+        $labels = [];
+        foreach ($meta as $entry) {
+            if (! is_array($entry)) {
+                continue;
+            }
+            $key = sanitize_key((string) ($entry['key'] ?? $entry['slug'] ?? $entry['id'] ?? ''));
+            if ($key) {
+                $labels[$key] = sanitize_text_field((string) ($entry['label'] ?? $entry['name'] ?? ucfirst($key)));
+            }
+        }
+        return $labels;
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function get_addon_labels_for_experience(int $experience_id): array
+    {
+        $meta = get_post_meta($experience_id, '_fp_addons', true);
+
+        if (! is_array($meta)) {
+            return [];
+        }
+
+        $labels = [];
+        foreach ($meta as $entry) {
+            if (! is_array($entry)) {
+                continue;
+            }
+            $key = sanitize_key((string) ($entry['key'] ?? $entry['slug'] ?? $entry['id'] ?? ''));
+            if ($key) {
+                $labels[$key] = sanitize_text_field((string) ($entry['label'] ?? $entry['name'] ?? ucfirst($key)));
+            }
+        }
+        return $labels;
     }
 
     /**
@@ -104,12 +397,15 @@ final class WooCommerceProduct implements HookableInterface
             return $enabled;
         }
 
-        // Check if order contains experience items
+        if ('fp-exp' === $order->get_created_via() || 'fp-exp-rtb' === $order->get_created_via()) {
+            return false;
+        }
+
         foreach ($order->get_items() as $item) {
-            $experience_id = $item->get_meta('fp_exp_experience_id');
-            if ($experience_id) {
-                // This is an experience order - disable WC email
-                // FP-Experiences will send its own email via the Emails class
+            if ($item->get_meta('_fp_exp_item_type')
+                || $item->get_meta('experience_id')
+                || $item->get_meta('fp_exp_experience_id')
+            ) {
                 return false;
             }
         }
@@ -146,7 +442,7 @@ final class WooCommerceProduct implements HookableInterface
         $status_message = '';
 
         if ($reservation_id) {
-            $reservation = \FP_Exp\Booking\Reservations::get_by_id((int) $reservation_id);
+            $reservation = \FP_Exp\Booking\Reservations::get((int) $reservation_id);
             if ($reservation) {
                 $status = $reservation['status'] ?? '';
                 switch ($status) {
@@ -218,7 +514,7 @@ final class WooCommerceProduct implements HookableInterface
         $expected_total = 0;
 
         if ($reservation_id) {
-            $reservation = \FP_Exp\Booking\Reservations::get_by_id((int) $reservation_id);
+            $reservation = \FP_Exp\Booking\Reservations::get((int) $reservation_id);
             if ($reservation && isset($reservation['total_gross'])) {
                 $expected_total = (float) $reservation['total_gross'];
             }

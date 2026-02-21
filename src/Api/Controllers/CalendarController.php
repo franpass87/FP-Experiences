@@ -23,6 +23,7 @@ use function get_current_user_id;
 use function is_array;
 use function rest_ensure_response;
 use function sanitize_key;
+use function get_the_title;
 use function sanitize_text_field;
 
 use const MINUTE_IN_SECONDS;
@@ -84,10 +85,16 @@ final class CalendarController
                     }
                 }
 
+                $title = (string) ($slot['experience_title'] ?? '');
+                $exp_id = (int) ($slot['experience_id'] ?? 0);
+                if ($title === '' && $exp_id > 0) {
+                    $title = get_the_title($exp_id);
+                }
+
                 return [
                     'id' => (int) ($slot['id'] ?? 0),
-                    'experience_id' => (int) ($slot['experience_id'] ?? 0),
-                    'experience_title' => sanitize_text_field((string) ($slot['experience_title'] ?? '')),
+                    'experience_id' => $exp_id,
+                    'experience_title' => sanitize_text_field($title),
                     'start' => sanitize_text_field((string) ($slot['start_datetime'] ?? '')),
                     'end' => sanitize_text_field((string) ($slot['end_datetime'] ?? '')),
                     'capacity_total' => (int) ($slot['capacity_total'] ?? 0),
