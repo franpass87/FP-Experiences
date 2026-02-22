@@ -146,6 +146,7 @@ final class Emails implements HookableInterface
         add_action('fp_exp_reservation_cancelled', [$this, 'handle_reservation_cancelled'], 10, 2);
         add_action(self::REMINDER_HOOK, [$this, 'handle_reminder_dispatch'], 10, 2);
         add_action(self::FOLLOWUP_HOOK, [$this, 'handle_followup_dispatch'], 10, 2);
+        add_filter('fp_exp_email_branding', [$this, 'apply_branding'], 10, 2);
     }
 
     /**
@@ -1101,7 +1102,7 @@ final class Emails implements HookableInterface
         return $this->apply_branding($message, $language);
     }
 
-    private function apply_branding(string $message, string $language): string
+    public function apply_branding(string $message, string $language): string
     {
         if ('' === trim($message)) {
             return '';
