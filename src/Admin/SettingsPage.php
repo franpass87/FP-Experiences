@@ -1572,6 +1572,12 @@ final class SettingsPage implements HookableInterface
                 'description' => esc_html__('Imposta automaticamente _fp_price per tutte le esperienze prendendo il prezzo dal primo ticket type. Usa questo se il checkout mostra "Prezzo: 0€".', 'fp-experiences'),
                 'button' => esc_html__('Fix prezzi', 'fp-experiences'),
             ],
+            [
+                'slug' => 'migrate-reservations',
+                'label' => esc_html__('Migra prenotazioni da ordini WC', 'fp-experiences'),
+                'description' => esc_html__('Crea record nella tabella prenotazioni leggendo i meta degli ordini WooCommerce esistenti. Utile se gli ordini hanno dati esperienza ma la tabella prenotazioni è vuota.', 'fp-experiences'),
+                'button' => esc_html__('Migra prenotazioni', 'fp-experiences'),
+            ],
         ];
     }
 

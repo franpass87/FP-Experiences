@@ -161,7 +161,7 @@ final class WooCommerceProduct implements HookableInterface
         $reservation_ids = \FP_Exp\Booking\Reservations::get_ids_by_order($order_id);
 
         if (empty($reservation_ids)) {
-            echo '<p style="color:#64748b;">' . esc_html__('Nessuna prenotazione collegata a questo ordine.', 'fp-experiences') . '</p>';
+            $this->render_booking_meta_box_from_item_meta($order);
             return;
         }
 
@@ -325,6 +325,130 @@ final class WooCommerceProduct implements HookableInterface
             }
 
             echo '</div>';
+        }
+    }
+
+    /**
+     * Fallback: show booking details from WooCommerce order item meta
+     * when the wp_fp_exp_reservations table has no matching records.
+     */
+    private function render_booking_meta_box_from_item_meta(\WC_Order $order): void
+    {
+        $found = false;
+
+        foreach ($order->get_items() as $item) {
+            $item_type = $item->get_meta('_fp_exp_item_type');
+            if ('experience' !== $item_type) {
+                continue;
+            }
+
+            $found = true;
+            $experience_id = absint($item->get_meta('experience_id'));
+            $slot_id = absint($item->get_meta('slot_id'));
+            $slot_start = $item->get_meta('slot_start');
+            $slot_end = $item->get_meta('slot_end');
+            $tickets = $item->get_meta('tickets');
+            $addons = $item->get_meta('addons');
+            $tickets = is_array($tickets) ? $tickets : [];
+            $addons = is_array($addons) ? $addons : [];
+
+            $experience_title = $experience_id
+                ? get_the_title($experience_id)
+                : ($item->get_meta('experience_title') ?: $item->get_name());
+
+            $order_status = $order->get_status();
+            $status = in_array($order_status, ['completed', 'processing'], true) ? 'paid' : 'pending';
+            $status_labels = [
+                'pending' => __('In attesa pagamento', 'fp-experiences'),
+                'paid' => __('Pagata', 'fp-experiences'),
+            ];
+            $status_colors = ['pending' => '#f59e0b', 'paid' => '#10b981'];
+
+            $color = $status_colors[$status] ?? '#64748b';
+            $label = $status_labels[$status] ?? ucfirst($status);
+
+            echo '<div style="border:1px solid #e2e8f0;border-radius:8px;padding:12px;margin-bottom:12px;background:#f8fafc;">';
+            echo '<div style="margin-bottom:4px;font-size:11px;color:#94a3b8;">' . esc_html__('(da meta ordine)', 'fp-experiences') . '</div>';
+
+            echo '<div style="margin-bottom:8px;">';
+            echo '<span style="display:inline-block;padding:2px 10px;border-radius:12px;font-size:12px;font-weight:600;color:#fff;background:' . esc_attr($color) . ';">';
+            echo esc_html($label);
+            echo '</span>';
+            echo '</div>';
+
+            echo '<p style="margin:0 0 6px;font-weight:600;">';
+            if ($experience_id) {
+                echo '<a href="' . esc_url(get_edit_post_link($experience_id) ?: '') . '" style="color:#0b7285;text-decoration:none;">';
+                echo esc_html($experience_title);
+                echo '</a>';
+            } else {
+                echo esc_html($experience_title);
+            }
+            echo '</p>';
+
+            if ($slot_start) {
+                $formatted = $this->format_datetime_for_display($slot_start);
+                echo '<p style="margin:0 0 4px;font-size:13px;color:#334155;">';
+                echo '<strong>' . esc_html__('Data:', 'fp-experiences') . '</strong> ' . esc_html($formatted);
+                echo '</p>';
+            }
+
+            if ($slot_end && $slot_end !== $slot_start) {
+                try {
+                    $end_dt = new \DateTimeImmutable($slot_end, new \DateTimeZone('UTC'));
+                    $local_end = $end_dt->setTimezone(wp_timezone());
+                    $time_format = get_option('time_format', 'H:i');
+                    echo '<p style="margin:0 0 4px;font-size:13px;color:#334155;">';
+                    echo '<strong>' . esc_html__('Fine:', 'fp-experiences') . '</strong> ' . esc_html(wp_date($time_format, $local_end->getTimestamp()));
+                    echo '</p>';
+                } catch (\Exception $e) {
+                    // ignore
+                }
+            }
+
+            if ($tickets) {
+                $ticket_labels = $experience_id ? $this->get_ticket_labels_for_experience($experience_id) : [];
+                echo '<p style="margin:8px 0 4px;font-size:13px;font-weight:600;color:#334155;">' . esc_html__('Partecipanti:', 'fp-experiences') . '</p>';
+                echo '<ul style="margin:0 0 4px 16px;padding:0;font-size:13px;color:#475569;">';
+                foreach ($tickets as $type => $qty) {
+                    $qty = absint($qty);
+                    if ($qty <= 0) {
+                        continue;
+                    }
+                    $type_label = $ticket_labels[sanitize_key($type)] ?? ucfirst(str_replace('_', ' ', $type));
+                    echo '<li>' . esc_html($type_label) . ': <strong>' . esc_html((string) $qty) . '</strong></li>';
+                }
+                echo '</ul>';
+            }
+
+            if ($addons && is_array($addons)) {
+                $addon_labels = $experience_id ? $this->get_addon_labels_for_experience($experience_id) : [];
+                echo '<p style="margin:8px 0 4px;font-size:13px;font-weight:600;color:#334155;">' . esc_html__('Extra:', 'fp-experiences') . '</p>';
+                echo '<ul style="margin:0 0 4px 16px;padding:0;font-size:13px;color:#475569;">';
+                foreach ($addons as $key => $addon) {
+                    $qty = absint(is_array($addon) ? ($addon['quantity'] ?? 0) : $addon);
+                    if ($qty <= 0) {
+                        continue;
+                    }
+                    $addon_label = $addon_labels[sanitize_key((string) $key)] ?? ucfirst(str_replace('_', ' ', (string) $key));
+                    echo '<li>' . esc_html($addon_label) . ': <strong>' . esc_html((string) $qty) . '</strong></li>';
+                }
+                echo '</ul>';
+            }
+
+            $total = (float) $item->get_total();
+            if ($total > 0) {
+                echo '<p style="margin:8px 0 4px;font-size:13px;color:#334155;">';
+                echo '<strong>' . esc_html__('Totale:', 'fp-experiences') . '</strong> ';
+                echo wp_kses_post(wc_price($total));
+                echo '</p>';
+            }
+
+            echo '</div>';
+        }
+
+        if (! $found) {
+            echo '<p style="color:#64748b;">' . esc_html__('Nessuna prenotazione collegata a questo ordine.', 'fp-experiences') . '</p>';
         }
     }
 

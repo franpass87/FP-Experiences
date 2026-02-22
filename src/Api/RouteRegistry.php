@@ -230,6 +230,7 @@ final class RouteRegistry
             'fix-virtual-product-quantity' => 'tool_fix_virtual_product_quantity',
             'fix-experience-prices' => 'tool_fix_experience_prices',
             'create-tables' => 'tool_create_tables',
+            'migrate-reservations' => 'tool_migrate_reservations',
         ];
 
         foreach ($legacy_tools as $route => $method) {

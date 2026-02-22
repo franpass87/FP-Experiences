@@ -1033,4 +1033,73 @@ final class RestRoutes implements HookableInterface
 
         return $this->tools_controller->fixExperiencePrices();
     }
+
+    public function tool_migrate_reservations(): WP_REST_Response
+    {
+        Reservations::create_table();
+
+        $orders = wc_get_orders([
+            'limit' => -1,
+            'status' => ['completed', 'processing', 'on-hold', 'pending'],
+            'orderby' => 'ID',
+            'order' => 'ASC',
+        ]);
+
+        $created = 0;
+        $skipped = 0;
+
+        foreach ($orders as $order) {
+            if (! $order instanceof \WC_Order) {
+                continue;
+            }
+
+            $order_id = $order->get_id();
+            $existing = Reservations::get_ids_by_order($order_id);
+            if (! empty($existing)) {
+                $skipped++;
+                continue;
+            }
+
+            foreach ($order->get_items() as $item) {
+                $item_type = $item->get_meta('_fp_exp_item_type');
+                if ('experience' !== $item_type) {
+                    continue;
+                }
+
+                $experience_id = absint($item->get_meta('experience_id'));
+                $slot_id = absint($item->get_meta('slot_id'));
+                $tickets = $item->get_meta('tickets');
+                $addons = $item->get_meta('addons');
+                $tickets = is_array($tickets) ? $tickets : [];
+                $addons = is_array($addons) ? $addons : [];
+
+                $order_status = $order->get_status();
+                $status = in_array($order_status, ['completed', 'processing'], true)
+                    ? Reservations::STATUS_PAID
+                    : Reservations::STATUS_PENDING;
+
+                $reservation_id = Reservations::create([
+                    'order_id' => $order_id,
+                    'experience_id' => $experience_id,
+                    'slot_id' => $slot_id,
+                    'status' => $status,
+                    'pax' => $tickets,
+                    'addons' => $addons,
+                    'total_gross' => (float) $item->get_total(),
+                    'tax_total' => (float) $item->get_total_tax(),
+                ]);
+
+                if ($reservation_id > 0) {
+                    $created++;
+                }
+            }
+        }
+
+        return new WP_REST_Response([
+            'success' => true,
+            'message' => sprintf('Migrazione completata: %d prenotazioni create, %d ordini già migrati.', $created, $skipped),
+            'created' => $created,
+            'skipped' => $skipped,
+        ]);
+    }
 }
