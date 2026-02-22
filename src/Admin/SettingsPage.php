@@ -197,10 +197,7 @@ final class SettingsPage implements HookableInterface
 
             echo '<form action="options.php" method="post" class="fp-exp-settings__form">';
 
-            if ('emails' === $active_tab) {
-                settings_fields('fp_exp_settings_emails');
-                do_settings_sections('fp_exp_settings_emails');
-            } elseif ('branding' === $active_tab) {
+            if ('branding' === $active_tab) {
                 settings_fields('fp_exp_settings_branding');
                 do_settings_sections('fp_exp_settings_branding');
                 $this->render_branding_contrast();
@@ -366,14 +363,14 @@ final class SettingsPage implements HookableInterface
             'fp_exp_section_emails_addresses',
             esc_html__('Sender & recipients', 'fp-experiences'),
             [$this, 'render_email_addresses_help'],
-            'fp_exp_settings_emails'
+            'fp_exp_emails_senders'
         );
 
         add_settings_field(
             'fp_exp_emails_sender_structure',
             esc_html__('Structure email', 'fp-experiences'),
             [$this, 'render_email_nested_field'],
-            'fp_exp_settings_emails',
+            'fp_exp_emails_senders',
             'fp_exp_section_emails_addresses',
             [
                 'path' => ['sender', 'structure'],
@@ -385,7 +382,7 @@ final class SettingsPage implements HookableInterface
             'fp_exp_emails_sender_webmaster',
             esc_html__('Webmaster email', 'fp-experiences'),
             [$this, 'render_email_nested_field'],
-            'fp_exp_settings_emails',
+            'fp_exp_emails_senders',
             'fp_exp_section_emails_addresses',
             [
                 'path' => ['sender', 'webmaster'],
@@ -397,7 +394,7 @@ final class SettingsPage implements HookableInterface
             'fp_exp_emails_recipients_staff_extra',
             esc_html__('Destinatari staff aggiuntivi', 'fp-experiences'),
             [$this, 'render_email_recipients_field'],
-            'fp_exp_settings_emails',
+            'fp_exp_emails_senders',
             'fp_exp_section_emails_addresses',
             [
                 'path' => ['recipients', 'staff_extra'],
@@ -410,14 +407,14 @@ final class SettingsPage implements HookableInterface
             'fp_exp_section_email_branding',
             esc_html__('Email branding', 'fp-experiences'),
             [$this, 'render_email_branding_help'],
-            'fp_exp_settings_emails'
+            'fp_exp_emails_look'
         );
 
         add_settings_field(
             'fp_exp_emails_branding_logo',
             esc_html__('Logo URL', 'fp-experiences'),
             [$this, 'render_emails_branding_field'],
-            'fp_exp_settings_emails',
+            'fp_exp_emails_look',
             'fp_exp_section_email_branding',
             [
                 'key' => 'logo',
@@ -431,7 +428,7 @@ final class SettingsPage implements HookableInterface
             'fp_exp_emails_branding_header',
             esc_html__('Header title', 'fp-experiences'),
             [$this, 'render_emails_branding_field'],
-            'fp_exp_settings_emails',
+            'fp_exp_emails_look',
             'fp_exp_section_email_branding',
             [
                 'key' => 'header_text',
@@ -445,7 +442,7 @@ final class SettingsPage implements HookableInterface
             'fp_exp_emails_branding_footer',
             esc_html__('Footer note', 'fp-experiences'),
             [$this, 'render_emails_branding_field'],
-            'fp_exp_settings_emails',
+            'fp_exp_emails_look',
             'fp_exp_section_email_branding',
             [
                 'key' => 'footer_text',
@@ -460,7 +457,7 @@ final class SettingsPage implements HookableInterface
             'fp_exp_section_email_types',
             esc_html__('Tipi di email', 'fp-experiences'),
             [$this, 'render_email_types_help'],
-            'fp_exp_settings_emails'
+            'fp_exp_emails_config'
         );
 
         $email_types = [
@@ -474,7 +471,7 @@ final class SettingsPage implements HookableInterface
                 'fp_exp_emails_type_' . $type['key'],
                 $type['label'],
                 [$this, 'render_email_toggle_field'],
-                'fp_exp_settings_emails',
+                'fp_exp_emails_config',
                 'fp_exp_section_email_types',
                 [
                     'path' => ['types', $type['key']],
@@ -487,14 +484,14 @@ final class SettingsPage implements HookableInterface
             'fp_exp_section_email_schedule',
             esc_html__('Pianificazione', 'fp-experiences'),
             [$this, 'render_email_schedule_help'],
-            'fp_exp_settings_emails'
+            'fp_exp_emails_config'
         );
 
         add_settings_field(
             'fp_exp_emails_schedule_reminder_offset_hours',
             esc_html__('Offset promemoria (ore prima dell\'inizio)', 'fp-experiences'),
             [$this, 'render_email_number_field'],
-            'fp_exp_settings_emails',
+            'fp_exp_emails_config',
             'fp_exp_section_email_schedule',
             [
                 'path' => ['schedule', 'reminder_offset_hours'],
@@ -509,7 +506,7 @@ final class SettingsPage implements HookableInterface
             'fp_exp_emails_schedule_followup_offset_hours',
             esc_html__('Offset follow-up (ore dopo la fine)', 'fp-experiences'),
             [$this, 'render_email_number_field'],
-            'fp_exp_settings_emails',
+            'fp_exp_emails_config',
             'fp_exp_section_email_schedule',
             [
                 'path' => ['schedule', 'followup_offset_hours'],
@@ -525,7 +522,7 @@ final class SettingsPage implements HookableInterface
             'fp_exp_section_email_subjects',
             esc_html__('Soggetti email', 'fp-experiences'),
             [$this, 'render_email_subjects_help'],
-            'fp_exp_settings_emails'
+            'fp_exp_emails_config'
         );
 
         $subjects = [
@@ -540,7 +537,7 @@ final class SettingsPage implements HookableInterface
                 'fp_exp_emails_subject_' . $subject['key'],
                 $subject['label'],
                 [$this, 'render_email_subject_field'],
-                'fp_exp_settings_emails',
+                'fp_exp_emails_config',
                 'fp_exp_section_email_subjects',
                 [
                     'path' => ['subjects', $subject['key']],
@@ -554,7 +551,7 @@ final class SettingsPage implements HookableInterface
             'fp_exp_section_email_previews',
             esc_html__('Anteprime email', 'fp-experiences'),
             [$this, 'render_email_previews_section'],
-            'fp_exp_settings_emails'
+            'fp_exp_emails_previews'
         );
     }
 
@@ -1352,7 +1349,6 @@ final class SettingsPage implements HookableInterface
     {
         $tabs = [
             'general' => '<span class="dashicons dashicons-admin-settings"></span> ' . esc_html__('General', 'fp-experiences'),
-            'emails' => '<span class="dashicons dashicons-email-alt"></span> ' . esc_html__('Email', 'fp-experiences'),
             'gift' => '<span class="dashicons dashicons-tickets-alt"></span> ' . esc_html__('Gift', 'fp-experiences'),
             'branding' => '<span class="dashicons dashicons-art"></span> ' . esc_html__('Branding', 'fp-experiences'),
             'booking' => '<span class="dashicons dashicons-calendar-alt"></span> ' . esc_html__('Booking Rules', 'fp-experiences'),

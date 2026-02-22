@@ -121,26 +121,9 @@ final class EmailsPage implements HookableInterface
 		}
 		echo '</div>';
 
-		// Active tab panel
-		if ('brevo' === $active_tab) {
-			echo '<div class="fp-exp-settings__panel">';
-			echo '<h2>' . esc_html__('Integrazione Brevo', 'fp-experiences') . '</h2>';
-			echo '<form action="options.php" method="post" class="fp-exp-settings__form">';
-			settings_fields('fp_exp_settings_brevo');
-			do_settings_sections('fp_exp_settings_brevo');
-			submit_button();
-			echo '</form>';
-			echo '</div>';
-		} else {
-			echo '<div class="fp-exp-settings__panel">';
-			echo '<h2>' . esc_html__('Mittenti e branding', 'fp-experiences') . '</h2>';
-			echo '<form action="options.php" method="post" class="fp-exp-settings__form">';
-			settings_fields('fp_exp_settings_emails');
-			do_settings_sections('fp_exp_settings_emails');
-			submit_button();
-			echo '</form>';
-			echo '</div>';
-		}
+		echo '<div class="fp-exp-settings__panel">';
+		$this->render_tab_panel($active_tab);
+		echo '</div>';
 
         echo '</div>';
         echo '</div>';
@@ -148,14 +131,54 @@ final class EmailsPage implements HookableInterface
         echo '</div>';
     }
 
+	private function render_tab_panel(string $tab): void
+	{
+		$tab_titles = [
+			'senders'  => esc_html__('Mittenti e destinatari', 'fp-experiences'),
+			'branding' => esc_html__('Branding email', 'fp-experiences'),
+			'config'   => esc_html__('Configurazione invii', 'fp-experiences'),
+			'previews' => esc_html__('Anteprime email', 'fp-experiences'),
+			'brevo'    => esc_html__('Integrazione Brevo', 'fp-experiences'),
+		];
+
+		$page_slugs = [
+			'senders'  => 'fp_exp_emails_senders',
+			'branding' => 'fp_exp_emails_look',
+			'config'   => 'fp_exp_emails_config',
+			'previews' => 'fp_exp_emails_previews',
+			'brevo'    => 'fp_exp_settings_brevo',
+		];
+
+		$title = $tab_titles[$tab] ?? '';
+		if ($title) {
+			echo '<h2>' . $title . '</h2>';
+		}
+
+		if ('previews' === $tab) {
+			do_settings_sections($page_slugs[$tab]);
+			return;
+		}
+
+		$option_group = ('brevo' === $tab) ? 'fp_exp_settings_brevo' : 'fp_exp_settings_emails';
+
+		echo '<form action="options.php" method="post" class="fp-exp-settings__form">';
+		settings_fields($option_group);
+		do_settings_sections($page_slugs[$tab]);
+		submit_button();
+		echo '</form>';
+	}
+
 	/**
 	 * @return array<string, string>
 	 */
 	private function get_tabs(): array
 	{
 		return [
+			'senders'  => esc_html__('Mittenti', 'fp-experiences'),
 			'branding' => esc_html__('Branding', 'fp-experiences'),
-			'brevo' => esc_html__('Brevo', 'fp-experiences'),
+			'config'   => esc_html__('Configurazione', 'fp-experiences'),
+			'previews' => esc_html__('Anteprime', 'fp-experiences'),
+			'brevo'    => esc_html__('Brevo', 'fp-experiences'),
 		];
 	}
 
@@ -164,7 +187,7 @@ final class EmailsPage implements HookableInterface
 	 */
 	private function get_active_tab(array $tabs): string
 	{
-		$default = 'branding';
+		$default = 'senders';
 		$requested = isset($_GET['tab']) ? sanitize_key((string) $_GET['tab']) : $default; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		return array_key_exists($requested, $tabs) ? $requested : $default;
 	}
