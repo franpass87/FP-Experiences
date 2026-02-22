@@ -1879,13 +1879,9 @@ final class SettingsPage implements HookableInterface
             return;
         }
 
-        // Use NestedFieldRenderer with toggle base type
-        // Note: label is empty because WordPress already shows it via add_settings_field
-        echo $this->render_form_field(
-            name: implode('_', $path), // Temporary name for field definition
+        echo $this->render_field_inline(
+            name: implode('_', $path),
             type: 'nested_toggle',
-            label: '', // WordPress already shows the label via add_settings_field
-            value: null, // Will be retrieved by NestedFieldRenderer
             options: [
                 'path' => $path,
                 'base_type' => 'toggle',
@@ -1908,13 +1904,9 @@ final class SettingsPage implements HookableInterface
         $step = isset($args['step']) ? (int) $args['step'] : 1;
         $placeholder = isset($args['placeholder']) ? (string) $args['placeholder'] : '';
 
-        // Use NestedFieldRenderer
-        // Note: label is empty because WordPress already shows it via add_settings_field
-        echo $this->render_form_field(
-            name: implode('_', $path), // Temporary name for field definition
+        echo $this->render_field_inline(
+            name: implode('_', $path),
             type: 'nested_number',
-            label: '', // WordPress already shows the label via add_settings_field
-            value: null, // Will be retrieved by NestedFieldRenderer
             options: [
                 'path' => $path,
                 'base_type' => 'number',
@@ -1936,13 +1928,9 @@ final class SettingsPage implements HookableInterface
             return;
         }
 
-        // Use NestedFieldRenderer
-        // Note: label is empty because WordPress already shows it via add_settings_field
-        echo $this->render_form_field(
-            name: implode('_', $path), // Temporary name for field definition
+        echo $this->render_field_inline(
+            name: implode('_', $path),
             type: 'nested_text',
-            label: '', // WordPress already shows the label via add_settings_field
-            value: null, // Will be retrieved by NestedFieldRenderer
             options: [
                 'path' => $path,
                 'base_type' => 'text',
@@ -3016,13 +3004,9 @@ final class SettingsPage implements HookableInterface
             $status_badge = '<span class="fp-exp-integration-status fp-exp-integration-status--' . esc_attr($status_class) . '">' . $status_text . '</span> ';
         }
 
-        // Use NestedFieldRenderer for tracking fields
-        // Note: label is empty because WordPress already shows it via add_settings_field
-        $field_html = $this->render_form_field(
+        $field_html = $this->render_field_inline(
             name: implode('_', $path),
             type: 'nested_' . $base_type,
-            label: '', // WordPress already shows the label via add_settings_field
-            value: null, // Will be retrieved by NestedFieldRenderer
             options: [
                 'path' => $path,
                 'base_type' => $base_type,
@@ -3037,18 +3021,7 @@ final class SettingsPage implements HookableInterface
             ]
         );
 
-        // Inject status badge before field if present
-        if ($status_badge) {
-            // Handle both <td> and <td colspan="2"> cases
-            $field_html = preg_replace(
-                '/(<td(?:\s+[^>]*)?>)/',
-                '$1' . $status_badge,
-                $field_html,
-                1 // Only replace the first occurrence
-            );
-        }
-
-        echo $field_html;
+        echo $status_badge . $field_html;
     }
 
     public function render_brevo_field(array $field): void
@@ -3086,13 +3059,9 @@ final class SettingsPage implements HookableInterface
             }
         }
 
-        // Use NestedFieldRenderer for Brevo fields
-        // Note: label is empty because WordPress already shows it via add_settings_field
-        $field_html = $this->render_form_field(
+        $field_html = $this->render_field_inline(
             name: implode('_', $path),
             type: 'nested_' . $base_type,
-            label: '', // WordPress already shows the label via add_settings_field
-            value: null, // Will be retrieved by NestedFieldRenderer
             options: [
                 'path' => $path,
                 'base_type' => $base_type,
@@ -3108,18 +3077,7 @@ final class SettingsPage implements HookableInterface
             ]
         );
 
-        // Inject status badge before field if present
-        if ($status_badge) {
-            // Handle both <td> and <td colspan="2"> cases
-            $field_html = preg_replace(
-                '/(<td(?:\s+[^>]*)?>)/',
-                '$1' . $status_badge,
-                $field_html,
-                1 // Only replace the first occurrence
-            );
-        }
-
-        echo $field_html;
+        echo $status_badge . $field_html;
     }
 
     public function render_calendar_field(array $field): void

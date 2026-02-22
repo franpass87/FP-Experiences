@@ -102,6 +102,40 @@ trait FormFieldRenderer
     }
 
     /**
+     * Render a field without the <tr> wrapper.
+     *
+     * Use inside WordPress Settings API callbacks (add_settings_field)
+     * where WP already provides the <tr><th><td> structure.
+     *
+     * @param string $name Field name
+     * @param string $type Field type
+     * @param mixed $value Current value
+     * @param array<string, mixed> $options Additional options
+     * @return string Raw field HTML
+     */
+    protected function render_field_inline(
+        string $name,
+        string $type,
+        mixed $value = null,
+        array $options = []
+    ): string {
+        $field = new FieldDefinition(
+            name: $name,
+            type: $type,
+            label: '',
+            value: $value,
+            options: $options,
+            description: $options['description'] ?? null,
+            required: $options['required'] ?? false,
+            attributes: $options['attributes'] ?? []
+        );
+
+        $renderer = $this->getFieldRendererFactory()->getRenderer($type);
+
+        return $renderer->render($field, '');
+    }
+
+    /**
      * Render multiple fields at once.
      * 
      * @param array<int, array<string, mixed>> $fields Array of field definitions
