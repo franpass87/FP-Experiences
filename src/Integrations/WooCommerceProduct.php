@@ -336,19 +336,40 @@ final class WooCommerceProduct implements HookableInterface
     {
         $found = false;
 
+        $is_fp_order = 'yes' === $order->get_meta('_fp_exp_isolated_checkout');
+
         foreach ($order->get_items() as $item) {
-            $item_type = $item->get_meta('_fp_exp_item_type');
-            if ('experience' !== $item_type) {
+            $experience_id = absint(
+                $item->get_meta('experience_id')
+                ?: $item->get_meta('fp_exp_experience_id')
+                ?: $item->get_meta('_fp_exp_experience_id')
+                ?: 0
+            );
+
+            $has_fp_type = 'experience' === $item->get_meta('_fp_exp_item_type');
+
+            if (! $has_fp_type && ! $experience_id && ! $is_fp_order) {
                 continue;
             }
 
             $found = true;
-            $experience_id = absint($item->get_meta('experience_id'));
-            $slot_id = absint($item->get_meta('slot_id'));
-            $slot_start = $item->get_meta('slot_start');
-            $slot_end = $item->get_meta('slot_end');
-            $tickets = $item->get_meta('tickets');
-            $addons = $item->get_meta('addons');
+            $slot_id = absint(
+                $item->get_meta('slot_id')
+                ?: $item->get_meta('fp_exp_slot_id')
+                ?: 0
+            );
+            $slot_start = $item->get_meta('slot_start')
+                ?: $item->get_meta('fp_exp_slot_start')
+                ?: '';
+            $slot_end = $item->get_meta('slot_end')
+                ?: $item->get_meta('fp_exp_slot_end')
+                ?: '';
+            $tickets = $item->get_meta('tickets')
+                ?: $item->get_meta('_fp_exp_tickets')
+                ?: [];
+            $addons = $item->get_meta('addons')
+                ?: $item->get_meta('_fp_exp_addons')
+                ?: [];
             $tickets = is_array($tickets) ? $tickets : [];
             $addons = is_array($addons) ? $addons : [];
 
