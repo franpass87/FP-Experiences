@@ -97,7 +97,7 @@ final class CalendarController
                 $reservations_out = [];
                 foreach ($reservations_raw as $res) {
                     $status = (string) ($res['status'] ?? 'pending');
-                    if ($status === 'cancelled') {
+                    if ($status === 'cancelled' || $status === 'declined') {
                         continue;
                     }
                     $order_id = (int) ($res['order_id'] ?? 0);

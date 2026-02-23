@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace FP_Exp\Booking\Email\Services;
 
+use FP_Exp\Utils\Logger;
+
 use function absint;
 use function get_option;
 use function is_array;
 use function max;
+use function sprintf;
 use function time;
 use function wp_clear_scheduled_hook;
 use function wp_schedule_single_event;
@@ -43,6 +46,16 @@ final class EmailSchedulerService
 
         $start_timestamp = isset($context['slot']['start_timestamp']) ? (int) $context['slot']['start_timestamp'] : 0;
         $end_timestamp = isset($context['slot']['end_timestamp']) ? (int) $context['slot']['end_timestamp'] : $start_timestamp;
+
+        if ($start_timestamp <= 0) {
+            Logger::log(sprintf(
+                'EmailScheduler: cannot schedule notifications, invalid start_timestamp for reservation %d, order %d',
+                $reservation_id,
+                $order_id
+            ));
+            return;
+        }
+
         $now = time();
 
         // Schedule reminder

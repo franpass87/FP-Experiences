@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace FP_Exp\Integrations;
 
+use FP_Exp\Booking\Reservations;
 use FP_Exp\Booking\Slots;
 use FP_Exp\Core\Hook\HookableInterface;
 use WC_Order;
@@ -11,6 +12,8 @@ use WC_Order;
 use function __;
 use function absint;
 use function add_action;
+use function do_action;
+use function in_array;
 use function is_wp_error;
 use function sanitize_text_field;
 use function wc_add_notice;
@@ -135,12 +138,19 @@ final class WooCommerceCheckout implements HookableInterface
     {
         error_log('[FP-EXP-WC-CHECKOUT] Order created: #' . $order->get_id());
 
-        // Skip RTB/isolated checkout orders (they create slots in their own flow)
         $is_isolated = $order->get_meta('_fp_exp_isolated_checkout');
         if ($is_isolated === 'yes') {
             error_log('[FP-EXP-WC-CHECKOUT] Skipping isolated checkout order (RTB/gift, handled separately)');
             return;
         }
+
+        $existing = Reservations::get_ids_by_order($order->get_id());
+        if (! empty($existing)) {
+            error_log('[FP-EXP-WC-CHECKOUT] Reservations already exist for order #' . $order->get_id() . ', skipping');
+            return;
+        }
+
+        $order_id = $order->get_id();
 
         foreach ($order->get_items() as $item) {
             $experience_id = absint($item->get_meta('fp_exp_experience_id'));
@@ -151,20 +161,50 @@ final class WooCommerceCheckout implements HookableInterface
                 continue;
             }
 
-            // Ensure slot exists
             $slot_id = Slots::ensure_slot_for_occurrence($experience_id, $slot_start, $slot_end);
 
             if (is_wp_error($slot_id)) {
-                error_log('[FP-EXP-WC-CHECKOUT] ❌ Failed to ensure slot for order ' . $order->get_id() . ': ' . $slot_id->get_error_message());
+                error_log('[FP-EXP-WC-CHECKOUT] ❌ Failed to ensure slot for order ' . $order_id . ': ' . $slot_id->get_error_message());
                 continue;
             }
 
             if ($slot_id > 0) {
-                // Update order item with final slot_id
                 $item->update_meta_data('fp_exp_slot_id', $slot_id);
                 $item->save();
-                
-                error_log('[FP-EXP-WC-CHECKOUT] ✅ Slot ensured for order item: slot_id=' . $slot_id);
+
+                $tickets = $item->get_meta('fp_exp_tickets');
+                $addons = $item->get_meta('fp_exp_addons');
+                $tickets = is_array($tickets) ? $tickets : [];
+                $addons = is_array($addons) ? $addons : [];
+
+                $order_status = $order->get_status();
+                $status = in_array($order_status, ['completed', 'processing'], true)
+                    ? Reservations::STATUS_PAID
+                    : Reservations::STATUS_PENDING;
+
+                $reservation_id = Reservations::create([
+                    'order_id'      => $order_id,
+                    'experience_id' => $experience_id,
+                    'slot_id'       => $slot_id,
+                    'status'        => $status,
+                    'pax'           => $tickets,
+                    'addons'        => $addons,
+                    'customer_id'   => $order->get_customer_id(),
+                    'total_gross'   => (float) $item->get_total(),
+                    'tax_total'     => (float) $item->get_total_tax(),
+                ]);
+
+                if ($reservation_id > 0) {
+                    do_action('fp_exp_reservation_created', $reservation_id, $order_id);
+
+                    if ($status === Reservations::STATUS_PAID) {
+                        do_action('fp_exp_reservation_paid', $reservation_id, $order_id);
+                    }
+
+                    error_log('[FP-EXP-WC-CHECKOUT] ✅ Reservation created: id=' . $reservation_id . ' slot_id=' . $slot_id);
+                } else {
+                    error_log('[FP-EXP-WC-CHECKOUT] ❌ Failed to create reservation for slot_id=' . $slot_id);
+                }
             }
         }
     }

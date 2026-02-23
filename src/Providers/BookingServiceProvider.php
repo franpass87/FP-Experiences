@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace FP_Exp\Providers;
 
 use FP_Exp\Booking\Cart;
+use FP_Exp\Booking\Cron\RtbHoldExpiryCron;
 use FP_Exp\Booking\Orders;
 use FP_Exp\Booking\Checkout as BookingCheckout;
 use FP_Exp\Booking\Emails;
@@ -120,7 +121,9 @@ final class BookingServiceProvider extends AbstractServiceProvider
      */
     public function boot(ContainerInterface $container): void
     {
-        // Register hooks for all booking services that implement HookableInterface
+        $rtb_cron = new RtbHoldExpiryCron();
+        $rtb_cron->register_hooks();
+
         $hookables = [
             Cart::class,
             Orders::class,

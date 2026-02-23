@@ -7,6 +7,7 @@ namespace FP_Exp\Booking;
 use Exception;
 use FP_Exp\Core\Hook\HookableInterface;
 use FP_Exp\Utils\Helpers;
+use FP_Exp\Utils\Logger;
 use WC_Order;
 use WC_Order_Item;
 use WC_Order_Item_Product;
@@ -44,6 +45,8 @@ final class Orders implements HookableInterface
         add_filter('woocommerce_data_stores', [$this, 'register_order_item_store']);
         add_filter('woocommerce_order_item_types', [$this, 'register_order_item_type']);
         add_action('woocommerce_payment_complete', [$this, 'handle_payment_complete']);
+        add_action('woocommerce_order_status_processing', [$this, 'handle_payment_complete']);
+        add_action('woocommerce_order_status_completed', [$this, 'handle_payment_complete']);
         add_action('woocommerce_order_status_cancelled', [$this, 'handle_order_cancelled']);
         add_action('woocommerce_order_status_failed', [$this, 'handle_order_failed']);
     }
@@ -372,8 +375,28 @@ final class Orders implements HookableInterface
         }
 
         foreach ($reservation_ids as $reservation_id) {
+            $reservation = Reservations::get($reservation_id);
+            if (! $reservation) {
+                Logger::log(sprintf(
+                    'handle_payment_complete: reservation %d not found for order %d',
+                    $reservation_id,
+                    $order_id
+                ));
+                continue;
+            }
+
+            if (($reservation['status'] ?? '') === Reservations::STATUS_PAID) {
+                continue;
+            }
+
             if (Reservations::update_status($reservation_id, Reservations::STATUS_PAID)) {
                 do_action('fp_exp_reservation_paid', $reservation_id, $order_id);
+            } else {
+                Logger::log(sprintf(
+                    'handle_payment_complete: failed to update reservation %d to paid for order %d',
+                    $reservation_id,
+                    $order_id
+                ));
             }
         }
 

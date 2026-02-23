@@ -1062,14 +1062,47 @@ final class RestRoutes implements HookableInterface
 
             foreach ($order->get_items() as $item) {
                 $item_type = $item->get_meta('_fp_exp_item_type');
-                if ('experience' !== $item_type) {
+                $is_experience = 'experience' === $item_type;
+                $is_rtb = 'rtb' === $item_type;
+                $is_gift = 'yes' === $item->get_meta('gift_redemption');
+
+                $experience_id = absint(
+                    $item->get_meta('experience_id')
+                    ?: $item->get_meta('fp_exp_experience_id')
+                    ?: $item->get_meta('_fp_exp_experience_id')
+                    ?: $item->get_meta('_experience_id')
+                    ?: 0
+                );
+
+                if (! $is_experience && ! $is_rtb && ! $is_gift && $experience_id <= 0) {
                     continue;
                 }
 
-                $experience_id = absint($item->get_meta('experience_id'));
-                $slot_id = absint($item->get_meta('slot_id'));
-                $tickets = $item->get_meta('tickets');
-                $addons = $item->get_meta('addons');
+                $slot_id = absint(
+                    $item->get_meta('slot_id')
+                    ?: $item->get_meta('fp_exp_slot_id')
+                    ?: $item->get_meta('_slot_id')
+                    ?: 0
+                );
+
+                if ($is_gift) {
+                    $tickets = $item->get_meta('gift_quantity');
+                    $addons = $item->get_meta('gift_addons');
+                } elseif ($is_rtb) {
+                    $tickets = $item->get_meta('_tickets')
+                        ?: $item->get_meta('tickets')
+                        ?: [];
+                    $addons = $item->get_meta('_addons')
+                        ?: $item->get_meta('addons')
+                        ?: [];
+                } else {
+                    $tickets = $item->get_meta('tickets')
+                        ?: $item->get_meta('fp_exp_tickets')
+                        ?: [];
+                    $addons = $item->get_meta('addons')
+                        ?: $item->get_meta('fp_exp_addons')
+                        ?: [];
+                }
                 $tickets = is_array($tickets) ? $tickets : [];
                 $addons = is_array($addons) ? $addons : [];
 
@@ -1079,14 +1112,15 @@ final class RestRoutes implements HookableInterface
                     : Reservations::STATUS_PENDING;
 
                 $reservation_id = Reservations::create([
-                    'order_id' => $order_id,
+                    'order_id'      => $order_id,
                     'experience_id' => $experience_id,
-                    'slot_id' => $slot_id,
-                    'status' => $status,
-                    'pax' => $tickets,
-                    'addons' => $addons,
-                    'total_gross' => (float) $item->get_total(),
-                    'tax_total' => (float) $item->get_total_tax(),
+                    'slot_id'       => $slot_id,
+                    'status'        => $status,
+                    'pax'           => $tickets,
+                    'addons'        => $addons,
+                    'customer_id'   => $order->get_customer_id(),
+                    'total_gross'   => (float) $item->get_total(),
+                    'tax_total'     => (float) $item->get_total_tax(),
                 ]);
 
                 if ($reservation_id > 0) {

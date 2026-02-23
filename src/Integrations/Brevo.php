@@ -155,7 +155,15 @@ final class Brevo implements HookableInterface
         }
 
         $context['status_label'] = 'cancelled';
-        $this->send_transactional('cancel', $context, $reservation_id);
+        $sent = $this->send_transactional('cancel', $context, $reservation_id);
+
+        if (! $sent) {
+            Logger::log('brevo', 'Cancel transactional fallback triggered', [
+                'reservation' => $reservation_id,
+                'reason' => 'cancel_send_failed',
+            ]);
+        }
+
         $this->send_event('reservation_cancelled', $context, $reservation_id);
     }
 
@@ -611,6 +619,20 @@ final class Brevo implements HookableInterface
         }
 
         return $sent;
+    }
+
+    /**
+     * Try to send a transactional email via Brevo for the given template key.
+     *
+     * @param array<string, mixed> $context
+     */
+    public function try_send_transactional(string $template_key, array $context, int $reservation_id): bool
+    {
+        if (! $this->is_enabled()) {
+            return false;
+        }
+
+        return $this->send_transactional($template_key, $context, $reservation_id);
     }
 
     /**

@@ -6,6 +6,7 @@ namespace FP_Exp\Booking;
 
 use DateTimeInterface;
 use FP_Exp\Utils\Helpers;
+use FP_Exp\Utils\Logger;
 use wpdb;
 
 use function __;
@@ -237,6 +238,11 @@ final class Reservations
         $result = $wpdb->insert($table, $prepared);
 
         if (false === $result) {
+            Logger::log(sprintf(
+                'Reservations::create failed — %s | data: %s',
+                $wpdb->last_error,
+                wp_json_encode($prepared)
+            ));
             return 0;
         }
 

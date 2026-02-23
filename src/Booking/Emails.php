@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace FP_Exp\Booking;
 
 use FP_Exp\Core\Hook\HookableInterface;
+use FP_Exp\Utils\Logger;
 use FP_Exp\Booking\Email\Senders\CustomerEmailSender;
 use FP_Exp\Booking\Email\Senders\StaffEmailSender;
 use FP_Exp\Booking\Email\Services\EmailContextService;
@@ -159,6 +160,11 @@ final class Emails implements HookableInterface
         $context = $this->get_context($reservation_id, $order_id);
 
         if (! $context) {
+            Logger::log(sprintf(
+                'handle_reservation_created: get_context returned null for reservation %d, order %d',
+                $reservation_id,
+                $order_id
+            ));
             return;
         }
 
@@ -190,6 +196,11 @@ final class Emails implements HookableInterface
         $context = $this->get_context($reservation_id, $order_id);
 
         if (! $context) {
+            Logger::log(sprintf(
+                'handle_reservation_paid: get_context returned null for reservation %d, order %d',
+                $reservation_id,
+                $order_id
+            ));
             return;
         }
 
@@ -228,6 +239,11 @@ final class Emails implements HookableInterface
         $context = $this->get_context($reservation_id, $order_id);
 
         if (! $context) {
+            Logger::log(sprintf(
+                'handle_reservation_cancelled: get_context returned null for reservation %d, order %d',
+                $reservation_id,
+                $order_id
+            ));
             return;
         }
 
@@ -365,8 +381,6 @@ final class Emails implements HookableInterface
 
         if ($this->brevo instanceof Brevo && $this->brevo->is_enabled()) {
             $this->brevo->queue_automation_events($context, $reservation_id);
-
-            return;
         }
 
         $this->initServices();
@@ -400,23 +414,29 @@ final class Emails implements HookableInterface
             return;
         }
 
+        if ($this->brevo instanceof Brevo && $this->brevo->try_send_transactional('reminder', $context, $reservation_id)) {
+            return;
+        }
+
         $template = new BookingReminderTemplate();
         $this->customer_sender->send($template, $context, true);
     }
 
     public function handle_followup_dispatch(int $reservation_id, int $order_id): void
     {
+        $this->initServices();
         $context = $this->get_context($reservation_id, $order_id);
 
         if (! $context) {
             return;
         }
 
-        $language = $this->resolve_language($context);
+        if ($this->brevo instanceof Brevo && $this->brevo->try_send_transactional('post_experience', $context, $reservation_id)) {
+            return;
+        }
 
-        $subject = $this->resolve_subject_override('customer_post_experience', $context, $language);
-
-        $this->send_customer_template($context, 'customer-post-experience', $subject, false, $language);
+        $template = new BookingFollowupTemplate();
+        $this->customer_sender->send($template, $context, true);
     }
 
     /**
@@ -455,24 +475,28 @@ final class Emails implements HookableInterface
         $reservation = Reservations::get($reservation_id);
 
         if (! $reservation) {
+            Logger::log(sprintf('get_context: reservation %d not found', $reservation_id));
             return null;
         }
 
         $order = wc_get_order($order_id);
 
         if (! $order instanceof WC_Order) {
+            Logger::log(sprintf('get_context: order %d not found for reservation %d', $order_id, $reservation_id));
             return null;
         }
 
         $experience = get_post(absint($reservation['experience_id'] ?? 0));
 
         if (! $experience) {
+            Logger::log(sprintf('get_context: experience %d not found for reservation %d', absint($reservation['experience_id'] ?? 0), $reservation_id));
             return null;
         }
 
         $slot = Slots::get_slot(absint($reservation['slot_id'] ?? 0));
 
         if (! $slot) {
+            Logger::log(sprintf('get_context: slot %d not found for reservation %d', absint($reservation['slot_id'] ?? 0), $reservation_id));
             return null;
         }
 

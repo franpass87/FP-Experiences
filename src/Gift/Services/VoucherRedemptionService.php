@@ -119,10 +119,9 @@ final class VoucherRedemptionService
         // Invalidate coupon (delegated to WooCommerce integration)
         // $this->invalidateCoupon($voucher_id);
 
-        // Send email (delegated to Email service)
-        // $this->sendRedeemedEmail($voucher_id, $order->get_id(), $slot);
+        do_action('fp_exp_reservation_created', $reservation_id, $order->get_id());
+        do_action('fp_exp_reservation_paid', $reservation_id, $order->get_id());
 
-        // Fire action
         do_action('fp_exp_gift_voucher_redeemed', $voucher_id, $order->get_id(), $reservation_id);
 
         // Build response

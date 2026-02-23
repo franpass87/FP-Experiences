@@ -676,13 +676,21 @@ final class RequestToBook implements HookableInterface
             return new WP_Error('fp_exp_rtb_missing', __('The request could not be found.', 'fp-experiences'));
         }
 
+        $current_status = Reservations::normalize_status((string) ($reservation['status'] ?? ''));
+        if ($current_status !== Reservations::STATUS_PENDING_REQUEST) {
+            return new WP_Error(
+                'fp_exp_rtb_invalid_status',
+                sprintf(__('Cannot approve: reservation status is "%s", expected "pending_request".', 'fp-experiences'), $current_status)
+            );
+        }
+
         $context = $this->get_request_context($reservation_id);
 
         if (! $context) {
             return new WP_Error('fp_exp_rtb_context', __('Unable to load the request details.', 'fp-experiences'));
         }
 
-        $status = Reservations::normalize_status((string) ($reservation['status'] ?? ''));
+        $status = $current_status;
         $mode = $this->resolve_mode($reservation);
         $stage = 'approved';
 
@@ -744,6 +752,14 @@ final class RequestToBook implements HookableInterface
             return new WP_Error('fp_exp_rtb_missing', __('The request could not be found.', 'fp-experiences'));
         }
 
+        $current_status = Reservations::normalize_status((string) ($reservation['status'] ?? ''));
+        if ($current_status !== Reservations::STATUS_PENDING_REQUEST) {
+            return new WP_Error(
+                'fp_exp_rtb_invalid_status',
+                sprintf(__('Cannot decline: reservation status is "%s", expected "pending_request".', 'fp-experiences'), $current_status)
+            );
+        }
+
         $context = $this->get_request_context($reservation_id);
 
         if (! $context) {
@@ -798,7 +814,7 @@ final class RequestToBook implements HookableInterface
         if ($existing_id > 0) {
             $existing = wc_get_order($existing_id);
 
-            if ($existing instanceof WC_Order) {
+            if ($existing instanceof WC_Order && ! $existing->has_status(['trash', 'cancelled', 'failed'])) {
                 return $existing;
             }
         }

@@ -9,6 +9,9 @@ use FP_Exp\Domain\Booking\Repositories\ReservationRepositoryInterface;
 use FP_Exp\Domain\Booking\Repositories\SlotRepositoryInterface;
 
 use function array_sum;
+use function in_array;
+use function is_array;
+use function max;
 
 /**
  * Use case: Get slots in a date range.
@@ -55,14 +58,26 @@ final class GetSlotsUseCase
             // Get reservations for this slot
             $reservations = $this->reservationRepository->findBySlotId($slot_id);
             
-            // Calculate booked capacity
+            $active_statuses = [
+                'pending',
+                'pending_request',
+                'approved_confirmed',
+                'approved_pending_payment',
+                'paid',
+                'checked_in',
+            ];
+
             $booked = 0;
             foreach ($reservations as $reservation) {
+                $status = (string) ($reservation['status'] ?? '');
+                if (! in_array($status, $active_statuses, true)) {
+                    continue;
+                }
                 $pax = $reservation['pax'] ?? [];
                 if (is_array($pax)) {
                     $booked += array_sum($pax);
                 } else {
-                    $booked += 1; // Default to 1 if pax is not an array
+                    $booked += 1;
                 }
             }
 

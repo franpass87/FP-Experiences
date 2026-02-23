@@ -339,37 +339,60 @@ final class WooCommerceProduct implements HookableInterface
         $is_fp_order = 'yes' === $order->get_meta('_fp_exp_isolated_checkout');
 
         foreach ($order->get_items() as $item) {
+            $item_type = $item->get_meta('_fp_exp_item_type');
+            $is_experience = 'experience' === $item_type;
+            $is_rtb = 'rtb' === $item_type;
+            $is_gift = 'yes' === $item->get_meta('gift_redemption');
+
             $experience_id = absint(
                 $item->get_meta('experience_id')
                 ?: $item->get_meta('fp_exp_experience_id')
                 ?: $item->get_meta('_fp_exp_experience_id')
+                ?: $item->get_meta('_experience_id')
                 ?: 0
             );
 
-            $has_fp_type = 'experience' === $item->get_meta('_fp_exp_item_type');
-
-            if (! $has_fp_type && ! $experience_id && ! $is_fp_order) {
+            if (! $is_experience && ! $is_rtb && ! $is_gift && ! $experience_id && ! $is_fp_order) {
                 continue;
             }
 
             $found = true;
+
             $slot_id = absint(
                 $item->get_meta('slot_id')
                 ?: $item->get_meta('fp_exp_slot_id')
+                ?: $item->get_meta('_slot_id')
                 ?: 0
             );
             $slot_start = $item->get_meta('slot_start')
                 ?: $item->get_meta('fp_exp_slot_start')
+                ?: $item->get_meta('_slot_start')
                 ?: '';
             $slot_end = $item->get_meta('slot_end')
                 ?: $item->get_meta('fp_exp_slot_end')
+                ?: $item->get_meta('_slot_end')
                 ?: '';
-            $tickets = $item->get_meta('tickets')
-                ?: $item->get_meta('_fp_exp_tickets')
-                ?: [];
-            $addons = $item->get_meta('addons')
-                ?: $item->get_meta('_fp_exp_addons')
-                ?: [];
+
+            if ($is_gift) {
+                $tickets = $item->get_meta('gift_quantity');
+                $addons = $item->get_meta('gift_addons');
+            } elseif ($is_rtb) {
+                $tickets = $item->get_meta('_tickets')
+                    ?: $item->get_meta('tickets')
+                    ?: [];
+                $addons = $item->get_meta('_addons')
+                    ?: $item->get_meta('addons')
+                    ?: [];
+            } else {
+                $tickets = $item->get_meta('tickets')
+                    ?: $item->get_meta('_fp_exp_tickets')
+                    ?: $item->get_meta('fp_exp_tickets')
+                    ?: [];
+                $addons = $item->get_meta('addons')
+                    ?: $item->get_meta('_fp_exp_addons')
+                    ?: $item->get_meta('fp_exp_addons')
+                    ?: [];
+            }
             $tickets = is_array($tickets) ? $tickets : [];
             $addons = is_array($addons) ? $addons : [];
 
@@ -388,8 +411,15 @@ final class WooCommerceProduct implements HookableInterface
             $color = $status_colors[$status] ?? '#64748b';
             $label = $status_labels[$status] ?? ucfirst($status);
 
+            $source_hint = __('(da meta ordine)', 'fp-experiences');
+            if ($is_rtb) {
+                $source_hint = __('(RTB — da meta ordine)', 'fp-experiences');
+            } elseif ($is_gift) {
+                $source_hint = __('(Gift Voucher — da meta ordine)', 'fp-experiences');
+            }
+
             echo '<div style="border:1px solid #e2e8f0;border-radius:8px;padding:12px;margin-bottom:12px;background:#f8fafc;">';
-            echo '<div style="margin-bottom:4px;font-size:11px;color:#94a3b8;">' . esc_html__('(da meta ordine)', 'fp-experiences') . '</div>';
+            echo '<div style="margin-bottom:4px;font-size:11px;color:#94a3b8;">' . esc_html($source_hint) . '</div>';
 
             echo '<div style="margin-bottom:8px;">';
             echo '<span style="display:inline-block;padding:2px 10px;border-radius:12px;font-size:12px;font-weight:600;color:#fff;background:' . esc_attr($color) . ';">';
@@ -535,7 +565,10 @@ final class WooCommerceProduct implements HookableInterface
             return $enabled;
         }
 
-        if ('fp-exp' === $order->get_created_via() || 'fp-exp-rtb' === $order->get_created_via()) {
+        if ('fp-exp' === $order->get_created_via()
+            || 'fp-exp-rtb' === $order->get_created_via()
+            || 'fp-exp-gift' === $order->get_created_via()
+        ) {
             return false;
         }
 
