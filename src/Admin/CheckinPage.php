@@ -216,9 +216,11 @@ final class CheckinPage implements HookableInterface
         $reservations_table = Reservations::table_name();
         $slots_table = Slots::table_name();
         
+        global $wpdb;
+
         // Try to get posts table name from DatabaseInterface if available
         $kernel = \FP_Exp\Core\Bootstrap\Bootstrap::kernel();
-        $posts_table = 'wp_posts'; // Default fallback
+        $posts_table = $wpdb->posts; // Default fallback
         if ($kernel !== null) {
             $container = $kernel->container();
             if ($container->has(\FP_Exp\Services\Database\DatabaseInterface::class)) {
@@ -226,15 +228,9 @@ final class CheckinPage implements HookableInterface
                     $database = $container->make(\FP_Exp\Services\Database\DatabaseInterface::class);
                     $posts_table = $database->getPrefix() . 'posts';
                 } catch (\Throwable $e) {
-                    // Fall through to global $wpdb
+                    // Fall through to $wpdb->posts
                 }
             }
-        }
-        
-        // Fallback to global $wpdb for backward compatibility
-        if ($posts_table === 'wp_posts') {
-            global $wpdb;
-            $posts_table = $wpdb->posts;
         }
 
         $timezone = wp_timezone();
