@@ -13,6 +13,7 @@ use function __;
 use function absint;
 use function add_action;
 use function do_action;
+use function get_post_meta;
 use function in_array;
 use function is_wp_error;
 use function sanitize_text_field;
@@ -115,6 +116,31 @@ final class WooCommerceCheckout implements HookableInterface
             }
 
             error_log('[FP-EXP-WC-CHECKOUT] ✅ Slot validation passed: slot_id=' . $slot_id);
+
+            // Check lead time: reject if slot starts before the minimum advance window
+            $lead_time_hours = absint(get_post_meta($experience_id, '_fp_lead_time_hours', true));
+            if ($lead_time_hours > 0 && $slot_start) {
+                try {
+                    $slot_start_dt = new \DateTimeImmutable($slot_start, new \DateTimeZone('UTC'));
+                    $cutoff = new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
+                    $cutoff = $cutoff->add(new \DateInterval('PT' . $lead_time_hours . 'H'));
+
+                    if ($slot_start_dt < $cutoff) {
+                        error_log('[FP-EXP-WC-CHECKOUT] ❌ Lead time check failed: slot starts at ' . $slot_start . ', cutoff is ' . $cutoff->format('Y-m-d H:i:s'));
+                        wc_add_notice(
+                            sprintf(
+                                /* translators: %d: minimum hours in advance */
+                                __('Questa esperienza richiede una prenotazione con almeno %d ore di anticipo. Seleziona un altro orario.', 'fp-experiences'),
+                                $lead_time_hours
+                            ),
+                            'error'
+                        );
+                        continue;
+                    }
+                } catch (\Exception $e) {
+                    // If we can't parse dates, let the checkout continue
+                }
+            }
 
             // Check capacity
             $tickets = is_array($cart_item['fp_exp_tickets'] ?? null) ? $cart_item['fp_exp_tickets'] : [];

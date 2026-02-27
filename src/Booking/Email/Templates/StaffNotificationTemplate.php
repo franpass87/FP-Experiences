@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace FP_Exp\Booking\Email\Templates;
 
 use FP_Exp\Booking\EmailTranslator;
+use FP_Exp\Utils\Logger;
 
 use function __;
 use function apply_filters;
@@ -103,7 +104,6 @@ final class StaffNotificationTemplate extends AbstractEmailTemplate
             $webmaster,
         ]);
 
-        // Add extra recipients from settings
         $emails_settings = get_option('fp_exp_emails', []);
         if (is_array($emails_settings) && ! empty($emails_settings['recipients']['staff_extra']) && is_array($emails_settings['recipients']['staff_extra'])) {
             $extra = array_values(array_filter(array_map('sanitize_email', $emails_settings['recipients']['staff_extra'])));
@@ -114,8 +114,18 @@ final class StaffNotificationTemplate extends AbstractEmailTemplate
         $filtered = apply_filters('fp_exp_email_recipients', $recipients, $context, 'staff');
 
         $filtered = array_map('sanitize_email', $filtered);
+        $result = array_values(array_filter($filtered));
 
-        return array_values(array_filter($filtered));
+        if (empty($result)) {
+            Logger::log(sprintf(
+                'StaffNotificationTemplate::getRecipients: no recipients resolved (structure=%s, webmaster=%s, admin=%s)',
+                $structure,
+                $webmaster,
+                sanitize_email((string) get_option('admin_email'))
+            ));
+        }
+
+        return $result;
     }
 
     /**

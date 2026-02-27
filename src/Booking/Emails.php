@@ -161,7 +161,7 @@ final class Emails implements HookableInterface
 
         if (! $context) {
             Logger::log(sprintf(
-                'handle_reservation_created: get_context returned null for reservation %d, order %d',
+                'handle_reservation_created: get_context returned null for reservation %d, order %d — staff email skipped, will retry on reservation_paid',
                 $reservation_id,
                 $order_id
             ));
@@ -181,7 +181,21 @@ final class Emails implements HookableInterface
         $staff_notification = $types['staff_notification'] ?? 'yes';
         if ($staff_notification !== 'no') {
             $template = new StaffNotificationTemplate(false);
-            $this->staff_sender->send($template, $context);
+            $sent = $this->staff_sender->send($template, $context);
+
+            if ($sent) {
+                $order = wc_get_order($order_id);
+                if ($order instanceof WC_Order) {
+                    $order->update_meta_data('_fp_exp_staff_notified', '1');
+                    $order->save();
+                }
+            } else {
+                Logger::log(sprintf(
+                    'handle_reservation_created: staff email send returned false for reservation %d, order %d — will retry on reservation_paid',
+                    $reservation_id,
+                    $order_id
+                ));
+            }
         }
     }
 
@@ -222,8 +236,27 @@ final class Emails implements HookableInterface
             $this->customer_sender->send($template, $context);
         }
 
-        // Staff notification is already sent on reservation_created;
-        // no duplicate here to avoid double emails on instant payments.
+        // Fallback: send staff notification if it wasn't sent on reservation_created
+        // (e.g. get_context() returned null due to timing, or wp_mail failed).
+        $staff_notification = $types['staff_notification'] ?? 'yes';
+        if ($staff_notification !== 'no') {
+            $order = wc_get_order($order_id);
+            $already_notified = $order instanceof WC_Order && $order->get_meta('_fp_exp_staff_notified') === '1';
+
+            if (! $already_notified) {
+                Logger::log(sprintf(
+                    'handle_reservation_paid: staff notification not sent on created — sending now for reservation %d, order %d',
+                    $reservation_id,
+                    $order_id
+                ));
+                $staff_template = new StaffNotificationTemplate(false);
+                $sent = $this->staff_sender->send($staff_template, $context);
+                if ($sent && $order instanceof WC_Order) {
+                    $order->update_meta_data('_fp_exp_staff_notified', '1');
+                    $order->save();
+                }
+            }
+        }
 
         $this->queue_automations($context);
     }

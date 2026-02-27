@@ -23,6 +23,7 @@ use function get_post_meta;
 use function get_the_post_thumbnail;
 use function get_the_title;
 use function has_post_thumbnail;
+use function in_array;
 use function is_admin;
 use function is_array;
 use function is_numeric;
@@ -683,35 +684,47 @@ final class WooCommerceProduct implements HookableInterface
         // Get total from reservation meta if available
         $reservation_id = $order->get_meta('_fp_exp_reservation_id');
         $expected_total = 0;
+        $reservation_status = '';
 
         if ($reservation_id) {
             $reservation = \FP_Exp\Booking\Reservations::get((int) $reservation_id);
             if ($reservation && isset($reservation['total_gross'])) {
                 $expected_total = (float) $reservation['total_gross'];
             }
+            if ($reservation && isset($reservation['status'])) {
+                $reservation_status = (string) $reservation['status'];
+            }
         }
 
-        // If order total is 0, show appropriate message
         $order_total = (float) $order->get_total();
+        $order_status = $order->get_status();
+        $is_paid = in_array($order_status, ['processing', 'completed'], true)
+            || in_array($reservation_status, ['paid', 'approved_confirmed', 'checked_in'], true);
 
-        if ($order_total <= 0 && $expected_total > 0) {
-            // Modify the total row to show expected amount
-            if (isset($total_rows['order_total'])) {
-                $total_rows['order_total']['value'] = sprintf(
-                    '<span style="color: #666;">%s</span>',
-                    sprintf(
-                        /* translators: %s: expected total amount */
-                        __('Da pagare dopo conferma: %s', 'fp-experiences'),
-                        wc_price($expected_total)
-                    )
-                );
-            }
-        } elseif ($order_total <= 0) {
-            // No expected total, just show pending message
-            if (isset($total_rows['order_total'])) {
-                $total_rows['order_total']['value'] = '<span style="color: #666;">' . 
-                    esc_html__('In attesa di conferma', 'fp-experiences') . '</span>';
-            }
+        // If order is paid or reservation is confirmed, show the real total
+        if ($is_paid && $order_total <= 0 && $expected_total > 0 && isset($total_rows['order_total'])) {
+            $total_rows['order_total']['value'] = wc_price($expected_total);
+            return $total_rows;
+        }
+
+        // Only modify display for actual RTB orders that are still pending
+        if (! $is_rtb_order || $is_paid) {
+            return $total_rows;
+        }
+
+        // RTB order with pending status
+        if ($order_total <= 0 && $expected_total > 0 && isset($total_rows['order_total'])) {
+            $total_rows['order_total']['value'] = sprintf(
+                '<span style="color: #666;">%s</span>',
+                sprintf(
+                    /* translators: %s: expected total amount */
+                    __('Da pagare dopo conferma: %s', 'fp-experiences'),
+                    wc_price($expected_total)
+                )
+            );
+        } elseif ($order_total <= 0 && isset($total_rows['order_total'])) {
+            $total_rows['order_total']['value'] = '<span style="color: #666;">' .
+                esc_html__('In attesa di conferma', 'fp-experiences') . '</span>';
         }
 
         return $total_rows;
