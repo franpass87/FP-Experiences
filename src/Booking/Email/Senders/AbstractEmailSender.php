@@ -6,8 +6,12 @@ namespace FP_Exp\Booking\Email\Senders;
 
 use FP_Exp\Booking\Email\Templates\EmailTemplateInterface;
 use FP_Exp\Integrations\Brevo;
+use FP_Exp\Utils\Logger;
 
 use function file_exists;
+use function function_exists;
+use function get_class;
+use function implode;
 use function trim;
 use function unlink;
 use function wp_mail;
@@ -34,7 +38,15 @@ abstract class AbstractEmailSender implements EmailSenderInterface
      */
     public function send(EmailTemplateInterface $template, array $context): bool
     {
+        $template_class = get_class($template);
+
         if (! $template->shouldSend($context)) {
+            $recipients = $template->getRecipients($context);
+            Logger::log('email', sprintf(
+                'AbstractEmailSender::send: shouldSend=false for %s (recipients resolved: %s)',
+                $template_class,
+                $recipients ? implode(', ', $recipients) : 'NONE'
+            ));
             return false;
         }
 
@@ -44,6 +56,11 @@ abstract class AbstractEmailSender implements EmailSenderInterface
         $attachments = $template->getAttachments($context);
 
         if ('' === trim($body)) {
+            Logger::log('email', sprintf(
+                'AbstractEmailSender::send: empty body for %s (recipients: %s)',
+                $template_class,
+                implode(', ', $recipients)
+            ));
             return false;
         }
 
@@ -63,6 +80,10 @@ abstract class AbstractEmailSender implements EmailSenderInterface
     protected function dispatch(array $recipients, string $subject, string $body, array $attachments = []): bool
     {
         if (empty($recipients)) {
+            Logger::log('email', sprintf(
+                'AbstractEmailSender::dispatch: no recipients for subject "%s"',
+                $subject
+            ));
             return false;
         }
 
@@ -71,13 +92,23 @@ abstract class AbstractEmailSender implements EmailSenderInterface
             'Content-Type: text/html; charset=UTF-8',
         ];
 
-        // Add CC if multiple recipients
         if (count($recipients) > 1) {
             $cc = implode(', ', array_slice($recipients, 1));
             $headers[] = 'Cc: ' . $cc;
         }
 
-        $sent = wp_mail($to, $subject, $body, $headers, $attachments);
+        if (function_exists('WC') && WC()->mailer()) {
+            $sent = WC()->mailer()->send($to, $subject, $body, implode("\r\n", $headers), $attachments);
+        } else {
+            $sent = wp_mail($to, $subject, $body, $headers, $attachments);
+        }
+
+        Logger::log('email', sprintf(
+            'AbstractEmailSender::dispatch: %s to=%s subject="%s"',
+            $sent ? 'OK' : 'FAILED',
+            implode(', ', $recipients),
+            $subject
+        ));
 
         return $sent;
     }

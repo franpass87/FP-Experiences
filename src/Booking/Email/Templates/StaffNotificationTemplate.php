@@ -117,7 +117,7 @@ final class StaffNotificationTemplate extends AbstractEmailTemplate
         $result = array_values(array_filter($filtered));
 
         if (empty($result)) {
-            Logger::log(sprintf(
+            Logger::log('email', sprintf(
                 'StaffNotificationTemplate::getRecipients: no recipients resolved (structure=%s, webmaster=%s, admin=%s)',
                 $structure,
                 $webmaster,

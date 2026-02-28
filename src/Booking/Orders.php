@@ -377,7 +377,7 @@ final class Orders implements HookableInterface
         foreach ($reservation_ids as $reservation_id) {
             $reservation = Reservations::get($reservation_id);
             if (! $reservation) {
-                Logger::log(sprintf(
+                Logger::log('booking', sprintf(
                     'handle_payment_complete: reservation %d not found for order %d',
                     $reservation_id,
                     $order_id
@@ -392,7 +392,7 @@ final class Orders implements HookableInterface
             if (Reservations::update_status($reservation_id, Reservations::STATUS_PAID)) {
                 do_action('fp_exp_reservation_paid', $reservation_id, $order_id);
             } else {
-                Logger::log(sprintf(
+                Logger::log('booking', sprintf(
                     'handle_payment_complete: failed to update reservation %d to paid for order %d',
                     $reservation_id,
                     $order_id

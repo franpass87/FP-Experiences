@@ -1,23 +1,15 @@
 <?php
 /**
- * Review order table - CUSTOM per FP Experiences Gift Vouchers
+ * Review order table - CUSTOM per FP Experiences
  *
- * Template override per gestire correttamente i gift vouchers nel checkout
- * senza errori causati da link al prodotto virtuale.
+ * Template override per gestire correttamente gift vouchers e prenotazioni
+ * normali nel checkout, evitando link al prodotto virtuale placeholder.
  *
  * @package FP_Experiences
- * @version 1.1.5
+ * @version 1.2.0
  */
 
 defined('ABSPATH') || exit;
-
-$has_gift = false;
-foreach (WC()->cart->get_cart() as $cart_item) {
-    if (($cart_item['_fp_exp_item_type'] ?? '') === 'gift') {
-        $has_gift = true;
-        break;
-    }
-}
 ?>
 
 <table class="shop_table woocommerce-checkout-review-order-table">
@@ -38,33 +30,29 @@ foreach (WC()->cart->get_cart() as $cart_item) {
 				continue;
 			}
 			
-			// Check se è un gift voucher
 			$is_gift = ($cart_item['_fp_exp_item_type'] ?? '') === 'gift';
+			$is_experience = !empty($cart_item['fp_exp_item']);
 			?>
 			<tr class="<?php echo esc_attr(apply_filters('woocommerce_cart_item_class', 'cart_item', $cart_item, $cart_item_key)); ?>">
 				<td class="product-name">
 					<?php 
 					if ($is_gift) {
-						// GIFT VOUCHER: Render custom senza link al prodotto
 						echo '<strong>' . esc_html($cart_item['experience_title'] ?? 'Gift Voucher') . '</strong>';
 						echo '<br><small style="color: #666;">' . esc_html__('Gift Voucher', 'fp-experiences') . '</small>';
 						
-						// Mostra dettagli gift se disponibili
 						$session_data = WC()->session ? WC()->session->get('fp_exp_gift_pending') : null;
-						if ($session_data) {
+						if ($session_data && !empty($session_data['recipient']['name'])) {
 							echo '<br><small style="color: #999;">';
 							echo sprintf(
 								esc_html__('For: %s', 'fp-experiences'),
-								esc_html($session_data['recipient']['name'] ?? '')
+								esc_html($session_data['recipient']['name'])
 							);
 							echo '</small>';
 						}
 					} else {
-						// PRODOTTO NORMALE: Render standard WooCommerce
 						echo wp_kses_post(apply_filters('woocommerce_cart_item_name', $_product->get_name(), $cart_item, $cart_item_key));
 					}
 					
-					// Quantità
 					echo '&nbsp;';
 					echo apply_filters(
 						'woocommerce_checkout_cart_item_quantity',
@@ -73,7 +61,10 @@ foreach (WC()->cart->get_cart() as $cart_item) {
 						$cart_item_key
 					);
 					
-					// Meta data
+					if (!$is_gift && !$is_experience) {
+						echo wc_get_formatted_cart_item_data($cart_item);
+					}
+					
 					do_action('woocommerce_after_cart_item_name', $cart_item, $cart_item_key);
 					?>
 				</td>
@@ -143,12 +134,3 @@ foreach (WC()->cart->get_cart() as $cart_item) {
 		<?php do_action('woocommerce_review_order_after_order_total'); ?>
 	</tfoot>
 </table>
-
-
-
-
-
-
-
-
-

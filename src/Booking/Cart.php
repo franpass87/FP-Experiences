@@ -624,17 +624,22 @@ final class Cart implements HookableInterface
 
         $log('[FP-EXP-CART] ✅ Starting sync of ' . count($custom_cart['items']) . ' items to WooCommerce cart');
 
-        // Check if WooCommerce cart has normal products (not experiences)
+        // Check if WooCommerce cart has normal products (not experiences, not gift vouchers)
         $wc_cart = WC()->cart;
         $has_normal_products = false;
+        $gift_keys_to_remove = [];
         if (!$wc_cart->is_empty()) {
             $cart_contents = $wc_cart->get_cart();
-            foreach ($cart_contents as $cart_item) {
-                // Check if this is NOT an experience item (normal product)
-                if (empty($cart_item['fp_exp_item'])) {
-                    $has_normal_products = true;
-                    break;
+            foreach ($cart_contents as $key => $cart_item) {
+                if (!empty($cart_item['fp_exp_item'])) {
+                    continue;
                 }
+                if (($cart_item['_fp_exp_item_type'] ?? '') === 'gift') {
+                    $gift_keys_to_remove[] = $key;
+                    continue;
+                }
+                $has_normal_products = true;
+                break;
             }
         }
 
@@ -642,6 +647,14 @@ final class Cart implements HookableInterface
         if ($has_normal_products) {
             $log('[FP-EXP-CART] ⚠️ WooCommerce cart contains normal products, skipping sync to prevent mixed carts');
             return;
+        }
+
+        // Remove residual gift items before syncing experience items
+        if (!empty($gift_keys_to_remove)) {
+            $log('[FP-EXP-CART] ⚠️ Removing ' . count($gift_keys_to_remove) . ' residual gift item(s) from WooCommerce cart');
+            foreach ($gift_keys_to_remove as $key) {
+                WC()->cart->remove_cart_item($key);
+            }
         }
 
         // Clear WooCommerce cart only if it contains experience items or is empty

@@ -238,7 +238,7 @@ final class Reservations
         $result = $wpdb->insert($table, $prepared);
 
         if (false === $result) {
-            Logger::log(sprintf(
+            Logger::log('booking', sprintf(
                 'Reservations::create failed — %s | data: %s',
                 $wpdb->last_error,
                 wp_json_encode($prepared)

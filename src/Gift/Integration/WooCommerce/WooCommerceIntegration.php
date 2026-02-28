@@ -148,7 +148,12 @@ final class WooCommerceIntegration
     }
 
     /**
-     * Locate custom WooCommerce template for gift vouchers.
+     * Locate custom WooCommerce template for FP-Experiences items.
+     *
+     * Loads the plugin's review-order template for both gift vouchers AND
+     * normal experience bookings. The theme template (Salient) uses hardcoded
+     * get_permalink() links that point to the virtual placeholder product,
+     * which is incorrect for both item types.
      */
     public function locateGiftTemplate(string $template, string $template_name, string $template_path): string
     {
@@ -160,20 +165,20 @@ final class WooCommerceIntegration
             return $template;
         }
 
-        $has_gift = false;
+        $has_fp_item = false;
 
         foreach (WC()->cart->get_cart() as $cart_item) {
-            if (($cart_item['_fp_exp_item_type'] ?? '') === 'gift') {
-                $has_gift = true;
+            if (($cart_item['_fp_exp_item_type'] ?? '') === 'gift'
+                || ! empty($cart_item['fp_exp_item'])) {
+                $has_fp_item = true;
                 break;
             }
         }
 
-        if (! $has_gift) {
+        if (! $has_fp_item) {
             return $template;
         }
 
-        // Load custom template if exists
         $plugin_template = FP_EXP_PLUGIN_DIR . 'templates/woocommerce/' . $template_name;
 
         if (file_exists($plugin_template)) {

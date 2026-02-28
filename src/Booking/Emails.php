@@ -160,7 +160,7 @@ final class Emails implements HookableInterface
         $context = $this->get_context($reservation_id, $order_id);
 
         if (! $context) {
-            Logger::log(sprintf(
+            Logger::log('email', sprintf(
                 'handle_reservation_created: get_context returned null for reservation %d, order %d — staff email skipped, will retry on reservation_paid',
                 $reservation_id,
                 $order_id
@@ -190,7 +190,7 @@ final class Emails implements HookableInterface
                     $order->save();
                 }
             } else {
-                Logger::log(sprintf(
+                Logger::log('email', sprintf(
                     'handle_reservation_created: staff email send returned false for reservation %d, order %d — will retry on reservation_paid',
                     $reservation_id,
                     $order_id
@@ -210,7 +210,7 @@ final class Emails implements HookableInterface
         $context = $this->get_context($reservation_id, $order_id);
 
         if (! $context) {
-            Logger::log(sprintf(
+            Logger::log('email', sprintf(
                 'handle_reservation_paid: get_context returned null for reservation %d, order %d',
                 $reservation_id,
                 $order_id
@@ -244,7 +244,7 @@ final class Emails implements HookableInterface
             $already_notified = $order instanceof WC_Order && $order->get_meta('_fp_exp_staff_notified') === '1';
 
             if (! $already_notified) {
-                Logger::log(sprintf(
+                Logger::log('email', sprintf(
                     'handle_reservation_paid: staff notification not sent on created — sending now for reservation %d, order %d',
                     $reservation_id,
                     $order_id
@@ -254,6 +254,17 @@ final class Emails implements HookableInterface
                 if ($sent && $order instanceof WC_Order) {
                     $order->update_meta_data('_fp_exp_staff_notified', '1');
                     $order->save();
+                    Logger::log('email', sprintf(
+                        'handle_reservation_paid: fallback staff email SENT for reservation %d, order %d',
+                        $reservation_id,
+                        $order_id
+                    ));
+                } elseif (! $sent) {
+                    Logger::log('email', sprintf(
+                        'handle_reservation_paid: fallback staff email FAILED for reservation %d, order %d',
+                        $reservation_id,
+                        $order_id
+                    ));
                 }
             }
         }
@@ -272,7 +283,7 @@ final class Emails implements HookableInterface
         $context = $this->get_context($reservation_id, $order_id);
 
         if (! $context) {
-            Logger::log(sprintf(
+            Logger::log('email', sprintf(
                 'handle_reservation_cancelled: get_context returned null for reservation %d, order %d',
                 $reservation_id,
                 $order_id
@@ -508,28 +519,28 @@ final class Emails implements HookableInterface
         $reservation = Reservations::get($reservation_id);
 
         if (! $reservation) {
-            Logger::log(sprintf('get_context: reservation %d not found', $reservation_id));
+            Logger::log('email', sprintf('get_context: reservation %d not found', $reservation_id));
             return null;
         }
 
         $order = wc_get_order($order_id);
 
         if (! $order instanceof WC_Order) {
-            Logger::log(sprintf('get_context: order %d not found for reservation %d', $order_id, $reservation_id));
+            Logger::log('email', sprintf('get_context: order %d not found for reservation %d', $order_id, $reservation_id));
             return null;
         }
 
         $experience = get_post(absint($reservation['experience_id'] ?? 0));
 
         if (! $experience) {
-            Logger::log(sprintf('get_context: experience %d not found for reservation %d', absint($reservation['experience_id'] ?? 0), $reservation_id));
+            Logger::log('email', sprintf('get_context: experience %d not found for reservation %d', absint($reservation['experience_id'] ?? 0), $reservation_id));
             return null;
         }
 
         $slot = Slots::get_slot(absint($reservation['slot_id'] ?? 0));
 
         if (! $slot) {
-            Logger::log(sprintf('get_context: slot %d not found for reservation %d', absint($reservation['slot_id'] ?? 0), $reservation_id));
+            Logger::log('email', sprintf('get_context: slot %d not found for reservation %d', absint($reservation['slot_id'] ?? 0), $reservation_id));
             return null;
         }
 

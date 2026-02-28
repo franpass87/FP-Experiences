@@ -48,7 +48,7 @@ final class EmailSchedulerService
         $end_timestamp = isset($context['slot']['end_timestamp']) ? (int) $context['slot']['end_timestamp'] : $start_timestamp;
 
         if ($start_timestamp <= 0) {
-            Logger::log(sprintf(
+            Logger::log('email', sprintf(
                 'EmailScheduler: cannot schedule notifications, invalid start_timestamp for reservation %d, order %d',
                 $reservation_id,
                 $order_id

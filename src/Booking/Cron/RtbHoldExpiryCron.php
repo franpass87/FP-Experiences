@@ -74,7 +74,7 @@ final class RtbHoldExpiryCron implements HookableInterface
         }
 
         if ($count > 0) {
-            Logger::log(sprintf('RTB hold expiry: %d reservation(s) cancelled', $count));
+            Logger::log('cron', sprintf('RTB hold expiry: %d reservation(s) cancelled', $count));
         }
     }
 }
