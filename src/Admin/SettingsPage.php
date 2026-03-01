@@ -403,6 +403,112 @@ final class SettingsPage implements HookableInterface
             ]
         );
 
+        // --- Mail provider & SMTP ---
+        add_settings_section(
+            'fp_exp_section_email_provider',
+            esc_html__('Provider email', 'fp-experiences'),
+            [$this, 'render_email_provider_help'],
+            'fp_exp_emails_senders'
+        );
+
+        add_settings_field(
+            'fp_exp_emails_provider',
+            esc_html__('Provider invio', 'fp-experiences'),
+            [$this, 'render_email_provider_field'],
+            'fp_exp_emails_senders',
+            'fp_exp_section_email_provider'
+        );
+
+        add_settings_field(
+            'fp_exp_emails_from_email',
+            esc_html__('Email mittente (From)', 'fp-experiences'),
+            [$this, 'render_email_nested_field'],
+            'fp_exp_emails_senders',
+            'fp_exp_section_email_provider',
+            [
+                'path' => ['from_email'],
+                'description' => esc_html__('Indirizzo email usato come mittente. Se vuoto, usa l\'email struttura.', 'fp-experiences'),
+                'placeholder' => 'noreply@example.com',
+            ]
+        );
+
+        add_settings_field(
+            'fp_exp_emails_from_name',
+            esc_html__('Nome mittente (From)', 'fp-experiences'),
+            [$this, 'render_email_text_field'],
+            'fp_exp_emails_senders',
+            'fp_exp_section_email_provider',
+            [
+                'path' => ['from_name'],
+                'description' => esc_html__('Nome visualizzato come mittente. Se vuoto, usa il nome del sito.', 'fp-experiences'),
+                'placeholder' => 'La Mia Struttura',
+            ]
+        );
+
+        add_settings_field(
+            'fp_exp_emails_smtp_host',
+            esc_html__('SMTP Host', 'fp-experiences'),
+            [$this, 'render_email_text_field'],
+            'fp_exp_emails_senders',
+            'fp_exp_section_email_provider',
+            [
+                'path' => ['smtp', 'host'],
+                'placeholder' => 'smtp.gmail.com',
+                'description' => esc_html__('Visibile solo se il provider è "SMTP".', 'fp-experiences'),
+                'class' => 'fp-exp-smtp-field',
+            ]
+        );
+
+        add_settings_field(
+            'fp_exp_emails_smtp_port',
+            esc_html__('SMTP Porta', 'fp-experiences'),
+            [$this, 'render_email_number_field'],
+            'fp_exp_emails_senders',
+            'fp_exp_section_email_provider',
+            [
+                'path' => ['smtp', 'port'],
+                'min' => 1,
+                'max' => 65535,
+                'step' => 1,
+                'placeholder' => '587',
+                'class' => 'fp-exp-smtp-field',
+            ]
+        );
+
+        add_settings_field(
+            'fp_exp_emails_smtp_encryption',
+            esc_html__('Crittografia SMTP', 'fp-experiences'),
+            [$this, 'render_email_smtp_encryption_field'],
+            'fp_exp_emails_senders',
+            'fp_exp_section_email_provider',
+            ['class' => 'fp-exp-smtp-field']
+        );
+
+        add_settings_field(
+            'fp_exp_emails_smtp_username',
+            esc_html__('SMTP Username', 'fp-experiences'),
+            [$this, 'render_email_text_field'],
+            'fp_exp_emails_senders',
+            'fp_exp_section_email_provider',
+            [
+                'path' => ['smtp', 'username'],
+                'placeholder' => '',
+                'class' => 'fp-exp-smtp-field',
+            ]
+        );
+
+        add_settings_field(
+            'fp_exp_emails_smtp_password',
+            esc_html__('SMTP Password', 'fp-experiences'),
+            [$this, 'render_email_password_field'],
+            'fp_exp_emails_senders',
+            'fp_exp_section_email_provider',
+            [
+                'path' => ['smtp', 'password'],
+                'class' => 'fp-exp-smtp-field',
+            ]
+        );
+
         add_settings_section(
             'fp_exp_section_email_branding',
             esc_html__('Email branding', 'fp-experiences'),
@@ -1116,6 +1222,26 @@ final class SettingsPage implements HookableInterface
             $subjects_sanitized[$key] = sanitize_text_field((string) ($subjects[$key] ?? ''));
         }
 
+        // provider & from
+        $provider = sanitize_key((string) ($value['provider'] ?? 'wordpress'));
+        if (! in_array($provider, ['wordpress', 'smtp', 'brevo'], true)) {
+            $provider = 'wordpress';
+        }
+        $from_email = sanitize_email((string) ($value['from_email'] ?? ''));
+        $from_name  = sanitize_text_field((string) ($value['from_name'] ?? ''));
+
+        // SMTP settings
+        $smtp_raw = isset($value['smtp']) && is_array($value['smtp']) ? $value['smtp'] : [];
+        $smtp = [
+            'host'       => sanitize_text_field((string) ($smtp_raw['host'] ?? '')),
+            'port'       => max(1, min(65535, (int) ($smtp_raw['port'] ?? 587))),
+            'encryption' => in_array(($smtp_raw['encryption'] ?? 'tls'), ['tls', 'ssl', 'none'], true)
+                ? (string) $smtp_raw['encryption']
+                : 'tls',
+            'username'   => sanitize_text_field((string) ($smtp_raw['username'] ?? '')),
+            'password'   => (string) ($smtp_raw['password'] ?? ''),
+        ];
+
         $result = [
             'sender' => [
                 'structure' => $structure,
@@ -1128,12 +1254,11 @@ final class SettingsPage implements HookableInterface
             'types' => $types_sanitized,
             'schedule' => $schedule_sanitized,
             'subjects' => $subjects_sanitized,
+            'provider'   => $provider,
+            'from_email' => $from_email,
+            'from_name'  => $from_name,
+            'smtp'       => $smtp,
         ];
-
-        // Debug logging per il valore finale che viene salvato
-        if (defined('WP_DEBUG') && WP_DEBUG) {
-            error_log('[FP-Exp Emails] Final sanitized value to save: ' . print_r($result, true));
-        }
 
         return $result;
     }
@@ -1718,7 +1843,24 @@ final class SettingsPage implements HookableInterface
             return;
         }
 
-        $emails = new Emails();
+        $emails = null;
+        try {
+            $kernel = \FP_Exp\Core\Bootstrap\Bootstrap::kernel();
+            if ($kernel !== null) {
+                $emails = $kernel->container()->make(Emails::class);
+            }
+        } catch (\Throwable $e) {
+            // fall through
+        }
+        if ($emails === null) {
+            $options = $this->getOptions();
+            $mailer = new \FP_Exp\Booking\Email\Mailer($options);
+            $emails = new Emails(
+                $options,
+                new \FP_Exp\Booking\Email\Senders\CustomerEmailSender($mailer),
+                new \FP_Exp\Booking\Email\Senders\StaffEmailSender($mailer)
+            );
+        }
         $templates = [
             'customer-confirmation' => esc_html__('Conferma cliente', 'fp-experiences'),
             'customer-reminder' => esc_html__('Promemoria cliente', 'fp-experiences'),
@@ -1942,6 +2084,117 @@ final class SettingsPage implements HookableInterface
             ]
         );
         echo '<p class="description">' . esc_html__('Puoi usare segnaposto come {experience_title}.', 'fp-experiences') . '</p>';
+    }
+
+    public function render_email_provider_help(): void
+    {
+        echo '<p>' . esc_html__('Scegli come inviare le email del plugin: tramite WordPress (wp_mail), un server SMTP personalizzato o Brevo API.', 'fp-experiences') . '</p>';
+    }
+
+    public function render_email_provider_field(): void
+    {
+        $settings = $this->getOptions()->get('fp_exp_emails', []);
+        $settings = is_array($settings) ? $settings : [];
+        $current = $settings['provider'] ?? 'wordpress';
+
+        $choices = [
+            'wordpress' => esc_html__('WordPress (wp_mail)', 'fp-experiences'),
+            'smtp'      => esc_html__('SMTP personalizzato', 'fp-experiences'),
+            'brevo'     => esc_html__('Brevo (API)', 'fp-experiences'),
+        ];
+
+        echo '<select name="fp_exp_emails[provider]" id="fp_exp_emails_provider">';
+        foreach ($choices as $value => $label) {
+            $selected = selected($current, $value, false);
+            echo '<option value="' . esc_attr($value) . '"' . $selected . '>' . $label . '</option>';
+        }
+        echo '</select>';
+        echo '<p class="description">' . esc_html__('Se scegli "SMTP personalizzato", compila i campi sottostanti. Se scegli "Brevo", configura la API key nel tab Brevo.', 'fp-experiences') . '</p>';
+    }
+
+    public function render_email_text_field(array $args): void
+    {
+        $path = isset($args['path']) && is_array($args['path']) ? $args['path'] : [];
+        if (! $path) {
+            return;
+        }
+
+        $settings = $this->getOptions()->get('fp_exp_emails', []);
+        $settings = is_array($settings) ? $settings : [];
+
+        $cursor = $settings;
+        foreach ($path as $segment) {
+            if (! isset($cursor[$segment])) {
+                $cursor = null;
+                break;
+            }
+            $cursor = $cursor[$segment];
+        }
+        $value = is_string($cursor) ? $cursor : '';
+
+        $name = 'fp_exp_emails';
+        foreach ($path as $segment) {
+            $name .= '[' . esc_attr($segment) . ']';
+        }
+
+        $placeholder = $args['placeholder'] ?? '';
+        $css_class = $args['class'] ?? '';
+
+        echo '<input type="text" class="regular-text ' . esc_attr($css_class) . '" name="' . $name . '" value="' . esc_attr($value) . '" placeholder="' . esc_attr($placeholder) . '" />';
+        if (! empty($args['description'])) {
+            echo '<p class="description">' . esc_html((string) $args['description']) . '</p>';
+        }
+    }
+
+    public function render_email_password_field(array $args): void
+    {
+        $path = isset($args['path']) && is_array($args['path']) ? $args['path'] : [];
+        if (! $path) {
+            return;
+        }
+
+        $settings = $this->getOptions()->get('fp_exp_emails', []);
+        $settings = is_array($settings) ? $settings : [];
+
+        $cursor = $settings;
+        foreach ($path as $segment) {
+            if (! isset($cursor[$segment])) {
+                $cursor = null;
+                break;
+            }
+            $cursor = $cursor[$segment];
+        }
+        $value = is_string($cursor) ? $cursor : '';
+
+        $name = 'fp_exp_emails';
+        foreach ($path as $segment) {
+            $name .= '[' . esc_attr($segment) . ']';
+        }
+
+        $css_class = $args['class'] ?? '';
+
+        echo '<input type="password" class="regular-text ' . esc_attr($css_class) . '" name="' . $name . '" value="' . esc_attr($value) . '" autocomplete="new-password" />';
+    }
+
+    public function render_email_smtp_encryption_field(array $args): void
+    {
+        $settings = $this->getOptions()->get('fp_exp_emails', []);
+        $settings = is_array($settings) ? $settings : [];
+        $current = $settings['smtp']['encryption'] ?? 'tls';
+        $css_class = $args['class'] ?? '';
+
+        $choices = [
+            'tls'  => 'TLS',
+            'ssl'  => 'SSL',
+            'none' => esc_html__('Nessuna', 'fp-experiences'),
+        ];
+
+        echo '<select name="fp_exp_emails[smtp][encryption]" class="' . esc_attr($css_class) . '">';
+        foreach ($choices as $value => $label) {
+            $selected = selected($current, $value, false);
+            echo '<option value="' . esc_attr($value) . '"' . $selected . '>' . $label . '</option>';
+        }
+        echo '</select>';
     }
 
     public function render_branding_help(): void

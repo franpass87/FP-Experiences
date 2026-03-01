@@ -566,21 +566,15 @@ final class WooCommerceProduct implements HookableInterface
             return $enabled;
         }
 
-        if ('fp-exp' === $order->get_created_via()
-            || 'fp-exp-rtb' === $order->get_created_via()
-            || 'fp-exp-gift' === $order->get_created_via()
-        ) {
+        $created_via = $order->get_created_via();
+
+        // RTB and Gift have dedicated email flows — disable WC emails for those.
+        if ('fp-exp-rtb' === $created_via || 'fp-exp-gift' === $created_via) {
             return false;
         }
 
-        foreach ($order->get_items() as $item) {
-            if ($item->get_meta('_fp_exp_item_type')
-                || $item->get_meta('experience_id')
-                || $item->get_meta('fp_exp_experience_id')
-            ) {
-                return false;
-            }
-        }
+        // Standard booking orders (fp-exp) now receive BOTH the WC order email
+        // AND the plugin's experience-specific email, so we let WC emails through.
 
         return $enabled;
     }

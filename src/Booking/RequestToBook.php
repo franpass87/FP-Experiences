@@ -6,6 +6,7 @@ namespace FP_Exp\Booking;
 
 use Exception;
 use FP_Exp\Core\Hook\HookableInterface;
+use FP_Exp\Booking\Email\Mailer;
 use FP_Exp\Booking\Email\Senders\CustomerEmailSender;
 use FP_Exp\Booking\Email\Templates\RtbApprovedTemplate;
 use FP_Exp\Booking\Email\Templates\RtbDeclinedTemplate;
@@ -51,7 +52,7 @@ use function wc_create_order;
 use function wc_get_order;
 use function wp_date;
 use function wp_json_encode;
-use function wp_mail;
+
 use function wp_verify_nonce;
 
 use const MINUTE_IN_SECONDS;
@@ -59,17 +60,14 @@ use const MINUTE_IN_SECONDS;
 final class RequestToBook implements HookableInterface
 {
     private Brevo $brevo;
+    private Mailer $mailer;
+    private ?CustomerEmailSender $customer_sender = null;
     private ?OptionsInterface $options = null;
 
-    /**
-     * RequestToBook constructor.
-     *
-     * @param Brevo $brevo Brevo integration
-     * @param OptionsInterface|null $options Optional OptionsInterface (will try to get from container if not provided)
-     */
-    public function __construct(Brevo $brevo, ?OptionsInterface $options = null)
+    public function __construct(Brevo $brevo, Mailer $mailer, ?OptionsInterface $options = null)
     {
         $this->brevo = $brevo;
+        $this->mailer = $mailer;
         $this->options = $options;
     }
 
@@ -1015,16 +1013,14 @@ final class RequestToBook implements HookableInterface
      */
     private function notify_customer(array $context, string $stage): void
     {
-        // Recupera la locale del cliente dalla reservation
         $reservation_id = (int) ($context['reservation_id'] ?? 0);
         $customer_locale = '';
-        
+
         if ($reservation_id > 0) {
             $reservation = Reservations::get($reservation_id);
             $customer_locale = $reservation['locale'] ?? '';
         }
 
-        // Switcha alla lingua del cliente per le email
         $original_locale = get_locale();
         if ($customer_locale && function_exists('switch_to_locale')) {
             switch_to_locale($customer_locale);
@@ -1035,13 +1031,11 @@ final class RequestToBook implements HookableInterface
         $template_id = isset($templates[$stage]) ? absint($templates[$stage]) : 0;
 
         if ($this->brevo->is_enabled() && $template_id > 0) {
-            // Aggiungi la locale al context per Brevo
             $context['language_locale'] = $customer_locale;
             $context['locale'] = $customer_locale;
-            
+
             $sent = $this->brevo->send_rtb_notification($stage, $context, (int) $context['reservation_id'], $template_id);
             if ($sent) {
-                // Ripristina la locale originale
                 if (function_exists('restore_current_locale') && $customer_locale && $customer_locale !== $original_locale) {
                     restore_current_locale();
                 }
@@ -1049,10 +1043,12 @@ final class RequestToBook implements HookableInterface
             }
         }
 
-        // Usa i template HTML strutturati per tutti gli stage RTB
         $context['language'] = $customer_locale ?: 'it';
-        $sender = new CustomerEmailSender($this->brevo);
-        
+
+        if ($this->customer_sender === null) {
+            $this->customer_sender = new CustomerEmailSender($this->mailer);
+        }
+
         $template = null;
         switch ($stage) {
             case 'request':
@@ -1068,12 +1064,11 @@ final class RequestToBook implements HookableInterface
                 $template = new RtbPaymentRequestTemplate();
                 break;
         }
-        
+
         if ($template !== null) {
-            $sender->send($template, $context, true); // force_send=true per bypassare Brevo e usare sempre il template locale
+            $this->customer_sender->send($template, $context, true);
         }
 
-        // Ripristina la locale originale
         if (function_exists('restore_current_locale') && $customer_locale && $customer_locale !== $original_locale) {
             restore_current_locale();
         }
@@ -1107,14 +1102,12 @@ final class RequestToBook implements HookableInterface
             return;
         }
 
-        // Forza la locale italiana per le email staff
         $original_locale = get_locale();
         if (function_exists('switch_to_locale')) {
             switch_to_locale('it_IT');
         }
 
         $subject = sprintf(
-            /* translators: %s: experience title. */
             __('Nuova richiesta per %s', 'fp-experiences'),
             $context['experience']['title']
         );
@@ -1133,9 +1126,8 @@ final class RequestToBook implements HookableInterface
 
         $body = implode("\n", $lines);
 
-        wp_mail($recipients, $subject, $body);
+        $this->mailer->send($recipients, $subject, $body);
 
-        // Ripristina la locale originale
         if (function_exists('restore_current_locale') && $original_locale !== 'it_IT') {
             restore_current_locale();
         }

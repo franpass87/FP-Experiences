@@ -30,7 +30,7 @@ final class BookingFollowupTemplate extends AbstractEmailTemplate
      */
     protected function getTemplateName(): string
     {
-        return 'customer_followup';
+        return 'customer_post_experience';
     }
 
     /**

@@ -52,6 +52,11 @@ final class CheckAvailabilityUseCase
 
         // Apply lead_time filter: exclude slots that start before the cutoff
         $lead_time_hours = (int) $this->experienceRepository->getMeta($experience_id, '_fp_lead_time_hours', 0);
+        if ($lead_time_hours === 0) {
+            $availability = $this->experienceRepository->getMeta($experience_id, '_fp_exp_availability', []);
+            $availability = is_array($availability) ? $availability : [];
+            $lead_time_hours = isset($availability['lead_time_hours']) ? (int) $availability['lead_time_hours'] : 0;
+        }
         $cutoff = null;
         if ($lead_time_hours > 0) {
             $now = new DateTimeImmutable('now', new DateTimeZone('UTC'));

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace FP_Exp\Gift\Email;
 
+use FP_Exp\Booking\Email\Mailer;
 use FP_Exp\Gift\Email\Templates\VoucherEmailTemplate;
 use FP_Exp\Gift\Repository\VoucherRepository;
 use FP_Exp\Utils\Helpers;
@@ -11,29 +12,67 @@ use FP_Exp\Utils\Helpers;
 use function add_query_arg;
 use function current_time;
 use function date_i18n;
+use function esc_html;
 use function esc_html__;
+use function esc_url;
 use function get_option;
 use function get_post;
 use function get_permalink;
 use function is_email;
 use function sanitize_email;
+use function sprintf;
+use function strtoupper;
 use function update_post_meta;
-use function wp_mail;
 
 use const MINUTE_IN_SECONDS;
 
 /**
  * Service for sending voucher emails.
  *
- * Handles all email sending for vouchers.
+ * All dispatch goes through the centralised Mailer.
  */
 final class VoucherEmailSender
 {
     private VoucherRepository $repository;
+    private ?Mailer $mailer;
 
-    public function __construct(?VoucherRepository $repository = null)
+    public function __construct($mailerOrRepository = null, ?VoucherRepository $repository = null)
     {
-        $this->repository = $repository ?? new VoucherRepository();
+        if ($mailerOrRepository instanceof Mailer) {
+            $this->mailer = $mailerOrRepository;
+            $this->repository = $repository ?? new VoucherRepository();
+        } elseif ($mailerOrRepository instanceof VoucherRepository) {
+            $this->mailer = null;
+            $this->repository = $mailerOrRepository;
+        } else {
+            $this->mailer = null;
+            $this->repository = $repository ?? new VoucherRepository();
+        }
+    }
+
+    private function getMailer(): Mailer
+    {
+        if ($this->mailer !== null) {
+            return $this->mailer;
+        }
+
+        try {
+            $kernel = \FP_Exp\Core\Bootstrap\Bootstrap::kernel();
+            if ($kernel !== null) {
+                $container = $kernel->container();
+                if ($container->has(Mailer::class)) {
+                    $this->mailer = $container->make(Mailer::class);
+                    return $this->mailer;
+                }
+            }
+        } catch (\Throwable $e) {
+            // fall through
+        }
+
+        $options = new \FP_Exp\Services\Options\Options();
+        $this->mailer = new Mailer($options);
+
+        return $this->mailer;
     }
 
     /**
@@ -71,9 +110,8 @@ final class VoucherEmailSender
 
         $subject = $template->getSubject($data);
         $body = $template->getBody($data);
-        $headers = $template->getHeaders();
 
-        wp_mail($email, $subject, $body, $headers);
+        $this->getMailer()->send([$email], $subject, $body);
 
         // Send copy to purchaser if different
         $purchaser = $this->repository->getPurchaser($voucher_id);
@@ -82,10 +120,9 @@ final class VoucherEmailSender
         if ($purchaser_email && $purchaser_email !== $email && is_email($purchaser_email)) {
             $copy = '<p>' . esc_html__('Your gift voucher was sent to the recipient.', 'fp-experiences') . '</p>';
             $copy .= '<p>' . esc_html__('Voucher code:', 'fp-experiences') . ' <strong>' . esc_html(strtoupper($code->toString())) . '</strong></p>';
-            wp_mail($purchaser_email, esc_html__('Gift voucher dispatched', 'fp-experiences'), $copy, $headers);
+            $this->getMailer()->send([$purchaser_email], esc_html__('Gift voucher dispatched', 'fp-experiences'), $copy);
         }
 
-        // Update delivery status
         $delivery = $this->repository->getDelivery($voucher_id);
         $delivery['sent_at'] = current_time('timestamp', true);
         $delivery['send_at'] = 0;
@@ -116,7 +153,6 @@ final class VoucherEmailSender
 
         $subject = esc_html__('Reminder: your experience gift is waiting', 'fp-experiences');
         $message = '<p>' . sprintf(
-            /* translators: %d: days left. */
             esc_html__('Your gift voucher will expire in %d day(s).', 'fp-experiences'),
             $offset
         ) . '</p>';
@@ -124,7 +160,7 @@ final class VoucherEmailSender
         $message .= '<p>' . esc_html__('Valid until:', 'fp-experiences') . ' ' . esc_html(date_i18n(get_option('date_format', 'Y-m-d'), $valid_until)) . '</p>';
         $message .= '<p><a href="' . esc_url($redeem_link) . '">' . esc_html__('Schedule your experience', 'fp-experiences') . '</a></p>';
 
-        wp_mail($email, $subject, $message, ['Content-Type: text/html; charset=UTF-8']);
+        $this->getMailer()->send([$email], $subject, $message);
     }
 
     /**
@@ -142,7 +178,7 @@ final class VoucherEmailSender
         $subject = esc_html__('Your experience gift has expired', 'fp-experiences');
         $message = '<p>' . esc_html__('Il voucher collegato alla tua esperienza FP è scaduto. Contatta l\'operatore per assistenza.', 'fp-experiences') . '</p>';
 
-        wp_mail($email, $subject, $message, ['Content-Type: text/html; charset=UTF-8']);
+        $this->getMailer()->send([$email], $subject, $message);
     }
 
     /**
@@ -163,7 +199,7 @@ final class VoucherEmailSender
         $subject = esc_html__('Your gift experience is booked', 'fp-experiences');
         $message = '<p>' . esc_html__('Your gift voucher has been successfully redeemed.', 'fp-experiences') . '</p>';
 
-        if ($experience instanceof WP_Post) {
+        if ($experience instanceof \WP_Post) {
             $message .= '<p><strong>' . esc_html($experience->post_title) . '</strong></p>';
         }
 
@@ -175,21 +211,6 @@ final class VoucherEmailSender
             }
         }
 
-        wp_mail($email, $subject, $message, ['Content-Type: text/html; charset=UTF-8']);
+        $this->getMailer()->send([$email], $subject, $message);
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -8,12 +8,13 @@ use FP_Exp\Booking\Email\Templates\EmailTemplateInterface;
 use FP_Exp\Utils\Logger;
 
 use function get_class;
+use function implode;
 use function sprintf;
 
 /**
  * Email sender for staff/admin emails.
  *
- * Always sends via wp_mail (no Brevo delegation).
+ * Always sends locally (never delegates to Brevo).
  */
 final class StaffEmailSender extends AbstractEmailSender
 {

@@ -4,7 +4,11 @@ declare(strict_types=1);
 
 namespace FP_Exp\Tests\Booking;
 
+use FP_Exp\Booking\Email\Mailer;
+use FP_Exp\Booking\Email\Senders\CustomerEmailSender;
+use FP_Exp\Booking\Email\Senders\StaffEmailSender;
 use FP_Exp\Booking\Emails;
+use FP_Exp\Services\Options\OptionsInterface;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 
@@ -17,7 +21,14 @@ final class EmailsLanguageTest extends TestCase
     {
         parent::setUp();
 
-        $this->emails = new Emails();
+        $options = $this->createMock(OptionsInterface::class);
+        $options->method('get')->willReturn([]);
+
+        $mailer = $this->createMock(Mailer::class);
+        $customer = $this->createMock(CustomerEmailSender::class);
+        $staff = $this->createMock(StaffEmailSender::class);
+
+        $this->emails = new Emails($options, $customer, $staff);
         $this->reflection = new ReflectionClass(Emails::class);
     }
 

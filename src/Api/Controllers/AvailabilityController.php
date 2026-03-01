@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace FP_Exp\Api\Controllers;
 
 use DateTimeImmutable;
+use DateTimeZone;
 use FP_Exp\Api\Middleware\ErrorHandlingMiddleware;
 use FP_Exp\Application\Booking\CheckAvailabilityUseCase;
 use FP_Exp\Booking\AvailabilityService;
@@ -69,8 +70,9 @@ final class AvailabilityController
         $useCase = $this->getCheckAvailabilityUseCase();
         if ($useCase !== null) {
             try {
-                $startDateTime = new DateTimeImmutable($start . ' 00:00:00');
-                $endDateTime = new DateTimeImmutable($end . ' 23:59:59');
+                $tz = new DateTimeZone('UTC');
+                $startDateTime = new DateTimeImmutable($start . ' 00:00:00', $tz);
+                $endDateTime = new DateTimeImmutable($end . ' 23:59:59', $tz);
                 $availability = $useCase->execute($experience_id, $startDateTime, $endDateTime);
                 
                 // Normalizza il formato per compatibilità con il frontend

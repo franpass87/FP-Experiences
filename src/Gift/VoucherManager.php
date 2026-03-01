@@ -15,6 +15,7 @@ use FP_Exp\Booking\Slots;
 use FP_Exp\Gift\Cron\VoucherDeliveryCron;
 use FP_Exp\Gift\Cron\VoucherReminderCron;
 use FP_Exp\Gift\Delivery\VoucherDeliveryService;
+use FP_Exp\Booking\Email\Mailer;
 use FP_Exp\Gift\Email\VoucherEmailSender;
 use FP_Exp\Gift\Integration\WooCommerce\GiftProductManager;
 use FP_Exp\Gift\Integration\WooCommerce\WooCommerceIntegration;
@@ -76,7 +77,7 @@ use function update_option;
 use function wp_get_scheduled_event;
 use function wp_date;
 use function wp_insert_post;
-use function wp_mail;
+
 use function wp_schedule_event;
 use function wp_schedule_single_event;
 use function wp_unschedule_event;
@@ -100,6 +101,8 @@ final class VoucherManager implements HookableInterface
 {
     private const CRON_HOOK = 'fp_exp_gift_send_reminders';
     private const DELIVERY_CRON_HOOK = 'fp_exp_gift_send_scheduled_voucher';
+
+    private ?Mailer $mailer_instance = null;
 
     // Refactored services
     private ?VoucherCreationService $creation_service = null;
@@ -150,6 +153,29 @@ final class VoucherManager implements HookableInterface
         // Fallback to direct instantiation
         $this->options = new \FP_Exp\Services\Options\Options();
         return $this->options;
+    }
+
+    private function resolveMailer(): Mailer
+    {
+        if ($this->mailer_instance !== null) {
+            return $this->mailer_instance;
+        }
+
+        try {
+            $kernel = \FP_Exp\Core\Bootstrap\Bootstrap::kernel();
+            if ($kernel !== null) {
+                $container = $kernel->container();
+                if ($container->has(Mailer::class)) {
+                    $this->mailer_instance = $container->make(Mailer::class);
+                    return $this->mailer_instance;
+                }
+            }
+        } catch (\Throwable $e) {
+            // fall through
+        }
+
+        $this->mailer_instance = new Mailer($this->getOptions());
+        return $this->mailer_instance;
     }
 
     /**
@@ -1013,8 +1039,7 @@ final class VoucherManager implements HookableInterface
             }
         }
 
-        $headers = ['Content-Type: text/html; charset=UTF-8'];
-        wp_mail($email, $subject, $message, $headers);
+        $this->resolveMailer()->send([$email], $subject, $message);
 
         $purchaser = get_post_meta($voucher_id, '_fp_exp_gift_purchaser', true);
         $purchaser = is_array($purchaser) ? $purchaser : [];
@@ -1022,7 +1047,7 @@ final class VoucherManager implements HookableInterface
         if ($purchaser_email && $purchaser_email !== $email) {
             $copy = '<p>' . esc_html__('Your gift voucher was sent to the recipient.', 'fp-experiences') . '</p>';
             $copy .= '<p>' . esc_html__('Voucher code:', 'fp-experiences') . ' <strong>' . esc_html(strtoupper($code)) . '</strong></p>';
-            wp_mail($purchaser_email, esc_html__('Gift voucher dispatched', 'fp-experiences'), $copy, $headers);
+            $this->resolveMailer()->send([$purchaser_email], esc_html__('Gift voucher dispatched', 'fp-experiences'), $copy);
         }
 
         $delivery = get_post_meta($voucher_id, '_fp_exp_gift_delivery', true);
@@ -1057,7 +1082,7 @@ final class VoucherManager implements HookableInterface
         $message .= '<p>' . esc_html__('Valid until:', 'fp-experiences') . ' ' . esc_html(date_i18n(get_option('date_format', 'Y-m-d'), $valid_until)) . '</p>';
         $message .= '<p><a href="' . esc_url($redeem_link) . '">' . esc_html__('Schedule your experience', 'fp-experiences') . '</a></p>';
 
-        wp_mail($email, $subject, $message, ['Content-Type: text/html; charset=UTF-8']);
+        $this->resolveMailer()->send([$email], $subject, $message);
     }
 
     private function send_expired_email(int $voucher_id): void
@@ -1072,7 +1097,7 @@ final class VoucherManager implements HookableInterface
         $subject = esc_html__('Your experience gift has expired', 'fp-experiences');
         $message = '<p>' . esc_html__('Il voucher collegato alla tua esperienza FP è scaduto. Contatta l’operatore per assistenza.', 'fp-experiences') . '</p>';
 
-        wp_mail($email, $subject, $message, ['Content-Type: text/html; charset=UTF-8']);
+        $this->resolveMailer()->send([$email], $subject, $message);
     }
 
     private function send_redeemed_email(int $voucher_id, int $order_id, array $slot): void
@@ -1098,7 +1123,7 @@ final class VoucherManager implements HookableInterface
             }
         }
 
-        wp_mail($email, $subject, $message, ['Content-Type: text/html; charset=UTF-8']);
+        $this->resolveMailer()->send([$email], $subject, $message);
     }
 
     /**

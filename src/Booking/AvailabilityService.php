@@ -112,9 +112,12 @@ final class AvailabilityService
             ? absint((string) $availability_meta['buffer_after_minutes']) 
             : 0;
         
-        // Leggi lead_time dai meta separati (se presenti)
+        // Leggi lead_time dai meta separati (se presenti), fallback su _fp_exp_availability
         $lead_time = absint(get_post_meta($experience_id, '_fp_lead_time_hours', true));
-        
+        if ($lead_time === 0 && is_array($availability_meta) && isset($availability_meta['lead_time_hours'])) {
+            $lead_time = absint($availability_meta['lead_time_hours']);
+        }
+
         Helpers::log_debug('availability', 'Reading recurrence availability configuration', [
             'experience_id' => $experience_id,
             'frequency' => $frequency,
@@ -348,6 +351,9 @@ final class AvailabilityService
         $custom = isset($availability['custom_slots']) && is_array($availability['custom_slots']) ? $availability['custom_slots'] : [];
         $capacity = isset($availability['slot_capacity']) ? absint((string) $availability['slot_capacity']) : 0;
         $lead_time = isset($availability['lead_time_hours']) ? absint((string) $availability['lead_time_hours']) : 0;
+        if ($lead_time === 0) {
+            $lead_time = absint(get_post_meta($experience_id, '_fp_lead_time_hours', true));
+        }
         $buffer_before = isset($availability['buffer_before_minutes']) ? absint((string) $availability['buffer_before_minutes']) : 0;
         $buffer_after = isset($availability['buffer_after_minutes']) ? absint((string) $availability['buffer_after_minutes']) : 0;
         $recurrence_start_date = isset($availability['start_date']) ? sanitize_text_field((string) $availability['start_date']) : '';
