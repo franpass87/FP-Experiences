@@ -462,6 +462,8 @@ final class Emails implements HookableInterface
         }
 
         $logo = isset($branding['logo']) ? esc_url((string) $branding['logo']) : '';
+        $logo_width  = isset($branding['logo_width']) ? (int) $branding['logo_width'] : 0;
+        $logo_height = isset($branding['logo_height']) ? (int) $branding['logo_height'] : 0;
         $header_text = isset($branding['header_text']) ? trim((string) $branding['header_text']) : '';
         $footer_text = isset($branding['footer_text']) ? trim((string) $branding['footer_text']) : '';
 
@@ -471,6 +473,10 @@ final class Emails implements HookableInterface
             $header_text = $site_name;
         }
 
+        $logo_style = 'margin:0 auto 12px;display:block;';
+        $logo_style .= $logo_width > 0 ? 'max-width:' . $logo_width . 'px;' : 'max-width:180px;';
+        $logo_style .= $logo_height > 0 ? 'max-height:' . $logo_height . 'px;width:auto;height:auto;' : 'height:auto;';
+
         ob_start();
         ?>
         <div style="margin:0;padding:0;background-color:#f1f5f9;">
@@ -478,7 +484,7 @@ final class Emails implements HookableInterface
                 <div style="border-radius:24px;overflow:hidden;background-color:#ffffff;box-shadow:0 24px 50px rgba(15,23,42,0.12);">
                     <div style="background:linear-gradient(135deg,#0b7285 0%,#0f4c81 100%);padding:24px 32px;text-align:center;color:#ffffff;font-family:'Helvetica Neue',Arial,sans-serif;">
                         <?php if ($logo) : ?>
-                            <img src="<?php echo esc_url($logo); ?>" alt="<?php echo esc_attr($header_text); ?>" style="max-width:180px;height:auto;margin:0 auto 12px;display:block;" />
+                            <img src="<?php echo esc_url($logo); ?>" alt="<?php echo esc_attr($header_text); ?>" style="<?php echo esc_attr($logo_style); ?>" />
                         <?php endif; ?>
                         <?php if ($header_text) : ?>
                             <p style="margin:0;font-size:18px;font-weight:600;letter-spacing:0.3px;"><?php echo esc_html($header_text); ?></p>
@@ -841,7 +847,11 @@ final class Emails implements HookableInterface
             'addons' => [
                 ['label' => $is_italian ? 'Degustazione extra' : 'Extra tasting', 'quantity' => 1],
             ],
-            'totals' => ['pax_total' => 3, 'gross' => 180.0, 'tax' => 0.0],
+            'totals' => ['pax_total' => 3, 'gross' => 180.0, 'tax' => 0.0, 'total' => 180.0],
+            'decline_reason' => $is_italian
+                ? 'La data richiesta non è più disponibile.'
+                : 'The requested date is no longer available.',
+            'payment_url' => 'https://example.com/checkout/pay/?order_id=123',
             'consent' => ['marketing' => true],
             'ics' => ['content' => '', 'filename' => '', 'google_link' => 'https://calendar.google.com/calendar/r/eventedit'],
             'timers' => [

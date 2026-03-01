@@ -12,6 +12,7 @@ use FP_Exp\Application\Settings\GetSettingsUseCase;
 use FP_Exp\Application\Settings\UpdateSettingsUseCase;
 use FP_Exp\Booking\EmailTranslator;
 use FP_Exp\Booking\Emails;
+use FP_Exp\Gift\Email\Templates\VoucherEmailTemplate;
 use FP_Exp\Services\Options\OptionsInterface;
 use FP_Exp\Utils\Helpers;
 use FP_Exp\Utils\Logger;
@@ -509,6 +510,14 @@ final class SettingsPage implements HookableInterface
             ]
         );
 
+        add_settings_field(
+            'fp_exp_emails_test',
+            esc_html__('Test invio', 'fp-experiences'),
+            [$this, 'render_email_test_button'],
+            'fp_exp_emails_senders',
+            'fp_exp_section_email_provider'
+        );
+
         add_settings_section(
             'fp_exp_section_email_branding',
             esc_html__('Email branding', 'fp-experiences'),
@@ -527,6 +536,34 @@ final class SettingsPage implements HookableInterface
                 'type' => 'text',
                 'placeholder' => 'https://example.com/logo.png',
                 'description' => esc_html__('Absolute URL to the logo shown in the email header. Leave empty to display only the title.', 'fp-experiences'),
+            ]
+        );
+
+        add_settings_field(
+            'fp_exp_emails_branding_logo_width',
+            esc_html__('Larghezza logo (px)', 'fp-experiences'),
+            [$this, 'render_emails_branding_field'],
+            'fp_exp_emails_look',
+            'fp_exp_section_email_branding',
+            [
+                'key' => 'logo_width',
+                'type' => 'number',
+                'placeholder' => '180',
+                'description' => esc_html__('Larghezza massima del logo in pixel. Default: 180px.', 'fp-experiences'),
+            ]
+        );
+
+        add_settings_field(
+            'fp_exp_emails_branding_logo_height',
+            esc_html__('Altezza logo (px)', 'fp-experiences'),
+            [$this, 'render_emails_branding_field'],
+            'fp_exp_emails_look',
+            'fp_exp_section_email_branding',
+            [
+                'key' => 'logo_height',
+                'type' => 'number',
+                'placeholder' => '',
+                'description' => esc_html__('Altezza massima del logo in pixel. Lascia vuoto per calcolo automatico proporzionale.', 'fp-experiences'),
             ]
         );
 
@@ -1153,8 +1190,13 @@ final class SettingsPage implements HookableInterface
         }
 
         // Use Sanitizer Strategy for nested fields
+        $logo_width  = (int) ($value['logo_width'] ?? 0);
+        $logo_height = (int) ($value['logo_height'] ?? 0);
+
         return [
-            'logo' => esc_url_raw((string) ($value['logo'] ?? '')),
+            'logo'        => esc_url_raw((string) ($value['logo'] ?? '')),
+            'logo_width'  => $logo_width > 0 ? min($logo_width, 600) : 0,
+            'logo_height' => $logo_height > 0 ? min($logo_height, 600) : 0,
             'header_text' => $this->sanitize_form_field('text', $value['header_text'] ?? ''),
             'footer_text' => $this->sanitize_form_field('textarea', $value['footer_text'] ?? ''),
         ];
@@ -1164,7 +1206,7 @@ final class SettingsPage implements HookableInterface
      * @param mixed $value
      * @return array{
      *   sender: array{structure:string,webmaster:string},
-     *   branding: array{logo:string,header_text:string,footer_text:string}
+     *   branding: array{logo:string,logo_width:int,logo_height:int,header_text:string,footer_text:string}
      * }
      */
     public function sanitize_emails_settings($value): array
@@ -1826,20 +1868,16 @@ final class SettingsPage implements HookableInterface
     }
 
     /**
-     * Render email previews section with all email templates.
+     * Render email previews section with all email templates grouped by category.
      */
     public function render_email_previews_section(): void
     {
-        echo '<p>' . esc_html__('Visualizza le anteprime delle email transazionali. Clicca su ogni tipo per espandere.', 'fp-experiences') . '</p>';
+        echo '<p>' . esc_html__('Panoramica di tutte le email inviate dal plugin, raggruppate per flusso. Clicca su ogni tipo per espandere l\'anteprima.', 'fp-experiences') . '</p>';
 
-        // Verifica che FP_EXP_PLUGIN_DIR sia definita
         if (! defined('FP_EXP_PLUGIN_DIR')) {
-            echo '<p class="fp-exp-email-previews__error" style="color: #d63638;">';
+            echo '<p class="fp-exp-email-previews__error">';
             echo esc_html__('Errore: FP_EXP_PLUGIN_DIR non definita. Le anteprime non possono essere caricate.', 'fp-experiences');
             echo '</p>';
-            if (defined('WP_DEBUG') && WP_DEBUG) {
-                error_log('[FP-Exp Email Previews] FP_EXP_PLUGIN_DIR is not defined');
-            }
             return;
         }
 
@@ -1861,72 +1899,198 @@ final class SettingsPage implements HookableInterface
                 new \FP_Exp\Booking\Email\Senders\StaffEmailSender($mailer)
             );
         }
-        $templates = [
-            'customer-confirmation' => esc_html__('Conferma cliente', 'fp-experiences'),
-            'customer-reminder' => esc_html__('Promemoria cliente', 'fp-experiences'),
-            'customer-post-experience' => esc_html__('Follow-up post-esperienza', 'fp-experiences'),
-            'staff-notification' => esc_html__('Notifica staff', 'fp-experiences'),
-        ];
+
+        $groups = $this->get_email_preview_groups();
         $languages = [
             EmailTranslator::LANGUAGE_IT => esc_html__('Italiano', 'fp-experiences'),
             EmailTranslator::LANGUAGE_EN => esc_html__('English', 'fp-experiences'),
         ];
 
-        // Debug: verifica percorso template
-        if (defined('WP_DEBUG') && WP_DEBUG) {
-            $test_path = FP_EXP_PLUGIN_DIR . 'templates/emails/customer-confirmation.php';
-            error_log('[FP-Exp Email Previews] FP_EXP_PLUGIN_DIR: ' . FP_EXP_PLUGIN_DIR);
-            error_log('[FP-Exp Email Previews] Test template path: ' . $test_path);
-            error_log('[FP-Exp Email Previews] Template exists: ' . (file_exists($test_path) ? 'YES' : 'NO'));
-        }
-
         echo '<div class="fp-exp-email-previews">';
 
-        foreach ($templates as $template => $label) {
-            echo '<details class="fp-exp-email-previews__item">';
-            echo '<summary class="fp-exp-email-previews__summary">' . esc_html($label) . '</summary>';
-            echo '<div class="fp-exp-email-previews__body">';
+        foreach ($groups as $group) {
+            echo '<div class="fp-exp-email-previews__group">';
+            echo '<h3 class="fp-exp-email-previews__group-title">';
+            echo '<span class="dashicons ' . esc_attr($group['icon']) . '"></span> ';
+            echo esc_html($group['title']);
+            echo '</h3>';
 
-            $has_previews = false;
-            foreach ($languages as $code => $language_label) {
-                $preview = $emails->render_preview($template, $code);
+            foreach ($group['templates'] as $tpl) {
+                $slug    = $tpl['slug'];
+                $label   = $tpl['label'];
+                $trigger = $tpl['trigger'];
+                $dest    = $tpl['dest'];
+                $is_gift = 'gift-voucher' === $slug;
 
-                // Debug logging per ogni preview
-                if (defined('WP_DEBUG') && WP_DEBUG) {
-                    $preview_length = strlen(trim($preview));
-                    error_log('[FP-Exp Email Previews] Template: ' . $template . ', Language: ' . $code . ', Preview length: ' . $preview_length);
-                }
+                echo '<details class="fp-exp-email-previews__item">';
+                echo '<summary class="fp-exp-email-previews__summary">';
+                echo '<span class="fp-exp-email-previews__summary-text">' . esc_html($label) . '</span>';
+                echo '<span class="fp-exp-email-previews__dest">' . esc_html($dest) . '</span>';
+                echo '</summary>';
 
-                if ('' === trim($preview)) {
-                    continue;
-                }
-
-                $has_previews = true;
-                echo '<div class="fp-exp-email-previews__preview" data-language="' . esc_attr($code) . '">';
-                echo '<h4 class="fp-exp-email-previews__label">' . esc_html($language_label) . '</h4>';
-                echo '<div class="fp-exp-email-previews__frame">';
-                echo $preview; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+                echo '<div class="fp-exp-email-previews__trigger">';
+                echo '<span class="dashicons dashicons-arrow-right-alt"></span> ';
+                echo esc_html($trigger);
                 echo '</div>';
-                echo '</div>';
-            }
 
-            if (! $has_previews) {
-                // Mostra messaggio più dettagliato
-                $template_path = FP_EXP_PLUGIN_DIR . 'templates/emails/' . $template . '.php';
-                $template_exists = file_exists($template_path);
-                echo '<p class="fp-exp-email-previews__empty">';
-                if (! $template_exists) {
-                    echo esc_html__('Template non trovato: ', 'fp-experiences') . esc_html($template_path);
+                echo '<div class="fp-exp-email-previews__body">';
+
+                $has_previews = false;
+
+                if ($is_gift) {
+                    $this->render_gift_voucher_preview($emails, $languages, $has_previews);
                 } else {
-                    echo esc_html__('Nessuna anteprima disponibile per questo template.', 'fp-experiences');
+                    foreach ($languages as $code => $language_label) {
+                        $preview = $emails->render_preview($slug, $code);
+
+                        if ('' === trim($preview)) {
+                            continue;
+                        }
+
+                        $has_previews = true;
+                        echo '<div class="fp-exp-email-previews__preview" data-language="' . esc_attr($code) . '">';
+                        echo '<h4 class="fp-exp-email-previews__label">' . esc_html($language_label) . '</h4>';
+                        echo '<div class="fp-exp-email-previews__frame">';
+                        echo $preview; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+                        echo '</div>';
+                        echo '</div>';
+                    }
                 }
-                echo '</p>';
+
+                if (! $has_previews) {
+                    $template_path = FP_EXP_PLUGIN_DIR . 'templates/emails/' . $slug . '.php';
+                    $template_exists = file_exists($template_path);
+                    echo '<p class="fp-exp-email-previews__empty">';
+                    if (! $is_gift && ! $template_exists) {
+                        echo esc_html__('Template non trovato: ', 'fp-experiences') . esc_html($template_path);
+                    } else {
+                        echo esc_html__('Nessuna anteprima disponibile per questo template.', 'fp-experiences');
+                    }
+                    echo '</p>';
+                }
+
+                echo '</div>'; // __body
+                echo '</details>';
             }
 
-            echo '</div>';
-            echo '</details>';
+            echo '</div>'; // __group
         }
 
+        echo '</div>';
+    }
+
+    /**
+     * @return list<array{title: string, icon: string, templates: list<array{slug: string, label: string, trigger: string, dest: string}>}>
+     */
+    private function get_email_preview_groups(): array
+    {
+        return [
+            [
+                'title' => __('Prenotazione diretta', 'fp-experiences'),
+                'icon'  => 'dashicons-calendar-alt',
+                'templates' => [
+                    [
+                        'slug'    => 'customer-confirmation',
+                        'label'   => __('Conferma prenotazione', 'fp-experiences'),
+                        'trigger' => __('Inviata al completamento del pagamento dell\'ordine WooCommerce.', 'fp-experiences'),
+                        'dest'    => __('Cliente', 'fp-experiences'),
+                    ],
+                    [
+                        'slug'    => 'customer-reminder',
+                        'label'   => __('Promemoria pre-esperienza', 'fp-experiences'),
+                        'trigger' => __('Inviata automaticamente X ore prima dell\'inizio dell\'esperienza (cron).', 'fp-experiences'),
+                        'dest'    => __('Cliente', 'fp-experiences'),
+                    ],
+                    [
+                        'slug'    => 'customer-post-experience',
+                        'label'   => __('Follow-up post-esperienza', 'fp-experiences'),
+                        'trigger' => __('Inviata automaticamente X ore dopo la fine dell\'esperienza (cron).', 'fp-experiences'),
+                        'dest'    => __('Cliente', 'fp-experiences'),
+                    ],
+                    [
+                        'slug'    => 'staff-notification',
+                        'label'   => __('Notifica staff', 'fp-experiences'),
+                        'trigger' => __('Inviata alla creazione, al pagamento confermato o alla cancellazione di una prenotazione.', 'fp-experiences'),
+                        'dest'    => __('Struttura / Webmaster', 'fp-experiences'),
+                    ],
+                ],
+            ],
+            [
+                'title' => __('Request To Book (RTB)', 'fp-experiences'),
+                'icon'  => 'dashicons-clipboard',
+                'templates' => [
+                    [
+                        'slug'    => 'rtb-request-received',
+                        'label'   => __('Richiesta ricevuta', 'fp-experiences'),
+                        'trigger' => __('Inviata quando il cliente invia una richiesta di prenotazione RTB.', 'fp-experiences'),
+                        'dest'    => __('Cliente', 'fp-experiences'),
+                    ],
+                    [
+                        'slug'    => 'rtb-approved',
+                        'label'   => __('Richiesta approvata', 'fp-experiences'),
+                        'trigger' => __('Inviata quando lo staff approva la richiesta con conferma diretta.', 'fp-experiences'),
+                        'dest'    => __('Cliente', 'fp-experiences'),
+                    ],
+                    [
+                        'slug'    => 'rtb-declined',
+                        'label'   => __('Richiesta rifiutata', 'fp-experiences'),
+                        'trigger' => __('Inviata quando lo staff rifiuta la richiesta RTB.', 'fp-experiences'),
+                        'dest'    => __('Cliente', 'fp-experiences'),
+                    ],
+                    [
+                        'slug'    => 'rtb-payment-request',
+                        'label'   => __('Richiesta di pagamento', 'fp-experiences'),
+                        'trigger' => __('Inviata quando lo staff approva la richiesta con modalita "paga dopo".', 'fp-experiences'),
+                        'dest'    => __('Cliente', 'fp-experiences'),
+                    ],
+                ],
+            ],
+            [
+                'title' => __('Gift Voucher', 'fp-experiences'),
+                'icon'  => 'dashicons-tickets-alt',
+                'templates' => [
+                    [
+                        'slug'    => 'gift-voucher',
+                        'label'   => __('Voucher regalo', 'fp-experiences'),
+                        'trigger' => __('Inviata alla consegna del voucher, immediata o alla data programmata.', 'fp-experiences'),
+                        'dest'    => __('Destinatario regalo', 'fp-experiences'),
+                    ],
+                ],
+            ],
+        ];
+    }
+
+    /**
+     * Render gift voucher preview using VoucherEmailTemplate class.
+     *
+     * @param array<string, string> $languages
+     */
+    private function render_gift_voucher_preview(Emails $emails, array $languages, bool &$has_previews): void
+    {
+        $template = new VoucherEmailTemplate();
+        $demo_data = [
+            'code'                 => 'GIFT-DEMO-2025',
+            'experience_title'     => 'Degustazione in vigna',
+            'experience_permalink' => 'https://example.com/experience/demo',
+            'value'                => 120.0,
+            'currency'             => 'EUR',
+            'valid_until'          => strtotime('+6 months'),
+        ];
+
+        $body = $template->getBody($demo_data);
+
+        if ('' === trim($body)) {
+            return;
+        }
+
+        $has_previews = true;
+
+        $branded = $emails->apply_branding($body, EmailTranslator::LANGUAGE_IT);
+        echo '<div class="fp-exp-email-previews__preview" data-language="' . esc_attr(EmailTranslator::LANGUAGE_IT) . '">';
+        echo '<h4 class="fp-exp-email-previews__label">' . esc_html__('Anteprima', 'fp-experiences') . '</h4>';
+        echo '<div class="fp-exp-email-previews__frame">';
+        echo $branded; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+        echo '</div>';
         echo '</div>';
     }
 
@@ -1956,6 +2120,8 @@ final class SettingsPage implements HookableInterface
 
         if ('textarea' === $type) {
             echo '<textarea name="' . $name . '" rows="4" class="large-text" placeholder="' . esc_attr($placeholder) . '">' . esc_textarea((string) $value) . '</textarea>';
+        } elseif ('number' === $type) {
+            echo '<input type="number" class="small-text" name="' . $name . '" value="' . esc_attr((string) $value) . '" placeholder="' . esc_attr($placeholder) . '" min="0" max="600" step="1" />';
         } else {
             echo '<input type="text" class="regular-text" name="' . $name . '" value="' . esc_attr((string) $value) . '" placeholder="' . esc_attr($placeholder) . '" />';
         }
@@ -2195,6 +2361,19 @@ final class SettingsPage implements HookableInterface
             echo '<option value="' . esc_attr($value) . '"' . $selected . '>' . $label . '</option>';
         }
         echo '</select>';
+    }
+
+    public function render_email_test_button(): void
+    {
+        $nonce = wp_create_nonce('fp_exp_test_email');
+        echo '<div class="fp-exp-test-email-wrap">';
+        echo '<button type="button" class="button button-secondary" id="fp-exp-test-email-btn" data-nonce="' . esc_attr($nonce) . '">';
+        echo esc_html__('Invia email di test', 'fp-experiences');
+        echo '</button>';
+        echo '<span class="spinner" id="fp-exp-test-email-spinner"></span>';
+        echo '</div>';
+        echo '<div class="fp-exp-test-email-result" id="fp-exp-test-email-result"></div>';
+        echo '<p class="description">' . esc_html__('Invia una email di prova all\'indirizzo del tuo account per verificare che il provider configurato funzioni correttamente. Salva le impostazioni prima di testare.', 'fp-experiences') . '</p>';
     }
 
     public function render_branding_help(): void

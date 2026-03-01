@@ -2541,5 +2541,52 @@
 
         initCalendarApp();
         initTools();
+        initTestEmailButton();
     });
+
+    function initTestEmailButton() {
+        var btn = document.getElementById('fp-exp-test-email-btn');
+        if (!btn) return;
+
+        btn.addEventListener('click', function () {
+            var spinner = document.getElementById('fp-exp-test-email-spinner');
+            var result = document.getElementById('fp-exp-test-email-result');
+            var nonce = btn.getAttribute('data-nonce');
+            var ajaxUrl = (window.fpExpAdmin && fpExpAdmin.ajaxUrl) || (window.ajaxurl || '/wp-admin/admin-ajax.php');
+
+            btn.disabled = true;
+            if (spinner) spinner.classList.add('is-active');
+            if (result) {
+                result.className = 'fp-exp-test-email-result';
+                result.textContent = '';
+                result.style.display = 'none';
+            }
+
+            var data = new FormData();
+            data.append('action', 'fp_exp_test_email');
+            data.append('nonce', nonce);
+
+            fetch(ajaxUrl, { method: 'POST', body: data, credentials: 'same-origin' })
+                .then(function (r) { return r.json(); })
+                .then(function (json) {
+                    btn.disabled = false;
+                    if (spinner) spinner.classList.remove('is-active');
+                    if (!result) return;
+
+                    var msg = (json.data && json.data.message) ? json.data.message : '';
+                    result.textContent = msg;
+                    result.className = 'fp-exp-test-email-result ' + (json.success ? 'success' : 'error');
+                    result.style.display = 'block';
+                })
+                .catch(function () {
+                    btn.disabled = false;
+                    if (spinner) spinner.classList.remove('is-active');
+                    if (result) {
+                        result.textContent = 'Errore di rete. Riprova.';
+                        result.className = 'fp-exp-test-email-result error';
+                        result.style.display = 'block';
+                    }
+                });
+        });
+    }
 })();
