@@ -4082,11 +4082,22 @@ label.fp-exp-settings__toggle input:checked + .fp-exp-toggle__switch::after {
 }
 
 /* --- Fix: prevent clipping on emails page --- */
+body.fp-exp-emails-body,
+body.fp-exp-emails-body #wpwrap,
+body.fp-exp-emails-body #wpcontent,
+body.fp-exp-emails-body #wpbody,
+body.fp-exp-emails-body #wpbody-content,
+body.fp-exp-emails-body .wrap,
+.fp-exp-emails-page,
 .fp-exp-emails-page .fp-exp-admin,
 .fp-exp-emails-page .fp-exp-admin__body,
 .fp-exp-emails-page .fp-exp-admin__layout,
-.fp-exp-emails-page .fp-exp-settings__panel {
+.fp-exp-emails-page .fp-exp-settings__panel,
+.fp-exp-emails-page .fp-exp-settings__form,
+.fp-exp-emails-page .fp-exp-settings__form .form-table {
     overflow: visible !important;
+    max-height: none !important;
+    height: auto !important;
 }
 
 .fp-exp-emails-page .fp-exp-settings__form .submit {

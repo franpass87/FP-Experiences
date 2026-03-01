@@ -471,6 +471,10 @@ final class AdminMenu implements HookableInterface
             $classes .= ' fp-exp-admin-shell';
         }
 
+        if ('fp-exp-dashboard_page_fp_exp_emails' === $screen_id) {
+            $classes .= ' fp-exp-emails-body';
+        }
+
         return $classes;
     }
 }
