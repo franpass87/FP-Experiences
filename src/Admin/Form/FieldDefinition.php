@@ -23,15 +23,15 @@ final class FieldDefinition
      * @param array<string, mixed> $attributes HTML attributes
      */
     public function __construct(
-        public readonly string $name,
-        public readonly string $type,
-        public readonly string $label,
-        public readonly mixed $value = null,
-        public readonly array $options = [],
-        public readonly ?string $description = null,
-        public readonly bool $required = false,
-        public readonly ?string $sanitize_callback = null,
-        public readonly array $attributes = [],
+        public string $name,
+        public string $type,
+        public string $label,
+        public mixed $value = null,
+        public array $options = [],
+        public ?string $description = null,
+        public bool $required = false,
+        public ?string $sanitize_callback = null,
+        public array $attributes = [],
     ) {
     }
 
