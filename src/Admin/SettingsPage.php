@@ -660,6 +660,15 @@ final class SettingsPage implements HookableInterface
             ]
         );
 
+        // Campo: URL recensione per email follow-up
+        add_settings_field(
+            'fp_exp_emails_review_url',
+            esc_html__('URL recensione', 'fp-experiences'),
+            [$this, 'render_email_review_url_field'],
+            'fp_exp_emails_config',
+            'fp_exp_section_email_schedule'
+        );
+
         // Sezione: Soggetti personalizzati
         add_settings_section(
             'fp_exp_section_email_subjects',
@@ -1277,6 +1286,11 @@ final class SettingsPage implements HookableInterface
             'followup_offset_hours' => max(0, min(240, $followup_hours)),
         ];
 
+        // review_url — preserve existing when not submitted
+        $review_url = isset($value['review_url'])
+            ? esc_url_raw(trim((string) $value['review_url']))
+            : ($existing['review_url'] ?? '');
+
         // subjects (override opzionali) — preserve existing when not submitted
         if (isset($value['subjects']) && is_array($value['subjects'])) {
             $subjects = $value['subjects'];
@@ -1324,6 +1338,7 @@ final class SettingsPage implements HookableInterface
             'types' => $types_sanitized,
             'schedule' => $schedule_sanitized,
             'subjects' => $subjects_sanitized,
+            'review_url' => $review_url,
             'provider'   => $provider,
             'from_email' => $from_email,
             'from_name'  => $from_name,
@@ -2282,6 +2297,20 @@ final class SettingsPage implements HookableInterface
             ]
         );
         echo '<p class="description">' . esc_html__('Puoi usare segnaposto come {experience_title}.', 'fp-experiences') . '</p>';
+    }
+
+    public function render_email_review_url_field(): void
+    {
+        $settings = $this->getOptions()->get('fp_exp_emails', []);
+        $settings = is_array($settings) ? $settings : [];
+        $value = $settings['review_url'] ?? '';
+
+        echo '<input type="url" name="fp_exp_emails[review_url]" id="fp_exp_emails_review_url" '
+            . 'value="' . esc_attr($value) . '" class="regular-text" '
+            . 'placeholder="https://g.page/r/esempio/review" />';
+        echo '<p class="description">'
+            . esc_html__('URL per il pulsante "Lascia una recensione" nella mail follow-up (es. Google Reviews, TripAdvisor). Se vuoto, usa il link all\'esperienza.', 'fp-experiences')
+            . '</p>';
     }
 
     public function render_email_provider_help(): void

@@ -22,6 +22,11 @@ $translate = static function (string $key, array $args = []) use ($language): st
 };
 
 $experience = $email_context['experience'] ?? [];
+
+$fp_email_settings = get_option('fp_exp_emails', []);
+$fp_email_settings = is_array($fp_email_settings) ? $fp_email_settings : [];
+$review_url = ! empty($fp_email_settings['review_url']) ? $fp_email_settings['review_url'] : '';
+$review_link = $review_url ?: ($experience['permalink'] ?? '');
 ?>
 <div style="font-family: 'Helvetica Neue', Arial, sans-serif; color:#1f2933; line-height:1.6;">
     <h1 style="font-size:22px; margin:0 0 16px; color:#0b3d2e;">
@@ -36,9 +41,9 @@ $experience = $email_context['experience'] ?? [];
         <?php echo esc_html($translate('customer_post_experience.review_request')); ?>
     </p>
 
-    <?php if (! empty($experience['permalink'])) : ?>
+    <?php if (! empty($review_link)) : ?>
         <p style="margin:0 0 20px;">
-            <a href="<?php echo esc_url((string) $experience['permalink']); ?>" style="color:#0b7285; text-decoration:none;">
+            <a href="<?php echo esc_url((string) $review_link); ?>" style="display:inline-block; background:#0b7285; color:#ffffff; padding:10px 24px; border-radius:6px; text-decoration:none; font-weight:600;">
                 <?php echo esc_html($translate('customer_post_experience.leave_review')); ?>
             </a>
         </p>
