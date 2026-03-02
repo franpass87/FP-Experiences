@@ -1211,69 +1211,97 @@ final class SettingsPage implements HookableInterface
      */
     public function sanitize_emails_settings($value): array
     {
-        // Debug logging per tracciare i valori ricevuti dal form
-        if (defined('WP_DEBUG') && WP_DEBUG) {
-            error_log('[FP-Exp Emails] sanitize_emails_settings() called with value: ' . print_r($value, true));
-        }
-
         $value = is_array($value) ? $value : [];
+
+        $existing = get_option('fp_exp_emails', []);
+        $existing = is_array($existing) ? $existing : [];
 
         // mittenti
         $sender = isset($value['sender']) && is_array($value['sender']) ? $value['sender'] : [];
-        $structure = sanitize_email((string) ($sender['structure'] ?? $this->getOptions()->get('fp_exp_structure_email', '')));
-        $webmaster = sanitize_email((string) ($sender['webmaster'] ?? $this->getOptions()->get('fp_exp_webmaster_email', '')));
+        $existing_sender = isset($existing['sender']) && is_array($existing['sender']) ? $existing['sender'] : [];
+        $structure = sanitize_email((string) ($sender['structure'] ?? $existing_sender['structure'] ?? $this->getOptions()->get('fp_exp_structure_email', '')));
+        $webmaster = sanitize_email((string) ($sender['webmaster'] ?? $existing_sender['webmaster'] ?? $this->getOptions()->get('fp_exp_webmaster_email', '')));
 
-        // branding
-        $branding = isset($value['branding']) && is_array($value['branding']) ? $value['branding'] : [];
-        $branding = $this->sanitize_email_branding($branding);
+        // branding — preserve existing when not submitted
+        if (isset($value['branding']) && is_array($value['branding'])) {
+            $branding = $this->sanitize_email_branding($value['branding']);
+        } else {
+            $branding = isset($existing['branding']) && is_array($existing['branding'])
+                ? $existing['branding']
+                : $this->sanitize_email_branding([]);
+        }
 
         // destinatari aggiuntivi staff
         $recipients = isset($value['recipients']) && is_array($value['recipients']) ? $value['recipients'] : [];
-        $staff_extra_raw = (string) ($recipients['staff_extra'] ?? '');
-        $staff_extra = array_values(array_filter(array_map('sanitize_email', array_map('trim', preg_split('/[,;]+/', $staff_extra_raw) ?: []))));
-
-        // tipi (toggle)
-        $types = isset($value['types']) && is_array($value['types']) ? $value['types'] : [];
-        $types_sanitized = [];
-        foreach (['customer_confirmation', 'staff_notification', 'customer_reminder', 'customer_post_experience'] as $key) {
-            // Get raw value - if not set or empty, default to 'no' (toggle off)
-            $raw = $types[$key] ?? '';
-            // If empty string or not set, treat as 'no' (disabled)
-            if ($raw === '' || $raw === null) {
-                $raw = 'no';
-            }
-            $types_sanitized[$key] = $this->sanitize_yes_no($raw);
+        if (isset($recipients['staff_extra'])) {
+            $staff_extra_raw = (string) $recipients['staff_extra'];
+            $staff_extra = array_values(array_filter(array_map('sanitize_email', array_map('trim', preg_split('/[,;]+/', $staff_extra_raw) ?: []))));
+        } else {
+            $existing_recipients = isset($existing['recipients']) && is_array($existing['recipients']) ? $existing['recipients'] : [];
+            $staff_extra = isset($existing_recipients['staff_extra']) && is_array($existing_recipients['staff_extra'])
+                ? $existing_recipients['staff_extra']
+                : [];
         }
 
-        // schedule (offset ore)
-        $schedule = isset($value['schedule']) && is_array($value['schedule']) ? $value['schedule'] : [];
-        $reminder_hours = isset($schedule['reminder_offset_hours']) ? (int) $schedule['reminder_offset_hours'] : 24;
-        $followup_hours = isset($schedule['followup_offset_hours']) ? (int) $schedule['followup_offset_hours'] : 24;
-        $reminder_hours = max(0, min(240, $reminder_hours));
-        $followup_hours = max(0, min(240, $followup_hours));
+        // tipi (toggle) — preserve existing when the types section is not submitted
+        $existing_types = isset($existing['types']) && is_array($existing['types']) ? $existing['types'] : [];
+        if (isset($value['types']) && is_array($value['types'])) {
+            $types = $value['types'];
+            $types_sanitized = [];
+            foreach (['customer_confirmation', 'staff_notification', 'customer_reminder', 'customer_post_experience'] as $key) {
+                $raw = $types[$key] ?? '';
+                if ($raw === '' || $raw === null) {
+                    $raw = 'no';
+                }
+                $types_sanitized[$key] = $this->sanitize_yes_no($raw);
+            }
+        } else {
+            $types_sanitized = [];
+            foreach (['customer_confirmation', 'staff_notification', 'customer_reminder', 'customer_post_experience'] as $key) {
+                $types_sanitized[$key] = $existing_types[$key] ?? 'yes';
+            }
+        }
 
+        // schedule (offset ore) — preserve existing when not submitted
+        if (isset($value['schedule']) && is_array($value['schedule'])) {
+            $schedule = $value['schedule'];
+            $reminder_hours = isset($schedule['reminder_offset_hours']) ? (int) $schedule['reminder_offset_hours'] : 24;
+            $followup_hours = isset($schedule['followup_offset_hours']) ? (int) $schedule['followup_offset_hours'] : 24;
+        } else {
+            $existing_schedule = isset($existing['schedule']) && is_array($existing['schedule']) ? $existing['schedule'] : [];
+            $reminder_hours = isset($existing_schedule['reminder_offset_hours']) ? (int) $existing_schedule['reminder_offset_hours'] : 24;
+            $followup_hours = isset($existing_schedule['followup_offset_hours']) ? (int) $existing_schedule['followup_offset_hours'] : 24;
+        }
         $schedule_sanitized = [
-            'reminder_offset_hours' => $reminder_hours,
-            'followup_offset_hours' => $followup_hours,
+            'reminder_offset_hours' => max(0, min(240, $reminder_hours)),
+            'followup_offset_hours' => max(0, min(240, $followup_hours)),
         ];
 
-        // subjects (override opzionali)
-        $subjects = isset($value['subjects']) && is_array($value['subjects']) ? $value['subjects'] : [];
+        // subjects (override opzionali) — preserve existing when not submitted
+        if (isset($value['subjects']) && is_array($value['subjects'])) {
+            $subjects = $value['subjects'];
+        } else {
+            $subjects = isset($existing['subjects']) && is_array($existing['subjects']) ? $existing['subjects'] : [];
+        }
         $subjects_sanitized = [];
         foreach (['customer_confirmation', 'customer_reminder', 'customer_post_experience', 'staff_notification_new', 'staff_notification_cancelled'] as $key) {
             $subjects_sanitized[$key] = sanitize_text_field((string) ($subjects[$key] ?? ''));
         }
 
-        // provider & from
-        $provider = sanitize_key((string) ($value['provider'] ?? 'wordpress'));
+        // provider & from — preserve existing when not submitted
+        $provider = sanitize_key((string) ($value['provider'] ?? $existing['provider'] ?? 'wordpress'));
         if (! in_array($provider, ['wordpress', 'smtp', 'brevo'], true)) {
             $provider = 'wordpress';
         }
-        $from_email = sanitize_email((string) ($value['from_email'] ?? ''));
-        $from_name  = sanitize_text_field((string) ($value['from_name'] ?? ''));
+        $from_email = sanitize_email((string) ($value['from_email'] ?? $existing['from_email'] ?? ''));
+        $from_name  = sanitize_text_field((string) ($value['from_name'] ?? $existing['from_name'] ?? ''));
 
-        // SMTP settings
-        $smtp_raw = isset($value['smtp']) && is_array($value['smtp']) ? $value['smtp'] : [];
+        // SMTP settings — preserve existing when not submitted
+        if (isset($value['smtp']) && is_array($value['smtp'])) {
+            $smtp_raw = $value['smtp'];
+        } else {
+            $smtp_raw = isset($existing['smtp']) && is_array($existing['smtp']) ? $existing['smtp'] : [];
+        }
         $smtp = [
             'host'       => sanitize_text_field((string) ($smtp_raw['host'] ?? '')),
             'port'       => max(1, min(65535, (int) ($smtp_raw['port'] ?? 587))),
@@ -1284,7 +1312,7 @@ final class SettingsPage implements HookableInterface
             'password'   => (string) ($smtp_raw['password'] ?? ''),
         ];
 
-        $result = [
+        return [
             'sender' => [
                 'structure' => $structure,
                 'webmaster' => $webmaster,
@@ -1301,8 +1329,6 @@ final class SettingsPage implements HookableInterface
             'from_name'  => $from_name,
             'smtp'       => $smtp,
         ];
-
-        return $result;
     }
 
     private function sanitize_yes_no($value): string
@@ -2189,17 +2215,23 @@ final class SettingsPage implements HookableInterface
             return;
         }
 
-        echo $this->render_field_inline(
-            name: implode('_', $path),
-            type: 'nested_toggle',
-            options: [
-                'path' => $path,
-                'base_type' => 'toggle',
-                'option_name' => 'fp_exp_emails',
-                'description' => $args['description'] ?? null,
-                'label_text' => esc_html__('Abilitato', 'fp-experiences'),
-            ]
-        );
+        try {
+            echo $this->render_field_inline(
+                name: implode('_', $path),
+                type: 'nested_toggle',
+                options: [
+                    'path' => $path,
+                    'base_type' => 'toggle',
+                    'option_name' => 'fp_exp_emails',
+                    'description' => $args['description'] ?? null,
+                    'label_text' => esc_html__('Abilitato', 'fp-experiences'),
+                ]
+            );
+        } catch (\Throwable $e) {
+            echo '<p class="description" style="color:#dc2626;">'
+                . esc_html($e->getMessage()) . ' in ' . esc_html(basename($e->getFile())) . ':' . $e->getLine()
+                . '</p>';
+        }
     }
 
     public function render_email_number_field(array $args): void

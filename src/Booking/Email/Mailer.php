@@ -8,14 +8,17 @@ use FP_Exp\Services\Options\OptionsInterface;
 use FP_Exp\Utils\Logger;
 
 use function add_action;
+use function add_filter;
 use function array_filter;
 use function array_slice;
 use function array_values;
 use function count;
+use function function_exists;
 use function implode;
 use function is_array;
 use function is_email;
 use function remove_action;
+use function remove_filter;
 use function sanitize_email;
 use function trim;
 use function wp_mail;
@@ -82,12 +85,12 @@ final class Mailer
 
         if ('smtp' === $provider) {
             $this->hookSmtp($settings);
-        }
-
-        $sent = wp_mail($to, $subject, $body, $headers, $attachments);
-
-        if ('smtp' === $provider) {
+            $sent = wp_mail($to, $subject, $body, $headers, $attachments);
             $this->unhookSmtp();
+        } elseif ('wordpress' === $provider && function_exists('WC') && WC()->mailer()) {
+            $sent = $this->sendViaWcMailer($to, $subject, $body, $headers, $attachments);
+        } else {
+            $sent = wp_mail($to, $subject, $body, $headers, $attachments);
         }
 
         Logger::log('email', \sprintf(
@@ -181,6 +184,60 @@ final class Mailer
         }
 
         return $headers;
+    }
+
+    /**
+     * Send through WC_Mailer, bypassing WC's template wrapper.
+     *
+     * WC_Email::send() adds wp_mail_from / wp_mail_from_name filters and
+     * calls wp_mail() — the same pipeline used by all WooCommerce emails.
+     * We override woocommerce_mail_content so WC does not wrap our
+     * already-branded body with its own header/footer.
+     *
+     * Headers: we strip our From header and let WC handle it via its
+     * own filters; if the plugin has a custom From configured we
+     * temporarily override WC's values at higher priority.
+     *
+     * @param string   $to
+     * @param string   $subject
+     * @param string   $body
+     * @param string[] $headers
+     * @param string[] $attachments
+     */
+    private function sendViaWcMailer(string $to, string $subject, string $body, array $headers, array $attachments): bool
+    {
+        $raw = $body;
+        $bypassContent = static function () use ($raw): string { return $raw; };
+        add_filter('woocommerce_mail_content', $bypassContent, \PHP_INT_MAX);
+
+        $wcHeaders = array_filter($headers, static function (string $h): bool {
+            return 0 !== \strncasecmp($h, 'From:', 5);
+        });
+
+        $fromOverrides = [];
+        $pluginFromEmail = $this->getFromEmail();
+        $pluginFromName  = $this->getFromName();
+
+        if ($pluginFromEmail) {
+            $fromEmailCb = static function () use ($pluginFromEmail): string { return $pluginFromEmail; };
+            add_filter('wp_mail_from', $fromEmailCb, 99);
+            $fromOverrides[] = ['wp_mail_from', $fromEmailCb, 99];
+        }
+
+        if ($pluginFromName !== '') {
+            $fromNameCb = static function () use ($pluginFromName): string { return $pluginFromName; };
+            add_filter('wp_mail_from_name', $fromNameCb, 99);
+            $fromOverrides[] = ['wp_mail_from_name', $fromNameCb, 99];
+        }
+
+        $sent = WC()->mailer()->send($to, $subject, $body, implode("\r\n", $wcHeaders), $attachments);
+
+        remove_filter('woocommerce_mail_content', $bypassContent, \PHP_INT_MAX);
+        foreach ($fromOverrides as [$filter, $cb, $prio]) {
+            remove_filter($filter, $cb, $prio);
+        }
+
+        return (bool) $sent;
     }
 
     /**
