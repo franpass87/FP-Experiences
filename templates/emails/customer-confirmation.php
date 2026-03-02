@@ -29,6 +29,10 @@ $addons = $email_context['addons'] ?? [];
 $customer = $email_context['customer'] ?? [];
 $ics = $email_context['ics'] ?? [];
 
+$_fp_s = get_option('fp_exp_emails', []);
+$_fp_s = is_array($_fp_s) ? $_fp_s : [];
+$_accent = ! empty($_fp_s['branding']['accent_color']) ? $_fp_s['branding']['accent_color'] : '#0b7285';
+
 $meeting_point = $experience['meeting_point'] ?? '';
 $google_link = $ics['google_link'] ?? '';
 $start_time = (string) ($slot['start_local_time'] ?? '');
@@ -137,7 +141,7 @@ if ($start_time && $end_time) {
     <p style="margin:20px 0;">
         <?php echo esc_html($translate('customer_confirmation.calendar_help')); ?>
         <?php if ($google_link) : ?>
-            <a href="<?php echo esc_url((string) $google_link); ?>" style="color:#0b7285; text-decoration:none; margin-left:4px;">
+            <a href="<?php echo esc_url((string) $google_link); ?>" style="color:<?php echo esc_attr($_accent); ?>; text-decoration:none; margin-left:4px;">
                 <?php echo esc_html($translate('customer_confirmation.calendar_cta')); ?>
             </a>
         <?php endif; ?>

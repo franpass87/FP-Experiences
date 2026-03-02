@@ -568,6 +568,20 @@ final class SettingsPage implements HookableInterface
         );
 
         add_settings_field(
+            'fp_exp_emails_branding_accent_color',
+            esc_html__('Colore accent', 'fp-experiences'),
+            [$this, 'render_emails_branding_field'],
+            'fp_exp_emails_look',
+            'fp_exp_section_email_branding',
+            [
+                'key' => 'accent_color',
+                'type' => 'color',
+                'placeholder' => '#0b7285',
+                'description' => esc_html__('Colore principale per header, pulsanti e link nelle email. Default: #0b7285.', 'fp-experiences'),
+            ]
+        );
+
+        add_settings_field(
             'fp_exp_emails_branding_header',
             esc_html__('Header title', 'fp-experiences'),
             [$this, 'render_emails_branding_field'],
@@ -1202,12 +1216,15 @@ final class SettingsPage implements HookableInterface
         $logo_width  = (int) ($value['logo_width'] ?? 0);
         $logo_height = (int) ($value['logo_height'] ?? 0);
 
+        $accent_color = sanitize_hex_color((string) ($value['accent_color'] ?? ''));
+
         return [
-            'logo'        => esc_url_raw((string) ($value['logo'] ?? '')),
-            'logo_width'  => $logo_width > 0 ? min($logo_width, 600) : 0,
-            'logo_height' => $logo_height > 0 ? min($logo_height, 600) : 0,
-            'header_text' => $this->sanitize_form_field('text', $value['header_text'] ?? ''),
-            'footer_text' => $this->sanitize_form_field('textarea', $value['footer_text'] ?? ''),
+            'logo'         => esc_url_raw((string) ($value['logo'] ?? '')),
+            'logo_width'   => $logo_width > 0 ? min($logo_width, 600) : 0,
+            'logo_height'  => $logo_height > 0 ? min($logo_height, 600) : 0,
+            'accent_color' => $accent_color ?: '',
+            'header_text'  => $this->sanitize_form_field('text', $value['header_text'] ?? ''),
+            'footer_text'  => $this->sanitize_form_field('textarea', $value['footer_text'] ?? ''),
         ];
     }
 
@@ -2163,6 +2180,10 @@ final class SettingsPage implements HookableInterface
             echo '<textarea name="' . $name . '" rows="4" class="large-text" placeholder="' . esc_attr($placeholder) . '">' . esc_textarea((string) $value) . '</textarea>';
         } elseif ('number' === $type) {
             echo '<input type="number" class="small-text" name="' . $name . '" value="' . esc_attr((string) $value) . '" placeholder="' . esc_attr($placeholder) . '" min="0" max="600" step="1" />';
+        } elseif ('color' === $type) {
+            $display_value = $value ?: $placeholder;
+            echo '<input type="color" name="' . $name . '" value="' . esc_attr((string) $display_value) . '" style="width:50px;height:34px;padding:2px;cursor:pointer;" />';
+            echo ' <code class="fp-exp-color-preview" style="font-size:13px;color:#64748b;">' . esc_html((string) $display_value) . '</code>';
         } else {
             echo '<input type="text" class="regular-text" name="' . $name . '" value="' . esc_attr((string) $value) . '" placeholder="' . esc_attr($placeholder) . '" />';
         }

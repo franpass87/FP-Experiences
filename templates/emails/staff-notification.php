@@ -27,6 +27,10 @@ $order = $email_context['order'] ?? [];
 $tickets = $email_context['tickets'] ?? [];
 $addons = $email_context['addons'] ?? [];
 $customer = $email_context['customer'] ?? [];
+$_fp_s = get_option('fp_exp_emails', []);
+$_fp_s = is_array($_fp_s) ? $_fp_s : [];
+$_accent = ! empty($_fp_s['branding']['accent_color']) ? $_fp_s['branding']['accent_color'] : '#0b7285';
+
 $status_label = $email_context['status_label'] ?? '';
 $is_cancelled = ! empty($email_context['is_cancelled']);
 $start_time = (string) ($slot['start_local_time'] ?? '');
@@ -117,7 +121,7 @@ $subject_key = $is_cancelled ? 'staff_notification.subject_cancelled' : 'staff_n
     </p>
     <?php if (! empty($customer['email'])) : ?>
         <p style="margin:0 0 6px;">
-            <a href="mailto:<?php echo esc_attr((string) $customer['email']); ?>" style="color:#0b7285; text-decoration:none;">
+            <a href="mailto:<?php echo esc_attr((string) $customer['email']); ?>" style="color:<?php echo esc_attr($_accent); ?>; text-decoration:none;">
                 <?php echo esc_html((string) $customer['email']); ?>
             </a>
         </p>
@@ -141,7 +145,7 @@ $subject_key = $is_cancelled ? 'staff_notification.subject_cancelled' : 'staff_n
     </p>
     <?php if (! empty($order['admin_url'])) : ?>
         <p style="margin:0 0 16px;">
-            <a href="<?php echo esc_url((string) $order['admin_url']); ?>" style="color:#0b7285; text-decoration:none;">
+            <a href="<?php echo esc_url((string) $order['admin_url']); ?>" style="color:<?php echo esc_attr($_accent); ?>; text-decoration:none;">
                 <?php echo esc_html($translate('staff_notification.open_order')); ?>
             </a>
         </p>

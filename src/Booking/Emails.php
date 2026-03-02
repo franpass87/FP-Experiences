@@ -464,6 +464,9 @@ final class Emails implements HookableInterface
         $logo = isset($branding['logo']) ? esc_url((string) $branding['logo']) : '';
         $logo_width  = isset($branding['logo_width']) ? (int) $branding['logo_width'] : 0;
         $logo_height = isset($branding['logo_height']) ? (int) $branding['logo_height'] : 0;
+        $accent_color = isset($branding['accent_color']) && '' !== $branding['accent_color']
+            ? (string) $branding['accent_color']
+            : '#0b7285';
         $header_text = isset($branding['header_text']) ? trim((string) $branding['header_text']) : '';
         $footer_text = isset($branding['footer_text']) ? trim((string) $branding['footer_text']) : '';
 
@@ -477,12 +480,14 @@ final class Emails implements HookableInterface
         $logo_style .= $logo_width > 0 ? 'max-width:' . $logo_width . 'px;' : 'max-width:180px;';
         $logo_style .= $logo_height > 0 ? 'max-height:' . $logo_height . 'px;width:auto;height:auto;' : 'height:auto;';
 
+        $accent_dark = self::darkenHex($accent_color, 30);
+
         ob_start();
         ?>
         <div style="margin:0;padding:0;background-color:#f1f5f9;">
             <div style="max-width:640px;margin:0 auto;padding:24px;">
                 <div style="border-radius:24px;overflow:hidden;background-color:#ffffff;box-shadow:0 24px 50px rgba(15,23,42,0.12);">
-                    <div style="background:linear-gradient(135deg,#0b7285 0%,#0f4c81 100%);padding:24px 32px;text-align:center;color:#ffffff;font-family:'Helvetica Neue',Arial,sans-serif;">
+                    <div style="background:linear-gradient(135deg,<?php echo esc_attr($accent_color); ?> 0%,<?php echo esc_attr($accent_dark); ?> 100%);padding:24px 32px;text-align:center;color:#ffffff;font-family:'Helvetica Neue',Arial,sans-serif;">
                         <?php if ($logo) : ?>
                             <img src="<?php echo esc_url($logo); ?>" alt="<?php echo esc_attr($header_text); ?>" style="<?php echo esc_attr($logo_style); ?>" />
                         <?php endif; ?>
@@ -513,6 +518,18 @@ final class Emails implements HookableInterface
     // ------------------------------------------------------------------
     // Internal helpers
     // ------------------------------------------------------------------
+
+    private static function darkenHex(string $hex, int $percent): string
+    {
+        $hex = ltrim($hex, '#');
+        if (strlen($hex) === 3) {
+            $hex = $hex[0] . $hex[0] . $hex[1] . $hex[1] . $hex[2] . $hex[2];
+        }
+        $r = max(0, (int) round(hexdec(substr($hex, 0, 2)) * (1 - $percent / 100)));
+        $g = max(0, (int) round(hexdec(substr($hex, 2, 2)) * (1 - $percent / 100)));
+        $b = max(0, (int) round(hexdec(substr($hex, 4, 2)) * (1 - $percent / 100)));
+        return sprintf('#%02x%02x%02x', $r, $g, $b);
+    }
 
     private function isTypeEnabled(string $type): bool
     {

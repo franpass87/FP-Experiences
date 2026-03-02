@@ -24,6 +24,10 @@ $translate = static function (string $key, array $args = []) use ($language): st
 $experience = $email_context['experience'] ?? [];
 $slot = $email_context['slot'] ?? [];
 $ics = $email_context['ics'] ?? [];
+$_fp_s = get_option('fp_exp_emails', []);
+$_fp_s = is_array($_fp_s) ? $_fp_s : [];
+$_accent = ! empty($_fp_s['branding']['accent_color']) ? $_fp_s['branding']['accent_color'] : '#0b7285';
+
 $google_link = $ics['google_link'] ?? '';
 $start_time = (string) ($slot['start_local_time'] ?? '');
 $end_time = (string) ($slot['end_local_time'] ?? '');
@@ -68,7 +72,7 @@ if ($start_time && $end_time) {
     <p style="margin:0 0 20px;">
         <?php echo esc_html($translate('customer_reminder.calendar_question')); ?>
         <?php if ($google_link) : ?>
-            <a href="<?php echo esc_url((string) $google_link); ?>" style="color:#0b7285; text-decoration:none;">
+            <a href="<?php echo esc_url((string) $google_link); ?>" style="color:<?php echo esc_attr($_accent); ?>; text-decoration:none;">
                 <?php echo esc_html($translate('customer_reminder.calendar_cta')); ?>
             </a>
         <?php endif; ?>
