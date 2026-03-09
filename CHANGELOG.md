@@ -7,6 +7,9 @@ All notable changes to FP Experiences will be documented in this file.
 - Refactor: migrazione integrazioni tracking (GA4, Meta Pixel, Clarity, Google Ads) al layer centralizzato FP Marketing Tracking Layer
 - Routing eventi tramite CustomEvent invece di chiamate dirette ai provider
 
+### Fixed
+- GiftCheckoutHandler: guard `function_exists('is_checkout')` prima di usare funzioni WooCommerce — evita Fatal 500 quando WooCommerce non è caricato
+
 ## [1.4.0] - 2026-03-02
 ### Added
 - Campo URL recensione per email di follow-up

@@ -197,12 +197,17 @@ final class GiftCheckoutHandler implements HookableInterface
      */
     public function outputCheckoutScript(): void
     {
+        // WooCommerce must be loaded for checkout-specific functions
+        if (! function_exists('is_checkout') || ! function_exists('is_wc_endpoint_url')) {
+            return;
+        }
+
         // Only on checkout page
         if (! is_checkout() || is_wc_endpoint_url('order-received')) {
             return;
         }
 
-        if (! WC()->session) {
+        if (! function_exists('WC') || ! WC()->session) {
             return;
         }
 
