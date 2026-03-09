@@ -4,78 +4,41 @@ declare(strict_types=1);
 
 namespace FP_Exp\Integrations\GA4;
 
-use FP_Exp\Integrations\GA4 as LegacyGA4;
 use FP_Exp\Integrations\Interfaces\IntegrationInterface;
-use FP_Exp\Services\Options\OptionsInterface;
 
 /**
- * GA4 integration wrapper implementing IntegrationInterface.
+ * GA4 integration wrapper — disabled.
+ * Tracking is now handled by FP-Marketing-Tracking-Layer.
+ * The purchase event is fired via do_action('fp_tracking_event') in GA4.php.
  */
 final class GA4Integration implements IntegrationInterface
 {
-    private LegacyGA4 $legacy;
-    private OptionsInterface $options;
-
-    public function __construct(
-        LegacyGA4 $legacy,
-        OptionsInterface $options
-    ) {
-        $this->legacy = $legacy;
-        $this->options = $options;
-    }
-
-    /**
-     * Check if integration is enabled.
-     */
     public function isEnabled(): bool
     {
-        // Use reflection to access private method
-        $reflection = new \ReflectionClass($this->legacy);
-        $method = $reflection->getMethod('is_enabled');
-        $method->setAccessible(true);
-        return $method->invoke($this->legacy);
+        return false;
     }
 
-    /**
-     * Check if integration is configured.
-     */
     public function isConfigured(): bool
     {
-        // Use reflection to access private method
-        $reflection = new \ReflectionClass($this->legacy);
-        $method = $reflection->getMethod('is_enabled');
-        $method->setAccessible(true);
-        return $method->invoke($this->legacy);
+        return false;
     }
 
-    /**
-     * Register WordPress hooks for the integration.
-     */
     public function register_hooks(): void
     {
-        $this->legacy->register_hooks();
+        // No-op: tracking delegated to FP-Marketing-Tracking-Layer
     }
 
-    /**
-     * Get integration name.
-     */
     public function getName(): string
     {
         return 'Google Analytics 4';
     }
 
-    /**
-     * Get integration status.
-     *
-     * @return array<string, mixed> Status information
-     */
     public function getStatus(): array
     {
         return [
-            'enabled' => $this->isEnabled(),
-            'configured' => $this->isConfigured(),
-            'name' => $this->getName(),
+            'enabled'    => false,
+            'configured' => false,
+            'name'       => $this->getName(),
         ];
     }
 }
-

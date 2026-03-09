@@ -44,6 +44,13 @@
         window.dataLayer.push(Object.assign({ event: eventName }, data || {}));
     }
 
+    // Funnel events bypass the isEnabled() guard — they must reach the dataLayer
+    // regardless of the GA4 tracking toggle (GTM decides what to do with them).
+    function pushFunnelEvent(eventName, data) {
+        window.dataLayer = window.dataLayer || [];
+        window.dataLayer.push(Object.assign({ event: eventName }, data || {}));
+    }
+
     function getCurrency() {
         if (typeof fpExpConfig !== 'undefined' && fpExpConfig.currency) {
             return fpExpConfig.currency;
@@ -195,6 +202,192 @@
     }
 
     /* ------------------------------------------------------------------ */
+    /*  Funnel events — standardised for FP-Marketing-Tracking-Layer       */
+    /* ------------------------------------------------------------------ */
+
+    function getExperienceId() {
+        if (typeof fpExpConfig !== 'undefined' && fpExpConfig.experienceId) {
+            return String(fpExpConfig.experienceId);
+        }
+        var el = document.querySelector('[data-fp-exp-id]');
+        return el ? String(el.getAttribute('data-fp-exp-id') || '') : '';
+    }
+
+    function getExperienceTitle() {
+        if (typeof fpExpConfig !== 'undefined' && fpExpConfig.experienceTitle) {
+            return String(fpExpConfig.experienceTitle);
+        }
+        var el = document.querySelector('[data-fp-exp-title]');
+        return el ? String(el.getAttribute('data-fp-exp-title') || '') : '';
+    }
+
+    /** booking_start — utente interagisce per la prima volta con il widget (data/biglietti) */
+    function bookingStart(data) {
+        pushFunnelEvent('booking_start', Object.assign({
+            experience_id: getExperienceId(),
+            experience_title: getExperienceTitle()
+        }, data || {}));
+    }
+
+    /** booking_step_complete — utente completa uno step del flusso (slot, biglietti, checkout) */
+    function bookingStepComplete(data) {
+        pushFunnelEvent('booking_step_complete', Object.assign({
+            experience_id: getExperienceId(),
+            experience_title: getExperienceTitle()
+        }, data || {}));
+    }
+
+    /** booking_abandon — utente lascia la pagina dopo aver iniziato il flusso */
+    function bookingAbandon(data) {
+        pushFunnelEvent('booking_abandon', Object.assign({
+            experience_id: getExperienceId(),
+            experience_title: getExperienceTitle()
+        }, data || {}));
+    }
+
+    /** rtb_start — utente inizia a compilare il form RTB */
+    function rtbStart(data) {
+        pushFunnelEvent('rtb_start', Object.assign({
+            experience_id: getExperienceId(),
+            experience_title: getExperienceTitle()
+        }, data || {}));
+    }
+
+    /** gift_start — utente apre il modal/form acquisto gift */
+    function giftStart(data) {
+        pushFunnelEvent('gift_start', Object.assign({
+            experience_id: getExperienceId(),
+            experience_title: getExperienceTitle()
+        }, data || {}));
+    }
+
+    /* ------------------------------------------------------------------ */
+    /*  Auto-init DOM listeners for funnel events                          */
+    /* ------------------------------------------------------------------ */
+
+    function initFunnelListeners() {
+        var _bookingStarted  = false;
+        var _bookingDone     = false;
+        var _rtbStarted      = false;
+        var _rtbDone         = false;
+        var _giftStarted     = false;
+
+        // ---- BOOKING (WooCommerce checkout flow) ----
+        var widget = document.querySelector('[data-fp-shortcode="experience"]');
+        if (widget) {
+            // booking_start: prima interazione con slot o biglietti
+            widget.addEventListener('focusin', function(e) {
+                if (_bookingStarted) return;
+                var target = e.target;
+                if (!target) return;
+                if (
+                    target.closest('.fp-exp-slots__item') ||
+                    target.closest('.fp-exp-quantity__input') ||
+                    target.closest('.fp-exp-party-table')
+                ) {
+                    _bookingStarted = true;
+                    bookingStart({ step: 'slot_selection' });
+                }
+            }, true);
+
+            widget.addEventListener('click', function(e) {
+                if (_bookingStarted) return;
+                var target = e.target;
+                if (!target) return;
+                if (target.closest('.fp-exp-slots__item') || target.closest('.fp-exp-calendar')) {
+                    _bookingStarted = true;
+                    bookingStart({ step: 'slot_selection' });
+                }
+            });
+
+            // booking_step_complete: slot selezionato
+            var slotsEl = widget.querySelector('.fp-exp-slots');
+            if (slotsEl) {
+                slotsEl.addEventListener('click', function(e) {
+                    if (e.target && e.target.closest('.fp-exp-slots__item')) {
+                        bookingStepComplete({ step: 'slot_selected' });
+                    }
+                });
+            }
+
+            // booking_step_complete: CTA "Procedi al pagamento" cliccato
+            var ctaBtn = widget.querySelector('.fp-exp-summary__cta');
+            if (ctaBtn) {
+                ctaBtn.addEventListener('click', function() {
+                    if (!ctaBtn.disabled) {
+                        _bookingDone = true;
+                        bookingStepComplete({ step: 'checkout_started' });
+                    }
+                });
+            }
+
+            // booking_abandon: lascia la pagina dopo aver iniziato
+            window.addEventListener('beforeunload', function() {
+                if (_bookingStarted && !_bookingDone) {
+                    bookingAbandon({ step: 'abandoned' });
+                }
+            });
+        }
+
+        // ---- RTB (Request to Book) ----
+        var rtbForm = document.querySelector('form.fp-exp-rtb-form');
+        if (rtbForm) {
+            // rtb_start: prima interazione con il form RTB
+            rtbForm.addEventListener('focusin', function() {
+                if (_rtbStarted) return;
+                _rtbStarted = true;
+                rtbStart();
+            }, true);
+
+            // booking_step_complete: CTA RTB cliccato
+            var rtbCta = document.querySelector('.fp-exp-summary__cta');
+            if (rtbCta) {
+                rtbCta.addEventListener('click', function() {
+                    if (!rtbCta.disabled) {
+                        bookingStepComplete({ step: 'rtb_submitted' });
+                    }
+                });
+            }
+
+            // Segna come completato quando la risposta RTB è positiva
+            document.addEventListener('fpExp:rtbSuccess', function() {
+                _rtbDone = true;
+            });
+
+            window.addEventListener('beforeunload', function() {
+                if (_rtbStarted && !_rtbDone) {
+                    bookingAbandon({ step: 'rtb_abandoned' });
+                }
+            });
+        }
+
+        // ---- GIFT ----
+        var giftToggle = document.querySelector('[data-fp-gift-toggle]');
+        var giftForm   = document.querySelector('[data-fp-gift-form]');
+        if (giftToggle) {
+            giftToggle.addEventListener('click', function() {
+                if (_giftStarted) return;
+                _giftStarted = true;
+                giftStart();
+            });
+        } else if (giftForm) {
+            // Fallback: prima interazione col form gift
+            giftForm.addEventListener('focusin', function() {
+                if (_giftStarted) return;
+                _giftStarted = true;
+                giftStart();
+            }, true);
+        }
+    }
+
+    // Avvia i listener quando il DOM è pronto
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initFunnelListeners);
+    } else {
+        initFunnelListeners();
+    }
+
+    /* ------------------------------------------------------------------ */
     /*  Expose on global namespace                                          */
     /* ------------------------------------------------------------------ */
 
@@ -210,7 +403,13 @@
         giftPurchase: giftPurchase,
         rtbSubmit: rtbSubmit,
         rtbSuccess: rtbSuccess,
-        rtbError: rtbError
+        rtbError: rtbError,
+        // Funnel
+        bookingStart: bookingStart,
+        bookingStepComplete: bookingStepComplete,
+        bookingAbandon: bookingAbandon,
+        rtbStart: rtbStart,
+        giftStart: giftStart
     };
 
 })();

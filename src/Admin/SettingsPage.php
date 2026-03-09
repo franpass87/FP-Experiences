@@ -2104,7 +2104,7 @@ final class SettingsPage implements HookableInterface
                 ],
             ],
             [
-                'title' => __('Gift Voucher', 'fp-experiences'),
+                'title' => __('Voucher Regalo', 'fp-experiences'),
                 'icon'  => 'dashicons-tickets-alt',
                 'templates' => [
                     [

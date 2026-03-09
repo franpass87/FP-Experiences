@@ -13,6 +13,7 @@ use WC_Order;
 
 use function absint;
 use function array_map;
+use function do_action;
 use function array_values;
 use function current_time;
 use function explode;
@@ -80,6 +81,9 @@ final class GiftOrderHandler implements HookableInterface
             // Activate voucher
             $this->repository->updateStatus($voucher_id, VoucherStatus::active());
             $this->repository->appendLog($voucher_id, 'activated', $order_id);
+
+            // Tracking: fires fp_tracking_event via GA4 bridge
+            do_action('fp_exp_gift_purchased', $voucher_id, $order_id);
 
             // Handle delivery
             $delivery = $this->repository->getDelivery($voucher_id);

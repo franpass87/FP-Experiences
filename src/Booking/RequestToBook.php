@@ -318,6 +318,19 @@ final class RequestToBook implements HookableInterface
 
         do_action('fp_exp_rtb_request_created', $reservation_id, $context);
 
+        // Tracking: fires fp_tracking_event via GA4 bridge in TrackingBridge
+        do_action('fp_exp_rtb_submitted', $experience_id, $reservation_id, [
+            'value'    => $grand_total,
+            'currency' => $breakdown['currency'] ?? 'EUR',
+            'tickets'  => $tickets,
+            'contact'  => [
+                'em' => sanitize_email((string) ($contact['email'] ?? '')),
+                'fn' => sanitize_text_field((string) ($contact['first_name'] ?? '')),
+                'ln' => sanitize_text_field((string) ($contact['last_name'] ?? '')),
+                'ph' => sanitize_text_field((string) ($contact['phone'] ?? '')),
+            ],
+        ]);
+
         Logger::log('rtb', 'Request-to-book created', [
             'reservation_id' => $reservation_id,
             'experience_id' => $experience_id,

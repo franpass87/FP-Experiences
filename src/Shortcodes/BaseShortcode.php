@@ -10,6 +10,7 @@ use WP_Error;
 
 use function add_shortcode;
 use function apply_filters;
+use function do_action;
 use function esc_html;
 use function file_exists;
 use function header;
@@ -73,6 +74,9 @@ abstract class BaseShortcode
         } else {
             Assets::instance()->enqueue_front($theme, $scope_class);
         }
+
+        // Fire tracking hook — allows TrackingBridge to record experience/checkout views
+        do_action('fp_exp_shortcode_rendered', $this->tag, $context);
 
         return TemplateLoader::render($this->template, $context);
     }

@@ -317,57 +317,41 @@ final class Plugin
     /**
      * Get GA4 instance.
      * 
-     * @deprecated 1.2.0 Use Bootstrap::get(GA4::class) instead.
+     * @deprecated 1.2.0 Tracking delegated to FP-Marketing-Tracking-Layer.
      */
     public function ga4(): GA4
     {
-        $ga4 = \FP_Exp\Core\Bootstrap\Bootstrap::get(GA4::class);
-        if ($ga4 === null) {
-            throw new \RuntimeException('GA4 service not available');
-        }
-        return $ga4;
+        return \FP_Exp\Core\Bootstrap\Bootstrap::get(GA4::class) ?? new GA4();
     }
 
     /**
      * Get GoogleAds instance.
      * 
-     * @deprecated 1.2.0 Use Bootstrap::get(GoogleAds::class) instead.
+     * @deprecated 1.2.0 Tracking delegated to FP-Marketing-Tracking-Layer.
      */
     public function google_ads(): GoogleAds
     {
-        $ads = \FP_Exp\Core\Bootstrap\Bootstrap::get(GoogleAds::class);
-        if ($ads === null) {
-            throw new \RuntimeException('GoogleAds service not available');
-        }
-        return $ads;
+        return \FP_Exp\Core\Bootstrap\Bootstrap::get(GoogleAds::class) ?? new GoogleAds();
     }
 
     /**
      * Get MetaPixel instance.
      * 
-     * @deprecated 1.2.0 Use Bootstrap::get(MetaPixel::class) instead.
+     * @deprecated 1.2.0 Tracking delegated to FP-Marketing-Tracking-Layer.
      */
     public function meta_pixel(): MetaPixel
     {
-        $pixel = \FP_Exp\Core\Bootstrap\Bootstrap::get(MetaPixel::class);
-        if ($pixel === null) {
-            throw new \RuntimeException('MetaPixel service not available');
-        }
-        return $pixel;
+        return \FP_Exp\Core\Bootstrap\Bootstrap::get(MetaPixel::class) ?? new MetaPixel();
     }
 
     /**
      * Get Clarity instance.
      * 
-     * @deprecated 1.2.0 Use Bootstrap::get(Clarity::class) instead.
+     * @deprecated 1.2.0 Tracking delegated to FP-Marketing-Tracking-Layer.
      */
     public function clarity(): Clarity
     {
-        $clarity = \FP_Exp\Core\Bootstrap\Bootstrap::get(Clarity::class);
-        if ($clarity === null) {
-            throw new \RuntimeException('Clarity service not available');
-        }
-        return $clarity;
+        return \FP_Exp\Core\Bootstrap\Bootstrap::get(Clarity::class) ?? new Clarity();
     }
 
     /**

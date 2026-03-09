@@ -9,17 +9,13 @@ use FP_Exp\Core\ServiceProvider\AbstractServiceProvider;
 use FP_Exp\Booking\Emails;
 use FP_Exp\Integrations\Brevo;
 use FP_Exp\Integrations\Brevo\BrevoIntegration;
-use FP_Exp\Integrations\Clarity;
 use FP_Exp\Integrations\ExperienceProduct;
-use FP_Exp\Integrations\GA4;
-use FP_Exp\Integrations\GA4\GA4Integration;
-use FP_Exp\Integrations\GoogleAds;
 use FP_Exp\Integrations\GoogleCalendar;
 use FP_Exp\Integrations\GoogleCalendar\GoogleCalendarIntegration;
 use FP_Exp\Integrations\Interfaces\IntegrationInterface;
-use FP_Exp\Integrations\MetaPixel;
 use FP_Exp\Integrations\PerformanceIntegration;
 use FP_Exp\Integrations\WooCommerceCheckout;
+use FP_Exp\Integrations\GA4;
 use FP_Exp\Integrations\WooCommerceProduct;
 use FP_Exp\Services\Options\OptionsInterface;
 
@@ -89,20 +85,8 @@ final class IntegrationServiceProvider extends AbstractServiceProvider
         });
         $container->bind(IntegrationInterface::class . '#googlecalendar', GoogleCalendarIntegration::class);
 
-        // Register GA4 integration
-        $container->singleton(GA4::class, GA4::class);
-        $container->bind(GA4Integration::class, static function (ContainerInterface $container): GA4Integration {
-            $legacy = $container->make(GA4::class);
-            $options = $container->make(OptionsInterface::class);
-            return new GA4Integration($legacy, $options);
-        });
-        $container->bind(IntegrationInterface::class . '#ga4', GA4Integration::class);
-        
-        // Register other tracking integrations (no dependencies)
-        $container->singleton(GoogleAds::class, GoogleAds::class);
-        $container->singleton(MetaPixel::class, MetaPixel::class);
-        $container->singleton(Clarity::class, Clarity::class);
-        
+        // Tracking delegated to FP-Marketing-Tracking-Layer via do_action('fp_tracking_event')
+
         // Register WooCommerce integrations (no dependencies)
         $container->singleton(ExperienceProduct::class, ExperienceProduct::class);
         $container->singleton(WooCommerceProduct::class, WooCommerceProduct::class);
@@ -123,7 +107,6 @@ final class IntegrationServiceProvider extends AbstractServiceProvider
         $integrations = [
             BrevoIntegration::class,
             GoogleCalendarIntegration::class,
-            GA4Integration::class,
         ];
 
         foreach ($integrations as $integrationClass) {
@@ -147,12 +130,9 @@ final class IntegrationServiceProvider extends AbstractServiceProvider
         }
         
         // Register hooks for legacy integrations (HookableInterface)
+        // Note: GA4, GoogleAds, MetaPixel, Clarity removed — tracking handled by FP-Marketing-Tracking-Layer
         $legacyIntegrations = [
             GoogleCalendar::class,
-            GA4::class,
-            GoogleAds::class,
-            MetaPixel::class,
-            Clarity::class,
             ExperienceProduct::class,
             WooCommerceProduct::class,
             WooCommerceCheckout::class,
@@ -192,11 +172,6 @@ final class IntegrationServiceProvider extends AbstractServiceProvider
             BrevoIntegration::class,
             GoogleCalendar::class,
             GoogleCalendarIntegration::class,
-            GA4::class,
-            GA4Integration::class,
-            GoogleAds::class,
-            MetaPixel::class,
-            Clarity::class,
             ExperienceProduct::class,
             WooCommerceProduct::class,
             WooCommerceCheckout::class,

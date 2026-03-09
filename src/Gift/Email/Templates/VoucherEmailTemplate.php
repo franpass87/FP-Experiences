@@ -31,11 +31,11 @@ final class VoucherEmailTemplate implements EmailTemplateInterface
      */
     public function getSubject(array $data): string
     {
-        $experience_title = $data['experience_title'] ?? esc_html__('FP Experience', 'fp-experiences');
+        $experience_title = $data['experience_title'] ?? esc_html__('un\'esperienza', 'fp-experiences');
 
         return sprintf(
             /* translators: %s: experience title. */
-            esc_html__('You received a gift: %s', 'fp-experiences'),
+            esc_html__('Hai ricevuto un regalo: %s', 'fp-experiences'),
             $experience_title
         );
     }
@@ -54,7 +54,7 @@ final class VoucherEmailTemplate implements EmailTemplateInterface
         $currency = (string) ($data['currency'] ?? 'EUR');
         $valid_until = (int) ($data['valid_until'] ?? 0);
 
-        $message = '<p>' . esc_html__('You have received a gift voucher for an FP Experience!', 'fp-experiences') . '</p>';
+        $message = '<p>' . esc_html__('Hai ricevuto un buono regalo per un\'esperienza!', 'fp-experiences') . '</p>';
 
         if ($experience_title) {
             $message .= '<p><strong>' . esc_html($experience_title) . '</strong></p>';
