@@ -1954,6 +1954,13 @@
 
                     // Collect form data
                     const formData = new FormData(giftForm);
+                    const selectedGiftAddons = [];
+                    giftForm.querySelectorAll('.fp-gift__addons input[type="checkbox"]:checked, .fp-gift__addons input[type="radio"]:checked').forEach((input) => {
+                        const value = (input.value || '').toString().trim();
+                        if (value !== '') {
+                            selectedGiftAddons.push(value);
+                        }
+                    });
                     const data = {
                         experience_id: giftConfig.experienceId || 0,
                         purchaser: {
@@ -1969,7 +1976,7 @@
                         },
                         quantity: parseInt(formData.get('quantity'), 10) || 1,
                         message: formData.get('message') || '',
-                        addons: formData.getAll('addons[]') || []
+                        addons: selectedGiftAddons
                     };
 
                     // Disable submit button
