@@ -8,6 +8,7 @@
  * @var array<int, array<string, mixed>> $slots
  * @var array<string, array<int, array<string, mixed>>> $calendar
  * @var array<string, bool> $behavior
+ * @var string $preselected_date Data in formato Y-m-d per eventi a data singola
  * @var array<string, mixed> $rtb
  * @var string $rtb_nonce
  * @var string $scope_class
@@ -178,6 +179,7 @@ $price_from_display = null !== $price_from_value && $price_from_value > 0
     : '';
 
 // Dataset per il JavaScript (deve essere definito dopo il calcolo del prezzo)
+$preselected_date = isset($preselected_date) && is_string($preselected_date) ? $preselected_date : '';
 $dataset = [
     'experienceId' => (int) $experience['id'],
     'experienceTitle' => wp_strip_all_tags((string) $experience['title']),
@@ -187,6 +189,7 @@ $dataset = [
     'addons' => $addons,
     'calendar' => $calendar,
     'behavior' => $behavior,
+    'preselectedDate' => $preselected_date !== '' ? $preselected_date : null,
     'rtb' => $rtb,
     'nonce' => $rtb_nonce,
     'displayContext' => $display_context,
@@ -291,28 +294,31 @@ $dataset = [
                             </button>
                             
                             <div class="fp-exp-calendar-nav__title-container">
+                                <?php
+                                $month_names = [
+                                    1 => __('Gennaio', 'fp-experiences'),
+                                    2 => __('Febbraio', 'fp-experiences'),
+                                    3 => __('Marzo', 'fp-experiences'),
+                                    4 => __('Aprile', 'fp-experiences'),
+                                    5 => __('Maggio', 'fp-experiences'),
+                                    6 => __('Giugno', 'fp-experiences'),
+                                    7 => __('Luglio', 'fp-experiences'),
+                                    8 => __('Agosto', 'fp-experiences'),
+                                    9 => __('Settembre', 'fp-experiences'),
+                                    10 => __('Ottobre', 'fp-experiences'),
+                                    11 => __('Novembre', 'fp-experiences'),
+                                    12 => __('Dicembre', 'fp-experiences'),
+                                ];
+                                $initial_month_key = $preselected_date !== '' ? substr($preselected_date, 0, 7) : gmdate('Y-m');
+                                $initial_parts = explode('-', $initial_month_key);
+                                $initial_month_num = isset($initial_parts[1]) ? (int) $initial_parts[1] : (int) date('n');
+                                $initial_year = isset($initial_parts[0]) ? (int) $initial_parts[0] : (int) date('Y');
+                                ?>
                                 <h4 class="fp-exp-calendar-nav__month">
-                                    <?php 
-                                    $month_names = [
-                                        1 => __('Gennaio', 'fp-experiences'),
-                                        2 => __('Febbraio', 'fp-experiences'),
-                                        3 => __('Marzo', 'fp-experiences'),
-                                        4 => __('Aprile', 'fp-experiences'),
-                                        5 => __('Maggio', 'fp-experiences'),
-                                        6 => __('Giugno', 'fp-experiences'),
-                                        7 => __('Luglio', 'fp-experiences'),
-                                        8 => __('Agosto', 'fp-experiences'),
-                                        9 => __('Settembre', 'fp-experiences'),
-                                        10 => __('Ottobre', 'fp-experiences'),
-                                        11 => __('Novembre', 'fp-experiences'),
-                                        12 => __('Dicembre', 'fp-experiences'),
-                                    ];
-                                    $current_month_num = (int) date('n');
-                                    echo esc_html($month_names[$current_month_num]);
-                                    ?>
+                                    <?php echo esc_html($month_names[$initial_month_num]); ?>
                                 </h4>
                                 <h5 class="fp-exp-calendar-nav__year">
-                                    <?php echo esc_html(date('Y')); ?>
+                                    <?php echo esc_html((string) $initial_year); ?>
                                 </h5>
                             </div>
                             
@@ -321,7 +327,7 @@ $dataset = [
                             </button>
                         </div>
                         
-                            <div class="fp-exp-calendar-nav__content" data-current-month="<?php echo esc_attr(gmdate('Y-m')); ?>">
+                            <div class="fp-exp-calendar-nav__content" data-current-month="<?php echo esc_attr($initial_month_key); ?>">
                             <div class="fp-exp-calendar-nav__grid">
                                 <div style="grid-column: 1/-1; text-align: center; padding: 2rem; color: var(--fp-color-muted);">
                                     <?php esc_html_e('Caricamento...', 'fp-experiences'); ?>

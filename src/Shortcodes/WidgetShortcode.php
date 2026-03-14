@@ -223,6 +223,28 @@ final class WidgetShortcode extends BaseShortcode
             'show_calendar' => in_array((string) $attributes['show_calendar'], ['1', 'true'], true),
         ];
 
+        // Per eventi a data singola: data preselezionata nel calendario
+        $preselected_date = '';
+        $is_event = (bool) ($repo !== null
+            ? $repo->getMeta($experience_id, '_fp_is_event', false)
+            : get_post_meta($experience_id, '_fp_is_event', true));
+        if ($is_event) {
+            $event_datetime = (string) ($repo !== null
+                ? $repo->getMeta($experience_id, '_fp_event_datetime', '')
+                : get_post_meta($experience_id, '_fp_event_datetime', true));
+            if ($event_datetime !== '') {
+                $dt = DateTimeImmutable::createFromFormat('Y-m-d H:i', $event_datetime);
+                if (! $dt) {
+                    $dt = DateTimeImmutable::createFromFormat('Y-m-d\TH:i', $event_datetime);
+                }
+                if ($dt) {
+                    $preselected_date = $dt->format('Y-m-d');
+                } elseif (preg_match('/^\d{4}-\d{2}-\d{2}/', $event_datetime)) {
+                    $preselected_date = substr($event_datetime, 0, 10);
+                }
+            }
+        }
+
         // Try to use repository if available
         $repo = $this->getExperienceRepository();
         $cognitive_bias_meta = [];
@@ -271,6 +293,7 @@ final class WidgetShortcode extends BaseShortcode
             'slots' => $slots,
             'calendar' => $calendar,
             'behavior' => $behavior,
+            'preselected_date' => $preselected_date,
             'schema_json' => $schema,
             'locale' => get_locale(),
             'timezone' => wp_timezone()->getName(),

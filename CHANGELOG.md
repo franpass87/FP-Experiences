@@ -2,6 +2,10 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.4.4] - 2026-03-14
+### Added
+- Eventi a data singola: data dell'evento preselezionata nel calendario al caricamento (mese e giorno già selezionati)
+
 ## [1.4.3] - 2026-03-14
 ### Fixed
 - Eventi a data singola: corretto caricamento `is_event` e `event_datetime` in `DetailsMetaBoxHandler::get_meta_data()` (variabili non definite)
