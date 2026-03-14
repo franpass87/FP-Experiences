@@ -2,6 +2,10 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.4.7] - 2026-03-14
+### Fixed
+- Gift voucher pricing: when ticket pricing is available, the voucher total no longer adds `_fp_base_price`, avoiding fixed extra amounts at checkout (for example +10 on top of expected ticket total).
+
 ## [1.4.6] - 2026-03-14
 ### Fixed
 - RTB summary pricing: when ticket lines are present, the total no longer adds `_fp_base_price`, preventing inflated totals in the recap (for example `Adulto x2 = 120` with total shown as `180`).

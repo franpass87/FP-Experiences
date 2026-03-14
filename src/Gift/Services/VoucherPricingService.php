@@ -70,10 +70,12 @@ final class VoucherPricingService
         // Get base price
         $base_price = $this->getBasePrice($experience_id);
 
-        // Calculate total
-        $total = $base_price;
+        // Calculate total:
+        // when ticket pricing is available, avoid adding base price to prevent inflated gift totals.
+        $has_ticket_pricing = null !== $ticket_price && $ticket_price > 0;
+        $total = $has_ticket_pricing ? 0.0 : $base_price;
 
-        if (null !== $ticket_price && $ticket_price > 0) {
+        if ($has_ticket_pricing) {
             $total += $ticket_price * $quantity;
         }
 
