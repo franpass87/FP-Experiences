@@ -131,9 +131,9 @@ final class Multilanguage implements HookableInterface
 
         // 1. FP-Multilanguage (check both old and new class structures)
         if (
-            class_exists('\FP\Multilanguage\Language') ||
-            class_exists('\FP\Multilanguage\Kernel\Plugin') ||
-            function_exists('fpml_get_current_language')
+            function_exists('fpml_get_current_language') ||
+            class_exists('\FP\Multilanguage\Language', false) ||
+            class_exists('\FP\Multilanguage\Kernel\Plugin', false)
         ) {
             self::$detected_plugin = 'fp-multilanguage';
             return self::$detected_plugin;
@@ -659,12 +659,12 @@ final class Multilanguage implements HookableInterface
         }
 
         // Try new Kernel structure
-        if (class_exists('\FP\Multilanguage\Language')) {
+        if (class_exists('\FP\Multilanguage\Language', false)) {
             return \FP\Multilanguage\Language::instance()->get_current_language();
         }
 
         // Try legacy class (deprecated)
-        if (class_exists('\FPML_Language')) {
+        if (class_exists('\FPML_Language', false)) {
             return \FPML_Language::instance()->get_current_language();
         }
 

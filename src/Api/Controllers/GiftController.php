@@ -41,6 +41,8 @@ final class GiftController
         $payload = [
             'experience_id' => $request->get_param('experience_id'),
             'quantity' => $request->get_param('quantity'),
+            'ticket_slug' => $request->get_param('ticket_slug'),
+            'ticket_quantities' => $request->get_param('ticket_quantities'),
             'addons' => $request->get_param('addons'),
             'purchaser' => $request->get_param('purchaser'),
             'recipient' => $request->get_param('recipient'),

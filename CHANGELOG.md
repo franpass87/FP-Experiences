@@ -2,6 +2,12 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.4.10] - 2026-03-14
+### Fixed
+- REST gift purchase payload now forwards `ticket_slug` and `ticket_quantities` from `GiftController` to avoid critical checkout errors when submitting the gift form.
+- Gift purchase sanitization now guards `purchaser`, `recipient`, and `delivery` payload structures before normalization, preventing type-related fatals on malformed requests.
+- Multilanguage compatibility detection now avoids forced autoload during `class_exists` checks to prevent side effects from third-party classmap entries.
+
 ## [1.4.9] - 2026-03-14
 ### Added
 - Gift voucher form now supports per-ticket quantities (for example Adult and Child in the same gift purchase flow).

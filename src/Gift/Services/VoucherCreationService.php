@@ -103,8 +103,10 @@ final class VoucherCreationService
         }
 
         // Sanitize contacts
-        $purchaser = $this->sanitizeContact($payload['purchaser'] ?? []);
-        $recipient = $this->sanitizeContact($payload['recipient'] ?? []);
+        $purchaser_raw = is_array($payload['purchaser'] ?? null) ? $payload['purchaser'] : [];
+        $recipient_raw = is_array($payload['recipient'] ?? null) ? $payload['recipient'] : [];
+        $purchaser = $this->sanitizeContact($purchaser_raw);
+        $recipient = $this->sanitizeContact($recipient_raw);
 
         if (! is_email($purchaser['email'])) {
             return new WP_Error(
@@ -125,7 +127,8 @@ final class VoucherCreationService
             : '';
 
         // Normalize delivery
-        $delivery_data = $this->normalizeDelivery($payload['delivery'] ?? []);
+        $delivery_raw = is_array($payload['delivery'] ?? null) ? $payload['delivery'] : [];
+        $delivery_data = $this->normalizeDelivery($delivery_raw);
 
         // Generate code and calculate validity
         $code = VoucherCode::generate();
