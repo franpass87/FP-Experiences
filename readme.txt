@@ -5,7 +5,7 @@ Tags: experiences, booking, wooocommerce, shortcodes, calendar
 Requires at least: 6.0
 Tested up to: 6.4
 Requires PHP: 8.0
-Stable tag: 1.4.2
+Stable tag: 1.4.3
 Last updated: 2025-01-27
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -123,6 +123,11 @@ If Brevo credentials are provided, confirmations, reminders, and cancellations u
 FP Experiences stores reservation details inside custom tables linked to WooCommerce orders. Marketing consent is recorded per order (`_fp_exp_consent_marketing`) and forwarded to Brevo only when enabled. UTM parameters are captured in the `fp_exp_utm` cookie, copied to reservation/order meta, and never displayed publicly. Site owners can export or erase booking data through WooCommerce personal data tools; deleting an order removes the associated reservation payload. API credentials (Brevo, Google Calendar) are kept in WordPress options and can be revoked at any time from the Settings screen.
 
 == Changelog ==
+
+= 1.4.3 - 2026-03-14 =
+* **Fixed**: Eventi a data singola — corretto caricamento is_event/event_datetime nel form Dettagli
+* **Fixed**: Calendario ora mostra correttamente gli slot per esperienze evento a data fissa
+* **Added**: Supporto completo eventi a data singola in AvailabilityService (slot da DB con lead time e buffer)
 
 = 1.4.2 - 2026-03-13 =
 * **Fixed**: Checkout gift voucher ora usa il prezzo aggiornato del prodotto regalo anche quando WooCommerce ricalcola il carrello in fasi successive.

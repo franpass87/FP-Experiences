@@ -34,6 +34,12 @@ final class AvailabilityService
             return [];
         }
 
+        // Eventi a data singola: slot persistiti in DB, non da ricorrenza
+        $is_event = (bool) get_post_meta($experience_id, '_fp_is_event', true);
+        if ($is_event) {
+            return self::get_event_slots($experience_id, $start_utc, $end_utc);
+        }
+
         // NUOVA LOGICA: Leggi direttamente da _fp_exp_recurrence (formato unico)
         $recurrence = get_post_meta($experience_id, '_fp_exp_recurrence', true);
         
@@ -326,6 +332,95 @@ final class AvailabilityService
                 'buffer_before' => $buffer_before,
                 'buffer_after' => $buffer_after,
                 'duration' => (int) (($end->getTimestamp() - $start->getTimestamp()) / 60),
+            ];
+        }
+
+        return $slots;
+    }
+
+    /**
+     * Restituisce gli slot per esperienze evento a data singola (letti da DB).
+     *
+     * @param int $experience_id ID esperienza
+     * @param string $start_utc Inizio range (Y-m-d o Y-m-d H:i:s)
+     * @param string $end_utc Fine range (Y-m-d o Y-m-d H:i:s)
+     * @return array<int, array<string, string|int>>
+     */
+    private static function get_event_slots(int $experience_id, string $start_utc, string $end_utc): array
+    {
+        $start_parsed = strlen($start_utc) === 10 ? $start_utc . ' 00:00:00' : $start_utc;
+        $end_parsed = strlen($end_utc) === 10 ? $end_utc . ' 23:59:59' : $end_utc;
+
+        $db_slots = Slots::get_slots_in_range($start_parsed, $end_parsed, [
+            'experience_id' => $experience_id,
+        ]);
+
+        $availability = get_post_meta($experience_id, '_fp_exp_availability', true);
+        $buffer_before = is_array($availability) && isset($availability['buffer_before_minutes'])
+            ? absint((string) $availability['buffer_before_minutes'])
+            : 0;
+        $buffer_after = is_array($availability) && isset($availability['buffer_after_minutes'])
+            ? absint((string) $availability['buffer_after_minutes'])
+            : 0;
+        $lead_time = absint(get_post_meta($experience_id, '_fp_lead_time_hours', true));
+        if ($lead_time === 0 && is_array($availability) && isset($availability['lead_time_hours'])) {
+            $lead_time = absint($availability['lead_time_hours']);
+        }
+
+        $tz = new DateTimeZone(wp_timezone_string() ?: 'UTC');
+        $end_date_only = substr($end_utc, 0, 10);
+        $slots = [];
+
+        foreach ($db_slots as $row) {
+            $start_sql = $row['start_datetime'] ?? '';
+            $end_sql = $row['end_datetime'] ?? '';
+            if ($start_sql === '' || $end_sql === '') {
+                continue;
+            }
+
+            try {
+                $start = new DateTimeImmutable($start_sql, new DateTimeZone('UTC'));
+            } catch (Exception $e) {
+                continue;
+            }
+
+            if ($lead_time > 0) {
+                $now = new DateTimeImmutable('now', new DateTimeZone('UTC'));
+                $cutoff = $now->add(new DateInterval('PT' . $lead_time . 'H'));
+                if ($start < $cutoff) {
+                    continue;
+                }
+            }
+
+            $start_local = $start->setTimezone($tz);
+            $start_date_local = $start_local->format('Y-m-d');
+            if ($start_date_local > $end_date_only) {
+                continue;
+            }
+
+            $capacity_total = absint($row['capacity_total'] ?? 0);
+            $reserved_total = absint($row['reserved_total'] ?? 0);
+            $capacity_remaining = max(0, $capacity_total - $reserved_total);
+
+            $duration = (int) ($row['duration'] ?? 60);
+            if ($duration <= 0 && $end_sql !== '') {
+                try {
+                    $end_dt = new DateTimeImmutable($end_sql, new DateTimeZone('UTC'));
+                    $duration = (int) (($end_dt->getTimestamp() - $start->getTimestamp()) / 60);
+                } catch (Exception $e) {
+                    $duration = 60;
+                }
+            }
+
+            $slots[] = [
+                'experience_id' => $experience_id,
+                'start' => $start_sql,
+                'end' => $end_sql,
+                'capacity_total' => $capacity_total,
+                'capacity_remaining' => $capacity_remaining,
+                'buffer_before' => $buffer_before,
+                'buffer_after' => $buffer_after,
+                'duration' => $duration,
             ];
         }
 

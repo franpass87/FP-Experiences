@@ -1173,6 +1173,10 @@ final class DetailsMetaBoxHandler extends BaseMetaBoxHandler
         $age_max = absint((string) $this->get_meta_value($post_id, 'age_max', 0));
         $rules_children = sanitize_text_field((string) $this->get_meta_value($post_id, 'rules_children', ''));
 
+        // Get event fields (evento a data singola)
+        $is_event = (bool) $this->get_meta_value($post_id, 'is_event', false);
+        $event_datetime = (string) $this->get_meta_value($post_id, 'event_datetime', '');
+
         return [
             'short_desc' => $short_desc,
             'duration_minutes' => $duration_minutes,

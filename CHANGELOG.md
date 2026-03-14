@@ -2,6 +2,14 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.4.3] - 2026-03-14
+### Fixed
+- Eventi a data singola: corretto caricamento `is_event` e `event_datetime` in `DetailsMetaBoxHandler::get_meta_data()` (variabili non definite)
+- Eventi a data singola: calendario ora mostra correttamente gli slot (gestione in `AvailabilityService::get_virtual_slots()` e `CalendarShortcode`)
+
+### Added
+- Supporto completo eventi a data singola: `AvailabilityService` legge slot da DB quando `_fp_is_event` è attivo, con lead time e buffer
+
 ## [1.4.2] - 2026-03-13
 ### Fixed
 - Gift voucher checkout: riallineato il prezzo item in carrello durante i ricalcoli WooCommerce per evitare mismatch tra importo mostrato e totale finale.

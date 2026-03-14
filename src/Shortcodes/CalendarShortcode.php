@@ -113,73 +113,57 @@ final class CalendarShortcode extends BaseShortcode
      */
     private function generate_calendar_months(int $experience_id, int $count = 1): array
     {
-        // NUOVA LOGICA: Verifica veloce se ci sono dati di ricorrenza configurati
-        // Try to use repository if available
-        $repo = $this->getExperienceRepository();
-        $recurrence = [];
-        if ($repo !== null) {
-            $recurrence = $repo->getMeta($experience_id, '_fp_exp_recurrence', []);
-            if (!is_array($recurrence)) {
-                $recurrence = [];
-            }
+        // Eventi a data singola: procedi direttamente (AvailabilityService gestisce gli slot da DB)
+        $is_event = (bool) get_post_meta($experience_id, '_fp_is_event', true);
+        if ($is_event) {
+            // Procedi a generare i mesi; get_virtual_slots restituirà gli slot da DB
         } else {
-            // Fallback to direct get_post_meta for backward compatibility
-            $recurrence = get_post_meta($experience_id, '_fp_exp_recurrence', true);
-            if (!is_array($recurrence)) {
-                $recurrence = [];
-            }
-        }
-        
-        // Debug log
-        if (defined('WP_DEBUG') && WP_DEBUG) {
-            error_log(sprintf(
-                'FP_EXP Calendar: Experience %d - Recurrence check: %s',
-                $experience_id,
-                is_array($recurrence) ? 'array with ' . count($recurrence) . ' fields' : 'not array'
-            ));
-        }
-        
-        // Verifica che ci siano slot configurati (time_slots nuovo formato o time_sets vecchio formato)
-        $has_time_slots = is_array($recurrence) && isset($recurrence['time_slots']) && is_array($recurrence['time_slots']) && count($recurrence['time_slots']) > 0;
-        $has_time_sets = is_array($recurrence) && isset($recurrence['time_sets']) && is_array($recurrence['time_sets']) && count($recurrence['time_sets']) > 0;
-        
-        if (! $has_time_slots && ! $has_time_sets) {
-            // Fallback: prova con il vecchio formato per retrocompatibilità
-            // Try to use repository if available
+            // Esperienze ricorrenti: verifica che ci siano dati di ricorrenza configurati
             $repo = $this->getExperienceRepository();
-            $availability = [];
+            $recurrence = [];
             if ($repo !== null) {
-                $availability = $repo->getMeta($experience_id, '_fp_exp_availability', []);
-                if (!is_array($availability)) {
-                    $availability = [];
+                $recurrence = $repo->getMeta($experience_id, '_fp_exp_recurrence', []);
+                if (!is_array($recurrence)) {
+                    $recurrence = [];
                 }
             } else {
-                // Fallback to direct get_post_meta for backward compatibility
-                $availability = get_post_meta($experience_id, '_fp_exp_availability', true);
-                if (!is_array($availability)) {
-                    $availability = [];
+                $recurrence = get_post_meta($experience_id, '_fp_exp_recurrence', true);
+                if (!is_array($recurrence)) {
+                    $recurrence = [];
                 }
             }
-            $has_legacy = is_array($availability) && !empty($availability['times']);
-            
-            if (! $has_legacy) {
-                if (defined('WP_DEBUG') && WP_DEBUG) {
-                    error_log(sprintf(
-                        'FP_EXP Calendar: Experience %d - No time_slots/time_sets in recurrence and no legacy availability, returning empty calendar',
-                        $experience_id
-                    ));
+
+            $has_time_slots = is_array($recurrence) && isset($recurrence['time_slots']) && is_array($recurrence['time_slots']) && count($recurrence['time_slots']) > 0;
+            $has_time_sets = is_array($recurrence) && isset($recurrence['time_sets']) && is_array($recurrence['time_sets']) && count($recurrence['time_sets']) > 0;
+
+            if (! $has_time_slots && ! $has_time_sets) {
+                $repo = $this->getExperienceRepository();
+                $availability = [];
+                if ($repo !== null) {
+                    $availability = $repo->getMeta($experience_id, '_fp_exp_availability', []);
+                    if (!is_array($availability)) {
+                        $availability = [];
+                    }
+                } else {
+                    $availability = get_post_meta($experience_id, '_fp_exp_availability', true);
+                    if (!is_array($availability)) {
+                        $availability = [];
+                    }
                 }
-                return []; // Non ci sono slot configurati in nessun formato
-            }
-            
-            if (defined('WP_DEBUG') && WP_DEBUG) {
-                error_log(sprintf(
-                    'FP_EXP Calendar: Experience %d - Using legacy availability format',
-                    $experience_id
-                ));
+                $has_legacy = is_array($availability) && !empty($availability['times']);
+
+                if (! $has_legacy) {
+                    if (defined('WP_DEBUG') && WP_DEBUG) {
+                        error_log(sprintf(
+                            'FP_EXP Calendar: Experience %d - No recurrence/legacy data, returning empty',
+                            $experience_id
+                        ));
+                    }
+                    return [];
+                }
             }
         }
-        
+
         $months = [];
         $timezone = wp_timezone();
         $now = new \DateTimeImmutable('now', $timezone);
