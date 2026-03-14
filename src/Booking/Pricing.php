@@ -175,7 +175,8 @@ final class Pricing
             $addon_subtotal += $line_total;
         }
 
-        $base_price = self::get_base_price($experience_id);
+        $has_ticket_lines = ! empty($ticket_lines);
+        $base_price = $has_ticket_lines ? 0.0 : self::get_base_price($experience_id);
         $subtotal = $base_price + $ticket_subtotal + $addon_subtotal;
 
         [$slot_start_local, $timezone] = self::resolve_slot_datetime($slot_start_utc);
