@@ -441,6 +441,7 @@ final class ExperienceShortcode extends BaseShortcode
                 'enabled' => Helpers::gift_enabled(),
                 'experience_id' => $experience_id,
                 'experience_title' => $post->post_title,
+                'tickets' => $tickets,
                 'addons' => $addons,
                 'validity_days' => Helpers::gift_validity_days(),
                 'redeem_page' => Helpers::gift_redeem_page(),
@@ -965,7 +966,13 @@ final class ExperienceShortcode extends BaseShortcode
             }
 
             $price = isset($ticket['price']) ? (float) $ticket['price'] : 0.0;
+            $slug = sanitize_key((string) ($ticket['slug'] ?? $ticket['label'] ?? ''));
+            if ('' === $slug) {
+                continue;
+            }
+
             $tickets[] = [
+                'slug' => $slug,
                 'label' => sanitize_text_field((string) ($ticket['label'] ?? '')),
                 'price' => $price,
             ];

@@ -30,9 +30,9 @@ final class VoucherPricingService
      *
      * @param array<string, mixed> $addons_requested
      *
-     * @return array{total: float, base_price: float, ticket_price: float|null, addons_total: float, addons_selected: array<string, int>}|WP_Error
+     * @return array{total: float, base_price: float, ticket_price: float|null, ticket_slug: string, ticket_label: string, addons_total: float, addons_selected: array<string, int>}|WP_Error
      */
-    public function calculateTotal(int $experience_id, int $quantity, array $addons_requested)
+    public function calculateTotal(int $experience_id, int $quantity, array $addons_requested, string $ticket_slug = '')
     {
         if ($quantity <= 0) {
             $quantity = 1;
@@ -64,8 +64,9 @@ final class VoucherPricingService
             $addons_selected[$slug] = $allow_multiple ? max(1, $quantity) : 1;
         }
 
-        // Get ticket price (lowest)
-        $ticket_price = $this->getLowestTicketPrice($experience_id);
+        // Get selected ticket price (or fallback to lowest if only one/default behavior).
+        $ticket_slug = sanitize_key($ticket_slug);
+        [$ticket_price, $resolved_ticket_slug, $resolved_ticket_label] = $this->resolveTicketPrice($experience_id, $ticket_slug);
 
         // Get base price
         $base_price = $this->getBasePrice($experience_id);
@@ -92,6 +93,8 @@ final class VoucherPricingService
             'total' => $total,
             'base_price' => $base_price,
             'ticket_price' => $ticket_price,
+            'ticket_slug' => $resolved_ticket_slug,
+            'ticket_label' => $resolved_ticket_label,
             'addons_total' => $addons_total,
             'addons_selected' => $addons_selected,
         ];
@@ -124,6 +127,42 @@ final class VoucherPricingService
         }
 
         return $ticket_price;
+    }
+
+    /**
+     * Resolve ticket price by selected slug, with fallback to lowest available price.
+     *
+     * @return array{0: float|null, 1: string, 2: string}
+     */
+    private function resolveTicketPrice(int $experience_id, string $ticket_slug): array
+    {
+        $tickets = Pricing::get_ticket_types($experience_id);
+
+        if ('' !== $ticket_slug && isset($tickets[$ticket_slug])) {
+            return [
+                (float) ($tickets[$ticket_slug]['price'] ?? 0.0),
+                $ticket_slug,
+                (string) ($tickets[$ticket_slug]['label'] ?? ''),
+            ];
+        }
+
+        if (empty($tickets)) {
+            return [null, '', ''];
+        }
+
+        $fallback_slug = '';
+        $fallback_price = null;
+        $fallback_label = '';
+        foreach ($tickets as $slug => $ticket) {
+            $price = (float) ($ticket['price'] ?? 0.0);
+            if (null === $fallback_price || $price < $fallback_price) {
+                $fallback_slug = (string) $slug;
+                $fallback_price = $price;
+                $fallback_label = (string) ($ticket['label'] ?? '');
+            }
+        }
+
+        return [$fallback_price, $fallback_slug, $fallback_label];
     }
 
     /**

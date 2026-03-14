@@ -111,8 +111,8 @@ final class Assets
         */
 
         $js_rel = Helpers::resolve_asset_rel([
-            'assets/js/dist/fp-experiences-frontend.min.js',
             'assets/js/front.js',
+            'assets/js/dist/fp-experiences-frontend.min.js',
         ]);
 
         $use_minified = str_contains($js_rel, 'assets/js/dist/');

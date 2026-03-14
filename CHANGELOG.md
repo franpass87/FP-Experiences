@@ -2,6 +2,14 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.4.8] - 2026-03-14
+### Added
+- Gift voucher flow now requires selecting a ticket type (for example Adult/Child), and stores the selected ticket slug/label in order and voucher metadata.
+
+### Changed
+- Gift voucher pricing now uses the selected ticket type price instead of an automatic lowest-ticket fallback.
+- Frontend asset resolution now prioritizes `assets/js/front.js` to ensure the updated gift payload is loaded even when minified builds are unavailable.
+
 ## [1.4.7] - 2026-03-14
 ### Fixed
 - Gift voucher pricing: when ticket pricing is available, the voucher total no longer adds `_fp_base_price`, avoiding fixed extra amounts at checkout (for example +10 on top of expected ticket total).

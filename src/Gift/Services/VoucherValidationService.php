@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace FP_Exp\Gift\Services;
 
+use FP_Exp\Booking\Pricing;
 use FP_Exp\Gift\Repository\VoucherRepository;
 use FP_Exp\Gift\ValueObjects\VoucherCode;
 use FP_Exp\Gift\ValueObjects\VoucherStatus;
@@ -13,7 +14,9 @@ use WP_Post;
 
 use function esc_html__;
 use function get_post;
+use function is_array;
 use function is_email;
+use function sanitize_key;
 
 /**
  * Service for voucher validation.
@@ -103,6 +106,23 @@ final class VoucherValidationService
             return new WP_Error(
                 'fp_exp_gift_experience',
                 esc_html__('Experience not found.', 'fp-experiences')
+            );
+        }
+
+        // Validate selected ticket type when multiple ticket types are available.
+        $ticket_types = Pricing::get_ticket_types($experience_id);
+        $ticket_slug = sanitize_key((string) ($payload['ticket_slug'] ?? ''));
+        if (count($ticket_types) > 1 && '' === $ticket_slug) {
+            return new WP_Error(
+                'fp_exp_gift_ticket_required',
+                esc_html__('Select a ticket type for the gift voucher.', 'fp-experiences')
+            );
+        }
+
+        if ('' !== $ticket_slug && ! isset($ticket_types[$ticket_slug])) {
+            return new WP_Error(
+                'fp_exp_gift_ticket_invalid',
+                esc_html__('The selected ticket type is not valid for this experience.', 'fp-experiences')
             );
         }
 

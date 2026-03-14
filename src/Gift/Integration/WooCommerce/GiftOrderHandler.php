@@ -170,6 +170,8 @@ final class GiftOrderHandler implements HookableInterface
         $order->update_meta_data('_fp_exp_gift_purchase', [
             'experience_id' => $gift_data['experience_id'] ?? 0,
             'quantity' => $gift_data['quantity'] ?? 1,
+            'ticket_slug' => $gift_data['ticket_slug'] ?? '',
+            'ticket_label' => $gift_data['ticket_label'] ?? '',
             'value' => $gift_data['total'] ?? 0.0,
             'currency' => $gift_data['currency'] ?? 'EUR',
         ]);
@@ -202,6 +204,8 @@ final class GiftOrderHandler implements HookableInterface
         update_post_meta($voucher_id, '_fp_exp_gift_code', $gift_data['code'] ?? '');
         update_post_meta($voucher_id, '_fp_exp_gift_experience_id', $gift_data['experience_id'] ?? 0);
         update_post_meta($voucher_id, '_fp_exp_gift_quantity', $gift_data['quantity'] ?? 1);
+        update_post_meta($voucher_id, '_fp_exp_gift_ticket_slug', $gift_data['ticket_slug'] ?? '');
+        update_post_meta($voucher_id, '_fp_exp_gift_ticket_label', $gift_data['ticket_label'] ?? '');
         update_post_meta($voucher_id, '_fp_exp_gift_value', $gift_data['total'] ?? 0.0);
         update_post_meta($voucher_id, '_fp_exp_gift_currency', $gift_data['currency'] ?? 'EUR');
         update_post_meta($voucher_id, '_fp_exp_gift_valid_until', $gift_data['valid_until'] ?? 0);

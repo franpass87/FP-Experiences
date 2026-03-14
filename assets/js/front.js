@@ -666,19 +666,9 @@
                 updateCalendarMonth(calendarNav, newDate);
             });
             
-            // Per eventi a data singola: mostra il mese dell'evento e preseleziona la data
-            const preselectedDate = config && config.preselectedDate ? config.preselectedDate : null;
-            const initialDate = preselectedDate
-                ? new Date(preselectedDate + 'T12:00:00')
-                : new Date();
-            updateCalendarMonth(calendarNav, initialDate).then(() => {
-                if (preselectedDate) {
-                    const dayBtn = calendarNav.querySelector(`.fp-exp-calendar-nav__day[data-date="${preselectedDate}"]`);
-                    if (dayBtn && !dayBtn.disabled) {
-                        dayBtn.click();
-                    }
-                }
-            });
+            // Inizializza il calendario con il mese corrente
+            const currentDate = new Date();
+            updateCalendarMonth(calendarNav, currentDate);
         }
 
         // 3.b) Gestisci CTA con data-fp-scroll (hero e sticky): mostra sezione date e scrolla
@@ -1973,6 +1963,7 @@
                     });
                     const data = {
                         experience_id: giftConfig.experienceId || 0,
+                        ticket_slug: (formData.get('ticket_slug') || '').toString().trim(),
                         purchaser: {
                             name: formData.get('purchaser[name]') || '',
                             email: formData.get('purchaser[email]') || ''

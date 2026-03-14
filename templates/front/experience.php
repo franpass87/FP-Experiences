@@ -103,6 +103,7 @@ $gift_config = [
     'redeemPage' => isset($gift['redeem_page']) ? (string) $gift['redeem_page'] : '',
     'currency' => isset($gift['currency']) ? (string) $gift['currency'] : get_option('woocommerce_currency', 'EUR'),
 ];
+$gift_tickets = isset($gift['tickets']) && is_array($gift['tickets']) ? $gift['tickets'] : [];
 $gift_addons = isset($gift['addons']) && is_array($gift['addons']) ? $gift['addons'] : [];
 
 $primary_image = ! empty($gallery) ? $gallery[0] : null;
@@ -638,6 +639,31 @@ $sticky_price_display = '' !== $price_from_display ? $format_currency($price_fro
                                             <label for="fp-gift-quantity"><?php esc_html_e('Numero di ospiti', 'fp-experiences'); ?></label>
                                             <input type="number" id="fp-gift-quantity" name="quantity" value="1" min="1" step="1" required />
                                         </div>
+                                        <?php if (! empty($gift_tickets)) : ?>
+                                            <div class="fp-gift__field fp-gift__field--ticket-type">
+                                                <label for="fp-gift-ticket-type"><?php esc_html_e('Tipo biglietto', 'fp-experiences'); ?></label>
+                                                <select id="fp-gift-ticket-type" name="ticket_slug" required>
+                                                    <option value=""><?php esc_html_e('-- Seleziona tipo biglietto --', 'fp-experiences'); ?></option>
+                                                    <?php foreach ($gift_tickets as $gift_ticket) : ?>
+                                                        <?php
+                                                        $ticket_slug = isset($gift_ticket['slug']) ? sanitize_key((string) $gift_ticket['slug']) : '';
+                                                        $ticket_label = isset($gift_ticket['label']) ? (string) $gift_ticket['label'] : '';
+                                                        $ticket_price = isset($gift_ticket['price']) ? (float) $gift_ticket['price'] : 0.0;
+                                                        if ('' === $ticket_slug || '' === trim($ticket_label)) {
+                                                            continue;
+                                                        }
+                                                        $ticket_price_label = function_exists('wc_price')
+                                                            ? wp_strip_all_tags((string) wc_price($ticket_price))
+                                                            : esc_html(number_format_i18n($ticket_price, 2) . ' ' . get_option('woocommerce_currency', 'EUR'));
+                                                        $ticket_option_label = sprintf('%s (%s)', $ticket_label, $ticket_price_label);
+                                                        ?>
+                                                        <option value="<?php echo esc_attr($ticket_slug); ?>">
+                                                            <?php echo esc_html($ticket_option_label); ?>
+                                                        </option>
+                                                    <?php endforeach; ?>
+                                                </select>
+                                            </div>
+                                        <?php endif; ?>
                                         <div class="fp-gift__field fp-gift__field--message">
                                             <label for="fp-gift-message"><?php esc_html_e('Messaggio personale (opzionale)', 'fp-experiences'); ?></label>
                                             <textarea id="fp-gift-message" name="message" rows="3"></textarea>

@@ -24,6 +24,7 @@ use function home_url;
 use function is_array;
 use function is_email;
 use function sanitize_email;
+use function sanitize_key;
 use function sanitize_textarea_field;
 use function sanitize_text_field;
 use function wc_get_checkout_url;
@@ -75,9 +76,10 @@ final class VoucherCreationService
         }
 
         $addons_requested = is_array($payload['addons'] ?? null) ? $payload['addons'] : [];
+        $ticket_slug = sanitize_key((string) ($payload['ticket_slug'] ?? ''));
 
         // Calculate pricing
-        $pricing_result = $this->pricing_service->calculateTotal($experience_id, $quantity, $addons_requested);
+        $pricing_result = $this->pricing_service->calculateTotal($experience_id, $quantity, $addons_requested, $ticket_slug);
 
         if (is_wp_error($pricing_result)) {
             return $pricing_result;
@@ -85,6 +87,8 @@ final class VoucherCreationService
 
         $total = $pricing_result['total'];
         $addons_selected = $pricing_result['addons_selected'];
+        $resolved_ticket_slug = (string) ($pricing_result['ticket_slug'] ?? '');
+        $resolved_ticket_label = (string) ($pricing_result['ticket_label'] ?? '');
 
         // Sanitize contacts
         $purchaser = $this->sanitizeContact($payload['purchaser'] ?? []);
@@ -130,6 +134,8 @@ final class VoucherCreationService
             'experience_id' => $experience_id,
             'experience_title' => $experience->post_title,
             'quantity' => $quantity,
+            'ticket_slug' => $resolved_ticket_slug,
+            'ticket_label' => $resolved_ticket_label,
             'addons' => $addons_selected,
             'purchaser' => $purchaser,
             'recipient' => $recipient,
