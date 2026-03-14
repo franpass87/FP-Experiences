@@ -635,16 +635,11 @@ $sticky_price_display = '' !== $price_from_display ? $format_currency($price_fro
                                             <input type="date" id="fp-gift-send-on" name="delivery[send_on]" min="<?php echo esc_attr(gmdate('Y-m-d')); ?>" />
                                             <p class="fp-gift__field-note"><?php esc_html_e('Invieremo il regalo via email alle 9:00 (Europe/Rome). Lascia vuoto per inviarlo subito dopo il pagamento.', 'fp-experiences'); ?></p>
                                         </div>
-                                        <div class="fp-gift__field fp-gift__field--quantity">
-                                            <label for="fp-gift-quantity"><?php esc_html_e('Numero di ospiti', 'fp-experiences'); ?></label>
-                                            <input type="number" id="fp-gift-quantity" name="quantity" value="1" min="1" step="1" required />
-                                        </div>
                                         <?php if (! empty($gift_tickets)) : ?>
-                                            <div class="fp-gift__field fp-gift__field--ticket-type">
-                                                <label for="fp-gift-ticket-type"><?php esc_html_e('Tipo biglietto', 'fp-experiences'); ?></label>
-                                                <select id="fp-gift-ticket-type" name="ticket_slug" required>
-                                                    <option value=""><?php esc_html_e('-- Seleziona tipo biglietto --', 'fp-experiences'); ?></option>
-                                                    <?php foreach ($gift_tickets as $gift_ticket) : ?>
+                                            <div class="fp-gift__field fp-gift__field--ticket-quantities">
+                                                <label><?php esc_html_e('Biglietti regalo', 'fp-experiences'); ?></label>
+                                                <div class="fp-gift__ticket-quantities">
+                                                    <?php foreach ($gift_tickets as $idx => $gift_ticket) : ?>
                                                         <?php
                                                         $ticket_slug = isset($gift_ticket['slug']) ? sanitize_key((string) $gift_ticket['slug']) : '';
                                                         $ticket_label = isset($gift_ticket['label']) ? (string) $gift_ticket['label'] : '';
@@ -655,13 +650,22 @@ $sticky_price_display = '' !== $price_from_display ? $format_currency($price_fro
                                                         $ticket_price_label = function_exists('wc_price')
                                                             ? wp_strip_all_tags((string) wc_price($ticket_price))
                                                             : esc_html(number_format_i18n($ticket_price, 2) . ' ' . get_option('woocommerce_currency', 'EUR'));
-                                                        $ticket_option_label = sprintf('%s (%s)', $ticket_label, $ticket_price_label);
+                                                        $ticket_row_label = sprintf('%s (%s)', $ticket_label, $ticket_price_label);
+                                                        $ticket_default_qty = 0 === (int) $idx ? 1 : 0;
                                                         ?>
-                                                        <option value="<?php echo esc_attr($ticket_slug); ?>">
-                                                            <?php echo esc_html($ticket_option_label); ?>
-                                                        </option>
+                                                        <div class="fp-gift__ticket-row">
+                                                            <span class="fp-gift__ticket-label"><?php echo esc_html($ticket_row_label); ?></span>
+                                                            <input
+                                                                type="number"
+                                                                min="0"
+                                                                step="1"
+                                                                name="ticket_quantities[<?php echo esc_attr($ticket_slug); ?>]"
+                                                                value="<?php echo esc_attr((string) $ticket_default_qty); ?>"
+                                                                class="fp-gift__ticket-qty"
+                                                            />
+                                                        </div>
                                                     <?php endforeach; ?>
-                                                </select>
+                                                </div>
                                             </div>
                                         <?php endif; ?>
                                         <div class="fp-gift__field fp-gift__field--message">

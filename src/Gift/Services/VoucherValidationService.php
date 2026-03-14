@@ -13,6 +13,7 @@ use WP_Error;
 use WP_Post;
 
 use function esc_html__;
+use function absint;
 use function get_post;
 use function is_array;
 use function is_email;
@@ -109,21 +110,47 @@ final class VoucherValidationService
             );
         }
 
-        // Validate selected ticket type when multiple ticket types are available.
         $ticket_types = Pricing::get_ticket_types($experience_id);
+        $ticket_quantities = is_array($payload['ticket_quantities'] ?? null) ? $payload['ticket_quantities'] : [];
         $ticket_slug = sanitize_key((string) ($payload['ticket_slug'] ?? ''));
-        if (count($ticket_types) > 1 && '' === $ticket_slug) {
-            return new WP_Error(
-                'fp_exp_gift_ticket_required',
-                esc_html__('Select a ticket type for the gift voucher.', 'fp-experiences')
-            );
-        }
 
-        if ('' !== $ticket_slug && ! isset($ticket_types[$ticket_slug])) {
-            return new WP_Error(
-                'fp_exp_gift_ticket_invalid',
-                esc_html__('The selected ticket type is not valid for this experience.', 'fp-experiences')
-            );
+        // Validate per-ticket quantities when provided.
+        $has_selected_ticket_quantity = false;
+        if (! empty($ticket_quantities)) {
+            foreach ($ticket_quantities as $slug => $qty) {
+                $slug_key = sanitize_key((string) $slug);
+                $qty_value = absint((string) $qty);
+                if ('' === $slug_key || ! isset($ticket_types[$slug_key])) {
+                    return new WP_Error(
+                        'fp_exp_gift_ticket_invalid',
+                        esc_html__('The selected ticket type is not valid for this experience.', 'fp-experiences')
+                    );
+                }
+                if ($qty_value > 0) {
+                    $has_selected_ticket_quantity = true;
+                }
+            }
+            if (! $has_selected_ticket_quantity) {
+                return new WP_Error(
+                    'fp_exp_gift_ticket_required',
+                    esc_html__('Select at least one ticket quantity for the gift voucher.', 'fp-experiences')
+                );
+            }
+        } else {
+            // Backward-compatible validation with single ticket selection.
+            if (count($ticket_types) > 1 && '' === $ticket_slug) {
+                return new WP_Error(
+                    'fp_exp_gift_ticket_required',
+                    esc_html__('Select a ticket type for the gift voucher.', 'fp-experiences')
+                );
+            }
+
+            if ('' !== $ticket_slug && ! isset($ticket_types[$ticket_slug])) {
+                return new WP_Error(
+                    'fp_exp_gift_ticket_invalid',
+                    esc_html__('The selected ticket type is not valid for this experience.', 'fp-experiences')
+                );
+            }
         }
 
         // Validate purchaser email

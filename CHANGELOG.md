@@ -2,6 +2,13 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.4.9] - 2026-03-14
+### Added
+- Gift voucher form now supports per-ticket quantities (for example Adult and Child in the same gift purchase flow).
+
+### Changed
+- Gift pricing now sums selected quantities for each ticket type and persists `ticket_quantities` metadata on orders and vouchers.
+
 ## [1.4.8] - 2026-03-14
 ### Added
 - Gift voucher flow now requires selecting a ticket type (for example Adult/Child), and stores the selected ticket slug/label in order and voucher metadata.

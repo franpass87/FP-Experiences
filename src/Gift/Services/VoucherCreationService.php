@@ -77,9 +77,16 @@ final class VoucherCreationService
 
         $addons_requested = is_array($payload['addons'] ?? null) ? $payload['addons'] : [];
         $ticket_slug = sanitize_key((string) ($payload['ticket_slug'] ?? ''));
+        $ticket_quantities = is_array($payload['ticket_quantities'] ?? null) ? $payload['ticket_quantities'] : [];
 
         // Calculate pricing
-        $pricing_result = $this->pricing_service->calculateTotal($experience_id, $quantity, $addons_requested, $ticket_slug);
+        $pricing_result = $this->pricing_service->calculateTotal(
+            $experience_id,
+            $quantity,
+            $addons_requested,
+            $ticket_slug,
+            $ticket_quantities
+        );
 
         if (is_wp_error($pricing_result)) {
             return $pricing_result;
@@ -89,6 +96,11 @@ final class VoucherCreationService
         $addons_selected = $pricing_result['addons_selected'];
         $resolved_ticket_slug = (string) ($pricing_result['ticket_slug'] ?? '');
         $resolved_ticket_label = (string) ($pricing_result['ticket_label'] ?? '');
+        $resolved_ticket_quantities = is_array($pricing_result['ticket_quantities'] ?? null) ? $pricing_result['ticket_quantities'] : [];
+        $total_guests = absint((string) ($pricing_result['total_guests'] ?? $quantity));
+        if ($total_guests <= 0) {
+            $total_guests = $quantity;
+        }
 
         // Sanitize contacts
         $purchaser = $this->sanitizeContact($payload['purchaser'] ?? []);
@@ -133,9 +145,10 @@ final class VoucherCreationService
         $gift_data = [
             'experience_id' => $experience_id,
             'experience_title' => $experience->post_title,
-            'quantity' => $quantity,
+            'quantity' => $total_guests,
             'ticket_slug' => $resolved_ticket_slug,
             'ticket_label' => $resolved_ticket_label,
+            'ticket_quantities' => $resolved_ticket_quantities,
             'addons' => $addons_selected,
             'purchaser' => $purchaser,
             'recipient' => $recipient,

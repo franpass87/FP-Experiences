@@ -1961,9 +1961,36 @@
                             selectedGiftAddons.push(value);
                         }
                     });
+                    const ticketQuantities = {};
+                    let totalGuests = 0;
+                    giftForm.querySelectorAll('input[name^="ticket_quantities["]').forEach((input) => {
+                        const match = input.name.match(/^ticket_quantities\[(.+)\]$/);
+                        if (!match || !match[1]) {
+                            return;
+                        }
+                        const slug = String(match[1]).trim();
+                        const qty = parseInt(input.value, 10) || 0;
+                        if (slug && qty > 0) {
+                            ticketQuantities[slug] = qty;
+                            totalGuests += qty;
+                        }
+                    });
+                    if (Object.keys(ticketQuantities).length > 0 && totalGuests <= 0) {
+                        if (giftFeedback) {
+                            giftFeedback.hidden = false;
+                            giftFeedback.className = 'fp-gift__feedback fp-gift__feedback--error';
+                            giftFeedback.textContent = 'Seleziona almeno 1 biglietto regalo.';
+                        }
+                        return;
+                    }
+                    if (Object.keys(ticketQuantities).length === 0) {
+                        totalGuests = parseInt(formData.get('quantity'), 10) || 1;
+                    }
+                    const firstTicketSlug = Object.keys(ticketQuantities)[0] || '';
                     const data = {
                         experience_id: giftConfig.experienceId || 0,
-                        ticket_slug: (formData.get('ticket_slug') || '').toString().trim(),
+                        ticket_slug: firstTicketSlug || (formData.get('ticket_slug') || '').toString().trim(),
+                        ticket_quantities: ticketQuantities,
                         purchaser: {
                             name: formData.get('purchaser[name]') || '',
                             email: formData.get('purchaser[email]') || ''
@@ -1975,7 +2002,7 @@
                         delivery: {
                             send_on: formData.get('delivery[send_on]') || ''
                         },
-                        quantity: parseInt(formData.get('quantity'), 10) || 1,
+                        quantity: totalGuests,
                         message: formData.get('message') || '',
                         addons: selectedGiftAddons
                     };
