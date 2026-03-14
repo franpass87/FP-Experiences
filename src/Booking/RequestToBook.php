@@ -214,6 +214,12 @@ final class RequestToBook implements HookableInterface
             return new WP_Error('fp_exp_rtb_slot', __('Lo slot selezionato non è più disponibile.', 'fp-experiences'), ['status' => 404]);
         }
 
+        $tickets_total = (int) array_sum(array_map('absint', $tickets));
+        $party_max = absint((string) get_post_meta($experience_id, '_fp_party_max', true));
+        if ($party_max > 0 && $tickets_total > $party_max) {
+            return new WP_Error('fp_exp_rtb_party_max', __('Il numero di biglietti supera il limite massimo per questa esperienza.', 'fp-experiences'), ['status' => 400]);
+        }
+
         $capacity = Slots::check_capacity($slot_id, $tickets);
         if (empty($capacity['allowed'])) {
             $message = isset($capacity['message']) ? (string) $capacity['message'] : __('Lo slot selezionato non può accettare altri partecipanti.', 'fp-experiences');

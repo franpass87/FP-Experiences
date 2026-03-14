@@ -9,6 +9,8 @@
  * @var array<string, array<int, array<string, mixed>>> $calendar
  * @var array<string, bool> $behavior
  * @var string $preselected_date Data in formato Y-m-d per eventi a data singola
+ * @var int $party_default Quantità predefinita primo biglietto (0 = nessuna)
+ * @var int $party_max Limite massimo biglietti (0 = nessun limite)
  * @var array<string, mixed> $rtb
  * @var string $rtb_nonce
  * @var string $scope_class
@@ -180,6 +182,8 @@ $price_from_display = null !== $price_from_value && $price_from_value > 0
 
 // Dataset per il JavaScript (deve essere definito dopo il calcolo del prezzo)
 $preselected_date = isset($preselected_date) && is_string($preselected_date) ? $preselected_date : '';
+$party_default = isset($party_default) ? absint($party_default) : 0;
+$party_max = isset($party_max) ? absint($party_max) : 0;
 $dataset = [
     'experienceId' => (int) $experience['id'],
     'experienceTitle' => wp_strip_all_tags((string) $experience['title']),
@@ -356,8 +360,27 @@ $dataset = [
                             </tr>
                         </thead>
                         <tbody>
-                            <?php foreach ($tickets as $ticket) : ?>
-                                <tr data-ticket="<?php echo esc_attr($ticket['slug']); ?>">
+                            <?php
+                            $ticket_index = 0;
+                            foreach ($tickets as $ticket) :
+                                $is_first = (0 === $ticket_index);
+                                $ticket_cap = isset($ticket['cap']) && $ticket['cap'] > 0 ? (int) $ticket['cap'] : null;
+                                if ($is_first && ($party_default > 0 || $party_max > 0)) {
+                                    $qty_value = $party_default;
+                                    $qty_max = $party_max > 0
+                                        ? ($ticket_cap !== null ? min($party_max, $ticket_cap) : $party_max)
+                                        : $ticket_cap;
+                                    $qty_min = ($party_default > 0 && $party_default === $party_max) ? $party_default : 0;
+                                    $is_fixed = $qty_min > 0 && $qty_min === $qty_max;
+                                } else {
+                                    $qty_value = 0;
+                                    $qty_min = 0;
+                                    $qty_max = $ticket_cap;
+                                    $is_fixed = false;
+                                }
+                                $ticket_index++;
+                            ?>
+                                <tr data-ticket="<?php echo esc_attr($ticket['slug']); ?>"<?php echo $is_fixed ? ' class="fp-exp-ticket--fixed-qty"' : ''; ?>>
                                     <th scope="row">
                                         <span class="fp-exp-ticket__label"><?php echo esc_html($ticket['label']); ?></span>
                                         <?php if (! empty($ticket['description'])) : ?>
@@ -371,8 +394,8 @@ $dataset = [
                                         <span class="fp-exp-ticket__price" data-price="<?php echo esc_attr((string) $ticket['price']); ?>"><?php echo esc_html($ticket_price_display); ?></span>
                                     </td>
                                     <td>
-                                        <div class="fp-exp-quantity">
-                                            <button type="button" class="fp-exp-quantity__control" data-action="decrease" aria-label="<?php echo esc_attr(sprintf(esc_html__('Riduci %s', 'fp-experiences'), $ticket['label'])); ?>">
+                                        <div class="fp-exp-quantity<?php echo $is_fixed ? ' fp-exp-quantity--fixed' : ''; ?>">
+                                            <button type="button" class="fp-exp-quantity__control" data-action="decrease" aria-label="<?php echo esc_attr(sprintf(esc_html__('Riduci %s', 'fp-experiences'), $ticket['label'])); ?>"<?php echo $is_fixed ? ' style="visibility:hidden;pointer-events:none;"' : ''; ?>>
                                                 <span class="screen-reader-text"><?php echo esc_html(sprintf(esc_html__('Riduci %s', 'fp-experiences'), $ticket['label'])); ?></span>
                                                 <span aria-hidden="true" class="fp-exp-quantity__icon">
                                                     <svg viewBox="0 0 24 24" role="img" aria-hidden="true" focusable="false" width="18" height="18">
@@ -380,8 +403,8 @@ $dataset = [
                                                     </svg>
                                                 </span>
                                             </button>
-                                            <input type="number" class="fp-exp-quantity__input" min="0" max="<?php echo esc_attr((string) ($ticket['cap'] ?? '')); ?>" value="0" aria-label="<?php echo esc_attr(sprintf(esc_html__('Quantità %s', 'fp-experiences'), $ticket['label'])); ?>">
-                                            <button type="button" class="fp-exp-quantity__control" data-action="increase" aria-label="<?php echo esc_attr(sprintf(esc_html__('Aumenta %s', 'fp-experiences'), $ticket['label'])); ?>">
+                                            <input type="number" class="fp-exp-quantity__input" min="<?php echo esc_attr((string) $qty_min); ?>" max="<?php echo esc_attr($qty_max !== null ? (string) $qty_max : ''); ?>" value="<?php echo esc_attr((string) $qty_value); ?>" aria-label="<?php echo esc_attr(sprintf(esc_html__('Quantità %s', 'fp-experiences'), $ticket['label'])); ?>"<?php echo $is_fixed ? ' readonly' : ''; ?>>
+                                            <button type="button" class="fp-exp-quantity__control" data-action="increase" aria-label="<?php echo esc_attr(sprintf(esc_html__('Aumenta %s', 'fp-experiences'), $ticket['label'])); ?>"<?php echo $is_fixed ? ' style="visibility:hidden;pointer-events:none;"' : ''; ?>>
                                                 <span class="screen-reader-text"><?php echo esc_html(sprintf(esc_html__('Aumenta %s', 'fp-experiences'), $ticket['label'])); ?></span>
                                                 <span aria-hidden="true" class="fp-exp-quantity__icon">
                                                     <svg viewBox="0 0 24 24" role="img" aria-hidden="true" focusable="false" width="18" height="18">

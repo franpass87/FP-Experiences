@@ -2,6 +2,10 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.4.5] - 2026-03-14
+### Added
+- Quantità predefinita e massima per biglietti (esperienza di coppia): nuovi campi "Quantità predefinita" e "Quantità massima" in Dettagli. Quando impostati (es. default 2, max 2), il primo tipo di biglietto viene pre-selezionato e limitato. Validazione backend su RTB e carrello WooCommerce.
+
 ## [1.4.4] - 2026-03-14
 ### Added
 - Eventi a data singola: data dell'evento preselezionata nel calendario al caricamento (mese e giorno già selezionati)

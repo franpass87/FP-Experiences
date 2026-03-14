@@ -265,6 +265,13 @@ final class WidgetShortcode extends BaseShortcode
             : [];
         $cognitive_bias_badges = Helpers::cognitive_bias_badges($cognitive_bias_slugs);
 
+        $party_default = absint((string) ($repo !== null
+            ? $repo->getMeta($experience_id, '_fp_party_default', 0)
+            : get_post_meta($experience_id, '_fp_party_default', true)));
+        $party_max = absint((string) ($repo !== null
+            ? $repo->getMeta($experience_id, '_fp_party_max', 0)
+            : get_post_meta($experience_id, '_fp_party_max', true)));
+
         $modified = get_post_modified_time('U', true, $post);
 
         // Calculate price_from using the same method as ExperienceShortcode
@@ -294,6 +301,8 @@ final class WidgetShortcode extends BaseShortcode
             'calendar' => $calendar,
             'behavior' => $behavior,
             'preselected_date' => $preselected_date,
+            'party_default' => $party_default,
+            'party_max' => $party_max,
             'schema_json' => $schema,
             'locale' => get_locale(),
             'timezone' => wp_timezone()->getName(),

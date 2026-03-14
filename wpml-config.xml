@@ -109,6 +109,8 @@
         <!-- Party size -->
         <custom-field action="copy">_fp_min_party</custom-field>
         <custom-field action="copy">_fp_capacity_slot</custom-field>
+        <custom-field action="copy">_fp_party_default</custom-field>
+        <custom-field action="copy">_fp_party_max</custom-field>
         
         <!-- Resources -->
         <custom-field action="copy">_fp_resources</custom-field>

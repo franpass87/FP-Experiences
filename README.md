@@ -2,7 +2,7 @@
 
 Plugin WordPress per booking di esperienze turistiche stile GetYourGuide. Shortcode/Elementor, carrello e checkout isolati, email transazionali, tracking marketing centralizzato.
 
-[![Version](https://img.shields.io/badge/version-1.4.4-blue.svg)](https://github.com/franpass87/FP-Experiences)
+[![Version](https://img.shields.io/badge/version-1.4.5-blue.svg)](https://github.com/franpass87/FP-Experiences)
 [![License](https://img.shields.io/badge/license-GPLv2%2B-blue.svg)](https://www.gnu.org/licenses/gpl-2.0.html)
 
 ---

@@ -664,6 +664,8 @@ final class DetailsMetaBoxHandler extends BaseMetaBoxHandler
     {
         $min_party = isset($data['min_party']) ? absint((string) $data['min_party']) : 0;
         $capacity_slot = isset($data['capacity_slot']) ? absint((string) $data['capacity_slot']) : 0;
+        $party_default = isset($data['party_default']) ? absint((string) $data['party_default']) : 0;
+        $party_max = isset($data['party_max']) ? absint((string) $data['party_max']) : 0;
         ?>
         <div class="fp-exp-field fp-exp-field--columns">
             <div>
@@ -694,6 +696,38 @@ final class DetailsMetaBoxHandler extends BaseMetaBoxHandler
                     step="1"
                     value="<?php echo esc_attr((string) $capacity_slot); ?>"
                     aria-describedby="fp-exp-capacity-help"
+                />
+            </div>
+        </div>
+        <div class="fp-exp-field fp-exp-field--columns">
+            <div>
+                <label class="fp-exp-field__label" for="fp-exp-party-default">
+                    <?php esc_html_e('Quantità predefinita', 'fp-experiences'); ?>
+                    <?php $this->render_tooltip('fp-exp-party-default-help', esc_html__('Quantità pre-selezionata nel widget (es. 2 per esperienza di coppia). Lascia 0 per nessuna pre-selezione.', 'fp-experiences')); ?>
+                </label>
+                <input
+                    type="number"
+                    id="fp-exp-party-default"
+                    name="fp_exp_details[party_default]"
+                    min="0"
+                    step="1"
+                    value="<?php echo esc_attr((string) $party_default); ?>"
+                    aria-describedby="fp-exp-party-default-help"
+                />
+            </div>
+            <div>
+                <label class="fp-exp-field__label" for="fp-exp-party-max">
+                    <?php esc_html_e('Quantità massima', 'fp-experiences'); ?>
+                    <?php $this->render_tooltip('fp-exp-party-max-help', esc_html__('Limite massimo di biglietti acquistabili (es. 2 per esperienza di coppia). Lascia 0 per nessun limite.', 'fp-experiences')); ?>
+                </label>
+                <input
+                    type="number"
+                    id="fp-exp-party-max"
+                    name="fp_exp_details[party_max]"
+                    min="0"
+                    step="1"
+                    value="<?php echo esc_attr((string) $party_max); ?>"
+                    aria-describedby="fp-exp-party-max-help"
                 />
             </div>
         </div>
@@ -1016,6 +1050,10 @@ final class DetailsMetaBoxHandler extends BaseMetaBoxHandler
         $this->update_or_delete_meta($post_id, 'min_party', $min_party > 0 ? $min_party : null);
         $capacity_slot = isset($raw['capacity_slot']) ? absint((string) $raw['capacity_slot']) : 0;
         $this->update_or_delete_meta($post_id, 'capacity_slot', $capacity_slot > 0 ? $capacity_slot : null);
+        $party_default = isset($raw['party_default']) ? absint((string) $raw['party_default']) : 0;
+        $this->update_or_delete_meta($post_id, 'party_default', $party_default > 0 ? $party_default : null);
+        $party_max = isset($raw['party_max']) ? absint((string) $raw['party_max']) : 0;
+        $this->update_or_delete_meta($post_id, 'party_max', $party_max > 0 ? $party_max : null);
 
         // Age restrictions
         $age_min = isset($raw['age_min']) ? absint((string) $raw['age_min']) : 0;
@@ -1169,6 +1207,8 @@ final class DetailsMetaBoxHandler extends BaseMetaBoxHandler
         // Get capacity and age fields
         $min_party = absint((string) $this->get_meta_value($post_id, 'min_party', 0));
         $capacity_slot = absint((string) $this->get_meta_value($post_id, 'capacity_slot', 0));
+        $party_default = absint((string) $this->get_meta_value($post_id, 'party_default', 0));
+        $party_max = absint((string) $this->get_meta_value($post_id, 'party_max', 0));
         $age_min = absint((string) $this->get_meta_value($post_id, 'age_min', 0));
         $age_max = absint((string) $this->get_meta_value($post_id, 'age_max', 0));
         $rules_children = sanitize_text_field((string) $this->get_meta_value($post_id, 'rules_children', ''));
@@ -1202,6 +1242,8 @@ final class DetailsMetaBoxHandler extends BaseMetaBoxHandler
             'linked_page' => $linked_page,
             'min_party' => $min_party,
             'capacity_slot' => $capacity_slot,
+            'party_default' => $party_default,
+            'party_max' => $party_max,
             'age_min' => $age_min,
             'age_max' => $age_max,
             'rules_children' => $rules_children,

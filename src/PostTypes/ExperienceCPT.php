@@ -381,6 +381,14 @@ final class ExperienceCPT implements HookableInterface
                 'type' => 'string',
                 'default' => '',
             ],
+            '_fp_party_default' => [
+                'type' => 'integer',
+                'default' => 0,
+            ],
+            '_fp_party_max' => [
+                'type' => 'integer',
+                'default' => 0,
+            ],
         ];
     }
 

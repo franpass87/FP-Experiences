@@ -1082,6 +1082,8 @@ final class Multilanguage implements HookableInterface
             // Capacity
             '_fp_min_party',
             '_fp_capacity_slot',
+            '_fp_party_default',
+            '_fp_party_max',
             '_fp_resources',
             // Age restrictions
             '_fp_age_min',

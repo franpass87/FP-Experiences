@@ -14,8 +14,10 @@ use WP_REST_Request;
 use WP_REST_Response;
 
 use function __;
+use function absint;
 use function add_action;
 use function get_option;
+use function get_post_meta;
 use function is_array;
 use function is_wp_error;
 use function nocache_headers;
@@ -173,6 +175,12 @@ final class Checkout implements HookableInterface
                                 'experience_id' => $experience_id,
                             ]);
                             return new WP_Error('fp_exp_set_cart_invalid', __('Experience ID non valido.', 'fp-experiences'), ['status' => 400]);
+                        }
+
+                        $tickets_total = (int) array_sum(array_map('intval', $tickets));
+                        $party_max = absint((string) get_post_meta($experience_id, '_fp_party_max', true));
+                        if ($party_max > 0 && $tickets_total > $party_max) {
+                            return new WP_Error('fp_exp_cart_party_max', __('Il numero di biglietti supera il limite massimo per questa esperienza.', 'fp-experiences'), ['status' => 400]);
                         }
 
                         $item = [
