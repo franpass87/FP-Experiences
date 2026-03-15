@@ -30,7 +30,7 @@ final class GiftController
     /**
      * Purchase a gift voucher.
      */
-    public function purchase(WP_REST_Request $request): WP_REST_Response
+    public function purchase(WP_REST_Request $request): WP_REST_Response|WP_Error
     {
         if (! Helpers::gift_enabled()) {
             return ErrorHandlingMiddleware::badRequest(
@@ -64,7 +64,7 @@ final class GiftController
     /**
      * Get gift voucher by code.
      */
-    public function getVoucher(WP_REST_Request $request): WP_REST_Response
+    public function getVoucher(WP_REST_Request $request): WP_REST_Response|WP_Error
     {
         $code = sanitize_text_field((string) $request->get_param('code'));
 
@@ -88,7 +88,7 @@ final class GiftController
     /**
      * Redeem a gift voucher.
      */
-    public function redeem(WP_REST_Request $request): WP_REST_Response
+    public function redeem(WP_REST_Request $request): WP_REST_Response|WP_Error
     {
         $code = sanitize_text_field((string) $request->get_param('code'));
 

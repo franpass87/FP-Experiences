@@ -249,7 +249,6 @@ final class VoucherRedemptionService
         // Create order item
         $item = new WC_Order_Item_Product();
         $item->set_product_id(0);
-        $item->set_type('fp_experience_item');
         $item->set_name(
             sprintf(
                 /* translators: %s: experience title. */

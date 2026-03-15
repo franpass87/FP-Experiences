@@ -32,6 +32,7 @@ use function load_textdomain;
 use function file_exists;
 use function plugin_basename;
 use function dirname;
+use function filemtime;
 
 use const WP_PLUGIN_DIR;
 
@@ -120,6 +121,12 @@ final class Assets
         $style_url = trailingslashit(FP_EXP_PLUGIN_URL) . $css_rel;
         $front_js = trailingslashit(FP_EXP_PLUGIN_URL) . $js_rel;
         $checkout_js = trailingslashit(FP_EXP_PLUGIN_URL) . 'assets/js/checkout.js';
+        $front_js_version = Helpers::asset_version($js_rel);
+        $front_js_path = FP_EXP_PLUGIN_DIR . $js_rel;
+        if (file_exists($front_js_path)) {
+            // Append filemtime to avoid stale cached JS after hotfixes.
+            $front_js_version .= '.' . (string) filemtime($front_js_path);
+        }
 
         wp_register_style(
             'fp-exp-fontawesome',
@@ -174,7 +181,7 @@ final class Assets
             'fp-exp-front',
             $front_js,
             $front_deps,
-            Helpers::asset_version($js_rel),
+            $front_js_version,
             true
         );
 

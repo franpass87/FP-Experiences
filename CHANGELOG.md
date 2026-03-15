@@ -2,6 +2,17 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.4.11] - 2026-03-15
+### Changed
+- Refined gift purchase modal UI on desktop and mobile (cards, fields, add-ons grid, spacing, and responsive layout) for better readability and conversion flow.
+- Gift voucher frontend now initializes redemption logic on the dedicated redeem page without depending on the single-experience widget bootstrap.
+
+### Fixed
+- Gift voucher lookup now returns the full payload with upcoming slots in `VoucherManager::get_voucher_by_code`, restoring slot selection in the redeem flow.
+- Gift REST controller methods now allow `WP_Error` responses in type declarations to prevent fatal errors on error paths.
+- Gift redemption order item creation no longer calls unsupported WooCommerce `set_type()` to avoid runtime fatal errors on redeem.
+- Added stronger frontend asset cache-busting for `front.js` registration to reduce stale-JS issues after hotfix deployments.
+
 ## [1.4.10] - 2026-03-14
 ### Fixed
 - REST gift purchase payload now forwards `ticket_slug` and `ticket_quantities` from `GiftController` to avoid critical checkout errors when submitting the gift form.

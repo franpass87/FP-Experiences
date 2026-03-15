@@ -211,6 +211,331 @@
     }, { capture: true });
 })();
 
+// Inizializza redeem voucher anche fuori dal flusso widget
+(function initGiftRedeemStandalone() {
+    'use strict';
+
+    const setup = () => {
+        const redeemRoot = document.querySelector('[data-fp-gift-redeem]');
+        if (!redeemRoot) {
+            return;
+        }
+
+        const lookupForm = redeemRoot.querySelector('[data-fp-gift-redeem-lookup]');
+        const lookupSubmit = redeemRoot.querySelector('[data-fp-gift-redeem-lookup-submit]');
+        const codeInput = redeemRoot.querySelector('[data-fp-gift-code]');
+        const lookupFeedback = redeemRoot.querySelector('[data-fp-gift-redeem-feedback]');
+        const details = redeemRoot.querySelector('[data-fp-gift-redeem-details]');
+        const detailsFeedback = redeemRoot.querySelector('[data-fp-gift-redeem-feedback-details]');
+        const redeemForm = redeemRoot.querySelector('[data-fp-gift-redeem-form]');
+        const slotSelect = redeemRoot.querySelector('[data-fp-gift-redeem-slot]');
+        const redeemSubmit = redeemRoot.querySelector('[data-fp-gift-redeem-submit]');
+        const successBox = redeemRoot.querySelector('[data-fp-gift-redeem-success]');
+        const imageEl = redeemRoot.querySelector('[data-fp-gift-redeem-image]');
+        const codeEl = redeemRoot.querySelector('[data-fp-gift-redeem-code]');
+        const titleEl = redeemRoot.querySelector('[data-fp-gift-redeem-title]');
+        const excerptEl = redeemRoot.querySelector('[data-fp-gift-redeem-excerpt]');
+        const quantityEl = redeemRoot.querySelector('[data-fp-gift-redeem-quantity]');
+        const validityEl = redeemRoot.querySelector('[data-fp-gift-redeem-validity]');
+        const valueEl = redeemRoot.querySelector('[data-fp-gift-redeem-value]');
+        const addonsWrapper = redeemRoot.querySelector('[data-fp-gift-redeem-addons-wrapper]');
+        const addonsList = redeemRoot.querySelector('[data-fp-gift-redeem-addons]');
+
+        if (!lookupForm || !lookupSubmit || !codeInput || !details || !redeemForm || !slotSelect || !redeemSubmit) {
+            return;
+        }
+
+        const apiBase = ((typeof fpExpConfig !== 'undefined' && fpExpConfig.restUrl) || (window.wpApiSettings && wpApiSettings.root) || (window.location.origin + '/wp-json/fp-exp/v1/')).replace(/\/?$/, '/');
+        const nonce = (typeof fpExpConfig !== 'undefined' && fpExpConfig.restNonce) ? fpExpConfig.restNonce : '';
+
+        const labels = {
+            lookupDefault: lookupSubmit.textContent || 'Verifica voucher',
+            lookupLoading: 'Verifica in corso...',
+            redeemDefault: redeemSubmit.textContent || 'Conferma utilizzo',
+            redeemLoading: 'Conferma in corso...',
+            redeemDone: 'Voucher utilizzato',
+            noSlots: 'Nessuna disponibilita trovata per questo voucher.',
+            selectSlot: 'Seleziona data e ora',
+            redeemSuccess: 'Voucher utilizzato con successo! La prenotazione e stata confermata.',
+            genericLookupError: 'Impossibile verificare il voucher. Riprova.',
+            genericRedeemError: 'Impossibile completare il riscatto. Riprova.',
+        };
+
+        let currentVoucher = null;
+
+        const setFeedback = (el, message, type) => {
+            if (!el) {
+                return;
+            }
+            if (!message) {
+                el.hidden = true;
+                el.textContent = '';
+                el.className = 'fp-gift__feedback';
+                return;
+            }
+            el.hidden = false;
+            el.className = 'fp-gift__feedback fp-gift__feedback--' + type;
+            el.textContent = message;
+        };
+
+        const setSuccess = (message) => {
+            if (!successBox) {
+                return;
+            }
+            if (!message) {
+                successBox.hidden = true;
+                successBox.textContent = '';
+                return;
+            }
+            successBox.hidden = false;
+            successBox.textContent = message;
+        };
+
+        const normalizeCode = (value) => {
+            return String(value || '').trim().toLowerCase().replace(/[^a-z0-9-]/g, '');
+        };
+
+        const setLoadingState = (button, isLoading, loadingText, defaultText) => {
+            if (!button) {
+                return;
+            }
+            button.disabled = isLoading;
+            button.textContent = isLoading ? loadingText : defaultText;
+        };
+
+        const formatCurrency = (amount, currency) => {
+            const parsed = Number(amount);
+            if (!Number.isFinite(parsed)) {
+                return '';
+            }
+
+            try {
+                return new Intl.NumberFormat(document.documentElement.lang || 'it-IT', {
+                    style: 'currency',
+                    currency: currency || 'EUR',
+                }).format(parsed);
+            } catch (e) {
+                return parsed.toFixed(2) + ' ' + (currency || 'EUR');
+            }
+        };
+
+        const getResponseData = async (response, fallbackMessage) => {
+            let payload = {};
+            try {
+                payload = await response.json();
+            } catch (e) {
+                payload = {};
+            }
+
+            if (!response.ok) {
+                const message = payload && payload.message ? payload.message : fallbackMessage;
+                throw new Error(message);
+            }
+
+            return payload;
+        };
+
+        const renderSlots = (slots) => {
+            const normalizedSlots = Array.isArray(slots) ? slots : [];
+            slotSelect.innerHTML = '';
+
+            const placeholder = document.createElement('option');
+            placeholder.value = '';
+            placeholder.textContent = labels.selectSlot;
+            placeholder.disabled = true;
+            placeholder.selected = true;
+            slotSelect.appendChild(placeholder);
+
+            if (!normalizedSlots.length) {
+                slotSelect.disabled = true;
+                redeemSubmit.disabled = true;
+                setFeedback(detailsFeedback, labels.noSlots, 'error');
+                return;
+            }
+
+            normalizedSlots.forEach((slot) => {
+                const option = document.createElement('option');
+                const slotId = parseInt(slot.id || slot.slot_id, 10);
+                option.value = Number.isFinite(slotId) ? String(slotId) : '';
+                option.textContent = slot.label || slot.start_label || slot.start_datetime || '';
+                if (!option.value || !option.textContent) {
+                    return;
+                }
+                slotSelect.appendChild(option);
+            });
+
+            slotSelect.disabled = slotSelect.options.length <= 1;
+            redeemSubmit.disabled = true;
+            if (!slotSelect.disabled) {
+                setFeedback(detailsFeedback, '', 'success');
+            }
+        };
+
+        const renderVoucher = (voucher) => {
+            const experience = voucher && voucher.experience ? voucher.experience : {};
+            const addons = Array.isArray(voucher.addons) ? voucher.addons : [];
+
+            codeEl.textContent = voucher.code || '';
+            titleEl.textContent = experience.title || '';
+            excerptEl.textContent = experience.excerpt || '';
+            quantityEl.textContent = String(voucher.quantity || 1);
+            validityEl.textContent = voucher.valid_until_label || '';
+            valueEl.textContent = formatCurrency(voucher.value, voucher.currency);
+
+            if (imageEl) {
+                const image = experience.image || '';
+                if (image) {
+                    imageEl.src = image;
+                    imageEl.alt = experience.title || '';
+                    imageEl.hidden = false;
+                } else {
+                    imageEl.hidden = true;
+                    imageEl.removeAttribute('src');
+                    imageEl.alt = '';
+                }
+            }
+
+            if (addonsWrapper && addonsList) {
+                addonsList.innerHTML = '';
+                if (addons.length) {
+                    addons.forEach((addon) => {
+                        const li = document.createElement('li');
+                        const label = addon.label || addon.slug || '';
+                        const qty = parseInt(addon.quantity, 10);
+                        li.textContent = qty > 1 ? (label + ' x' + qty) : label;
+                        addonsList.appendChild(li);
+                    });
+                    addonsWrapper.hidden = false;
+                } else {
+                    addonsWrapper.hidden = true;
+                }
+            }
+
+            renderSlots(voucher.slots || []);
+            details.hidden = false;
+            setSuccess('');
+            setFeedback(detailsFeedback, '', 'success');
+        };
+
+        const lookupVoucher = async (code) => {
+            const headers = { 'Accept': 'application/json' };
+            if (nonce) {
+                headers['X-WP-Nonce'] = nonce;
+            }
+            const response = await fetch(apiBase + 'gift/voucher/' + encodeURIComponent(code), {
+                method: 'GET',
+                headers,
+                credentials: 'same-origin',
+            });
+
+            return getResponseData(response, labels.genericLookupError);
+        };
+
+        const redeemVoucher = async (code, slotId) => {
+            const headers = {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+            };
+            if (nonce) {
+                headers['X-WP-Nonce'] = nonce;
+            }
+            const response = await fetch(apiBase + 'gift/redeem', {
+                method: 'POST',
+                headers,
+                credentials: 'same-origin',
+                body: JSON.stringify({
+                    code,
+                    slot_id: slotId,
+                }),
+            });
+
+            return getResponseData(response, labels.genericRedeemError);
+        };
+
+        slotSelect.addEventListener('change', () => {
+            redeemSubmit.disabled = !slotSelect.value;
+            setFeedback(detailsFeedback, '', 'success');
+            setSuccess('');
+        });
+
+        lookupForm.addEventListener('submit', async (ev) => {
+            ev.preventDefault();
+            const code = normalizeCode(codeInput.value);
+            if (!code) {
+                setFeedback(lookupFeedback, labels.genericLookupError, 'error');
+                return;
+            }
+
+            setFeedback(lookupFeedback, '', 'success');
+            setFeedback(detailsFeedback, '', 'success');
+            setSuccess('');
+            setLoadingState(lookupSubmit, true, labels.lookupLoading, labels.lookupDefault);
+
+            try {
+                const voucher = await lookupVoucher(code);
+                currentVoucher = voucher;
+                codeInput.value = code;
+                renderVoucher(voucher);
+                setFeedback(lookupFeedback, '', 'success');
+            } catch (error) {
+                details.hidden = true;
+                currentVoucher = null;
+                setFeedback(lookupFeedback, error.message || labels.genericLookupError, 'error');
+            } finally {
+                setLoadingState(lookupSubmit, false, labels.lookupLoading, labels.lookupDefault);
+            }
+        });
+
+        redeemForm.addEventListener('submit', async (ev) => {
+            ev.preventDefault();
+            if (!currentVoucher || !currentVoucher.code) {
+                setFeedback(detailsFeedback, labels.genericLookupError, 'error');
+                return;
+            }
+
+            const slotId = parseInt(slotSelect.value, 10);
+            if (!Number.isFinite(slotId) || slotId <= 0) {
+                setFeedback(detailsFeedback, labels.selectSlot, 'error');
+                return;
+            }
+
+            setFeedback(detailsFeedback, '', 'success');
+            setSuccess('');
+            setLoadingState(redeemSubmit, true, labels.redeemLoading, labels.redeemDefault);
+
+            try {
+                await redeemVoucher(currentVoucher.code, slotId);
+                setSuccess(labels.redeemSuccess);
+                setFeedback(detailsFeedback, '', 'success');
+                slotSelect.disabled = true;
+                redeemSubmit.disabled = true;
+                redeemSubmit.textContent = labels.redeemDone;
+            } catch (error) {
+                setFeedback(detailsFeedback, error.message || labels.genericRedeemError, 'error');
+            } finally {
+                if (redeemSubmit.textContent !== labels.redeemDone) {
+                    setLoadingState(redeemSubmit, false, labels.redeemLoading, labels.redeemDefault);
+                }
+            }
+        });
+
+        const initialFromData = normalizeCode(redeemRoot.getAttribute('data-fp-initial-code'));
+        const initialFromQuery = normalizeCode(new URLSearchParams(window.location.search).get('gift'));
+        const initialCode = initialFromData || initialFromQuery;
+
+        if (initialCode) {
+            codeInput.value = initialCode;
+            lookupForm.dispatchEvent(new Event('submit', { cancelable: true }));
+        }
+    };
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', setup);
+    } else {
+        setup();
+    }
+})();
+
 // Carica i moduli frontend necessari
 (function() {
     'use strict';

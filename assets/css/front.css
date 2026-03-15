@@ -3455,7 +3455,7 @@ body.fp-modal-open {
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: clamp(2rem, 6vw, 4rem);
+    padding: clamp(1rem, 3.5vw, 2.75rem);
     pointer-events: none;
     opacity: 0;
     transition: opacity 0.25s ease;
@@ -3473,33 +3473,35 @@ body.fp-modal-open {
 .fp-gift-modal__backdrop {
     position: absolute;
     inset: 0;
-    background: rgba(19, 29, 56, 0.55);
+    background: linear-gradient(180deg, rgba(9, 15, 32, 0.56) 0%, rgba(19, 29, 56, 0.74) 100%);
+    backdrop-filter: blur(4px);
 }
 
 @media (min-width: 1024px) {
     .fp-gift-modal__backdrop {
-        background: rgba(19, 29, 56, 0.65);
+        background: linear-gradient(180deg, rgba(7, 12, 26, 0.62) 0%, rgba(19, 29, 56, 0.8) 100%);
     }
 }
 
 .fp-gift-modal__dialog {
     position: relative;
     z-index: 1;
-    width: min(760px, 100%);
-    max-height: calc(100vh - 14rem);
+    width: min(840px, 100%);
+    max-height: calc(100vh - 2.25rem);
     overflow-y: auto;
     overflow-x: hidden;
-    border-radius: var(--fp-exp-radius-large, 20px);
+    border-radius: clamp(18px, 2vw, 24px);
     outline: none;
-    background: var(--fp-color-surface, #fff);
-    box-shadow: 0 20px 45px -20px rgba(19, 29, 56, 0.25);
-    padding: clamp(1.5rem, 3vw, 2rem);
+    background: linear-gradient(148deg, #ffffff 0%, #f8faff 100%);
+    border: 1px solid rgba(19, 29, 56, 0.1);
+    box-shadow: 0 28px 64px -24px rgba(19, 29, 56, 0.55);
+    padding: clamp(1.1rem, 2.2vw, 1.8rem);
 }
 
 @media (min-width: 1024px) {
     .fp-gift-modal__dialog {
-        max-height: min(700px, calc(100vh - 16rem));
-        width: min(680px, 90%);
+        max-height: min(760px, calc(100vh - 2.75rem));
+        width: min(820px, 92%);
     }
 }
 
@@ -3509,26 +3511,27 @@ body.fp-modal-open {
 
 .fp-gift-modal__close {
     position: absolute;
-    top: 1.25rem;
-    right: 1.25rem;
+    top: 0.95rem;
+    right: 0.95rem;
     border: none;
-    background: #fff;
+    background: rgba(255, 255, 255, 0.92);
     border-radius: 999px;
-    width: 2.5rem;
-    height: 2.5rem;
+    width: 2.35rem;
+    height: 2.35rem;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     color: var(--fp-color-text, #131d38);
     cursor: pointer;
-    transition: transform 0.2s ease, background 0.2s ease;
-    box-shadow: 0 4px 12px rgba(19, 29, 56, 0.15);
+    transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+    box-shadow: 0 8px 20px rgba(19, 29, 56, 0.18);
 }
 
 .fp-gift-modal__close:hover,
 .fp-gift-modal__close:focus-visible {
-    transform: scale(1.05);
-    background: var(--fp-color-surface, #fff);
+    transform: scale(1.07);
+    background: #fff;
+    box-shadow: 0 10px 24px rgba(19, 29, 56, 0.24);
     outline: none;
 }
 
@@ -3539,60 +3542,79 @@ body.fp-modal-open {
 
 @media (max-width: 640px) {
     .fp-gift-modal {
-        padding: 1rem 0.5rem;
+        padding: 0.35rem;
+        align-items: flex-end;
     }
 
     .fp-gift-modal__dialog {
-        max-height: calc(100vh - 12rem);
-        border-radius: var(--fp-exp-radius-base, 12px);
+        width: 100%;
+        max-height: calc(100vh - 0.7rem);
+        border-radius: 20px 20px 14px 14px;
+        padding: 1rem 0.85rem 1.1rem;
     }
 
     .fp-gift-modal__close {
-        top: 1rem;
-        right: 1rem;
+        top: 0.6rem;
+        right: 0.6rem;
         width: 2.25rem;
         height: 2.25rem;
     }
 }
 
 .fp-gift {
-    margin-top: clamp(2.5rem, 4vw, 4rem);
+    margin-top: clamp(1.75rem, 3vw, 2.8rem);
 }
 
 .fp-gift__inner {
-    background: var(--fp-color-surface, #fff);
-    border-radius: var(--fp-exp-radius-large, 20px);
-    border: 1px solid rgba(19, 29, 56, 0.08);
-    padding: clamp(1.25rem, 2.5vw, 1.75rem);
-    padding-top: clamp(1.5rem, 3vw, 2rem);
-    box-shadow: 0 20px 45px -20px rgba(19, 29, 56, 0.25);
+    background: #fff;
+    border-radius: clamp(14px, 1.8vw, 20px);
+    border: 1px solid rgba(19, 29, 56, 0.1);
+    padding: clamp(1rem, 2.1vw, 1.5rem);
+    padding-top: clamp(1.35rem, 2.4vw, 1.75rem);
+    box-shadow: 0 14px 34px -18px rgba(19, 29, 56, 0.3);
     overflow-wrap: break-word;
     word-wrap: break-word;
 }
 
 .fp-gift__title {
-    margin: 0 0 0.35rem;
-    font-size: clamp(1.4rem, 1.1vw + 1rem, 1.9rem);
+    margin: 0 0 0.4rem;
+    font-size: clamp(1.42rem, 1.2vw + 1rem, 2rem);
+    letter-spacing: -0.01em;
 }
 
 .fp-gift__intro {
-    margin: 0 0 1.25rem;
+    margin: 0 0 1.1rem;
     color: var(--fp-color-text-muted, rgba(19, 29, 56, 0.7));
-    font-size: 1rem;
+    font-size: 0.98rem;
+    max-width: 64ch;
 }
 
 .fp-gift__grid {
     display: grid;
-    gap: 0.85rem 1rem;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    margin-bottom: 1rem;
+    gap: 1rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin-bottom: 1.15rem;
+    align-items: stretch;
+}
+
+.fp-gift__field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    border: 1px solid rgba(19, 29, 56, 0.1);
+    border-radius: 14px;
+    background: linear-gradient(180deg, rgba(252, 253, 255, 0.95), #ffffff);
+    padding: 0.7rem 0.75rem 0.78rem;
+    min-height: 100%;
 }
 
 .fp-gift__field label {
     display: block;
     font-weight: 600;
-    margin-bottom: 0.25rem;
+    margin-bottom: 0.05rem;
     color: var(--fp-color-text, #131d38);
+    font-size: 0.92rem;
+    line-height: 1.35;
 }
 
 .fp-gift__field input,
@@ -3600,12 +3622,12 @@ body.fp-modal-open {
     width: 100%;
     max-width: 100%;
     border-radius: 14px;
-    border: 1px solid rgba(19, 29, 56, 0.16);
-    padding: 0.6rem 0.85rem;
+    border: 1px solid rgba(19, 29, 56, 0.14);
+    padding: 0.7rem 0.9rem;
     font: inherit;
     line-height: 1.45;
     color: var(--fp-color-text, #131d38);
-    background: #fff;
+    background: #fcfdff;
     transition: border 0.2s ease, box-shadow 0.2s ease;
     box-sizing: border-box;
 }
@@ -3613,26 +3635,71 @@ body.fp-modal-open {
 .fp-gift__field input:focus,
 .fp-gift__field textarea:focus {
     border-color: var(--fp-color-primary);
-    box-shadow: 0 0 0 3px rgba(19, 29, 56, 0.12);
+    box-shadow: 0 0 0 3px rgba(19, 29, 56, 0.12), 0 10px 22px -18px rgba(19, 29, 56, 0.55);
     outline: none;
 }
 
 .fp-gift__field-note {
-    margin: 0.35rem 0 0;
-    font-size: 0.95rem;
+    margin: 0.2rem 0 0;
+    font-size: 0.87rem;
+    line-height: 1.35;
     color: var(--fp-color-text-muted, rgba(19, 29, 56, 0.7));
 }
 
 .fp-gift__field textarea {
-    min-height: 80px;
+    min-height: 96px;
     resize: vertical;
+}
+
+.fp-gift__field--message,
+.fp-gift__field--ticket-quantities {
+    grid-column: 1 / -1;
+}
+
+.fp-gift__field--ticket-quantities {
+    gap: 0.55rem;
+    padding-bottom: 0.7rem;
+}
+
+.fp-gift__field--message {
+    gap: 0.45rem;
+}
+
+.fp-gift__ticket-quantities {
+    display: grid;
+    gap: 0.6rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.fp-gift__ticket-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.8rem;
+    border: 1px solid rgba(19, 29, 56, 0.12);
+    border-radius: 12px;
+    padding: 0.58rem 0.65rem 0.58rem 0.82rem;
+    background: #fcfdff;
+}
+
+.fp-gift__ticket-label {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--fp-color-text, #131d38);
+}
+
+.fp-gift__ticket-qty {
+    width: 82px;
+    min-width: 82px;
+    text-align: center;
 }
 
 .fp-gift__addons {
     border: 1px solid rgba(19, 29, 56, 0.12);
-    border-radius: 14px;
-    padding: 0.85rem 1rem;
-    margin: 0 0 1rem;
+    border-radius: 16px;
+    padding: 0.95rem 1rem;
+    margin: 0 0 1.1rem;
+    background: linear-gradient(180deg, rgba(248, 250, 255, 0.68), rgba(255, 255, 255, 0.96));
 }
 
 .fp-gift__addons legend {
@@ -3644,8 +3711,9 @@ body.fp-modal-open {
 .fp-gift__addons-grid {
     display: grid;
     gap: 0.75rem;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     margin-top: 0.75rem;
+    align-items: stretch;
 }
 
 .fp-gift__addon {
@@ -3654,16 +3722,28 @@ body.fp-modal-open {
     column-gap: 0.65rem;
     row-gap: 0.25rem;
     align-items: flex-start;
-    border: 1px solid rgba(19, 29, 56, 0.16);
+    border: 1px solid rgba(19, 29, 56, 0.14);
     border-radius: 12px;
-    padding: 0.6rem 0.85rem;
+    padding: 0.65rem 0.85rem;
     background: #fff;
     cursor: pointer;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.fp-gift__addon:hover {
+    border-color: rgba(19, 29, 56, 0.3);
+    box-shadow: 0 10px 24px -24px rgba(19, 29, 56, 0.7);
+    transform: translateY(-1px);
 }
 
 .fp-gift__addon > input {
     margin-top: 0.4rem;
     accent-color: var(--fp-color-primary);
+}
+
+.fp-gift__addon > input:focus-visible {
+    outline: 2px solid var(--fp-color-primary);
+    outline-offset: 2px;
 }
 
 .fp-gift__addon-label,
@@ -3688,16 +3768,17 @@ body.fp-modal-open {
 }
 
 .fp-gift__note {
-    font-size: 0.9rem;
+    font-size: 0.92rem;
     color: var(--fp-color-text-muted, rgba(19, 29, 56, 0.7));
-    margin: 0 0 0.85rem;
+    margin: 0 0 1rem;
+    line-height: 1.45;
 }
 
 .fp-gift__feedback,
 .fp-gift__success {
     border-radius: 12px;
-    padding: 0.7rem 0.85rem;
-    margin-bottom: 0.85rem;
+    padding: 0.72rem 0.9rem;
+    margin-bottom: 0.95rem;
     font-weight: 600;
 }
 
@@ -3725,10 +3806,27 @@ body.fp-modal-open {
     border: 1px solid rgba(24, 161, 104, 0.35);
 }
 
+@media (min-width: 641px) {
+    .fp-gift__form > .fp-exp-button,
+    .fp-gift__form > button[data-fp-gift-submit] {
+        width: auto;
+        min-width: 230px;
+        min-height: 46px;
+    }
+}
+
+@media (max-width: 840px) {
+    .fp-gift__ticket-quantities,
+    .fp-gift__addons-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
 @media (max-width: 600px) {
     .fp-gift__inner {
-        padding: 1rem;
-        padding-top: 1.5rem;
+        padding: 0.9rem;
+        padding-top: 1.3rem;
+        border-radius: 14px;
     }
 
     .fp-gift__addons-grid {
@@ -3737,6 +3835,40 @@ body.fp-modal-open {
 
     .fp-gift__grid {
         grid-template-columns: 1fr;
+        gap: 0.75rem;
+    }
+
+    .fp-gift__field {
+        padding: 0.62rem 0.62rem 0.68rem;
+        border-radius: 12px;
+    }
+
+    .fp-gift__title {
+        font-size: 1.28rem;
+        padding-right: 2rem;
+    }
+
+    .fp-gift__intro {
+        margin-bottom: 0.95rem;
+        font-size: 0.94rem;
+    }
+
+    .fp-gift__ticket-row {
+        padding: 0.55rem 0.58rem;
+    }
+
+    .fp-gift__ticket-label {
+        font-size: 0.9rem;
+    }
+
+    .fp-gift__ticket-qty {
+        width: 76px;
+        min-width: 76px;
+    }
+
+    .fp-gift__form > .fp-exp-button,
+    .fp-gift__form > button[data-fp-gift-submit] {
+        width: 100%;
     }
 }
 

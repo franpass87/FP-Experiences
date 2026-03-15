@@ -5,8 +5,8 @@ Tags: experiences, booking, wooocommerce, shortcodes, calendar
 Requires at least: 6.0
 Tested up to: 6.4
 Requires PHP: 8.0
-Stable tag: 1.4.10
-Last updated: 2025-01-27
+Stable tag: 1.4.11
+Last updated: 2026-03-15
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -123,6 +123,11 @@ If Brevo credentials are provided, confirmations, reminders, and cancellations u
 FP Experiences stores reservation details inside custom tables linked to WooCommerce orders. Marketing consent is recorded per order (`_fp_exp_consent_marketing`) and forwarded to Brevo only when enabled. UTM parameters are captured in the `fp_exp_utm` cookie, copied to reservation/order meta, and never displayed publicly. Site owners can export or erase booking data through WooCommerce personal data tools; deleting an order removes the associated reservation payload. API credentials (Brevo, Google Calendar) are kept in WordPress options and can be revoked at any time from the Settings screen.
 
 == Changelog ==
+
+= 1.4.11 - 2026-03-15 =
+* **Changed**: Migliorata la UI del modal Gift Experience su desktop/mobile (spaziature, griglia campi, addon, leggibilita e resa responsive).
+* **Fixed**: Flusso redeem voucher ripristinato lato frontend/backend: inizializzazione JS dedicata sulla pagina redeem, payload voucher con slot disponibili e correzioni ai fatal REST/WooCommerce.
+* **Fixed**: Cache busting piu robusto per `assets/js/front.js` in registrazione asset per ridurre casi di JS stale dopo hotfix.
 
 = 1.4.10 - 2026-03-14 =
 * **Fixed**: Endpoint REST `gift/purchase` ora inoltra correttamente `ticket_slug` e `ticket_quantities`, evitando errore critico in fase "Procedi al pagamento".

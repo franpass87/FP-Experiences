@@ -550,7 +550,7 @@ final class VoucherManager implements HookableInterface
             );
         }
 
-        return $this->creation_service->buildVoucherPayload($voucher);
+        return $this->build_voucher_payload($voucher);
     }
 
     /**

@@ -730,7 +730,7 @@ $sticky_price_display = '' !== $price_from_display ? $format_currency($price_fro
                                             </fieldset>
                                         <?php endforeach; ?>
                                     <?php endif; ?>
-                                    <p class="fp-gift__note"><?php esc_html_e('Potrai verificare il totale e completare il pagamento al checkout. Il destinatario riceverà il voucher la mattina programmata o immediatamente dopo il pagamento se non è stata selezionata una data.', 'fp-experiences'); ?></p>
+                                    <p class="fp-gift__note"><?php esc_html_e('Potrai verificare il totale e completare il pagamento al checkout. Il destinatario riceverà il voucher la mattina programmata o immediatamente dopo il pagamento se non è stata selezionata una data. La data dell’esperienza verrà scelta dal destinatario in fase di riscatto del voucher.', 'fp-experiences'); ?></p>
                                     <button type="submit" class="fp-exp-button" data-fp-gift-submit>
                                         <?php esc_html_e('Procedi al pagamento', 'fp-experiences'); ?>
                                     </button>
