@@ -2,6 +2,18 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.4.12] - 2026-03-16
+### Added
+- Extended AutoTranslator with IT/EN mappings for gift-redeem page, widget labels, calendar/slots fallbacks, and voucher emails so the frontend and emails are consistent in both languages.
+- Voucher redemption labels (lookup, redeem, errors) now passed via `fpExpConfig.i18n.giftRedeem` and used in front.js for consistent translation.
+- i18n keys for JS fallbacks: readMore, readLess, slotsEmpty, slotsEmptyShort, calendarError, slotsLoadError.
+
+### Changed
+- front.js, slots.js and calendar-standalone.js now use translated strings from fpExpConfig.i18n for placeholder and error messages instead of hardcoded Italian.
+
+### Fixed
+- Resolved IT/EN mix on voucher redeem section (title, description, labels and button now follow the active language).
+
 ## [1.4.11] - 2026-03-15
 ### Changed
 - Refined gift purchase modal UI on desktop and mobile (cards, fields, add-ons grid, spacing, and responsive layout) for better readability and conversion flow.

@@ -14,8 +14,9 @@
     function renderSlots(items) {
         if (!_slotsEl) return;
         var emptyLabel = _slotsEl.getAttribute('data-empty-label') || '';
+        var fallbackEmpty = (window.fpExpConfig && window.fpExpConfig.i18n && window.fpExpConfig.i18n.slotsEmptyShort) || 'Nessuna fascia disponibile';
         if (!items || items.length === 0) {
-            _slotsEl.innerHTML = '<p class="fp-exp-slots__placeholder">' + (emptyLabel || 'Nessuna fascia disponibile') + '</p>';
+            _slotsEl.innerHTML = '<p class="fp-exp-slots__placeholder">' + (emptyLabel || fallbackEmpty) + '</p>';
             return;
         }
         var list = document.createElement('ul');

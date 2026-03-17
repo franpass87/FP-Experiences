@@ -38,8 +38,9 @@
             if (!description || !textSpan) return;
             
             const isExpanded = btn.getAttribute('aria-expanded') === 'true';
-            const expandText = textSpan.getAttribute('data-expand-text') || 'Leggi di più';
-            const collapseText = textSpan.getAttribute('data-collapse-text') || 'Mostra meno';
+            const i18n = (window.fpExpConfig && window.fpExpConfig.i18n) || {};
+            const expandText = textSpan.getAttribute('data-expand-text') || i18n.readMore || 'Leggi di più';
+            const collapseText = textSpan.getAttribute('data-collapse-text') || i18n.readLess || 'Mostra meno';
             
             if (isExpanded) {
                 description.classList.remove('is-expanded');
@@ -248,17 +249,18 @@
         const apiBase = ((typeof fpExpConfig !== 'undefined' && fpExpConfig.restUrl) || (window.wpApiSettings && wpApiSettings.root) || (window.location.origin + '/wp-json/fp-exp/v1/')).replace(/\/?$/, '/');
         const nonce = (typeof fpExpConfig !== 'undefined' && fpExpConfig.restNonce) ? fpExpConfig.restNonce : '';
 
+        const i18n = (typeof fpExpConfig !== 'undefined' && fpExpConfig.i18n && fpExpConfig.i18n.giftRedeem) ? fpExpConfig.i18n.giftRedeem : {};
         const labels = {
-            lookupDefault: lookupSubmit.textContent || 'Verifica voucher',
-            lookupLoading: 'Verifica in corso...',
-            redeemDefault: redeemSubmit.textContent || 'Conferma utilizzo',
-            redeemLoading: 'Conferma in corso...',
-            redeemDone: 'Voucher utilizzato',
-            noSlots: 'Nessuna disponibilita trovata per questo voucher.',
-            selectSlot: 'Seleziona data e ora',
-            redeemSuccess: 'Voucher utilizzato con successo! La prenotazione e stata confermata.',
-            genericLookupError: 'Impossibile verificare il voucher. Riprova.',
-            genericRedeemError: 'Impossibile completare il riscatto. Riprova.',
+            lookupDefault: lookupSubmit.textContent || i18n.lookupDefault || 'Verifica voucher',
+            lookupLoading: i18n.lookupLoading || 'Verifica in corso...',
+            redeemDefault: redeemSubmit.textContent || i18n.redeemDefault || 'Conferma utilizzo',
+            redeemLoading: i18n.redeemLoading || 'Conferma in corso...',
+            redeemDone: i18n.redeemDone || 'Voucher utilizzato',
+            noSlots: i18n.noSlots || 'Nessuna disponibilita trovata per questo voucher.',
+            selectSlot: i18n.selectSlot || 'Seleziona data e ora',
+            redeemSuccess: i18n.redeemSuccess || 'Voucher utilizzato con successo! La prenotazione e stata confermata.',
+            genericLookupError: i18n.genericLookupError || 'Impossibile verificare il voucher. Riprova.',
+            genericRedeemError: i18n.genericRedeemError || 'Impossibile completare il riscatto. Riprova.',
         };
 
         let currentVoucher = null;
@@ -667,9 +669,12 @@
             // showSlotsInline non più necessaria - sistema semplificato
         };
 
+        const slotsLoadErrorMsg = (window.fpExpConfig && window.fpExpConfig.i18n && window.fpExpConfig.i18n.slotsLoadError) || 'Impossibile caricare gli slot. Riprova.';
+        const slotsEmptyMsg = (window.fpExpConfig && window.fpExpConfig.i18n && window.fpExpConfig.i18n.slotsEmpty) || 'Nessuna fascia disponibile per questa data';
+        const calendarErrorMsg = (window.fpExpConfig && window.fpExpConfig.i18n && window.fpExpConfig.i18n.calendarError) || 'Errore caricamento calendario';
         const showSlotsError = (message) => {
             if (!slotsEl) return;
-            const text = message || 'Impossibile caricare gli slot. Riprova.';
+            const text = message || slotsLoadErrorMsg;
             // ✅ XSS fix: usa createElement + textContent invece di innerHTML
             const placeholder = document.createElement('p');
             placeholder.className = 'fp-exp-slots__placeholder';
@@ -721,7 +726,7 @@
                         items = await fetchAvailability(date);
                     } catch (e) {
                         // API fetch failed
-                        showSlotsError('Impossibile caricare gli slot. Riprova.');
+                        showSlotsError(slotsLoadErrorMsg);
                         items = [];
                         return; // Esci qui per evitare di chiamare renderSlots con errori
                     }
@@ -752,7 +757,7 @@
                     } else {
                         // Nessun slot disponibile
                         if (slotsEl) {
-                            slotsEl.innerHTML = '<p class="fp-exp-slots__placeholder">Nessuna fascia disponibile per questa data</p>';
+                            slotsEl.innerHTML = '<p class="fp-exp-slots__placeholder">' + slotsEmptyMsg + '</p>';
                         }
                     }
                 } else {
@@ -781,7 +786,7 @@
                     } else {
                         // Nessun slot disponibile
                         if (slotsEl) {
-                            slotsEl.innerHTML = '<p class="fp-exp-slots__placeholder">Nessuna fascia disponibile per questa data</p>';
+                            slotsEl.innerHTML = '<p class="fp-exp-slots__placeholder">' + slotsEmptyMsg + '</p>';
                         }
                     }
                 }
@@ -911,7 +916,7 @@
                     
                 } catch (error) {
                     // Errore generazione calendario
-                    grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 2rem; color: var(--fp-color-error);">Errore caricamento calendario</div>';
+                    grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 2rem; color: var(--fp-color-error);">' + calendarErrorMsg + '</div>';
                 }
             }
         };

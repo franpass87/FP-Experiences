@@ -104,7 +104,7 @@
         var slots = slotsMap[date] || [];
 
         if (slots.length === 0) {
-            var emptyLabel = slotsEl.getAttribute('data-empty-label') || 'Nessuna fascia disponibile per questa data';
+            var emptyLabel = slotsEl.getAttribute('data-empty-label') || ((window.fpExpConfig && window.fpExpConfig.i18n && window.fpExpConfig.i18n.slotsEmpty) || 'Nessuna fascia disponibile per questa data');
             slotsEl.innerHTML = '<p class="fp-exp-slots__placeholder">' + emptyLabel + '</p>';
             return;
         }

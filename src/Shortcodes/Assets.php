@@ -32,7 +32,6 @@ use function load_textdomain;
 use function file_exists;
 use function plugin_basename;
 use function dirname;
-use function filemtime;
 
 use const WP_PLUGIN_DIR;
 
@@ -121,12 +120,6 @@ final class Assets
         $style_url = trailingslashit(FP_EXP_PLUGIN_URL) . $css_rel;
         $front_js = trailingslashit(FP_EXP_PLUGIN_URL) . $js_rel;
         $checkout_js = trailingslashit(FP_EXP_PLUGIN_URL) . 'assets/js/checkout.js';
-        $front_js_version = Helpers::asset_version($js_rel);
-        $front_js_path = FP_EXP_PLUGIN_DIR . $js_rel;
-        if (file_exists($front_js_path)) {
-            // Append filemtime to avoid stale cached JS after hotfixes.
-            $front_js_version .= '.' . (string) filemtime($front_js_path);
-        }
 
         wp_register_style(
             'fp-exp-fontawesome',
@@ -181,7 +174,7 @@ final class Assets
             'fp-exp-front',
             $front_js,
             $front_deps,
-            $front_js_version,
+            Helpers::asset_version($js_rel),
             true
         );
 
@@ -270,6 +263,24 @@ final class Assets
             'selectAtLeast1Ticket' => __('Seleziona almeno 1 biglietto', 'fp-experiences'),
             'selectDateTime' => __('Seleziona data e orario', 'fp-experiences'),
             'proceedToPayment' => __('Procedi al pagamento', 'fp-experiences'),
+            'giftRedeem' => [
+                'lookupDefault' => __('Verifica voucher', 'fp-experiences'),
+                'lookupLoading' => __('Verifica in corso...', 'fp-experiences'),
+                'redeemDefault' => __('Conferma utilizzo', 'fp-experiences'),
+                'redeemLoading' => __('Conferma in corso...', 'fp-experiences'),
+                'redeemDone' => __('Voucher utilizzato', 'fp-experiences'),
+                'noSlots' => __('Nessuna disponibilita trovata per questo voucher.', 'fp-experiences'),
+                'selectSlot' => __('Scegli data e ora', 'fp-experiences'),
+                'redeemSuccess' => __('Voucher utilizzato con successo! La prenotazione e stata confermata.', 'fp-experiences'),
+                'genericLookupError' => __('Impossibile verificare il voucher. Riprova.', 'fp-experiences'),
+                'genericRedeemError' => __('Impossibile completare il riscatto. Riprova.', 'fp-experiences'),
+            ],
+            'readMore' => __('Leggi di più', 'fp-experiences'),
+            'readLess' => __('Mostra meno', 'fp-experiences'),
+            'slotsEmpty' => __('Nessuna fascia disponibile per questa data', 'fp-experiences'),
+            'slotsEmptyShort' => __('Nessuna fascia disponibile', 'fp-experiences'),
+            'calendarError' => __('Errore caricamento calendario', 'fp-experiences'),
+            'slotsLoadError' => __('Impossibile caricare gli slot. Riprova.', 'fp-experiences'),
         ];
     }
 
