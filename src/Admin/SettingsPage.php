@@ -145,6 +145,7 @@ final class SettingsPage implements HookableInterface
         $this->register_rtb_settings();
         $this->register_brevo_settings();
         $this->register_calendar_settings();
+        $this->register_webhook_settings();
     }
 
     public function render_page(): void
@@ -215,6 +216,9 @@ final class SettingsPage implements HookableInterface
             } elseif ('rtb' === $active_tab) {
                 settings_fields('fp_exp_settings_rtb');
                 do_settings_sections('fp_exp_settings_rtb');
+            } elseif ('webhook' === $active_tab) {
+                settings_fields('fp_exp_settings_webhook');
+                do_settings_sections('fp_exp_settings_webhook');
             } elseif ('calendar' === $active_tab) {
                 settings_fields('fp_exp_settings_calendar');
                 do_settings_sections('fp_exp_settings_calendar');
@@ -1459,6 +1463,104 @@ final class SettingsPage implements HookableInterface
         }
     }
 
+    private function register_webhook_settings(): void
+    {
+        register_setting('fp_exp_settings_webhook', 'fp_exp_webhook_settings', [
+            'type' => 'array',
+            'sanitize_callback' => [$this, 'sanitize_webhook_settings'],
+            'default' => [],
+        ]);
+
+        add_settings_section(
+            'fp_exp_section_webhook_outbound',
+            esc_html__('Webhook outbound', 'fp-experiences'),
+            [$this, 'render_webhook_help'],
+            'fp_exp_settings_webhook'
+        );
+
+        add_settings_field(
+            'fp_exp_webhook_url',
+            esc_html__('Endpoint URL', 'fp-experiences'),
+            [$this, 'render_webhook_url_field'],
+            'fp_exp_settings_webhook',
+            'fp_exp_section_webhook_outbound'
+        );
+        add_settings_field(
+            'fp_exp_webhook_secret',
+            esc_html__('Segreto (HMAC)', 'fp-experiences'),
+            [$this, 'render_webhook_secret_field'],
+            'fp_exp_settings_webhook',
+            'fp_exp_section_webhook_outbound'
+        );
+        add_settings_field(
+            'fp_exp_webhook_events',
+            esc_html__('Eventi da inviare', 'fp-experiences'),
+            [$this, 'render_webhook_events_field'],
+            'fp_exp_settings_webhook',
+            'fp_exp_section_webhook_outbound'
+        );
+    }
+
+    public function render_webhook_help(): void
+    {
+        echo '<p>' . esc_html__('Invia notifiche POST a un endpoint esterno quando si verificano eventi (prenotazione creata, pagata, RTB approvata/rifiutata, voucher riscattato). Il corpo è JSON con header X-FP-EXP-Signature (HMAC-SHA256 del body).', 'fp-experiences') . '</p>';
+    }
+
+    public function render_webhook_url_field(): void
+    {
+        $opts = get_option('fp_exp_webhook_settings', []);
+        $url = isset($opts['url']) ? (string) $opts['url'] : '';
+        echo '<input type="url" name="fp_exp_webhook_settings[url]" value="' . esc_attr($url) . '" class="regular-text" placeholder="https://..." />';
+    }
+
+    public function render_webhook_secret_field(): void
+    {
+        $opts = get_option('fp_exp_webhook_settings', []);
+        $secret = isset($opts['secret']) ? (string) $opts['secret'] : '';
+        echo '<input type="password" name="fp_exp_webhook_settings[secret]" value="' . esc_attr($secret) . '" class="regular-text" autocomplete="off" />';
+    }
+
+    public function render_webhook_events_field(): void
+    {
+        $opts = get_option('fp_exp_webhook_settings', []);
+        $events = isset($opts['events']) && is_array($opts['events']) ? $opts['events'] : [];
+        $labels = [
+            \FP_Exp\Api\WebhookDispatcher::EVENT_RESERVATION_CREATED => esc_html__('Prenotazione creata', 'fp-experiences'),
+            \FP_Exp\Api\WebhookDispatcher::EVENT_RESERVATION_PAID => esc_html__('Prenotazione pagata', 'fp-experiences'),
+            \FP_Exp\Api\WebhookDispatcher::EVENT_RESERVATION_CANCELLED => esc_html__('Prenotazione cancellata', 'fp-experiences'),
+            \FP_Exp\Api\WebhookDispatcher::EVENT_RTB_APPROVED => esc_html__('RTB approvata', 'fp-experiences'),
+            \FP_Exp\Api\WebhookDispatcher::EVENT_RTB_DECLINED => esc_html__('RTB rifiutata', 'fp-experiences'),
+            \FP_Exp\Api\WebhookDispatcher::EVENT_GIFT_REDEEMED => esc_html__('Voucher riscattato', 'fp-experiences'),
+        ];
+        foreach (\FP_Exp\Api\WebhookDispatcher::supported_events() as $event) {
+            $checked = in_array($event, $events, true);
+            echo '<label><input type="checkbox" name="fp_exp_webhook_settings[events][]" value="' . esc_attr($event) . '" ' . checked($checked, true, false) . ' /> ' . esc_html($labels[$event] ?? $event) . '</label><br />';
+        }
+    }
+
+    /**
+     * @param array<string, mixed> $input
+     * @return array<string, mixed>
+     */
+    public function sanitize_webhook_settings(array $input): array
+    {
+        $out = [
+            'url' => isset($input['url']) ? esc_url_raw(trim((string) $input['url'])) : '',
+            'secret' => isset($input['secret']) ? sanitize_text_field((string) $input['secret']) : '',
+            'events' => [],
+        ];
+        if (isset($input['events']) && is_array($input['events'])) {
+            $allowed = \FP_Exp\Api\WebhookDispatcher::supported_events();
+            foreach ($input['events'] as $e) {
+                $e = sanitize_key((string) $e);
+                if (in_array($e, $allowed, true)) {
+                    $out['events'][] = $e;
+                }
+            }
+        }
+        return $out;
+    }
+
     private function register_brevo_settings(): void
     {
         register_setting('fp_exp_settings_brevo', 'fp_exp_brevo', [
@@ -1580,6 +1682,7 @@ final class SettingsPage implements HookableInterface
             'calendar' => '<span class="dashicons dashicons-calendar"></span> ' . esc_html__('Calendar', 'fp-experiences'),
             'tracking' => '<span class="dashicons dashicons-chart-line"></span> ' . esc_html__('Tracking', 'fp-experiences'),
             'rtb' => '<span class="dashicons dashicons-email"></span> ' . esc_html__('Request to Book', 'fp-experiences'),
+            'webhook' => '<span class="dashicons dashicons-admin-links"></span> ' . esc_html__('Webhook', 'fp-experiences'),
             'listing' => '<span class="dashicons dashicons-list-view"></span> ' . esc_html__('Vetrina', 'fp-experiences'),
             'tools' => '<span class="dashicons dashicons-admin-tools"></span> ' . esc_html__('Tools', 'fp-experiences'),
             'logs' => '<span class="dashicons dashicons-media-text"></span> ' . esc_html__('Logs', 'fp-experiences'),

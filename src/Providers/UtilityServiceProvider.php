@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace FP_Exp\Providers;
 
 use FP_Exp\Api\RestRoutes;
+use FP_Exp\Api\WebhookDispatcher;
 use FP_Exp\Api\Webhooks;
 use FP_Exp\Core\Container\ContainerInterface;
 use FP_Exp\Core\ServiceProvider\AbstractServiceProvider;
@@ -75,6 +76,8 @@ final class UtilityServiceProvider extends AbstractServiceProvider
             
             return new RestRoutes($voucher_manager);
         });
+
+        $container->singleton(WebhookDispatcher::class, WebhookDispatcher::class);
     }
 
     /**
@@ -92,6 +95,7 @@ final class UtilityServiceProvider extends AbstractServiceProvider
             AutoTranslator::class,
             Webhooks::class,
             RestRoutes::class,
+            WebhookDispatcher::class,
         ];
 
         foreach ($hookables as $serviceClass) {
@@ -129,6 +133,7 @@ final class UtilityServiceProvider extends AbstractServiceProvider
             AutoTranslator::class,
             Webhooks::class,
             RestRoutes::class,
+            WebhookDispatcher::class,
         ];
     }
 }

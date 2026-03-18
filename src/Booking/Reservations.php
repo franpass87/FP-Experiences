@@ -445,6 +445,91 @@ final class Reservations
     }
 
     /**
+     * Get reservations for export (CSV) with optional date range, experience and status filters.
+     *
+     * @param array<string, mixed> $args Keys: date_from (Y-m-d), date_to (Y-m-d), experience_id (int), statuses (string[]), limit (int).
+     * @return array<int, array<string, mixed>>
+     */
+    public static function get_for_export(array $args = []): array
+    {
+        global $wpdb;
+
+        $defaults = [
+            'date_from' => '',
+            'date_to' => '',
+            'experience_id' => 0,
+            'statuses' => [],
+            'limit' => 10000,
+        ];
+        $args = wp_parse_args($args, $defaults);
+
+        $reservations_table = self::table_name();
+        $slots_table = Slots::table_name();
+        $posts_table = $wpdb->posts;
+
+        $where = ['1=1'];
+        $params = [];
+
+        $date_from = is_string($args['date_from']) ? trim($args['date_from']) : '';
+        $date_to = is_string($args['date_to']) ? trim($args['date_to']) : '';
+        if ('' !== $date_from) {
+            $where[] = 's.start_datetime >= %s';
+            $params[] = $date_from . ' 00:00:00';
+        }
+        if ('' !== $date_to) {
+            $where[] = 's.start_datetime <= %s';
+            $params[] = $date_to . ' 23:59:59';
+        }
+
+        $experience_id = absint($args['experience_id']);
+        if ($experience_id > 0) {
+            $where[] = 'r.experience_id = %d';
+            $params[] = $experience_id;
+        }
+
+        $statuses = array_filter((array) ($args['statuses'] ?? []));
+        if ($statuses !== []) {
+            $normalized = [];
+            foreach ($statuses as $s) {
+                $normalized[] = self::normalize_status((string) $s);
+            }
+            $placeholders = implode(',', array_fill(0, count($normalized), '%s'));
+            $where[] = "r.status IN ({$placeholders})";
+            foreach ($normalized as $s) {
+                $params[] = $s;
+            }
+        }
+
+        $limit = max(1, min(10000, absint($args['limit'])));
+        $params[] = $limit;
+        $where_clause = implode(' AND ', $where);
+
+        $sql = $wpdb->prepare(
+            "SELECT r.*, s.start_datetime, s.end_datetime, p.post_title AS experience_title FROM {$reservations_table} r " .
+            "LEFT JOIN {$slots_table} s ON r.slot_id = s.id " .
+            "LEFT JOIN {$posts_table} p ON r.experience_id = p.ID WHERE {$where_clause} " .
+            'ORDER BY s.start_datetime ASC, r.id ASC LIMIT %d',
+            ...$params
+        );
+
+        $rows = $wpdb->get_results($sql, ARRAY_A);
+        if (! $rows) {
+            return [];
+        }
+
+        return array_map(
+            static function (array $row): array {
+                $row['pax'] = maybe_unserialize($row['pax']);
+                $row['addons'] = maybe_unserialize($row['addons']);
+                $row['utm'] = maybe_unserialize($row['utm']);
+                $row['meta'] = maybe_unserialize($row['meta']);
+                return $row;
+            },
+            $rows
+        );
+    }
+
+    /**
      * Supported request workflow statuses and their labels.
      *
      * @return array<string, string>

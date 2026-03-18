@@ -95,6 +95,50 @@ final class RequestsPage implements HookableInterface
             return;
         }
 
+        $bulk_action = isset($_POST['fp_exp_rtb_bulk_action']) ? sanitize_key((string) wp_unslash($_POST['fp_exp_rtb_bulk_action'])) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing
+        if ($bulk_action && in_array($bulk_action, ['approve', 'decline'], true)) {
+            check_admin_referer('fp_exp_rtb_bulk', 'fp_exp_rtb_bulk_nonce');
+            $ids = isset($_POST['reservation_ids']) && is_array($_POST['reservation_ids']) // phpcs:ignore WordPress.Security.NonceVerification.Missing
+                ? array_map('absint', wp_unslash($_POST['reservation_ids'])) // phpcs:ignore WordPress.Security.NonceVerification.Missing
+                : [];
+            $ids = array_filter($ids);
+            if (empty($ids)) {
+                add_settings_error('fp_exp_rtb_requests', 'fp_exp_rtb_bulk', esc_html__('Seleziona almeno una richiesta.', 'fp-experiences'), 'error');
+                $stored = get_settings_errors('fp_exp_rtb_requests');
+                set_transient('fp_exp_rtb_requests_notices', $stored, 30);
+                wp_safe_redirect(add_query_arg(['page' => 'fp_exp_requests'], admin_url('admin.php')));
+                exit;
+            }
+            $reason = isset($_POST['reason']) ? sanitize_textarea_field((string) wp_unslash($_POST['reason'])) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing
+            $messages = [];
+            $has_error = false;
+            foreach ($ids as $reservation_id) {
+                if ($bulk_action === 'approve') {
+                    $result = $this->request_to_book->approve($reservation_id);
+                } else {
+                    $result = $this->request_to_book->decline($reservation_id, $reason);
+                }
+                if ($result instanceof WP_Error) {
+                    $messages[] = sprintf(/* translators: 1: reservation ID, 2: error message */ esc_html__('#%1$d: %2$s', 'fp-experiences'), $reservation_id, $result->get_error_message());
+                    $has_error = true;
+                }
+            }
+            if (! empty($messages)) {
+                $message = implode(' ', $messages);
+                $type = $has_error ? 'error' : 'updated';
+            } else {
+                $message = $bulk_action === 'approve'
+                    ? esc_html__('Richieste selezionate approvate.', 'fp-experiences')
+                    : esc_html__('Richieste selezionate rifiutate.', 'fp-experiences');
+                $type = 'updated';
+            }
+            add_settings_error('fp_exp_rtb_requests', 'fp_exp_rtb_bulk', $message, $type);
+            $stored = get_settings_errors('fp_exp_rtb_requests');
+            set_transient('fp_exp_rtb_requests_notices', $stored, 30);
+            wp_safe_redirect(add_query_arg(['page' => 'fp_exp_requests'], admin_url('admin.php')));
+            exit;
+        }
+
         if (! isset($_POST['fp_exp_rtb_action'])) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
             return;
         }
@@ -224,8 +268,22 @@ final class RequestsPage implements HookableInterface
                 esc_html__('Configura Request to Book', 'fp-experiences')
             );
         } else {
+            echo '<form method="post" id="fp-exp-requests-bulk-form">';
+            wp_nonce_field('fp_exp_rtb_bulk', 'fp_exp_rtb_bulk_nonce');
+            echo '<p class="fp-exp-requests__bulk">';
+            echo '<label for="fp-exp-rtb-bulk-action">' . esc_html__('Azioni di gruppo', 'fp-experiences') . '</label> ';
+            echo '<select id="fp-exp-rtb-bulk-action" name="fp_exp_rtb_bulk_action">';
+            echo '<option value="">' . esc_html__('— Seleziona —', 'fp-experiences') . '</option>';
+            echo '<option value="approve">' . esc_html__('Approva selezionate', 'fp-experiences') . '</option>';
+            echo '<option value="decline">' . esc_html__('Rifiuta selezionate', 'fp-experiences') . '</option>';
+            echo '</select> ';
+            echo '<label for="fp-exp-rtb-bulk-reason">' . esc_html__('Motivo (per rifiuto)', 'fp-experiences') . '</label> ';
+            echo '<input type="text" id="fp-exp-rtb-bulk-reason" name="reason" class="regular-text" placeholder="' . esc_attr__('Opzionale', 'fp-experiences') . '" /> ';
+            echo '<button type="submit" class="button">' . esc_html__('Applica', 'fp-experiences') . '</button>';
+            echo '</p>';
             echo '<table class="widefat fixed striped fp-exp-requests__table">';
             echo '<thead><tr>';
+            echo '<th class="check-column"><span class="screen-reader-text">' . esc_html__('Seleziona', 'fp-experiences') . '</span></th>';
             echo '<th>' . esc_html__('Esperienza', 'fp-experiences') . '</th>';
             echo '<th>' . esc_html__('Slot', 'fp-experiences') . '</th>';
             echo '<th>' . esc_html__('Cliente', 'fp-experiences') . '</th>';
@@ -275,6 +333,7 @@ final class RequestsPage implements HookableInterface
                 }
 
                 echo '<tr>';
+                echo '<th scope="row" class="check-column"><input type="checkbox" name="reservation_ids[]" value="' . esc_attr((string) $reservation_id) . '" aria-label="' . esc_attr(sprintf(/* translators: %d: reservation ID */ __('Seleziona richiesta #%d', 'fp-experiences'), $reservation_id)) . '" /></th>';
                 echo '<td>' . esc_html($experience_title ?: sprintf('#%d', absint($request['experience_id'] ?? 0))) . '</td>';
                 echo '<td>' . esc_html($start_label) . '</td>';
                 echo '<td>';
@@ -319,6 +378,7 @@ final class RequestsPage implements HookableInterface
             }
             echo '</tbody>';
             echo '</table>';
+            echo '</form>';
         }
 
         echo '</div>'; // .fp-exp-admin__layout

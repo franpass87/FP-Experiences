@@ -2,6 +2,26 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.6.0] - 2026-03-18
+### Added
+- Export prenotazioni in CSV dalla Dashboard: filtri per periodo (da/a), esperienza e stato; pulsante "Scarica CSV" con encoding UTF-8 e BOM per Excel.
+- Webhook outbound: nuovo tab Impostazioni → Webhook per configurare URL endpoint, segreto HMAC e eventi da inviare (prenotazione creata/pagata/cancellata, RTB approvata/rifiutata, voucher riscattato). Payload JSON con header X-FP-EXP-Signature; retry automatico dopo 5 minuti in caso di fallimento.
+- Azioni bulk su Richieste RTB: selezione multipla con checkbox, "Approva selezionate" e "Rifiuta selezionate" con motivo opzionale.
+- Filtri agenda operativa in Dashboard: intervallo date (da/a) e filtro per esperienza per la tabella "Agenda operativa".
+- Miglioramenti accessibilità modal regalo: focus trap con Tab/Shift+Tab per mantenere il focus all'interno del dialog; chiusura con Esc già presente.
+
+### Changed
+- Titolo sezione Dashboard "Agenda operativa oggi/domani" rinominato in "Agenda operativa" (supporta ora range personalizzato).
+- Tabella agenda operativa limitata a 100 righe quando si usano i filtri (prima 30).
+
+## [1.5.1] - 2026-03-17
+### Added
+- Added visual section separators in the WordPress admin submenu for FP Experiences to improve navigation scanning.
+
+### Changed
+- Reordered FP Experiences submenu entries to prioritize daily operator flows (calendar, requests, check-in, orders) before management/system pages.
+- Simplified submenu labels to concise names for better readability.
+
 ## [1.5.0] - 2026-03-17
 ### Added
 - Added local simulation mode for Google Calendar (no OAuth required) with simulated create/update/delete flow and diagnostic logs for reservation lifecycle events.

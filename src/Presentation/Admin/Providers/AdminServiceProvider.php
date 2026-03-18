@@ -8,6 +8,7 @@ use FP_Exp\Admin\AdminMenu;
 use FP_Exp\Admin\CalendarAdmin;
 use FP_Exp\Admin\CheckinPage;
 use FP_Exp\Admin\EmailsPage;
+use FP_Exp\Admin\ExportReservations;
 use FP_Exp\Admin\ExperienceMetaBoxes;
 use FP_Exp\Admin\ExperienceMetaBoxes\Handlers\CalendarMetaBoxHandler;
 use FP_Exp\Admin\ExperienceMetaBoxes\Handlers\DetailsMetaBoxHandler;
@@ -127,6 +128,7 @@ final class AdminServiceProvider extends AbstractServiceProvider
         $container->singleton(ExperiencePageCreator::class, ExperiencePageCreator::class);
         $container->singleton(Onboarding::class, Onboarding::class);
         $container->singleton(LanguageAdmin::class, LanguageAdmin::class);
+        $container->singleton(ExportReservations::class, ExportReservations::class);
         
         // Register AdminMenu - depends on all admin pages
         $container->singleton(AdminMenu::class, static function (ContainerInterface $container): AdminMenu {
@@ -195,6 +197,7 @@ final class AdminServiceProvider extends AbstractServiceProvider
             ExperiencePageCreator::class,
             Onboarding::class,
             LanguageAdmin::class,
+            ExportReservations::class,
             AdminMenu::class,
         ];
 
@@ -249,6 +252,7 @@ final class AdminServiceProvider extends AbstractServiceProvider
             ExperiencePageCreator::class,
             Onboarding::class,
             LanguageAdmin::class,
+            ExportReservations::class,
             AdminMenu::class,
         ];
     }

@@ -2265,7 +2265,30 @@
                 }
             };
             document.addEventListener('keydown', handleEscapeKey);
-            
+
+            // Focus trap: keep Tab/Shift+Tab within modal focusable elements
+            const focusableSelector = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
+            const getFocusables = () => Array.from(giftModal.querySelectorAll(focusableSelector)).filter((el) => el.offsetParent !== null && !el.disabled);
+            const handleTrapKey = (ev) => {
+                if (giftModal.hidden || ev.key !== 'Tab') return;
+                const focusables = getFocusables();
+                if (focusables.length === 0) return;
+                const first = focusables[0];
+                const last = focusables[focusables.length - 1];
+                if (ev.shiftKey) {
+                    if (document.activeElement === first) {
+                        ev.preventDefault();
+                        last.focus();
+                    }
+                } else {
+                    if (document.activeElement === last) {
+                        ev.preventDefault();
+                        first.focus();
+                    }
+                }
+            };
+            giftModal.addEventListener('keydown', handleTrapKey);
+
             // Cleanup event listener quando la pagina viene scaricata
             window.addEventListener('beforeunload', () => {
                 document.removeEventListener('keydown', handleEscapeKey);

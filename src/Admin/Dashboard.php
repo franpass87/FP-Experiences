@@ -19,8 +19,13 @@ use function esc_html;
 use function esc_html__;
 use function esc_url;
 use function get_option;
+use function get_posts;
+use function get_the_title;
+use function wp_create_nonce;
+use function wp_unslash;
 use function maybe_unserialize;
 use function number_format_i18n;
+use function sanitize_text_field;
 use function wp_die;
 use function wp_strip_all_tags;
 use function wp_timezone;
@@ -36,7 +41,14 @@ final class Dashboard
             wp_die(esc_html__('Non hai i permessi per accedere alla dashboard di FP Experiences.', 'fp-experiences'));
         }
 
-        $metrics = self::collect_metrics();
+        $agenda_date_from = isset($_GET['agenda_date_from']) ? sanitize_text_field((string) wp_unslash($_GET['agenda_date_from'])) : '';
+        $agenda_date_to = isset($_GET['agenda_date_to']) ? sanitize_text_field((string) wp_unslash($_GET['agenda_date_to'])) : '';
+        $agenda_experience_id = isset($_GET['agenda_experience_id']) ? absint($_GET['agenda_experience_id']) : 0;
+        $metrics = self::collect_metrics([
+            'agenda_date_from' => $agenda_date_from,
+            'agenda_date_to' => $agenda_date_to,
+            'agenda_experience_id' => $agenda_experience_id,
+        ]);
 
         echo '<div class="wrap fp-exp-dashboard">';
         echo '<div class="fp-exp-admin" data-fp-exp-admin>';
@@ -100,7 +112,8 @@ final class Dashboard
         echo '<div class="fp-exp-dashboard__columns">';
 
         echo '<section class="fp-exp-dashboard__section" aria-labelledby="fp-exp-dashboard-agenda">';
-        echo '<h2 id="fp-exp-dashboard-agenda">' . esc_html__('Agenda operativa oggi/domani', 'fp-experiences') . '</h2>';
+        echo '<h2 id="fp-exp-dashboard-agenda">' . esc_html__('Agenda operativa', 'fp-experiences') . '</h2>';
+        self::render_agenda_filters($agenda_date_from, $agenda_date_to, $agenda_experience_id);
         if ($metrics['operational_agenda']) {
             echo '<table class="widefat striped fp-exp-dashboard__table">';
             echo '<thead><tr>';
@@ -135,6 +148,10 @@ final class Dashboard
             );
         }
         echo '</section>';
+
+        if (Helpers::can_manage_fp()) {
+            self::render_export_section();
+        }
 
         echo '<section class="fp-exp-dashboard__section" aria-labelledby="fp-exp-dashboard-orders">';
         echo '<h2 id="fp-exp-dashboard-orders">' . esc_html__('Ultimi ordini esperienza', 'fp-experiences') . '</h2>';
@@ -393,7 +410,20 @@ final class Dashboard
                 : esc_html__('Nessuna prenotazione passata da analizzare negli ultimi 30 giorni.', 'fp-experiences'),
         ];
 
-        $operational_agenda = self::load_operational_agenda($start_utc, $end_tomorrow_utc);
+        $agenda_start = $start_utc;
+        $agenda_end = $end_tomorrow_utc;
+        $agenda_experience_id = isset($filters['agenda_experience_id']) ? absint($filters['agenda_experience_id']) : 0;
+        if (! empty($filters['agenda_date_from']) && ! empty($filters['agenda_date_to'])) {
+            try {
+                $from = new DateTimeImmutable($filters['agenda_date_from'] . ' 00:00:00', $timezone);
+                $to = new DateTimeImmutable($filters['agenda_date_to'] . ' 23:59:59', $timezone);
+                $agenda_start = $from->setTimezone(new DateTimeZone('UTC'))->format('Y-m-d H:i:s');
+                $agenda_end = $to->setTimezone(new DateTimeZone('UTC'))->format('Y-m-d H:i:s');
+            } catch (\Throwable $e) {
+                // keep default range
+            }
+        }
+        $operational_agenda = self::load_operational_agenda($agenda_start, $agenda_end, $agenda_experience_id);
         $orders = self::load_recent_orders();
 
         return [
@@ -420,28 +450,25 @@ final class Dashboard
      *     checkin_url: string
      * }>
      */
-    private static function load_operational_agenda(string $start_utc, string $end_utc): array
+    private static function load_operational_agenda(string $start_utc, string $end_utc, int $experience_id = 0): array
     {
         global $wpdb;
 
         $reservations_table = Reservations::table_name();
         $slots_table = Slots::table_name();
 
-        $rows = $wpdb->get_results(
-            $wpdb->prepare(
-                "SELECT r.id, r.order_id, r.experience_id, r.status, r.pax, s.start_datetime " .
-                "FROM {$reservations_table} r " .
-                "INNER JOIN {$slots_table} s ON r.slot_id = s.id " .
-                "WHERE s.start_datetime BETWEEN %s AND %s " .
-                "AND r.status NOT IN (%s, %s) " .
-                "ORDER BY s.start_datetime ASC LIMIT 30",
-                $start_utc,
-                $end_utc,
-                Reservations::STATUS_CANCELLED,
-                Reservations::STATUS_DECLINED
-            ),
-            ARRAY_A
-        );
+        $sql = "SELECT r.id, r.order_id, r.experience_id, r.status, r.pax, s.start_datetime " .
+            "FROM {$reservations_table} r " .
+            "INNER JOIN {$slots_table} s ON r.slot_id = s.id " .
+            "WHERE s.start_datetime BETWEEN %s AND %s " .
+            "AND r.status NOT IN (%s, %s) ";
+        $params = [$start_utc, $end_utc, Reservations::STATUS_CANCELLED, Reservations::STATUS_DECLINED];
+        if ($experience_id > 0) {
+            $sql .= "AND r.experience_id = %d ";
+            $params[] = $experience_id;
+        }
+        $sql .= "ORDER BY s.start_datetime ASC LIMIT 100";
+        $rows = $wpdb->get_results($wpdb->prepare($sql, ...$params), ARRAY_A);
 
         if (! is_array($rows) || empty($rows)) {
             return [];
@@ -679,6 +706,84 @@ final class Dashboard
                 'action_label' => esc_html__('Configura', 'fp-experiences'),
             ],
         ];
+    }
+
+    /**
+     * Renders agenda filters (date range + experience) for the operational agenda table.
+     */
+    private static function render_agenda_filters(string $date_from, string $date_to, int $experience_id): void
+    {
+        $action_url = add_query_arg(['page' => 'fp_exp_dashboard'], admin_url('admin.php'));
+        $experiences = ExportReservations::get_experience_options();
+        echo '<form method="get" action="' . esc_url($action_url) . '" class="fp-exp-agenda-filters">';
+        echo '<input type="hidden" name="page" value="fp_exp_dashboard" />';
+        echo '<label for="fp-exp-agenda-date-from">' . esc_html__('Da', 'fp-experiences') . '</label> ';
+        echo '<input type="date" id="fp-exp-agenda-date-from" name="agenda_date_from" value="' . esc_attr($date_from) . '" /> ';
+        echo '<label for="fp-exp-agenda-date-to">' . esc_html__('A', 'fp-experiences') . '</label> ';
+        echo '<input type="date" id="fp-exp-agenda-date-to" name="agenda_date_to" value="' . esc_attr($date_to) . '" /> ';
+        echo '<label for="fp-exp-agenda-experience">' . esc_html__('Esperienza', 'fp-experiences') . '</label> ';
+        echo '<select id="fp-exp-agenda-experience" name="agenda_experience_id">';
+        echo '<option value="0">' . esc_html__('Tutte', 'fp-experiences') . '</option>';
+        foreach ($experiences as $exp) {
+            $sel = $experience_id === $exp['id'] ? ' selected="selected"' : '';
+            echo '<option value="' . esc_attr((string) $exp['id']) . '"' . $sel . '>' . esc_html($exp['title']) . '</option>';
+        }
+        echo '</select> ';
+        echo '<button type="submit" class="button">' . esc_html__('Filtra', 'fp-experiences') . '</button>';
+        echo '</form>';
+    }
+
+    /**
+     * Renders the export reservations form (CSV) with date range and experience filters.
+     */
+    private static function render_export_section(): void
+    {
+        $export_url = admin_url('admin-ajax.php');
+        $nonce = wp_create_nonce('fp_exp_export_reservations');
+        $experiences = ExportReservations::get_experience_options();
+        $statuses = Reservations::request_statuses();
+        $all_statuses = [
+            Reservations::STATUS_PENDING,
+            Reservations::STATUS_PENDING_REQUEST,
+            Reservations::STATUS_APPROVED_CONFIRMED,
+            Reservations::STATUS_APPROVED_PENDING_PAYMENT,
+            Reservations::STATUS_DECLINED,
+            Reservations::STATUS_PAID,
+            Reservations::STATUS_CANCELLED,
+            Reservations::STATUS_CHECKED_IN,
+        ];
+
+        echo '<section class="fp-exp-dashboard__section" aria-labelledby="fp-exp-dashboard-export">';
+        echo '<h2 id="fp-exp-dashboard-export">' . esc_html__('Esporta prenotazioni', 'fp-experiences') . '</h2>';
+        echo '<form method="get" action="' . esc_url($export_url) . '" class="fp-exp-export-form">';
+        echo '<input type="hidden" name="action" value="fp_exp_export_reservations" />';
+        echo '<input type="hidden" name="nonce" value="' . esc_attr($nonce) . '" />';
+        echo '<p class="fp-exp-export-form__row">';
+        echo '<label for="fp-exp-export-date-from">' . esc_html__('Da data', 'fp-experiences') . '</label> ';
+        echo '<input type="date" id="fp-exp-export-date-from" name="date_from" class="fp-exp-export-date" /> ';
+        echo '<label for="fp-exp-export-date-to">' . esc_html__('A data', 'fp-experiences') . '</label> ';
+        echo '<input type="date" id="fp-exp-export-date-to" name="date_to" class="fp-exp-export-date" />';
+        echo '</p>';
+        echo '<p class="fp-exp-export-form__row">';
+        echo '<label for="fp-exp-export-experience">' . esc_html__('Esperienza', 'fp-experiences') . '</label> ';
+        echo '<select id="fp-exp-export-experience" name="experience_id">';
+        echo '<option value="0">' . esc_html__('Tutte', 'fp-experiences') . '</option>';
+        foreach ($experiences as $exp) {
+            echo '<option value="' . esc_attr((string) $exp['id']) . '">' . esc_html($exp['title']) . '</option>';
+        }
+        echo '</select> ';
+        echo '<label for="fp-exp-export-status">' . esc_html__('Stato', 'fp-experiences') . '</label> ';
+        echo '<select id="fp-exp-export-status" name="status">';
+        echo '<option value="">' . esc_html__('Tutti', 'fp-experiences') . '</option>';
+        foreach ($all_statuses as $s) {
+            $label = $statuses[$s] ?? $s;
+            echo '<option value="' . esc_attr($s) . '">' . esc_html($label) . '</option>';
+        }
+        echo '</select>';
+        echo '</p>';
+        echo '<p><button type="submit" class="button button-primary">' . esc_html__('Scarica CSV', 'fp-experiences') . '</button></p>';
+        echo '</form>';
+        echo '</section>';
     }
 
     /**
