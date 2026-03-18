@@ -38,6 +38,7 @@ use function wp_unslash;
 use function wp_die;
 use function wp_timezone;
 use function strtotime;
+use function current_user_can;
 
 final class CheckinPage implements HookableInterface
 {
@@ -148,6 +149,7 @@ final class CheckinPage implements HookableInterface
         echo '<h1 class="fp-exp-admin__title">' . esc_html__('Console check-in', 'fp-experiences') . '</h1>';
         echo '<p class="fp-exp-admin__intro">' . esc_html__('Segna gli ospiti al loro arrivo e controlla le prenotazioni imminenti.', 'fp-experiences') . '</p>';
         echo '</header>';
+        $this->render_operator_navigation();
 
         if ($notice_html) {
             echo $notice_html; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
@@ -305,5 +307,23 @@ final class CheckinPage implements HookableInterface
             default:
                 return esc_html__('Aggiornamento', 'fp-experiences');
         }
+    }
+
+    private function render_operator_navigation(): void
+    {
+        echo '<nav class="fp-exp-operator-nav nav-tab-wrapper" aria-label="' . esc_attr__('Navigazione operatore', 'fp-experiences') . '">';
+        echo '<a class="nav-tab" href="' . esc_url(admin_url('admin.php?page=fp_exp_calendar&view=calendar')) . '">' . esc_html__('Calendario & Prenotazioni', 'fp-experiences') . '</a>';
+
+        if (Helpers::rtb_mode() !== 'off') {
+            echo '<a class="nav-tab" href="' . esc_url(admin_url('admin.php?page=fp_exp_requests')) . '">' . esc_html__('Richieste RTB', 'fp-experiences') . '</a>';
+        }
+
+        echo '<a class="nav-tab nav-tab-active" href="' . esc_url(admin_url('admin.php?page=fp_exp_checkin')) . '">' . esc_html__('Check-in', 'fp-experiences') . '</a>';
+
+        if (current_user_can('manage_woocommerce') && Helpers::can_manage_fp()) {
+            echo '<a class="nav-tab" href="' . esc_url(admin_url('admin.php?page=fp_exp_orders')) . '">' . esc_html__('Ordini', 'fp-experiences') . '</a>';
+        }
+
+        echo '</nav>';
     }
 }

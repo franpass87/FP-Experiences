@@ -6,7 +6,9 @@ namespace FP_Exp\Api\Controllers;
 
 use FP_Exp\Activation;
 use FP_Exp\Api\Middleware\ErrorHandlingMiddleware;
+use FP_Exp\Booking\Reservations;
 use FP_Exp\Booking\Slots;
+use FP_Exp\Integrations\GA4;
 use FP_Exp\Migrations\Migrations\CleanupDuplicatePageIds;
 use FP_Exp\Utils\Helpers;
 use FP_Exp\Utils\Logger;
@@ -17,10 +19,15 @@ use WP_REST_Response;
 use function array_filter;
 use function array_keys;
 use function array_merge;
+use function count;
 use function do_action;
 use function get_current_user_id;
 use function get_posts;
 use function get_post_meta;
+use function get_option;
+use function is_array;
+use function str_contains;
+use function strtolower;
 use function update_option;
 use function update_post_meta;
 use function wp_delete_post;
@@ -82,6 +89,143 @@ final class ToolsController
         return ErrorHandlingMiddleware::success([
             'success' => true,
             'message' => __('Event replay initiated.', 'fp-experiences'),
+        ]);
+    }
+
+    /**
+     * Verify tracking flow in Brevo simulation mode.
+     */
+    public function verifyTrackingSimulation(): WP_REST_Response
+    {
+        if (Helpers::hit_rate_limit('tools_tracking_sim_' . get_current_user_id(), 3, MINUTE_IN_SECONDS)) {
+            return ErrorHandlingMiddleware::handleError(
+                new WP_Error(
+                    'fp_exp_rate_limited',
+                    __('La verifica tracking è stata eseguita da poco. Riprova tra qualche istante.', 'fp-experiences'),
+                    ['status' => 429]
+                )
+            );
+        }
+
+        global $wpdb;
+
+        $reservation = $wpdb->get_row(
+            'SELECT id, order_id FROM ' . Reservations::table_name() . ' WHERE order_id > 0 ORDER BY id DESC LIMIT 1',
+            ARRAY_A
+        );
+
+        if (! is_array($reservation)) {
+            return ErrorHandlingMiddleware::success([
+                'success' => false,
+                'message' => __('Nessuna prenotazione con ordine disponibile per il test tracking.', 'fp-experiences'),
+            ]);
+        }
+
+        $reservation_id = absint((int) ($reservation['id'] ?? 0));
+        $order_id = absint((int) ($reservation['order_id'] ?? 0));
+
+        if ($reservation_id <= 0 || $order_id <= 0) {
+            return ErrorHandlingMiddleware::success([
+                'success' => false,
+                'message' => __('Dati prenotazione non validi per il test tracking.', 'fp-experiences'),
+            ]);
+        }
+
+        $captured_events = [];
+        add_action('fp_tracking_event', static function ($event, $params) use (&$captured_events): void {
+            $captured_events[] = [
+                'event' => (string) $event,
+                'transaction_id' => is_array($params) ? (string) ($params['transaction_id'] ?? '') : '',
+                'currency' => is_array($params) ? (string) ($params['currency'] ?? '') : '',
+            ];
+        }, 1, 2);
+
+        $brevo_option_key = 'fp_exp_brevo';
+        $brevo_previous = get_option($brevo_option_key, []);
+        $brevo_previous = is_array($brevo_previous) ? $brevo_previous : [];
+        $logs_before = get_option('fp_exp_logs', []);
+        $logs_before_count = is_array($logs_before) ? count($logs_before) : 0;
+
+        $has_brevo_event = false;
+        $has_purchase = false;
+        $has_experience_paid = false;
+
+        try {
+            $brevo_simulation = $brevo_previous;
+            $brevo_simulation['enabled'] = true;
+            $brevo_simulation['simulate_mode'] = true;
+            $brevo_simulation['api_key'] = '';
+            update_option($brevo_option_key, $brevo_simulation, false);
+
+            do_action('fp_exp_reservation_paid', $reservation_id, $order_id);
+            do_action('fp_exp_reservation_rescheduled', $reservation_id, $order_id, 0, 0);
+            do_action('fp_exp_reservation_cancelled', $reservation_id, $order_id);
+
+            $ga4 = new GA4();
+            $ga4->fire_purchase_event($order_id);
+            do_action('woocommerce_thankyou', $order_id);
+
+            foreach ($captured_events as $event_data) {
+                $event_name = (string) ($event_data['event'] ?? '');
+                if ('purchase' === $event_name) {
+                    $has_purchase = true;
+                }
+                if ('experience_paid' === $event_name) {
+                    $has_experience_paid = true;
+                }
+            }
+
+            $logs_after = get_option('fp_exp_logs', []);
+            $logs_after = is_array($logs_after) ? $logs_after : [];
+            $new_logs = array_slice($logs_after, $logs_before_count);
+            foreach ($new_logs as $entry) {
+                if (! is_array($entry) || 'brevo' !== (string) ($entry['channel'] ?? '')) {
+                    continue;
+                }
+
+                $message = (string) ($entry['message'] ?? '');
+                if (! str_contains(strtolower($message), 'simulated')) {
+                    continue;
+                }
+
+                $has_brevo_event = true;
+                break;
+            }
+        } finally {
+            update_option($brevo_option_key, $brevo_previous, false);
+        }
+
+        $success = $has_purchase || $has_experience_paid;
+        $details = [
+            sprintf(__('Reservation tested: #%d (order #%d).', 'fp-experiences'), $reservation_id, $order_id),
+            $has_brevo_event
+                ? __('Brevo simulated tracking events detected.', 'fp-experiences')
+                : __('Brevo simulated tracking events not detected.', 'fp-experiences'),
+            $has_purchase
+                ? __('Tracking layer purchase event detected.', 'fp-experiences')
+                : __('Tracking layer purchase event not detected.', 'fp-experiences'),
+            $has_experience_paid
+                ? __('Tracking layer experience_paid event detected.', 'fp-experiences')
+                : __('Tracking layer experience_paid event not detected.', 'fp-experiences'),
+            ($has_purchase || $has_experience_paid)
+                ? __('Tracking check passed with available event taxonomy for this order type.', 'fp-experiences')
+                : __('Tracking check failed: no recognised tracking events were emitted.', 'fp-experiences'),
+        ];
+
+        Logger::log('tools', 'Tracking simulation executed', [
+            'reservation_id' => $reservation_id,
+            'order_id' => $order_id,
+            'has_brevo_event' => $has_brevo_event,
+            'has_purchase' => $has_purchase,
+            'has_experience_paid' => $has_experience_paid,
+        ]);
+
+        return ErrorHandlingMiddleware::success([
+            'success' => $success,
+            'message' => $success
+                ? __('Verifica tracking simulato completata con successo.', 'fp-experiences')
+                : __('Verifica tracking simulato completata con avvisi.', 'fp-experiences'),
+            'details' => $details,
         ]);
     }
 

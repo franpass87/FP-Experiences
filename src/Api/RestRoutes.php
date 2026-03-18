@@ -355,6 +355,16 @@ final class RestRoutes implements HookableInterface
 
         register_rest_route(
             'fp-exp/v1',
+            '/tools/verify-tracking-simulation',
+            [
+                'methods' => 'POST',
+                'permission_callback' => [AuthenticationMiddleware::class, 'managerPermission'],
+                'callback' => [$this, 'tool_verify_tracking_simulation'],
+            ]
+        );
+
+        register_rest_route(
+            'fp-exp/v1',
             '/tools/resync-roles',
             [
                 'methods' => 'POST',
@@ -728,6 +738,18 @@ final class RestRoutes implements HookableInterface
         $this->initControllers();
 
         return $this->tools_controller->replayEvents();
+    }
+
+    /**
+     * Verify tracking simulation (delegated to ToolsController).
+     *
+     * @deprecated Use ToolsController::verifyTrackingSimulation() instead
+     */
+    public function tool_verify_tracking_simulation(): WP_REST_Response
+    {
+        $this->initControllers();
+
+        return $this->tools_controller->verifyTrackingSimulation();
     }
 
     /**

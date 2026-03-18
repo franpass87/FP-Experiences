@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace FP_Exp\Admin;
 
+use DateTimeZone;
 use FP_Exp\Core\Hook\HookableInterface;
 use FP_Exp\Booking\Orders;
 use FP_Exp\Booking\Pricing;
@@ -18,12 +19,16 @@ use function add_action;
 use function add_query_arg;
 use function admin_url;
 use function array_filter;
+use function array_map;
+use function array_sum;
 use function check_admin_referer;
 use function checked;
+use function count;
 use function esc_attr;
 use function esc_html;
 use function esc_html__;
 use function esc_url;
+use function get_post_type;
 use function get_option;
 use function get_posts;
 use function get_the_title;
@@ -34,10 +39,13 @@ use function sanitize_email;
 use function sanitize_key;
 use function sanitize_text_field;
 use function selected;
+use function sprintf;
 use function strpos;
+use function strtotime;
 use function submit_button;
 use function wp_create_nonce;
 use function wp_die;
+use function wp_date;
 use function wp_enqueue_script;
 use function wp_enqueue_style;
 use function wp_json_encode;
@@ -45,6 +53,8 @@ use function wp_localize_script;
 use function wp_nonce_field;
 use function wp_unslash;
 use function wp_kses_post;
+use function wp_timezone;
+use function current_user_can;
 
 final class CalendarAdmin implements HookableInterface
 {
@@ -169,7 +179,7 @@ final class CalendarAdmin implements HookableInterface
             wp_die(esc_html__('Non hai i permessi per gestire le prenotazioni di FP Experiences.', 'fp-experiences'));
         }
 
-        $active_tab = isset($_GET['view']) ? sanitize_text_field((string) wp_unslash($_GET['view'])) : 'calendar';
+        $active_tab = isset($_GET['view']) ? sanitize_text_field((string) wp_unslash($_GET['view'])) : 'overview';
         $message = '';
         $error = '';
 
@@ -201,8 +211,10 @@ final class CalendarAdmin implements HookableInterface
         echo '<h1 class="fp-exp-admin__title">' . esc_html__('Operazioni FP Experiences', 'fp-experiences') . '</h1>';
         echo '<p class="fp-exp-admin__intro">' . esc_html__('Gestisci calendario, disponibilità e prenotazioni manuali da un unico pannello.', 'fp-experiences') . '</p>';
         echo '</header>';
+        $this->render_operator_navigation($active_tab);
         echo '<div class="fp-exp-tabs nav-tab-wrapper">';
         $tabs = [
+            'overview' => esc_html__('Panoramica Operatore', 'fp-experiences'),
             'calendar' => esc_html__('Calendario', 'fp-experiences'),
             'manual' => esc_html__('Prenotazione Manuale', 'fp-experiences'),
         ];
@@ -224,7 +236,9 @@ final class CalendarAdmin implements HookableInterface
             echo '<div class="notice notice-error"><p>' . esc_html($error) . '</p></div>';
         }
 
-        if ('manual' === $active_tab) {
+        if ('overview' === $active_tab) {
+            $this->render_operator_overview();
+        } elseif ('manual' === $active_tab) {
             $this->render_manual_form();
         } else {
             $this->render_calendar();
@@ -276,6 +290,7 @@ final class CalendarAdmin implements HookableInterface
             foreach ($reservations as $reservation) {
                 $experience_title = get_the_title((int) $reservation['experience_id']);
                 $start = isset($reservation['start_datetime']) ? sanitize_text_field((string) $reservation['start_datetime']) : '';
+                $start_label = $this->format_slot_datetime_label($start);
                 $total_guests = 0;
                 if (is_array($reservation['pax'])) {
                     foreach ($reservation['pax'] as $qty) {
@@ -287,7 +302,7 @@ final class CalendarAdmin implements HookableInterface
                     '#%1$d · %2$s · %3$s · %4$d %5$s',
                     (int) $reservation['id'],
                     $experience_title ?: esc_html__('Untitled', 'fp-experiences'),
-                    $start,
+                    $start_label,
                     $total_guests,
                     esc_html__('ospiti', 'fp-experiences')
                 );
@@ -369,7 +384,8 @@ final class CalendarAdmin implements HookableInterface
 
             echo '<select id="fp-exp-slot" name="slot_id">';
             foreach ($slots as $slot) {
-                $label = $slot['start_datetime'] ?? '';
+                $start_datetime = isset($slot['start_datetime']) ? (string) $slot['start_datetime'] : '';
+                $label = $this->format_slot_datetime_label($start_datetime);
                 echo '<option value="' . esc_attr((string) $slot['id']) . '" ' . selected($selected_slot_id, $slot['id'] ?? 0, false) . '>' . esc_html($label) . '</option>';
             }
             echo '</select>';
@@ -608,5 +624,409 @@ final class CalendarAdmin implements HookableInterface
         }
 
         return $order;
+    }
+
+    private function render_operator_overview(): void
+    {
+        $filters = $this->get_operator_filters();
+        $metrics = $this->get_operator_metrics();
+        $rows = $this->get_filtered_operator_reservations($filters, 30);
+        $experiences = $this->get_operator_experiences();
+
+        echo '<section class="fp-exp-operator-overview">';
+        echo '<h2>' . esc_html__('Dashboard Operatore', 'fp-experiences') . '</h2>';
+        echo '<p class="description">' . esc_html__('Controllo rapido di calendario e prenotazioni con filtri operativi.', 'fp-experiences') . '</p>';
+
+        echo '<div class="fp-exp-operator-overview__kpis" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin:16px 0;">';
+        $kpi_items = [
+            [
+                'label' => esc_html__('Richieste in attesa', 'fp-experiences'),
+                'value' => (int) $metrics['pending_requests'],
+            ],
+            [
+                'label' => esc_html__('Partenze oggi', 'fp-experiences'),
+                'value' => (int) $metrics['departures_today'],
+            ],
+            [
+                'label' => esc_html__('Check-in oggi', 'fp-experiences'),
+                'value' => (int) $metrics['checkins_today'],
+            ],
+            [
+                'label' => esc_html__('Partenze prossime 24h', 'fp-experiences'),
+                'value' => (int) $metrics['departures_24h'],
+            ],
+        ];
+        foreach ($kpi_items as $item) {
+            echo '<div style="background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:12px;">';
+            echo '<div style="font-size:12px;color:#6b7280;margin-bottom:4px;">' . esc_html((string) $item['label']) . '</div>';
+            echo '<div style="font-size:26px;font-weight:700;line-height:1;">' . esc_html(number_format_i18n((int) $item['value'])) . '</div>';
+            echo '</div>';
+        }
+        echo '</div>';
+
+        echo '<div class="fp-exp-operator-overview__quick-actions" style="display:flex;flex-wrap:wrap;gap:8px;margin:0 0 16px;">';
+        echo '<a class="button button-secondary" href="' . esc_url(admin_url('admin.php?page=fp_exp_requests')) . '">' . esc_html__('Apri Richieste RTB', 'fp-experiences') . '</a>';
+        echo '<a class="button button-secondary" href="' . esc_url(admin_url('admin.php?page=fp_exp_checkin')) . '">' . esc_html__('Apri Check-in', 'fp-experiences') . '</a>';
+        echo '<a class="button button-secondary" href="' . esc_url(admin_url('admin.php?page=fp_exp_calendar&view=calendar')) . '">' . esc_html__('Apri Calendario Slot', 'fp-experiences') . '</a>';
+        echo '<a class="button button-primary" href="' . esc_url(admin_url('admin.php?page=fp_exp_calendar&view=manual')) . '">' . esc_html__('Nuova Prenotazione Manuale', 'fp-experiences') . '</a>';
+        echo '</div>';
+
+        echo '<form method="get" style="margin:0 0 12px;padding:12px;background:#fff;border:1px solid #e5e7eb;border-radius:10px;">';
+        echo '<input type="hidden" name="page" value="fp_exp_calendar" />';
+        echo '<input type="hidden" name="view" value="overview" />';
+        echo '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;align-items:end;">';
+
+        echo '<label><span style="display:block;font-size:12px;color:#6b7280;margin-bottom:4px;">' . esc_html__('Esperienza', 'fp-experiences') . '</span>';
+        echo '<select name="experience_id" style="width:100%;">';
+        echo '<option value="0">' . esc_html__('Tutte', 'fp-experiences') . '</option>';
+        foreach ($experiences as $experience) {
+            $exp_id = (int) ($experience['id'] ?? 0);
+            $exp_title = (string) ($experience['title'] ?? '');
+            if ($exp_id <= 0) {
+                continue;
+            }
+
+            echo '<option value="' . esc_attr((string) $exp_id) . '" ' . selected($filters['experience_id'], $exp_id, false) . '>' . esc_html($exp_title) . '</option>';
+        }
+        echo '</select></label>';
+
+        $status_options = [
+            'all' => esc_html__('Tutti gli stati', 'fp-experiences'),
+            Reservations::STATUS_PENDING => esc_html__('Pending', 'fp-experiences'),
+            Reservations::STATUS_PENDING_REQUEST => esc_html__('Pending RTB', 'fp-experiences'),
+            Reservations::STATUS_APPROVED_CONFIRMED => esc_html__('Approvata', 'fp-experiences'),
+            Reservations::STATUS_APPROVED_PENDING_PAYMENT => esc_html__('Da pagare', 'fp-experiences'),
+            Reservations::STATUS_PAID => esc_html__('Pagata', 'fp-experiences'),
+            Reservations::STATUS_CHECKED_IN => esc_html__('Check-in', 'fp-experiences'),
+            Reservations::STATUS_CANCELLED => esc_html__('Cancellata', 'fp-experiences'),
+            Reservations::STATUS_DECLINED => esc_html__('Rifiutata', 'fp-experiences'),
+        ];
+        echo '<label><span style="display:block;font-size:12px;color:#6b7280;margin-bottom:4px;">' . esc_html__('Stato', 'fp-experiences') . '</span>';
+        echo '<select name="status" style="width:100%;">';
+        foreach ($status_options as $status_key => $status_label) {
+            echo '<option value="' . esc_attr((string) $status_key) . '" ' . selected($filters['status'], $status_key, false) . '>' . esc_html($status_label) . '</option>';
+        }
+        echo '</select></label>';
+
+        echo '<label><span style="display:block;font-size:12px;color:#6b7280;margin-bottom:4px;">' . esc_html__('Da data', 'fp-experiences') . '</span>';
+        echo '<input type="date" name="date_from" value="' . esc_attr($filters['date_from']) . '" style="width:100%;" />';
+        echo '</label>';
+
+        echo '<label><span style="display:block;font-size:12px;color:#6b7280;margin-bottom:4px;">' . esc_html__('A data', 'fp-experiences') . '</span>';
+        echo '<input type="date" name="date_to" value="' . esc_attr($filters['date_to']) . '" style="width:100%;" />';
+        echo '</label>';
+
+        echo '<div>';
+        echo '<button type="submit" class="button button-secondary">' . esc_html__('Applica filtri', 'fp-experiences') . '</button> ';
+        echo '<a class="button" href="' . esc_url(admin_url('admin.php?page=fp_exp_calendar&view=overview')) . '">' . esc_html__('Reset', 'fp-experiences') . '</a>';
+        echo '</div>';
+
+        echo '</div>';
+        echo '</form>';
+
+        if (! $rows) {
+            echo '<p>' . esc_html__('Nessuna prenotazione trovata con i filtri selezionati.', 'fp-experiences') . '</p>';
+            echo '</section>';
+            return;
+        }
+
+        echo '<table class="widefat striped">';
+        echo '<thead><tr>';
+        echo '<th>' . esc_html__('Esperienza', 'fp-experiences') . '</th>';
+        echo '<th>' . esc_html__('Data/Ora', 'fp-experiences') . '</th>';
+        echo '<th>' . esc_html__('Ospiti', 'fp-experiences') . '</th>';
+        echo '<th>' . esc_html__('Stato', 'fp-experiences') . '</th>';
+        echo '<th>' . esc_html__('Azioni rapide', 'fp-experiences') . '</th>';
+        echo '</tr></thead><tbody>';
+
+        foreach ($rows as $row) {
+            $reservation_id = (int) ($row['id'] ?? 0);
+            $experience_id = (int) ($row['experience_id'] ?? 0);
+            $experience_title = (string) ($row['experience_title'] ?? '');
+            $start_datetime = (string) ($row['start_datetime'] ?? '');
+            $status = Reservations::normalize_status((string) ($row['status'] ?? ''));
+            $pax = is_array($row['pax'] ?? null) ? $row['pax'] : [];
+            $guests = (int) array_sum(array_map('absint', $pax));
+
+            $timestamp = strtotime($start_datetime . ' UTC');
+            $start_label = $timestamp ? wp_date(get_option('date_format', 'Y-m-d') . ' ' . get_option('time_format', 'H:i'), $timestamp) : esc_html__('Sconosciuto', 'fp-experiences');
+
+            echo '<tr>';
+            echo '<td>' . esc_html($experience_title ?: sprintf('#%d', $experience_id)) . '</td>';
+            echo '<td>' . esc_html($start_label) . '</td>';
+            echo '<td>' . esc_html(number_format_i18n($guests)) . '</td>';
+            echo '<td>' . esc_html($this->format_operator_status_label($status)) . '</td>';
+            echo '<td>';
+            echo '<a class="button button-small" href="' . esc_url(admin_url('admin.php?page=fp_exp_checkin')) . '">' . esc_html__('Check-in', 'fp-experiences') . '</a> ';
+            if ($reservation_id > 0) {
+                $order_id = (int) ($row['order_id'] ?? 0);
+                if ($order_id > 0 && 'shop_order' === get_post_type($order_id)) {
+                    echo '<a class="button button-small" href="' . esc_url(admin_url('post.php?post=' . $order_id . '&action=edit')) . '">' . esc_html__('Apri ordine', 'fp-experiences') . '</a>';
+                } else {
+                    echo '<a class="button button-small" href="' . esc_url(admin_url('admin.php?page=fp_exp_requests')) . '">' . esc_html__('Apri richieste', 'fp-experiences') . '</a>';
+                }
+            }
+            echo '</td>';
+            echo '</tr>';
+        }
+
+        echo '</tbody></table>';
+        echo '</section>';
+    }
+
+    /**
+     * @return array{experience_id:int,status:string,date_from:string,date_to:string}
+     */
+    private function get_operator_filters(): array
+    {
+        $experience_id = isset($_GET['experience_id']) ? absint((string) wp_unslash($_GET['experience_id'])) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+        $status = isset($_GET['status']) ? sanitize_key((string) wp_unslash($_GET['status'])) : 'all'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+        $date_from = isset($_GET['date_from']) ? sanitize_text_field((string) wp_unslash($_GET['date_from'])) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+        $date_to = isset($_GET['date_to']) ? sanitize_text_field((string) wp_unslash($_GET['date_to'])) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+
+        return [
+            'experience_id' => $experience_id,
+            'status' => '' !== $status ? $status : 'all',
+            'date_from' => $date_from,
+            'date_to' => $date_to,
+        ];
+    }
+
+    /**
+     * @return array{pending_requests:int,departures_today:int,checkins_today:int,departures_24h:int}
+     */
+    private function get_operator_metrics(): array
+    {
+        global $wpdb;
+
+        $reservations_table = Reservations::table_name();
+        $slots_table = Slots::table_name();
+        $timezone = wp_timezone();
+
+        $now_local = new \DateTimeImmutable('now', $timezone);
+        $today_start_local = $now_local->setTime(0, 0, 0);
+        $today_end_local = $now_local->setTime(23, 59, 59);
+        $next_24_local = $now_local->add(new \DateInterval('PT24H'));
+
+        $today_start_utc = $today_start_local->setTimezone(new DateTimeZone('UTC'))->format('Y-m-d H:i:s');
+        $today_end_utc = $today_end_local->setTimezone(new DateTimeZone('UTC'))->format('Y-m-d H:i:s');
+        $now_utc = $now_local->setTimezone(new DateTimeZone('UTC'))->format('Y-m-d H:i:s');
+        $next_24_utc = $next_24_local->setTimezone(new DateTimeZone('UTC'))->format('Y-m-d H:i:s');
+
+        $pending_requests = (int) $wpdb->get_var(
+            $wpdb->prepare(
+                "SELECT COUNT(*) FROM {$reservations_table} WHERE status = %s",
+                Reservations::STATUS_PENDING_REQUEST
+            )
+        );
+
+        $departures_today = (int) $wpdb->get_var(
+            $wpdb->prepare(
+                "SELECT COUNT(*) FROM {$reservations_table} r
+                INNER JOIN {$slots_table} s ON r.slot_id = s.id
+                WHERE s.start_datetime BETWEEN %s AND %s
+                AND r.status NOT IN (%s, %s)",
+                $today_start_utc,
+                $today_end_utc,
+                Reservations::STATUS_CANCELLED,
+                Reservations::STATUS_DECLINED
+            )
+        );
+
+        $checkins_today = (int) $wpdb->get_var(
+            $wpdb->prepare(
+                "SELECT COUNT(*) FROM {$reservations_table} r
+                INNER JOIN {$slots_table} s ON r.slot_id = s.id
+                WHERE s.start_datetime BETWEEN %s AND %s
+                AND r.status = %s",
+                $today_start_utc,
+                $today_end_utc,
+                Reservations::STATUS_CHECKED_IN
+            )
+        );
+
+        $departures_24h = (int) $wpdb->get_var(
+            $wpdb->prepare(
+                "SELECT COUNT(*) FROM {$reservations_table} r
+                INNER JOIN {$slots_table} s ON r.slot_id = s.id
+                WHERE s.start_datetime BETWEEN %s AND %s
+                AND r.status NOT IN (%s, %s)",
+                $now_utc,
+                $next_24_utc,
+                Reservations::STATUS_CANCELLED,
+                Reservations::STATUS_DECLINED
+            )
+        );
+
+        return [
+            'pending_requests' => $pending_requests,
+            'departures_today' => $departures_today,
+            'checkins_today' => $checkins_today,
+            'departures_24h' => $departures_24h,
+        ];
+    }
+
+    /**
+     * @param array{experience_id:int,status:string,date_from:string,date_to:string} $filters
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function get_filtered_operator_reservations(array $filters, int $limit = 30): array
+    {
+        global $wpdb;
+
+        $reservations_table = Reservations::table_name();
+        $slots_table = Slots::table_name();
+        $posts_table = $wpdb->posts;
+
+        $where = [];
+        $params = [];
+
+        $where[] = 'r.status NOT IN (%s, %s)';
+        $params[] = Reservations::STATUS_CANCELLED;
+        $params[] = Reservations::STATUS_DECLINED;
+
+        if (($filters['experience_id'] ?? 0) > 0) {
+            $where[] = 'r.experience_id = %d';
+            $params[] = (int) $filters['experience_id'];
+        }
+
+        $status = (string) ($filters['status'] ?? 'all');
+        if ('all' !== $status && '' !== $status) {
+            $where[] = 'r.status = %s';
+            $params[] = Reservations::normalize_status($status);
+        }
+
+        if (! empty($filters['date_from'])) {
+            $where[] = 's.start_datetime >= %s';
+            $params[] = sanitize_text_field($filters['date_from']) . ' 00:00:00';
+        }
+
+        if (! empty($filters['date_to'])) {
+            $where[] = 's.start_datetime <= %s';
+            $params[] = sanitize_text_field($filters['date_to']) . ' 23:59:59';
+        }
+
+        $where_sql = $where ? ('WHERE ' . implode(' AND ', $where)) : '';
+        $limit = max(1, $limit);
+        $params[] = $limit;
+
+        $sql = $wpdb->prepare(
+            "SELECT r.id, r.order_id, r.experience_id, r.status, r.pax, s.start_datetime, p.post_title AS experience_title
+            FROM {$reservations_table} r
+            INNER JOIN {$slots_table} s ON r.slot_id = s.id
+            LEFT JOIN {$posts_table} p ON p.ID = r.experience_id
+            {$where_sql}
+            ORDER BY s.start_datetime ASC
+            LIMIT %d",
+            ...$params
+        );
+
+        $rows = $wpdb->get_results($sql, ARRAY_A);
+        if (! $rows) {
+            return [];
+        }
+
+        return array_map(
+            static function (array $row): array {
+                $row['pax'] = maybe_unserialize($row['pax']);
+                return $row;
+            },
+            $rows
+        );
+    }
+
+    /**
+     * @return array<int, array{id:int,title:string}>
+     */
+    private function get_operator_experiences(): array
+    {
+        $posts = get_posts([
+            'post_type' => 'fp_experience',
+            'posts_per_page' => 200,
+            'orderby' => 'title',
+            'order' => 'ASC',
+            'post_status' => ['publish', 'private'],
+            'suppress_filters' => true,
+        ]);
+
+        $experiences = [];
+        foreach ($posts as $post) {
+            $experiences[] = [
+                'id' => (int) $post->ID,
+                'title' => (string) get_the_title((int) $post->ID),
+            ];
+        }
+
+        return $experiences;
+    }
+
+    private function format_operator_status_label(string $status): string
+    {
+        switch ($status) {
+            case Reservations::STATUS_PENDING:
+                return esc_html__('Pending', 'fp-experiences');
+            case Reservations::STATUS_PENDING_REQUEST:
+                return esc_html__('Pending RTB', 'fp-experiences');
+            case Reservations::STATUS_APPROVED_CONFIRMED:
+                return esc_html__('Approvata', 'fp-experiences');
+            case Reservations::STATUS_APPROVED_PENDING_PAYMENT:
+                return esc_html__('Da pagare', 'fp-experiences');
+            case Reservations::STATUS_PAID:
+                return esc_html__('Pagata', 'fp-experiences');
+            case Reservations::STATUS_CHECKED_IN:
+                return esc_html__('Check-in', 'fp-experiences');
+            case Reservations::STATUS_CANCELLED:
+                return esc_html__('Cancellata', 'fp-experiences');
+            case Reservations::STATUS_DECLINED:
+                return esc_html__('Rifiutata', 'fp-experiences');
+            default:
+                return esc_html__('Stato', 'fp-experiences');
+        }
+    }
+
+    private function render_operator_navigation(string $active_view): void
+    {
+        $calendar_view = in_array($active_view, ['overview', 'calendar', 'manual'], true) ? $active_view : 'overview';
+        $calendar_url = add_query_arg(
+            [
+                'page' => 'fp_exp_calendar',
+                'view' => $calendar_view,
+            ],
+            admin_url('admin.php')
+        );
+
+        echo '<nav class="fp-exp-operator-nav nav-tab-wrapper" aria-label="' . esc_attr__('Navigazione operatore', 'fp-experiences') . '">';
+        echo '<a class="nav-tab nav-tab-active" href="' . esc_url($calendar_url) . '">' . esc_html__('Calendario & Prenotazioni', 'fp-experiences') . '</a>';
+
+        if (Helpers::rtb_mode() !== 'off') {
+            echo '<a class="nav-tab" href="' . esc_url(admin_url('admin.php?page=fp_exp_requests')) . '">' . esc_html__('Richieste RTB', 'fp-experiences') . '</a>';
+        }
+
+        echo '<a class="nav-tab" href="' . esc_url(admin_url('admin.php?page=fp_exp_checkin')) . '">' . esc_html__('Check-in', 'fp-experiences') . '</a>';
+
+        if (current_user_can('manage_woocommerce') && Helpers::can_manage_fp()) {
+            echo '<a class="nav-tab" href="' . esc_url(admin_url('admin.php?page=fp_exp_orders')) . '">' . esc_html__('Ordini', 'fp-experiences') . '</a>';
+        }
+
+        echo '</nav>';
+    }
+
+    private function format_slot_datetime_label(string $datetime_utc): string
+    {
+        if ('' === $datetime_utc) {
+            return '';
+        }
+
+        try {
+            $utc_datetime = new \DateTimeImmutable($datetime_utc, new DateTimeZone('UTC'));
+            $local_datetime = $utc_datetime->setTimezone(wp_timezone());
+            $date_format = get_option('date_format', 'd/m/Y');
+            $time_format = get_option('time_format', 'H:i');
+
+            return wp_date($date_format . ' ' . $time_format, $local_datetime->getTimestamp());
+        } catch (\Throwable $exception) {
+            return $datetime_utc;
+        }
     }
 }

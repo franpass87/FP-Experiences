@@ -12,6 +12,8 @@ use FP_Exp\Booking\Email\Services\EmailSchedulerService;
 use FP_Exp\Booking\Email\Templates\BookingConfirmationTemplate;
 use FP_Exp\Booking\Email\Templates\BookingFollowupTemplate;
 use FP_Exp\Booking\Email\Templates\BookingReminderTemplate;
+use FP_Exp\Booking\Email\Templates\BookingRescheduledTemplate;
+use FP_Exp\Booking\Email\Templates\StaffRescheduledTemplate;
 use FP_Exp\Booking\Email\Templates\StaffNotificationTemplate;
 use FP_Exp\Integrations\Brevo;
 use FP_Exp\Booking\EmailTranslator;
@@ -98,6 +100,7 @@ final class Emails implements HookableInterface
         add_action('fp_exp_reservation_created', [$this, 'handle_reservation_created'], 10, 2);
         add_action('fp_exp_reservation_paid', [$this, 'handle_reservation_paid'], 10, 2);
         add_action('fp_exp_reservation_cancelled', [$this, 'handle_reservation_cancelled'], 10, 2);
+        add_action('fp_exp_reservation_rescheduled', [$this, 'handle_reservation_rescheduled'], 10, 4);
         add_action(self::REMINDER_HOOK, [$this, 'handle_reminder_dispatch'], 10, 2);
         add_action(self::FOLLOWUP_HOOK, [$this, 'handle_followup_dispatch'], 10, 2);
         add_filter('fp_exp_email_branding', [$this, 'apply_branding'], 10, 2);
@@ -213,6 +216,44 @@ final class Emails implements HookableInterface
         }
 
         $this->scheduler_service->cancelNotifications($reservation_id, $order_id);
+    }
+
+    public function handle_reservation_rescheduled(
+        int $reservation_id,
+        int $order_id,
+        int $previous_slot_id = 0,
+        int $new_slot_id = 0
+    ): void {
+        $context = $this->get_context($reservation_id, $order_id);
+
+        if (! $context) {
+            Logger::log('email', sprintf(
+                'handle_reservation_rescheduled: get_context returned null for reservation %d, order %d',
+                $reservation_id,
+                $order_id
+            ));
+            return;
+        }
+
+        $current_slot = $new_slot_id > 0 ? Slots::get_slot($new_slot_id) : null;
+        $previous_slot = $previous_slot_id > 0 ? Slots::get_slot($previous_slot_id) : null;
+        $context['reschedule'] = [
+            'previous' => $this->build_reschedule_slot_snapshot($previous_slot),
+            'current' => $this->build_reschedule_slot_snapshot($current_slot),
+        ];
+
+        if ($this->isTypeEnabled('customer_confirmation')) {
+            $template = new BookingRescheduledTemplate();
+            $this->customer_sender->send($template, $context, true);
+        }
+
+        if ($this->isTypeEnabled('staff_notification')) {
+            $template = new StaffRescheduledTemplate();
+            $this->staff_sender->send($template, $context);
+        }
+
+        // Refresh reminder/follow-up timers after slot change.
+        $this->scheduleAutomations($context);
     }
 
     public function handle_reminder_dispatch(int $reservation_id, int $order_id): void
@@ -484,32 +525,41 @@ final class Emails implements HookableInterface
 
         ob_start();
         ?>
-        <div style="margin:0;padding:0;background-color:#f1f5f9;">
-            <div style="max-width:640px;margin:0 auto;padding:24px;">
-                <div style="border-radius:24px;overflow:hidden;background-color:#ffffff;box-shadow:0 24px 50px rgba(15,23,42,0.12);">
-                    <div style="background:linear-gradient(135deg,<?php echo esc_attr($accent_color); ?> 0%,<?php echo esc_attr($accent_dark); ?> 100%);padding:24px 32px;text-align:center;color:#ffffff;font-family:'Helvetica Neue',Arial,sans-serif;">
-                        <?php if ($logo) : ?>
-                            <img src="<?php echo esc_url($logo); ?>" alt="<?php echo esc_attr($header_text); ?>" style="<?php echo esc_attr($logo_style); ?>" />
-                        <?php endif; ?>
-                        <?php if ($header_text) : ?>
-                            <p style="margin:0;font-size:18px;font-weight:600;letter-spacing:0.3px;"><?php echo esc_html($header_text); ?></p>
-                        <?php endif; ?>
-                    </div>
-                    <div style="padding:32px 32px 24px;color:#0f172a;font-family:'Helvetica Neue',Arial,sans-serif;line-height:1.7;font-size:15px;">
-                        <?php echo wp_kses_post($message); ?>
-                    </div>
-                    <div style="padding:20px 32px;background-color:#f8fafc;color:#475569;font-size:13px;text-align:center;font-family:'Helvetica Neue',Arial,sans-serif;">
-                        <?php if ($footer_text) : ?>
-                            <p style="margin:0;"><?php echo nl2br(esc_html($footer_text)); ?></p>
-                        <?php else : ?>
-                            <p style="margin:0;">
-                                <?php echo esc_html(EmailTranslator::text('common.default_footer', $language)); ?>
-                            </p>
-                        <?php endif; ?>
-                    </div>
-                </div>
-            </div>
+        <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">
+            <?php echo esc_html($header_text); ?>
         </div>
+        <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin:0;padding:0;background-color:#eef2f7;">
+            <tr>
+                <td align="center" style="padding:28px 12px;">
+                    <table role="presentation" cellpadding="0" cellspacing="0" width="640" style="width:640px;max-width:640px;background-color:#ffffff;border-radius:18px;overflow:hidden;border:1px solid #dbe3ef;">
+                        <tr>
+                            <td style="background:linear-gradient(135deg,<?php echo esc_attr($accent_color); ?> 0%,<?php echo esc_attr($accent_dark); ?> 100%);padding:24px 28px;text-align:center;color:#ffffff;font-family:'Helvetica Neue',Arial,sans-serif;">
+                                <?php if ($logo) : ?>
+                                    <img src="<?php echo esc_url($logo); ?>" alt="<?php echo esc_attr($header_text); ?>" style="<?php echo esc_attr($logo_style); ?>" />
+                                <?php endif; ?>
+                                <?php if ($header_text) : ?>
+                                    <p style="margin:0;font-size:19px;font-weight:700;letter-spacing:0.25px;"><?php echo esc_html($header_text); ?></p>
+                                <?php endif; ?>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="padding:30px 30px 22px;color:#0f172a;font-family:'Helvetica Neue',Arial,sans-serif;line-height:1.75;font-size:15px;background:#ffffff;">
+                                <?php echo wp_kses_post($message); ?>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="padding:18px 30px;background-color:#f8fafc;color:#475569;font-size:13px;text-align:center;font-family:'Helvetica Neue',Arial,sans-serif;border-top:1px solid #e2e8f0;">
+                                <?php if ($footer_text) : ?>
+                                    <p style="margin:0;"><?php echo nl2br(esc_html($footer_text)); ?></p>
+                                <?php else : ?>
+                                    <p style="margin:0;"><?php echo esc_html(EmailTranslator::text('common.default_footer', $language)); ?></p>
+                                <?php endif; ?>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
         <?php
 
         return trim((string) ob_get_clean());
@@ -540,6 +590,36 @@ final class Emails implements HookableInterface
         $value = $types[$type] ?? 'yes';
 
         return $value !== 'no' && $value !== '' && $value !== null;
+    }
+
+    /**
+     * @param array<string, mixed>|null $slot
+     * @return array<string, mixed>
+     */
+    private function build_reschedule_slot_snapshot(?array $slot): array
+    {
+        if (! is_array($slot)) {
+            return [
+                'start_local_date' => '',
+                'start_local_time' => '',
+                'end_local_time' => '',
+                'timezone' => wp_timezone_string(),
+            ];
+        }
+
+        $start_utc = isset($slot['start_datetime']) ? (string) $slot['start_datetime'] : '';
+        $end_utc = isset($slot['end_datetime']) ? (string) $slot['end_datetime'] : '';
+        $start_timestamp = $start_utc ? strtotime($start_utc . ' UTC') : 0;
+        $end_timestamp = $end_utc ? strtotime($end_utc . ' UTC') : 0;
+        $date_format = get_option('date_format', 'F j, Y');
+        $time_format = get_option('time_format', 'H:i');
+
+        return [
+            'start_local_date' => $start_timestamp ? wp_date($date_format, $start_timestamp) : '',
+            'start_local_time' => $start_timestamp ? wp_date($time_format, $start_timestamp) : '',
+            'end_local_time' => $end_timestamp ? wp_date($time_format, $end_timestamp) : '',
+            'timezone' => wp_timezone_string(),
+        ];
     }
 
     private function scheduleAutomations(array $context): void

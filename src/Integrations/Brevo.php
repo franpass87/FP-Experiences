@@ -93,6 +93,7 @@ final class Brevo implements HookableInterface
     {
         add_action('fp_exp_reservation_paid', [$this, 'handle_reservation_paid'], 20, 2);
         add_action('fp_exp_reservation_cancelled', [$this, 'handle_reservation_cancelled'], 20, 2);
+        add_action('fp_exp_reservation_rescheduled', [$this, 'handle_reservation_rescheduled'], 20, 4);
         add_action('rest_api_init', [$this, 'register_rest_routes']);
     }
 
@@ -105,7 +106,15 @@ final class Brevo implements HookableInterface
     {
         $settings = $this->get_settings();
 
-        return ! empty($settings['enabled']) && ! empty($settings['api_key']);
+        if (empty($settings['enabled'])) {
+            return false;
+        }
+
+        if ($this->is_simulation_enabled()) {
+            return true;
+        }
+
+        return ! empty($settings['api_key']);
     }
 
     /**
@@ -165,6 +174,30 @@ final class Brevo implements HookableInterface
         }
 
         $this->send_event('reservation_cancelled', $context, $reservation_id);
+    }
+
+    public function handle_reservation_rescheduled(
+        int $reservation_id,
+        int $order_id,
+        int $previous_slot_id = 0,
+        int $new_slot_id = 0
+    ): void {
+        if (! $this->is_enabled()) {
+            return;
+        }
+
+        $context = $this->get_context($reservation_id, $order_id);
+        if (! $context) {
+            return;
+        }
+
+        // Optional transactional template for rescheduled bookings (if configured in Brevo settings).
+        $this->send_transactional('rescheduled', $context, $reservation_id);
+
+        $this->send_event('reservation_rescheduled', $context, $reservation_id, [
+            'previous_slot_id' => absint($previous_slot_id),
+            'new_slot_id' => absint($new_slot_id),
+        ]);
     }
 
     /**
@@ -288,6 +321,16 @@ final class Brevo implements HookableInterface
         $settings = $this->get_settings();
         $api_key = (string) ($settings['api_key'] ?? '');
 
+        if ($this->is_simulation_enabled()) {
+            $customer = isset($context['customer']) && is_array($context['customer']) ? $context['customer'] : [];
+            Logger::log('brevo', 'Simulated contact sync', [
+                'reservation' => $reservation_id,
+                'email' => sanitize_email((string) ($customer['email'] ?? '')),
+                'mode' => 'simulation',
+            ]);
+            return;
+        }
+
         if (! $api_key) {
             return;
         }
@@ -339,6 +382,18 @@ final class Brevo implements HookableInterface
     {
         $settings = $this->get_settings();
         $api_key = (string) ($settings['api_key'] ?? '');
+
+        if ($this->is_simulation_enabled()) {
+            $customer = isset($context['customer']) && is_array($context['customer']) ? $context['customer'] : [];
+            Logger::log('brevo', 'Simulated transactional send', [
+                'reservation' => $reservation_id,
+                'template_key' => sanitize_key($template_key),
+                'template_id' => is_numeric($override_template_id) ? (int) $override_template_id : null,
+                'email' => sanitize_email((string) ($customer['email'] ?? '')),
+                'mode' => 'simulation',
+            ]);
+            return true;
+        }
 
         if (! $api_key) {
             Logger::log('brevo', 'Transactional skipped: missing API key', [
@@ -469,6 +524,18 @@ final class Brevo implements HookableInterface
     {
         $settings = $this->get_settings();
         $api_key = (string) ($settings['api_key'] ?? '');
+
+        if ($this->is_simulation_enabled()) {
+            $customer = isset($context['customer']) && is_array($context['customer']) ? $context['customer'] : [];
+            Logger::log('brevo', 'Simulated event send', [
+                'reservation' => $reservation_id,
+                'event' => sanitize_key($event),
+                'email' => sanitize_email((string) ($customer['email'] ?? '')),
+                'additional' => $additional_properties,
+                'mode' => 'simulation',
+            ]);
+            return;
+        }
 
         if (! $api_key) {
             return;
@@ -786,5 +853,11 @@ final class Brevo implements HookableInterface
         ];
 
         set_transient('fp_exp_brevo_notices', $notices, 30 * MINUTE_IN_SECONDS);
+    }
+
+    private function is_simulation_enabled(): bool
+    {
+        $settings = $this->get_settings();
+        return ! empty($settings['simulate_mode']);
     }
 }

@@ -73,9 +73,68 @@ final class Dashboard
                 number_format_i18n($metrics['pending_requests'])
             );
         }
+
+        self::render_metric_card(
+            esc_html__('Prenotazioni domani', 'fp-experiences'),
+            number_format_i18n($metrics['bookings_tomorrow'])
+        );
+
+        self::render_metric_card(
+            esc_html__('Check-in da effettuare oggi', 'fp-experiences'),
+            number_format_i18n($metrics['checkin_pending_today'])
+        );
+
+        self::render_metric_card(
+            esc_html__('Conversione ultimi 30 giorni', 'fp-experiences'),
+            $metrics['conversion_rate']['label'],
+            $metrics['conversion_rate']['description']
+        );
+
+        self::render_metric_card(
+            esc_html__('No-show ultimi 30 giorni', 'fp-experiences'),
+            $metrics['no_show_rate']['label'],
+            $metrics['no_show_rate']['description']
+        );
         echo '</div>';
 
         echo '<div class="fp-exp-dashboard__columns">';
+
+        echo '<section class="fp-exp-dashboard__section" aria-labelledby="fp-exp-dashboard-agenda">';
+        echo '<h2 id="fp-exp-dashboard-agenda">' . esc_html__('Agenda operativa oggi/domani', 'fp-experiences') . '</h2>';
+        if ($metrics['operational_agenda']) {
+            echo '<table class="widefat striped fp-exp-dashboard__table">';
+            echo '<thead><tr>';
+            echo '<th>' . esc_html__('Giorno', 'fp-experiences') . '</th>';
+            echo '<th>' . esc_html__('Esperienza', 'fp-experiences') . '</th>';
+            echo '<th>' . esc_html__('Orario', 'fp-experiences') . '</th>';
+            echo '<th>' . esc_html__('Stato', 'fp-experiences') . '</th>';
+            echo '<th>' . esc_html__('Pax', 'fp-experiences') . '</th>';
+            echo '<th>' . esc_html__('Azioni', 'fp-experiences') . '</th>';
+            echo '</tr></thead><tbody>';
+            foreach ($metrics['operational_agenda'] as $entry) {
+                echo '<tr>';
+                echo '<td>' . esc_html($entry['day']) . '</td>';
+                echo '<td>' . esc_html($entry['experience']) . '</td>';
+                echo '<td>' . esc_html($entry['time']) . '</td>';
+                echo '<td>' . esc_html($entry['status']) . '</td>';
+                echo '<td>' . esc_html(number_format_i18n($entry['pax'])) . '</td>';
+                echo '<td>';
+                echo '<a class="button button-small" href="' . esc_url($entry['order_url']) . '">' . esc_html__('Ordine', 'fp-experiences') . '</a> ';
+                echo '<a class="button button-small" href="' . esc_url($entry['checkin_url']) . '">' . esc_html__('Check-in', 'fp-experiences') . '</a>';
+                echo '</td>';
+                echo '</tr>';
+            }
+            echo '</tbody></table>';
+        } else {
+            self::render_empty_state(
+                'calendar-alt',
+                esc_html__('Nessuna attività imminente', 'fp-experiences'),
+                esc_html__('Non ci sono prenotazioni operative per oggi e domani.', 'fp-experiences'),
+                admin_url('admin.php?page=fp_exp_calendar'),
+                esc_html__('Apri calendario', 'fp-experiences')
+            );
+        }
+        echo '</section>';
 
         echo '<section class="fp-exp-dashboard__section" aria-labelledby="fp-exp-dashboard-orders">';
         echo '<h2 id="fp-exp-dashboard-orders">' . esc_html__('Ultimi ordini esperienza', 'fp-experiences') . '</h2>';
@@ -129,8 +188,21 @@ final class Dashboard
     /**
      * @return array{
      *     bookings_today: int,
+     *     bookings_tomorrow: int,
      *     fill_rate: array{label: string, description: string},
+     *     checkin_pending_today: int,
+     *     conversion_rate: array{label: string, description: string},
+     *     no_show_rate: array{label: string, description: string},
      *     pending_requests: ?int,
+     *     operational_agenda: array<int, array{
+     *         day: string,
+     *         experience: string,
+     *         time: string,
+     *         status: string,
+     *         pax: int,
+     *         order_url: string,
+     *         checkin_url: string
+     *     }>,
      *     orders: array<int, array{number: string, date: string, status: string, total: string, url: string}>
      * }
      */
@@ -145,11 +217,17 @@ final class Dashboard
         $today = new DateTimeImmutable('now', $timezone);
         $start_of_day = $today->setTime(0, 0, 0);
         $end_of_day = $start_of_day->setTime(23, 59, 59);
+        $start_of_tomorrow = $start_of_day->add(new DateInterval('P1D'))->setTime(0, 0, 0);
+        $end_of_tomorrow = $start_of_tomorrow->setTime(23, 59, 59);
         $end_of_week = $start_of_day->add(new DateInterval('P6D'))->setTime(23, 59, 59);
+        $start_last_30_days = $start_of_day->sub(new DateInterval('P30D'))->setTime(0, 0, 0);
 
         $start_utc = $start_of_day->setTimezone(new DateTimeZone('UTC'))->format('Y-m-d H:i:s');
         $end_day_utc = $end_of_day->setTimezone(new DateTimeZone('UTC'))->format('Y-m-d H:i:s');
+        $start_tomorrow_utc = $start_of_tomorrow->setTimezone(new DateTimeZone('UTC'))->format('Y-m-d H:i:s');
+        $end_tomorrow_utc = $end_of_tomorrow->setTimezone(new DateTimeZone('UTC'))->format('Y-m-d H:i:s');
         $end_week_utc = $end_of_week->setTimezone(new DateTimeZone('UTC'))->format('Y-m-d H:i:s');
+        $start_last_30_days_utc = $start_last_30_days->setTimezone(new DateTimeZone('UTC'))->format('Y-m-d H:i:s');
 
         $bookings_today = (int) $wpdb->get_var(
             $wpdb->prepare(
@@ -158,6 +236,18 @@ final class Dashboard
                 "WHERE s.start_datetime BETWEEN %s AND %s AND r.status NOT IN (%s, %s)",
                 $start_utc,
                 $end_day_utc,
+                Reservations::STATUS_CANCELLED,
+                Reservations::STATUS_DECLINED
+            )
+        );
+
+        $bookings_tomorrow = (int) $wpdb->get_var(
+            $wpdb->prepare(
+                "SELECT COUNT(r.id) FROM {$reservations_table} r " .
+                "INNER JOIN {$slots_table} s ON r.slot_id = s.id " .
+                "WHERE s.start_datetime BETWEEN %s AND %s AND r.status NOT IN (%s, %s)",
+                $start_tomorrow_utc,
+                $end_tomorrow_utc,
                 Reservations::STATUS_CANCELLED,
                 Reservations::STATUS_DECLINED
             )
@@ -228,14 +318,175 @@ final class Dashboard
             );
         }
 
+        $checkin_pending_today = (int) $wpdb->get_var(
+            $wpdb->prepare(
+                "SELECT COUNT(r.id) FROM {$reservations_table} r " .
+                "INNER JOIN {$slots_table} s ON r.slot_id = s.id " .
+                "WHERE s.start_datetime BETWEEN %s AND %s AND r.status IN (%s, %s, %s)",
+                $start_utc,
+                $end_day_utc,
+                Reservations::STATUS_PAID,
+                Reservations::STATUS_APPROVED_CONFIRMED,
+                Reservations::STATUS_APPROVED_PENDING_PAYMENT
+            )
+        );
+
+        $total_last_30_days = (int) $wpdb->get_var(
+            $wpdb->prepare(
+                "SELECT COUNT(id) FROM {$reservations_table} WHERE created_at >= %s",
+                $start_last_30_days_utc
+            )
+        );
+        $paid_last_30_days = (int) $wpdb->get_var(
+            $wpdb->prepare(
+                "SELECT COUNT(id) FROM {$reservations_table} WHERE created_at >= %s AND status IN (%s, %s)",
+                $start_last_30_days_utc,
+                Reservations::STATUS_PAID,
+                Reservations::STATUS_CHECKED_IN
+            )
+        );
+        $conversion_percentage = $total_last_30_days > 0 ? min(100.0, ($paid_last_30_days / $total_last_30_days) * 100) : 0.0;
+        $conversion_rate = [
+            'label' => $total_last_30_days > 0 ? sprintf('%s%%', number_format_i18n($conversion_percentage, 1)) : esc_html__('n/d', 'fp-experiences'),
+            'description' => $total_last_30_days > 0
+                ? sprintf(
+                    /* translators: 1: paid reservations, 2: total reservations. */
+                    esc_html__('%1$s pagate su %2$s totali.', 'fp-experiences'),
+                    number_format_i18n($paid_last_30_days),
+                    number_format_i18n($total_last_30_days)
+                )
+                : esc_html__('Nessuna prenotazione registrata negli ultimi 30 giorni.', 'fp-experiences'),
+        ];
+
+        $past_paid = (int) $wpdb->get_var(
+            $wpdb->prepare(
+                "SELECT COUNT(r.id) FROM {$reservations_table} r " .
+                "INNER JOIN {$slots_table} s ON r.slot_id = s.id " .
+                "WHERE s.start_datetime BETWEEN %s AND %s AND r.status IN (%s, %s)",
+                $start_last_30_days_utc,
+                $start_utc,
+                Reservations::STATUS_PAID,
+                Reservations::STATUS_APPROVED_CONFIRMED
+            )
+        );
+        $checked_in = (int) $wpdb->get_var(
+            $wpdb->prepare(
+                "SELECT COUNT(r.id) FROM {$reservations_table} r " .
+                "INNER JOIN {$slots_table} s ON r.slot_id = s.id " .
+                "WHERE s.start_datetime BETWEEN %s AND %s AND r.status = %s",
+                $start_last_30_days_utc,
+                $start_utc,
+                Reservations::STATUS_CHECKED_IN
+            )
+        );
+        $no_show_count = max(0, $past_paid - $checked_in);
+        $no_show_percentage = $past_paid > 0 ? min(100.0, ($no_show_count / $past_paid) * 100) : 0.0;
+        $no_show_rate = [
+            'label' => $past_paid > 0 ? sprintf('%s%%', number_format_i18n($no_show_percentage, 1)) : esc_html__('n/d', 'fp-experiences'),
+            'description' => $past_paid > 0
+                ? sprintf(
+                    /* translators: 1: no-show reservations, 2: past paid reservations. */
+                    esc_html__('%1$s no-show su %2$s prenotazioni passate.', 'fp-experiences'),
+                    number_format_i18n($no_show_count),
+                    number_format_i18n($past_paid)
+                )
+                : esc_html__('Nessuna prenotazione passata da analizzare negli ultimi 30 giorni.', 'fp-experiences'),
+        ];
+
+        $operational_agenda = self::load_operational_agenda($start_utc, $end_tomorrow_utc);
         $orders = self::load_recent_orders();
 
         return [
             'bookings_today' => $bookings_today,
+            'bookings_tomorrow' => $bookings_tomorrow,
             'fill_rate' => $fill_rate,
+            'checkin_pending_today' => $checkin_pending_today,
+            'conversion_rate' => $conversion_rate,
+            'no_show_rate' => $no_show_rate,
             'pending_requests' => $pending_requests,
+            'operational_agenda' => $operational_agenda,
             'orders' => $orders,
         ];
+    }
+
+    /**
+     * @return array<int, array{
+     *     day: string,
+     *     experience: string,
+     *     time: string,
+     *     status: string,
+     *     pax: int,
+     *     order_url: string,
+     *     checkin_url: string
+     * }>
+     */
+    private static function load_operational_agenda(string $start_utc, string $end_utc): array
+    {
+        global $wpdb;
+
+        $reservations_table = Reservations::table_name();
+        $slots_table = Slots::table_name();
+
+        $rows = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT r.id, r.order_id, r.experience_id, r.status, r.pax, s.start_datetime " .
+                "FROM {$reservations_table} r " .
+                "INNER JOIN {$slots_table} s ON r.slot_id = s.id " .
+                "WHERE s.start_datetime BETWEEN %s AND %s " .
+                "AND r.status NOT IN (%s, %s) " .
+                "ORDER BY s.start_datetime ASC LIMIT 30",
+                $start_utc,
+                $end_utc,
+                Reservations::STATUS_CANCELLED,
+                Reservations::STATUS_DECLINED
+            ),
+            ARRAY_A
+        );
+
+        if (! is_array($rows) || empty($rows)) {
+            return [];
+        }
+
+        $timezone = wp_timezone();
+        $items = [];
+
+        foreach ($rows as $row) {
+            $start_value = (string) ($row['start_datetime'] ?? '');
+            if ('' === $start_value) {
+                continue;
+            }
+
+            try {
+                $start_local = (new DateTimeImmutable($start_value, new DateTimeZone('UTC')))->setTimezone($timezone);
+            } catch (\Throwable $exception) {
+                continue;
+            }
+
+            $pax_total = 0;
+            $pax = maybe_unserialize($row['pax'] ?? []);
+            if (is_array($pax)) {
+                foreach ($pax as $quantity) {
+                    if (is_numeric($quantity)) {
+                        $pax_total += (int) $quantity;
+                    }
+                }
+            } elseif (is_numeric($pax)) {
+                $pax_total = (int) $pax;
+            }
+
+            $order_id = absint((int) ($row['order_id'] ?? 0));
+            $items[] = [
+                'day' => $start_local->format('D j M'),
+                'experience' => (string) get_the_title(absint((int) ($row['experience_id'] ?? 0))),
+                'time' => $start_local->format('H:i'),
+                'status' => (string) ($row['status'] ?? ''),
+                'pax' => max(0, $pax_total),
+                'order_url' => $order_id > 0 ? admin_url('admin.php?page=wc-orders&action=edit&id=' . $order_id) : admin_url('admin.php?page=wc-orders'),
+                'checkin_url' => admin_url('admin.php?page=fp_exp_checkin'),
+            ];
+        }
+
+        return $items;
     }
 
     /**
@@ -370,9 +621,9 @@ final class Dashboard
         $has_experience = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->posts} WHERE post_type = 'fp_experience' AND post_status = 'publish'") > 0;
 
         // 2. Check if calendar has slots
-        $slots_table = $wpdb->prefix . 'fp_exp_calendar_slots';
+        $slots_table = Slots::table_name();
         $has_slots = false;
-        if ($wpdb->get_var("SHOW TABLES LIKE '$slots_table'") === $slots_table) {
+        if ((string) $wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $slots_table)) === $slots_table) {
             $has_slots = $wpdb->get_var("SELECT COUNT(*) FROM {$slots_table}") > 0;
         }
 

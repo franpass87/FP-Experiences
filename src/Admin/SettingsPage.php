@@ -1714,6 +1714,12 @@ final class SettingsPage implements HookableInterface
                 'button' => esc_html__('Replay events', 'fp-experiences'),
             ],
             [
+                'slug' => 'verify-tracking-simulation',
+                'label' => esc_html__('Verifica tracking simulato', 'fp-experiences'),
+                'description' => esc_html__('Esegue un test one-click di tracking (Brevo simulato + eventi fp_tracking_event) senza credenziali reali.', 'fp-experiences'),
+                'button' => esc_html__('Esegui verifica tracking', 'fp-experiences'),
+            ],
+            [
                 'slug' => 'resync-roles',
                 'label' => esc_html__('Resynchronise FP roles', 'fp-experiences'),
                 'description' => esc_html__('Restore the FP Experiences capabilities for administrators and custom roles.', 'fp-experiences'),
@@ -2496,10 +2502,13 @@ final class SettingsPage implements HookableInterface
 
         $enabled = ! empty($settings['enabled']);
         $api_key = isset($settings['api_key']) ? (string) $settings['api_key'] : '';
-        $connected = $enabled && '' !== $api_key;
+        $simulate_mode = ! empty($settings['simulate_mode']);
+        $connected = $enabled && ('' !== $api_key || $simulate_mode);
 
         if (! $enabled) {
             echo '<div class="notice notice-info inline"><p>' . esc_html__('Brevo is currently disabled. WooCommerce templates will be used for customer emails.', 'fp-experiences') . '</p></div>';
+        } elseif ($simulate_mode) {
+            echo '<div class="notice notice-warning inline"><p>' . esc_html__('Brevo simulation mode is active. API calls are skipped and operations are logged locally.', 'fp-experiences') . '</p></div>';
         } elseif ($connected) {
             echo '<div class="notice notice-success inline"><p>' . esc_html__('Brevo connection active. Transactional emails will use the configured templates when available.', 'fp-experiences') . '</p></div>';
         } else {
@@ -2545,6 +2554,7 @@ final class SettingsPage implements HookableInterface
     public function render_calendar_help(): void
     {
         echo '<p>' . esc_html__('Create an OAuth client in Google Cloud and add the redirect URI below. After saving credentials, connect the account to sync reservations.', 'fp-experiences') . '</p>';
+        echo '<p>' . esc_html__('For company-wide visibility, select a shared corporate calendar and grant staff read access directly in Google Calendar.', 'fp-experiences') . '</p>';
     }
 
     /**
@@ -2979,6 +2989,12 @@ final class SettingsPage implements HookableInterface
                 'type' => 'checkbox',
             ],
             [
+                'key' => 'simulate_mode',
+                'label' => esc_html__('Simulation mode (local test)', 'fp-experiences'),
+                'type' => 'checkbox',
+                'description' => esc_html__('Enable local Brevo simulation without API key. Contacts, transactional emails and events are logged without external API calls.', 'fp-experiences'),
+            ],
+            [
                 'key' => 'api_key',
                 'label' => esc_html__('API key', 'fp-experiences'),
                 'type' => 'text',
@@ -3132,10 +3148,16 @@ final class SettingsPage implements HookableInterface
     {
         return [
             [
+                'key' => 'simulate_mode',
+                'label' => esc_html__('Simulation mode (local test)', 'fp-experiences'),
+                'type' => 'checkbox',
+                'description' => esc_html__('Enable local simulation without Google credentials. Events are simulated and logged without external API calls.', 'fp-experiences'),
+            ],
+            [
                 'key' => 'calendar_id',
                 'label' => esc_html__('Calendar', 'fp-experiences'),
                 'type' => 'calendar_select',
-                'description' => esc_html__('Select the target calendar for new reservations. Save credentials and connect to load calendars.', 'fp-experiences'),
+                'description' => esc_html__('Select the target calendar for new reservations. Use a shared company calendar so all staff can see updates.', 'fp-experiences'),
             ],
         ];
     }
@@ -3565,8 +3587,11 @@ final class SettingsPage implements HookableInterface
         if ($field['key'] === 'enabled') {
             $is_enabled = !empty($value);
             $has_api_key = !empty($settings['api_key'] ?? '');
+            $simulate_mode = !empty($settings['simulate_mode'] ?? false);
             
-            if ($is_enabled && $has_api_key) {
+            if ($is_enabled && $simulate_mode) {
+                $status_badge = '<span class="fp-exp-integration-status fp-exp-integration-status--warning">' . esc_html__('Simulazione', 'fp-experiences') . '</span> ';
+            } elseif ($is_enabled && $has_api_key) {
                 $status_badge = '<span class="fp-exp-integration-status fp-exp-integration-status--active">' . esc_html__('Attivo', 'fp-experiences') . '</span> ';
             } elseif ($is_enabled && !$has_api_key) {
                 $status_badge = '<span class="fp-exp-integration-status fp-exp-integration-status--warning">' . esc_html__('API key mancante', 'fp-experiences') . '</span> ';
@@ -3616,7 +3641,10 @@ final class SettingsPage implements HookableInterface
             }
         }
 
-        if ('calendar_select' === $field['type']) {
+        if ('checkbox' === ($field['type'] ?? '')) {
+            echo '<label><input type="checkbox" name="' . esc_attr($name) . '" value="1" ' . checked(! empty($value), true, false) . ' /> ';
+            echo esc_html__('Enabled', 'fp-experiences') . '</label>';
+        } elseif ('calendar_select' === $field['type']) {
             $choices = $this->get_calendar_choices();
             if ($choices) {
                 echo '<select name="' . esc_attr($name) . '">';
@@ -3679,7 +3707,9 @@ final class SettingsPage implements HookableInterface
     private function render_calendar_status(): void
     {
         $settings = $this->get_calendar_settings();
-        $connected = ! empty($settings['access_token']) && ! empty($settings['calendar_id']);
+        $simulation = ! empty($settings['simulate_mode']);
+        $connected = (! empty($settings['access_token']) && ! empty($settings['calendar_id']))
+            || ($simulation && ! empty($settings['calendar_id']));
         $status = $connected
             ? esc_html__('Google Calendar is connected.', 'fp-experiences')
             : esc_html__('Google Calendar is not connected.', 'fp-experiences');
@@ -3689,6 +3719,10 @@ final class SettingsPage implements HookableInterface
 
         if ($connected) {
             echo '<div class="notice notice-success inline"><p>' . esc_html__('Reservations will create or update events on the linked calendar.', 'fp-experiences') . '</p></div>';
+            echo '<div class="notice notice-info inline"><p>' . esc_html__('Tip: if staff members need visibility, share this Google calendar with their company accounts.', 'fp-experiences') . '</p></div>';
+            if ($simulation) {
+                echo '<div class="notice notice-warning inline"><p>' . esc_html__('Simulation mode active: events are not sent to Google, but local create/update/delete flow is fully simulated.', 'fp-experiences') . '</p></div>';
+            }
         } else {
             echo '<div class="notice notice-info inline"><p>' . esc_html__('Connect a Google account to synchronise confirmed reservations with your calendar.', 'fp-experiences') . '</p></div>';
         }
@@ -4136,6 +4170,7 @@ final class SettingsPage implements HookableInterface
 
         $sanitised = [];
         $sanitised['enabled'] = ! empty($value['enabled']);
+        $sanitised['simulate_mode'] = ! empty($value['simulate_mode']);
         $sanitised['api_key'] = isset($value['api_key']) ? sanitize_text_field((string) $value['api_key']) : '';
         $sanitised['webhook_secret'] = isset($value['webhook_secret']) ? sanitize_text_field((string) $value['webhook_secret']) : '';
         $sanitised['list_id'] = isset($value['list_id']) ? absint($value['list_id']) : 0;
@@ -4259,6 +4294,7 @@ final class SettingsPage implements HookableInterface
         $sanitised['client_secret'] = isset($value['client_secret']) ? sanitize_text_field((string) $value['client_secret']) : ($existing['client_secret'] ?? '');
         $sanitised['redirect_uri'] = isset($value['redirect_uri']) ? sanitize_text_field((string) $value['redirect_uri']) : ($existing['redirect_uri'] ?? '');
         $sanitised['calendar_id'] = isset($value['calendar_id']) ? sanitize_text_field((string) $value['calendar_id']) : ($existing['calendar_id'] ?? '');
+        $sanitised['simulate_mode'] = ! empty($value['simulate_mode']) ? 1 : 0;
 
         return $sanitised;
     }
@@ -4496,6 +4532,12 @@ final class SettingsPage implements HookableInterface
     private function get_calendar_choices(): array
     {
         $settings = $this->get_calendar_settings();
+        if (! empty($settings['simulate_mode'])) {
+            return [
+                'fp-exp-company-main' => esc_html__('FP Company Calendar (Simulated)', 'fp-experiences'),
+                'fp-exp-company-operations' => esc_html__('FP Operations Calendar (Simulated)', 'fp-experiences'),
+            ];
+        }
         $token = $this->ensure_calendar_token($settings);
 
         if (! $token) {

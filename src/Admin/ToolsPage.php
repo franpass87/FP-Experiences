@@ -122,8 +122,16 @@ final class ToolsPage implements HookableInterface
                         if (output) {
                             const isSuccess = data.success !== false;
                             const message = data.message || (isSuccess ? 'Operazione completata' : 'Operazione fallita');
+                            const details = Array.isArray(data.details) ? data.details : [];
+                            let detailsHtml = '';
+                            if (details.length > 0) {
+                                const items = details
+                                    .map(detail => '<li>' + String(detail) + '</li>')
+                                    .join('');
+                                detailsHtml = '<ul style="margin:8px 0 0 18px;">' + items + '</ul>';
+                            }
                             
-                            output.innerHTML = '<div class="notice notice-' + (isSuccess ? 'success' : 'error') + '" style="margin: 20px 0; padding: 12px;"><p><strong>' + message + '</strong></p></div>';
+                            output.innerHTML = '<div class="notice notice-' + (isSuccess ? 'success' : 'error') + '" style="margin: 20px 0; padding: 12px;"><p><strong>' + message + '</strong></p>' + detailsHtml + '</div>';
                             output.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
                         }
                         

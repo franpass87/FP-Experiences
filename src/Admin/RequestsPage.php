@@ -41,6 +41,7 @@ use function wp_enqueue_style;
 use function wp_nonce_field;
 use function wp_safe_redirect;
 use function wp_unslash;
+use function current_user_can;
 
 final class RequestsPage implements HookableInterface
 {
@@ -199,6 +200,7 @@ final class RequestsPage implements HookableInterface
         echo '</nav>';
         echo '<h1 class="fp-exp-admin__title">' . esc_html__('Request-to-Book', 'fp-experiences') . '</h1>';
         echo '</header>';
+        $this->render_operator_navigation();
 
         echo '<form method="get" class="fp-exp-requests__filters">';
         echo '<input type="hidden" name="page" value="fp_exp_requests" />';
@@ -323,5 +325,19 @@ final class RequestsPage implements HookableInterface
         echo '</div>';
         echo '</div>';
         echo '</div>';
+    }
+
+    private function render_operator_navigation(): void
+    {
+        echo '<nav class="fp-exp-operator-nav nav-tab-wrapper" aria-label="' . esc_attr__('Navigazione operatore', 'fp-experiences') . '">';
+        echo '<a class="nav-tab" href="' . esc_url(admin_url('admin.php?page=fp_exp_calendar&view=calendar')) . '">' . esc_html__('Calendario & Prenotazioni', 'fp-experiences') . '</a>';
+        echo '<a class="nav-tab nav-tab-active" href="' . esc_url(admin_url('admin.php?page=fp_exp_requests')) . '">' . esc_html__('Richieste RTB', 'fp-experiences') . '</a>';
+        echo '<a class="nav-tab" href="' . esc_url(admin_url('admin.php?page=fp_exp_checkin')) . '">' . esc_html__('Check-in', 'fp-experiences') . '</a>';
+
+        if (current_user_can('manage_woocommerce') && Helpers::can_manage_fp()) {
+            echo '<a class="nav-tab" href="' . esc_url(admin_url('admin.php?page=fp_exp_orders')) . '">' . esc_html__('Ordini', 'fp-experiences') . '</a>';
+        }
+
+        echo '</nav>';
     }
 }

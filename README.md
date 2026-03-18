@@ -2,7 +2,7 @@
 
 Plugin WordPress per booking di esperienze turistiche stile GetYourGuide. Shortcode/Elementor, carrello e checkout isolati, email transazionali, tracking marketing centralizzato.
 
-[![Version](https://img.shields.io/badge/version-1.4.12-blue.svg)](https://github.com/franpass87/FP-Experiences)
+[![Version](https://img.shields.io/badge/version-1.5.0-blue.svg)](https://github.com/franpass87/FP-Experiences)
 [![License](https://img.shields.io/badge/license-GPLv2%2B-blue.svg)](https://www.gnu.org/licenses/gpl-2.0.html)
 
 ---
@@ -19,6 +19,7 @@ FP Experiences permette di vendere esperienze (tour, degustazioni, corsi, ecc.) 
 - **Email transazionali** personalizzate (conferma, approvazione RTB, voucher) con branding
 - **Integrazione Brevo** per email marketing (opzionale)
 - **Google Calendar** per sincronizzazione prenotazioni (opzionale)
+- **Modalità simulazione locale** per Brevo e Google Calendar senza credenziali reali
 - **Tracking marketing**: GA4, Meta Pixel, Google Ads, Clarity tramite FP Marketing Tracking Layer
 - **Multilingua**: supporto WPML con metabox e badge traducibili
 - **Integrazione FP Restaurant**: ruoli operatori condivisi

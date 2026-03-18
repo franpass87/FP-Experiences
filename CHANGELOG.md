@@ -2,6 +2,22 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.5.0] - 2026-03-17
+### Added
+- Added local simulation mode for Google Calendar (no OAuth required) with simulated create/update/delete flow and diagnostic logs for reservation lifecycle events.
+- Added local simulation mode for Brevo (no API key required) to simulate contact sync, transactional sends, and event tracking without external API calls.
+- Added customer/staff reschedule templates and dedicated reschedule notification flow (customer + staff) with automatic reminder/follow-up rescheduling.
+- Added a one-click Tools action to verify simulated tracking and render structured diagnostic details in the admin output panel.
+
+### Changed
+- Improved backend operator workflow for reservation reschedule with a calendar-oriented date selection and stronger server-side safeguards.
+- Enhanced dashboard operational visibility with day-by-day agenda, quick actions, and KPI cards for conversion/no-show monitoring.
+- Improved Google Calendar event payload quality (staff attendees, deduplication, extended properties) and sync diagnostics.
+
+### Fixed
+- Prevented invalid reschedule transitions to non-selectable slots (closed/past/not allowed states).
+- Removed duplicate staff recipients in notification templates for reschedule and generic staff emails.
+
 ## [1.4.12] - 2026-03-16
 ### Added
 - Extended AutoTranslator with IT/EN mappings for gift-redeem page, widget labels, calendar/slots fallbacks, and voucher emails so the frontend and emails are consistent in both languages.

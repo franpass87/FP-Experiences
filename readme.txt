@@ -5,8 +5,8 @@ Tags: experiences, booking, wooocommerce, shortcodes, calendar
 Requires at least: 6.0
 Tested up to: 6.4
 Requires PHP: 8.0
-Stable tag: 1.4.12
-Last updated: 2026-03-16
+Stable tag: 1.5.0
+Last updated: 2026-03-17
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -123,6 +123,13 @@ If Brevo credentials are provided, confirmations, reminders, and cancellations u
 FP Experiences stores reservation details inside custom tables linked to WooCommerce orders. Marketing consent is recorded per order (`_fp_exp_consent_marketing`) and forwarded to Brevo only when enabled. UTM parameters are captured in the `fp_exp_utm` cookie, copied to reservation/order meta, and never displayed publicly. Site owners can export or erase booking data through WooCommerce personal data tools; deleting an order removes the associated reservation payload. API credentials (Brevo, Google Calendar) are kept in WordPress options and can be revoked at any time from the Settings screen.
 
 == Changelog ==
+
+= 1.5.0 - 2026-03-17 =
+* **Added**: Modalità simulazione locale per Google Calendar (senza OAuth) con test create/update/delete e log diagnostici.
+* **Added**: Modalità simulazione locale per Brevo (senza API key) per contact sync, transactional email e tracking eventi.
+* **Added**: Nuove email dedicate per riprogrammazione cliente/staff e tool one-click "Verifica tracking simulato" in area Tools.
+* **Changed**: Dashboard operatore potenziata con agenda oggi/domani, quick actions e KPI conversion/no-show.
+* **Fixed**: Hardening backend reschedule con blocchi server-side su slot non validi (chiusi/passati/non consentiti) e deduplica destinatari staff.
 
 = 1.4.12 - 2026-03-16 =
 * Extended AutoTranslator for gift-redeem, widget, calendar/slots and voucher emails (IT/EN consistency).

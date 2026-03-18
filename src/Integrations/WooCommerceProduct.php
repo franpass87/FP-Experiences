@@ -39,6 +39,11 @@ use function wp_doing_ajax;
 use function wp_date;
 use function wp_timezone;
 use function get_option;
+use function check_admin_referer;
+use function current_user_can;
+use function wp_get_referer;
+use function wp_safe_redirect;
+use function wp_unslash;
 
 /**
  * Customizes WooCommerce cart/checkout display for experience items
@@ -101,6 +106,8 @@ final class WooCommerceProduct implements HookableInterface
 
         // Meta box with booking details on the WooCommerce order page
         add_action('add_meta_boxes', [$this, 'register_booking_meta_box']);
+        add_action('admin_init', [$this, 'handle_reservation_slot_update']);
+        add_action('admin_notices', [$this, 'render_reschedule_notice']);
     }
 
     /**
@@ -252,6 +259,182 @@ final class WooCommerceProduct implements HookableInterface
                     } catch (\Exception $e) {
                         // ignore
                     }
+                }
+            }
+
+            $reschedule_slots = $this->get_reschedule_slots_for_experience($experience_id, $slot_id);
+            if (! empty($reschedule_slots)) {
+                $slot_select_id = 'fp-exp-reschedule-slot-' . $rid;
+                $day_select_id = 'fp-exp-reschedule-day-' . $rid;
+                $calendar_id = 'fp-exp-reschedule-calendar-' . $rid;
+                $selected_day = '';
+                $day_options = [];
+                $month_options = [];
+                $slot_options = [];
+
+                foreach ($reschedule_slots as $candidate) {
+                    $candidate_id = absint($candidate['id'] ?? 0);
+                    $candidate_start = isset($candidate['start_datetime']) ? (string) $candidate['start_datetime'] : '';
+                    if ($candidate_id <= 0 || '' === $candidate_start) {
+                        continue;
+                    }
+
+                    $candidate_day_key = $this->get_slot_local_day_key($candidate_start);
+                    if ('' === $candidate_day_key) {
+                        continue;
+                    }
+
+                    if (! isset($day_options[$candidate_day_key])) {
+                        $day_options[$candidate_day_key] = [
+                            'label' => $this->format_slot_local_day_label($candidate_start),
+                            'count' => 0,
+                        ];
+                    }
+                    $day_options[$candidate_day_key]['count']++;
+
+                    if ($candidate_id === $slot_id) {
+                        $selected_day = $candidate_day_key;
+                    }
+
+                    $slot_options[] = [
+                        'id' => $candidate_id,
+                        'day_key' => $candidate_day_key,
+                        'label' => $this->format_datetime_for_display($candidate_start),
+                        'selected' => $candidate_id === $slot_id,
+                    ];
+                }
+
+                if (! empty($day_options)) {
+                    ksort($day_options);
+                    foreach ($day_options as $day_key => $day_data) {
+                        $month_key = substr($day_key, 0, 7);
+                        if (! isset($month_options[$month_key])) {
+                            $month_options[$month_key] = [
+                                'label' => $this->format_slot_local_month_label($day_key),
+                                'days' => [],
+                            ];
+                        }
+                        $month_options[$month_key]['days'][$day_key] = $day_data;
+                    }
+                    ksort($month_options);
+                }
+
+                if ('' === $selected_day && ! empty($slot_options)) {
+                    $selected_day = (string) ($slot_options[0]['day_key'] ?? '');
+                }
+
+                echo '<form method="post" style="margin:10px 0 0;padding:8px;background:#eef2ff;border:1px solid #c7d2fe;border-radius:6px;">';
+                wp_nonce_field('fp_exp_update_reservation_slot_' . $rid, 'fp_exp_update_reservation_slot_nonce');
+                echo '<input type="hidden" name="fp_exp_update_reservation_slot" value="1" />';
+                echo '<input type="hidden" name="reservation_id" value="' . esc_attr((string) $rid) . '" />';
+                echo '<input type="hidden" name="order_id" value="' . esc_attr((string) $order_id) . '" />';
+                echo '<p style="margin:0 0 6px;font-size:12px;font-weight:600;color:#1f2937;">' . esc_html__('Modifica data prenotazione', 'fp-experiences') . '</p>';
+
+                if (count($day_options) > 1) {
+                    echo '<div id="' . esc_attr($calendar_id) . '" style="margin:0 0 10px;padding:8px;background:#ffffff;border:1px solid #dbe4ff;border-radius:6px;">';
+                    echo '<div style="display:flex;align-items:center;justify-content:space-between;margin:0 0 8px;">';
+                    echo '<button type="button" data-cal-prev style="min-width:28px;">&lsaquo;</button>';
+                    echo '<strong data-cal-month style="font-size:12px;color:#1f2937;"></strong>';
+                    echo '<button type="button" data-cal-next style="min-width:28px;">&rsaquo;</button>';
+                    echo '</div>';
+                    echo '<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;">';
+                    foreach ($month_options as $month_key => $month_data) {
+                        $month_label = (string) ($month_data['label'] ?? $month_key);
+                        echo '<div data-cal-month-panel="' . esc_attr($month_key) . '" data-cal-month-label="' . esc_attr($month_label) . '" style="display:contents;">';
+                        foreach ($month_data['days'] as $day_key => $day_data) {
+                            $day_count = absint($day_data['count'] ?? 0);
+                            $day_btn_label = $this->format_slot_local_day_button_label($day_key);
+                            $is_active = $day_key === $selected_day;
+                            echo '<button type="button" data-cal-day="' . esc_attr($day_key) . '" style="padding:6px 4px;border:1px solid ' . esc_attr($is_active ? '#3b82f6' : '#cbd5e1') . ';background:' . esc_attr($is_active ? '#dbeafe' : '#f8fafc') . ';border-radius:4px;font-size:11px;line-height:1.2;cursor:pointer;">';
+                            echo esc_html($day_btn_label);
+                            echo '<br><span style="color:#64748b;">' . esc_html((string) max(1, $day_count)) . '</span>';
+                            echo '</button>';
+                        }
+                        echo '</div>';
+                    }
+                    echo '</div>';
+                    echo '<select id="' . esc_attr($day_select_id) . '" style="display:none;">';
+                    foreach ($day_options as $day_key => $day_data) {
+                        $day_label = (string) ($day_data['label'] ?? $day_key);
+                        echo '<option value="' . esc_attr($day_key) . '" ' . selected($selected_day, $day_key, false) . '>' . esc_html($day_label) . '</option>';
+                    }
+                    echo '</select>';
+                    echo '</div>';
+                }
+
+                echo '<label for="' . esc_attr($slot_select_id) . '" style="display:block;margin:0 0 4px;font-size:12px;color:#334155;">' . esc_html__('Orario', 'fp-experiences') . '</label>';
+                echo '<select id="' . esc_attr($slot_select_id) . '" name="new_slot_id" style="width:100%;margin:0 0 8px;">';
+                foreach ($slot_options as $option) {
+                    $candidate_id = (int) ($option['id'] ?? 0);
+                    $candidate_day_key = (string) ($option['day_key'] ?? '');
+                    $candidate_label = (string) ($option['label'] ?? (string) $candidate_id);
+                    $is_selected = ! empty($option['selected']);
+                    echo '<option value="' . esc_attr((string) $candidate_id) . '" data-day="' . esc_attr($candidate_day_key) . '" ' . ($is_selected ? 'selected' : '') . '>' . esc_html($candidate_label) . '</option>';
+                }
+                echo '</select>';
+                echo '<button type="submit" class="button button-secondary" style="width:100%;">' . esc_html__('Salva nuova data', 'fp-experiences') . '</button>';
+                echo '</form>';
+
+                if (count($day_options) > 1) {
+                    echo '<script>(function(){';
+                    echo 'var calendar=document.getElementById(' . wp_json_encode($calendar_id) . ');';
+                    echo 'var daySelect=document.getElementById(' . wp_json_encode($day_select_id) . ');';
+                    echo 'var slotSelect=document.getElementById(' . wp_json_encode($slot_select_id) . ');';
+                    echo 'if(!calendar||!daySelect||!slotSelect){return;}';
+                    echo 'var monthPanels=calendar.querySelectorAll("[data-cal-month-panel]");';
+                    echo 'var monthLabel=calendar.querySelector("[data-cal-month]");';
+                    echo 'var prevBtn=calendar.querySelector("[data-cal-prev]");';
+                    echo 'var nextBtn=calendar.querySelector("[data-cal-next]");';
+                    echo 'var dayButtons=calendar.querySelectorAll("[data-cal-day]");';
+                    echo 'var monthOrder=[];';
+                    echo 'for(var i=0;i<monthPanels.length;i++){var key=monthPanels[i].getAttribute("data-cal-month-panel");if(monthOrder.indexOf(key)===-1){monthOrder.push(key);}}';
+                    echo 'var selectedDay=daySelect.value||"";';
+                    echo 'var activeMonth=selectedDay?selectedDay.substring(0,7):(monthOrder[0]||"");';
+                    echo 'var sync=function(){';
+                    echo 'var activeDay=daySelect.value||"";';
+                    echo 'var options=slotSelect.options;var firstVisible=-1;';
+                    echo 'for(var i=0;i<options.length;i++){';
+                    echo 'var option=options[i];var visible=!activeDay||option.getAttribute("data-day")===activeDay;';
+                    echo 'option.hidden=!visible;';
+                    echo 'option.disabled=!visible;';
+                    echo 'if(visible&&firstVisible===-1){firstVisible=i;}';
+                    echo '}';
+                    echo 'if(slotSelect.selectedIndex<0||slotSelect.options[slotSelect.selectedIndex].disabled){';
+                    echo 'if(firstVisible>=0){slotSelect.selectedIndex=firstVisible;}';
+                    echo '}';
+                    echo '};';
+                    echo 'var renderMonth=function(){';
+                    echo 'for(var i=0;i<monthPanels.length;i++){';
+                    echo 'var panel=monthPanels[i];';
+                    echo 'var panelMonth=panel.getAttribute("data-cal-month-panel")||"";';
+                    echo 'panel.style.display=(panelMonth===activeMonth)?"contents":"none";';
+                    echo '}';
+                    echo 'if(monthLabel){';
+                    echo 'var activePanel=calendar.querySelector("[data-cal-month-panel=\\""+activeMonth+"\\"]");';
+                    echo 'monthLabel.textContent=activePanel?(activePanel.getAttribute("data-cal-month-label")||activeMonth):activeMonth;';
+                    echo '}';
+                    echo '};';
+                    echo 'var setDay=function(dayKey){';
+                    echo 'daySelect.value=dayKey;';
+                    echo 'for(var i=0;i<dayButtons.length;i++){';
+                    echo 'var btn=dayButtons[i];var isActive=(btn.getAttribute("data-cal-day")===dayKey);';
+                    echo 'btn.style.borderColor=isActive?"#3b82f6":"#cbd5e1";';
+                    echo 'btn.style.background=isActive?"#dbeafe":"#f8fafc";';
+                    echo '}';
+                    echo 'sync();';
+                    echo '};';
+                    echo 'for(var i=0;i<dayButtons.length;i++){';
+                    echo 'dayButtons[i].addEventListener("click",function(){';
+                    echo 'var dayKey=this.getAttribute("data-cal-day")||"";';
+                    echo 'if(!dayKey){return;}';
+                    echo 'activeMonth=dayKey.substring(0,7);';
+                    echo 'renderMonth();setDay(dayKey);';
+                    echo '});';
+                    echo '}';
+                    echo 'if(prevBtn){prevBtn.addEventListener("click",function(){var idx=monthOrder.indexOf(activeMonth);if(idx>0){activeMonth=monthOrder[idx-1];renderMonth();}});}';
+                    echo 'if(nextBtn){nextBtn.addEventListener("click",function(){var idx=monthOrder.indexOf(activeMonth);if(idx>-1&&idx<monthOrder.length-1){activeMonth=monthOrder[idx+1];renderMonth();}});}';
+                    echo 'renderMonth();setDay(daySelect.value||selectedDay||"");';
+                    echo '})();</script>';
                 }
             }
 
@@ -1143,6 +1326,412 @@ final class WooCommerceProduct implements HookableInterface
             // Fallback: return original value if conversion fails
             return $datetime_utc;
         }
+    }
+
+    /**
+     * Handle backend reservation date update from order metabox.
+     */
+    public function handle_reservation_slot_update(): void
+    {
+        if ('POST' !== ($_SERVER['REQUEST_METHOD'] ?? '')) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
+            return;
+        }
+
+        if (! isset($_POST['fp_exp_update_reservation_slot'])) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
+            return;
+        }
+
+        if (! Helpers::can_operate_fp() || ! current_user_can('manage_woocommerce')) {
+            return;
+        }
+
+        $reservation_id = isset($_POST['reservation_id']) ? absint((string) wp_unslash($_POST['reservation_id'])) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Missing
+        $order_id = isset($_POST['order_id']) ? absint((string) wp_unslash($_POST['order_id'])) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Missing
+        $new_slot_id = isset($_POST['new_slot_id']) ? absint((string) wp_unslash($_POST['new_slot_id'])) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Missing
+
+        if ($reservation_id <= 0 || $order_id <= 0 || $new_slot_id <= 0) {
+            $this->redirect_with_reschedule_notice($order_id, 'invalid');
+            return;
+        }
+
+        check_admin_referer('fp_exp_update_reservation_slot_' . $reservation_id, 'fp_exp_update_reservation_slot_nonce');
+
+        $reservation = \FP_Exp\Booking\Reservations::get($reservation_id);
+        if (! $reservation) {
+            $this->redirect_with_reschedule_notice($order_id, 'not_found');
+            return;
+        }
+
+        if (absint($reservation['order_id'] ?? 0) !== $order_id) {
+            $this->redirect_with_reschedule_notice($order_id, 'invalid');
+            return;
+        }
+
+        $current_slot_id = absint($reservation['slot_id'] ?? 0);
+        if ($current_slot_id === $new_slot_id) {
+            $this->redirect_with_reschedule_notice($order_id, 'noop');
+            return;
+        }
+
+        $new_slot = \FP_Exp\Booking\Slots::get_slot($new_slot_id);
+        if (! $new_slot) {
+            $this->redirect_with_reschedule_notice($order_id, 'slot_not_found');
+            return;
+        }
+
+        $experience_id = absint($reservation['experience_id'] ?? 0);
+        if (absint($new_slot['experience_id'] ?? 0) !== $experience_id) {
+            $this->redirect_with_reschedule_notice($order_id, 'slot_mismatch');
+            return;
+        }
+
+        $reservation_status = (string) ($reservation['status'] ?? '');
+        if (in_array($reservation_status, [\FP_Exp\Booking\Reservations::STATUS_CANCELLED, \FP_Exp\Booking\Reservations::STATUS_DECLINED], true)) {
+            $this->redirect_with_reschedule_notice($order_id, 'status_not_allowed');
+            return;
+        }
+
+        if (! $this->is_slot_selectable_for_reschedule($new_slot, $current_slot_id)) {
+            $this->redirect_with_reschedule_notice($order_id, 'slot_not_allowed');
+            return;
+        }
+
+        $requested_pax = is_array($reservation['pax'] ?? null) ? $reservation['pax'] : [];
+        $capacity_check = \FP_Exp\Booking\Slots::check_capacity($new_slot_id, $requested_pax);
+        if (empty($capacity_check['allowed'])) {
+            $this->redirect_with_reschedule_notice($order_id, 'capacity');
+            return;
+        }
+
+        $updated = \FP_Exp\Booking\Reservations::update($reservation_id, [
+            'order_id' => absint($reservation['order_id'] ?? 0),
+            'experience_id' => $experience_id,
+            'slot_id' => $new_slot_id,
+            'customer_id' => absint($reservation['customer_id'] ?? 0),
+            'status' => (string) ($reservation['status'] ?? 'pending'),
+            'pax' => is_array($reservation['pax'] ?? null) ? $reservation['pax'] : [],
+            'addons' => is_array($reservation['addons'] ?? null) ? $reservation['addons'] : [],
+            'utm' => is_array($reservation['utm'] ?? null) ? $reservation['utm'] : [],
+            'meta' => is_array($reservation['meta'] ?? null) ? $reservation['meta'] : [],
+            'locale' => (string) ($reservation['locale'] ?? ''),
+            'total_gross' => (float) ($reservation['total_gross'] ?? 0),
+            'tax_total' => (float) ($reservation['tax_total'] ?? 0),
+            'hold_expires_at' => $reservation['hold_expires_at'] ?? null,
+        ]);
+
+        if (! $updated) {
+            $this->redirect_with_reschedule_notice($order_id, 'save_failed');
+            return;
+        }
+
+        $order = wc_get_order($order_id);
+        if ($order instanceof \WC_Order) {
+            $this->sync_order_item_slot_meta($order, $experience_id, $current_slot_id, $new_slot);
+        }
+
+        do_action(
+            'fp_exp_reservation_rescheduled',
+            $reservation_id,
+            $order_id,
+            $current_slot_id,
+            $new_slot_id
+        );
+
+        $this->redirect_with_reschedule_notice($order_id, 'success');
+    }
+
+    /**
+     * Show feedback after reservation date change.
+     */
+    public function render_reschedule_notice(): void
+    {
+        $status = isset($_GET['fp_exp_reschedule']) ? sanitize_key((string) $_GET['fp_exp_reschedule']) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+        if ('' === $status) {
+            return;
+        }
+
+        $messages = [
+            'success' => [
+                'type' => 'success',
+                'text' => esc_html__('Data prenotazione aggiornata con successo.', 'fp-experiences'),
+            ],
+            'noop' => [
+                'type' => 'info',
+                'text' => esc_html__('La prenotazione era gia impostata sulla data selezionata.', 'fp-experiences'),
+            ],
+            'capacity' => [
+                'type' => 'error',
+                'text' => esc_html__('Impossibile spostare la prenotazione: capienza slot insufficiente.', 'fp-experiences'),
+            ],
+            'slot_not_found' => [
+                'type' => 'error',
+                'text' => esc_html__('Slot selezionato non trovato.', 'fp-experiences'),
+            ],
+            'slot_mismatch' => [
+                'type' => 'error',
+                'text' => esc_html__('Lo slot selezionato non appartiene alla stessa esperienza.', 'fp-experiences'),
+            ],
+            'slot_not_allowed' => [
+                'type' => 'error',
+                'text' => esc_html__('Lo slot selezionato non è disponibile per la riprogrammazione.', 'fp-experiences'),
+            ],
+            'status_not_allowed' => [
+                'type' => 'error',
+                'text' => esc_html__('La prenotazione non può essere riprogrammata nel suo stato attuale.', 'fp-experiences'),
+            ],
+            'not_found' => [
+                'type' => 'error',
+                'text' => esc_html__('Prenotazione non trovata.', 'fp-experiences'),
+            ],
+            'save_failed' => [
+                'type' => 'error',
+                'text' => esc_html__('Salvataggio non riuscito. Riprova.', 'fp-experiences'),
+            ],
+            'invalid' => [
+                'type' => 'error',
+                'text' => esc_html__('Richiesta non valida.', 'fp-experiences'),
+            ],
+        ];
+
+        if (! isset($messages[$status])) {
+            return;
+        }
+
+        $type = $messages[$status]['type'];
+        $class = 'notice';
+        if ('success' === $type) {
+            $class .= ' notice-success';
+        } elseif ('info' === $type) {
+            $class .= ' notice-info';
+        } else {
+            $class .= ' notice-error';
+        }
+
+        echo '<div class="' . esc_attr($class) . ' is-dismissible"><p>' . esc_html($messages[$status]['text']) . '</p></div>';
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private function get_reschedule_slots_for_experience(int $experience_id, int $current_slot_id): array
+    {
+        $range_start = \gmdate('Y-m-d H:i:s', time() - (7 * \DAY_IN_SECONDS));
+        $range_end = \gmdate('Y-m-d H:i:s', time() + (540 * \DAY_IN_SECONDS));
+        $slots = \FP_Exp\Booking\Slots::get_slots_in_range($range_start, $range_end, [
+            'experience_id' => $experience_id,
+            'statuses' => [
+                \FP_Exp\Booking\Slots::STATUS_OPEN,
+                \FP_Exp\Booking\Slots::STATUS_CLOSED,
+            ],
+        ]);
+
+        if ($current_slot_id > 0) {
+            $has_current = false;
+            foreach ($slots as $slot) {
+                if (absint($slot['id'] ?? 0) === $current_slot_id) {
+                    $has_current = true;
+                    break;
+                }
+            }
+
+            if (! $has_current) {
+                $current_slot = \FP_Exp\Booking\Slots::get_slot($current_slot_id);
+                if (is_array($current_slot)) {
+                    array_unshift($slots, $current_slot);
+                }
+            }
+        }
+
+        if (count($slots) > 800) {
+            $slots = array_slice($slots, 0, 800);
+        }
+
+        $filtered_slots = [];
+        foreach ($slots as $slot) {
+            if (! is_array($slot)) {
+                continue;
+            }
+            if ($this->is_slot_selectable_for_reschedule($slot, $current_slot_id)) {
+                $filtered_slots[] = $slot;
+            }
+        }
+
+        return $filtered_slots;
+    }
+
+    /**
+     * @param array<string, mixed> $slot
+     */
+    private function is_slot_selectable_for_reschedule(array $slot, int $current_slot_id): bool
+    {
+        $slot_id = absint($slot['id'] ?? 0);
+        if ($slot_id <= 0) {
+            return false;
+        }
+
+        if ($slot_id === $current_slot_id) {
+            return true;
+        }
+
+        $status = sanitize_key((string) ($slot['status'] ?? \FP_Exp\Booking\Slots::STATUS_OPEN));
+        if (\FP_Exp\Booking\Slots::STATUS_OPEN !== $status) {
+            return false;
+        }
+
+        $start_datetime = isset($slot['start_datetime']) ? (string) $slot['start_datetime'] : '';
+        if ('' === $start_datetime) {
+            return false;
+        }
+
+        $timestamp = strtotime($start_datetime . ' UTC');
+        if (! is_numeric($timestamp) || (int) $timestamp <= (time() - \MINUTE_IN_SECONDS)) {
+            return false;
+        }
+
+        return true;
+    }
+
+    private function get_slot_local_day_key(string $datetime_utc): string
+    {
+        if ('' === $datetime_utc) {
+            return '';
+        }
+
+        try {
+            $utc_datetime = new DateTimeImmutable($datetime_utc, new DateTimeZone('UTC'));
+            $local_datetime = $utc_datetime->setTimezone(wp_timezone());
+            return $local_datetime->format('Y-m-d');
+        } catch (\Throwable $exception) {
+            return '';
+        }
+    }
+
+    private function format_slot_local_day_label(string $datetime_utc): string
+    {
+        if ('' === $datetime_utc) {
+            return '';
+        }
+
+        try {
+            $utc_datetime = new DateTimeImmutable($datetime_utc, new DateTimeZone('UTC'));
+            $local_datetime = $utc_datetime->setTimezone(wp_timezone());
+            return wp_date('l j F Y', $local_datetime->getTimestamp());
+        } catch (\Throwable $exception) {
+            return $datetime_utc;
+        }
+    }
+
+    private function format_slot_local_month_label(string $day_key): string
+    {
+        if ('' === $day_key) {
+            return '';
+        }
+
+        try {
+            $local_datetime = new DateTimeImmutable($day_key . ' 00:00:00', wp_timezone());
+            return wp_date('F Y', $local_datetime->getTimestamp());
+        } catch (\Throwable $exception) {
+            return $day_key;
+        }
+    }
+
+    private function format_slot_local_day_button_label(string $day_key): string
+    {
+        if ('' === $day_key) {
+            return '';
+        }
+
+        try {
+            $local_datetime = new DateTimeImmutable($day_key . ' 00:00:00', wp_timezone());
+            return wp_date('D j', $local_datetime->getTimestamp());
+        } catch (\Throwable $exception) {
+            return $day_key;
+        }
+    }
+
+    /**
+     * Update WooCommerce order item slot metadata after reservation move.
+     *
+     * @param array<string, mixed> $new_slot
+     */
+    private function sync_order_item_slot_meta(\WC_Order $order, int $experience_id, int $previous_slot_id, array $new_slot): void
+    {
+        $new_slot_id = absint($new_slot['id'] ?? 0);
+        $new_start = isset($new_slot['start_datetime']) ? (string) $new_slot['start_datetime'] : '';
+        $new_end = isset($new_slot['end_datetime']) ? (string) $new_slot['end_datetime'] : '';
+
+        if ($new_slot_id <= 0 || '' === $new_start || '' === $new_end) {
+            return;
+        }
+
+        foreach ($order->get_items() as $item) {
+            $item_experience_id = absint(
+                $item->get_meta('experience_id')
+                ?: $item->get_meta('fp_exp_experience_id')
+                ?: $item->get_meta('_fp_exp_experience_id')
+                ?: $item->get_meta('_experience_id')
+                ?: 0
+            );
+
+            if ($item_experience_id !== $experience_id) {
+                continue;
+            }
+
+            $item_slot_id = absint(
+                $item->get_meta('slot_id')
+                ?: $item->get_meta('fp_exp_slot_id')
+                ?: $item->get_meta('_fp_exp_slot_id')
+                ?: $item->get_meta('_slot_id')
+                ?: 0
+            );
+
+            if ($previous_slot_id > 0 && $item_slot_id > 0 && $item_slot_id !== $previous_slot_id) {
+                continue;
+            }
+
+            $item->update_meta_data('slot_id', $new_slot_id);
+            $item->update_meta_data('fp_exp_slot_id', $new_slot_id);
+            $item->update_meta_data('_fp_exp_slot_id', $new_slot_id);
+            $item->update_meta_data('_slot_id', $new_slot_id);
+
+            $item->update_meta_data('slot_start', $new_start);
+            $item->update_meta_data('fp_exp_slot_start', $new_start);
+            $item->update_meta_data('_fp_exp_slot_start', $new_start);
+            $item->update_meta_data('_slot_start', $new_start);
+
+            $item->update_meta_data('slot_end', $new_end);
+            $item->update_meta_data('fp_exp_slot_end', $new_end);
+            $item->update_meta_data('_fp_exp_slot_end', $new_end);
+            $item->update_meta_data('_slot_end', $new_end);
+
+            $item->save();
+        }
+    }
+
+    private function redirect_with_reschedule_notice(int $order_id, string $status): void
+    {
+        $fallback = $order_id > 0
+            ? add_query_arg(
+                [
+                    'post' => $order_id,
+                    'action' => 'edit',
+                ],
+                admin_url('post.php')
+            )
+            : admin_url('edit.php?post_type=shop_order');
+
+        $referer = wp_get_referer();
+        $base = $referer && is_string($referer) ? $referer : $fallback;
+
+        $redirect = add_query_arg(
+            [
+                'fp_exp_reschedule' => sanitize_key($status),
+            ],
+            $base
+        );
+
+        wp_safe_redirect($redirect);
+        exit;
     }
 }
 

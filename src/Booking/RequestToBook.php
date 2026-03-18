@@ -30,6 +30,8 @@ use function add_action;
 use function apply_filters;
 use function do_action;
 use function current_time;
+use function esc_html;
+use function esc_html__;
 use function function_exists;
 use function get_option;
 use function get_permalink;
@@ -47,6 +49,7 @@ use function sanitize_email;
 use function sanitize_key;
 use function sanitize_text_field;
 use function sanitize_textarea_field;
+use function nl2br;
 use function strtotime;
 use function wc_create_order;
 use function wc_get_order;
@@ -1131,19 +1134,32 @@ final class RequestToBook implements HookableInterface
             $context['experience']['title']
         );
 
-        $lines = [];
-        $lines[] = sprintf(__('Cliente: %s (%s)', 'fp-experiences'), $context['customer']['name'] ?: __('Sconosciuto', 'fp-experiences'), $context['customer']['email']);
-        if (! empty($context['customer']['phone'])) {
-            $lines[] = sprintf(__('Telefono: %s', 'fp-experiences'), $context['customer']['phone']);
-        }
-        $lines[] = sprintf(__('Ospiti: %d', 'fp-experiences'), (int) ($context['totals']['guests'] ?? 0));
-        $lines[] = sprintf(__('Slot richiesto: %s', 'fp-experiences'), $context['slot']['start_label'] ?? $context['slot']['start_datetime'] ?? '');
-        if (! empty($context['notes'])) {
-            $lines[] = __('Note:', 'fp-experiences');
-            $lines[] = $context['notes'];
-        }
+        $customer_name = (string) ($context['customer']['name'] ?: __('Sconosciuto', 'fp-experiences'));
+        $customer_email = (string) ($context['customer']['email'] ?? '');
+        $customer_phone = (string) ($context['customer']['phone'] ?? '');
+        $guests = (int) ($context['totals']['guests'] ?? 0);
+        $slot_label = (string) ($context['slot']['start_label'] ?? $context['slot']['start_datetime'] ?? '');
+        $notes = trim((string) ($context['notes'] ?? ''));
 
-        $body = implode("\n", $lines);
+        $body = '<div style="font-family:\'Helvetica Neue\',Arial,sans-serif;line-height:1.6;color:#1f2933;">';
+        $body .= '<p style="margin:0 0 12px;">' . esc_html__('Nuova richiesta ricevuta dal frontend RTB.', 'fp-experiences') . '</p>';
+        $body .= '<table role="presentation" style="width:100%;border-collapse:collapse;margin:0 0 12px;">';
+        $body .= '<tr><td style="padding:6px 0;color:#64748b;">' . esc_html__('Cliente', 'fp-experiences') . '</td><td style="padding:6px 0;text-align:right;">' . esc_html($customer_name) . '</td></tr>';
+        $body .= '<tr><td style="padding:6px 0;color:#64748b;">' . esc_html__('Email', 'fp-experiences') . '</td><td style="padding:6px 0;text-align:right;">' . esc_html($customer_email) . '</td></tr>';
+        if ($customer_phone !== '') {
+            $body .= '<tr><td style="padding:6px 0;color:#64748b;">' . esc_html__('Telefono', 'fp-experiences') . '</td><td style="padding:6px 0;text-align:right;">' . esc_html($customer_phone) . '</td></tr>';
+        }
+        $body .= '<tr><td style="padding:6px 0;color:#64748b;">' . esc_html__('Ospiti', 'fp-experiences') . '</td><td style="padding:6px 0;text-align:right;">' . esc_html((string) $guests) . '</td></tr>';
+        $body .= '<tr><td style="padding:6px 0;color:#64748b;">' . esc_html__('Slot richiesto', 'fp-experiences') . '</td><td style="padding:6px 0;text-align:right;">' . esc_html($slot_label) . '</td></tr>';
+        $body .= '</table>';
+        if ($notes !== '') {
+            $body .= '<div style="padding:12px;border:1px solid #fde68a;background:#fffbeb;border-radius:8px;color:#78350f;">';
+            $body .= '<strong>' . esc_html__('Note cliente', 'fp-experiences') . '</strong><br>' . nl2br(esc_html($notes));
+            $body .= '</div>';
+        }
+        $body .= '</div>';
+
+        $body = (string) apply_filters('fp_exp_email_branding', $body, 'it');
 
         $this->mailer->send($recipients, $subject, $body);
 

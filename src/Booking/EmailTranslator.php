@@ -155,6 +155,31 @@ final class EmailTranslator
             'en' => 'We look forward to seeing you again soon!',
             'de' => 'Wir freuen uns darauf, Sie bald wiederzusehen!',
         ],
+        'customer_rescheduled.heading' => [
+            'it' => 'La tua prenotazione per %s e stata aggiornata',
+            'en' => 'Your reservation for %s has been updated',
+            'de' => 'Ihre Buchung fur %s wurde aktualisiert',
+        ],
+        'customer_rescheduled.intro' => [
+            'it' => 'Abbiamo aggiornato data/orario della tua prenotazione. Di seguito trovi il riepilogo del cambio.',
+            'en' => 'We updated the date/time of your reservation. Here is a quick summary of the change.',
+            'de' => 'Wir haben Datum/Uhrzeit Ihrer Buchung aktualisiert. Hier ist eine Zusammenfassung der Anderung.',
+        ],
+        'customer_rescheduled.previous_slot' => [
+            'it' => 'Data precedente',
+            'en' => 'Previous date',
+            'de' => 'Vorheriges Datum',
+        ],
+        'customer_rescheduled.new_slot' => [
+            'it' => 'Nuova data confermata',
+            'en' => 'New confirmed date',
+            'de' => 'Neues bestatigtes Datum',
+        ],
+        'customer_rescheduled.support' => [
+            'it' => 'Se hai bisogno di supporto, rispondi a questa email.',
+            'en' => 'If you need support, reply to this email.',
+            'de' => 'Wenn Sie Unterstutzung benotigen, antworten Sie auf diese E-Mail.',
+        ],
         'staff_notification.subject_new' => [
             'it' => 'Nuova prenotazione – %s',
             'en' => 'New reservation – %s',
@@ -204,6 +229,31 @@ final class EmailTranslator
             'it' => 'Note del cliente',
             'en' => 'Customer notes',
             'de' => 'Kundennotizen',
+        ],
+        'staff_rescheduled.heading' => [
+            'it' => 'Prenotazione riprogrammata: %s',
+            'en' => 'Reservation rescheduled: %s',
+            'de' => 'Buchung verschoben: %s',
+        ],
+        'staff_rescheduled.intro' => [
+            'it' => 'Una prenotazione e stata aggiornata manualmente dal backend operatore.',
+            'en' => 'A reservation was manually updated from the operator backend.',
+            'de' => 'Eine Buchung wurde manuell im Operator-Backend aktualisiert.',
+        ],
+        'staff_rescheduled.previous_slot' => [
+            'it' => 'Slot precedente',
+            'en' => 'Previous slot',
+            'de' => 'Vorheriger Slot',
+        ],
+        'staff_rescheduled.new_slot' => [
+            'it' => 'Nuovo slot',
+            'en' => 'New slot',
+            'de' => 'Neuer Slot',
+        ],
+        'staff_rescheduled.timezone' => [
+            'it' => 'Fuso orario',
+            'en' => 'Timezone',
+            'de' => 'Zeitzone',
         ],
         // RTB Payment Request
         'rtb_payment.heading' => [

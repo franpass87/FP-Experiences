@@ -14,6 +14,8 @@ use function add_action;
 use function absint;
 use function array_filter;
 use function array_map;
+use function array_merge;
+use function array_unique;
 use function esc_url_raw;
 use function get_option;
 use function get_transient;
@@ -23,11 +25,15 @@ use function is_array;
 use function is_string;
 use function is_wp_error;
 use function rawurlencode;
+use function sanitize_email;
 use function sanitize_text_field;
 use function set_transient;
 use function sprintf;
+use function strtolower;
 use function strtotime;
 use function time;
+use function trim;
+use function wp_generate_uuid4;
 use function wp_json_encode;
 use function wp_remote_delete;
 use function wp_remote_post;
@@ -89,6 +95,7 @@ final class GoogleCalendar implements HookableInterface
     {
         add_action('fp_exp_reservation_paid', [$this, 'handle_reservation_paid'], 30, 2);
         add_action('fp_exp_reservation_cancelled', [$this, 'handle_reservation_cancelled'], 30, 2);
+        add_action('fp_exp_reservation_rescheduled', [$this, 'handle_reservation_rescheduled'], 30, 4);
     }
 
     public function set_email_service(Emails $emails): void
@@ -99,6 +106,10 @@ final class GoogleCalendar implements HookableInterface
     public function is_connected(): bool
     {
         $settings = $this->get_settings();
+
+        if ($this->is_simulation_enabled()) {
+            return ! empty($settings['calendar_id']);
+        }
 
         return ! empty($settings['access_token']) && ! empty($settings['calendar_id']);
     }
@@ -131,6 +142,25 @@ final class GoogleCalendar implements HookableInterface
         }
 
         $this->delete_event($context, $reservation_id);
+    }
+
+    public function handle_reservation_rescheduled(
+        int $reservation_id,
+        int $order_id,
+        int $previous_slot_id = 0,
+        int $new_slot_id = 0
+    ): void {
+        if (! $this->is_connected()) {
+            return;
+        }
+
+        $context = $this->get_context($reservation_id, $order_id);
+
+        if (! $context) {
+            return;
+        }
+
+        $this->upsert_event($context, $reservation_id);
     }
 
     /**
@@ -170,6 +200,11 @@ final class GoogleCalendar implements HookableInterface
         $settings = $this->get_settings();
         $calendar_id = (string) ($settings['calendar_id'] ?? '');
 
+        if ($this->is_simulation_enabled()) {
+            $this->simulate_upsert_event($order, $reservation_id, $order_id, $calendar_id);
+            return;
+        }
+
         $token = $this->get_access_token();
         if (! $token || ! $calendar_id) {
             return;
@@ -182,7 +217,7 @@ final class GoogleCalendar implements HookableInterface
 
         if ($event_id) {
             $endpoint = sprintf(
-                'https://www.googleapis.com/calendar/v3/calendars/%s/events/%s',
+                'https://www.googleapis.com/calendar/v3/calendars/%s/events/%s?sendUpdates=all',
                 rawurlencode($calendar_id),
                 rawurlencode($event_id)
             );
@@ -195,7 +230,7 @@ final class GoogleCalendar implements HookableInterface
             ]);
         } else {
             $endpoint = sprintf(
-                'https://www.googleapis.com/calendar/v3/calendars/%s/events',
+                'https://www.googleapis.com/calendar/v3/calendars/%s/events?sendUpdates=all',
                 rawurlencode($calendar_id)
             );
 
@@ -234,6 +269,14 @@ final class GoogleCalendar implements HookableInterface
                 $order->save();
             }
 
+            Logger::log('google_calendar', 'Event synced', [
+                'reservation' => $reservation_id,
+                'order_id' => $order_id,
+                'calendar_id' => $calendar_id,
+                'event_id' => is_array($body) ? sanitize_text_field((string) ($body['id'] ?? $event_id)) : $event_id,
+                'action' => $event_id ? 'update' : 'create',
+            ]);
+
             return;
         }
 
@@ -258,8 +301,13 @@ final class GoogleCalendar implements HookableInterface
 
         $settings = $this->get_settings();
         $calendar_id = (string) ($settings['calendar_id'] ?? '');
-        $token = $this->get_access_token();
 
+        if ($this->is_simulation_enabled()) {
+            $this->simulate_delete_event($order, $reservation_id, $order_id, $calendar_id);
+            return;
+        }
+
+        $token = $this->get_access_token();
         if (! $calendar_id || ! $token) {
             return;
         }
@@ -302,6 +350,13 @@ final class GoogleCalendar implements HookableInterface
         if ($code >= 200 && $code < 300) {
             $order->delete_meta_data($meta_key);
             $order->save();
+
+            Logger::log('google_calendar', 'Event deleted', [
+                'reservation' => $reservation_id,
+                'order_id' => $order_id,
+                'calendar_id' => $calendar_id,
+                'event_id' => $event_id,
+            ]);
 
             return;
         }
@@ -350,11 +405,22 @@ final class GoogleCalendar implements HookableInterface
         $attendees = [];
         $customer = $context['customer'] ?? [];
         if (is_array($customer) && ! empty($customer['email'])) {
-            $attendees[] = [
-                'email' => sanitize_text_field((string) $customer['email']),
-                'displayName' => sanitize_text_field((string) ($customer['name'] ?? '')),
-            ];
+            $customer_email = sanitize_email((string) $customer['email']);
+            if ('' !== $customer_email) {
+                $attendees[] = [
+                    'email' => $customer_email,
+                    'displayName' => sanitize_text_field((string) ($customer['name'] ?? '')),
+                ];
+            }
         }
+
+        // Include company recipients so staff can track updates directly in Google Calendar.
+        $staff_attendees = $this->get_staff_attendees();
+        foreach ($staff_attendees as $staff_email) {
+            $attendees[] = ['email' => $staff_email];
+        }
+
+        $attendees = $this->dedupe_attendees($attendees);
 
         return [
             'summary' => sanitize_text_field((string) ($context['experience']['title'] ?? 'Experience booking')),
@@ -372,6 +438,13 @@ final class GoogleCalendar implements HookableInterface
             'source' => [
                 'title' => 'FP Experiences',
                 'url' => esc_url_raw((string) ($context['experience']['permalink'] ?? '')),
+            ],
+            'extendedProperties' => [
+                'private' => [
+                    'fp_exp_reservation_id' => (string) absint((int) ($context['reservation']['id'] ?? 0)),
+                    'fp_exp_order_id' => (string) absint((int) ($context['order']['id'] ?? 0)),
+                    'fp_exp_experience_id' => (string) absint((int) ($context['experience']['id'] ?? 0)),
+                ],
             ],
         ];
     }
@@ -454,5 +527,145 @@ final class GoogleCalendar implements HookableInterface
         ];
 
         set_transient('fp_exp_calendar_notices', $notices, 30 * MINUTE_IN_SECONDS);
+    }
+
+    private function is_simulation_enabled(): bool
+    {
+        $settings = $this->get_settings();
+        return ! empty($settings['simulate_mode']);
+    }
+
+    private function simulate_upsert_event(WC_Order $order, int $reservation_id, int $order_id, string $calendar_id): void
+    {
+        if ('' === $calendar_id) {
+            $calendar_id = 'fp-exp-company-main';
+        }
+
+        $meta_key = '_fp_exp_google_event_' . $reservation_id;
+        $event_id = (string) $order->get_meta($meta_key);
+        $action = 'create';
+
+        if ('' === $event_id) {
+            $event_id = 'sim-' . wp_generate_uuid4();
+            $order->update_meta_data($meta_key, $event_id);
+            $order->save();
+        } else {
+            $action = 'update';
+        }
+
+        Logger::log('google_calendar', 'Simulated event sync', [
+            'reservation' => $reservation_id,
+            'order_id' => $order_id,
+            'calendar_id' => $calendar_id,
+            'event_id' => $event_id,
+            'action' => $action,
+            'mode' => 'simulation',
+        ]);
+
+        $this->record_notice(
+            'event_simulated',
+            __('Simulation mode: Google Calendar event sync executed locally.', 'fp-experiences'),
+            'info'
+        );
+    }
+
+    private function simulate_delete_event(WC_Order $order, int $reservation_id, int $order_id, string $calendar_id): void
+    {
+        if ('' === $calendar_id) {
+            $calendar_id = 'fp-exp-company-main';
+        }
+
+        $meta_key = '_fp_exp_google_event_' . $reservation_id;
+        $event_id = (string) $order->get_meta($meta_key);
+
+        if ('' !== $event_id) {
+            $order->delete_meta_data($meta_key);
+            $order->save();
+        }
+
+        Logger::log('google_calendar', 'Simulated event delete', [
+            'reservation' => $reservation_id,
+            'order_id' => $order_id,
+            'calendar_id' => $calendar_id,
+            'event_id' => $event_id,
+            'mode' => 'simulation',
+        ]);
+
+        $this->record_notice(
+            'event_simulated_delete',
+            __('Simulation mode: Google Calendar event deletion executed locally.', 'fp-experiences'),
+            'info'
+        );
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function get_staff_attendees(): array
+    {
+        $emails_settings = get_option('fp_exp_emails', []);
+        if (! is_array($emails_settings)) {
+            $emails_settings = [];
+        }
+
+        $sender_settings = isset($emails_settings['sender']) && is_array($emails_settings['sender'])
+            ? $emails_settings['sender']
+            : [];
+
+        $recipients_settings = isset($emails_settings['recipients']) && is_array($emails_settings['recipients'])
+            ? $emails_settings['recipients']
+            : [];
+
+        $candidates = [
+            sanitize_email((string) ($sender_settings['structure'] ?? '')),
+            sanitize_email((string) ($sender_settings['webmaster'] ?? '')),
+            sanitize_email((string) get_option('fp_exp_structure_email', '')),
+            sanitize_email((string) get_option('fp_exp_webmaster_email', '')),
+            sanitize_email((string) get_option('admin_email', '')),
+        ];
+
+        if (! empty($recipients_settings['staff_extra']) && is_array($recipients_settings['staff_extra'])) {
+            $extra = array_map(
+                static fn ($email): string => sanitize_email((string) $email),
+                $recipients_settings['staff_extra']
+            );
+            $candidates = array_merge($candidates, $extra);
+        }
+
+        $candidates = array_values(array_filter($candidates, static fn (string $email): bool => '' !== $email));
+        $unique = array_values(array_unique($candidates));
+
+        return $unique;
+    }
+
+    /**
+     * @param array<int, array<string, string>> $attendees
+     * @return array<int, array<string, string>>
+     */
+    private function dedupe_attendees(array $attendees): array
+    {
+        $seen = [];
+        $output = [];
+
+        foreach ($attendees as $attendee) {
+            $email = sanitize_email((string) ($attendee['email'] ?? ''));
+            if ('' === $email) {
+                continue;
+            }
+
+            $key = strtolower(trim($email));
+            if (isset($seen[$key])) {
+                continue;
+            }
+
+            $seen[$key] = true;
+            $entry = ['email' => $email];
+            if (! empty($attendee['displayName'])) {
+                $entry['displayName'] = sanitize_text_field((string) $attendee['displayName']);
+            }
+            $output[] = $entry;
+        }
+
+        return $output;
     }
 }
