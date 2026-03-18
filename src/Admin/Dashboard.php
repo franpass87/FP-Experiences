@@ -222,8 +222,9 @@ final class Dashboard
      *     }>,
      *     orders: array<int, array{number: string, date: string, status: string, total: string, url: string}>
      * }
+     * @param array{agenda_date_from?: string, agenda_date_to?: string, agenda_experience_id?: int} $filters
      */
-    private static function collect_metrics(): array
+    private static function collect_metrics(array $filters = []): array
     {
         global $wpdb;
 
