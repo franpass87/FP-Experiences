@@ -10,6 +10,9 @@ All notable changes to FP Experiences will be documented in this file.
 - Filtri agenda operativa in Dashboard: intervallo date (da/a) e filtro per esperienza per la tabella "Agenda operativa".
 - Miglioramenti accessibilità modal regalo: focus trap con Tab/Shift+Tab per mantenere il focus all'interno del dialog; chiusura con Esc già presente.
 
+### Fixed
+- Corretta firma `Dashboard::collect_metrics(array $filters = [])`: il parametro `$filters` era usato nel corpo ma mancava nella dichiarazione, causando variabile indefinita con i filtri agenda.
+
 ### Changed
 - Titolo sezione Dashboard "Agenda operativa oggi/domani" rinominato in "Agenda operativa" (supporta ora range personalizzato).
 - Tabella agenda operativa limitata a 100 righe quando si usano i filtri (prima 30).

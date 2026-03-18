@@ -130,6 +130,7 @@ FP Experiences stores reservation details inside custom tables linked to WooComm
 * **Added**: Azioni bulk su Richieste RTB (Approva/Rifiuta selezionate).
 * **Added**: Filtri agenda operativa in Dashboard (date da/a, esperienza).
 * **Added**: Focus trap e miglioramenti accessibilità nel modal regalo (Tab/Shift+Tab, Esc).
+* **Fixed**: Firma `collect_metrics` con parametro filters per filtri agenda (evita variabile indefinita).
 * **Changed**: Agenda operativa supporta range date personalizzato e fino a 100 righe con filtri.
 
 = 1.5.1 - 2026-03-17 =
