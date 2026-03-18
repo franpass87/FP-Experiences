@@ -87,6 +87,7 @@ final class AdminMenu implements HookableInterface
         add_action('admin_menu', [$this, 'remove_duplicate_cpt_menus'], 99);
         add_action('admin_bar_menu', [$this, 'register_admin_bar_links'], 80);
         add_action('admin_enqueue_scripts', [$this, 'enqueue_shared_assets']);
+        add_action('admin_head', [$this, 'render_submenu_section_enhancements']);
         add_filter('admin_body_class', [$this, 'add_admin_body_class']);
     }
 
@@ -140,7 +141,7 @@ final class AdminMenu implements HookableInterface
         add_submenu_page(
             'fp_exp_dashboard',
             esc_html__('Importer Esperienze', 'fp-experiences'),
-            esc_html__('Importer Esperienze', 'fp-experiences'),
+            esc_html__('Importer esperienze', 'fp-experiences'),
             Helpers::management_capability(),
             'fp_exp_importer',
             [$this->importer_page, 'render_page']
@@ -251,6 +252,8 @@ final class AdminMenu implements HookableInterface
                 [$this->page_creator, 'render_page']
             );
         }
+
+        $this->reorder_dashboard_submenus();
     }
 
     public function render_home_page(): void
@@ -350,6 +353,127 @@ final class AdminMenu implements HookableInterface
     private function admin_bar_meta(bool $is_current): array
     {
         return $is_current ? ['aria-current' => 'page'] : [];
+    }
+
+    /**
+     * Reorder FP Experiences submenu entries for faster operator access.
+     */
+    private function reorder_dashboard_submenus(): void
+    {
+        global $submenu;
+
+        if (! isset($submenu['fp_exp_dashboard']) || ! is_array($submenu['fp_exp_dashboard'])) {
+            return;
+        }
+
+        $items = $submenu['fp_exp_dashboard'];
+        $bucketed = [];
+
+        foreach ($items as $item) {
+            if (! is_array($item) || ! isset($item[2])) {
+                continue;
+            }
+            $slug = (string) $item[2];
+            if (! isset($bucketed[$slug])) {
+                $bucketed[$slug] = [];
+            }
+            $bucketed[$slug][] = $item;
+        }
+
+        $desired_order = [
+            'fp_exp_dashboard',
+            'fp_exp_calendar',
+            'fp_exp_requests',
+            'fp_exp_checkin',
+            'fp_exp_orders',
+            'edit.php?post_type=fp_experience',
+            'post-new.php?post_type=fp_experience',
+            'edit.php?post_type=fp_exp_gift_voucher',
+            'post-new.php?post_type=fp_exp_gift_voucher',
+            'fp_exp_importer',
+            'edit.php?post_type=fp_meeting_point',
+            'fp_exp_settings',
+            'fp_exp_emails',
+            'fp_exp_tools',
+            'fp_exp_logs',
+            'fp_exp_help',
+            'fp_exp_create_page',
+        ];
+
+        $reordered = [];
+
+        foreach ($desired_order as $slug) {
+            if (! isset($bucketed[$slug])) {
+                continue;
+            }
+            foreach ($bucketed[$slug] as $entry) {
+                $reordered[] = $entry;
+            }
+            unset($bucketed[$slug]);
+        }
+
+        foreach ($bucketed as $entries) {
+            foreach ($entries as $entry) {
+                $reordered[] = $entry;
+            }
+        }
+
+        $submenu['fp_exp_dashboard'] = $reordered;
+    }
+
+    /**
+     * Render submenu visual section separators (purely cosmetic).
+     */
+    public function render_submenu_section_enhancements(): void
+    {
+        if (! Helpers::can_access_guides()) {
+            return;
+        }
+
+        ?>
+        <style>
+            #toplevel_page_fp_exp_dashboard .wp-submenu li.fp-exp-submenu-section-start {
+                margin-top: 8px;
+                padding-top: 8px;
+                border-top: 1px solid rgba(240, 246, 252, 0.18);
+            }
+
+            #toplevel_page_fp_exp_dashboard .wp-submenu li.fp-exp-submenu-section-start::before {
+                content: attr(data-section-label);
+                display: block;
+                margin: 0 10px 6px 10px;
+                font-size: 10px;
+                line-height: 1.2;
+                letter-spacing: 0.08em;
+                text-transform: uppercase;
+                color: rgba(240, 246, 252, 0.62);
+                font-weight: 600;
+                pointer-events: none;
+            }
+        </style>
+        <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const root = document.querySelector('#toplevel_page_fp_exp_dashboard .wp-submenu');
+            if (!root) return;
+
+            const markers = [
+                { selector: 'a[href*="page=fp_exp_calendar"]', label: 'Operatività' },
+                { selector: 'a[href*="post_type=fp_experience"]', label: 'Gestione' },
+                { selector: 'a[href*="page=fp_exp_settings"]', label: 'Sistema' },
+                { selector: 'a[href*="page=fp_exp_help"]', label: 'Supporto' }
+            ];
+
+            markers.forEach(function (marker) {
+                const link = root.querySelector(marker.selector);
+                if (!link) return;
+                const item = link.closest('li');
+                if (!item) return;
+                item.classList.add('fp-exp-submenu-section-start');
+                item.setAttribute('data-section-label', marker.label);
+            });
+        });
+        </script>
+        <?php
     }
 
     public function enqueue_shared_assets(): void
