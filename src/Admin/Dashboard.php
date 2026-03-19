@@ -51,6 +51,7 @@ final class Dashboard
         ]);
 
         echo '<div class="wrap fp-exp-dashboard">';
+        echo '<h1 class="screen-reader-text">' . esc_html__('Dashboard FP Experiences', 'fp-experiences') . '</h1>';
         echo '<div class="fp-exp-admin" data-fp-exp-admin>';
         echo '<div class="fp-exp-admin__body">';
         echo '<div class="fp-exp-dashboard fp-exp-admin__layout">';
@@ -60,7 +61,7 @@ final class Dashboard
         echo ' <span aria-hidden="true">›</span> ';
         echo '<span>' . esc_html__('Dashboard', 'fp-experiences') . '</span>';
         echo '</nav>';
-        echo '<h1 class="fp-exp-admin__title">' . esc_html__('Dashboard FP Experiences', 'fp-experiences') . '</h1>';
+        echo '<h2 class="fp-exp-admin__title" aria-hidden="true">' . esc_html__('Dashboard FP Experiences', 'fp-experiences') . '</h2>';
         echo '</header>';
 
         // Setup Checklist Banner

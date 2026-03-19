@@ -137,6 +137,7 @@ final class CheckinPage implements HookableInterface
         $rows = $this->get_upcoming_reservations();
 
         echo '<div class="wrap fp-exp-checkin">';
+        echo '<h1 class="screen-reader-text">' . esc_html__('Console check-in', 'fp-experiences') . '</h1>';
         echo '<div class="fp-exp-admin" data-fp-exp-admin>';
         echo '<div class="fp-exp-admin__body">';
         echo '<div class="fp-exp-admin__layout fp-exp-checkin">';
@@ -146,7 +147,7 @@ final class CheckinPage implements HookableInterface
         echo ' <span aria-hidden="true">›</span> ';
         echo '<span>' . esc_html__('Check-in', 'fp-experiences') . '</span>';
         echo '</nav>';
-        echo '<h1 class="fp-exp-admin__title">' . esc_html__('Console check-in', 'fp-experiences') . '</h1>';
+        echo '<h2 class="fp-exp-admin__title" aria-hidden="true">' . esc_html__('Console check-in', 'fp-experiences') . '</h2>';
         echo '<p class="fp-exp-admin__intro">' . esc_html__('Segna gli ospiti al loro arrivo e controlla le prenotazioni imminenti.', 'fp-experiences') . '</p>';
         echo '</header>';
         $this->render_operator_navigation();

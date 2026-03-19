@@ -103,6 +103,7 @@ final class LogsPage implements HookableInterface
         ]);
 
         echo '<div class="wrap">';
+        echo '<h1 class="screen-reader-text">' . esc_html__('FP Experiences Logs', 'fp-experiences') . '</h1>';
         echo '<div class="fp-exp-admin" data-fp-exp-admin>';
         echo '<div class="fp-exp-admin__body">';
         echo '<div class="fp-exp-admin__layout fp-exp-logs">';
@@ -112,7 +113,7 @@ final class LogsPage implements HookableInterface
         echo ' <span aria-hidden="true">›</span> ';
         echo '<span>' . esc_html__('Logs', 'fp-experiences') . '</span>';
         echo '</nav>';
-        echo '<h1 class="fp-exp-admin__title">' . esc_html__('FP Experiences Logs', 'fp-experiences') . '</h1>';
+        echo '<h2 class="fp-exp-admin__title" aria-hidden="true">' . esc_html__('FP Experiences Logs', 'fp-experiences') . '</h2>';
         echo '<p class="fp-exp-admin__intro">' . esc_html__('Monitora gli eventi applicativi, esporta diagnosi e ripulisci i registri di sistema.', 'fp-experiences') . '</p>';
         echo '</header>';
 

@@ -111,7 +111,7 @@ body.fp-exp-admin-shell #wpbody-content {
 }
 
 body.fp-exp-admin-shell #wpbody-content > .wrap {
-    margin: 0 auto;
+    margin: 12px auto 0;
     max-width: 1200px;
     width: 100%;
     padding: 0;

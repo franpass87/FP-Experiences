@@ -101,6 +101,7 @@ final class EmailsPage implements HookableInterface
 		$active_tab = $this->get_active_tab($tabs);
 
         echo '<div class="wrap fp-exp-emails-page">';
+        echo '<h1 class="screen-reader-text">' . esc_html__('Gestione email', 'fp-experiences') . '</h1>';
         echo '<div class="fp-exp-admin" data-fp-exp-admin>';
         echo '<div class="fp-exp-admin__body">';
         echo '<div class="fp-exp-admin__layout fp-exp-emails">';
@@ -110,7 +111,7 @@ final class EmailsPage implements HookableInterface
         echo ' <span aria-hidden="true">›</span> ';
         echo '<span>' . esc_html__('Email', 'fp-experiences') . '</span>';
         echo '</nav>';
-        echo '<h1 class="fp-exp-admin__title">' . esc_html__('Gestione email', 'fp-experiences') . '</h1>';
+        echo '<h2 class="fp-exp-admin__title" aria-hidden="true">' . esc_html__('Gestione email', 'fp-experiences') . '</h2>';
         echo '<p class="fp-exp-admin__intro">' . esc_html__('Configura mittenti, destinatari, branding e integrazioni per le comunicazioni automatiche.', 'fp-experiences') . '</p>';
         echo '</header>';
 

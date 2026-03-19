@@ -5,8 +5,8 @@ Tags: experiences, booking, wooocommerce, shortcodes, calendar
 Requires at least: 6.0
 Tested up to: 6.4
 Requires PHP: 8.0
-Stable tag: 1.6.0
-Last updated: 2026-03-18
+Stable tag: 1.5.2
+Last updated: 2026-03-19
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -124,14 +124,8 @@ FP Experiences stores reservation details inside custom tables linked to WooComm
 
 == Changelog ==
 
-= 1.6.0 - 2026-03-18 =
-* **Added**: Export prenotazioni in CSV dalla Dashboard (filtri periodo, esperienza, stato).
-* **Added**: Webhook outbound (Impostazioni → Webhook): URL, segreto HMAC, eventi selezionabili; retry dopo 5 min.
-* **Added**: Azioni bulk su Richieste RTB (Approva/Rifiuta selezionate).
-* **Added**: Filtri agenda operativa in Dashboard (date da/a, esperienza).
-* **Added**: Focus trap e miglioramenti accessibilità nel modal regalo (Tab/Shift+Tab, Esc).
-* **Fixed**: Firma `collect_metrics` con parametro filters per filtri agenda (evita variabile indefinita).
-* **Changed**: Agenda operativa supporta range date personalizzato e fino a 100 righe con filtri.
+= 1.5.2 - 2026-03-19 =
+* **Changed**: Gerarchia titoli admin (h1 screen reader + h2 titolo visibile) e spaziatura `.wrap` sotto le notice, in linea con il design system FP.
 
 = 1.5.1 - 2026-03-17 =
 * **Added**: Separazione visiva dei gruppi nel sottomenu admin (Operatività, Gestione, Sistema, Supporto) per orientamento più rapido.

@@ -2,20 +2,9 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
-## [1.6.0] - 2026-03-18
-### Added
-- Export prenotazioni in CSV dalla Dashboard: filtri per periodo (da/a), esperienza e stato; pulsante "Scarica CSV" con encoding UTF-8 e BOM per Excel.
-- Webhook outbound: nuovo tab Impostazioni → Webhook per configurare URL endpoint, segreto HMAC e eventi da inviare (prenotazione creata/pagata/cancellata, RTB approvata/rifiutata, voucher riscattato). Payload JSON con header X-FP-EXP-Signature; retry automatico dopo 5 minuti in caso di fallimento.
-- Azioni bulk su Richieste RTB: selezione multipla con checkbox, "Approva selezionate" e "Rifiuta selezionate" con motivo opzionale.
-- Filtri agenda operativa in Dashboard: intervallo date (da/a) e filtro per esperienza per la tabella "Agenda operativa".
-- Miglioramenti accessibilità modal regalo: focus trap con Tab/Shift+Tab per mantenere il focus all'interno del dialog; chiusura con Esc già presente.
-
-### Fixed
-- Corretta firma `Dashboard::collect_metrics(array $filters = [])`: il parametro `$filters` era usato nel corpo ma mancava nella dichiarazione, causando variabile indefinita con i filtri agenda.
-
+## [1.5.2] - 2026-03-19
 ### Changed
-- Titolo sezione Dashboard "Agenda operativa oggi/domani" rinominato in "Agenda operativa" (supporta ora range personalizzato).
-- Tabella agenda operativa limitata a 100 righe quando si usano i filtri (prima 30).
+- Admin: gerarchia titoli allineata al design system FP (`h1.screen-reader-text` nel `.wrap`, titolo visibile in `h2` con `aria-hidden="true"`) su tutte le pagine admin principali; margine superiore del `.wrap` sotto le notice.
 
 ## [1.5.1] - 2026-03-17
 ### Added

@@ -199,6 +199,7 @@ final class CalendarAdmin implements HookableInterface
         }
 
         echo '<div class="wrap fp-exp-calendar-admin">';
+        echo '<h1 class="screen-reader-text">' . esc_html__('Operazioni FP Experiences', 'fp-experiences') . '</h1>';
         echo '<div class="fp-exp-admin" data-fp-exp-admin>';
         echo '<div class="fp-exp-admin__body">';
         echo '<div class="fp-exp-admin__layout fp-exp-calendar">';
@@ -208,7 +209,7 @@ final class CalendarAdmin implements HookableInterface
         echo ' <span aria-hidden="true">›</span> ';
         echo '<span>' . esc_html__('Operazioni', 'fp-experiences') . '</span>';
         echo '</nav>';
-        echo '<h1 class="fp-exp-admin__title">' . esc_html__('Operazioni FP Experiences', 'fp-experiences') . '</h1>';
+        echo '<h2 class="fp-exp-admin__title" aria-hidden="true">' . esc_html__('Operazioni FP Experiences', 'fp-experiences') . '</h2>';
         echo '<p class="fp-exp-admin__intro">' . esc_html__('Gestisci calendario, disponibilità e prenotazioni manuali da un unico pannello.', 'fp-experiences') . '</p>';
         echo '</header>';
         $this->render_operator_navigation($active_tab);

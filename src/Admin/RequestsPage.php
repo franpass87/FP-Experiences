@@ -233,6 +233,7 @@ final class RequestsPage implements HookableInterface
         $time_format = get_option('time_format', 'H:i');
 
         echo '<div class="wrap fp-exp-requests">';
+        echo '<h1 class="screen-reader-text">' . esc_html__('Request-to-Book', 'fp-experiences') . '</h1>';
         echo '<div class="fp-exp-admin" data-fp-exp-admin>';
         echo '<div class="fp-exp-admin__body">';
         echo '<div class="fp-exp-admin__layout">';
@@ -242,7 +243,7 @@ final class RequestsPage implements HookableInterface
         echo ' <span aria-hidden="true">›</span> ';
         echo '<span>' . esc_html__('Richieste', 'fp-experiences') . '</span>';
         echo '</nav>';
-        echo '<h1 class="fp-exp-admin__title">' . esc_html__('Request-to-Book', 'fp-experiences') . '</h1>';
+        echo '<h2 class="fp-exp-admin__title" aria-hidden="true">' . esc_html__('Request-to-Book', 'fp-experiences') . '</h2>';
         echo '</header>';
         $this->render_operator_navigation();
 
