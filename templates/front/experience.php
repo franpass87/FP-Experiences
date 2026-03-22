@@ -290,7 +290,13 @@ if (null === $overview_has_content) {
 }
 
 $has_overview = ! empty($sections['overview']) && $overview_has_content;
-$cta_label = esc_html__('Controlla disponibilità', 'fp-experiences');
+$event_mode = isset($event_mode) ? (string) $event_mode : 'recurring';
+$event_meta = isset($event_meta) && is_array($event_meta) ? $event_meta : [];
+$is_single_event_mode = 'single_event' === $event_mode;
+$event_date_label = isset($event_meta['date_label']) ? (string) $event_meta['date_label'] : '';
+$cta_label = $is_single_event_mode
+    ? esc_html__('Prenota il tuo posto', 'fp-experiences')
+    : esc_html__('Controlla disponibilità', 'fp-experiences');
 $price_from_display = isset($experience['price_from_display']) ? (string) $experience['price_from_display'] : '';
 // Non mostrare il prezzo se è 0
 if ('' !== $price_from_display && (float) $price_from_display <= 0) {
@@ -320,6 +326,7 @@ $sticky_price_display = '' !== $price_from_display ? $format_currency($price_fro
 <div
     class="<?php echo esc_attr(implode(' ', $wrapper_classes)); ?>"
     data-fp-shortcode="experience"
+    data-fp-event-mode="<?php echo esc_attr($event_mode); ?>"
     data-layout="<?php echo esc_attr($layout_container); ?>"
     data-sidebar="<?php echo esc_attr($sidebar_data); ?>"
     <?php if ('' !== $layout_style_attr) : ?>style="<?php echo esc_attr($layout_style_attr); ?>"<?php endif; ?>
@@ -363,6 +370,9 @@ $sticky_price_display = '' !== $price_from_display ? $format_currency($price_fro
                         <div class="fp-exp-hero__content">
                             <header class="fp-exp-hero__header">
                                 <h1 class="fp-exp-hero__title"><?php echo esc_html($experience['title']); ?></h1>
+                                <?php if ($is_single_event_mode && '' !== $event_date_label) : ?>
+                                    <p class="fp-exp-hero__event-date"><?php echo esc_html($event_date_label); ?></p>
+                                <?php endif; ?>
                                 <?php if ('' !== $hero_summary) : ?>
                                     <p class="fp-exp-hero__summary"><?php echo esc_html($hero_summary); ?></p>
                                 <?php endif; ?>

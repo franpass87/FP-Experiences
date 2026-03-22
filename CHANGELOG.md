@@ -2,6 +2,14 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.5.3] - 2026-03-22
+### Added
+- Nuovo flusso check-in mobile con shortcode dedicato e template frontend per scansione/operatività sul campo.
+
+### Changed
+- Aggiornamento esteso UI/UX admin/frontend (dashboard, richieste, email, strumenti, listing/widget) con affinamenti layout e coerenza design system.
+- Impostazioni tracking allineate al layer centralizzato FP Marketing Tracking Layer: rimosse dalla UI le credenziali canale locali (GA4/Ads/Meta/Clarity).
+
 ## [1.5.2] - 2026-03-19
 ### Changed
 - Admin: gerarchia titoli allineata al design system FP (`h1.screen-reader-text` nel `.wrap`, titolo visibile in `h2` con `aria-hidden="true"`) su tutte le pagine admin principali; margine superiore del `.wrap` sotto le notice.

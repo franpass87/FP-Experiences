@@ -225,6 +225,9 @@ final class WidgetShortcode extends BaseShortcode
 
         // Per eventi a data singola: data preselezionata nel calendario
         $preselected_date = '';
+        $event_datetime = '';
+        $event_date_label = '';
+        $event_start_iso = '';
         $is_event = (bool) ($repo !== null
             ? $repo->getMeta($experience_id, '_fp_is_event', false)
             : get_post_meta($experience_id, '_fp_is_event', true));
@@ -239,8 +242,25 @@ final class WidgetShortcode extends BaseShortcode
                 }
                 if ($dt) {
                     $preselected_date = $dt->format('Y-m-d');
+                    $event_start_iso = $dt->format(DateTimeInterface::ATOM);
+                    $event_date_label = $dt->format('d/m/Y H:i');
                 } elseif (preg_match('/^\d{4}-\d{2}-\d{2}/', $event_datetime)) {
                     $preselected_date = substr($event_datetime, 0, 10);
+                }
+            }
+        }
+        $event_mode = $is_event ? 'single_event' : 'recurring';
+        $event_is_sold_out = false;
+        if ($is_event) {
+            $event_is_sold_out = true;
+            foreach ($slots as $slot) {
+                if (! is_array($slot)) {
+                    continue;
+                }
+                $remaining = isset($slot['remaining']) ? (int) $slot['remaining'] : 0;
+                if ($remaining > 0) {
+                    $event_is_sold_out = false;
+                    break;
                 }
             }
         }
@@ -294,11 +314,21 @@ final class WidgetShortcode extends BaseShortcode
                 'language_badges' => $language_badges,
                 'price_from' => $price_from,
                 'price_from_display' => $price_from_display,
+                'is_event' => $is_event,
+                'event_datetime' => $event_datetime,
             ],
             'tickets' => $tickets,
             'addons' => $addons,
             'slots' => $slots,
             'calendar' => $calendar,
+            'event_mode' => $event_mode,
+            'event_meta' => [
+                'is_event' => $is_event,
+                'datetime' => $event_datetime,
+                'date_label' => $event_date_label,
+                'start_iso' => $event_start_iso,
+                'is_sold_out' => $event_is_sold_out,
+            ],
             'behavior' => $behavior,
             'preselected_date' => $preselected_date,
             'party_default' => $party_default,

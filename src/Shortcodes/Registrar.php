@@ -28,6 +28,7 @@ final class Registrar implements HookableInterface
             new CheckoutShortcode(),
             new ExperienceShortcode(),
             new GiftRedeemShortcode(),
+            new MobileScannerShortcode(),
         ];
 
         if (Helpers::meeting_points_enabled()) {

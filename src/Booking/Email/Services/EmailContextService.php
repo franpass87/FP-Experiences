@@ -7,6 +7,7 @@ namespace FP_Exp\Booking\Email\Services;
 use FP_Exp\Booking\EmailTranslator;
 use FP_Exp\Booking\ICS;
 use FP_Exp\Booking\Reservations;
+use FP_Exp\Checkin\QrTokenService;
 use FP_Exp\MeetingPoints\Repository;
 use WC_Order;
 
@@ -106,6 +107,8 @@ final class EmailContextService
         $calendar_link = ICS::google_calendar_link($event);
 
         $total_pax = array_sum(array_map('absint', $reservation['pax'] ?? []));
+        $is_event = '1' === (string) get_post_meta($experience_id, '_fp_is_event', true);
+        $checkin = $this->resolveEventCheckinContext($reservation_id, $order_id, $reservation, $is_event);
         $marketing_consent = 'yes' === $order->get_meta('_fp_exp_consent_marketing');
 
         $context = [
@@ -156,6 +159,7 @@ final class EmailContextService
                 'gross' => (float) ($reservation['total_gross'] ?? 0),
                 'tax' => (float) ($reservation['tax_total'] ?? 0),
             ],
+            'checkin' => $checkin,
             'consent' => [
                 'marketing' => $marketing_consent,
             ],
@@ -186,6 +190,41 @@ final class EmailContextService
         $context['language_locale'] = EmailTranslator::LANGUAGE_IT === $language ? 'it_IT' : 'en_US';
 
         return $context;
+    }
+
+    /**
+     * @param array<string, mixed> $reservation
+     * @return array{is_event:bool,qr_token:string,qr_url:string,expires_at:int}
+     */
+    private function resolveEventCheckinContext(int $reservation_id, int $order_id, array $reservation, bool $is_event): array
+    {
+        if (! $is_event) {
+            return [
+                'is_event' => false,
+                'qr_token' => '',
+                'qr_url' => '',
+                'expires_at' => 0,
+            ];
+        }
+
+        $meta = is_array($reservation['meta'] ?? null) ? $reservation['meta'] : [];
+        $checkin = is_array($meta['checkin'] ?? null) ? $meta['checkin'] : [];
+        $token = is_string($checkin['token'] ?? null) ? $checkin['token'] : '';
+
+        if ('' === $token || empty(QrTokenService::verify($token)['valid'])) {
+            $checkin = QrTokenService::generate($reservation_id, $order_id);
+            Reservations::update_meta($reservation_id, [
+                'checkin' => $checkin,
+            ]);
+            $token = (string) ($checkin['token'] ?? '');
+        }
+
+        return [
+            'is_event' => true,
+            'qr_token' => $token,
+            'qr_url' => '' !== $token ? QrTokenService::build_qr_url($token) : '',
+            'expires_at' => (int) ($checkin['expires_at'] ?? 0),
+        ];
     }
 
     /**

@@ -28,6 +28,7 @@ $tickets = $email_context['tickets'] ?? [];
 $addons = $email_context['addons'] ?? [];
 $customer = $email_context['customer'] ?? [];
 $ics = $email_context['ics'] ?? [];
+$checkin = is_array($email_context['checkin'] ?? null) ? $email_context['checkin'] : [];
 
 $_fp_s = get_option('fp_exp_emails', []);
 $_fp_s = is_array($_fp_s) ? $_fp_s : [];
@@ -130,6 +131,32 @@ if ($start_time && $end_time) {
         <strong><?php echo esc_html($translate('common.total')); ?>:</strong>
         <?php echo wp_kses_post((string) ($order['total'] ?? '')); ?>
     </p>
+
+    <?php if (! empty($checkin['is_event']) && ! empty($checkin['qr_token'])) : ?>
+        <h2 style="font-size:18px; margin:20px 0 12px; color:#0b3d2e;">
+            <?php esc_html_e('QR check-in evento', 'fp-experiences'); ?>
+        </h2>
+        <p style="margin:0 0 10px; color:#364152;">
+            <?php esc_html_e('Mostra questo QR all\'arrivo: verranno riconosciuti automaticamente la tua prenotazione e il numero di partecipanti.', 'fp-experiences'); ?>
+        </p>
+        <?php if (! empty($checkin['qr_url'])) : ?>
+            <p style="margin:0 0 10px;">
+                <img
+                    src="<?php echo esc_url((string) $checkin['qr_url']); ?>"
+                    alt="<?php echo esc_attr__('QR check-in evento', 'fp-experiences'); ?>"
+                    width="220"
+                    height="220"
+                    style="max-width:220px; height:auto; display:block; border:1px solid #e2e8f0; border-radius:8px; padding:8px; background:#fff;"
+                />
+            </p>
+        <?php endif; ?>
+        <p style="margin:0 0 10px; color:#556987; font-size:13px;">
+            <strong><?php esc_html_e('Codice di backup', 'fp-experiences'); ?>:</strong><br />
+            <code style="display:inline-block; margin-top:4px; background:#f1f5f9; padding:6px 8px; border-radius:6px; color:#111827;">
+                <?php echo esc_html((string) $checkin['qr_token']); ?>
+            </code>
+        </p>
+    <?php endif; ?>
 
     <?php if (! empty($order['notes'])) : ?>
         <p style="margin:12px 0; color:#364152;">

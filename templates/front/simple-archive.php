@@ -55,6 +55,16 @@ $format_currency = static function (string $amount) use ($currency_symbol, $curr
         <?php if (empty($experiences)) : ?>
             <p class="fp-simple-archive__empty"><?php esc_html_e('Nessuna esperienza disponibile al momento. Torna a trovarci presto.', 'fp-experiences'); ?></p>
         <?php else : ?>
+            <?php
+            $events_count = 0;
+            foreach ($experiences as $listing_item) {
+                if (! empty($listing_item['is_event'])) {
+                    ++$events_count;
+                }
+            }
+            $events_heading_rendered = false;
+            $regular_heading_rendered = false;
+            ?>
             <div class="fp-simple-archive__list">
                 <?php foreach ($experiences as $experience) :
                     $title = isset($experience['title']) ? (string) $experience['title'] : '';
@@ -64,6 +74,21 @@ $format_currency = static function (string $amount) use ($currency_symbol, $curr
                     $duration = isset($experience['duration']) ? (string) $experience['duration'] : '';
                     $price_display = isset($experience['price_from_display']) ? (string) $experience['price_from_display'] : '';
                     $formatted_price_display = '' !== $price_display ? $format_currency($price_display) : '';
+                    $is_event = ! empty($experience['is_event']);
+                    if ($is_event && ! $events_heading_rendered) :
+                        $events_heading_rendered = true;
+                        ?>
+                        <div class="fp-simple-archive__section-heading" role="heading" aria-level="3">
+                            <span class="fp-simple-archive__section-heading-label"><?php esc_html_e('Eventi', 'fp-experiences'); ?></span>
+                        </div>
+                    <?php endif; ?>
+                    <?php if (! $is_event && ! $regular_heading_rendered) :
+                        $regular_heading_rendered = true;
+                        ?>
+                        <div class="fp-simple-archive__section-heading" role="heading" aria-level="3">
+                            <span class="fp-simple-archive__section-heading-label"><?php echo esc_html('Esperienze'); ?></span>
+                        </div>
+                    <?php endif; ?>
                     ?>
                     <article class="fp-simple-archive__card">
                         <a class="fp-simple-archive__media" href="<?php echo esc_url($details_url); ?>">

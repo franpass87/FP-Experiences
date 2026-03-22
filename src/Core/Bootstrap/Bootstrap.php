@@ -67,16 +67,14 @@ final class Bootstrap
         self::$kernel = $kernel;
 
         // Boot kernel - timing depends on context
-        // In admin, boot early on plugins_loaded to ensure admin_menu hooks are registered in time
-        // On frontend/REST, boot on wp_loaded
+        // In admin, boot on init (priority 0) to keep i18n lifecycle compliant.
+        // On frontend/REST, boot on wp_loaded.
         if (is_admin()) {
-            // Boot kernel on plugins_loaded in admin to ensure admin_menu hooks are registered
-            // admin_menu fires during admin_init, so we need to boot before that
-            if (did_action('plugins_loaded')) {
-                // If plugins_loaded already fired, boot immediately
+            // admin_menu fires after init/admin_init, so init priority 0 is still in time.
+            if (did_action('init')) {
                 self::$kernel->boot();
             } else {
-                add_action('plugins_loaded', [self::$kernel, 'boot'], 0);
+                add_action('init', [self::$kernel, 'boot'], 0);
             }
         } else {
             // Boot kernel on wp_loaded (after legacy Plugin boot)

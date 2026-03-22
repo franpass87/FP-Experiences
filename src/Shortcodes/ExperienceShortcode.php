@@ -401,6 +401,18 @@ final class ExperienceShortcode extends BaseShortcode
             ]);
         }
 
+        $is_event = (bool) get_post_meta($experience_id, '_fp_is_event', true);
+        $event_datetime = $is_event ? (string) get_post_meta($experience_id, '_fp_event_datetime', true) : '';
+        $event_mode = $is_event ? 'single_event' : 'recurring';
+        $event_date_label = '';
+        if ('' !== $event_datetime) {
+            $normalized_event_datetime = str_replace('T', ' ', $event_datetime);
+            $event_timestamp = strtotime($normalized_event_datetime);
+            if (false !== $event_timestamp) {
+                $event_date_label = date_i18n(get_option('date_format', 'd/m/Y') . ' H:i', $event_timestamp);
+            }
+        }
+
         $price_from = $this->calculate_price_from_meta($experience_id);
         $price_from_display = null !== $price_from && $price_from > 0 ? number_format_i18n($price_from, 0) : '';
 
@@ -417,6 +429,9 @@ final class ExperienceShortcode extends BaseShortcode
                 'language_badges' => $language_badges,
                 'price_from' => $price_from,
                 'price_from_display' => $price_from_display,
+                'is_event' => $is_event,
+                'event_datetime' => $event_datetime,
+                'event_date_label' => $event_date_label,
             ],
             'gallery' => $gallery,
             'gallery_video_url' => $gallery_video_url,
@@ -437,6 +452,12 @@ final class ExperienceShortcode extends BaseShortcode
             'schema_json' => $schema,
             'data_layer' => wp_json_encode($data_layer),
             'layout' => $layout,
+            'event_mode' => $event_mode,
+            'event_meta' => [
+                'is_event' => $is_event,
+                'datetime' => $event_datetime,
+                'date_label' => $event_date_label,
+            ],
             'gift' => [
                 'enabled' => Helpers::gift_enabled(),
                 'experience_id' => $experience_id,

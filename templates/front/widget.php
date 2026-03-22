@@ -41,6 +41,11 @@ $privacy_id = $scope_class . '-consent-privacy';
 
 $display_context = isset($display_context) ? (string) $display_context : '';
 $config_version = isset($config_version) ? (string) $config_version : '';
+$event_mode = isset($event_mode) ? (string) $event_mode : 'recurring';
+$event_meta = isset($event_meta) && is_array($event_meta) ? $event_meta : [];
+$is_single_event_mode = 'single_event' === $event_mode;
+$event_date_label = isset($event_meta['date_label']) ? (string) $event_meta['date_label'] : '';
+$event_is_sold_out = ! empty($event_meta['is_sold_out']);
 
 $slots = is_array($slots) ? $slots : [];
 $tickets = is_array($tickets) ? $tickets : [];
@@ -61,6 +66,7 @@ $rtb = is_array($rtb) ? array_merge($rtb_defaults, $rtb) : $rtb_defaults;
 $currency_code = isset($currency) && is_string($currency) ? $currency : (string) get_option('woocommerce_currency', 'EUR');
 
 $container_class = 'fp-exp fp-exp-widget ' . esc_attr($scope_class);
+$container_class .= $is_single_event_mode ? ' fp-exp-widget--single-event' : ' fp-exp-widget--recurring';
 $rtb_enabled = ! empty($rtb['enabled']);
 $rtb_mode = isset($rtb['mode']) ? (string) $rtb['mode'] : 'off';
 $rtb_forced = ! empty($rtb['forced']);
@@ -82,7 +88,9 @@ $format_currency = static function (string $amount) use ($currency_symbol, $curr
             return $currency_symbol . $amount;
     }
 };
-$cta_label = esc_html__('Controlla disponibilità', 'fp-experiences');
+$cta_label = $is_single_event_mode
+    ? esc_html__('Prenota il tuo posto', 'fp-experiences')
+    : esc_html__('Controlla disponibilità', 'fp-experiences');
 
 $language_badges = isset($experience['language_badges']) && is_array($experience['language_badges'])
     ? array_values(array_filter(array_map(
@@ -197,6 +205,8 @@ $dataset = [
     'rtb' => $rtb,
     'nonce' => $rtb_nonce,
     'displayContext' => $display_context,
+    'eventMode' => $event_mode,
+    'eventMeta' => $event_meta,
     'timezone' => (string) wp_timezone_string(),
     'version' => $config_version,
     'currency' => $currency_code,
@@ -280,7 +290,9 @@ $dataset = [
             <li class="fp-exp-step fp-exp-step--dates" data-fp-step="dates">
                 <header>
                     <span class="fp-exp-step__number">1</span>
-                    <h3 class="fp-exp-step__title"><?php echo esc_html__('Scegli una data', 'fp-experiences'); ?></h3>
+                    <h3 class="fp-exp-step__title">
+                        <?php echo $is_single_event_mode ? esc_html__('Data evento', 'fp-experiences') : esc_html__('Scegli una data', 'fp-experiences'); ?>
+                    </h3>
                 </header>
                 <div class="fp-exp-step__content">
                     <!-- Input nascosto per compatibilità -->
@@ -289,9 +301,32 @@ $dataset = [
                         id="fp-exp-date-input"
                         data-fp-date-input
                     />
-                    
+
+                    <?php if ($is_single_event_mode) : ?>
+                        <div class="fp-exp-single-event-info" data-fp-single-event-info>
+                            <?php if ('' !== $event_date_label) : ?>
+                                <p class="fp-exp-single-event-info__date">
+                                    <strong><?php esc_html_e('Data evento:', 'fp-experiences'); ?></strong>
+                                    <?php echo esc_html($event_date_label); ?>
+                                </p>
+                            <?php endif; ?>
+                            <p class="fp-exp-single-event-info__note">
+                                <?php echo $event_is_sold_out
+                                    ? esc_html__('Evento al completo. Controlla eventuali disponibilità alternative nel calendario.', 'fp-experiences')
+                                    : esc_html__('Evento a data unica. Il calendario completo è disponibile qui sotto.', 'fp-experiences'); ?>
+                            </p>
+                        </div>
+                    <?php endif; ?>
+
+                    <?php if ($is_single_event_mode) : ?>
+                    <details class="fp-exp-calendar-advanced">
+                        <summary class="fp-exp-calendar-advanced__summary">
+                            <?php esc_html_e('Mostra calendario completo', 'fp-experiences'); ?>
+                        </summary>
+                    <?php endif; ?>
+
                     <!-- Calendario con navigazione mesi -->
-                    <div class="fp-exp-calendar-nav">
+                    <div class="fp-exp-calendar-nav" data-fp-calendar-nav>
                         <div class="fp-exp-calendar-nav__header">
                             <button type="button" class="fp-exp-calendar-nav__prev-month" data-action="prev-month">
                                 ←
@@ -339,9 +374,17 @@ $dataset = [
                             </div>
                         </div>
                     </div>
-                    
+
+                    <?php if ($is_single_event_mode) : ?>
+                    </details>
+                    <?php endif; ?>
+
                     <div class="fp-exp-slots" aria-live="polite">
-                        <p class="fp-exp-slots__placeholder"><?php echo esc_html__('Seleziona una data per vedere le fasce orarie', 'fp-experiences'); ?></p>
+                        <p class="fp-exp-slots__placeholder">
+                            <?php echo $is_single_event_mode
+                                ? esc_html__('Seleziona la data evento per vedere le fasce orarie disponibili', 'fp-experiences')
+                                : esc_html__('Seleziona una data per vedere le fasce orarie', 'fp-experiences'); ?>
+                        </p>
                     </div>
                 </div>
             </li>

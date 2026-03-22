@@ -162,15 +162,18 @@ final class SettingsPage implements HookableInterface
         echo '<div class="fp-exp-admin" data-fp-exp-admin>';
         echo '<div class="fp-exp-admin__body">';
         echo '<div class="fp-exp-admin__layout fp-exp-settings">';
-        echo '<header class="fp-exp-admin__header">';
+        echo '<div class="fpexp-page-header">';
         echo '<nav class="fp-exp-admin__breadcrumb" aria-label="' . esc_attr__('Percorso di navigazione', 'fp-experiences') . '">';
         echo '<a href="' . esc_url(admin_url('admin.php?page=fp_exp_dashboard')) . '">' . esc_html__('FP Experiences', 'fp-experiences') . '</a>';
         echo ' <span aria-hidden="true">›</span> ';
         echo '<span>' . esc_html__('Impostazioni', 'fp-experiences') . '</span>';
         echo '</nav>';
-        echo '<h2 class="fp-exp-admin__title" aria-hidden="true">' . esc_html__('Impostazioni FP Experiences', 'fp-experiences') . '</h2>';
-        echo '<p class="fp-exp-admin__intro">' . esc_html__('Configura preferenze, integrazioni e regole operative delle esperienze.', 'fp-experiences') . '</p>';
-        echo '</header>';
+        echo '<div class="fpexp-page-header-content">';
+        echo '<h2 class="fpexp-page-header-title" aria-hidden="true">' . esc_html__('Impostazioni FP Experiences', 'fp-experiences') . '</h2>';
+        echo '<p class="fpexp-page-header-desc">' . esc_html__('Configura preferenze, integrazioni e regole operative delle esperienze.', 'fp-experiences') . '</p>';
+        echo '</div>';
+        echo '<span class="fpexp-page-header-badge">v' . esc_html( defined( 'FP_EXP_VERSION' ) ? FP_EXP_VERSION : '0' ) . '</span>';
+        echo '</div>';
 
         settings_errors('fp_exp_settings');
 
@@ -2580,7 +2583,7 @@ final class SettingsPage implements HookableInterface
 
     public function render_tracking_help(): void
     {
-        echo '<p>' . esc_html__('Provide tracking IDs for each enabled channel. Scripts only load when consent is granted and the channel toggle is enabled.', 'fp-experiences') . '</p>';
+        echo '<p>' . esc_html__('Le credenziali GTM/GA4/Google Ads/Meta/Clarity sono gestite centralmente in FP Marketing Tracking Layer. FP Experiences invia solo eventi al bus di tracking condiviso.', 'fp-experiences') . '</p>';
     }
 
     public function render_rtb_help(): void
@@ -2915,72 +2918,7 @@ final class SettingsPage implements HookableInterface
      */
     private function get_tracking_channel_fields(): array
     {
-        return [
-            [
-                'key' => 'ga4[enabled]',
-                'label' => esc_html__('Enable Google Analytics 4', 'fp-experiences'),
-                'type' => 'checkbox',
-                'description' => esc_html__('Loads Google Tag Manager or the GA4 gtag snippet when consent allows.', 'fp-experiences'),
-            ],
-            [
-                'key' => 'ga4[gtm_id]',
-                'label' => esc_html__('Google Tag Manager ID', 'fp-experiences'),
-                'type' => 'text',
-                'placeholder' => 'GTM-XXXXXXX',
-            ],
-            [
-                'key' => 'ga4[measurement_id]',
-                'label' => esc_html__('GA4 Measurement ID', 'fp-experiences'),
-                'type' => 'text',
-                'placeholder' => 'G-XXXXXXX',
-            ],
-            [
-                'key' => 'google_ads[enabled]',
-                'label' => esc_html__('Enable Google Ads conversions', 'fp-experiences'),
-                'type' => 'checkbox',
-            ],
-            [
-                'key' => 'google_ads[conversion_id]',
-                'label' => esc_html__('Conversion ID', 'fp-experiences'),
-                'type' => 'text',
-                'placeholder' => 'AW-XXXXXXX',
-            ],
-            [
-                'key' => 'google_ads[conversion_label]',
-                'label' => esc_html__('Conversion label', 'fp-experiences'),
-                'type' => 'text',
-            ],
-            [
-                'key' => 'google_ads[enhanced_conversions]',
-                'label' => esc_html__('Enable enhanced conversions hashing', 'fp-experiences'),
-                'type' => 'checkbox',
-            ],
-            [
-                'key' => 'meta_pixel[enabled]',
-                'label' => esc_html__('Enable Meta Pixel', 'fp-experiences'),
-                'type' => 'checkbox',
-            ],
-            [
-                'key' => 'meta_pixel[pixel_id]',
-                'label' => esc_html__('Pixel ID', 'fp-experiences'),
-                'type' => 'text',
-            ],
-            [
-                'key' => 'meta_pixel[capi_token]',
-                'label' => esc_html__('CAPI token (optional)', 'fp-experiences'),
-                'type' => 'text',
-            ],
-            [
-                'key' => 'clarity[enabled]',
-                'label' => esc_html__('Enable Microsoft Clarity', 'fp-experiences'),
-                'type' => 'checkbox',
-            ],
-            [
-                'key' => 'clarity[project_id]',
-                'label' => esc_html__('Clarity project ID', 'fp-experiences'),
-                'type' => 'text',
-            ],
-        ];
+        return [];
     }
 
     /**

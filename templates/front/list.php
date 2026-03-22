@@ -99,6 +99,16 @@ $format_currency = static function (string $amount) use ($currency_symbol, $curr
     <?php if (empty($experiences)) : ?>
         <p class="fp-listing__empty"><?php esc_html_e('Nessuna esperienza disponibile al momento. Torna a trovarci presto.', 'fp-experiences'); ?></p>
     <?php else : ?>
+        <?php
+        $events_count = 0;
+        foreach ($experiences as $listing_item) {
+            if (! empty($listing_item['is_event'])) {
+                ++$events_count;
+            }
+        }
+        $events_heading_rendered = false;
+        $regular_heading_rendered = false;
+        ?>
         <div class="fp-listing__grid fp-listing__grid--<?php echo esc_attr($current_view); ?><?php echo $is_cards_variant ? ' fp-listing__grid--cards' : ''; ?>">
             <?php foreach ($experiences as $experience) : ?>
                 <?php
@@ -120,6 +130,18 @@ $format_currency = static function (string $amount) use ($currency_symbol, $curr
                     $card_classes .= ' fp-listing__card--event fp-listing__card--full-width';
                 }
                 ?>
+                <?php if ($is_event && ! $events_heading_rendered) : ?>
+                    <?php $events_heading_rendered = true; ?>
+                    <div class="fp-listing__section-heading" role="heading" aria-level="2">
+                        <span class="fp-listing__section-heading-label"><?php esc_html_e('Eventi', 'fp-experiences'); ?></span>
+                    </div>
+                <?php endif; ?>
+                <?php if (! $is_event && ! $regular_heading_rendered) : ?>
+                    <?php $regular_heading_rendered = true; ?>
+                    <div class="fp-listing__section-heading" role="heading" aria-level="2">
+                        <span class="fp-listing__section-heading-label"><?php echo esc_html('Esperienze'); ?></span>
+                    </div>
+                <?php endif; ?>
                 <?php if ($is_cards_variant) : ?>
                     <article
                         class="<?php echo esc_attr($card_classes); ?>"

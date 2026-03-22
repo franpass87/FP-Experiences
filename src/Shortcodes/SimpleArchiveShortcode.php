@@ -154,7 +154,40 @@ final class SimpleArchiveShortcode extends BaseShortcode
             }
         }
 
-        return $posts;
+        if (empty($posts)) {
+            return [];
+        }
+
+        $event_posts = [];
+        $regular_posts = [];
+        foreach ($posts as $post) {
+            $is_event = (bool) get_post_meta($post->ID, '_fp_is_event', true);
+            if ($is_event) {
+                $event_posts[] = $post;
+            } else {
+                $regular_posts[] = $post;
+            }
+        }
+
+        if (! empty($event_posts)) {
+            usort($event_posts, static function (WP_Post $a, WP_Post $b): int {
+                $date_a = (string) get_post_meta($a->ID, '_fp_event_datetime', true);
+                $date_b = (string) get_post_meta($b->ID, '_fp_event_datetime', true);
+                if ('' === $date_a && '' === $date_b) {
+                    return 0;
+                }
+                if ('' === $date_a) {
+                    return 1;
+                }
+                if ('' === $date_b) {
+                    return -1;
+                }
+
+                return strcmp($date_a, $date_b);
+            });
+        }
+
+        return array_merge($event_posts, $regular_posts);
     }
 
     /**
@@ -175,6 +208,8 @@ final class SimpleArchiveShortcode extends BaseShortcode
             // Fallback to direct get_post_meta for backward compatibility
             $duration_minutes = absint((string) get_post_meta($id, '_fp_duration_minutes', true));
         }
+        $is_event = (bool) get_post_meta($id, '_fp_is_event', true);
+        $event_datetime = $is_event ? (string) get_post_meta($id, '_fp_event_datetime', true) : '';
         $price_from = $this->calculate_price_from_meta($id);
         $price_display = null !== $price_from ? number_format_i18n($price_from, 0) : '';
 
@@ -187,6 +222,8 @@ final class SimpleArchiveShortcode extends BaseShortcode
             'duration' => $this->format_duration($duration_minutes),
             'price_from' => $price_from,
             'price_from_display' => $price_display,
+            'is_event' => $is_event,
+            'event_datetime' => $event_datetime,
         ];
     }
 

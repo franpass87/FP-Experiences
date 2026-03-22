@@ -55,14 +55,18 @@ final class Dashboard
         echo '<div class="fp-exp-admin" data-fp-exp-admin>';
         echo '<div class="fp-exp-admin__body">';
         echo '<div class="fp-exp-dashboard fp-exp-admin__layout">';
-        echo '<header class="fp-exp-admin__header">';
+        echo '<div class="fpexp-page-header">';
         echo '<nav class="fp-exp-admin__breadcrumb" aria-label="' . esc_attr__('Percorso di navigazione', 'fp-experiences') . '">';
         echo '<a href="' . esc_url(admin_url('admin.php?page=fp_exp_dashboard')) . '">' . esc_html__('FP Experiences', 'fp-experiences') . '</a>';
         echo ' <span aria-hidden="true">›</span> ';
         echo '<span>' . esc_html__('Dashboard', 'fp-experiences') . '</span>';
         echo '</nav>';
-        echo '<h2 class="fp-exp-admin__title" aria-hidden="true">' . esc_html__('Dashboard FP Experiences', 'fp-experiences') . '</h2>';
-        echo '</header>';
+        echo '<div class="fpexp-page-header-content">';
+        echo '<h2 class="fpexp-page-header-title" aria-hidden="true">' . esc_html__('Dashboard FP Experiences', 'fp-experiences') . '</h2>';
+        echo '<p class="fpexp-page-header-desc">' . esc_html__('Panoramica operativa e agenda.', 'fp-experiences') . '</p>';
+        echo '</div>';
+        echo '<span class="fpexp-page-header-badge">v' . esc_html( defined( 'FP_EXP_VERSION' ) ? FP_EXP_VERSION : '0' ) . '</span>';
+        echo '</div>';
 
         // Setup Checklist Banner
         self::render_setup_checklist();

@@ -105,15 +105,18 @@ final class EmailsPage implements HookableInterface
         echo '<div class="fp-exp-admin" data-fp-exp-admin>';
         echo '<div class="fp-exp-admin__body">';
         echo '<div class="fp-exp-admin__layout fp-exp-emails">';
-        echo '<header class="fp-exp-admin__header">';
+        echo '<div class="fpexp-page-header">';
         echo '<nav class="fp-exp-admin__breadcrumb" aria-label="' . esc_attr__('Percorso di navigazione', 'fp-experiences') . '">';
         echo '<a href="' . esc_url(admin_url('admin.php?page=fp_exp_dashboard')) . '">' . esc_html__('FP Experiences', 'fp-experiences') . '</a>';
         echo ' <span aria-hidden="true">›</span> ';
         echo '<span>' . esc_html__('Email', 'fp-experiences') . '</span>';
         echo '</nav>';
-        echo '<h2 class="fp-exp-admin__title" aria-hidden="true">' . esc_html__('Gestione email', 'fp-experiences') . '</h2>';
-        echo '<p class="fp-exp-admin__intro">' . esc_html__('Configura mittenti, destinatari, branding e integrazioni per le comunicazioni automatiche.', 'fp-experiences') . '</p>';
-        echo '</header>';
+        echo '<div class="fpexp-page-header-content">';
+        echo '<h2 class="fpexp-page-header-title" aria-hidden="true">' . esc_html__('Gestione email', 'fp-experiences') . '</h2>';
+        echo '<p class="fpexp-page-header-desc">' . esc_html__('Configura mittenti, destinatari, branding e integrazioni per le comunicazioni automatiche.', 'fp-experiences') . '</p>';
+        echo '</div>';
+        echo '<span class="fpexp-page-header-badge">v' . esc_html( defined( 'FP_EXP_VERSION' ) ? FP_EXP_VERSION : '0' ) . '</span>';
+        echo '</div>';
 
         settings_errors('fp_exp_settings');
 

@@ -624,6 +624,8 @@
         } catch (e) {
             // Config frontend non valida
         }
+        const eventMode = (config && config.eventMode) ? String(config.eventMode) : 'recurring';
+        const isSingleEventMode = eventMode === 'single_event';
 
         // 1) Apri il datepicker quando si clicca/focalizza l'input
         if (dateInput) {
@@ -684,6 +686,18 @@
         };
 
         const formatTimeRange = (startIso, endIso) => window.FPFront.availability ? window.FPFront.availability.formatTimeRange(startIso, endIso) : 'Slot';
+        const tryAutoSelectSingleSlot = () => {
+            if (!isSingleEventMode || !slotsEl) {
+                return;
+            }
+            if (slotsEl.querySelector('.fp-exp-slots__item.is-selected')) {
+                return;
+            }
+            const availableSlots = slotsEl.querySelectorAll('.fp-exp-slots__item:not(.is-disabled)');
+            if (availableSlots.length === 1) {
+                availableSlots[0].click();
+            }
+        };
 
         // Inizializza modulo slots una volta
         if (window.FPFront.slots) window.FPFront.slots.init({ slotsEl });
@@ -735,6 +749,7 @@
                 // Renderizza gli slot (rimuove automaticamente il loading state)
                 if (window.FPFront.slots && window.FPFront.slots.renderSlots) {
                     window.FPFront.slots.renderSlots(items);
+                    tryAutoSelectSingleSlot();
                 } else if (isLoading) {
                     // Fallback: se il modulo slots non è disponibile, rimuovi manualmente il loading
                     setSlotsLoading(false);
@@ -753,6 +768,7 @@
                         if (slotsEl) {
                             slotsEl.innerHTML = '';
                             slotsEl.appendChild(list);
+                            tryAutoSelectSingleSlot();
                         }
                     } else {
                         // Nessun slot disponibile
@@ -766,6 +782,7 @@
                     if (items && items.length > 0) {
                         if (window.FPFront.slots && window.FPFront.slots.renderSlots) {
                             window.FPFront.slots.renderSlots(items);
+                            tryAutoSelectSingleSlot();
                         } else {
                             // Fallback manuale
                             const list = document.createElement('ul');
@@ -781,6 +798,7 @@
                             if (slotsEl) {
                                 slotsEl.innerHTML = '';
                                 slotsEl.appendChild(list);
+                                tryAutoSelectSingleSlot();
                             }
                         }
                     } else {
@@ -997,8 +1015,14 @@
             });
             
             // Inizializza il calendario con il mese corrente
-            const currentDate = new Date();
+            const currentDate = (isSingleEventMode && config.preselectedDate)
+                ? new Date(config.preselectedDate + 'T00:00:00')
+                : new Date();
             updateCalendarMonth(calendarNav, currentDate);
+            if (isSingleEventMode && config.preselectedDate && dateInput) {
+                dateInput.value = config.preselectedDate;
+                dateInput.dispatchEvent(new Event('change', { bubbles: true }));
+            }
         }
 
         // 3.b) Gestisci CTA con data-fp-scroll (hero e sticky): mostra sezione date e scrolla
@@ -1015,7 +1039,11 @@
                 // Mappa dei target noti
                 var targetEl = null;
                 if (targetKey === 'calendar' || targetKey === 'dates') {
-                    targetEl = calendarNav || document.querySelector('[data-fp-scroll-target="dates"], .fp-exp-calendar-nav');
+                    if (isSingleEventMode) {
+                        targetEl = document.querySelector('[data-fp-single-event-info]') || document.querySelector('.fp-exp-slots') || calendarNav;
+                    } else {
+                        targetEl = calendarNav || document.querySelector('[data-fp-scroll-target="dates"], .fp-exp-calendar-nav');
+                    }
                 } else if (targetKey === 'gallery') {
                     targetEl = document.querySelector('[data-fp-scroll-target="gallery"], .fp-exp-gallery');
                 }
@@ -2265,30 +2293,7 @@
                 }
             };
             document.addEventListener('keydown', handleEscapeKey);
-
-            // Focus trap: keep Tab/Shift+Tab within modal focusable elements
-            const focusableSelector = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
-            const getFocusables = () => Array.from(giftModal.querySelectorAll(focusableSelector)).filter((el) => el.offsetParent !== null && !el.disabled);
-            const handleTrapKey = (ev) => {
-                if (giftModal.hidden || ev.key !== 'Tab') return;
-                const focusables = getFocusables();
-                if (focusables.length === 0) return;
-                const first = focusables[0];
-                const last = focusables[focusables.length - 1];
-                if (ev.shiftKey) {
-                    if (document.activeElement === first) {
-                        ev.preventDefault();
-                        last.focus();
-                    }
-                } else {
-                    if (document.activeElement === last) {
-                        ev.preventDefault();
-                        first.focus();
-                    }
-                }
-            };
-            giftModal.addEventListener('keydown', handleTrapKey);
-
+            
             // Cleanup event listener quando la pagina viene scaricata
             window.addEventListener('beforeunload', () => {
                 document.removeEventListener('keydown', handleEscapeKey);

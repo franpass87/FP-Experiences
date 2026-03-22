@@ -15,6 +15,7 @@ use FP_Exp\Booking\Email\Templates\BookingReminderTemplate;
 use FP_Exp\Booking\Email\Templates\BookingRescheduledTemplate;
 use FP_Exp\Booking\Email\Templates\StaffRescheduledTemplate;
 use FP_Exp\Booking\Email\Templates\StaffNotificationTemplate;
+use FP_Exp\Checkin\QrTokenService;
 use FP_Exp\Integrations\Brevo;
 use FP_Exp\Booking\EmailTranslator;
 use FP_Exp\MeetingPoints\Repository;
@@ -154,6 +155,8 @@ final class Emails implements HookableInterface
      */
     public function handle_reservation_paid(int $reservation_id, int $order_id): void
     {
+        $this->ensure_event_checkin_token($reservation_id, $order_id);
+
         $context = $this->get_context($reservation_id, $order_id);
 
         if (! $context) {
@@ -394,6 +397,8 @@ final class Emails implements HookableInterface
         $calendar_link = ICS::google_calendar_link($event);
 
         $total_pax = array_sum(array_map('absint', $reservation['pax'] ?? []));
+        $is_event = '1' === (string) get_post_meta((int) $experience->ID, '_fp_is_event', true);
+        $checkin = $this->resolve_event_checkin_context($reservation_id, $order_id, $reservation, (int) $experience->ID, $is_event);
         $marketing_consent = 'yes' === $order->get_meta('_fp_exp_consent_marketing');
 
         $context = [
@@ -444,6 +449,7 @@ final class Emails implements HookableInterface
                 'gross' => (float) $reservation['total_gross'],
                 'tax' => (float) $reservation['tax_total'],
             ],
+            'checkin' => $checkin,
             'consent' => [
                 'marketing' => $marketing_consent,
             ],
@@ -474,6 +480,91 @@ final class Emails implements HookableInterface
         $context['language_locale'] = EmailTranslator::LANGUAGE_IT === $language ? 'it_IT' : 'en_US';
 
         return $context;
+    }
+
+    /**
+     * Ensure event reservations always have a valid signed check-in token.
+     */
+    private function ensure_event_checkin_token(int $reservation_id, int $order_id): void
+    {
+        $reservation = Reservations::get($reservation_id);
+        if (! is_array($reservation)) {
+            return;
+        }
+
+        $experience_id = absint((int) ($reservation['experience_id'] ?? 0));
+        if ($experience_id <= 0) {
+            return;
+        }
+
+        $is_event = '1' === (string) get_post_meta($experience_id, '_fp_is_event', true);
+        if (! $is_event) {
+            return;
+        }
+
+        $this->ensure_and_store_checkin_token($reservation_id, $order_id, $reservation);
+    }
+
+    /**
+     * @param array<string, mixed> $reservation
+     * @return array{is_event:bool,qr_token:string,qr_url:string,expires_at:int}
+     */
+    private function resolve_event_checkin_context(
+        int $reservation_id,
+        int $order_id,
+        array $reservation,
+        int $experience_id,
+        bool $is_event
+    ): array {
+        if (! $is_event || $experience_id <= 0) {
+            return [
+                'is_event' => false,
+                'qr_token' => '',
+                'qr_url' => '',
+                'expires_at' => 0,
+            ];
+        }
+
+        $token_data = $this->ensure_and_store_checkin_token($reservation_id, $order_id, $reservation);
+        $token = (string) ($token_data['token'] ?? '');
+        $expires_at = (int) ($token_data['expires_at'] ?? 0);
+
+        return [
+            'is_event' => true,
+            'qr_token' => $token,
+            'qr_url' => '' !== $token ? QrTokenService::build_qr_url($token) : '',
+            'expires_at' => $expires_at,
+        ];
+    }
+
+    /**
+     * @param array<string, mixed> $reservation
+     * @return array{token:string,issued_at:int,expires_at:int,version:int}
+     */
+    private function ensure_and_store_checkin_token(int $reservation_id, int $order_id, array $reservation): array
+    {
+        $meta = is_array($reservation['meta'] ?? null) ? $reservation['meta'] : [];
+        $checkin = is_array($meta['checkin'] ?? null) ? $meta['checkin'] : [];
+        $existing_token = is_string($checkin['token'] ?? null) ? $checkin['token'] : '';
+
+        if ('' !== $existing_token) {
+            $verification = QrTokenService::verify($existing_token);
+            if (! empty($verification['valid'])) {
+                return [
+                    'token' => $existing_token,
+                    'issued_at' => (int) ($checkin['issued_at'] ?? 0),
+                    'expires_at' => (int) ($checkin['expires_at'] ?? 0),
+                    'version' => (int) ($checkin['version'] ?? 1),
+                ];
+            }
+        }
+
+        $generated = QrTokenService::generate($reservation_id, $order_id);
+        Reservations::update_meta($reservation_id, [
+            'checkin' => $generated,
+        ]);
+
+        return $generated;
     }
 
     // ------------------------------------------------------------------
