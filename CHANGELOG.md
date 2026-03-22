@@ -2,6 +2,10 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.5.7] - 2026-03-22
+### Fixed
+- Regressione: `error_log` in WooCommerceCheckout (slot validation failed) e GiftCouponManager (create coupon, invalidate coupon) ora condizionati a `WP_DEBUG`
+
 ## [1.5.6] - 2026-03-22
 ### Fixed
 - Tutti gli `error_log` condizionati a `WP_DEBUG` (SettingsPage, WooCommerceCheckout, WooCommerceProduct, GiftProductManager, GiftOrderHandler, VoucherManager, GiftCouponManager) per evitare output in produzione

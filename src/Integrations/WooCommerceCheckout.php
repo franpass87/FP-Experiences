@@ -103,9 +103,10 @@ final class WooCommerceCheckout implements HookableInterface
             $slot_id = Slots::ensure_slot_for_occurrence($experience_id, $slot_start, $slot_end);
 
             if (is_wp_error($slot_id)) {
-                error_log('[FP-EXP-WC-CHECKOUT] ❌ Slot validation failed: ' . $slot_id->get_error_message());
-                error_log('[FP-EXP-WC-CHECKOUT] Error data: ' . wp_json_encode($slot_id->get_error_data()));
-                
+                if (defined('WP_DEBUG') && WP_DEBUG) {
+                    error_log('[FP-EXP-WC-CHECKOUT] ❌ Slot validation failed: ' . $slot_id->get_error_message());
+                    error_log('[FP-EXP-WC-CHECKOUT] Error data: ' . wp_json_encode($slot_id->get_error_data()));
+                }
                 wc_add_notice(
                     __('Lo slot selezionato non è più disponibile. Rimuovi l\'esperienza dal carrello e seleziona una nuova data.', 'fp-experiences'),
                     'error'

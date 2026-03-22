@@ -112,8 +112,9 @@ final class GiftCouponManager implements HookableInterface
 
             return $coupon_id;
         } catch (Exception $exception) {
-            error_log('FP Experiences: Failed to create coupon: ' . $exception->getMessage());
-
+            if (defined('WP_DEBUG') && WP_DEBUG && function_exists('error_log')) {
+                error_log('FP Experiences: Failed to create coupon: ' . $exception->getMessage());
+            }
             return null;
         }
     }
@@ -221,7 +222,9 @@ final class GiftCouponManager implements HookableInterface
         $coupon->set_usage_count($coupon->get_usage_limit());
         $coupon->save();
 
-        error_log("FP Experiences: Invalidated coupon #{$coupon_id} for redeemed voucher #{$voucher_id}");
+        if (defined('WP_DEBUG') && WP_DEBUG && function_exists('error_log')) {
+            error_log("FP Experiences: Invalidated coupon #{$coupon_id} for redeemed voucher #{$voucher_id}");
+        }
     }
 }
 
