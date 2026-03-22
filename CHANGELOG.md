@@ -2,6 +2,10 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.5.9] - 2026-03-23
+### Changed
+- Brevo: notice centralizzazione con link a FP Tracking nel tab Brevo.
+
 ## [1.5.8] - 2026-03-23
 ### Changed
 - Brevo: API key e liste ITA/ENG ora lette da FP Marketing Tracking Layer quando attivo. Filtro `option_fp_exp_brevo` e sanitize preservano i valori centralizzati.

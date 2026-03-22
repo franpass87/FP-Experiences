@@ -2612,6 +2612,13 @@ final class SettingsPage implements HookableInterface
     {
         echo '<p>' . esc_html__('Connect your Brevo account to deliver transactional emails and sync contacts with marketing attributes and tags.', 'fp-experiences') . '</p>';
 
+        if (\function_exists('fp_tracking_get_brevo_settings')) {
+            echo '<div class="notice notice-info inline"><p>';
+            echo esc_html__('API key e liste ITA/ENG sono configurati in FP Tracking.', 'fp-experiences');
+            echo ' <a href="' . esc_url(admin_url('admin.php?page=fp-tracking')) . '">' . esc_html__('Configura in FP Tracking', 'fp-experiences') . '</a>';
+            echo '</p></div>';
+        }
+
         $settings = $this->getOptions()->get('fp_exp_brevo', []);
         $settings = is_array($settings) ? $settings : [];
 
