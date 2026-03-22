@@ -53,6 +53,7 @@ final class ToolsPage implements HookableInterface
         ?>
         <script>
         window.fpExpAdmin = window.fpExpAdmin || {};
+        window.fpExpAdmin.debug = <?php echo (defined('WP_DEBUG') && WP_DEBUG) ? 'true' : 'false'; ?>;
         window.fpExpAdmin.restUrl = <?php echo wp_json_encode(rest_url('fp-exp/v1/')); ?>;
         window.fpExpAdmin.restNonce = <?php echo wp_json_encode(wp_create_nonce('wp_rest')); ?>;
         window.fpExpAdmin.ajaxUrl = <?php echo wp_json_encode(admin_url('admin-ajax.php')); ?>;
@@ -67,20 +68,20 @@ final class ToolsPage implements HookableInterface
             success: <?php echo wp_json_encode(esc_html__('Action completed successfully.', 'fp-experiences')); ?>,
             error: <?php echo wp_json_encode(esc_html__('Action failed. Check the logs for details.', 'fp-experiences')); ?>
         };
-        console.log('FP-EXP: Config loaded inline', {fpExpAdmin, fpExpTools});
+        if (window.fpExpAdmin && window.fpExpAdmin.debug) console.log('FP-EXP: Config loaded inline', {fpExpAdmin, fpExpTools});
         
         // Inizializza i bottoni tools direttamente
         document.addEventListener('DOMContentLoaded', function() {
             const toolsContainer = document.querySelector('[data-fp-exp-tools]');
             if (!toolsContainer) {
-                console.error('FP-EXP: Tools container not found!');
+                if (window.fpExpAdmin && window.fpExpAdmin.debug) console.error('FP-EXP: Tools container not found!');
                 return;
             }
             
-            console.log('FP-EXP: Tools container found, attaching event listeners...');
+            if (window.fpExpAdmin && window.fpExpAdmin.debug) console.log('FP-EXP: Tools container found, attaching event listeners...');
             
             const buttons = toolsContainer.querySelectorAll('button[data-action]');
-            console.log('FP-EXP: Found ' + buttons.length + ' tool buttons');
+            if (window.fpExpAdmin && window.fpExpAdmin.debug) console.log('FP-EXP: Found ' + buttons.length + ' tool buttons');
             
             buttons.forEach(button => {
                 button.addEventListener('click', async function(e) {
@@ -89,7 +90,7 @@ final class ToolsPage implements HookableInterface
                     const action = this.getAttribute('data-action');
                     if (!action) return;
                     
-                    console.log('FP-EXP: Executing tool:', action);
+                    if (window.fpExpAdmin && window.fpExpAdmin.debug) console.log('FP-EXP: Executing tool:', action);
                     
                     this.disabled = true;
                     const originalText = this.textContent;
@@ -103,7 +104,7 @@ final class ToolsPage implements HookableInterface
                             throw new Error('Endpoint not found for action: ' + action);
                         }
                         
-                        console.log('FP-EXP: Calling endpoint:', endpoint);
+                        if (window.fpExpAdmin && window.fpExpAdmin.debug) console.log('FP-EXP: Calling endpoint:', endpoint);
                         
                         const response = await fetch(endpoint, {
                             method: 'POST',
@@ -115,7 +116,7 @@ final class ToolsPage implements HookableInterface
                         });
                         
                         const data = await response.json();
-                        console.log('FP-EXP: Response:', data);
+                        if (window.fpExpAdmin && window.fpExpAdmin.debug) console.log('FP-EXP: Response:', data);
                         
                         // Mostra risultato
                         const output = toolsContainer.querySelector('.fp-exp-tools__output');
@@ -136,7 +137,7 @@ final class ToolsPage implements HookableInterface
                         }
                         
                     } catch (error) {
-                        console.error('FP-EXP: Tool execution failed:', error);
+                        if (window.fpExpAdmin && window.fpExpAdmin.debug) console.error('FP-EXP: Tool execution failed:', error);
                         alert('Errore: ' + error.message);
                     } finally {
                         this.disabled = false;
@@ -145,7 +146,7 @@ final class ToolsPage implements HookableInterface
                 });
             });
             
-            console.log('FP-EXP: Tool buttons initialized successfully');
+            if (window.fpExpAdmin && window.fpExpAdmin.debug) console.log('FP-EXP: Tool buttons initialized successfully');
         });
         </script>
         <?php

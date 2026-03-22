@@ -1485,24 +1485,24 @@
                         }
                         window.fpExpConfig.checkoutNonce = freshCheckoutNonce;
                     }
-                    console.log('FP-EXP: Nonce ottenuto:', freshCheckoutNonce);
+                    if (window.fpExpConfig && window.fpExpConfig.debug) console.log('FP-EXP: Nonce ottenuto:', freshCheckoutNonce);
                 } catch (e) {
-                    console.error('FP-EXP: Errore nonce:', e);
+                    if (window.fpExpConfig && window.fpExpConfig.debug) console.error('FP-EXP: Errore nonce:', e);
                     ctaBtn.disabled = false;
                     ctaBtn.textContent = 'Procedi al pagamento';
                     alert('Sessione non valida. Aggiorna la pagina e riprova.');
                     return;
                 }
 
-                console.log('FP-EXP: Procedo con cart/set...');
+                if (window.fpExpConfig && window.fpExpConfig.debug) console.log('FP-EXP: Procedo con cart/set...');
 
                 // Usa il sistema di checkout integrato del plugin
                 try {
                     ctaBtn.textContent = 'Aggiunta al carrello...';
-                    console.log('FP-EXP: Preparazione chiamata cart/set');
+                    if (window.fpExpConfig && window.fpExpConfig.debug) console.log('FP-EXP: Preparazione chiamata cart/set');
                     
                     // Verifica variabili PRIMA di procedere
-                    console.log('FP-EXP: Verifica variabili:', {
+                    if (window.fpExpConfig && window.fpExpConfig.debug) console.log('FP-EXP: Verifica variabili:', {
                         experienceId: experienceId,
                         start: start,
                         end: end,
@@ -1520,21 +1520,21 @@
                         throw new Error('Nessun ticket selezionato');
                     }
 
-                    console.log('FP-EXP: Variabili OK, costruisco URL...');
-                    console.log('FP-EXP: restBaseUrl vale:', restBaseUrl);
-                    console.log('FP-EXP: window.location.origin vale:', window.location.origin);
+                    if (window.fpExpConfig && window.fpExpConfig.debug) console.log('FP-EXP: Variabili OK, costruisco URL...');
+                    if (window.fpExpConfig && window.fpExpConfig.debug) console.log('FP-EXP: restBaseUrl vale:', restBaseUrl);
+                    if (window.fpExpConfig && window.fpExpConfig.debug) console.log('FP-EXP: window.location.origin vale:', window.location.origin);
 
                     // Aggiungi al carrello interno del plugin
                     try {
                         const setCartUrl = new URL(restBaseUrl + 'cart/set', window.location.origin);
-                        console.log('FP-EXP: URL costruito:', setCartUrl.toString());
+                        if (window.fpExpConfig && window.fpExpConfig.debug) console.log('FP-EXP: URL costruito:', setCartUrl.toString());
                     } catch (urlError) {
-                        console.error('FP-EXP: Errore costruzione URL:', urlError);
+                        if (window.fpExpConfig && window.fpExpConfig.debug) console.error('FP-EXP: Errore costruzione URL:', urlError);
                         throw new Error('Errore costruzione URL: ' + urlError.message);
                     }
                     
                     const setCartUrl = new URL(restBaseUrl + 'cart/set', window.location.origin);
-                    console.log('FP-EXP: URL finale:', setCartUrl.toString());
+                    if (window.fpExpConfig && window.fpExpConfig.debug) console.log('FP-EXP: URL finale:', setCartUrl.toString());
                     
                     // Raccogli lingua selezionata
                     const languageSelect = widget.querySelector('[data-fp-language-select]');
@@ -1571,9 +1571,9 @@
                         special_requests: specialRequests || ''
                     };
                     
-                    console.log('FP-EXP: Dati carrello preparati:', cartData);
+                    if (window.fpExpConfig && window.fpExpConfig.debug) console.log('FP-EXP: Dati carrello preparati:', cartData);
 
-                    console.log('FP-EXP: Invio fetch a cart/set...');
+                    if (window.fpExpConfig && window.fpExpConfig.debug) console.log('FP-EXP: Invio fetch a cart/set...');
 
                     const setCartResponse = await fetch(setCartUrl, {
                         method: 'POST',
@@ -1585,8 +1585,8 @@
                         body: JSON.stringify(cartData)
                     });
 
-                    console.log('FP-EXP: Fetch completato!');
-                    console.log('FP-EXP: Risposta cart/set:', setCartResponse.status, setCartResponse.ok);
+                    if (window.fpExpConfig && window.fpExpConfig.debug) console.log('FP-EXP: Fetch completato!');
+                    if (window.fpExpConfig && window.fpExpConfig.debug) console.log('FP-EXP: Risposta cart/set:', setCartResponse.status, setCartResponse.ok);
 
                     if (!setCartResponse.ok) {
                         let errorData = {};
@@ -1619,11 +1619,11 @@
                     // Cart will be automatically synced via template_redirect hook
                     ctaBtn.textContent = 'Reindirizzamento...';
                     
-                    console.log('FP-EXP: Cart/set OK, procedo con redirect...');
+                    if (window.fpExpConfig && window.fpExpConfig.debug) console.log('FP-EXP: Cart/set OK, procedo con redirect...');
                     
                     // Redirect to WooCommerce checkout page (with fallback)
                     const checkoutPageUrl = (typeof fpExpConfig !== 'undefined' && fpExpConfig.checkoutUrl) || '/checkout/';
-                    console.log('FP-EXP: Redirect a:', checkoutPageUrl);
+                    if (window.fpExpConfig && window.fpExpConfig.debug) console.log('FP-EXP: Redirect a:', checkoutPageUrl);
                     window.location.href = checkoutPageUrl;
 
                 } catch (error) {
@@ -2019,7 +2019,7 @@
             // Gestione submit form RTB via AJAX
             if (rtbForm) {
                 rtbForm.addEventListener('submit', async (ev) => {
-                    console.log('🔥 RTB SUBMIT HANDLER ESEGUITO - VERSIONE CORRETTA');
+                    if (window.fpExpConfig && window.fpExpConfig.debug) console.log('🔥 RTB SUBMIT HANDLER ESEGUITO - VERSIONE CORRETTA');
                     ev.preventDefault();
 
                     const statusEl = rtbForm.querySelector('.fp-exp-rtb-form__status');
@@ -2033,7 +2033,7 @@
                     const phoneInput = rtbForm.querySelector('[name="phone"]');
                     const privacyCheck = rtbForm.querySelector('[name="consent_privacy"]');
                     
-                    console.log('📝 DEBUG CAMPI:', {
+                    if (window.fpExpConfig && window.fpExpConfig.debug) console.log('📝 DEBUG CAMPI:', {
                         nameInput: !!nameInput,
                         nameValue: nameInput ? nameInput.value : 'N/A',
                         emailInput: !!emailInput,
@@ -2144,12 +2144,12 @@
                             body: JSON.stringify(payload),
                         });
 
-                        console.log('📡 RTB Response Status:', response.status, response.statusText);
+                        if (window.fpExpConfig && window.fpExpConfig.debug) console.log('📡 RTB Response Status:', response.status, response.statusText);
                         const result = await response.json();
-                        console.log('📦 RTB Response Data:', result);
+                        if (window.fpExpConfig && window.fpExpConfig.debug) console.log('📦 RTB Response Data:', result);
 
                         if (!response.ok || result.success !== true) {
-                            console.error('❌ RTB Request failed:', result);
+                            if (window.fpExpConfig && window.fpExpConfig.debug) console.error('❌ RTB Request failed:', result);
                             throw new Error(result.message || 'Errore durante l\'invio della richiesta.');
                         }
 

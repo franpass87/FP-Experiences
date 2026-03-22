@@ -237,6 +237,22 @@
         }, data || {}));
     }
 
+    /** booking_date_selected — utente seleziona una data dal calendario/date picker */
+    function bookingDateSelected(data) {
+        pushFunnelEvent('booking_date_selected', Object.assign({
+            experience_id: getExperienceId(),
+            experience_title: getExperienceTitle()
+        }, data || {}));
+    }
+
+    /** booking_slot_selected — utente seleziona uno slot orario */
+    function bookingSlotSelected(data) {
+        pushFunnelEvent('booking_slot_selected', Object.assign({
+            experience_id: getExperienceId(),
+            experience_title: getExperienceTitle()
+        }, data || {}));
+    }
+
     /** booking_abandon — utente lascia la pagina dopo aver iniziato il flusso */
     function bookingAbandon(data) {
         pushFunnelEvent('booking_abandon', Object.assign({
@@ -407,6 +423,8 @@
         // Funnel
         bookingStart: bookingStart,
         bookingStepComplete: bookingStepComplete,
+        bookingDateSelected: bookingDateSelected,
+        bookingSlotSelected: bookingSlotSelected,
         bookingAbandon: bookingAbandon,
         rtbStart: rtbStart,
         giftStart: giftStart

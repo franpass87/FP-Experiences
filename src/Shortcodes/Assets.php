@@ -230,6 +230,7 @@ final class Assets
                     'plurals' => AutoTranslator::plurals(),
                 ],
                 'i18n' => $this->get_i18n_strings(),
+                'debug' => defined('WP_DEBUG') && WP_DEBUG,
             ]
         );
     }

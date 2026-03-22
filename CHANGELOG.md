@@ -2,6 +2,10 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.5.5] - 2026-03-22
+### Fixed
+- Console.log/warn/error in front.js (flusso cart/set WooCommerce e RTB submit) condizionati a `window.fpExpConfig.debug` (WP_DEBUG)
+
 ## [1.5.4] - 2026-03-22
 ### Fixed
 - Rimosso console.log in produzione (Sezione listing non trovata, Read More toggle)

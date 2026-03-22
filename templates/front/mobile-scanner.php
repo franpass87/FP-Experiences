@@ -123,7 +123,7 @@ if (! defined('ABSPATH')) {
                 );
                 running = true;
             } catch (e) {
-                console.warn('Scanner start failed', e);
+                if (window.fpExpConfig && window.fpExpConfig.debug) console.warn('Scanner start failed', e);
             }
         });
 
@@ -132,7 +132,7 @@ if (! defined('ABSPATH')) {
             try {
                 await scanner.stop();
             } catch (e) {
-                console.warn('Scanner stop failed', e);
+                if (window.fpExpConfig && window.fpExpConfig.debug) console.warn('Scanner stop failed', e);
             }
             running = false;
         });
