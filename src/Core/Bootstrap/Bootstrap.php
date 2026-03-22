@@ -28,6 +28,42 @@ use FP_Exp\Providers\UtilityServiceProvider;
  */
 final class Bootstrap
 {
+    /**
+     * Inietta api_key Brevo da FP-Tracking quando attivo.
+     *
+     * @param mixed $value   Valore attuale
+     * @param string $option Nome opzione
+     * @param mixed $default Default
+     * @return mixed
+     */
+    public static function mergeBrevoFromTracking(mixed $value, string $option, mixed $default): mixed
+    {
+        if (!\function_exists('fp_tracking_get_brevo_settings')) {
+            return $value;
+        }
+        $central = fp_tracking_get_brevo_settings();
+        if (empty($central['enabled']) || empty($central['api_key'])) {
+            return $value;
+        }
+        $local = \is_array($value) ? $value : [];
+        $lists = $local['lists'] ?? [];
+        if (!\is_array($lists)) {
+            $lists = [];
+        }
+        if (!empty($central['list_id_it'])) {
+            $lists['it'] = $central['list_id_it'];
+        }
+        if (!empty($central['list_id_en'])) {
+            $lists['en'] = $central['list_id_en'];
+        }
+        $fallback = $central['list_id_it'] ?: $central['list_id_en'] ?: ($local['list_id'] ?? 0);
+        return \array_merge($local, [
+            'api_key' => $central['api_key'],
+            'list_id' => $fallback,
+            'lists' => $lists,
+        ]);
+    }
+
     private static ?KernelInterface $kernel = null;
 
     /**
@@ -38,6 +74,9 @@ final class Bootstrap
         if (self::$kernel !== null) {
             return;
         }
+
+        // API key e liste Brevo da FP-Tracking quando attivo
+        add_filter('option_fp_exp_brevo', [self::class, 'mergeBrevoFromTracking'], 10, 3);
 
         $container = new Container();
         $kernel = new Kernel($container);

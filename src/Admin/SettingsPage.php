@@ -4256,6 +4256,21 @@ final class SettingsPage implements HookableInterface
         }
         $sanitised['templates'] = $templates;
 
+        // API key e liste da FP-Tracking quando attivo
+        if (\function_exists('fp_tracking_get_brevo_settings')) {
+            $central = fp_tracking_get_brevo_settings();
+            if (!empty($central['enabled']) && !empty($central['api_key'])) {
+                $sanitised['api_key'] = $central['api_key'];
+                $sanitised['list_id'] = $central['list_id_it'] ?: $central['list_id_en'] ?: $sanitised['list_id'];
+                if (!empty($central['list_id_it'])) {
+                    $sanitised['lists']['it'] = $central['list_id_it'];
+                }
+                if (!empty($central['list_id_en'])) {
+                    $sanitised['lists']['en'] = $central['list_id_en'];
+                }
+            }
+        }
+
         return $sanitised;
     }
 
