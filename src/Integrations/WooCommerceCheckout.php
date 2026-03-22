@@ -47,7 +47,9 @@ final class WooCommerceCheckout implements HookableInterface
             return;
         }
 
-        error_log('[FP-EXP-WC-CHECKOUT] Validating experience slots in WooCommerce checkout');
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('[FP-EXP-WC-CHECKOUT] Validating experience slots in WooCommerce checkout');
+        }
 
         foreach (WC()->cart->get_cart() as $cart_item_key => $cart_item) {
             // Only process experience items
@@ -57,7 +59,9 @@ final class WooCommerceCheckout implements HookableInterface
             
             // Skip RTB items (Request To Book creates orders programmatically, not via checkout form)
             if (!empty($cart_item['fp_exp_rtb'])) {
-                error_log('[FP-EXP-WC-CHECKOUT] Skipping RTB item (handled separately)');
+                if (defined('WP_DEBUG') && WP_DEBUG) {
+                    error_log('[FP-EXP-WC-CHECKOUT] Skipping RTB item (handled separately)');
+                }
                 continue;
             }
 
@@ -66,7 +70,9 @@ final class WooCommerceCheckout implements HookableInterface
             $slot_end = sanitize_text_field($cart_item['fp_exp_slot_end'] ?? '');
 
             if ($experience_id <= 0 || !$slot_start || !$slot_end) {
-                error_log('[FP-EXP-WC-CHECKOUT] ❌ Experience item missing required data');
+                if (defined('WP_DEBUG') && WP_DEBUG) {
+                    error_log('[FP-EXP-WC-CHECKOUT] ❌ Experience item missing required data');
+                }
                 wc_add_notice(
                     __('Dati esperienza mancanti. Rimuovi l\'item dal carrello e riprova.', 'fp-experiences'),
                     'error'
@@ -78,16 +84,20 @@ final class WooCommerceCheckout implements HookableInterface
             $is_gift = !empty($cart_item['fp_exp_is_gift']) || !empty($cart_item['gift_voucher']);
             
             if ($is_gift) {
-                error_log('[FP-EXP-WC-CHECKOUT] Skipping slot validation for gift item');
+                if (defined('WP_DEBUG') && WP_DEBUG) {
+                    error_log('[FP-EXP-WC-CHECKOUT] Skipping slot validation for gift item');
+                }
                 continue;
             }
 
-            error_log(sprintf(
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log(sprintf(
                 '[FP-EXP-WC-CHECKOUT] Validating slot for experience %d: %s → %s',
                 $experience_id,
                 $slot_start,
                 $slot_end
-            ));
+                ));
+            }
 
             // Ensure slot exists or can be created
             $slot_id = Slots::ensure_slot_for_occurrence($experience_id, $slot_start, $slot_end);
@@ -105,7 +115,9 @@ final class WooCommerceCheckout implements HookableInterface
             }
 
             if ($slot_id <= 0) {
-                error_log('[FP-EXP-WC-CHECKOUT] ❌ Slot validation failed: returned 0');
+                if (defined('WP_DEBUG') && WP_DEBUG) {
+                    error_log('[FP-EXP-WC-CHECKOUT] ❌ Slot validation failed: returned 0');
+                }
                 
                 wc_add_notice(
                     __('Lo slot selezionato non è più disponibile. Rimuovi l\'esperienza dal carrello e seleziona una nuova data.', 'fp-experiences'),
@@ -115,7 +127,9 @@ final class WooCommerceCheckout implements HookableInterface
                 continue;
             }
 
-            error_log('[FP-EXP-WC-CHECKOUT] ✅ Slot validation passed: slot_id=' . $slot_id);
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('[FP-EXP-WC-CHECKOUT] ✅ Slot validation passed: slot_id=' . $slot_id);
+            }
 
             // Check lead time: reject if slot starts before the minimum advance window
             $lead_time_hours = absint(get_post_meta($experience_id, '_fp_lead_time_hours', true));
@@ -126,7 +140,9 @@ final class WooCommerceCheckout implements HookableInterface
                     $cutoff = $cutoff->add(new \DateInterval('PT' . $lead_time_hours . 'H'));
 
                     if ($slot_start_dt < $cutoff) {
-                        error_log('[FP-EXP-WC-CHECKOUT] ❌ Lead time check failed: slot starts at ' . $slot_start . ', cutoff is ' . $cutoff->format('Y-m-d H:i:s'));
+                        if (defined('WP_DEBUG') && WP_DEBUG) {
+                            error_log('[FP-EXP-WC-CHECKOUT] ❌ Lead time check failed: slot starts at ' . $slot_start . ', cutoff is ' . $cutoff->format('Y-m-d H:i:s'));
+                        }
                         wc_add_notice(
                             sprintf(
                                 /* translators: %d: minimum hours in advance */
@@ -147,12 +163,15 @@ final class WooCommerceCheckout implements HookableInterface
             $capacity_check = Slots::check_capacity($slot_id, $tickets);
 
             if (!$capacity_check['allowed']) {
-                error_log('[FP-EXP-WC-CHECKOUT] ❌ Capacity check failed');
-                
+                if (defined('WP_DEBUG') && WP_DEBUG) {
+                    error_log('[FP-EXP-WC-CHECKOUT] ❌ Capacity check failed');
+                }
                 $message = $capacity_check['message'] ?? __('Lo slot selezionato è al completo.', 'fp-experiences');
                 wc_add_notice($message, 'error');
             } else {
-                error_log('[FP-EXP-WC-CHECKOUT] ✅ Capacity check passed');
+                if (defined('WP_DEBUG') && WP_DEBUG) {
+                    error_log('[FP-EXP-WC-CHECKOUT] ✅ Capacity check passed');
+                }
             }
         }
     }
@@ -162,17 +181,23 @@ final class WooCommerceCheckout implements HookableInterface
      */
     public function ensure_slots_for_order(WC_Order $order): void
     {
-        error_log('[FP-EXP-WC-CHECKOUT] Order created: #' . $order->get_id());
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('[FP-EXP-WC-CHECKOUT] Order created: #' . $order->get_id());
+        }
 
         $is_isolated = $order->get_meta('_fp_exp_isolated_checkout');
         if ($is_isolated === 'yes') {
-            error_log('[FP-EXP-WC-CHECKOUT] Skipping isolated checkout order (RTB/gift, handled separately)');
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('[FP-EXP-WC-CHECKOUT] Skipping isolated checkout order (RTB/gift, handled separately)');
+            }
             return;
         }
 
         $existing = Reservations::get_ids_by_order($order->get_id());
         if (! empty($existing)) {
-            error_log('[FP-EXP-WC-CHECKOUT] Reservations already exist for order #' . $order->get_id() . ', skipping');
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('[FP-EXP-WC-CHECKOUT] Reservations already exist for order #' . $order->get_id() . ', skipping');
+            }
             return;
         }
 
@@ -190,7 +215,9 @@ final class WooCommerceCheckout implements HookableInterface
             $slot_id = Slots::ensure_slot_for_occurrence($experience_id, $slot_start, $slot_end);
 
             if (is_wp_error($slot_id)) {
-                error_log('[FP-EXP-WC-CHECKOUT] ❌ Failed to ensure slot for order ' . $order_id . ': ' . $slot_id->get_error_message());
+                if (defined('WP_DEBUG') && WP_DEBUG) {
+                    error_log('[FP-EXP-WC-CHECKOUT] ❌ Failed to ensure slot for order ' . $order_id . ': ' . $slot_id->get_error_message());
+                }
                 continue;
             }
 
@@ -227,9 +254,13 @@ final class WooCommerceCheckout implements HookableInterface
                         do_action('fp_exp_reservation_paid', $reservation_id, $order_id);
                     }
 
-                    error_log('[FP-EXP-WC-CHECKOUT] ✅ Reservation created: id=' . $reservation_id . ' slot_id=' . $slot_id);
+                    if (defined('WP_DEBUG') && WP_DEBUG) {
+                        error_log('[FP-EXP-WC-CHECKOUT] ✅ Reservation created: id=' . $reservation_id . ' slot_id=' . $slot_id);
+                    }
                 } else {
-                    error_log('[FP-EXP-WC-CHECKOUT] ❌ Failed to create reservation for slot_id=' . $slot_id);
+                    if (defined('WP_DEBUG') && WP_DEBUG) {
+                        error_log('[FP-EXP-WC-CHECKOUT] ❌ Failed to create reservation for slot_id=' . $slot_id);
+                    }
                 }
             }
         }

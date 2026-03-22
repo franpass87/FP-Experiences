@@ -1055,7 +1055,9 @@ final class WooCommerceProduct implements HookableInterface
             $exp_price = get_post_meta($experience_id, '_fp_price', true);
             
             if (!is_numeric($exp_price) || $exp_price <= 0) {
-                error_log('[FP-EXP-WC] ⚠️ Experience ID ' . $experience_id . ' has invalid price: ' . $exp_price);
+                if (defined('WP_DEBUG') && WP_DEBUG) {
+                    error_log('[FP-EXP-WC] ⚠️ Experience ID ' . $experience_id . ' has invalid price: ' . $exp_price);
+                }
                 continue;
             }
 
@@ -1071,7 +1073,9 @@ final class WooCommerceProduct implements HookableInterface
             $quantity = isset($cart_item['quantity']) ? $cart_item['quantity'] : 1;
             $total = $price_per_person * $quantity;
             
-            error_log('[FP-EXP-WC] ✅ Set price for experience ' . $experience_id . ': ' . $price_per_person . ' EUR per person x ' . $quantity . ' = ' . $total . ' EUR total');
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('[FP-EXP-WC] ✅ Set price for experience ' . $experience_id . ': ' . $price_per_person . ' EUR per person x ' . $quantity . ' = ' . $total . ' EUR total');
+            }
         }
     }
 
@@ -1100,7 +1104,9 @@ final class WooCommerceProduct implements HookableInterface
         $exp_price = get_post_meta($experience_id, '_fp_price', true);
         
         if (!is_numeric($exp_price) || $exp_price <= 0) {
-            error_log('[FP-EXP-WC] ⚠️ Experience ID ' . $experience_id . ' has invalid price on add_to_cart: ' . $exp_price);
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('[FP-EXP-WC] ⚠️ Experience ID ' . $experience_id . ' has invalid price on add_to_cart: ' . $exp_price);
+            }
             return $cart_item;
         }
 
@@ -1112,7 +1118,9 @@ final class WooCommerceProduct implements HookableInterface
         // Set the price per person on the product
         if (isset($cart_item['data']) && is_object($cart_item['data'])) {
             $cart_item['data']->set_price($price_per_person);
-            error_log('[FP-EXP-WC-STOREAPI] ✅ Set price on add_to_cart for experience ' . $experience_id . ': ' . $price_per_person . ' EUR per person');
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('[FP-EXP-WC-STOREAPI] ✅ Set price on add_to_cart for experience ' . $experience_id . ': ' . $price_per_person . ' EUR per person');
+            }
         }
 
         return $cart_item;
@@ -1275,7 +1283,9 @@ final class WooCommerceProduct implements HookableInterface
             }
         }
 
-        error_log('[FP-EXP-WC] Saved order item meta for experience: ' . ($values['fp_exp_experience_id'] ?? 'unknown'));
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('[FP-EXP-WC] Saved order item meta for experience: ' . ($values['fp_exp_experience_id'] ?? 'unknown'));
+        }
     }
 
     /**

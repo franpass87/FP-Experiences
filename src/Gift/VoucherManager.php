@@ -421,8 +421,9 @@ final class VoucherManager implements HookableInterface
         try {
             $product->save();
         } catch (Exception $exception) {
-            error_log('FP Experiences Gift: failed saving gift product #' . $product_id . ' - ' . $exception->getMessage());
-
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('FP Experiences Gift: failed saving gift product #' . $product_id . ' - ' . $exception->getMessage());
+            }
             return false;
         }
 
@@ -448,8 +449,9 @@ final class VoucherManager implements HookableInterface
         ]);
 
         if (is_wp_error($product_id)) {
-            error_log('FP Experiences Gift: failed creating gift product - ' . $product_id->get_error_message());
-
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('FP Experiences Gift: failed creating gift product - ' . $product_id->get_error_message());
+            }
             return 0;
         }
 
@@ -1189,7 +1191,9 @@ final class VoucherManager implements HookableInterface
     private function create_woocommerce_coupon_for_gift(int $voucher_id, array $gift_data): ?int
     {
         if (!class_exists('WC_Coupon')) {
-            error_log('FP Experiences: WC_Coupon class not found');
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('FP Experiences: WC_Coupon class not found');
+            }
             return null;
         }
 
@@ -1238,7 +1242,9 @@ final class VoucherManager implements HookableInterface
             $coupon_id = $coupon->save();
             return $coupon_id;
         } catch (Exception $e) {
-            error_log('FP Experiences: Failed to create coupon: ' . $e->getMessage());
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('FP Experiences: Failed to create coupon: ' . $e->getMessage());
+            }
             return null;
         }
     }

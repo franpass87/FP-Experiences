@@ -2,6 +2,10 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.5.6] - 2026-03-22
+### Fixed
+- Tutti gli `error_log` condizionati a `WP_DEBUG` (SettingsPage, WooCommerceCheckout, WooCommerceProduct, GiftProductManager, GiftOrderHandler, VoucherManager, GiftCouponManager) per evitare output in produzione
+
 ## [1.5.5] - 2026-03-22
 ### Fixed
 - Console.log/warn/error in front.js (flusso cart/set WooCommerce e RTB submit) condizionati a `window.fpExpConfig.debug` (WP_DEBUG)

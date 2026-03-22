@@ -54,8 +54,9 @@ final class GiftCouponManager implements HookableInterface
     public function createCoupon(int $voucher_id, array $gift_data): ?int
     {
         if (! class_exists('WC_Coupon')) {
-            error_log('FP Experiences: WC_Coupon class not found');
-
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('FP Experiences: WC_Coupon class not found');
+            }
             return null;
         }
 

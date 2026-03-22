@@ -125,8 +125,9 @@ final class GiftProductManager
         try {
             $product->save();
         } catch (Exception $exception) {
-            error_log('FP Experiences Gift: failed saving gift product #' . $product_id . ' - ' . $exception->getMessage());
-
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('FP Experiences Gift: failed saving gift product #' . $product_id . ' - ' . $exception->getMessage());
+            }
             return false;
         }
 
@@ -155,8 +156,9 @@ final class GiftProductManager
         ]);
 
         if (is_wp_error($product_id)) {
-            error_log('FP Experiences Gift: failed creating gift product - ' . $product_id->get_error_message());
-
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('FP Experiences Gift: failed creating gift product - ' . $product_id->get_error_message());
+            }
             return 0;
         }
 

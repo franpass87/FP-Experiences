@@ -196,8 +196,9 @@ final class GiftOrderHandler implements HookableInterface
         ]);
 
         if (is_wp_error($voucher_id)) {
-            error_log('FP Experiences Gift: Failed to create voucher post: ' . $voucher_id->get_error_message());
-
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('FP Experiences Gift: Failed to create voucher post: ' . $voucher_id->get_error_message());
+            }
             return null;
         }
 

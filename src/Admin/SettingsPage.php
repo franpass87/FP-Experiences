@@ -306,14 +306,18 @@ final class SettingsPage implements HookableInterface
 
     public function enqueue_tools_assets(): void
     {
-        error_log('[FP-EXP-SETTINGS] enqueue_tools_assets() START');
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('[FP-EXP-SETTINGS] enqueue_tools_assets() START');
+        }
         
         $admin_css = Helpers::resolve_asset_rel([
             'assets/css/dist/fp-experiences-admin.min.css',
             'assets/css/admin.css',
         ]);
         
-        error_log('[FP-EXP-SETTINGS] CSS file: ' . $admin_css);
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('[FP-EXP-SETTINGS] CSS file: ' . $admin_css);
+        }
         
         wp_enqueue_style(
             'fp-exp-admin',
@@ -327,7 +331,9 @@ final class SettingsPage implements HookableInterface
             'assets/js/admin.js',
         ]);
         
-        error_log('[FP-EXP-SETTINGS] JS file: ' . $admin_js);
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('[FP-EXP-SETTINGS] JS file: ' . $admin_js);
+        }
         
         wp_enqueue_script(
             'fp-exp-admin',
@@ -337,7 +343,9 @@ final class SettingsPage implements HookableInterface
             true
         );
         
-        error_log('[FP-EXP-SETTINGS] Script enqueued: fp-exp-admin');
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('[FP-EXP-SETTINGS] Script enqueued: fp-exp-admin');
+        }
 
         // Config base per fpExpAdmin (richiesto da admin.js)
         wp_localize_script('fp-exp-admin', 'fpExpAdmin', [
