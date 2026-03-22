@@ -16,11 +16,8 @@
     function setupReadMore() {
         const listingSection = document.querySelector('.fp-listing');
         if (!listingSection) {
-            console.log('FP-Experiences: Sezione listing non trovata');
             return;
         }
-        
-        console.log('FP-Experiences: Read More STANDALONE attivo');
         
         // Click handler con delegazione
         listingSection.addEventListener('click', function(ev) {
@@ -28,8 +25,6 @@
             if (!btn) return;
             
             ev.preventDefault();
-            console.log('FP-Experiences: Toggle Read More');
-            
             const wrapper = btn.closest('.fp-listing__description-wrapper');
             if (!wrapper) return;
             
@@ -815,6 +810,15 @@
                     window.FPFront.availability.prefetchMonth(window.FPFront.availability.monthKeyOf(date));
                 }
 
+                // Tracking dedicato selezione data (compatibile con vecchi eventi funnel)
+                if (window.FPFront && window.FPFront.tracking && typeof window.FPFront.tracking.bookingDateSelected === 'function') {
+                    window.FPFront.tracking.bookingDateSelected({
+                        booking_mode: isSingleEventMode ? 'single_date' : 'multi_date',
+                        selected_date: date,
+                        available_slots: Array.isArray(items) ? items.length : 0
+                    });
+                }
+
                 // Rimosso scroll automatico per evitare il salto verso il basso
                 // if (slotsEl && typeof slotsEl.scrollIntoView === 'function') {
                 //     slotsEl.scrollIntoView({ behavior: 'auto', block: 'start' });
@@ -1125,6 +1129,15 @@
                 const ctaButton = document.querySelector('.fp-exp-summary__cta');
                 if (ctaButton) {
                     ctaButton.disabled = false;
+                }
+
+                // Tracking dedicato selezione slot (retrocompatibile con booking_step_complete)
+                if (window.FPFront && window.FPFront.tracking && typeof window.FPFront.tracking.bookingSlotSelected === 'function') {
+                    window.FPFront.tracking.bookingSlotSelected({
+                        booking_mode: isSingleEventMode ? 'single_date' : 'multi_date',
+                        slot_start: start,
+                        slot_end: end
+                    });
                 }
             });
             if (window.FPFront.slots) window.FPFront.slots.init({ slotsEl });

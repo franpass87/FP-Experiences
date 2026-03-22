@@ -2,6 +2,10 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.5.4] - 2026-03-22
+### Fixed
+- Rimosso console.log in produzione (Sezione listing non trovata, Read More toggle)
+
 ## [1.5.3] - 2026-03-22
 ### Added
 - Nuovo flusso check-in mobile con shortcode dedicato e template frontend per scansione/operatività sul campo.
