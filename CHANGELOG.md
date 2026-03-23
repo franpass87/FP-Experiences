@@ -2,6 +2,10 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.5.10] - 2026-03-23
+### Changed
+- Brevo: fallback lingua per lista ITA/ENG da get_locale(), WPML o Polylang quando context non la fornisce.
+
 ## [1.5.9] - 2026-03-23
 ### Changed
 - Brevo: notice centralizzazione con link a FP Tracking nel tab Brevo.

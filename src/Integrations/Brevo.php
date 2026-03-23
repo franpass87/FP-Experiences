@@ -804,7 +804,11 @@ final class Brevo implements HookableInterface
         }
 
         if (! empty($settings['subscribe_to_list'])) {
-            $language = EmailTranslator::normalize((string) ($context['language'] ?? $context['language_locale'] ?? ''));
+            $language_raw = (string) ($context['language'] ?? $context['language_locale'] ?? '');
+            if ($language_raw === '') {
+                $language_raw = $this->detect_site_language_for_list();
+            }
+            $language = EmailTranslator::normalize($language_raw);
             $language_key = EmailTranslator::LANGUAGE_IT === $language ? 'it' : 'en';
 
             $list_ids = [];
@@ -859,5 +863,44 @@ final class Brevo implements HookableInterface
     {
         $settings = $this->get_settings();
         return ! empty($settings['simulate_mode']);
+    }
+
+    /**
+     * Rileva lingua da WP locale, WPML o Polylang quando context non la fornisce.
+     */
+    private function detect_site_language_for_list(): string
+    {
+        if (defined('ICL_LANGUAGE_CODE') && ICL_LANGUAGE_CODE !== '') {
+            $code = strtolower((string) ICL_LANGUAGE_CODE);
+            if (str_starts_with($code, 'it')) {
+                return 'it';
+            }
+            if (str_starts_with($code, 'en')) {
+                return 'en';
+            }
+        }
+        if (function_exists('pll_current_language')) {
+            $pll = pll_current_language();
+            if (is_string($pll) && $pll !== '') {
+                $code = strtolower($pll);
+                if (str_starts_with($code, 'it')) {
+                    return 'it';
+                }
+                if (str_starts_with($code, 'en')) {
+                    return 'en';
+                }
+            }
+        }
+        $locale = get_locale();
+        if (is_string($locale) && $locale !== '') {
+            $prefix = substr($locale, 0, 2);
+            if (str_starts_with(strtolower($prefix), 'it')) {
+                return 'it';
+            }
+            if (str_starts_with(strtolower($prefix), 'en')) {
+                return 'en';
+            }
+        }
+        return '';
     }
 }
