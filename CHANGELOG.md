@@ -2,6 +2,10 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.5.12] - 2026-03-23
+### Fixed
+- Tab Brevo (Email): try-catch e fallback HTML in render_brevo_field per evitare errore 500; protezione callback da $field non valido.
+
 ## [1.5.11] - 2026-03-22
 ### Fixed
 - `error_log` in Activation.php e ExperienceProduct.php (WooCommerce non disponibile) condizionati a `WP_DEBUG` per evitare log in produzione.

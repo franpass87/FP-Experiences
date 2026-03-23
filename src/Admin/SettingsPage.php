@@ -3619,8 +3619,15 @@ final class SettingsPage implements HookableInterface
         echo $status_badge . $field_html;
     }
 
-    public function render_brevo_field(array $field): void
+    /**
+     * @param array<string, mixed> $field
+     */
+    public function render_brevo_field($field): void
     {
+        if (! is_array($field) || empty($field['key'])) {
+            return;
+        }
+
         $settings = $this->getOptions()->get('fp_exp_brevo', []);
         $settings = is_array($settings) ? $settings : [];
         $value = $this->extract_nested_value($settings, $field['key']);
@@ -3657,25 +3664,41 @@ final class SettingsPage implements HookableInterface
             }
         }
 
-        $field_html = $this->render_field_inline(
-            name: implode('_', $path),
-            type: 'nested_' . $base_type,
-            options: [
-                'path' => $path,
-                'base_type' => $base_type,
-                'option_name' => 'fp_exp_brevo',
-                'description' => $field['description'] ?? null,
-                'attributes' => array_merge(
-                    $this->get_field_attributes($type),
-                    $type === 'number' ? ['inputmode' => 'numeric', 'pattern' => '[0-9]*', 'step' => '1'] : []
-                ),
-                'choices' => $field['options'] ?? [],
-                'min' => isset($field['min']) ? max(0, (int) $field['min']) : 0,
-                'placeholder' => $field['placeholder'] ?? '',
-            ]
-        );
-
-        echo $status_badge . $field_html;
+        try {
+            $field_html = $this->render_field_inline(
+                name: implode('_', $path),
+                type: 'nested_' . $base_type,
+                options: [
+                    'path' => $path,
+                    'base_type' => $base_type,
+                    'option_name' => 'fp_exp_brevo',
+                    'description' => $field['description'] ?? null,
+                    'attributes' => array_merge(
+                        $this->get_field_attributes($type),
+                        $type === 'number' ? ['inputmode' => 'numeric', 'pattern' => '[0-9]*', 'step' => '1'] : []
+                    ),
+                    'choices' => $field['options'] ?? [],
+                    'min' => isset($field['min']) ? max(0, (int) $field['min']) : 0,
+                    'placeholder' => $field['placeholder'] ?? '',
+                ]
+            );
+            echo $status_badge . $field_html;
+        } catch (\Throwable $e) {
+            if (function_exists('error_log')) {
+                error_log('[FP-Exp Brevo field ' . ($field['key'] ?? '') . '] ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine());
+            }
+            $name = $this->build_input_name('fp_exp_brevo', $field['key']);
+            if ('checkbox' === $type || 'toggle' === $base_type) {
+                echo $status_badge . '<label><input type="checkbox" name="' . esc_attr($name) . '" value="1" ' . checked(! empty($value), true, false) . ' /> ' . esc_html($field['label'] ?? '') . '</label>';
+            } elseif ('number' === $type) {
+                echo $status_badge . '<input type="number" class="small-text" name="' . esc_attr($name) . '" value="' . esc_attr((string) $value) . '" min="' . esc_attr((string) ($field['min'] ?? 0)) . '" />';
+            } else {
+                echo $status_badge . '<input type="text" class="regular-text" name="' . esc_attr($name) . '" value="' . esc_attr((string) $value) . '" placeholder="' . esc_attr((string) ($field['placeholder'] ?? '')) . '" />';
+            }
+            if (! empty($field['description'])) {
+                echo '<p class="description">' . esc_html($field['description']) . '</p>';
+            }
+        }
     }
 
     public function render_calendar_field(array $field): void

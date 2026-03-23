@@ -174,7 +174,25 @@ final class EmailsPage implements HookableInterface
 
 		echo '<form action="options.php" method="post" class="fp-exp-settings__form">';
 		settings_fields($option_group);
-		do_settings_sections($page_slugs[$tab]);
+
+		if ('brevo' === $tab) {
+			try {
+				do_settings_sections($page_slugs[$tab]);
+			} catch (\Throwable $e) {
+				if (defined('WP_DEBUG') && WP_DEBUG) {
+					echo '<div class="notice notice-error"><p><strong>' . esc_html__('Errore tab Brevo:', 'fp-experiences') . '</strong> ' . esc_html($e->getMessage()) . ' (' . esc_html($e->getFile()) . ':' . (int) $e->getLine() . ')</p></div>';
+					if (function_exists('error_log')) {
+						error_log('[FP-Exp Brevo tab] ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine());
+						error_log('[FP-Exp Brevo tab] Stack: ' . $e->getTraceAsString());
+					}
+				} else {
+					echo '<div class="notice notice-error"><p>' . esc_html__('Errore nel caricamento della sezione Brevo. Attiva WP_DEBUG per dettagli.', 'fp-experiences') . '</p></div>';
+				}
+			}
+		} else {
+			do_settings_sections($page_slugs[$tab]);
+		}
+
 		submit_button();
 		echo '</form>';
 	}
