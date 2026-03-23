@@ -2,6 +2,10 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.5.13] - 2026-03-23
+### Changed
+- Menu position 56.3 per ordine alfabetico FP.
+
 ## [1.5.12] - 2026-03-23
 ### Fixed
 - Tab Brevo (Email): try-catch e fallback HTML in render_brevo_field per evitare errore 500; protezione callback da $field non valido.

@@ -100,7 +100,7 @@ final class AdminMenu implements HookableInterface
             'fp_exp_dashboard',
             [$this, 'render_home_page'],
             'dashicons-location',
-            58
+            '56.3'
         );
 
         // The top-level callback already appears as the first submenu item, so we avoid
