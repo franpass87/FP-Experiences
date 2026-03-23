@@ -2464,7 +2464,7 @@ final class SettingsPage implements HookableInterface
             echo '<span class="dashicons dashicons-email-alt" style="color:#2271b1;vertical-align:middle;"></span> ';
             printf(
                 /* translators: %s: link to FP Mail SMTP settings */
-                esc_html__( 'FP Mail SMTP è installato e attivo: centralizza la configurazione SMTP per tutti i plugin FP. Con provider "WordPress" le email passano da FP Mail SMTP. Configura in %s.', 'fp-experiences' ),
+                esc_html__( 'FP Mail SMTP è installato e attivo: centralizza la configurazione SMTP per tutti i plugin FP. Scegli provider "WordPress" e configura in %s. Non compilare la sezione SMTP personalizzato.', 'fp-experiences' ),
                 '<a href="' . $url . '">FP Mail SMTP → Impostazioni</a>'
             );
             echo '</p></div>';

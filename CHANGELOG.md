@@ -2,6 +2,10 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.5.6] - 2026-03-23
+### Changed
+- Notice FP Mail SMTP: aggiunto esplicito "Non compilare la sezione SMTP personalizzato" quando attivo.
+
 ## [1.5.5] - 2026-03-23
 ### Added
 - Notice in sezione Email: se FP Mail SMTP è installato, avvisa che centralizza SMTP per tutti i plugin FP con link a Impostazioni.
