@@ -2458,6 +2458,17 @@ final class SettingsPage implements HookableInterface
     public function render_email_provider_help(): void
     {
         echo '<p>' . esc_html__('Scegli come inviare le email del plugin: tramite WordPress (wp_mail), un server SMTP personalizzato o Brevo API.', 'fp-experiences') . '</p>';
+        if ( defined( 'FP_FPMAIL_VERSION' ) ) {
+            $url = esc_url( admin_url( 'admin.php?page=fp-fpmail' ) );
+            echo '<div class="notice notice-info inline" style="margin:12px 0 0 0;padding:12px 16px;"><p style="margin:0;">';
+            echo '<span class="dashicons dashicons-email-alt" style="color:#2271b1;vertical-align:middle;"></span> ';
+            printf(
+                /* translators: %s: link to FP Mail SMTP settings */
+                esc_html__( 'FP Mail SMTP è installato e attivo: centralizza la configurazione SMTP per tutti i plugin FP. Con provider "WordPress" le email passano da FP Mail SMTP. Configura in %s.', 'fp-experiences' ),
+                '<a href="' . $url . '">FP Mail SMTP → Impostazioni</a>'
+            );
+            echo '</p></div>';
+        }
     }
 
     public function render_email_provider_field(): void
@@ -2611,13 +2622,6 @@ final class SettingsPage implements HookableInterface
     public function render_brevo_help(): void
     {
         echo '<p>' . esc_html__('Connect your Brevo account to deliver transactional emails and sync contacts with marketing attributes and tags.', 'fp-experiences') . '</p>';
-
-        if (\function_exists('fp_tracking_get_brevo_settings')) {
-            echo '<div class="notice notice-info inline"><p>';
-            echo esc_html__('API key e liste ITA/ENG sono configurati in FP Tracking.', 'fp-experiences');
-            echo ' <a href="' . esc_url(admin_url('admin.php?page=fp-tracking')) . '">' . esc_html__('Configura in FP Tracking', 'fp-experiences') . '</a>';
-            echo '</p></div>';
-        }
 
         $settings = $this->getOptions()->get('fp_exp_brevo', []);
         $settings = is_array($settings) ? $settings : [];
@@ -3619,15 +3623,8 @@ final class SettingsPage implements HookableInterface
         echo $status_badge . $field_html;
     }
 
-    /**
-     * @param array<string, mixed> $field
-     */
-    public function render_brevo_field($field): void
+    public function render_brevo_field(array $field): void
     {
-        if (! is_array($field) || empty($field['key'])) {
-            return;
-        }
-
         $settings = $this->getOptions()->get('fp_exp_brevo', []);
         $settings = is_array($settings) ? $settings : [];
         $value = $this->extract_nested_value($settings, $field['key']);
@@ -3664,41 +3661,25 @@ final class SettingsPage implements HookableInterface
             }
         }
 
-        try {
-            $field_html = $this->render_field_inline(
-                name: implode('_', $path),
-                type: 'nested_' . $base_type,
-                options: [
-                    'path' => $path,
-                    'base_type' => $base_type,
-                    'option_name' => 'fp_exp_brevo',
-                    'description' => $field['description'] ?? null,
-                    'attributes' => array_merge(
-                        $this->get_field_attributes($type),
-                        $type === 'number' ? ['inputmode' => 'numeric', 'pattern' => '[0-9]*', 'step' => '1'] : []
-                    ),
-                    'choices' => $field['options'] ?? [],
-                    'min' => isset($field['min']) ? max(0, (int) $field['min']) : 0,
-                    'placeholder' => $field['placeholder'] ?? '',
-                ]
-            );
-            echo $status_badge . $field_html;
-        } catch (\Throwable $e) {
-            if (function_exists('error_log')) {
-                error_log('[FP-Exp Brevo field ' . ($field['key'] ?? '') . '] ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine());
-            }
-            $name = $this->build_input_name('fp_exp_brevo', $field['key']);
-            if ('checkbox' === $type || 'toggle' === $base_type) {
-                echo $status_badge . '<label><input type="checkbox" name="' . esc_attr($name) . '" value="1" ' . checked(! empty($value), true, false) . ' /> ' . esc_html($field['label'] ?? '') . '</label>';
-            } elseif ('number' === $type) {
-                echo $status_badge . '<input type="number" class="small-text" name="' . esc_attr($name) . '" value="' . esc_attr((string) $value) . '" min="' . esc_attr((string) ($field['min'] ?? 0)) . '" />';
-            } else {
-                echo $status_badge . '<input type="text" class="regular-text" name="' . esc_attr($name) . '" value="' . esc_attr((string) $value) . '" placeholder="' . esc_attr((string) ($field['placeholder'] ?? '')) . '" />';
-            }
-            if (! empty($field['description'])) {
-                echo '<p class="description">' . esc_html($field['description']) . '</p>';
-            }
-        }
+        $field_html = $this->render_field_inline(
+            name: implode('_', $path),
+            type: 'nested_' . $base_type,
+            options: [
+                'path' => $path,
+                'base_type' => $base_type,
+                'option_name' => 'fp_exp_brevo',
+                'description' => $field['description'] ?? null,
+                'attributes' => array_merge(
+                    $this->get_field_attributes($type),
+                    $type === 'number' ? ['inputmode' => 'numeric', 'pattern' => '[0-9]*', 'step' => '1'] : []
+                ),
+                'choices' => $field['options'] ?? [],
+                'min' => isset($field['min']) ? max(0, (int) $field['min']) : 0,
+                'placeholder' => $field['placeholder'] ?? '',
+            ]
+        );
+
+        echo $status_badge . $field_html;
     }
 
     public function render_calendar_field(array $field): void
@@ -4285,21 +4266,6 @@ final class SettingsPage implements HookableInterface
             }
         }
         $sanitised['templates'] = $templates;
-
-        // API key e liste da FP-Tracking quando attivo
-        if (\function_exists('fp_tracking_get_brevo_settings')) {
-            $central = fp_tracking_get_brevo_settings();
-            if (!empty($central['enabled']) && !empty($central['api_key'])) {
-                $sanitised['api_key'] = $central['api_key'];
-                $sanitised['list_id'] = $central['list_id_it'] ?: $central['list_id_en'] ?: $sanitised['list_id'];
-                if (!empty($central['list_id_it'])) {
-                    $sanitised['lists']['it'] = $central['list_id_it'];
-                }
-                if (!empty($central['list_id_en'])) {
-                    $sanitised['lists']['en'] = $central['list_id_en'];
-                }
-            }
-        }
 
         return $sanitised;
     }

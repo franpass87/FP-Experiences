@@ -2,41 +2,9 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
-## [1.5.13] - 2026-03-23
-### Changed
-- Menu position 56.3 per ordine alfabetico FP.
-
-## [1.5.12] - 2026-03-23
-### Fixed
-- Tab Brevo (Email): try-catch e fallback HTML in render_brevo_field per evitare errore 500; protezione callback da $field non valido.
-
-## [1.5.11] - 2026-03-22
-### Fixed
-- `error_log` in Activation.php e ExperienceProduct.php (WooCommerce non disponibile) condizionati a `WP_DEBUG` per evitare log in produzione.
-
-## [1.5.10] - 2026-03-23
-### Changed
-- Brevo: fallback lingua per lista ITA/ENG da get_locale(), WPML o Polylang quando context non la fornisce.
-
-## [1.5.9] - 2026-03-23
-### Changed
-- Brevo: notice centralizzazione con link a FP Tracking nel tab Brevo.
-
-## [1.5.8] - 2026-03-23
-### Changed
-- Brevo: API key e liste ITA/ENG ora lette da FP Marketing Tracking Layer quando attivo. Filtro `option_fp_exp_brevo` e sanitize preservano i valori centralizzati.
-
-## [1.5.7] - 2026-03-22
-### Fixed
-- Regressione: `error_log` in WooCommerceCheckout (slot validation failed) e GiftCouponManager (create coupon, invalidate coupon) ora condizionati a `WP_DEBUG`
-
-## [1.5.6] - 2026-03-22
-### Fixed
-- Tutti gli `error_log` condizionati a `WP_DEBUG` (SettingsPage, WooCommerceCheckout, WooCommerceProduct, GiftProductManager, GiftOrderHandler, VoucherManager, GiftCouponManager) per evitare output in produzione
-
-## [1.5.5] - 2026-03-22
-### Fixed
-- Console.log/warn/error in front.js (flusso cart/set WooCommerce e RTB submit) condizionati a `window.fpExpConfig.debug` (WP_DEBUG)
+## [1.5.5] - 2026-03-23
+### Added
+- Notice in sezione Email: se FP Mail SMTP è installato, avvisa che centralizza SMTP per tutti i plugin FP con link a Impostazioni.
 
 ## [1.5.4] - 2026-03-22
 ### Fixed

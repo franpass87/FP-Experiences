@@ -5,8 +5,8 @@ Tags: experiences, booking, wooocommerce, shortcodes, calendar
 Requires at least: 6.0
 Tested up to: 6.4
 Requires PHP: 8.0
-Stable tag: 1.5.13
-Last updated: 2026-03-23
+Stable tag: 1.5.5
+Last updated: 2026-03-22
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -124,32 +124,8 @@ FP Experiences stores reservation details inside custom tables linked to WooComm
 
 == Changelog ==
 
-= 1.5.13 - 2026-03-23 =
-* Menu position 56.3 per ordine alfabetico FP.
-
-= 1.5.12 - 2026-03-23 =
-* fix: Tab Brevo (Email) - try-catch e fallback HTML per evitare errore 500
-
-= 1.5.11 - 2026-03-22 =
-* fix: error_log in Activation.php e ExperienceProduct.php condizionati a WP_DEBUG
-
-= 1.5.10 - 2026-03-23 =
-* Changed: Brevo - fallback lingua per lista ITA/ENG da get_locale(), WPML o Polylang.
-
-= 1.5.9 - 2026-03-23 =
-* Changed: Brevo - notice centralizzazione con link a FP Tracking nel tab Brevo.
-
-= 1.5.8 - 2026-03-23 =
-* Changed: Brevo - API key e liste da FP Tracking quando attivo.
-
-= 1.5.7 - 2026-03-22 =
-* fix: regressione error_log in WooCommerceCheckout e GiftCouponManager
-
-= 1.5.6 - 2026-03-22 =
-* fix: error_log condizionati a WP_DEBUG (SettingsPage, WooCommerceCheckout, Gift*, VoucherManager)
-
-= 1.5.5 - 2026-03-22 =
-* **FIXED**: Console.log/warn/error in front.js (cart/set WooCommerce, RTB submit) condizionati a fpExpConfig.debug
+= 1.5.5 - 2026-03-23 =
+* **Added**: Notice in sezione Email se FP Mail SMTP installato (centralizza SMTP per tutti i plugin FP).
 
 = 1.5.4 - 2026-03-22 =
 * **FIXED**: Rimosso console.log in produzione (Sezione listing, Read More)
