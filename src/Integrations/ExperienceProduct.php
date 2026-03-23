@@ -51,9 +51,13 @@ final class ExperienceProduct implements HookableInterface
             }
             
             // Product deleted or invalid - log warning
-            error_log('[FP-EXP-WC] ⚠️ Virtual product ID ' . $product_id . ' no longer exists or is not published. Recreating...');
+            if (defined('WP_DEBUG') && WP_DEBUG && function_exists('error_log')) {
+                error_log('[FP-EXP-WC] ⚠️ Virtual product ID ' . $product_id . ' no longer exists or is not published. Recreating...');
+            }
         } else {
-            error_log('[FP-EXP-WC] ℹ️ No virtual product configured. Creating...');
+            if (defined('WP_DEBUG') && WP_DEBUG && function_exists('error_log')) {
+                error_log('[FP-EXP-WC] ℹ️ No virtual product configured. Creating...');
+            }
         }
 
         // Create virtual product for experiences
@@ -74,7 +78,9 @@ final class ExperienceProduct implements HookableInterface
     private function create_product(): void
     {
         if (!function_exists('wc_get_product')) {
-            error_log('[FP-EXP-WC] ❌ Cannot create virtual product: WooCommerce not available');
+            if (defined('WP_DEBUG') && WP_DEBUG && function_exists('error_log')) {
+                error_log('[FP-EXP-WC] ❌ Cannot create virtual product: WooCommerce not available');
+            }
             return;
         }
 
@@ -87,7 +93,9 @@ final class ExperienceProduct implements HookableInterface
         ]);
 
         if (!$product_id || is_wp_error($product_id)) {
-            error_log('[FP-EXP-WC] ❌ Failed to create virtual product: ' . (is_wp_error($product_id) ? $product_id->get_error_message() : 'Unknown error'));
+            if (defined('WP_DEBUG') && WP_DEBUG && function_exists('error_log')) {
+                error_log('[FP-EXP-WC] ❌ Failed to create virtual product: ' . (is_wp_error($product_id) ? $product_id->get_error_message() : 'Unknown error'));
+            }
             return;
         }
 
@@ -95,7 +103,9 @@ final class ExperienceProduct implements HookableInterface
         $product = wc_get_product($product_id);
         
         if (!$product) {
-            error_log('[FP-EXP-WC] ❌ Failed to load virtual product after creation (ID: ' . $product_id . ')');
+            if (defined('WP_DEBUG') && WP_DEBUG && function_exists('error_log')) {
+                error_log('[FP-EXP-WC] ❌ Failed to load virtual product after creation (ID: ' . $product_id . ')');
+            }
             return;
         }
         
@@ -109,7 +119,9 @@ final class ExperienceProduct implements HookableInterface
 
         update_option(self::OPTION_KEY, $product_id);
 
-        error_log('[FP-EXP-WC] ✅ Created virtual product for experiences: ID ' . $product_id);
+        if (defined('WP_DEBUG') && WP_DEBUG && function_exists('error_log')) {
+            error_log('[FP-EXP-WC] ✅ Created virtual product for experiences: ID ' . $product_id);
+        }
     }
 }
 

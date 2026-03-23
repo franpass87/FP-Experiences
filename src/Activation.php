@@ -296,7 +296,7 @@ final class Activation
         }
 
         // Log del ripristino automatico
-        if ($restored_count > 0) {
+        if ($restored_count > 0 && defined('WP_DEBUG') && WP_DEBUG && function_exists('error_log')) {
             error_log(sprintf(
                 '[FP Experiences] Ripristino automatico completato: %d impostazioni ripristinate dal backup del %s',
                 $restored_count,
@@ -430,11 +430,13 @@ final class Activation
             $backup_key = '_checkout_backup_before_fp_exp_' . time();
             update_post_meta($checkout_page_id, $backup_key, $page->post_content);
             
-            error_log(sprintf(
-                '[FP Experiences] Backup checkout Blocks salvato in meta %s per pagina ID %d',
-                $backup_key,
-                $checkout_page_id
-            ));
+            if (defined('WP_DEBUG') && WP_DEBUG && function_exists('error_log')) {
+                error_log(sprintf(
+                    '[FP Experiences] Backup checkout Blocks salvato in meta %s per pagina ID %d',
+                    $backup_key,
+                    $checkout_page_id
+                ));
+            }
         }
         
         // Imposta il checkout classico
@@ -445,16 +447,18 @@ final class Activation
             'post_content' => $classic_content,
         ]);
         
-        if (!is_wp_error($result)) {
-            error_log(sprintf(
-                '[FP Experiences] Checkout classico configurato automaticamente per pagina ID %d',
-                $checkout_page_id
-            ));
-        } else {
-            error_log(sprintf(
-                '[FP Experiences] Errore configurazione checkout classico: %s',
-                $result->get_error_message()
-            ));
+        if (defined('WP_DEBUG') && WP_DEBUG && function_exists('error_log')) {
+            if (!is_wp_error($result)) {
+                error_log(sprintf(
+                    '[FP Experiences] Checkout classico configurato automaticamente per pagina ID %d',
+                    $checkout_page_id
+                ));
+            } else {
+                error_log(sprintf(
+                    '[FP Experiences] Errore configurazione checkout classico: %s',
+                    $result->get_error_message()
+                ));
+            }
         }
     }
 }

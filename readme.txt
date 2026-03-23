@@ -5,7 +5,7 @@ Tags: experiences, booking, wooocommerce, shortcodes, calendar
 Requires at least: 6.0
 Tested up to: 6.4
 Requires PHP: 8.0
-Stable tag: 1.5.10
+Stable tag: 1.5.11
 Last updated: 2026-03-22
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -124,8 +124,11 @@ FP Experiences stores reservation details inside custom tables linked to WooComm
 
 == Changelog ==
 
+= 1.5.11 - 2026-03-22 =
+* fix: error_log in Activation.php e ExperienceProduct.php condizionati a WP_DEBUG
+
 = 1.5.10 - 2026-03-23 =
-* Changed: Brevo - fallback lingua lista da locale WP/WPML/Polylang.
+* Changed: Brevo - fallback lingua per lista ITA/ENG da get_locale(), WPML o Polylang.
 
 = 1.5.9 - 2026-03-23 =
 * Changed: Brevo - notice centralizzazione con link a FP Tracking nel tab Brevo.

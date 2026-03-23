@@ -2,6 +2,10 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.5.11] - 2026-03-22
+### Fixed
+- `error_log` in Activation.php e ExperienceProduct.php (WooCommerce non disponibile) condizionati a `WP_DEBUG` per evitare log in produzione.
+
 ## [1.5.10] - 2026-03-23
 ### Changed
 - Brevo: fallback lingua per lista ITA/ENG da get_locale(), WPML o Polylang quando context non la fornisce.
