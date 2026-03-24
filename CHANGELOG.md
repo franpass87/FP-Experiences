@@ -2,6 +2,11 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.5.10] - 2026-03-24
+### Changed
+- Brevo: canale predefinito **WordPress (wp_mail)** per le email al cliente se non salvato diversamente; la sola chiave/liste da FP Tracking non implica più delega Brevo per conferme.
+- Eventi `trackEvent` e `queue_automation_events` restano attivi con integrazione Brevo abilitata anche quando il messaggio al cliente è WordPress; sync contatti invariato.
+
 ## [1.5.9] - 2026-03-24
 ### Added
 - Tab Brevo: sezione **Messaggi al cliente** — scelta tra invio al cliente via Brevo (eventi Automation e opzionalmente template transazionali API) o **WordPress (wp_mail)**; elenco eventi `trackEvent` selezionabili; opzione solo-eventi senza SMTP API.

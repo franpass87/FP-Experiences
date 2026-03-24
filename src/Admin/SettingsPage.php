@@ -2659,7 +2659,7 @@ final class SettingsPage implements HookableInterface
         $connected = $enabled && ('' !== $api_key || $simulate_mode);
         $customer_channel = isset($settings['customer_messages_channel'])
             ? sanitize_key((string) $settings['customer_messages_channel'])
-            : Brevo::CUSTOMER_CHANNEL_BREVO;
+            : Brevo::CUSTOMER_CHANNEL_WORDPRESS;
 
         if (! $enabled) {
             echo '<div class="notice notice-info inline"><p>' . esc_html__('Brevo is currently disabled. WooCommerce templates will be used for customer emails.', 'fp-experiences') . '</p></div>';
@@ -3176,11 +3176,11 @@ final class SettingsPage implements HookableInterface
     public function render_brevo_customer_delivery_intro(): void
     {
         echo '<p>' . esc_html__(
-            'Controlla come il plugin recapita le email al cliente finale. Gli eventi selezionati vengono inviati a Brevo Automation (trackEvent).',
+            'Controlla se le email di conferma al cliente passano da Brevo (template API) o da WordPress. Gli eventi Brevo Automation e la sincronizzazione contatti restano attivi quando Brevo è abilitato sopra, anche con WordPress selezionato qui.',
             'fp-experiences'
         ) . '</p>';
         echo '<p class="description">' . esc_html__(
-            'Suggerimento: se scegli WordPress, allinea anche FP Experiences → Email → Provider su WordPress o SMTP.',
+            'Predefinito: WordPress (wp_mail) per le email al cliente. Scegli Brevo solo se vuoi delegare conferme/reminder transazionali al canale Brevo. Allinea FP Experiences → Email → Provider di conseguenza.',
             'fp-experiences'
         ) . '</p>';
     }
@@ -4400,9 +4400,9 @@ final class SettingsPage implements HookableInterface
 
         $channel = isset($value['customer_messages_channel'])
             ? sanitize_key((string) $value['customer_messages_channel'])
-            : (isset($existing['customer_messages_channel']) ? sanitize_key((string) $existing['customer_messages_channel']) : Brevo::CUSTOMER_CHANNEL_BREVO);
+            : (isset($existing['customer_messages_channel']) ? sanitize_key((string) $existing['customer_messages_channel']) : Brevo::CUSTOMER_CHANNEL_WORDPRESS);
         if (! in_array($channel, [Brevo::CUSTOMER_CHANNEL_BREVO, Brevo::CUSTOMER_CHANNEL_WORDPRESS], true)) {
-            $channel = Brevo::CUSTOMER_CHANNEL_BREVO;
+            $channel = Brevo::CUSTOMER_CHANNEL_WORDPRESS;
         }
         $sanitised['customer_messages_channel'] = $channel;
 

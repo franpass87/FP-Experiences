@@ -724,7 +724,7 @@ final class Emails implements HookableInterface
 
         // Brevo automation events (reminder/followup scheduling on Brevo side)
         $brevo = $this->resolveBrevo();
-        if ($brevo !== null && $brevo->is_customer_pipeline_active()) {
+        if ($brevo !== null && $brevo->is_enabled()) {
             $brevo->queue_automation_events($context, $reservation_id);
         }
 

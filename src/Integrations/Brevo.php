@@ -184,7 +184,7 @@ final class Brevo implements HookableInterface
         $settings = is_array($settings) ? $settings : [];
 
         if (! array_key_exists('customer_messages_channel', $settings)) {
-            $settings['customer_messages_channel'] = self::CUSTOMER_CHANNEL_BREVO;
+            $settings['customer_messages_channel'] = self::CUSTOMER_CHANNEL_WORDPRESS;
         }
 
         return $settings;
@@ -208,11 +208,11 @@ final class Brevo implements HookableInterface
     }
 
     /**
-     * Verifica se il nome evento trackEvent è abilitato nelle impostazioni.
+     * Verifica se il nome evento trackEvent è abilitato (indipendente dal canale email cliente).
      */
     public function is_track_event_enabled(string $event): bool
     {
-        if (! $this->is_customer_pipeline_active()) {
+        if (! $this->is_enabled()) {
             return false;
         }
 
@@ -234,13 +234,9 @@ final class Brevo implements HookableInterface
 
         $this->sync_contact($context, $reservation_id);
 
-        if (! $this->is_customer_pipeline_active()) {
-            return;
-        }
-
         $sent = false;
 
-        if ($this->should_send_transactional_templates()) {
+        if ($this->is_customer_pipeline_active() && $this->should_send_transactional_templates()) {
             $sent = $this->send_transactional('confirmation', $context, $reservation_id);
 
             if (! $sent && $this->emails instanceof Emails) {
@@ -266,14 +262,10 @@ final class Brevo implements HookableInterface
             return;
         }
 
-        if (! $this->is_customer_pipeline_active()) {
-            return;
-        }
-
         $context['status_label'] = 'cancelled';
         $sent = false;
 
-        if ($this->should_send_transactional_templates()) {
+        if ($this->is_customer_pipeline_active() && $this->should_send_transactional_templates()) {
             $sent = $this->send_transactional('cancel', $context, $reservation_id);
 
             if (! $sent) {
@@ -302,12 +294,8 @@ final class Brevo implements HookableInterface
             return;
         }
 
-        if (! $this->is_customer_pipeline_active()) {
-            return;
-        }
-
         // Optional transactional template for rescheduled bookings (if configured in Brevo settings).
-        if ($this->should_send_transactional_templates()) {
+        if ($this->is_customer_pipeline_active() && $this->should_send_transactional_templates()) {
             $this->send_transactional('rescheduled', $context, $reservation_id);
         }
 
@@ -323,10 +311,6 @@ final class Brevo implements HookableInterface
     public function queue_automation_events(array $context, int $reservation_id): void
     {
         if (! $this->is_enabled()) {
-            return;
-        }
-
-        if (! $this->is_customer_pipeline_active()) {
             return;
         }
 
@@ -807,11 +791,14 @@ final class Brevo implements HookableInterface
             return false;
         }
 
+        $key = 'rtb_' . sanitize_key($stage);
+
         if (! $this->is_customer_pipeline_active()) {
+            $this->send_event($key, $context, $reservation_id);
+
             return false;
         }
 
-        $key = 'rtb_' . sanitize_key($stage);
         $sent = false;
 
         if ($this->should_send_transactional_templates() || $this->is_simulation_enabled()) {

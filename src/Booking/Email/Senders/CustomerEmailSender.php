@@ -60,7 +60,7 @@ final class CustomerEmailSender extends AbstractEmailSender
         $brevo = is_array($brevo) ? $brevo : [];
         $channel = isset($brevo['customer_messages_channel'])
             ? sanitize_key((string) $brevo['customer_messages_channel'])
-            : Brevo::CUSTOMER_CHANNEL_BREVO;
+            : Brevo::CUSTOMER_CHANNEL_WORDPRESS;
 
         return Brevo::CUSTOMER_CHANNEL_BREVO === $channel;
     }
