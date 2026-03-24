@@ -10,6 +10,8 @@ use WC_Order_Item;
 
 use function add_action;
 use function do_action;
+use function get_bloginfo;
+use function implode;
 use function wc_get_order;
 
 /**
@@ -49,10 +51,11 @@ final class GA4 implements HookableInterface
             }
 
             $items[] = [
-                'item_id'   => (string) $item->get_meta('experience_id'),
-                'item_name' => (string) $item->get_meta('experience_title'),
-                'price'     => (float) $item->get_total(),
-                'quantity'  => $qty,
+                'item_id'       => (string) $item->get_meta('experience_id'),
+                'item_name'     => (string) $item->get_meta('experience_title'),
+                'item_category' => 'experience',
+                'price'         => (float) $item->get_total(),
+                'quantity'      => $qty,
             ];
         }
 
@@ -66,7 +69,15 @@ final class GA4 implements HookableInterface
             'currency'       => $order->get_currency(),
             'items'          => $items,
             'event_id'       => 'purchase_' . $order->get_id() . '_' . time(),
+            'affiliation'    => (string) get_bloginfo('name'),
+            'fp_source'      => 'experiences',
+            'page_url'       => $order->get_checkout_order_received_url(),
         ];
+
+        $coupons = $order->get_coupon_codes();
+        if ($coupons !== []) {
+            $params['coupon'] = implode(',', $coupons);
+        }
 
         /**
          * Allows modifying the purchase event payload before it is sent to the tracking layer.
