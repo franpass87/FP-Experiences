@@ -2,6 +2,13 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.5.9] - 2026-03-24
+### Added
+- Tab Brevo: sezione **Messaggi al cliente** — scelta tra invio al cliente via Brevo (eventi Automation e opzionalmente template transazionali API) o **WordPress (wp_mail)**; elenco eventi `trackEvent` selezionabili; opzione solo-eventi senza SMTP API.
+
+### Changed
+- `CustomerEmailSender` rispetta il canale Brevo: con **WordPress** non delega al provider email “Brevo” così le conferme passano da `wp_mail` anche se il provider in Email è impostato su Brevo.
+
 ## [1.5.8] - 2026-03-24
 ### Fixed
 - Filtro `option_fp_exp_brevo`: `mergeBrevoFromTracking` accetta solo gli argomenti effettivamente passati da WordPress (2), evitando fatal su PHP 8 e ripristinando il boot dell’integrazione Brevo.

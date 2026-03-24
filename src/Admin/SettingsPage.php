@@ -13,6 +13,7 @@ use FP_Exp\Application\Settings\UpdateSettingsUseCase;
 use FP_Exp\Booking\EmailTranslator;
 use FP_Exp\Booking\Emails;
 use FP_Exp\Gift\Email\Templates\VoucherEmailTemplate;
+use FP_Exp\Integrations\Brevo;
 use FP_Exp\Services\Options\OptionsInterface;
 use FP_Exp\Utils\Helpers;
 use FP_Exp\Utils\Logger;
@@ -1600,6 +1601,32 @@ final class SettingsPage implements HookableInterface
         }
 
         add_settings_section(
+            'fp_exp_section_brevo_customer_delivery',
+            esc_html__('Messaggi al cliente', 'fp-experiences'),
+            [$this, 'render_brevo_customer_delivery_intro'],
+            'fp_exp_settings_brevo'
+        );
+
+        foreach ($this->get_brevo_customer_delivery_fields() as $field) {
+            add_settings_field(
+                'fp_exp_brevo_delivery_' . preg_replace('/[^a-z0-9]+/i', '_', $field['key']),
+                esc_html($field['label']),
+                [$this, 'render_brevo_field'],
+                'fp_exp_settings_brevo',
+                'fp_exp_section_brevo_customer_delivery',
+                $field
+            );
+        }
+
+        add_settings_field(
+            'fp_exp_brevo_track_events',
+            esc_html__('Eventi Brevo Automation', 'fp-experiences'),
+            [$this, 'render_brevo_track_events_field'],
+            'fp_exp_settings_brevo',
+            'fp_exp_section_brevo_customer_delivery'
+        );
+
+        add_settings_section(
             'fp_exp_section_brevo_mapping',
             esc_html__('Attribute mapping', 'fp-experiences'),
             '__return_false',
@@ -2074,7 +2101,7 @@ final class SettingsPage implements HookableInterface
             $mailer = new \FP_Exp\Booking\Email\Mailer($options);
             $emails = new Emails(
                 $options,
-                new \FP_Exp\Booking\Email\Senders\CustomerEmailSender($mailer),
+                new \FP_Exp\Booking\Email\Senders\CustomerEmailSender($mailer, $options),
                 new \FP_Exp\Booking\Email\Senders\StaffEmailSender($mailer)
             );
         }
@@ -2630,13 +2657,26 @@ final class SettingsPage implements HookableInterface
         $api_key = isset($settings['api_key']) ? (string) $settings['api_key'] : '';
         $simulate_mode = ! empty($settings['simulate_mode']);
         $connected = $enabled && ('' !== $api_key || $simulate_mode);
+        $customer_channel = isset($settings['customer_messages_channel'])
+            ? sanitize_key((string) $settings['customer_messages_channel'])
+            : Brevo::CUSTOMER_CHANNEL_BREVO;
 
         if (! $enabled) {
             echo '<div class="notice notice-info inline"><p>' . esc_html__('Brevo is currently disabled. WooCommerce templates will be used for customer emails.', 'fp-experiences') . '</p></div>';
         } elseif ($simulate_mode) {
             echo '<div class="notice notice-warning inline"><p>' . esc_html__('Brevo simulation mode is active. API calls are skipped and operations are logged locally.', 'fp-experiences') . '</p></div>';
         } elseif ($connected) {
-            echo '<div class="notice notice-success inline"><p>' . esc_html__('Brevo connection active. Transactional emails will use the configured templates when available.', 'fp-experiences') . '</p></div>';
+            if (Brevo::CUSTOMER_CHANNEL_WORDPRESS === $customer_channel) {
+                echo '<div class="notice notice-success inline"><p>' . esc_html__(
+                    'Brevo attivo per contatti/liste; le email al cliente usano WordPress (wp_mail) come da sezione Messaggi al cliente.',
+                    'fp-experiences'
+                ) . '</p></div>';
+            } else {
+                echo '<div class="notice notice-success inline"><p>' . esc_html__(
+                    'Brevo attivo per il cliente: eventi (e template transazionali se abilitati) secondo la sezione Messaggi al cliente.',
+                    'fp-experiences'
+                ) . '</p></div>';
+            }
         } else {
             echo '<div class="notice notice-warning inline"><p>' . esc_html__('Brevo is enabled but the API key is missing. Add the API key to send transactional emails via Brevo.', 'fp-experiences') . '</p></div>';
         }
@@ -3094,6 +3134,94 @@ final class SettingsPage implements HookableInterface
                 'type' => 'checkbox',
             ],
         ];
+    }
+
+    /**
+     * Campi canale cliente Brevo vs wp_mail e template transazionali.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function get_brevo_customer_delivery_fields(): array
+    {
+        return [
+            [
+                'key' => 'customer_messages_channel',
+                'label' => esc_html__('Invio email al cliente', 'fp-experiences'),
+                'type' => 'select',
+                'description' => esc_html__(
+                    'Scegli se conferme, promemoria e comunicazioni booking al cliente passano da Brevo (template API e/o eventi Automation) o dal mailer WordPress (wp_mail). La sincronizzazione contatti su Brevo resta attiva se la connessione Brevo è abilitata.',
+                    'fp-experiences'
+                ),
+                'options' => [
+                    Brevo::CUSTOMER_CHANNEL_BREVO => esc_html__('Brevo — eventi (e opzionalmente template transazionali)', 'fp-experiences'),
+                    Brevo::CUSTOMER_CHANNEL_WORDPRESS => esc_html__('WordPress (wp_mail)', 'fp-experiences'),
+                ],
+            ],
+            [
+                'key' => 'send_transactional_templates',
+                'label' => esc_html__('Template transazionali Brevo (SMTP API)', 'fp-experiences'),
+                'type' => 'select',
+                'description' => esc_html__(
+                    'Disattiva se invii le email al cliente solo tramite automazioni Brevo attivate dagli eventi (nessun invio con template ID).',
+                    'fp-experiences'
+                ),
+                'options' => [
+                    '1' => esc_html__('Sì, usa gli ID template configurati sotto', 'fp-experiences'),
+                    '0' => esc_html__('No, solo eventi Automation', 'fp-experiences'),
+                ],
+            ],
+        ];
+    }
+
+    public function render_brevo_customer_delivery_intro(): void
+    {
+        echo '<p>' . esc_html__(
+            'Controlla come il plugin recapita le email al cliente finale. Gli eventi selezionati vengono inviati a Brevo Automation (trackEvent).',
+            'fp-experiences'
+        ) . '</p>';
+        echo '<p class="description">' . esc_html__(
+            'Suggerimento: se scegli WordPress, allinea anche FP Experiences → Email → Provider su WordPress o SMTP.',
+            'fp-experiences'
+        ) . '</p>';
+    }
+
+    public function render_brevo_track_events_field(): void
+    {
+        $settings = $this->getOptions()->get('fp_exp_brevo', []);
+        $settings = is_array($settings) ? $settings : [];
+        $enabled = [];
+        if (isset($settings['track_events']) && is_array($settings['track_events'])) {
+            $enabled = array_map('sanitize_key', $settings['track_events']);
+        } else {
+            $enabled = Brevo::TRACK_EVENT_IDS;
+        }
+
+        $labels = [
+            'reservation_paid' => esc_html__('Pagamento confermato', 'fp-experiences'),
+            'reservation_cancelled' => esc_html__('Prenotazione annullata', 'fp-experiences'),
+            'reservation_rescheduled' => esc_html__('Prenotazione riprogrammata', 'fp-experiences'),
+            'reservation_reminder_scheduled' => esc_html__('Promemoria pianificato (dati per Automation)', 'fp-experiences'),
+            'reservation_followup_scheduled' => esc_html__('Follow-up post-esperienza pianificato', 'fp-experiences'),
+            'rtb_request' => esc_html__('RTB — richiesta ricevuta', 'fp-experiences'),
+            'rtb_approved' => esc_html__('RTB — approvata', 'fp-experiences'),
+            'rtb_declined' => esc_html__('RTB — rifiutata', 'fp-experiences'),
+            'rtb_payment' => esc_html__('RTB — richiesta pagamento', 'fp-experiences'),
+        ];
+
+        echo '<fieldset class="fp-exp-brevo-track-events"><legend class="screen-reader-text">' . esc_html__('Eventi', 'fp-experiences') . '</legend>';
+        echo '<input type="hidden" name="fp_exp_brevo[track_events_submitted]" value="1" />';
+        foreach (Brevo::TRACK_EVENT_IDS as $id) {
+            $checked = in_array($id, $enabled, true);
+            echo '<label style="display:block;margin:0.35em 0;">';
+            echo '<input type="checkbox" name="fp_exp_brevo[track_events][' . esc_attr($id) . ']" value="1" ' . checked($checked, true, false) . ' /> ';
+            echo esc_html($labels[$id] ?? $id);
+            echo '</label>';
+        }
+        echo '</fieldset>';
+        echo '<p class="description">' . esc_html__(
+            'Solo gli eventi spuntati vengono inviati a Brevo Automation. Puoi deselezionarli tutti se usi solo i template transazionali API.',
+            'fp-experiences'
+        ) . '</p>';
     }
 
     /**
@@ -4229,6 +4357,9 @@ final class SettingsPage implements HookableInterface
             return [];
         }
 
+        $existing = get_option('fp_exp_brevo', []);
+        $existing = is_array($existing) ? $existing : [];
+
         $sanitised = [];
         $sanitised['enabled'] = ! empty($value['enabled']);
         $sanitised['simulate_mode'] = ! empty($value['simulate_mode']);
@@ -4266,6 +4397,37 @@ final class SettingsPage implements HookableInterface
             }
         }
         $sanitised['templates'] = $templates;
+
+        $channel = isset($value['customer_messages_channel'])
+            ? sanitize_key((string) $value['customer_messages_channel'])
+            : (isset($existing['customer_messages_channel']) ? sanitize_key((string) $existing['customer_messages_channel']) : Brevo::CUSTOMER_CHANNEL_BREVO);
+        if (! in_array($channel, [Brevo::CUSTOMER_CHANNEL_BREVO, Brevo::CUSTOMER_CHANNEL_WORDPRESS], true)) {
+            $channel = Brevo::CUSTOMER_CHANNEL_BREVO;
+        }
+        $sanitised['customer_messages_channel'] = $channel;
+
+        if (isset($value['send_transactional_templates'])) {
+            $txn = (string) $value['send_transactional_templates'];
+            $sanitised['send_transactional_templates'] = ($txn === '0' || $txn === 'false') ? '0' : '1';
+        } else {
+            $prev = $existing['send_transactional_templates'] ?? '1';
+            $sanitised['send_transactional_templates'] = ((string) $prev === '0') ? '0' : '1';
+        }
+
+        if (! empty($value['track_events_submitted'])) {
+            $sanitised['track_events'] = [];
+            if (isset($value['track_events']) && is_array($value['track_events'])) {
+                foreach (Brevo::TRACK_EVENT_IDS as $id) {
+                    if (! empty($value['track_events'][$id])) {
+                        $sanitised['track_events'][] = $id;
+                    }
+                }
+            }
+        } else {
+            $sanitised['track_events'] = isset($existing['track_events']) && is_array($existing['track_events'])
+                ? array_values(array_intersect(Brevo::TRACK_EVENT_IDS, array_map('sanitize_key', $existing['track_events'])))
+                : Brevo::TRACK_EVENT_IDS;
+        }
 
         return $sanitised;
     }

@@ -52,7 +52,16 @@ final class BookingServiceProvider extends AbstractServiceProvider
 
         // Senders — depend on Mailer
         $container->singleton(CustomerEmailSender::class, static function (ContainerInterface $container): CustomerEmailSender {
-            return new CustomerEmailSender($container->make(Mailer::class));
+            $options = null;
+            if ($container->has(OptionsInterface::class)) {
+                try {
+                    $options = $container->make(OptionsInterface::class);
+                } catch (\Throwable $e) {
+                    // fall through
+                }
+            }
+
+            return new CustomerEmailSender($container->make(Mailer::class), $options);
         });
 
         $container->singleton(StaffEmailSender::class, static function (ContainerInterface $container): StaffEmailSender {

@@ -1068,7 +1068,7 @@ final class RequestToBook implements HookableInterface
         $context['language'] = $customer_locale ?: 'it';
 
         if ($this->customer_sender === null) {
-            $this->customer_sender = new CustomerEmailSender($this->mailer);
+            $this->customer_sender = new CustomerEmailSender($this->mailer, $this->getOptions());
         }
 
         $template = null;

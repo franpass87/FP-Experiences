@@ -45,6 +45,27 @@ use function __;
 
 final class Brevo implements HookableInterface
 {
+    public const CUSTOMER_CHANNEL_BREVO = 'brevo';
+
+    public const CUSTOMER_CHANNEL_WORDPRESS = 'wordpress';
+
+    /**
+     * Eventi inviati a Brevo Automation (trackEvent), selezionabili in impostazioni.
+     *
+     * @var list<string>
+     */
+    public const TRACK_EVENT_IDS = [
+        'reservation_paid',
+        'reservation_cancelled',
+        'reservation_rescheduled',
+        'reservation_reminder_scheduled',
+        'reservation_followup_scheduled',
+        'rtb_request',
+        'rtb_approved',
+        'rtb_declined',
+        'rtb_payment',
+    ];
+
     private ?Emails $emails = null;
     private ?OptionsInterface $options = null;
 
@@ -118,13 +139,86 @@ final class Brevo implements HookableInterface
     }
 
     /**
+     * Indica se conferme e comunicazioni al cliente passano dalla pipeline Brevo (eventi/template API).
+     */
+    public function is_customer_pipeline_active(): bool
+    {
+        if (! $this->is_enabled()) {
+            return false;
+        }
+
+        $settings = $this->get_settings();
+        $channel = isset($settings['customer_messages_channel'])
+            ? sanitize_key((string) $settings['customer_messages_channel'])
+            : self::CUSTOMER_CHANNEL_BREVO;
+
+        return self::CUSTOMER_CHANNEL_BREVO === $channel;
+    }
+
+    /**
+     * Se true, vengono usati gli ID template per invio SMTP API (`/smtp/email`).
+     */
+    public function should_send_transactional_templates(): bool
+    {
+        if (! $this->is_customer_pipeline_active()) {
+            return false;
+        }
+
+        $settings = $this->get_settings();
+
+        if (! array_key_exists('send_transactional_templates', $settings)) {
+            return true;
+        }
+
+        $flag = $settings['send_transactional_templates'];
+
+        return $flag === true || $flag === 1 || $flag === '1';
+    }
+
+    /**
      * @return array<string, mixed>
      */
     public function get_settings(): array
     {
         $settings = $this->getOptions()->get('fp_exp_brevo', []);
+        $settings = is_array($settings) ? $settings : [];
 
-        return is_array($settings) ? $settings : [];
+        if (! array_key_exists('customer_messages_channel', $settings)) {
+            $settings['customer_messages_channel'] = self::CUSTOMER_CHANNEL_BREVO;
+        }
+
+        return $settings;
+    }
+
+    /**
+     * Eventi track abilitati (lista vuota salvata = nessun evento).
+     *
+     * @return list<string>
+     */
+    public function get_enabled_track_event_ids(): array
+    {
+        $settings = $this->getOptions()->get('fp_exp_brevo', []);
+        $settings = is_array($settings) ? $settings : [];
+
+        if (! array_key_exists('track_events', $settings) || ! is_array($settings['track_events'])) {
+            return self::TRACK_EVENT_IDS;
+        }
+
+        return array_values(array_intersect(self::TRACK_EVENT_IDS, array_map('sanitize_key', $settings['track_events'])));
+    }
+
+    /**
+     * Verifica se il nome evento trackEvent è abilitato nelle impostazioni.
+     */
+    public function is_track_event_enabled(string $event): bool
+    {
+        if (! $this->is_customer_pipeline_active()) {
+            return false;
+        }
+
+        $event = sanitize_key($event);
+
+        return in_array($event, $this->get_enabled_track_event_ids(), true);
     }
 
     public function handle_reservation_paid(int $reservation_id, int $order_id): void
@@ -139,14 +233,23 @@ final class Brevo implements HookableInterface
         }
 
         $this->sync_contact($context, $reservation_id);
-        $sent = $this->send_transactional('confirmation', $context, $reservation_id);
 
-        if (! $sent && $this->emails instanceof Emails) {
-            Logger::log('brevo', 'Transactional fallback triggered', [
-                'reservation' => $reservation_id,
-                'reason' => 'confirmation_send_failed',
-            ]);
-            $this->emails->send_customer_confirmation_fallback($context);
+        if (! $this->is_customer_pipeline_active()) {
+            return;
+        }
+
+        $sent = false;
+
+        if ($this->should_send_transactional_templates()) {
+            $sent = $this->send_transactional('confirmation', $context, $reservation_id);
+
+            if (! $sent && $this->emails instanceof Emails) {
+                Logger::log('brevo', 'Transactional fallback triggered', [
+                    'reservation' => $reservation_id,
+                    'reason' => 'confirmation_send_failed',
+                ]);
+                $this->emails->send_customer_confirmation_fallback($context);
+            }
         }
 
         $this->send_event('reservation_paid', $context, $reservation_id);
@@ -163,14 +266,22 @@ final class Brevo implements HookableInterface
             return;
         }
 
-        $context['status_label'] = 'cancelled';
-        $sent = $this->send_transactional('cancel', $context, $reservation_id);
+        if (! $this->is_customer_pipeline_active()) {
+            return;
+        }
 
-        if (! $sent) {
-            Logger::log('brevo', 'Cancel transactional fallback triggered', [
-                'reservation' => $reservation_id,
-                'reason' => 'cancel_send_failed',
-            ]);
+        $context['status_label'] = 'cancelled';
+        $sent = false;
+
+        if ($this->should_send_transactional_templates()) {
+            $sent = $this->send_transactional('cancel', $context, $reservation_id);
+
+            if (! $sent) {
+                Logger::log('brevo', 'Cancel transactional fallback triggered', [
+                    'reservation' => $reservation_id,
+                    'reason' => 'cancel_send_failed',
+                ]);
+            }
         }
 
         $this->send_event('reservation_cancelled', $context, $reservation_id);
@@ -191,8 +302,14 @@ final class Brevo implements HookableInterface
             return;
         }
 
+        if (! $this->is_customer_pipeline_active()) {
+            return;
+        }
+
         // Optional transactional template for rescheduled bookings (if configured in Brevo settings).
-        $this->send_transactional('rescheduled', $context, $reservation_id);
+        if ($this->should_send_transactional_templates()) {
+            $this->send_transactional('rescheduled', $context, $reservation_id);
+        }
 
         $this->send_event('reservation_rescheduled', $context, $reservation_id, [
             'previous_slot_id' => absint($previous_slot_id),
@@ -206,6 +323,10 @@ final class Brevo implements HookableInterface
     public function queue_automation_events(array $context, int $reservation_id): void
     {
         if (! $this->is_enabled()) {
+            return;
+        }
+
+        if (! $this->is_customer_pipeline_active()) {
             return;
         }
 
@@ -380,6 +501,10 @@ final class Brevo implements HookableInterface
      */
     private function send_transactional(string $template_key, array $context, int $reservation_id, ?int $override_template_id = null): bool
     {
+        if (! $this->should_send_transactional_templates() && ! $this->is_simulation_enabled()) {
+            return false;
+        }
+
         $settings = $this->get_settings();
         $api_key = (string) ($settings['api_key'] ?? '');
 
@@ -522,6 +647,10 @@ final class Brevo implements HookableInterface
      */
     private function send_event(string $event, array $context, int $reservation_id, array $additional_properties = []): void
     {
+        if (! $this->is_track_event_enabled($event)) {
+            return;
+        }
+
         $settings = $this->get_settings();
         $api_key = (string) ($settings['api_key'] ?? '');
 
@@ -678,14 +807,32 @@ final class Brevo implements HookableInterface
             return false;
         }
 
-        $key = 'rtb_' . sanitize_key($stage);
-        $sent = $this->send_transactional($key, $context, $reservation_id, $template_id);
-
-        if ($sent) {
-            $this->send_event($key, $context, $reservation_id);
+        if (! $this->is_customer_pipeline_active()) {
+            return false;
         }
 
-        return $sent;
+        $key = 'rtb_' . sanitize_key($stage);
+        $sent = false;
+
+        if ($this->should_send_transactional_templates() || $this->is_simulation_enabled()) {
+            $sent = $this->send_transactional($key, $context, $reservation_id, $template_id);
+        }
+
+        $this->send_event($key, $context, $reservation_id);
+
+        if ($sent) {
+            return true;
+        }
+
+        if (
+            ! $this->should_send_transactional_templates()
+            && ! $this->is_simulation_enabled()
+            && $this->is_track_event_enabled($key)
+        ) {
+            return true;
+        }
+
+        return false;
     }
 
     /**
@@ -696,6 +843,10 @@ final class Brevo implements HookableInterface
     public function try_send_transactional(string $template_key, array $context, int $reservation_id): bool
     {
         if (! $this->is_enabled()) {
+            return false;
+        }
+
+        if (! $this->is_customer_pipeline_active()) {
             return false;
         }
 
