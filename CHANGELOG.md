@@ -2,6 +2,10 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.5.11] - 2026-03-24
+### Changed
+- Admin tab Brevo: testi in italiano più chiari, riepilogo «a cosa serve», collegamento esplicito a **FP Marketing Tracking Layer** (chiave API e liste), note sui campi centralizzati e badge stato «Chiave da FP Tracking» quando applicabile.
+
 ## [1.5.10] - 2026-03-24
 ### Changed
 - Brevo: canale predefinito **WordPress (wp_mail)** per le email al cliente se non salvato diversamente; la sola chiave/liste da FP Tracking non implica più delega Brevo per conferme.

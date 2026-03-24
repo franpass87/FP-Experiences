@@ -58,6 +58,7 @@ use function settings_errors;
 use function settings_fields;
 use function set_transient;
 use function submit_button;
+use function __;
 use function trim;
 use function strtolower;
 use function time;
@@ -77,6 +78,7 @@ use function wp_remote_retrieve_response_code;
 use function wp_safe_redirect;
 use function wp_unslash;
 use function wp_create_nonce;
+use function wp_kses_post;
 use function wp_verify_nonce;
 
 final class SettingsPage implements HookableInterface
@@ -1584,7 +1586,7 @@ final class SettingsPage implements HookableInterface
 
         add_settings_section(
             'fp_exp_section_brevo_connection',
-            esc_html__('Connection', 'fp-experiences'),
+            esc_html__('Connessione e account', 'fp-experiences'),
             [$this, 'render_brevo_help'],
             'fp_exp_settings_brevo'
         );
@@ -1628,7 +1630,7 @@ final class SettingsPage implements HookableInterface
 
         add_settings_section(
             'fp_exp_section_brevo_mapping',
-            esc_html__('Attribute mapping', 'fp-experiences'),
+            esc_html__('Mapping attributi contatto', 'fp-experiences'),
             '__return_false',
             'fp_exp_settings_brevo'
         );
@@ -1646,7 +1648,7 @@ final class SettingsPage implements HookableInterface
 
         add_settings_section(
             'fp_exp_section_brevo_templates',
-            esc_html__('Transactional templates', 'fp-experiences'),
+            esc_html__('Template transazionali (ID Brevo)', 'fp-experiences'),
             '__return_false',
             'fp_exp_settings_brevo'
         );
@@ -2516,7 +2518,10 @@ final class SettingsPage implements HookableInterface
             echo '<option value="' . esc_attr($value) . '"' . $selected . '>' . $label . '</option>';
         }
         echo '</select>';
-        echo '<p class="description">' . esc_html__('Se scegli "SMTP personalizzato", compila i campi sottostanti. Se scegli "Brevo", configura la API key nel tab Brevo.', 'fp-experiences') . '</p>';
+        echo '<p class="description">' . esc_html__(
+            'Se scegli "SMTP personalizzato", compila i campi sottostanti. Se scegli "Brevo (API)", la chiave e le liste sono in FP Marketing Tracking Layer oppure nella scheda Brevo di FP Experiences.',
+            'fp-experiences'
+        ) . '</p>';
     }
 
     public function render_email_text_field(array $args): void
@@ -2646,9 +2651,68 @@ final class SettingsPage implements HookableInterface
         echo '</p>';
     }
 
+    /**
+     * URL impostazioni Brevo nel plugin FP Marketing Tracking Layer.
+     */
+    private function get_fp_tracking_brevo_admin_url(): string
+    {
+        return admin_url('admin.php?page=fp-tracking');
+    }
+
+    /**
+     * True se FP Tracking espone Brevo attivo con API key (merge automatico su questa integrazione).
+     */
+    private function is_fp_tracking_brevo_centralized(): bool
+    {
+        if (! \function_exists('fp_tracking_get_brevo_settings')) {
+            return false;
+        }
+        $central = fp_tracking_get_brevo_settings();
+
+        return ! empty($central['enabled']) && ! empty($central['api_key']);
+    }
+
     public function render_brevo_help(): void
     {
-        echo '<p>' . esc_html__('Connect your Brevo account to deliver transactional emails and sync contacts with marketing attributes and tags.', 'fp-experiences') . '</p>';
+        $tracking_link = '<a href="' . esc_url($this->get_fp_tracking_brevo_admin_url()) . '">' . esc_html__('FP Marketing Tracking Layer', 'fp-experiences') . '</a>';
+        $centralized = $this->is_fp_tracking_brevo_centralized();
+
+        echo '<div class="fp-exp-brevo-intro" style="margin-bottom:1em;">';
+        echo '<p><strong>' . esc_html__('A cosa serve questa pagina', 'fp-experiences') . '</strong></p>';
+        echo '<ul class="description" style="margin-left:1.25em;list-style:disc;">';
+        echo '<li>' . esc_html__('Attivare Brevo per FP Experiences: sincronizzazione contatti, invio eventi verso le Automation e (se scegli) template transazionali via API.', 'fp-experiences') . '</li>';
+        echo '<li>' . esc_html__('Decidere se le email al cliente (conferme, promemoria, RTB, ecc.) passano da WordPress (wp_mail) o dalla pipeline Brevo — vedi sezione «Messaggi al cliente».', 'fp-experiences') . '</li>';
+        echo '<li>' . esc_html__('Impostare qui solo ciò che è specifico di Experiences: webhook, nomi attributi Brevo, ID template, quali eventi inviare.', 'fp-experiences') . '</li>';
+        echo '</ul>';
+        echo '</div>';
+
+        if ($centralized) {
+            echo '<div class="notice notice-info inline"><p>';
+            echo wp_kses_post(
+                sprintf(
+                    /* translators: %s: HTML link to FP Marketing Tracking Layer settings */
+                    __(
+                        'La <strong>chiave API</strong> Brevo e le <strong>liste</strong> (IT/EN) per Experiences sono gestite in %s. In questa scheda abiliti l’integrazione e le opzioni dedicate; non devi reinserire la chiave a meno che tu non usi solo FP Experiences senza il layer centralizzato.',
+                        'fp-experiences'
+                    ),
+                    $tracking_link
+                )
+            );
+            echo '</p></div>';
+        } else {
+            echo '<div class="notice notice-info inline"><p>';
+            echo wp_kses_post(
+                sprintf(
+                    /* translators: %s: HTML link to FP Marketing Tracking Layer settings */
+                    __(
+                        '<strong>Consiglio:</strong> installa e configura %s per centralizzare chiave API e liste tra i plugin FP (Experiences, Forms, Restaurant, ecc.). Se non lo usi, compila chiave e liste nei campi sotto.',
+                        'fp-experiences'
+                    ),
+                    $tracking_link
+                )
+            );
+            echo '</p></div>';
+        }
 
         $settings = $this->getOptions()->get('fp_exp_brevo', []);
         $settings = is_array($settings) ? $settings : [];
@@ -2662,23 +2726,32 @@ final class SettingsPage implements HookableInterface
             : Brevo::CUSTOMER_CHANNEL_WORDPRESS;
 
         if (! $enabled) {
-            echo '<div class="notice notice-info inline"><p>' . esc_html__('Brevo is currently disabled. WooCommerce templates will be used for customer emails.', 'fp-experiences') . '</p></div>';
+            echo '<div class="notice notice-info inline"><p>' . esc_html__('Brevo è disattivato per FP Experiences. Le email al cliente seguono le impostazioni in Email (wp_mail / SMTP / provider).', 'fp-experiences') . '</p></div>';
         } elseif ($simulate_mode) {
-            echo '<div class="notice notice-warning inline"><p>' . esc_html__('Brevo simulation mode is active. API calls are skipped and operations are logged locally.', 'fp-experiences') . '</p></div>';
+            echo '<div class="notice notice-warning inline"><p>' . esc_html__('Modalità simulazione: nessuna chiamata reale a Brevo; sync ed eventi sono solo registrati in log.', 'fp-experiences') . '</p></div>';
         } elseif ($connected) {
             if (Brevo::CUSTOMER_CHANNEL_WORDPRESS === $customer_channel) {
                 echo '<div class="notice notice-success inline"><p>' . esc_html__(
-                    'Brevo attivo per contatti/liste; le email al cliente usano WordPress (wp_mail) come da sezione Messaggi al cliente.',
+                    'Integrazione attiva: contatti ed eventi verso Brevo sono operativi; le email al cliente usano WordPress (wp_mail) come da «Messaggi al cliente».',
                     'fp-experiences'
                 ) . '</p></div>';
             } else {
                 echo '<div class="notice notice-success inline"><p>' . esc_html__(
-                    'Brevo attivo per il cliente: eventi (e template transazionali se abilitati) secondo la sezione Messaggi al cliente.',
+                    'Integrazione attiva: messaggi al cliente gestiti da Brevo (eventi Automation e, se abilitato, template transazionali) come da «Messaggi al cliente».',
                     'fp-experiences'
                 ) . '</p></div>';
             }
         } else {
-            echo '<div class="notice notice-warning inline"><p>' . esc_html__('Brevo is enabled but the API key is missing. Add the API key to send transactional emails via Brevo.', 'fp-experiences') . '</p></div>';
+            $missing_key_msg = $centralized
+                ? esc_html__(
+                    'Hai abilitato Brevo ma non risulta una chiave API utilizzabile. Verifica che Brevo sia attivo e con chiave valida in FP Marketing Tracking Layer.',
+                    'fp-experiences'
+                )
+                : esc_html__(
+                    'Brevo è abilitato ma manca la chiave API. Inseriscila qui oppure configurala in FP Marketing Tracking Layer se usi la centralizzazione.',
+                    'fp-experiences'
+                );
+            echo '<div class="notice notice-warning inline"><p>' . $missing_key_msg . '</p></div>';
         }
 
         $templates = isset($settings['templates']) && is_array($settings['templates']) ? $settings['templates'] : [];
@@ -2687,11 +2760,17 @@ final class SettingsPage implements HookableInterface
         if ($configured_templates) {
             echo '<div class="notice notice-info inline"><p>' . sprintf(
                 /* translators: %d: number of configured templates. */
-                esc_html__('%d Brevo templates configured for confirmations and RTB stages.', 'fp-experiences'),
+                esc_html__(
+                    '%d template Brevo configurati (conferme e fasi RTB).',
+                    'fp-experiences'
+                ),
                 count($configured_templates)
             ) . '</p></div>';
         } else {
-            echo '<div class="notice notice-info inline"><p>' . esc_html__('Transactional templates are optional; the plugin falls back to WooCommerce emails when none are provided.', 'fp-experiences') . '</p></div>';
+            echo '<div class="notice notice-info inline"><p>' . esc_html__(
+                'I template transazionali sono facoltativi: senza ID il plugin usa le email WooCommerce / wp_mail di fallback dove previsto.',
+                'fp-experiences'
+            ) . '</p></div>';
         }
 
         $notices = get_transient('fp_exp_brevo_notices');
@@ -3086,51 +3165,70 @@ final class SettingsPage implements HookableInterface
         return [
             [
                 'key' => 'enabled',
-                'label' => esc_html__('Enable Brevo', 'fp-experiences'),
+                'label' => esc_html__('Abilita Brevo per FP Experiences', 'fp-experiences'),
                 'type' => 'checkbox',
             ],
             [
                 'key' => 'simulate_mode',
-                'label' => esc_html__('Simulation mode (local test)', 'fp-experiences'),
+                'label' => esc_html__('Modalità simulazione (test locale)', 'fp-experiences'),
                 'type' => 'checkbox',
-                'description' => esc_html__('Enable local Brevo simulation without API key. Contacts, transactional emails and events are logged without external API calls.', 'fp-experiences'),
+                'description' => esc_html__(
+                    'Nessuna chiamata esterna: sync, eventi e invii sono solo registrati in log. Utile per provare i flussi senza API key.',
+                    'fp-experiences'
+                ),
             ],
             [
                 'key' => 'api_key',
-                'label' => esc_html__('API key', 'fp-experiences'),
+                'label' => esc_html__('Chiave API Brevo', 'fp-experiences'),
                 'type' => 'text',
                 'placeholder' => esc_html__('xkeysib-...', 'fp-experiences'),
+                'description' => esc_html__(
+                    'Se usi FP Marketing Tracking Layer con Brevo attivo, la chiave viene applicata automaticamente; altrimenti incollala qui.',
+                    'fp-experiences'
+                ),
             ],
             [
                 'key' => 'webhook_secret',
-                'label' => esc_html__('Webhook secret', 'fp-experiences'),
+                'label' => esc_html__('Segreto webhook', 'fp-experiences'),
                 'type' => 'text',
-                'description' => esc_html__('Used to validate Brevo webhook signatures.', 'fp-experiences'),
+                'description' => esc_html__(
+                    'Opzionale: verifica la firma delle richieste al webhook REST di FP Experiences (`/fp-exp/v1/brevo/webhook`).',
+                    'fp-experiences'
+                ),
             ],
             [
                 'key' => 'list_id',
-                'label' => esc_html__('Default list ID', 'fp-experiences'),
+                'label' => esc_html__('ID lista predefinita', 'fp-experiences'),
                 'type' => 'number',
                 'min' => 1,
-                'description' => esc_html__('Optional: contacts will be subscribed to this list on sync.', 'fp-experiences'),
+                'description' => esc_html__(
+                    'Lista Brevo a cui iscrivere il contatto in sync (ripiego se mancano le liste per lingua).',
+                    'fp-experiences'
+                ),
             ],
             [
                 'key' => 'lists[it]',
-                'label' => esc_html__('Italian list ID', 'fp-experiences'),
+                'label' => esc_html__('ID lista italiano', 'fp-experiences'),
                 'type' => 'number',
                 'min' => 1,
-                'description' => esc_html__('Used when the reservation prefix starts with “ita”. Falls back to the default list when empty.', 'fp-experiences'),
+                'description' => esc_html__(
+                    'Usata per prenotazioni con prefisso lingua ITA. Se vuota, si usa la lista predefinita.',
+                    'fp-experiences'
+                ),
             ],
             [
                 'key' => 'lists[en]',
-                'label' => esc_html__('English list ID', 'fp-experiences'),
+                'label' => esc_html__('ID lista inglese / altre lingue', 'fp-experiences'),
                 'type' => 'number',
                 'min' => 1,
-                'description' => esc_html__('Used for all other reservations. Falls back to the default list when empty.', 'fp-experiences'),
+                'description' => esc_html__(
+                    'Usata per le altre lingue. Se vuota, si usa la lista predefinita.',
+                    'fp-experiences'
+                ),
             ],
             [
                 'key' => 'subscribe_to_list',
-                'label' => esc_html__('Subscribe contact to list on sync', 'fp-experiences'),
+                'label' => esc_html__('Iscrivi il contatto alla lista in sync', 'fp-experiences'),
                 'type' => 'checkbox',
             ],
         ];
@@ -3149,7 +3247,7 @@ final class SettingsPage implements HookableInterface
                 'label' => esc_html__('Invio email al cliente', 'fp-experiences'),
                 'type' => 'select',
                 'description' => esc_html__(
-                    'Scegli se conferme, promemoria e comunicazioni booking al cliente passano da Brevo (template API e/o eventi Automation) o dal mailer WordPress (wp_mail). La sincronizzazione contatti su Brevo resta attiva se la connessione Brevo è abilitata.',
+                    'Scegli se conferme, promemoria e comunicazioni booking al cliente passano da Brevo (template API e/o eventi Automation) o dal mailer WordPress (wp_mail). La sincronizzazione contatti e gli eventi Automation restano disponibili quando Brevo è abilitato sopra, indipendentemente da questa scelta.',
                     'fp-experiences'
                 ),
                 'options' => [
@@ -3176,11 +3274,15 @@ final class SettingsPage implements HookableInterface
     public function render_brevo_customer_delivery_intro(): void
     {
         echo '<p>' . esc_html__(
-            'Controlla se le email di conferma al cliente passano da Brevo (template API) o da WordPress. Gli eventi Brevo Automation e la sincronizzazione contatti restano attivi quando Brevo è abilitato sopra, anche con WordPress selezionato qui.',
+            'Qui non configuri la chiave API (è in FP Marketing Tracking Layer oppure nel blocco «Connessione e account» se non usi il layer): scegli solo come arrivano le email al cliente finale.',
+            'fp-experiences'
+        ) . '</p>';
+        echo '<p>' . esc_html__(
+            'Gli eventi verso le Automation Brevo e la sync contatti restano attivi con «Abilita Brevo» in alto, anche se scegli WordPress per le email al cliente.',
             'fp-experiences'
         ) . '</p>';
         echo '<p class="description">' . esc_html__(
-            'Predefinito: WordPress (wp_mail) per le email al cliente. Scegli Brevo solo se vuoi delegare conferme/reminder transazionali al canale Brevo. Allinea FP Experiences → Email → Provider di conseguenza.',
+            'Predefinito consigliato: WordPress (wp_mail). Passa a Brevo solo se vuoi conferme/reminder via template API o solo tramite scenari Automation. Allinea anche la scheda Email (provider) al flusso scelto.',
             'fp-experiences'
         ) . '</p>';
     }
@@ -3219,7 +3321,7 @@ final class SettingsPage implements HookableInterface
         }
         echo '</fieldset>';
         echo '<p class="description">' . esc_html__(
-            'Solo gli eventi spuntati vengono inviati a Brevo Automation. Puoi deselezionarli tutti se usi solo i template transazionali API.',
+            'Solo gli eventi selezionati vengono inviati a Brevo (trackEvent) usando la stessa chiave API dell’integrazione (centralizzata o locale). Puoi disattivarli tutti se usi unicamente i template transazionali SMTP API.',
             'fp-experiences'
         ) . '</p>';
     }
@@ -3777,16 +3879,34 @@ final class SettingsPage implements HookableInterface
             $is_enabled = !empty($value);
             $has_api_key = !empty($settings['api_key'] ?? '');
             $simulate_mode = !empty($settings['simulate_mode'] ?? false);
-            
+            $tracking_central = $this->is_fp_tracking_brevo_centralized();
+
             if ($is_enabled && $simulate_mode) {
                 $status_badge = '<span class="fp-exp-integration-status fp-exp-integration-status--warning">' . esc_html__('Simulazione', 'fp-experiences') . '</span> ';
             } elseif ($is_enabled && $has_api_key) {
                 $status_badge = '<span class="fp-exp-integration-status fp-exp-integration-status--active">' . esc_html__('Attivo', 'fp-experiences') . '</span> ';
+            } elseif ($is_enabled && !$has_api_key && $tracking_central) {
+                $status_badge = '<span class="fp-exp-integration-status fp-exp-integration-status--active">' . esc_html__('Chiave da FP Tracking', 'fp-experiences') . '</span> ';
             } elseif ($is_enabled && !$has_api_key) {
                 $status_badge = '<span class="fp-exp-integration-status fp-exp-integration-status--warning">' . esc_html__('API key mancante', 'fp-experiences') . '</span> ';
             } else {
                 $status_badge = '<span class="fp-exp-integration-status fp-exp-integration-status--inactive">' . esc_html__('Non configurato', 'fp-experiences') . '</span> ';
             }
+        }
+
+        $tracking_field_keys = ['api_key', 'list_id', 'lists[it]', 'lists[en]'];
+        if ($this->is_fp_tracking_brevo_centralized() && in_array($field['key'], $tracking_field_keys, true)) {
+            $fp_tracking_anchor = '<a href="' . esc_url($this->get_fp_tracking_brevo_admin_url()) . '">' . esc_html__('FP Marketing Tracking Layer', 'fp-experiences') . '</a>';
+            echo '<p class="description">' . wp_kses_post(
+                sprintf(
+                    /* translators: %s: HTML link to FP Marketing Tracking Layer */
+                    __(
+                        'Valore fornito da %s (Brevo → sorgente Experiences). Per modificarlo apri quella pagina; qui vedi solo l’anteprima aggregata.',
+                        'fp-experiences'
+                    ),
+                    $fp_tracking_anchor
+                )
+            ) . '</p>';
         }
 
         $field_html = $this->render_field_inline(
