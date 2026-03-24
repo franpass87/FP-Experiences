@@ -45,18 +45,36 @@ final class Bootstrap
         if (empty($central['enabled']) || empty($central['api_key'])) {
             return $value;
         }
+        $experiencesListIt = 0;
+        $experiencesListEn = 0;
+        if (\function_exists('fp_tracking_get_brevo_list_id')) {
+            $experiencesListIt = (int) fp_tracking_get_brevo_list_id('experiences', 'it');
+            $experiencesListEn = (int) fp_tracking_get_brevo_list_id('experiences', 'en');
+        } else {
+            $sourceLists = $central['source_lists']['experiences'] ?? null;
+            if (\is_array($sourceLists)) {
+                $experiencesListIt = (int) ($sourceLists['it'] ?? 0);
+                $experiencesListEn = (int) ($sourceLists['en'] ?? 0);
+            }
+        }
+        if ($experiencesListIt <= 0) {
+            $experiencesListIt = (int) ($central['list_id_it'] ?? 0);
+        }
+        if ($experiencesListEn <= 0) {
+            $experiencesListEn = (int) ($central['list_id_en'] ?? 0);
+        }
         $local = \is_array($value) ? $value : [];
         $lists = $local['lists'] ?? [];
         if (!\is_array($lists)) {
             $lists = [];
         }
-        if (!empty($central['list_id_it'])) {
-            $lists['it'] = $central['list_id_it'];
+        if ($experiencesListIt > 0) {
+            $lists['it'] = $experiencesListIt;
         }
-        if (!empty($central['list_id_en'])) {
-            $lists['en'] = $central['list_id_en'];
+        if ($experiencesListEn > 0) {
+            $lists['en'] = $experiencesListEn;
         }
-        $fallback = $central['list_id_it'] ?: $central['list_id_en'] ?: ($local['list_id'] ?? 0);
+        $fallback = $experiencesListIt ?: $experiencesListEn ?: ($local['list_id'] ?? 0);
         return \array_merge($local, [
             'api_key' => $central['api_key'],
             'list_id' => $fallback,
