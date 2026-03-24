@@ -2,6 +2,11 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.5.13] - 2026-03-24
+### Changed
+- Branding email: se è attivo **FP Mail SMTP** (≥ 1.2.0), `apply_branding` delega a `fp_fpmail_brand_html()`; altrimenti resta il wrapper locale da impostazioni FP Experiences.
+- Email buono regalo / reminder / scaduto / riscattato, percorso `VoucherManager` e test dalla pagina Email: stesso filtro `fp_exp_email_branding` così il layout è unificato.
+
 ## [1.5.12] - 2026-03-24
 ### Added
 - Tab Brevo → Messaggi al cliente: **tre canali** (conferma e aggiornamenti prenotazione / promemoria / follow-up post-esperienza), ciascino WordPress o Brevo — allineato a FP Restaurant Reservations (mix consentito).

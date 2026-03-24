@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace FP_Exp\Admin;
 
+use FP_Exp\Booking\EmailTranslator;
 use FP_Exp\Core\Hook\HookableInterface;
 use FP_Exp\Utils\Helpers;
 
 use function add_action;
+use function apply_filters;
 use function admin_url;
 use function add_query_arg;
 use function check_ajax_referer;
@@ -18,6 +20,7 @@ use function esc_html;
 use function esc_html__;
 use function esc_url;
 use function get_current_screen;
+use function get_locale;
 use function rest_url;
 use function settings_errors;
 use function settings_fields;
@@ -267,6 +270,8 @@ final class EmailsPage implements HookableInterface
             $body .= '</table>';
             $body .= '<p style="color:#64748b;font-size:13px;margin:16px 0 0;">' . esc_html__('Se ricevi questa email, la configurazione è corretta.', 'fp-experiences') . '</p>';
             $body .= '</div>';
+
+            $body = (string) apply_filters('fp_exp_email_branding', $body, EmailTranslator::normalize(get_locale()));
 
             $sent = $mailer->send([$to], $subject, $body);
 

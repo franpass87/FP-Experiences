@@ -61,6 +61,7 @@ use function wp_strip_all_tags;
 use function wp_timezone_string;
 use function admin_url;
 use function file_exists;
+use function function_exists;
 use const DAY_IN_SECONDS;
 
 /**
@@ -583,6 +584,10 @@ final class Emails implements HookableInterface
     {
         if ('' === trim($message)) {
             return '';
+        }
+
+        if (function_exists('fp_fpmail_brand_html')) {
+            return fp_fpmail_brand_html($message);
         }
 
         $emails = $this->options->get('fp_exp_emails', []);

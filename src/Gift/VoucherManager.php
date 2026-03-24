@@ -16,6 +16,7 @@ use FP_Exp\Gift\Cron\VoucherDeliveryCron;
 use FP_Exp\Gift\Cron\VoucherReminderCron;
 use FP_Exp\Gift\Delivery\VoucherDeliveryService;
 use FP_Exp\Booking\Email\Mailer;
+use FP_Exp\Booking\EmailTranslator;
 use FP_Exp\Gift\Email\VoucherEmailSender;
 use FP_Exp\Gift\Integration\WooCommerce\GiftProductManager;
 use FP_Exp\Gift\Integration\WooCommerce\WooCommerceIntegration;
@@ -34,6 +35,7 @@ use WP_Post;
 
 use function absint;
 use function add_action;
+use function apply_filters;
 use function do_action;
 use function add_query_arg;
 use function array_filter;
@@ -1041,6 +1043,8 @@ final class VoucherManager implements HookableInterface
             }
         }
 
+        $message = (string) apply_filters('fp_exp_email_branding', $message, EmailTranslator::LANGUAGE_IT);
+
         $this->resolveMailer()->send([$email], $subject, $message);
 
         $purchaser = get_post_meta($voucher_id, '_fp_exp_gift_purchaser', true);
@@ -1049,6 +1053,7 @@ final class VoucherManager implements HookableInterface
         if ($purchaser_email && $purchaser_email !== $email) {
             $copy = '<p>' . esc_html__('Your gift voucher was sent to the recipient.', 'fp-experiences') . '</p>';
             $copy .= '<p>' . esc_html__('Voucher code:', 'fp-experiences') . ' <strong>' . esc_html(strtoupper($code)) . '</strong></p>';
+            $copy = (string) apply_filters('fp_exp_email_branding', $copy, EmailTranslator::LANGUAGE_IT);
             $this->resolveMailer()->send([$purchaser_email], esc_html__('Gift voucher dispatched', 'fp-experiences'), $copy);
         }
 
@@ -1084,6 +1089,8 @@ final class VoucherManager implements HookableInterface
         $message .= '<p>' . esc_html__('Valid until:', 'fp-experiences') . ' ' . esc_html(date_i18n(get_option('date_format', 'Y-m-d'), $valid_until)) . '</p>';
         $message .= '<p><a href="' . esc_url($redeem_link) . '">' . esc_html__('Schedule your experience', 'fp-experiences') . '</a></p>';
 
+        $message = (string) apply_filters('fp_exp_email_branding', $message, EmailTranslator::LANGUAGE_IT);
+
         $this->resolveMailer()->send([$email], $subject, $message);
     }
 
@@ -1098,6 +1105,8 @@ final class VoucherManager implements HookableInterface
 
         $subject = esc_html__('Your experience gift has expired', 'fp-experiences');
         $message = '<p>' . esc_html__('Il voucher collegato alla tua esperienza FP è scaduto. Contatta l’operatore per assistenza.', 'fp-experiences') . '</p>';
+
+        $message = (string) apply_filters('fp_exp_email_branding', $message, EmailTranslator::LANGUAGE_IT);
 
         $this->resolveMailer()->send([$email], $subject, $message);
     }
@@ -1124,6 +1133,8 @@ final class VoucherManager implements HookableInterface
                 $message .= '<p>' . esc_html__('Scheduled for:', 'fp-experiences') . ' ' . esc_html(wp_date(get_option('date_format', 'F j, Y') . ' ' . get_option('time_format', 'H:i'), $timestamp)) . '</p>';
             }
         }
+
+        $message = (string) apply_filters('fp_exp_email_branding', $message, EmailTranslator::LANGUAGE_IT);
 
         $this->resolveMailer()->send([$email], $subject, $message);
     }
