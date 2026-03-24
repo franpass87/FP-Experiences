@@ -2,6 +2,10 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.5.8] - 2026-03-24
+### Fixed
+- Filtro `option_fp_exp_brevo`: `mergeBrevoFromTracking` accetta solo gli argomenti effettivamente passati da WordPress (2), evitando fatal su PHP 8 e ripristinando il boot dell’integrazione Brevo.
+
 ## [1.5.7] - 2026-03-24
 ### Changed
 - GA4 WooCommerce (`Integrations\GA4`): evento `purchase` arricchito con `affiliation`, `fp_source`, `page_url` (thank you), `item_category` sugli articoli, `coupon` se presente.

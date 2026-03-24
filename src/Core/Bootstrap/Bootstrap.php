@@ -31,12 +31,15 @@ final class Bootstrap
     /**
      * Inietta api_key Brevo da FP-Tracking quando attivo.
      *
-     * @param mixed $value   Valore attuale
+     * WordPress passa normalmente 2 argomenti al filtro `option_{$option}` (valore e nome opzione).
+     * Il terzo parametro è opzionale per compatibilità.
+     *
+     * @param mixed $value Valore attuale dell'opzione
      * @param string $option Nome opzione
-     * @param mixed $default Default
+     * @param mixed $default Default (non fornito da WP nel filtro option_*)
      * @return mixed
      */
-    public static function mergeBrevoFromTracking(mixed $value, string $option, mixed $default): mixed
+    public static function mergeBrevoFromTracking(mixed $value, string $option = '', mixed $default = null): mixed
     {
         if (!\function_exists('fp_tracking_get_brevo_settings')) {
             return $value;
@@ -94,7 +97,7 @@ final class Bootstrap
         }
 
         // API key e liste Brevo da FP-Tracking quando attivo
-        add_filter('option_fp_exp_brevo', [self::class, 'mergeBrevoFromTracking'], 10, 3);
+        add_filter('option_fp_exp_brevo', [self::class, 'mergeBrevoFromTracking'], 10, 2);
 
         $container = new Container();
         $kernel = new Kernel($container);
