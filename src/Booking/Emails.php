@@ -247,7 +247,7 @@ final class Emails implements HookableInterface
 
         if ($this->isTypeEnabled('customer_confirmation')) {
             $template = new BookingRescheduledTemplate();
-            $this->customer_sender->send($template, $context, true);
+            $this->customer_sender->send($template, $context);
         }
 
         if ($this->isTypeEnabled('staff_notification')) {

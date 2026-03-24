@@ -2,6 +2,14 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.5.12] - 2026-03-24
+### Added
+- Tab Brevo → Messaggi al cliente: **tre canali** (conferma e aggiornamenti prenotazione / promemoria / follow-up post-esperienza), ciascino WordPress o Brevo — allineato a FP Restaurant Reservations (mix consentito).
+
+### Changed
+- `Brevo::is_customer_pipeline_active()` è true se **almeno un** canale è Brevo; invii transazionali e `CustomerEmailSender` usano il canale del tipo di messaggio.
+- Email «data spostata» (riprogrammazione): niente più `force_send` locale forzato, così con canale Brevo non si duplica con il template Brevo.
+
 ## [1.5.11] - 2026-03-24
 ### Changed
 - Admin tab Brevo: testi in italiano più chiari, riepilogo «a cosa serve», collegamento esplicito a **FP Marketing Tracking Layer** (chiave API e liste), note sui campi centralizzati e badge stato «Chiave da FP Tracking» quando applicabile.

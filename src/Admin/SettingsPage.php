@@ -2721,23 +2721,31 @@ final class SettingsPage implements HookableInterface
         $api_key = isset($settings['api_key']) ? (string) $settings['api_key'] : '';
         $simulate_mode = ! empty($settings['simulate_mode']);
         $connected = $enabled && ('' !== $api_key || $simulate_mode);
-        $customer_channel = isset($settings['customer_messages_channel'])
-            ? sanitize_key((string) $settings['customer_messages_channel'])
-            : Brevo::CUSTOMER_CHANNEL_WORDPRESS;
+        $brevo_helper = new Brevo(null, $this->getOptions());
+        $ch_conf = $brevo_helper->is_bucket_using_brevo('confirmation');
+        $ch_rem = $brevo_helper->is_bucket_using_brevo('reminder');
+        $ch_fol = $brevo_helper->is_bucket_using_brevo('followup');
+        $all_wp = ! $ch_conf && ! $ch_rem && ! $ch_fol;
+        $all_brevo = $ch_conf && $ch_rem && $ch_fol;
 
         if (! $enabled) {
             echo '<div class="notice notice-info inline"><p>' . esc_html__('Brevo è disattivato per FP Experiences. Le email al cliente seguono le impostazioni in Email (wp_mail / SMTP / provider).', 'fp-experiences') . '</p></div>';
         } elseif ($simulate_mode) {
             echo '<div class="notice notice-warning inline"><p>' . esc_html__('Modalità simulazione: nessuna chiamata reale a Brevo; sync ed eventi sono solo registrati in log.', 'fp-experiences') . '</p></div>';
         } elseif ($connected) {
-            if (Brevo::CUSTOMER_CHANNEL_WORDPRESS === $customer_channel) {
+            if ($all_wp) {
                 echo '<div class="notice notice-success inline"><p>' . esc_html__(
-                    'Integrazione attiva: contatti ed eventi verso Brevo sono operativi; le email al cliente usano WordPress (wp_mail) come da «Messaggi al cliente».',
+                    'Integrazione attiva: contatti ed eventi verso Brevo sono operativi; le email al cliente usano WordPress (wp_mail) per conferma, promemoria e follow-up, come da «Messaggi al cliente».',
+                    'fp-experiences'
+                ) . '</p></div>';
+            } elseif ($all_brevo) {
+                echo '<div class="notice notice-success inline"><p>' . esc_html__(
+                    'Integrazione attiva: conferma, promemoria e follow-up al cliente sono delegati a Brevo (eventi Automation e, se abilitato, template transazionali).',
                     'fp-experiences'
                 ) . '</p></div>';
             } else {
                 echo '<div class="notice notice-success inline"><p>' . esc_html__(
-                    'Integrazione attiva: messaggi al cliente gestiti da Brevo (eventi Automation e, se abilitato, template transazionali) come da «Messaggi al cliente».',
+                    'Integrazione attiva: i canali conferma / promemoria / follow-up sono misti (WordPress e Brevo) come da «Messaggi al cliente»; contatti ed eventi restano operativi.',
                     'fp-experiences'
                 ) . '</p></div>';
             }
@@ -3241,19 +3249,41 @@ final class SettingsPage implements HookableInterface
      */
     private function get_brevo_customer_delivery_fields(): array
     {
+        $channel_options = [
+            Brevo::CUSTOMER_CHANNEL_WORDPRESS => esc_html__('WordPress (wp_mail)', 'fp-experiences'),
+            Brevo::CUSTOMER_CHANNEL_BREVO => esc_html__('Brevo — eventi (e opzionalmente template transazionali)', 'fp-experiences'),
+        ];
+
         return [
             [
-                'key' => 'customer_messages_channel',
-                'label' => esc_html__('Invio email al cliente', 'fp-experiences'),
+                'key' => Brevo::CUSTOMER_CONFIRMATION_CHANNEL_KEY,
+                'label' => esc_html__('Canale conferma e aggiornamenti prenotazione', 'fp-experiences'),
                 'type' => 'select',
                 'description' => esc_html__(
-                    'Scegli se conferme, promemoria e comunicazioni booking al cliente passano da Brevo (template API e/o eventi Automation) o dal mailer WordPress (wp_mail). La sincronizzazione contatti e gli eventi Automation restano disponibili quando Brevo è abilitato sopra, indipendentemente da questa scelta.',
+                    'Conferma pagamento, annullo, riprogrammazione e email RTB (richiesta / approvata / rifiutata / pagamento). WordPress = template del plugin; Brevo = template API e/o Automation.',
                     'fp-experiences'
                 ),
-                'options' => [
-                    Brevo::CUSTOMER_CHANNEL_BREVO => esc_html__('Brevo — eventi (e opzionalmente template transazionali)', 'fp-experiences'),
-                    Brevo::CUSTOMER_CHANNEL_WORDPRESS => esc_html__('WordPress (wp_mail)', 'fp-experiences'),
-                ],
+                'options' => $channel_options,
+            ],
+            [
+                'key' => Brevo::CUSTOMER_REMINDER_CHANNEL_KEY,
+                'label' => esc_html__('Canale promemoria pre-esperienza', 'fp-experiences'),
+                'type' => 'select',
+                'description' => esc_html__(
+                    'Promemoria (es. 24h prima). Puoi lasciare WordPress per il promemoria e usare Brevo solo per la conferma, o viceversa.',
+                    'fp-experiences'
+                ),
+                'options' => $channel_options,
+            ],
+            [
+                'key' => Brevo::CUSTOMER_FOLLOWUP_CHANNEL_KEY,
+                'label' => esc_html__('Canale follow-up post-esperienza', 'fp-experiences'),
+                'type' => 'select',
+                'description' => esc_html__(
+                    'Email dopo l’esperienza (ringraziamento / survey). Indipendente dagli altri due canali.',
+                    'fp-experiences'
+                ),
+                'options' => $channel_options,
             ],
             [
                 'key' => 'send_transactional_templates',
@@ -3274,15 +3304,15 @@ final class SettingsPage implements HookableInterface
     public function render_brevo_customer_delivery_intro(): void
     {
         echo '<p>' . esc_html__(
-            'Qui non configuri la chiave API (è in FP Marketing Tracking Layer oppure nel blocco «Connessione e account» se non usi il layer): scegli solo come arrivano le email al cliente finale.',
+            'Qui non configuri la chiave API (è in FP Marketing Tracking Layer oppure nel blocco «Connessione e account» se non usi il layer): scegli per ogni tipo di messaggio se arriva con wp_mail o tramite Brevo.',
             'fp-experiences'
         ) . '</p>';
         echo '<p>' . esc_html__(
-            'Gli eventi verso le Automation Brevo e la sync contatti restano attivi con «Abilita Brevo» in alto, anche se scegli WordPress per le email al cliente.',
+            'Gli eventi verso le Automation Brevo e la sync contatti restano attivi con «Abilita Brevo» in alto, anche se per uno o più tipi scegli WordPress.',
             'fp-experiences'
         ) . '</p>';
         echo '<p class="description">' . esc_html__(
-            'Predefinito consigliato: WordPress (wp_mail). Passa a Brevo solo se vuoi conferme/reminder via template API o solo tramite scenari Automation. Allinea anche la scheda Email (provider) al flusso scelto.',
+            'Predefinito consigliato: WordPress per tutti e tre i canali. Puoi mescolare (es. conferma Brevo, promemoria WordPress). Allinea la scheda Email (provider) al flusso che usi di più.',
             'fp-experiences'
         ) . '</p>';
     }
@@ -3858,6 +3888,23 @@ final class SettingsPage implements HookableInterface
         $settings = $this->getOptions()->get('fp_exp_brevo', []);
         $settings = is_array($settings) ? $settings : [];
         $value = $this->extract_nested_value($settings, $field['key']);
+
+        if (in_array($field['key'] ?? '', [
+            Brevo::CUSTOMER_CONFIRMATION_CHANNEL_KEY,
+            Brevo::CUSTOMER_REMINDER_CHANNEL_KEY,
+            Brevo::CUSTOMER_FOLLOWUP_CHANNEL_KEY,
+        ], true)) {
+            if ($value === '' || $value === null) {
+                $legacy = isset($settings['customer_messages_channel'])
+                    ? sanitize_key((string) $settings['customer_messages_channel'])
+                    : Brevo::CUSTOMER_CHANNEL_WORDPRESS;
+                if (! in_array($legacy, [Brevo::CUSTOMER_CHANNEL_BREVO, Brevo::CUSTOMER_CHANNEL_WORDPRESS], true)) {
+                    $legacy = Brevo::CUSTOMER_CHANNEL_WORDPRESS;
+                }
+                $value = $legacy;
+            }
+        }
+
         $path = $this->parse_key_segments($field['key'] ?? '');
         
         if (empty($path)) {
@@ -4518,13 +4565,41 @@ final class SettingsPage implements HookableInterface
         }
         $sanitised['templates'] = $templates;
 
-        $channel = isset($value['customer_messages_channel'])
-            ? sanitize_key((string) $value['customer_messages_channel'])
-            : (isset($existing['customer_messages_channel']) ? sanitize_key((string) $existing['customer_messages_channel']) : Brevo::CUSTOMER_CHANNEL_WORDPRESS);
-        if (! in_array($channel, [Brevo::CUSTOMER_CHANNEL_BREVO, Brevo::CUSTOMER_CHANNEL_WORDPRESS], true)) {
-            $channel = Brevo::CUSTOMER_CHANNEL_WORDPRESS;
+        $legacy = isset($existing['customer_messages_channel'])
+            ? sanitize_key((string) $existing['customer_messages_channel'])
+            : Brevo::CUSTOMER_CHANNEL_WORDPRESS;
+        if (! in_array($legacy, [Brevo::CUSTOMER_CHANNEL_BREVO, Brevo::CUSTOMER_CHANNEL_WORDPRESS], true)) {
+            $legacy = Brevo::CUSTOMER_CHANNEL_WORDPRESS;
         }
-        $sanitised['customer_messages_channel'] = $channel;
+
+        $sanitize_channel = static function ($raw, string $fallback) {
+            $ch = sanitize_key((string) $raw);
+            if (! in_array($ch, [Brevo::CUSTOMER_CHANNEL_BREVO, Brevo::CUSTOMER_CHANNEL_WORDPRESS], true)) {
+                return $fallback;
+            }
+
+            return $ch;
+        };
+
+        $sanitised[Brevo::CUSTOMER_CONFIRMATION_CHANNEL_KEY] = $sanitize_channel(
+            $value[Brevo::CUSTOMER_CONFIRMATION_CHANNEL_KEY] ?? ($existing[Brevo::CUSTOMER_CONFIRMATION_CHANNEL_KEY] ?? $legacy),
+            $legacy
+        );
+        $sanitised[Brevo::CUSTOMER_REMINDER_CHANNEL_KEY] = $sanitize_channel(
+            $value[Brevo::CUSTOMER_REMINDER_CHANNEL_KEY] ?? ($existing[Brevo::CUSTOMER_REMINDER_CHANNEL_KEY] ?? $legacy),
+            $legacy
+        );
+        $sanitised[Brevo::CUSTOMER_FOLLOWUP_CHANNEL_KEY] = $sanitize_channel(
+            $value[Brevo::CUSTOMER_FOLLOWUP_CHANNEL_KEY] ?? ($existing[Brevo::CUSTOMER_FOLLOWUP_CHANNEL_KEY] ?? $legacy),
+            $legacy
+        );
+
+        $sanitised['customer_messages_channel'] =
+            ($sanitised[Brevo::CUSTOMER_CONFIRMATION_CHANNEL_KEY] === Brevo::CUSTOMER_CHANNEL_BREVO
+                || $sanitised[Brevo::CUSTOMER_REMINDER_CHANNEL_KEY] === Brevo::CUSTOMER_CHANNEL_BREVO
+                || $sanitised[Brevo::CUSTOMER_FOLLOWUP_CHANNEL_KEY] === Brevo::CUSTOMER_CHANNEL_BREVO)
+                ? Brevo::CUSTOMER_CHANNEL_BREVO
+                : Brevo::CUSTOMER_CHANNEL_WORDPRESS;
 
         if (isset($value['send_transactional_templates'])) {
             $txn = (string) $value['send_transactional_templates'];

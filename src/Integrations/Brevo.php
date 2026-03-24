@@ -49,6 +49,12 @@ final class Brevo implements HookableInterface
 
     public const CUSTOMER_CHANNEL_WORDPRESS = 'wordpress';
 
+    public const CUSTOMER_CONFIRMATION_CHANNEL_KEY = 'customer_confirmation_channel';
+
+    public const CUSTOMER_REMINDER_CHANNEL_KEY = 'customer_reminder_channel';
+
+    public const CUSTOMER_FOLLOWUP_CHANNEL_KEY = 'customer_followup_channel';
+
     /**
      * Eventi inviati a Brevo Automation (trackEvent), selezionabili in impostazioni.
      *
@@ -139,7 +145,7 @@ final class Brevo implements HookableInterface
     }
 
     /**
-     * Indica se conferme e comunicazioni al cliente passano dalla pipeline Brevo (eventi/template API).
+     * True se almeno un tipo di messaggio al cliente è delegato a Brevo (API template e/o solo eventi).
      */
     public function is_customer_pipeline_active(): bool
     {
@@ -148,11 +154,70 @@ final class Brevo implements HookableInterface
         }
 
         $settings = $this->get_settings();
-        $channel = isset($settings['customer_messages_channel'])
-            ? sanitize_key((string) $settings['customer_messages_channel'])
-            : self::CUSTOMER_CHANNEL_BREVO;
 
-        return self::CUSTOMER_CHANNEL_BREVO === $channel;
+        foreach (
+            [
+                self::CUSTOMER_CONFIRMATION_CHANNEL_KEY,
+                self::CUSTOMER_REMINDER_CHANNEL_KEY,
+                self::CUSTOMER_FOLLOWUP_CHANNEL_KEY,
+            ] as $key
+        ) {
+            if (($settings[$key] ?? '') === self::CUSTOMER_CHANNEL_BREVO) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Bucket canale cliente: conferma (e correlati), promemoria, follow-up post-esperienza.
+     */
+    public function is_bucket_using_brevo(string $bucket): bool
+    {
+        if (! $this->is_enabled()) {
+            return false;
+        }
+
+        $settings = $this->get_settings();
+        $bucket = sanitize_key($bucket);
+        $key = match ($bucket) {
+            'reminder' => self::CUSTOMER_REMINDER_CHANNEL_KEY,
+            'followup' => self::CUSTOMER_FOLLOWUP_CHANNEL_KEY,
+            default => self::CUSTOMER_CONFIRMATION_CHANNEL_KEY,
+        };
+
+        return ($settings[$key] ?? '') === self::CUSTOMER_CHANNEL_BREVO;
+    }
+
+    /**
+     * Mappa chiave template transazionale / flusso al bucket canale.
+     */
+    public function template_key_to_channel_bucket(string $template_key): string
+    {
+        $key = sanitize_key($template_key);
+
+        if ($key === 'reminder') {
+            return 'reminder';
+        }
+
+        if ($key === 'post_experience') {
+            return 'followup';
+        }
+
+        if (str_starts_with($key, 'rtb_')) {
+            return 'confirmation';
+        }
+
+        return 'confirmation';
+    }
+
+    /**
+     * True se questo invio transazionale/evento deve usare il canale Brevo per il tipo indicato.
+     */
+    public function is_customer_channel_brevo_for_template_key(string $template_key): bool
+    {
+        return $this->is_bucket_using_brevo($this->template_key_to_channel_bucket($template_key));
     }
 
     /**
@@ -185,6 +250,29 @@ final class Brevo implements HookableInterface
 
         if (! array_key_exists('customer_messages_channel', $settings)) {
             $settings['customer_messages_channel'] = self::CUSTOMER_CHANNEL_WORDPRESS;
+        }
+
+        $legacy = sanitize_key((string) $settings['customer_messages_channel']);
+        if (! in_array($legacy, [self::CUSTOMER_CHANNEL_BREVO, self::CUSTOMER_CHANNEL_WORDPRESS], true)) {
+            $legacy = self::CUSTOMER_CHANNEL_WORDPRESS;
+        }
+
+        foreach (
+            [
+                self::CUSTOMER_CONFIRMATION_CHANNEL_KEY,
+                self::CUSTOMER_REMINDER_CHANNEL_KEY,
+                self::CUSTOMER_FOLLOWUP_CHANNEL_KEY,
+            ] as $perKey
+        ) {
+            if (! array_key_exists($perKey, $settings) || $settings[$perKey] === '' || $settings[$perKey] === null) {
+                $settings[$perKey] = $legacy;
+                continue;
+            }
+
+            $v = sanitize_key((string) $settings[$perKey]);
+            $settings[$perKey] = in_array($v, [self::CUSTOMER_CHANNEL_BREVO, self::CUSTOMER_CHANNEL_WORDPRESS], true)
+                ? $v
+                : $legacy;
         }
 
         return $settings;
@@ -236,7 +324,7 @@ final class Brevo implements HookableInterface
 
         $sent = false;
 
-        if ($this->is_customer_pipeline_active() && $this->should_send_transactional_templates()) {
+        if ($this->is_customer_channel_brevo_for_template_key('confirmation') && $this->should_send_transactional_templates()) {
             $sent = $this->send_transactional('confirmation', $context, $reservation_id);
 
             if (! $sent && $this->emails instanceof Emails) {
@@ -265,7 +353,7 @@ final class Brevo implements HookableInterface
         $context['status_label'] = 'cancelled';
         $sent = false;
 
-        if ($this->is_customer_pipeline_active() && $this->should_send_transactional_templates()) {
+        if ($this->is_customer_channel_brevo_for_template_key('cancel') && $this->should_send_transactional_templates()) {
             $sent = $this->send_transactional('cancel', $context, $reservation_id);
 
             if (! $sent) {
@@ -295,7 +383,7 @@ final class Brevo implements HookableInterface
         }
 
         // Optional transactional template for rescheduled bookings (if configured in Brevo settings).
-        if ($this->is_customer_pipeline_active() && $this->should_send_transactional_templates()) {
+        if ($this->is_customer_channel_brevo_for_template_key('rescheduled') && $this->should_send_transactional_templates()) {
             $this->send_transactional('rescheduled', $context, $reservation_id);
         }
 
@@ -793,7 +881,7 @@ final class Brevo implements HookableInterface
 
         $key = 'rtb_' . sanitize_key($stage);
 
-        if (! $this->is_customer_pipeline_active()) {
+        if (! $this->is_customer_channel_brevo_for_template_key($key)) {
             $this->send_event($key, $context, $reservation_id);
 
             return false;
@@ -833,7 +921,7 @@ final class Brevo implements HookableInterface
             return false;
         }
 
-        if (! $this->is_customer_pipeline_active()) {
+        if (! $this->is_customer_channel_brevo_for_template_key($template_key)) {
             return false;
         }
 
