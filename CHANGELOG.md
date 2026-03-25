@@ -2,6 +2,12 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.5.17] - 2026-03-25
+
+### Fixed
+
+- `RTBHelper::getSettings`: rimosso `error_log` con `print_r` dell’intero array opzioni (chiamata molto frequente in frontend/admin).
+
 ## [1.5.16] - 2026-03-25
 
 ### Fixed

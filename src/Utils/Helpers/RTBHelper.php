@@ -24,11 +24,6 @@ final class RTBHelper
     {
         $settings = get_option('fp_exp_rtb', []);
 
-        // Debug logging per tracciare le impostazioni RTB
-        if (defined('WP_DEBUG') && WP_DEBUG) {
-            error_log('[FP-Exp RTBHelper] getSettings() returned: ' . print_r($settings, true));
-        }
-
         return is_array($settings) ? $settings : [];
     }
 
