@@ -309,19 +309,11 @@ final class SettingsPage implements HookableInterface
 
     public function enqueue_tools_assets(): void
     {
-        if (defined('WP_DEBUG') && WP_DEBUG) {
-            error_log('[FP-EXP-SETTINGS] enqueue_tools_assets() START');
-        }
-        
         $admin_css = Helpers::resolve_asset_rel([
             'assets/css/dist/fp-experiences-admin.min.css',
             'assets/css/admin.css',
         ]);
-        
-        if (defined('WP_DEBUG') && WP_DEBUG) {
-            error_log('[FP-EXP-SETTINGS] CSS file: ' . $admin_css);
-        }
-        
+
         wp_enqueue_style(
             'fp-exp-admin',
             FP_EXP_PLUGIN_URL . $admin_css,
@@ -345,10 +337,6 @@ final class SettingsPage implements HookableInterface
             Helpers::asset_version($admin_js),
             true
         );
-        
-        if (defined('WP_DEBUG') && WP_DEBUG) {
-            error_log('[FP-EXP-SETTINGS] Script enqueued: fp-exp-admin');
-        }
 
         // Config base per fpExpAdmin (richiesto da admin.js)
         wp_localize_script('fp-exp-admin', 'fpExpAdmin', [
@@ -4629,30 +4617,11 @@ final class SettingsPage implements HookableInterface
 
     public function sanitize_rtb($value): array
     {
-        // Debug logging dettagliato per diagnosticare il problema di salvataggio
-        if (defined('WP_DEBUG') && WP_DEBUG) {
-            error_log('[FP-Exp RTB] ========== SANITIZE_RTB CHIAMATO ==========');
-            error_log('[FP-Exp RTB] Valore ricevuto: ' . print_r($value, true));
-            error_log('[FP-Exp RTB] $_POST[fp_exp_rtb] presente: ' . (isset($_POST['fp_exp_rtb']) ? 'SI' : 'NO'));
-            if (isset($_POST['fp_exp_rtb'])) {
-                error_log('[FP-Exp RTB] $_POST[fp_exp_rtb]: ' . print_r($_POST['fp_exp_rtb'], true));
-            }
-            error_log('[FP-Exp RTB] Valore attuale in DB: ' . print_r(get_option('fp_exp_rtb', []), true));
-        }
-
         $value = is_array($value) ? $value : [];
 
         $mode = isset($value['mode']) ? sanitize_key((string) $value['mode']) : 'off';
-        
-        // Debug logging per il mode ricevuto
-        if (defined('WP_DEBUG') && WP_DEBUG) {
-            error_log('[FP-Exp RTB] Mode received: ' . ($value['mode'] ?? 'NOT SET') . ' -> sanitized to: ' . $mode);
-        }
 
         if (! in_array($mode, ['off', 'confirm', 'pay_later'], true)) {
-            if (defined('WP_DEBUG') && WP_DEBUG) {
-                error_log('[FP-Exp RTB] Mode "' . $mode . '" not in allowed values, defaulting to "off"');
-            }
             $mode = 'off';
         }
 
@@ -4688,11 +4657,6 @@ final class SettingsPage implements HookableInterface
                     'body' => sanitize_textarea_field((string) $body),
                 ];
             }
-        }
-
-        // Debug logging per il valore finale che viene salvato
-        if (defined('WP_DEBUG') && WP_DEBUG) {
-            error_log('[FP-Exp RTB] Final sanitized value to save: ' . print_r($clean, true));
         }
 
         return $clean;

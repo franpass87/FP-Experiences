@@ -2,6 +2,12 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.5.16] - 2026-03-25
+
+### Fixed
+
+- Admin impostazioni: rimossi `error_log` diagnostici da `enqueue_tools_assets`, `render_rtb_field` e `sanitize_rtb` (evita dump `print_r` / `$_POST` in `debug.log` con `WP_DEBUG` attivo).
+
 ## [1.5.15] - 2026-03-24
 
 ### Changed
