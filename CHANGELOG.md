@@ -2,6 +2,12 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.5.15] - 2026-03-24
+
+### Changed
+
+- Brevo transactional: prima di `POST /v3/smtp/email` il payload passa da `fp_tracking_brevo_merge_transactional_tags()` se FP Marketing Tracking Layer espone la funzione (tag sito per log/sync centralizzati).
+
 ## [1.5.14] - 2026-03-24
 ### Changed
 - Brevo contatti: con FP Tracking e Brevo abilitato, `sync_contact` usa `fp_tracking_brevo_upsert_contact()`; `is_enabled()` è true anche senza API key in `fp_exp_brevo` se il layer ha Brevo attivo. Template transazionali e `POST /v3/events` restano sulla chiave locale.

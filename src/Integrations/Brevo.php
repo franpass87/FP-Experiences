@@ -713,6 +713,10 @@ final class Brevo implements HookableInterface
 
         $payload = apply_filters('fp_exp_brevo_tx_payload', $payload, $template_key, $context, $reservation_id);
 
+        if (function_exists('fp_tracking_brevo_merge_transactional_tags')) {
+            $payload = fp_tracking_brevo_merge_transactional_tags($payload);
+        }
+
         $response = wp_remote_post('https://api.brevo.com/v3/smtp/email', [
             'headers' => $this->build_headers($api_key),
             'body' => wp_json_encode($payload),
