@@ -2,6 +2,10 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.5.14] - 2026-03-24
+### Changed
+- Brevo contatti: con FP Tracking e Brevo abilitato, `sync_contact` usa `fp_tracking_brevo_upsert_contact()`; `is_enabled()` è true anche senza API key in `fp_exp_brevo` se il layer ha Brevo attivo. Template transazionali e `POST /v3/events` restano sulla chiave locale.
+
 ## [1.5.13] - 2026-03-24
 ### Changed
 - Branding email: se è attivo **FP Mail SMTP** (≥ 1.2.0), `apply_branding` delega a `fp_fpmail_brand_html()`; altrimenti resta il wrapper locale da impostazioni FP Experiences.

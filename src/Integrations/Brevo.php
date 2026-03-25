@@ -141,7 +141,12 @@ final class Brevo implements HookableInterface
             return true;
         }
 
-        return ! empty($settings['api_key']);
+        if (! empty($settings['api_key'])) {
+            return true;
+        }
+
+        return function_exists('fp_tracking_get_brevo_settings')
+            && ! empty(fp_tracking_get_brevo_settings()['enabled']);
     }
 
     /**
@@ -524,7 +529,11 @@ final class Brevo implements HookableInterface
             return;
         }
 
-        if (! $api_key) {
+        $tracking_contacts_enabled = function_exists('fp_tracking_brevo_upsert_contact')
+            && function_exists('fp_tracking_get_brevo_settings')
+            && ! empty(fp_tracking_get_brevo_settings()['enabled']);
+
+        if (! $api_key && ! $tracking_contacts_enabled) {
             return;
         }
 
@@ -540,6 +549,41 @@ final class Brevo implements HookableInterface
 
         $payload = $this->build_contact_payload($context, $reservation_id);
         $payload = apply_filters('fp_exp_brevo_contact_payload', $payload, $context, $reservation_id);
+
+        if ($tracking_contacts_enabled) {
+            $language_raw = (string) ($context['language'] ?? $context['language_locale'] ?? '');
+            if ($language_raw === '') {
+                $language_raw = $this->detect_site_language_for_list();
+            }
+            $normalized = EmailTranslator::normalize($language_raw);
+            $lang = EmailTranslator::LANGUAGE_IT === $normalized ? 'it' : 'en';
+
+            $result = fp_tracking_brevo_upsert_contact($payload, 'experiences', $lang);
+            if (empty($result['success'])) {
+                $code = (int) ($result['code'] ?? 0);
+                Logger::log('brevo', 'Contact sync failed (FP Tracking)', [
+                    'reservation' => $reservation_id,
+                    'status' => $code,
+                    'message' => (string) ($result['message'] ?? ''),
+                ]);
+
+                $this->record_notice(
+                    'contact_sync',
+                    sprintf(
+                        /* translators: %d: HTTP status code (0 if transport error). */
+                        __('Brevo contact sync failed (HTTP %d). Check the logs for details.', 'fp-experiences'),
+                        $code
+                    ),
+                    'error'
+                );
+            }
+
+            return;
+        }
+
+        if (! $api_key) {
+            return;
+        }
 
         $endpoint = 'https://api.brevo.com/v3/contacts';
         $response = wp_remote_post($endpoint, [
