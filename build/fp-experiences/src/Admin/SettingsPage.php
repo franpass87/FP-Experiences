@@ -4,8 +4,17 @@ declare(strict_types=1);
 
 namespace FP_Exp\Admin;
 
+use FP_Exp\Admin\Traits\FormFieldRenderer;
+use FP_Exp\Admin\Form\FieldDefinition;
+use FP_Exp\Core\Hook\HookableInterface;
+use FP_Exp\Admin\Traits\FormSanitizer;
+use FP_Exp\Application\Settings\GetSettingsUseCase;
+use FP_Exp\Application\Settings\UpdateSettingsUseCase;
 use FP_Exp\Booking\EmailTranslator;
 use FP_Exp\Booking\Emails;
+use FP_Exp\Gift\Email\Templates\VoucherEmailTemplate;
+use FP_Exp\Integrations\Brevo;
+use FP_Exp\Services\Options\OptionsInterface;
 use FP_Exp\Utils\Helpers;
 use FP_Exp\Utils\Logger;
 use FP_Exp\Utils\Theme;
@@ -49,6 +58,7 @@ use function settings_errors;
 use function settings_fields;
 use function set_transient;
 use function submit_button;
+use function __;
 use function trim;
 use function strtolower;
 use function time;
@@ -68,11 +78,57 @@ use function wp_remote_retrieve_response_code;
 use function wp_safe_redirect;
 use function wp_unslash;
 use function wp_create_nonce;
+use function wp_kses_post;
 use function wp_verify_nonce;
 
-final class SettingsPage
+final class SettingsPage implements HookableInterface
 {
+    use FormFieldRenderer;
+    use FormSanitizer;
+
     private string $menu_slug = 'fp_exp_settings';
+    private ?GetSettingsUseCase $getSettingsUseCase = null;
+    private ?UpdateSettingsUseCase $updateSettingsUseCase = null;
+    private ?OptionsInterface $options = null;
+
+    /**
+     * SettingsPage constructor.
+     *
+     * @param OptionsInterface|null $options Optional OptionsInterface (will try to get from container if not provided)
+     */
+    public function __construct(?OptionsInterface $options = null)
+    {
+        $this->options = $options;
+    }
+
+    /**
+     * Get OptionsInterface instance.
+     * Tries container first, falls back to direct instantiation for backward compatibility.
+     */
+    private function getOptions(): OptionsInterface
+    {
+        if ($this->options !== null) {
+            return $this->options;
+        }
+
+        // Try to get from container
+        $kernel = \FP_Exp\Core\Bootstrap\Bootstrap::kernel();
+        if ($kernel !== null) {
+            $container = $kernel->container();
+            if ($container->has(OptionsInterface::class)) {
+                try {
+                    $this->options = $container->make(OptionsInterface::class);
+                    return $this->options;
+                } catch (\Throwable $e) {
+                    // Fall through to direct instantiation
+                }
+            }
+        }
+
+        // Fallback to direct instantiation
+        $this->options = new \FP_Exp\Services\Options\Options();
+        return $this->options;
+    }
 
     public function register_hooks(): void
     {
@@ -92,30 +148,35 @@ final class SettingsPage
         $this->register_rtb_settings();
         $this->register_brevo_settings();
         $this->register_calendar_settings();
+        $this->register_webhook_settings();
     }
 
     public function render_page(): void
     {
         if (! Helpers::can_manage_fp()) {
-            wp_die(esc_html__('You do not have permission to manage FP Experiences settings.', 'fp-experiences'));
+            wp_die(esc_html__('Non hai i permessi per gestire le impostazioni di FP Experiences.', 'fp-experiences'));
         }
 
         $tabs = $this->get_tabs();
         $active_tab = $this->get_active_tab($tabs);
 
         echo '<div class="wrap">';
+        echo '<h1 class="screen-reader-text">' . esc_html__('Impostazioni FP Experiences', 'fp-experiences') . '</h1>';
         echo '<div class="fp-exp-admin" data-fp-exp-admin>';
         echo '<div class="fp-exp-admin__body">';
         echo '<div class="fp-exp-admin__layout fp-exp-settings">';
-        echo '<header class="fp-exp-admin__header">';
+        echo '<div class="fpexp-page-header">';
         echo '<nav class="fp-exp-admin__breadcrumb" aria-label="' . esc_attr__('Percorso di navigazione', 'fp-experiences') . '">';
         echo '<a href="' . esc_url(admin_url('admin.php?page=fp_exp_dashboard')) . '">' . esc_html__('FP Experiences', 'fp-experiences') . '</a>';
         echo ' <span aria-hidden="true">›</span> ';
         echo '<span>' . esc_html__('Impostazioni', 'fp-experiences') . '</span>';
         echo '</nav>';
-        echo '<h1 class="fp-exp-admin__title">' . esc_html__('FP Experiences — Settings', 'fp-experiences') . '</h1>';
-        echo '<p class="fp-exp-admin__intro">' . esc_html__('Configura preferenze, integrazioni e regole operative delle esperienze.', 'fp-experiences') . '</p>';
-        echo '</header>';
+        echo '<div class="fpexp-page-header-content">';
+        echo '<h2 class="fpexp-page-header-title" aria-hidden="true">' . esc_html__('Impostazioni FP Experiences', 'fp-experiences') . '</h2>';
+        echo '<p class="fpexp-page-header-desc">' . esc_html__('Configura preferenze, integrazioni e regole operative delle esperienze.', 'fp-experiences') . '</p>';
+        echo '</div>';
+        echo '<span class="fpexp-page-header-badge">v' . esc_html( defined( 'FP_EXP_VERSION' ) ? FP_EXP_VERSION : '0' ) . '</span>';
+        echo '</div>';
 
         settings_errors('fp_exp_settings');
 
@@ -126,7 +187,9 @@ final class SettingsPage
                 'tab' => $slug,
             ], admin_url('admin.php'));
             $classes = 'nav-tab' . ($active_tab === $slug ? ' nav-tab-active' : '');
-            echo '<a class="' . esc_attr($classes) . '" href="' . esc_attr($url) . '">' . esc_html($label) . '</a>';
+            // Allow dashicons spans in tab labels
+            $allowed_html = ['span' => ['class' => []]];
+            echo '<a class="' . esc_attr($classes) . '" href="' . esc_attr($url) . '">' . wp_kses($label, $allowed_html) . '</a>';
         }
         echo '</div>';
 
@@ -147,6 +210,7 @@ final class SettingsPage
                 settings_fields('fp_exp_settings_branding');
                 do_settings_sections('fp_exp_settings_branding');
                 $this->render_branding_contrast();
+                $this->render_preview_notice();
             } elseif ('gift' === $active_tab) {
                 settings_fields('fp_exp_settings_gift');
                 do_settings_sections('fp_exp_settings_gift');
@@ -159,6 +223,9 @@ final class SettingsPage
             } elseif ('rtb' === $active_tab) {
                 settings_fields('fp_exp_settings_rtb');
                 do_settings_sections('fp_exp_settings_rtb');
+            } elseif ('webhook' === $active_tab) {
+                settings_fields('fp_exp_settings_webhook');
+                do_settings_sections('fp_exp_settings_webhook');
             } elseif ('calendar' === $active_tab) {
                 settings_fields('fp_exp_settings_calendar');
                 do_settings_sections('fp_exp_settings_calendar');
@@ -180,7 +247,13 @@ final class SettingsPage
     public function enqueue_assets(string $hook = ''): void
     {
         $screen = get_current_screen();
-        if (! $screen || 'fp-exp-dashboard_page_' . $this->menu_slug !== $screen->id) {
+        // Verifica anche il hook e il page parameter per maggiore sicurezza
+        $is_settings_page = $screen && (
+            'fp-exp-dashboard_page_' . $this->menu_slug === $screen->id ||
+            (isset($_GET['page']) && $_GET['page'] === $this->menu_slug)
+        );
+        
+        if (! $is_settings_page) {
             return;
         }
 
@@ -203,8 +276,17 @@ final class SettingsPage
         wp_enqueue_script(
             'fp-exp-admin',
             FP_EXP_PLUGIN_URL . $admin_js,
-            ['wp-api-fetch', 'wp-i18n'],
+            ['jquery'], // Usa solo jQuery, non servono wp-api-fetch o wp-i18n
             Helpers::asset_version($admin_js),
+            true
+        );
+
+        // Toast notifications system
+        wp_enqueue_script(
+            'fp-exp-toast',
+            FP_EXP_PLUGIN_URL . 'assets/js/admin/toast.js',
+            [],
+            Helpers::asset_version('assets/js/admin/toast.js'),
             true
         );
 
@@ -231,6 +313,7 @@ final class SettingsPage
             'assets/css/dist/fp-experiences-admin.min.css',
             'assets/css/admin.css',
         ]);
+
         wp_enqueue_style(
             'fp-exp-admin',
             FP_EXP_PLUGIN_URL . $admin_css,
@@ -242,14 +325,29 @@ final class SettingsPage
             'assets/js/dist/fp-experiences-admin.min.js',
             'assets/js/admin.js',
         ]);
+        
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('[FP-EXP-SETTINGS] JS file: ' . $admin_js);
+        }
+        
         wp_enqueue_script(
             'fp-exp-admin',
             FP_EXP_PLUGIN_URL . $admin_js,
-            ['wp-api-fetch', 'wp-i18n'],
+            ['jquery'], // Usa solo jQuery, non servono wp-api-fetch o wp-i18n
             Helpers::asset_version($admin_js),
             true
         );
 
+        // Config base per fpExpAdmin (richiesto da admin.js)
+        wp_localize_script('fp-exp-admin', 'fpExpAdmin', [
+            'restUrl' => rest_url('fp-exp/v1/'),
+            'restNonce' => wp_create_nonce('wp_rest'),
+            'ajaxUrl' => admin_url('admin-ajax.php'),
+            'pluginUrl' => FP_EXP_PLUGIN_URL,
+            'strings' => [],
+        ]);
+
+        // Config specifico per tools
         wp_localize_script('fp-exp-admin', 'fpExpTools', [
             'nonce' => wp_create_nonce('wp_rest'),
             'actions' => $this->get_tool_actions_localised(),
@@ -273,14 +371,14 @@ final class SettingsPage
             'fp_exp_section_emails_addresses',
             esc_html__('Sender & recipients', 'fp-experiences'),
             [$this, 'render_email_addresses_help'],
-            'fp_exp_settings_emails'
+            'fp_exp_emails_senders'
         );
 
         add_settings_field(
             'fp_exp_emails_sender_structure',
             esc_html__('Structure email', 'fp-experiences'),
             [$this, 'render_email_nested_field'],
-            'fp_exp_settings_emails',
+            'fp_exp_emails_senders',
             'fp_exp_section_emails_addresses',
             [
                 'path' => ['sender', 'structure'],
@@ -292,7 +390,7 @@ final class SettingsPage
             'fp_exp_emails_sender_webmaster',
             esc_html__('Webmaster email', 'fp-experiences'),
             [$this, 'render_email_nested_field'],
-            'fp_exp_settings_emails',
+            'fp_exp_emails_senders',
             'fp_exp_section_emails_addresses',
             [
                 'path' => ['sender', 'webmaster'],
@@ -304,7 +402,7 @@ final class SettingsPage
             'fp_exp_emails_recipients_staff_extra',
             esc_html__('Destinatari staff aggiuntivi', 'fp-experiences'),
             [$this, 'render_email_recipients_field'],
-            'fp_exp_settings_emails',
+            'fp_exp_emails_senders',
             'fp_exp_section_emails_addresses',
             [
                 'path' => ['recipients', 'staff_extra'],
@@ -313,18 +411,132 @@ final class SettingsPage
             ]
         );
 
+        // --- Mail provider & SMTP ---
+        add_settings_section(
+            'fp_exp_section_email_provider',
+            esc_html__('Provider email', 'fp-experiences'),
+            [$this, 'render_email_provider_help'],
+            'fp_exp_emails_senders'
+        );
+
+        add_settings_field(
+            'fp_exp_emails_provider',
+            esc_html__('Provider invio', 'fp-experiences'),
+            [$this, 'render_email_provider_field'],
+            'fp_exp_emails_senders',
+            'fp_exp_section_email_provider'
+        );
+
+        add_settings_field(
+            'fp_exp_emails_from_email',
+            esc_html__('Email mittente (From)', 'fp-experiences'),
+            [$this, 'render_email_nested_field'],
+            'fp_exp_emails_senders',
+            'fp_exp_section_email_provider',
+            [
+                'path' => ['from_email'],
+                'description' => esc_html__('Indirizzo email usato come mittente. Se vuoto, usa l\'email struttura.', 'fp-experiences'),
+                'placeholder' => 'noreply@example.com',
+            ]
+        );
+
+        add_settings_field(
+            'fp_exp_emails_from_name',
+            esc_html__('Nome mittente (From)', 'fp-experiences'),
+            [$this, 'render_email_text_field'],
+            'fp_exp_emails_senders',
+            'fp_exp_section_email_provider',
+            [
+                'path' => ['from_name'],
+                'description' => esc_html__('Nome visualizzato come mittente. Se vuoto, usa il nome del sito.', 'fp-experiences'),
+                'placeholder' => 'La Mia Struttura',
+            ]
+        );
+
+        add_settings_field(
+            'fp_exp_emails_smtp_host',
+            esc_html__('SMTP Host', 'fp-experiences'),
+            [$this, 'render_email_text_field'],
+            'fp_exp_emails_senders',
+            'fp_exp_section_email_provider',
+            [
+                'path' => ['smtp', 'host'],
+                'placeholder' => 'smtp.gmail.com',
+                'description' => esc_html__('Visibile solo se il provider è "SMTP".', 'fp-experiences'),
+                'class' => 'fp-exp-smtp-field',
+            ]
+        );
+
+        add_settings_field(
+            'fp_exp_emails_smtp_port',
+            esc_html__('SMTP Porta', 'fp-experiences'),
+            [$this, 'render_email_number_field'],
+            'fp_exp_emails_senders',
+            'fp_exp_section_email_provider',
+            [
+                'path' => ['smtp', 'port'],
+                'min' => 1,
+                'max' => 65535,
+                'step' => 1,
+                'placeholder' => '587',
+                'class' => 'fp-exp-smtp-field',
+            ]
+        );
+
+        add_settings_field(
+            'fp_exp_emails_smtp_encryption',
+            esc_html__('Crittografia SMTP', 'fp-experiences'),
+            [$this, 'render_email_smtp_encryption_field'],
+            'fp_exp_emails_senders',
+            'fp_exp_section_email_provider',
+            ['class' => 'fp-exp-smtp-field']
+        );
+
+        add_settings_field(
+            'fp_exp_emails_smtp_username',
+            esc_html__('SMTP Username', 'fp-experiences'),
+            [$this, 'render_email_text_field'],
+            'fp_exp_emails_senders',
+            'fp_exp_section_email_provider',
+            [
+                'path' => ['smtp', 'username'],
+                'placeholder' => '',
+                'class' => 'fp-exp-smtp-field',
+            ]
+        );
+
+        add_settings_field(
+            'fp_exp_emails_smtp_password',
+            esc_html__('SMTP Password', 'fp-experiences'),
+            [$this, 'render_email_password_field'],
+            'fp_exp_emails_senders',
+            'fp_exp_section_email_provider',
+            [
+                'path' => ['smtp', 'password'],
+                'class' => 'fp-exp-smtp-field',
+            ]
+        );
+
+        add_settings_field(
+            'fp_exp_emails_test',
+            esc_html__('Test invio', 'fp-experiences'),
+            [$this, 'render_email_test_button'],
+            'fp_exp_emails_senders',
+            'fp_exp_section_email_provider'
+        );
+
         add_settings_section(
             'fp_exp_section_email_branding',
             esc_html__('Email branding', 'fp-experiences'),
             [$this, 'render_email_branding_help'],
-            'fp_exp_settings_emails'
+            'fp_exp_emails_look'
         );
 
         add_settings_field(
             'fp_exp_emails_branding_logo',
             esc_html__('Logo URL', 'fp-experiences'),
             [$this, 'render_emails_branding_field'],
-            'fp_exp_settings_emails',
+            'fp_exp_emails_look',
             'fp_exp_section_email_branding',
             [
                 'key' => 'logo',
@@ -335,10 +547,52 @@ final class SettingsPage
         );
 
         add_settings_field(
+            'fp_exp_emails_branding_logo_width',
+            esc_html__('Larghezza logo (px)', 'fp-experiences'),
+            [$this, 'render_emails_branding_field'],
+            'fp_exp_emails_look',
+            'fp_exp_section_email_branding',
+            [
+                'key' => 'logo_width',
+                'type' => 'number',
+                'placeholder' => '180',
+                'description' => esc_html__('Larghezza massima del logo in pixel. Default: 180px.', 'fp-experiences'),
+            ]
+        );
+
+        add_settings_field(
+            'fp_exp_emails_branding_logo_height',
+            esc_html__('Altezza logo (px)', 'fp-experiences'),
+            [$this, 'render_emails_branding_field'],
+            'fp_exp_emails_look',
+            'fp_exp_section_email_branding',
+            [
+                'key' => 'logo_height',
+                'type' => 'number',
+                'placeholder' => '',
+                'description' => esc_html__('Altezza massima del logo in pixel. Lascia vuoto per calcolo automatico proporzionale.', 'fp-experiences'),
+            ]
+        );
+
+        add_settings_field(
+            'fp_exp_emails_branding_accent_color',
+            esc_html__('Colore accent', 'fp-experiences'),
+            [$this, 'render_emails_branding_field'],
+            'fp_exp_emails_look',
+            'fp_exp_section_email_branding',
+            [
+                'key' => 'accent_color',
+                'type' => 'color',
+                'placeholder' => '#0b7285',
+                'description' => esc_html__('Colore principale per header, pulsanti e link nelle email. Default: #0b7285.', 'fp-experiences'),
+            ]
+        );
+
+        add_settings_field(
             'fp_exp_emails_branding_header',
             esc_html__('Header title', 'fp-experiences'),
             [$this, 'render_emails_branding_field'],
-            'fp_exp_settings_emails',
+            'fp_exp_emails_look',
             'fp_exp_section_email_branding',
             [
                 'key' => 'header_text',
@@ -352,7 +606,7 @@ final class SettingsPage
             'fp_exp_emails_branding_footer',
             esc_html__('Footer note', 'fp-experiences'),
             [$this, 'render_emails_branding_field'],
-            'fp_exp_settings_emails',
+            'fp_exp_emails_look',
             'fp_exp_section_email_branding',
             [
                 'key' => 'footer_text',
@@ -367,7 +621,7 @@ final class SettingsPage
             'fp_exp_section_email_types',
             esc_html__('Tipi di email', 'fp-experiences'),
             [$this, 'render_email_types_help'],
-            'fp_exp_settings_emails'
+            'fp_exp_emails_config'
         );
 
         $email_types = [
@@ -381,7 +635,7 @@ final class SettingsPage
                 'fp_exp_emails_type_' . $type['key'],
                 $type['label'],
                 [$this, 'render_email_toggle_field'],
-                'fp_exp_settings_emails',
+                'fp_exp_emails_config',
                 'fp_exp_section_email_types',
                 [
                     'path' => ['types', $type['key']],
@@ -394,14 +648,14 @@ final class SettingsPage
             'fp_exp_section_email_schedule',
             esc_html__('Pianificazione', 'fp-experiences'),
             [$this, 'render_email_schedule_help'],
-            'fp_exp_settings_emails'
+            'fp_exp_emails_config'
         );
 
         add_settings_field(
             'fp_exp_emails_schedule_reminder_offset_hours',
             esc_html__('Offset promemoria (ore prima dell\'inizio)', 'fp-experiences'),
             [$this, 'render_email_number_field'],
-            'fp_exp_settings_emails',
+            'fp_exp_emails_config',
             'fp_exp_section_email_schedule',
             [
                 'path' => ['schedule', 'reminder_offset_hours'],
@@ -416,7 +670,7 @@ final class SettingsPage
             'fp_exp_emails_schedule_followup_offset_hours',
             esc_html__('Offset follow-up (ore dopo la fine)', 'fp-experiences'),
             [$this, 'render_email_number_field'],
-            'fp_exp_settings_emails',
+            'fp_exp_emails_config',
             'fp_exp_section_email_schedule',
             [
                 'path' => ['schedule', 'followup_offset_hours'],
@@ -427,12 +681,21 @@ final class SettingsPage
             ]
         );
 
+        // Campo: URL recensione per email follow-up
+        add_settings_field(
+            'fp_exp_emails_review_url',
+            esc_html__('URL recensione', 'fp-experiences'),
+            [$this, 'render_email_review_url_field'],
+            'fp_exp_emails_config',
+            'fp_exp_section_email_schedule'
+        );
+
         // Sezione: Soggetti personalizzati
         add_settings_section(
             'fp_exp_section_email_subjects',
             esc_html__('Soggetti email', 'fp-experiences'),
             [$this, 'render_email_subjects_help'],
-            'fp_exp_settings_emails'
+            'fp_exp_emails_config'
         );
 
         $subjects = [
@@ -447,7 +710,7 @@ final class SettingsPage
                 'fp_exp_emails_subject_' . $subject['key'],
                 $subject['label'],
                 [$this, 'render_email_subject_field'],
-                'fp_exp_settings_emails',
+                'fp_exp_emails_config',
                 'fp_exp_section_email_subjects',
                 [
                     'path' => ['subjects', $subject['key']],
@@ -455,6 +718,14 @@ final class SettingsPage
                 ]
             );
         }
+
+        // Sezione: Anteprime email
+        add_settings_section(
+            'fp_exp_section_email_previews',
+            esc_html__('Anteprime email', 'fp-experiences'),
+            [$this, 'render_email_previews_section'],
+            'fp_exp_emails_previews'
+        );
     }
 
     private function register_general_settings(): void
@@ -574,9 +845,9 @@ final class SettingsPage
                 'key' => 'sidebar',
                 'type' => 'select',
                 'options' => [
-                    'right' => esc_html__('Right column', 'fp-experiences'),
-                    'left' => esc_html__('Left column', 'fp-experiences'),
-                    'none' => esc_html__('No sidebar (single column)', 'fp-experiences'),
+                    'right' => esc_html__('Colonna destra', 'fp-experiences'),
+                    'left' => esc_html__('Colonna sinistra', 'fp-experiences'),
+                    'none' => esc_html__('Nessuna sidebar (colonna singola)', 'fp-experiences'),
                 ],
                 'description' => esc_html__('Default position for the booking widget on desktop.', 'fp-experiences'),
             ]
@@ -648,7 +919,9 @@ final class SettingsPage
     {
         $value = is_array($value) ? $value : [];
 
-        $enabled = ! empty($value['enabled']) ? 'yes' : 'no';
+        // Handle both 'yes'/'no' from toggle and 1/0 from legacy checkbox
+        $enabled_raw = $value['enabled'] ?? 'no';
+        $enabled = in_array($enabled_raw, ['yes', '1', 1, true, 'true'], true) ? 'yes' : 'no';
         $validity = isset($value['validity_days']) ? absint((string) $value['validity_days']) : Helpers::gift_validity_days();
         if ($validity <= 0) {
             $validity = Helpers::gift_validity_days();
@@ -700,12 +973,29 @@ final class SettingsPage
     public function render_gift_toggle(): void
     {
         $settings = Helpers::gift_settings();
-        $enabled = ! empty($settings['enabled']);
+        // Handle both 'yes'/'no' and legacy 1/0 values
+        $enabled_raw = $settings['enabled'] ?? 'no';
+        $enabled = in_array($enabled_raw, ['yes', '1', 1, true, 'true'], true);
+        $toggle_value = $enabled ? 'yes' : 'no';
 
-        echo '<label for="fp-exp-gift-enabled">';
-        echo '<input type="checkbox" id="fp-exp-gift-enabled" name="fp_exp_gift[enabled]" value="1" ' . checked($enabled, true, false) . ' /> ';
-        esc_html_e('Allow customers to purchase gift vouchers and send them via email.', 'fp-experiences');
-        echo '</label>';
+        // Use Field Renderer Strategy for consistent toggle styling
+        $field = new FieldDefinition(
+            name: 'fp_exp_gift[enabled]',
+            type: 'toggle',
+            label: '', // Empty label - WordPress shows it via add_settings_field
+            value: $toggle_value,
+            options: [
+                'toggle_class' => 'fp-exp-settings__toggle',
+                'add_hidden_input' => true, // Ensure value is sent even when unchecked
+                'label_text' => esc_html__('Allow customers to purchase gift vouchers and send them via email.', 'fp-experiences'),
+            ],
+            description: null,
+            required: false,
+            attributes: []
+        );
+
+        $renderer = $this->getFieldRendererFactory()->getRenderer('toggle');
+        echo $renderer->render($field, '');
     }
 
     public function render_gift_validity_field(): void
@@ -795,7 +1085,7 @@ final class SettingsPage
             'sidebar' => 'right',
         ];
 
-        $option = get_option('fp_exp_experience_layout', []);
+        $option = $this->getOptions()->get('fp_exp_experience_layout', []);
 
         if (! is_array($option)) {
             return $defaults;
@@ -871,18 +1161,42 @@ final class SettingsPage
         }
 
         $default = isset($args['default']) ? (string) $args['default'] : 'yes';
-        $value = get_option($option, $default);
-        $checked = in_array($value, ['yes', '1', 'true', 1, true], true);
-
-        echo '<input type="hidden" name="' . esc_attr($option) . '" value="no" />';
-        echo '<label class="fp-exp-settings__toggle">';
-        echo '<input type="checkbox" name="' . esc_attr($option) . '" value="yes" ' . checked(true, $checked, false) . ' />';
-        echo ' <span>' . esc_html($label) . '</span>';
-        echo '</label>';
-
-        if (! empty($args['description'])) {
-            echo '<p class="description">' . esc_html((string) $args['description']) . '</p>';
+        
+        // Try to use new use case if available
+        $useCase = $this->getGetSettingsUseCase();
+        if ($useCase !== null) {
+            $value = $useCase->get($option, $default);
+        } else {
+            // Fallback to OptionsInterface for backward compatibility
+            $value = $this->getOptions()->get($option, $default);
         }
+        
+        // Convert to toggle format (yes/no)
+        $toggle_value = in_array($value, ['yes', '1', 'true', 1, true], true) ? 'yes' : 'no';
+
+        // Use Field Renderer Strategy
+        // Note: For toggles, we skip the label in <th> and put it in the toggle itself
+        // to avoid double labels (one in <th> and one in toggle)
+        $field = new FieldDefinition(
+            name: $option,
+            type: 'toggle',
+            label: '', // Empty label - we'll put it in the toggle
+            value: $toggle_value,
+            options: [
+                'description' => $args['description'] ?? null,
+                'toggle_class' => 'fp-exp-settings__toggle',
+                'add_hidden_input' => true, // Tell renderer to add hidden input
+                'label_text' => $label, // Put label text in the toggle
+            ],
+            description: $args['description'] ?? null,
+            required: false,
+            attributes: []
+        );
+
+        $renderer = $this->getFieldRendererFactory()->getRenderer('toggle');
+        
+        // Output the toggle field directly - WordPress Settings API already handles <tr><th><td> wrapper
+        echo $renderer->render($field, '');
     }
 
     /**
@@ -890,25 +1204,8 @@ final class SettingsPage
      */
     public function sanitize_toggle($value): string
     {
-        if (is_bool($value)) {
-            return $value ? 'yes' : 'no';
-        }
-
-        if (is_numeric($value)) {
-            return (int) $value > 0 ? 'yes' : 'no';
-        }
-
-        if (is_string($value)) {
-            $normalized = strtolower(trim($value));
-
-            if ('' === $normalized) {
-                return 'no';
-            }
-
-            return in_array($normalized, ['1', 'yes', 'true', 'on'], true) ? 'yes' : 'no';
-        }
-
-        return $value ? 'yes' : 'no';
+        // Use Sanitizer Strategy
+        return (string) $this->sanitize_form_field('toggle', $value);
     }
 
     /**
@@ -922,10 +1219,19 @@ final class SettingsPage
             $value = [];
         }
 
+        // Use Sanitizer Strategy for nested fields
+        $logo_width  = (int) ($value['logo_width'] ?? 0);
+        $logo_height = (int) ($value['logo_height'] ?? 0);
+
+        $accent_color = sanitize_hex_color((string) ($value['accent_color'] ?? ''));
+
         return [
-            'logo' => esc_url_raw((string) ($value['logo'] ?? '')),
-            'header_text' => sanitize_text_field((string) ($value['header_text'] ?? '')),
-            'footer_text' => sanitize_textarea_field((string) ($value['footer_text'] ?? '')),
+            'logo'         => esc_url_raw((string) ($value['logo'] ?? '')),
+            'logo_width'   => $logo_width > 0 ? min($logo_width, 600) : 0,
+            'logo_height'  => $logo_height > 0 ? min($logo_height, 600) : 0,
+            'accent_color' => $accent_color ?: '',
+            'header_text'  => $this->sanitize_form_field('text', $value['header_text'] ?? ''),
+            'footer_text'  => $this->sanitize_form_field('textarea', $value['footer_text'] ?? ''),
         ];
     }
 
@@ -933,53 +1239,116 @@ final class SettingsPage
      * @param mixed $value
      * @return array{
      *   sender: array{structure:string,webmaster:string},
-     *   branding: array{logo:string,header_text:string,footer_text:string}
+     *   branding: array{logo:string,logo_width:int,logo_height:int,header_text:string,footer_text:string}
      * }
      */
     public function sanitize_emails_settings($value): array
     {
         $value = is_array($value) ? $value : [];
 
+        $existing = get_option('fp_exp_emails', []);
+        $existing = is_array($existing) ? $existing : [];
+
         // mittenti
         $sender = isset($value['sender']) && is_array($value['sender']) ? $value['sender'] : [];
-        $structure = sanitize_email((string) ($sender['structure'] ?? get_option('fp_exp_structure_email', '')));
-        $webmaster = sanitize_email((string) ($sender['webmaster'] ?? get_option('fp_exp_webmaster_email', '')));
+        $existing_sender = isset($existing['sender']) && is_array($existing['sender']) ? $existing['sender'] : [];
+        $structure = sanitize_email((string) ($sender['structure'] ?? $existing_sender['structure'] ?? $this->getOptions()->get('fp_exp_structure_email', '')));
+        $webmaster = sanitize_email((string) ($sender['webmaster'] ?? $existing_sender['webmaster'] ?? $this->getOptions()->get('fp_exp_webmaster_email', '')));
 
-        // branding
-        $branding = isset($value['branding']) && is_array($value['branding']) ? $value['branding'] : [];
-        $branding = $this->sanitize_email_branding($branding);
+        // branding — preserve existing when not submitted
+        if (isset($value['branding']) && is_array($value['branding'])) {
+            $branding = $this->sanitize_email_branding($value['branding']);
+        } else {
+            $branding = isset($existing['branding']) && is_array($existing['branding'])
+                ? $existing['branding']
+                : $this->sanitize_email_branding([]);
+        }
 
         // destinatari aggiuntivi staff
         $recipients = isset($value['recipients']) && is_array($value['recipients']) ? $value['recipients'] : [];
-        $staff_extra_raw = (string) ($recipients['staff_extra'] ?? '');
-        $staff_extra = array_values(array_filter(array_map('sanitize_email', array_map('trim', preg_split('/[,;]+/', $staff_extra_raw) ?: []))));
-
-        // tipi (toggle)
-        $types = isset($value['types']) && is_array($value['types']) ? $value['types'] : [];
-        $types_sanitized = [];
-        foreach (['customer_confirmation', 'staff_notification', 'customer_reminder', 'customer_post_experience'] as $key) {
-            $raw = $types[$key] ?? '';
-            $types_sanitized[$key] = $this->sanitize_yes_no($raw);
+        if (isset($recipients['staff_extra'])) {
+            $staff_extra_raw = (string) $recipients['staff_extra'];
+            $staff_extra = array_values(array_filter(array_map('sanitize_email', array_map('trim', preg_split('/[,;]+/', $staff_extra_raw) ?: []))));
+        } else {
+            $existing_recipients = isset($existing['recipients']) && is_array($existing['recipients']) ? $existing['recipients'] : [];
+            $staff_extra = isset($existing_recipients['staff_extra']) && is_array($existing_recipients['staff_extra'])
+                ? $existing_recipients['staff_extra']
+                : [];
         }
 
-        // schedule (offset ore)
-        $schedule = isset($value['schedule']) && is_array($value['schedule']) ? $value['schedule'] : [];
-        $reminder_hours = isset($schedule['reminder_offset_hours']) ? (int) $schedule['reminder_offset_hours'] : 24;
-        $followup_hours = isset($schedule['followup_offset_hours']) ? (int) $schedule['followup_offset_hours'] : 24;
-        $reminder_hours = max(0, min(240, $reminder_hours));
-        $followup_hours = max(0, min(240, $followup_hours));
+        // tipi (toggle) — preserve existing when the types section is not submitted
+        $existing_types = isset($existing['types']) && is_array($existing['types']) ? $existing['types'] : [];
+        if (isset($value['types']) && is_array($value['types'])) {
+            $types = $value['types'];
+            $types_sanitized = [];
+            foreach (['customer_confirmation', 'staff_notification', 'customer_reminder', 'customer_post_experience'] as $key) {
+                $raw = $types[$key] ?? '';
+                if ($raw === '' || $raw === null) {
+                    $raw = 'no';
+                }
+                $types_sanitized[$key] = $this->sanitize_yes_no($raw);
+            }
+        } else {
+            $types_sanitized = [];
+            foreach (['customer_confirmation', 'staff_notification', 'customer_reminder', 'customer_post_experience'] as $key) {
+                $types_sanitized[$key] = $existing_types[$key] ?? 'yes';
+            }
+        }
 
+        // schedule (offset ore) — preserve existing when not submitted
+        if (isset($value['schedule']) && is_array($value['schedule'])) {
+            $schedule = $value['schedule'];
+            $reminder_hours = isset($schedule['reminder_offset_hours']) ? (int) $schedule['reminder_offset_hours'] : 24;
+            $followup_hours = isset($schedule['followup_offset_hours']) ? (int) $schedule['followup_offset_hours'] : 24;
+        } else {
+            $existing_schedule = isset($existing['schedule']) && is_array($existing['schedule']) ? $existing['schedule'] : [];
+            $reminder_hours = isset($existing_schedule['reminder_offset_hours']) ? (int) $existing_schedule['reminder_offset_hours'] : 24;
+            $followup_hours = isset($existing_schedule['followup_offset_hours']) ? (int) $existing_schedule['followup_offset_hours'] : 24;
+        }
         $schedule_sanitized = [
-            'reminder_offset_hours' => $reminder_hours,
-            'followup_offset_hours' => $followup_hours,
+            'reminder_offset_hours' => max(0, min(240, $reminder_hours)),
+            'followup_offset_hours' => max(0, min(240, $followup_hours)),
         ];
 
-        // subjects (override opzionali)
-        $subjects = isset($value['subjects']) && is_array($value['subjects']) ? $value['subjects'] : [];
+        // review_url — preserve existing when not submitted
+        $review_url = isset($value['review_url'])
+            ? esc_url_raw(trim((string) $value['review_url']))
+            : ($existing['review_url'] ?? '');
+
+        // subjects (override opzionali) — preserve existing when not submitted
+        if (isset($value['subjects']) && is_array($value['subjects'])) {
+            $subjects = $value['subjects'];
+        } else {
+            $subjects = isset($existing['subjects']) && is_array($existing['subjects']) ? $existing['subjects'] : [];
+        }
         $subjects_sanitized = [];
         foreach (['customer_confirmation', 'customer_reminder', 'customer_post_experience', 'staff_notification_new', 'staff_notification_cancelled'] as $key) {
             $subjects_sanitized[$key] = sanitize_text_field((string) ($subjects[$key] ?? ''));
         }
+
+        // provider & from — preserve existing when not submitted
+        $provider = sanitize_key((string) ($value['provider'] ?? $existing['provider'] ?? 'wordpress'));
+        if (! in_array($provider, ['wordpress', 'smtp', 'brevo'], true)) {
+            $provider = 'wordpress';
+        }
+        $from_email = sanitize_email((string) ($value['from_email'] ?? $existing['from_email'] ?? ''));
+        $from_name  = sanitize_text_field((string) ($value['from_name'] ?? $existing['from_name'] ?? ''));
+
+        // SMTP settings — preserve existing when not submitted
+        if (isset($value['smtp']) && is_array($value['smtp'])) {
+            $smtp_raw = $value['smtp'];
+        } else {
+            $smtp_raw = isset($existing['smtp']) && is_array($existing['smtp']) ? $existing['smtp'] : [];
+        }
+        $smtp = [
+            'host'       => sanitize_text_field((string) ($smtp_raw['host'] ?? '')),
+            'port'       => max(1, min(65535, (int) ($smtp_raw['port'] ?? 587))),
+            'encryption' => in_array(($smtp_raw['encryption'] ?? 'tls'), ['tls', 'ssl', 'none'], true)
+                ? (string) $smtp_raw['encryption']
+                : 'tls',
+            'username'   => sanitize_text_field((string) ($smtp_raw['username'] ?? '')),
+            'password'   => (string) ($smtp_raw['password'] ?? ''),
+        ];
 
         return [
             'sender' => [
@@ -993,17 +1362,18 @@ final class SettingsPage
             'types' => $types_sanitized,
             'schedule' => $schedule_sanitized,
             'subjects' => $subjects_sanitized,
+            'review_url' => $review_url,
+            'provider'   => $provider,
+            'from_email' => $from_email,
+            'from_name'  => $from_name,
+            'smtp'       => $smtp,
         ];
     }
 
     private function sanitize_yes_no($value): string
     {
-        if (is_string($value)) {
-            $normalized = strtolower(trim($value));
-            return in_array($normalized, ['1', 'yes', 'true', 'on'], true) ? 'yes' : 'no';
-        }
-
-        return $value ? 'yes' : 'no';
+        // Use Sanitizer Strategy
+        return (string) $this->sanitize_form_field('toggle', $value);
     }
 
     private function register_tracking_settings(): void
@@ -1096,6 +1466,104 @@ final class SettingsPage
         }
     }
 
+    private function register_webhook_settings(): void
+    {
+        register_setting('fp_exp_settings_webhook', 'fp_exp_webhook_settings', [
+            'type' => 'array',
+            'sanitize_callback' => [$this, 'sanitize_webhook_settings'],
+            'default' => [],
+        ]);
+
+        add_settings_section(
+            'fp_exp_section_webhook_outbound',
+            esc_html__('Webhook outbound', 'fp-experiences'),
+            [$this, 'render_webhook_help'],
+            'fp_exp_settings_webhook'
+        );
+
+        add_settings_field(
+            'fp_exp_webhook_url',
+            esc_html__('Endpoint URL', 'fp-experiences'),
+            [$this, 'render_webhook_url_field'],
+            'fp_exp_settings_webhook',
+            'fp_exp_section_webhook_outbound'
+        );
+        add_settings_field(
+            'fp_exp_webhook_secret',
+            esc_html__('Segreto (HMAC)', 'fp-experiences'),
+            [$this, 'render_webhook_secret_field'],
+            'fp_exp_settings_webhook',
+            'fp_exp_section_webhook_outbound'
+        );
+        add_settings_field(
+            'fp_exp_webhook_events',
+            esc_html__('Eventi da inviare', 'fp-experiences'),
+            [$this, 'render_webhook_events_field'],
+            'fp_exp_settings_webhook',
+            'fp_exp_section_webhook_outbound'
+        );
+    }
+
+    public function render_webhook_help(): void
+    {
+        echo '<p>' . esc_html__('Invia notifiche POST a un endpoint esterno quando si verificano eventi (prenotazione creata, pagata, RTB approvata/rifiutata, voucher riscattato). Il corpo è JSON con header X-FP-EXP-Signature (HMAC-SHA256 del body).', 'fp-experiences') . '</p>';
+    }
+
+    public function render_webhook_url_field(): void
+    {
+        $opts = get_option('fp_exp_webhook_settings', []);
+        $url = isset($opts['url']) ? (string) $opts['url'] : '';
+        echo '<input type="url" name="fp_exp_webhook_settings[url]" value="' . esc_attr($url) . '" class="regular-text" placeholder="https://..." />';
+    }
+
+    public function render_webhook_secret_field(): void
+    {
+        $opts = get_option('fp_exp_webhook_settings', []);
+        $secret = isset($opts['secret']) ? (string) $opts['secret'] : '';
+        echo '<input type="password" name="fp_exp_webhook_settings[secret]" value="' . esc_attr($secret) . '" class="regular-text" autocomplete="off" />';
+    }
+
+    public function render_webhook_events_field(): void
+    {
+        $opts = get_option('fp_exp_webhook_settings', []);
+        $events = isset($opts['events']) && is_array($opts['events']) ? $opts['events'] : [];
+        $labels = [
+            \FP_Exp\Api\WebhookDispatcher::EVENT_RESERVATION_CREATED => esc_html__('Prenotazione creata', 'fp-experiences'),
+            \FP_Exp\Api\WebhookDispatcher::EVENT_RESERVATION_PAID => esc_html__('Prenotazione pagata', 'fp-experiences'),
+            \FP_Exp\Api\WebhookDispatcher::EVENT_RESERVATION_CANCELLED => esc_html__('Prenotazione cancellata', 'fp-experiences'),
+            \FP_Exp\Api\WebhookDispatcher::EVENT_RTB_APPROVED => esc_html__('RTB approvata', 'fp-experiences'),
+            \FP_Exp\Api\WebhookDispatcher::EVENT_RTB_DECLINED => esc_html__('RTB rifiutata', 'fp-experiences'),
+            \FP_Exp\Api\WebhookDispatcher::EVENT_GIFT_REDEEMED => esc_html__('Voucher riscattato', 'fp-experiences'),
+        ];
+        foreach (\FP_Exp\Api\WebhookDispatcher::supported_events() as $event) {
+            $checked = in_array($event, $events, true);
+            echo '<label><input type="checkbox" name="fp_exp_webhook_settings[events][]" value="' . esc_attr($event) . '" ' . checked($checked, true, false) . ' /> ' . esc_html($labels[$event] ?? $event) . '</label><br />';
+        }
+    }
+
+    /**
+     * @param array<string, mixed> $input
+     * @return array<string, mixed>
+     */
+    public function sanitize_webhook_settings(array $input): array
+    {
+        $out = [
+            'url' => isset($input['url']) ? esc_url_raw(trim((string) $input['url'])) : '',
+            'secret' => isset($input['secret']) ? sanitize_text_field((string) $input['secret']) : '',
+            'events' => [],
+        ];
+        if (isset($input['events']) && is_array($input['events'])) {
+            $allowed = \FP_Exp\Api\WebhookDispatcher::supported_events();
+            foreach ($input['events'] as $e) {
+                $e = sanitize_key((string) $e);
+                if (in_array($e, $allowed, true)) {
+                    $out['events'][] = $e;
+                }
+            }
+        }
+        return $out;
+    }
+
     private function register_brevo_settings(): void
     {
         register_setting('fp_exp_settings_brevo', 'fp_exp_brevo', [
@@ -1106,7 +1574,7 @@ final class SettingsPage
 
         add_settings_section(
             'fp_exp_section_brevo_connection',
-            esc_html__('Connection', 'fp-experiences'),
+            esc_html__('Connessione e account', 'fp-experiences'),
             [$this, 'render_brevo_help'],
             'fp_exp_settings_brevo'
         );
@@ -1123,8 +1591,34 @@ final class SettingsPage
         }
 
         add_settings_section(
+            'fp_exp_section_brevo_customer_delivery',
+            esc_html__('Messaggi al cliente', 'fp-experiences'),
+            [$this, 'render_brevo_customer_delivery_intro'],
+            'fp_exp_settings_brevo'
+        );
+
+        foreach ($this->get_brevo_customer_delivery_fields() as $field) {
+            add_settings_field(
+                'fp_exp_brevo_delivery_' . preg_replace('/[^a-z0-9]+/i', '_', $field['key']),
+                esc_html($field['label']),
+                [$this, 'render_brevo_field'],
+                'fp_exp_settings_brevo',
+                'fp_exp_section_brevo_customer_delivery',
+                $field
+            );
+        }
+
+        add_settings_field(
+            'fp_exp_brevo_track_events',
+            esc_html__('Eventi Brevo Automation', 'fp-experiences'),
+            [$this, 'render_brevo_track_events_field'],
+            'fp_exp_settings_brevo',
+            'fp_exp_section_brevo_customer_delivery'
+        );
+
+        add_settings_section(
             'fp_exp_section_brevo_mapping',
-            esc_html__('Attribute mapping', 'fp-experiences'),
+            esc_html__('Mapping attributi contatto', 'fp-experiences'),
             '__return_false',
             'fp_exp_settings_brevo'
         );
@@ -1142,7 +1636,7 @@ final class SettingsPage
 
         add_settings_section(
             'fp_exp_section_brevo_templates',
-            esc_html__('Transactional templates', 'fp-experiences'),
+            esc_html__('Template transazionali (ID Brevo)', 'fp-experiences'),
             '__return_false',
             'fp_exp_settings_brevo'
         );
@@ -1209,18 +1703,27 @@ final class SettingsPage
      */
     private function get_tabs(): array
     {
-        return [
-            'general' => esc_html__('General', 'fp-experiences'),
-            'gift' => esc_html__('Gift', 'fp-experiences'),
-            'branding' => esc_html__('Branding', 'fp-experiences'),
-            'booking' => esc_html__('Booking Rules', 'fp-experiences'),
-            'calendar' => esc_html__('Calendar', 'fp-experiences'),
-            'tracking' => esc_html__('Tracking', 'fp-experiences'),
-            'rtb' => esc_html__('RTB', 'fp-experiences'),
-            'listing' => esc_html__('Vetrina', 'fp-experiences'),
-            'tools' => esc_html__('Tools', 'fp-experiences'),
-            'logs' => esc_html__('Logs', 'fp-experiences'),
+        $tabs = [
+            'general' => '<span class="dashicons dashicons-admin-settings"></span> ' . esc_html__('General', 'fp-experiences'),
+            'gift' => '<span class="dashicons dashicons-tickets-alt"></span> ' . esc_html__('Gift', 'fp-experiences'),
+            'branding' => '<span class="dashicons dashicons-art"></span> ' . esc_html__('Branding', 'fp-experiences'),
+            'booking' => '<span class="dashicons dashicons-calendar-alt"></span> ' . esc_html__('Booking Rules', 'fp-experiences'),
+            'calendar' => '<span class="dashicons dashicons-calendar"></span> ' . esc_html__('Calendar', 'fp-experiences'),
+            'tracking' => '<span class="dashicons dashicons-chart-line"></span> ' . esc_html__('Tracking', 'fp-experiences'),
+            'rtb' => '<span class="dashicons dashicons-email"></span> ' . esc_html__('Request to Book', 'fp-experiences'),
+            'webhook' => '<span class="dashicons dashicons-admin-links"></span> ' . esc_html__('Webhook', 'fp-experiences'),
+            'listing' => '<span class="dashicons dashicons-list-view"></span> ' . esc_html__('Vetrina', 'fp-experiences'),
+            'tools' => '<span class="dashicons dashicons-admin-tools"></span> ' . esc_html__('Tools', 'fp-experiences'),
+            'logs' => '<span class="dashicons dashicons-media-text"></span> ' . esc_html__('Logs', 'fp-experiences'),
         ];
+
+        /**
+         * Filter the settings tabs.
+         *
+         * @param array<string, string> $tabs Array of tab slugs and labels.
+         * @return array<string, string> Filtered tabs.
+         */
+        return apply_filters('fp_exp_settings_tabs', $tabs);
     }
 
     public function render_tools_panel(): void
@@ -1343,6 +1846,12 @@ final class SettingsPage
                 'button' => esc_html__('Replay events', 'fp-experiences'),
             ],
             [
+                'slug' => 'verify-tracking-simulation',
+                'label' => esc_html__('Verifica tracking simulato', 'fp-experiences'),
+                'description' => esc_html__('Esegue un test one-click di tracking (Brevo simulato + eventi fp_tracking_event) senza credenziali reali.', 'fp-experiences'),
+                'button' => esc_html__('Esegui verifica tracking', 'fp-experiences'),
+            ],
+            [
                 'slug' => 'resync-roles',
                 'label' => esc_html__('Resynchronise FP roles', 'fp-experiences'),
                 'description' => esc_html__('Restore the FP Experiences capabilities for administrators and custom roles.', 'fp-experiences'),
@@ -1353,6 +1862,30 @@ final class SettingsPage
                 'label' => esc_html__('Ripara dati corrotti', 'fp-experiences'),
                 'description' => esc_html__('Pulisce i campi array corrotti (highlights, inclusions, exclusions, what_to_bring, notes) rimuovendo le stringhe "Array" non valide.', 'fp-experiences'),
                 'button' => esc_html__('Ripara dati', 'fp-experiences'),
+            ],
+            [
+                'slug' => 'cleanup-duplicate-page-ids',
+                'label' => esc_html__('Pulisci Page ID duplicati', 'fp-experiences'),
+                'description' => esc_html__('Rimuove i _fp_exp_page_id dalle esperienze che condividono lo stesso page_id. Questo garantisce che ogni esperienza abbia un link univoco nella lista.', 'fp-experiences'),
+                'button' => esc_html__('Pulisci duplicati', 'fp-experiences'),
+            ],
+            [
+                'slug' => 'rebuild-availability-meta',
+                'label' => esc_html__('Ricostruisci Availability Meta', 'fp-experiences'),
+                'description' => esc_html__('Ricostruisce _fp_exp_availability per tutte le esperienze usando i meta esistenti (_fp_capacity_slot, _fp_lead_time_hours, ecc). Utile dopo import CSV o per sistemare availability incomplete.', 'fp-experiences'),
+                'button' => esc_html__('Ricostruisci meta', 'fp-experiences'),
+            ],
+            [
+                'slug' => 'repair-slot-capacities',
+                'label' => esc_html__('Ripara Capacity Slot', 'fp-experiences'),
+                'description' => esc_html__('Aggiorna la capacity di tutti gli slot esistenti con capacity=0, usando la configurazione corrente dall\'esperienza. Utile per slot creati prima dei fix recenti.', 'fp-experiences'),
+                'button' => esc_html__('Ripara slot', 'fp-experiences'),
+            ],
+            [
+                'slug' => 'cleanup-old-slots',
+                'label' => esc_html__('Pulisci Slot Vecchi', 'fp-experiences'),
+                'description' => esc_html__('Cancella slot passati (oltre 30 giorni) che non hanno prenotazioni. Aiuta a mantenere il database pulito.', 'fp-experiences'),
+                'button' => esc_html__('Pulisci slot', 'fp-experiences'),
             ],
             [
                 'slug' => 'resync-pages',
@@ -1380,9 +1913,33 @@ final class SettingsPage
             ],
             [
                 'slug' => 'clear-cache',
-                'label' => esc_html__('Clear caches & logs', 'fp-experiences'),
-                'description' => esc_html__('Purge plugin transients and truncate the internal log buffer.', 'fp-experiences'),
-                'button' => esc_html__('Clear caches', 'fp-experiences'),
+                'label' => esc_html__('Pulisci cache e log', 'fp-experiences'),
+                'description' => esc_html__('Elimina i transient del plugin e svuota il buffer dei log interni.', 'fp-experiences'),
+                'button' => esc_html__('Pulisci cache', 'fp-experiences'),
+            ],
+            [
+                'slug' => 'recreate-virtual-product',
+                'label' => esc_html__('Ricrea prodotto virtuale WooCommerce', 'fp-experiences'),
+                'description' => esc_html__('Ricrea il prodotto virtuale WooCommerce necessario per il checkout. Usa questo se il checkout restituisce errori di "configurazione mancante".', 'fp-experiences'),
+                'button' => esc_html__('Ricrea prodotto', 'fp-experiences'),
+            ],
+            [
+                'slug' => 'fix-virtual-product-quantity',
+                'label' => esc_html__('Fix quantità prodotto virtuale', 'fp-experiences'),
+                'description' => esc_html__('Disabilita "Venduto singolarmente" sul prodotto virtuale per permettere quantità multiple (numero di persone). Usa questo se il checkout mostra sempre "Quantità: 1".', 'fp-experiences'),
+                'button' => esc_html__('Fix quantità', 'fp-experiences'),
+            ],
+            [
+                'slug' => 'fix-experience-prices',
+                'label' => esc_html__('Fix prezzi esperienze', 'fp-experiences'),
+                'description' => esc_html__('Imposta automaticamente _fp_price per tutte le esperienze prendendo il prezzo dal primo ticket type. Usa questo se il checkout mostra "Prezzo: 0€".', 'fp-experiences'),
+                'button' => esc_html__('Fix prezzi', 'fp-experiences'),
+            ],
+            [
+                'slug' => 'migrate-reservations',
+                'label' => esc_html__('Migra prenotazioni da ordini WC', 'fp-experiences'),
+                'description' => esc_html__('Crea record nella tabella prenotazioni leggendo i meta degli ordini WooCommerce esistenti. Utile se gli ordini hanno dati esperienza ma la tabella prenotazioni è vuota.', 'fp-experiences'),
+                'button' => esc_html__('Migra prenotazioni', 'fp-experiences'),
             ],
         ];
     }
@@ -1419,12 +1976,24 @@ final class SettingsPage
 
     public function render_email_field(array $args): void
     {
-        $option = $args['option'];
-        $value = get_option($option, '');
-        echo '<input type="email" class="regular-text" name="' . esc_attr($option) . '" value="' . esc_attr((string) $value) . '" />';
-        if (! empty($args['description'])) {
-            echo '<p class="description">' . esc_html($args['description']) . '</p>';
+        $option = $args['option'] ?? '';
+        if (! $option) {
+            return;
         }
+
+        $value = $this->getOptions()->get($option, '');
+        
+        // Use Field Renderer Strategy
+        echo $this->render_form_field(
+            name: $option,
+            type: 'email',
+            label: $args['label'] ?? '',
+            value: $value,
+            options: [
+                'description' => $args['description'] ?? null,
+                'attributes' => ['class' => 'regular-text'],
+            ]
+        );
     }
 
     public function render_email_nested_field(array $args): void
@@ -1434,18 +2003,18 @@ final class SettingsPage
             return;
         }
 
-        $settings = get_option('fp_exp_emails', []);
+        $settings = $this->getOptions()->get('fp_exp_emails', []);
         $settings = is_array($settings) ? $settings : [];
 
         // retrocompat: fallback a opzioni legacy
         if (! isset($settings['sender']['structure'])) {
-            $legacy = sanitize_email((string) get_option('fp_exp_structure_email', ''));
+            $legacy = sanitize_email((string) $this->getOptions()->get('fp_exp_structure_email', ''));
             if ($legacy) {
                 $settings['sender']['structure'] = $legacy;
             }
         }
         if (! isset($settings['sender']['webmaster'])) {
-            $legacy = sanitize_email((string) get_option('fp_exp_webmaster_email', ''));
+            $legacy = sanitize_email((string) $this->getOptions()->get('fp_exp_webmaster_email', ''));
             if ($legacy) {
                 $settings['sender']['webmaster'] = $legacy;
             }
@@ -1492,14 +2061,42 @@ final class SettingsPage
     public function render_email_branding_help(): void
     {
         echo '<p>' . esc_html__('Personalizza intestazione e footer delle email transazionali con logo e messaggi di cortesia.', 'fp-experiences') . '</p>';
+    }
 
-        $emails = new Emails();
-        $templates = [
-            'customer-confirmation' => esc_html__('Customer confirmation', 'fp-experiences'),
-            'customer-reminder' => esc_html__('Customer reminder', 'fp-experiences'),
-            'customer-post-experience' => esc_html__('Post-experience follow-up', 'fp-experiences'),
-            'staff-notification' => esc_html__('Staff notification', 'fp-experiences'),
-        ];
+    /**
+     * Render email previews section with all email templates grouped by category.
+     */
+    public function render_email_previews_section(): void
+    {
+        echo '<p>' . esc_html__('Panoramica di tutte le email inviate dal plugin, raggruppate per flusso. Clicca su ogni tipo per espandere l\'anteprima.', 'fp-experiences') . '</p>';
+
+        if (! defined('FP_EXP_PLUGIN_DIR')) {
+            echo '<p class="fp-exp-email-previews__error">';
+            echo esc_html__('Errore: FP_EXP_PLUGIN_DIR non definita. Le anteprime non possono essere caricate.', 'fp-experiences');
+            echo '</p>';
+            return;
+        }
+
+        $emails = null;
+        try {
+            $kernel = \FP_Exp\Core\Bootstrap\Bootstrap::kernel();
+            if ($kernel !== null) {
+                $emails = $kernel->container()->make(Emails::class);
+            }
+        } catch (\Throwable $e) {
+            // fall through
+        }
+        if ($emails === null) {
+            $options = $this->getOptions();
+            $mailer = new \FP_Exp\Booking\Email\Mailer($options);
+            $emails = new Emails(
+                $options,
+                new \FP_Exp\Booking\Email\Senders\CustomerEmailSender($mailer, $options),
+                new \FP_Exp\Booking\Email\Senders\StaffEmailSender($mailer)
+            );
+        }
+
+        $groups = $this->get_email_preview_groups();
         $languages = [
             EmailTranslator::LANGUAGE_IT => esc_html__('Italiano', 'fp-experiences'),
             EmailTranslator::LANGUAGE_EN => esc_html__('English', 'fp-experiences'),
@@ -1507,68 +2104,201 @@ final class SettingsPage
 
         echo '<div class="fp-exp-email-previews">';
 
-        foreach ($templates as $template => $label) {
-            echo '<details class="fp-exp-email-previews__item">';
-            echo '<summary class="fp-exp-email-previews__summary">' . esc_html($label) . '</summary>';
-            echo '<div class="fp-exp-email-previews__body">';
+        foreach ($groups as $group) {
+            echo '<div class="fp-exp-email-previews__group">';
+            echo '<h3 class="fp-exp-email-previews__group-title">';
+            echo '<span class="dashicons ' . esc_attr($group['icon']) . '"></span> ';
+            echo esc_html($group['title']);
+            echo '</h3>';
 
-            foreach ($languages as $code => $language_label) {
-                $preview = $emails->render_preview($template, $code);
+            foreach ($group['templates'] as $tpl) {
+                $slug    = $tpl['slug'];
+                $label   = $tpl['label'];
+                $trigger = $tpl['trigger'];
+                $dest    = $tpl['dest'];
+                $is_gift = 'gift-voucher' === $slug;
 
-                if ('' === trim($preview)) {
-                    continue;
+                echo '<details class="fp-exp-email-previews__item">';
+                echo '<summary class="fp-exp-email-previews__summary">';
+                echo '<span class="fp-exp-email-previews__summary-text">' . esc_html($label) . '</span>';
+                echo '<span class="fp-exp-email-previews__dest">' . esc_html($dest) . '</span>';
+                echo '</summary>';
+
+                echo '<div class="fp-exp-email-previews__trigger">';
+                echo '<span class="dashicons dashicons-arrow-right-alt"></span> ';
+                echo esc_html($trigger);
+                echo '</div>';
+
+                echo '<div class="fp-exp-email-previews__body">';
+
+                $has_previews = false;
+
+                if ($is_gift) {
+                    $this->render_gift_voucher_preview($emails, $languages, $has_previews);
+                } else {
+                    foreach ($languages as $code => $language_label) {
+                        $preview = $emails->render_preview($slug, $code);
+
+                        if ('' === trim($preview)) {
+                            continue;
+                        }
+
+                        $has_previews = true;
+                        echo '<div class="fp-exp-email-previews__preview" data-language="' . esc_attr($code) . '">';
+                        echo '<h4 class="fp-exp-email-previews__label">' . esc_html($language_label) . '</h4>';
+                        echo '<div class="fp-exp-email-previews__frame">';
+                        echo $preview; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+                        echo '</div>';
+                        echo '</div>';
+                    }
                 }
 
-                echo '<div class="fp-exp-email-previews__preview" data-language="' . esc_attr($code) . '">';
-                echo '<h4 class="fp-exp-email-previews__label">' . esc_html($language_label) . '</h4>';
-                echo '<div class="fp-exp-email-previews__frame">';
-                echo $preview; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-                echo '</div>';
-                echo '</div>';
+                if (! $has_previews) {
+                    $template_path = FP_EXP_PLUGIN_DIR . 'templates/emails/' . $slug . '.php';
+                    $template_exists = file_exists($template_path);
+                    echo '<p class="fp-exp-email-previews__empty">';
+                    if (! $is_gift && ! $template_exists) {
+                        echo esc_html__('Template non trovato: ', 'fp-experiences') . esc_html($template_path);
+                    } else {
+                        echo esc_html__('Nessuna anteprima disponibile per questo template.', 'fp-experiences');
+                    }
+                    echo '</p>';
+                }
+
+                echo '</div>'; // __body
+                echo '</details>';
             }
 
-            echo '</div>';
-            echo '</details>';
+            echo '</div>'; // __group
         }
 
         echo '</div>';
     }
 
-    public function render_email_branding_field(array $args): void
+    /**
+     * @return list<array{title: string, icon: string, templates: list<array{slug: string, label: string, trigger: string, dest: string}>}>
+     */
+    private function get_email_preview_groups(): array
     {
-        // legacy accessor per opzione separata
-        $settings = get_option('fp_exp_email_branding', []);
-        $settings = is_array($settings) ? $settings : [];
-        $key = $args['key'] ?? '';
+        return [
+            [
+                'title' => __('Prenotazione diretta', 'fp-experiences'),
+                'icon'  => 'dashicons-calendar-alt',
+                'templates' => [
+                    [
+                        'slug'    => 'customer-confirmation',
+                        'label'   => __('Conferma prenotazione', 'fp-experiences'),
+                        'trigger' => __('Inviata al completamento del pagamento dell\'ordine WooCommerce.', 'fp-experiences'),
+                        'dest'    => __('Cliente', 'fp-experiences'),
+                    ],
+                    [
+                        'slug'    => 'customer-reminder',
+                        'label'   => __('Promemoria pre-esperienza', 'fp-experiences'),
+                        'trigger' => __('Inviata automaticamente X ore prima dell\'inizio dell\'esperienza (cron).', 'fp-experiences'),
+                        'dest'    => __('Cliente', 'fp-experiences'),
+                    ],
+                    [
+                        'slug'    => 'customer-post-experience',
+                        'label'   => __('Follow-up post-esperienza', 'fp-experiences'),
+                        'trigger' => __('Inviata automaticamente X ore dopo la fine dell\'esperienza (cron).', 'fp-experiences'),
+                        'dest'    => __('Cliente', 'fp-experiences'),
+                    ],
+                    [
+                        'slug'    => 'staff-notification',
+                        'label'   => __('Notifica staff', 'fp-experiences'),
+                        'trigger' => __('Inviata alla creazione, al pagamento confermato o alla cancellazione di una prenotazione.', 'fp-experiences'),
+                        'dest'    => __('Struttura / Webmaster', 'fp-experiences'),
+                    ],
+                ],
+            ],
+            [
+                'title' => __('Request To Book (RTB)', 'fp-experiences'),
+                'icon'  => 'dashicons-clipboard',
+                'templates' => [
+                    [
+                        'slug'    => 'rtb-request-received',
+                        'label'   => __('Richiesta ricevuta', 'fp-experiences'),
+                        'trigger' => __('Inviata quando il cliente invia una richiesta di prenotazione RTB.', 'fp-experiences'),
+                        'dest'    => __('Cliente', 'fp-experiences'),
+                    ],
+                    [
+                        'slug'    => 'rtb-approved',
+                        'label'   => __('Richiesta approvata', 'fp-experiences'),
+                        'trigger' => __('Inviata quando lo staff approva la richiesta con conferma diretta.', 'fp-experiences'),
+                        'dest'    => __('Cliente', 'fp-experiences'),
+                    ],
+                    [
+                        'slug'    => 'rtb-declined',
+                        'label'   => __('Richiesta rifiutata', 'fp-experiences'),
+                        'trigger' => __('Inviata quando lo staff rifiuta la richiesta RTB.', 'fp-experiences'),
+                        'dest'    => __('Cliente', 'fp-experiences'),
+                    ],
+                    [
+                        'slug'    => 'rtb-payment-request',
+                        'label'   => __('Richiesta di pagamento', 'fp-experiences'),
+                        'trigger' => __('Inviata quando lo staff approva la richiesta con modalita "paga dopo".', 'fp-experiences'),
+                        'dest'    => __('Cliente', 'fp-experiences'),
+                    ],
+                ],
+            ],
+            [
+                'title' => __('Voucher Regalo', 'fp-experiences'),
+                'icon'  => 'dashicons-tickets-alt',
+                'templates' => [
+                    [
+                        'slug'    => 'gift-voucher',
+                        'label'   => __('Voucher regalo', 'fp-experiences'),
+                        'trigger' => __('Inviata alla consegna del voucher, immediata o alla data programmata.', 'fp-experiences'),
+                        'dest'    => __('Destinatario regalo', 'fp-experiences'),
+                    ],
+                ],
+            ],
+        ];
+    }
 
-        if (! $key) {
+    /**
+     * Render gift voucher preview using VoucherEmailTemplate class.
+     *
+     * @param array<string, string> $languages
+     */
+    private function render_gift_voucher_preview(Emails $emails, array $languages, bool &$has_previews): void
+    {
+        $template = new VoucherEmailTemplate();
+        $demo_data = [
+            'code'                 => 'GIFT-DEMO-2025',
+            'experience_title'     => 'Degustazione in vigna',
+            'experience_permalink' => 'https://example.com/experience/demo',
+            'value'                => 120.0,
+            'currency'             => 'EUR',
+            'valid_until'          => strtotime('+6 months'),
+        ];
+
+        $body = $template->getBody($demo_data);
+
+        if ('' === trim($body)) {
             return;
         }
 
-        $value = $settings[$key] ?? '';
-        $placeholder = isset($args['placeholder']) ? (string) $args['placeholder'] : '';
-        $type = $args['type'] ?? 'text';
+        $has_previews = true;
 
-        if ('textarea' === $type) {
-            echo '<textarea name="fp_exp_email_branding[' . esc_attr($key) . ']" rows="4" class="large-text" placeholder="' . esc_attr($placeholder) . '">' . esc_textarea((string) $value) . '</textarea>';
-        } else {
-            echo '<input type="text" class="regular-text" name="fp_exp_email_branding[' . esc_attr($key) . ']" value="' . esc_attr((string) $value) . '" placeholder="' . esc_attr($placeholder) . '" />';
-        }
-
-        if (! empty($args['description'])) {
-            echo '<p class="description">' . esc_html((string) $args['description']) . '</p>';
-        }
+        $branded = $emails->apply_branding($body, EmailTranslator::LANGUAGE_IT);
+        echo '<div class="fp-exp-email-previews__preview" data-language="' . esc_attr(EmailTranslator::LANGUAGE_IT) . '">';
+        echo '<h4 class="fp-exp-email-previews__label">' . esc_html__('Anteprima', 'fp-experiences') . '</h4>';
+        echo '<div class="fp-exp-email-previews__frame">';
+        echo $branded; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+        echo '</div>';
+        echo '</div>';
     }
 
     public function render_emails_branding_field(array $args): void
     {
-        $emails = get_option('fp_exp_emails', []);
+        $emails = $this->getOptions()->get('fp_exp_emails', []);
         $emails = is_array($emails) ? $emails : [];
         $branding = isset($emails['branding']) && is_array($emails['branding']) ? $emails['branding'] : [];
 
         // retrocompat: pre-popolare da opzione legacy
         if (! $branding) {
-            $legacy = get_option('fp_exp_email_branding', []);
+            $legacy = $this->getOptions()->get('fp_exp_email_branding', []);
             $legacy = is_array($legacy) ? $legacy : [];
             $branding = $legacy;
         }
@@ -1586,6 +2316,12 @@ final class SettingsPage
 
         if ('textarea' === $type) {
             echo '<textarea name="' . $name . '" rows="4" class="large-text" placeholder="' . esc_attr($placeholder) . '">' . esc_textarea((string) $value) . '</textarea>';
+        } elseif ('number' === $type) {
+            echo '<input type="number" class="small-text" name="' . $name . '" value="' . esc_attr((string) $value) . '" placeholder="' . esc_attr($placeholder) . '" min="0" max="600" step="1" />';
+        } elseif ('color' === $type) {
+            $display_value = $value ?: $placeholder;
+            echo '<input type="color" name="' . $name . '" value="' . esc_attr((string) $display_value) . '" style="width:50px;height:34px;padding:2px;cursor:pointer;" />';
+            echo ' <code class="fp-exp-color-preview" style="font-size:13px;color:#64748b;">' . esc_html((string) $display_value) . '</code>';
         } else {
             echo '<input type="text" class="regular-text" name="' . $name . '" value="' . esc_attr((string) $value) . '" placeholder="' . esc_attr($placeholder) . '" />';
         }
@@ -1602,7 +2338,7 @@ final class SettingsPage
             return;
         }
 
-        $emails = get_option('fp_exp_emails', []);
+        $emails = $this->getOptions()->get('fp_exp_emails', []);
         $emails = is_array($emails) ? $emails : [];
         $cursor = $emails;
         foreach ($path as $segment) {
@@ -1653,24 +2389,23 @@ final class SettingsPage
             return;
         }
 
-        $settings = get_option('fp_exp_emails', []);
-        $settings = is_array($settings) ? $settings : [];
-        $cursor = $settings;
-        foreach ($path as $segment) {
-            if (! isset($cursor[$segment])) {
-                $cursor[$segment] = [];
-            }
-            $cursor = $cursor[$segment];
+        try {
+            echo $this->render_field_inline(
+                name: implode('_', $path),
+                type: 'nested_toggle',
+                options: [
+                    'path' => $path,
+                    'base_type' => 'toggle',
+                    'option_name' => 'fp_exp_emails',
+                    'description' => $args['description'] ?? null,
+                    'label_text' => esc_html__('Abilitato', 'fp-experiences'),
+                ]
+            );
+        } catch (\Throwable $e) {
+            echo '<p class="description" style="color:#dc2626;">'
+                . esc_html($e->getMessage()) . ' in ' . esc_html(basename($e->getFile())) . ':' . $e->getLine()
+                . '</p>';
         }
-
-        $value = 'yes' === ($cursor ?? '');
-
-        $name = 'fp_exp_emails';
-        foreach ($path as $segment) {
-            $name .= '[' . esc_attr($segment) . ']';
-        }
-
-        echo '<label><input type="checkbox" name="' . $name . '" value="yes" ' . checked($value, true, false) . ' /> ' . esc_html__('Abilitato', 'fp-experiences') . '</label>';
     }
 
     public function render_email_number_field(array $args): void
@@ -1685,25 +2420,21 @@ final class SettingsPage
         $step = isset($args['step']) ? (int) $args['step'] : 1;
         $placeholder = isset($args['placeholder']) ? (string) $args['placeholder'] : '';
 
-        $settings = get_option('fp_exp_emails', []);
-        $settings = is_array($settings) ? $settings : [];
-
-        $cursor = $settings;
-        foreach ($path as $segment) {
-            if (! isset($cursor[$segment])) {
-                $cursor[$segment] = [];
-            }
-            $cursor = $cursor[$segment];
-        }
-
-        $value = is_numeric($cursor ?? null) ? (int) $cursor : '';
-
-        $name = 'fp_exp_emails';
-        foreach ($path as $segment) {
-            $name .= '[' . esc_attr($segment) . ']';
-        }
-
-        echo '<input type="number" class="small-text" min="' . esc_attr((string) $min) . '" max="' . esc_attr((string) $max) . '" step="' . esc_attr((string) $step) . '" name="' . $name . '" value="' . esc_attr((string) $value) . '" placeholder="' . esc_attr($placeholder) . '" />';
+        echo $this->render_field_inline(
+            name: implode('_', $path),
+            type: 'nested_number',
+            options: [
+                'path' => $path,
+                'base_type' => 'number',
+                'option_name' => 'fp_exp_emails',
+                'description' => $args['description'] ?? null,
+                'attributes' => ['class' => 'small-text'],
+                'min' => $min,
+                'max' => $max,
+                'step' => $step,
+                'placeholder' => $placeholder,
+            ]
+        );
     }
 
     public function render_email_subject_field(array $args): void
@@ -1713,26 +2444,170 @@ final class SettingsPage
             return;
         }
 
-        $settings = get_option('fp_exp_emails', []);
+        echo $this->render_field_inline(
+            name: implode('_', $path),
+            type: 'nested_text',
+            options: [
+                'path' => $path,
+                'base_type' => 'text',
+                'option_name' => 'fp_exp_emails',
+                'description' => $args['description'] ?? null,
+                'attributes' => ['class' => 'regular-text'],
+            ]
+        );
+        echo '<p class="description">' . esc_html__('Puoi usare segnaposto come {experience_title}.', 'fp-experiences') . '</p>';
+    }
+
+    public function render_email_review_url_field(): void
+    {
+        $settings = $this->getOptions()->get('fp_exp_emails', []);
+        $settings = is_array($settings) ? $settings : [];
+        $value = $settings['review_url'] ?? '';
+
+        echo '<input type="url" name="fp_exp_emails[review_url]" id="fp_exp_emails_review_url" '
+            . 'value="' . esc_attr($value) . '" class="regular-text" '
+            . 'placeholder="https://g.page/r/esempio/review" />';
+        echo '<p class="description">'
+            . esc_html__('URL per il pulsante "Lascia una recensione" nella mail follow-up (es. Google Reviews, TripAdvisor). Se vuoto, usa il link all\'esperienza.', 'fp-experiences')
+            . '</p>';
+    }
+
+    public function render_email_provider_help(): void
+    {
+        echo '<p>' . esc_html__('Scegli come inviare le email del plugin: tramite WordPress (wp_mail), un server SMTP personalizzato o Brevo API.', 'fp-experiences') . '</p>';
+        if ( defined( 'FP_FPMAIL_VERSION' ) ) {
+            $url = esc_url( admin_url( 'admin.php?page=fp-fpmail' ) );
+            echo '<div class="notice notice-info inline" style="margin:12px 0 0 0;padding:12px 16px;"><p style="margin:0;">';
+            echo '<span class="dashicons dashicons-email-alt" style="color:#2271b1;vertical-align:middle;"></span> ';
+            printf(
+                /* translators: %s: link to FP Mail SMTP settings */
+                esc_html__( 'FP Mail SMTP è installato e attivo: centralizza la configurazione SMTP per tutti i plugin FP. Scegli provider "WordPress" e configura in %s. Non compilare la sezione SMTP personalizzato.', 'fp-experiences' ),
+                '<a href="' . $url . '">FP Mail SMTP → Impostazioni</a>'
+            );
+            echo '</p></div>';
+        }
+    }
+
+    public function render_email_provider_field(): void
+    {
+        $settings = $this->getOptions()->get('fp_exp_emails', []);
+        $settings = is_array($settings) ? $settings : [];
+        $current = $settings['provider'] ?? 'wordpress';
+
+        $choices = [
+            'wordpress' => esc_html__('WordPress (wp_mail)', 'fp-experiences'),
+            'smtp'      => esc_html__('SMTP personalizzato', 'fp-experiences'),
+            'brevo'     => esc_html__('Brevo (API)', 'fp-experiences'),
+        ];
+
+        echo '<select name="fp_exp_emails[provider]" id="fp_exp_emails_provider">';
+        foreach ($choices as $value => $label) {
+            $selected = selected($current, $value, false);
+            echo '<option value="' . esc_attr($value) . '"' . $selected . '>' . $label . '</option>';
+        }
+        echo '</select>';
+        echo '<p class="description">' . esc_html__(
+            'Se scegli "SMTP personalizzato", compila i campi sottostanti. Se scegli "Brevo (API)", la chiave e le liste sono in FP Marketing Tracking Layer oppure nella scheda Brevo di FP Experiences.',
+            'fp-experiences'
+        ) . '</p>';
+    }
+
+    public function render_email_text_field(array $args): void
+    {
+        $path = isset($args['path']) && is_array($args['path']) ? $args['path'] : [];
+        if (! $path) {
+            return;
+        }
+
+        $settings = $this->getOptions()->get('fp_exp_emails', []);
         $settings = is_array($settings) ? $settings : [];
 
         $cursor = $settings;
         foreach ($path as $segment) {
             if (! isset($cursor[$segment])) {
-                $cursor[$segment] = [];
+                $cursor = null;
+                break;
             }
             $cursor = $cursor[$segment];
         }
-
-        $value = is_string($cursor ?? null) ? (string) $cursor : '';
+        $value = is_string($cursor) ? $cursor : '';
 
         $name = 'fp_exp_emails';
         foreach ($path as $segment) {
             $name .= '[' . esc_attr($segment) . ']';
         }
 
-        echo '<input type="text" class="regular-text" name="' . $name . '" value="' . esc_attr($value) . '" />';
-        echo '<p class="description">' . esc_html__('Puoi usare segnaposto come {experience_title}.', 'fp-experiences') . '</p>';
+        $placeholder = $args['placeholder'] ?? '';
+        $css_class = $args['class'] ?? '';
+
+        echo '<input type="text" class="regular-text ' . esc_attr($css_class) . '" name="' . $name . '" value="' . esc_attr($value) . '" placeholder="' . esc_attr($placeholder) . '" />';
+        if (! empty($args['description'])) {
+            echo '<p class="description">' . esc_html((string) $args['description']) . '</p>';
+        }
+    }
+
+    public function render_email_password_field(array $args): void
+    {
+        $path = isset($args['path']) && is_array($args['path']) ? $args['path'] : [];
+        if (! $path) {
+            return;
+        }
+
+        $settings = $this->getOptions()->get('fp_exp_emails', []);
+        $settings = is_array($settings) ? $settings : [];
+
+        $cursor = $settings;
+        foreach ($path as $segment) {
+            if (! isset($cursor[$segment])) {
+                $cursor = null;
+                break;
+            }
+            $cursor = $cursor[$segment];
+        }
+        $value = is_string($cursor) ? $cursor : '';
+
+        $name = 'fp_exp_emails';
+        foreach ($path as $segment) {
+            $name .= '[' . esc_attr($segment) . ']';
+        }
+
+        $css_class = $args['class'] ?? '';
+
+        echo '<input type="password" class="regular-text ' . esc_attr($css_class) . '" name="' . $name . '" value="' . esc_attr($value) . '" autocomplete="new-password" />';
+    }
+
+    public function render_email_smtp_encryption_field(array $args): void
+    {
+        $settings = $this->getOptions()->get('fp_exp_emails', []);
+        $settings = is_array($settings) ? $settings : [];
+        $current = $settings['smtp']['encryption'] ?? 'tls';
+        $css_class = $args['class'] ?? '';
+
+        $choices = [
+            'tls'  => 'TLS',
+            'ssl'  => 'SSL',
+            'none' => esc_html__('Nessuna', 'fp-experiences'),
+        ];
+
+        echo '<select name="fp_exp_emails[smtp][encryption]" class="' . esc_attr($css_class) . '">';
+        foreach ($choices as $value => $label) {
+            $selected = selected($current, $value, false);
+            echo '<option value="' . esc_attr($value) . '"' . $selected . '>' . $label . '</option>';
+        }
+        echo '</select>';
+    }
+
+    public function render_email_test_button(): void
+    {
+        $nonce = wp_create_nonce('fp_exp_test_email');
+        echo '<div class="fp-exp-test-email-wrap">';
+        echo '<button type="button" class="button button-secondary" id="fp-exp-test-email-btn" data-nonce="' . esc_attr($nonce) . '">';
+        echo esc_html__('Invia email di test', 'fp-experiences');
+        echo '</button>';
+        echo '<span class="spinner" id="fp-exp-test-email-spinner"></span>';
+        echo '</div>';
+        echo '<div class="fp-exp-test-email-result" id="fp-exp-test-email-result"></div>';
+        echo '<p class="description">' . esc_html__('Invia una email di prova all\'indirizzo del tuo account per verificare che il provider configurato funzioni correttamente. Salva le impostazioni prima di testare.', 'fp-experiences') . '</p>';
     }
 
     public function render_branding_help(): void
@@ -1747,31 +2622,132 @@ final class SettingsPage
 
     public function render_tracking_help(): void
     {
-        echo '<p>' . esc_html__('Provide tracking IDs for each enabled channel. Scripts only load when consent is granted and the channel toggle is enabled.', 'fp-experiences') . '</p>';
+        echo '<p>' . esc_html__('Le credenziali GTM/GA4/Google Ads/Meta/Clarity sono gestite centralmente in FP Marketing Tracking Layer. FP Experiences invia solo eventi al bus di tracking condiviso.', 'fp-experiences') . '</p>';
     }
 
     public function render_rtb_help(): void
     {
         echo '<p>' . esc_html__('Request-to-book holds slots for a short time while staff review the inquiry. Configure the global workflow here and enable it per experience.', 'fp-experiences') . '</p>';
+        $requests_url = admin_url('admin.php?page=fp_exp_requests');
+        $link         = '<a href="' . esc_url($requests_url) . '">' . esc_html__('Richieste', 'fp-experiences') . '</a>';
+        echo '<p><strong>' . esc_html__('Conferma manuale prima dell\'addebito', 'fp-experiences') . '</strong> &mdash; ';
+        echo sprintf(
+            /* translators: %s: link to Requests page. */
+            esc_html__('Con la modalità "Conferma manuale, poi richiedi pagamento" potete approvare o rifiutare ogni richiesta dalla pagina %s prima che il cliente paghi. L\'addebito avviene solo dopo la vostra approvazione e il completamento del pagamento da parte del cliente. Potete così non accettare richieste in momenti particolari (es. sovraccarico, chiusure).', 'fp-experiences'),
+            $link
+        );
+        echo '</p>';
+    }
+
+    /**
+     * URL impostazioni Brevo nel plugin FP Marketing Tracking Layer.
+     */
+    private function get_fp_tracking_brevo_admin_url(): string
+    {
+        return admin_url('admin.php?page=fp-tracking');
+    }
+
+    /**
+     * True se FP Tracking espone Brevo attivo con API key (merge automatico su questa integrazione).
+     */
+    private function is_fp_tracking_brevo_centralized(): bool
+    {
+        if (! \function_exists('fp_tracking_get_brevo_settings')) {
+            return false;
+        }
+        $central = fp_tracking_get_brevo_settings();
+
+        return ! empty($central['enabled']) && ! empty($central['api_key']);
     }
 
     public function render_brevo_help(): void
     {
-        echo '<p>' . esc_html__('Connect your Brevo account to deliver transactional emails and sync contacts with marketing attributes and tags.', 'fp-experiences') . '</p>';
+        $tracking_link = '<a href="' . esc_url($this->get_fp_tracking_brevo_admin_url()) . '">' . esc_html__('FP Marketing Tracking Layer', 'fp-experiences') . '</a>';
+        $centralized = $this->is_fp_tracking_brevo_centralized();
 
-        $settings = get_option('fp_exp_brevo', []);
+        echo '<div class="fp-exp-brevo-intro" style="margin-bottom:1em;">';
+        echo '<p><strong>' . esc_html__('A cosa serve questa pagina', 'fp-experiences') . '</strong></p>';
+        echo '<ul class="description" style="margin-left:1.25em;list-style:disc;">';
+        echo '<li>' . esc_html__('Attivare Brevo per FP Experiences: sincronizzazione contatti, invio eventi verso le Automation e (se scegli) template transazionali via API.', 'fp-experiences') . '</li>';
+        echo '<li>' . esc_html__('Decidere se le email al cliente (conferme, promemoria, RTB, ecc.) passano da WordPress (wp_mail) o dalla pipeline Brevo — vedi sezione «Messaggi al cliente».', 'fp-experiences') . '</li>';
+        echo '<li>' . esc_html__('Impostare qui solo ciò che è specifico di Experiences: webhook, nomi attributi Brevo, ID template, quali eventi inviare.', 'fp-experiences') . '</li>';
+        echo '</ul>';
+        echo '</div>';
+
+        if ($centralized) {
+            echo '<div class="notice notice-info inline"><p>';
+            echo wp_kses_post(
+                sprintf(
+                    /* translators: %s: HTML link to FP Marketing Tracking Layer settings */
+                    __(
+                        'La <strong>chiave API</strong> Brevo e le <strong>liste</strong> (IT/EN) per Experiences sono gestite in %s. In questa scheda abiliti l’integrazione e le opzioni dedicate; non devi reinserire la chiave a meno che tu non usi solo FP Experiences senza il layer centralizzato.',
+                        'fp-experiences'
+                    ),
+                    $tracking_link
+                )
+            );
+            echo '</p></div>';
+        } else {
+            echo '<div class="notice notice-info inline"><p>';
+            echo wp_kses_post(
+                sprintf(
+                    /* translators: %s: HTML link to FP Marketing Tracking Layer settings */
+                    __(
+                        '<strong>Consiglio:</strong> installa e configura %s per centralizzare chiave API e liste tra i plugin FP (Experiences, Forms, Restaurant, ecc.). Se non lo usi, compila chiave e liste nei campi sotto.',
+                        'fp-experiences'
+                    ),
+                    $tracking_link
+                )
+            );
+            echo '</p></div>';
+        }
+
+        $settings = $this->getOptions()->get('fp_exp_brevo', []);
         $settings = is_array($settings) ? $settings : [];
 
         $enabled = ! empty($settings['enabled']);
         $api_key = isset($settings['api_key']) ? (string) $settings['api_key'] : '';
-        $connected = $enabled && '' !== $api_key;
+        $simulate_mode = ! empty($settings['simulate_mode']);
+        $connected = $enabled && ('' !== $api_key || $simulate_mode);
+        $brevo_helper = new Brevo(null, $this->getOptions());
+        $ch_conf = $brevo_helper->is_bucket_using_brevo('confirmation');
+        $ch_rem = $brevo_helper->is_bucket_using_brevo('reminder');
+        $ch_fol = $brevo_helper->is_bucket_using_brevo('followup');
+        $all_wp = ! $ch_conf && ! $ch_rem && ! $ch_fol;
+        $all_brevo = $ch_conf && $ch_rem && $ch_fol;
 
         if (! $enabled) {
-            echo '<div class="notice notice-info inline"><p>' . esc_html__('Brevo is currently disabled. WooCommerce templates will be used for customer emails.', 'fp-experiences') . '</p></div>';
+            echo '<div class="notice notice-info inline"><p>' . esc_html__('Brevo è disattivato per FP Experiences. Le email al cliente seguono le impostazioni in Email (wp_mail / SMTP / provider).', 'fp-experiences') . '</p></div>';
+        } elseif ($simulate_mode) {
+            echo '<div class="notice notice-warning inline"><p>' . esc_html__('Modalità simulazione: nessuna chiamata reale a Brevo; sync ed eventi sono solo registrati in log.', 'fp-experiences') . '</p></div>';
         } elseif ($connected) {
-            echo '<div class="notice notice-success inline"><p>' . esc_html__('Brevo connection active. Transactional emails will use the configured templates when available.', 'fp-experiences') . '</p></div>';
+            if ($all_wp) {
+                echo '<div class="notice notice-success inline"><p>' . esc_html__(
+                    'Integrazione attiva: contatti ed eventi verso Brevo sono operativi; le email al cliente usano WordPress (wp_mail) per conferma, promemoria e follow-up, come da «Messaggi al cliente».',
+                    'fp-experiences'
+                ) . '</p></div>';
+            } elseif ($all_brevo) {
+                echo '<div class="notice notice-success inline"><p>' . esc_html__(
+                    'Integrazione attiva: conferma, promemoria e follow-up al cliente sono delegati a Brevo (eventi Automation e, se abilitato, template transazionali).',
+                    'fp-experiences'
+                ) . '</p></div>';
+            } else {
+                echo '<div class="notice notice-success inline"><p>' . esc_html__(
+                    'Integrazione attiva: i canali conferma / promemoria / follow-up sono misti (WordPress e Brevo) come da «Messaggi al cliente»; contatti ed eventi restano operativi.',
+                    'fp-experiences'
+                ) . '</p></div>';
+            }
         } else {
-            echo '<div class="notice notice-warning inline"><p>' . esc_html__('Brevo is enabled but the API key is missing. Add the API key to send transactional emails via Brevo.', 'fp-experiences') . '</p></div>';
+            $missing_key_msg = $centralized
+                ? esc_html__(
+                    'Hai abilitato Brevo ma non risulta una chiave API utilizzabile. Verifica che Brevo sia attivo e con chiave valida in FP Marketing Tracking Layer.',
+                    'fp-experiences'
+                )
+                : esc_html__(
+                    'Brevo è abilitato ma manca la chiave API. Inseriscila qui oppure configurala in FP Marketing Tracking Layer se usi la centralizzazione.',
+                    'fp-experiences'
+                );
+            echo '<div class="notice notice-warning inline"><p>' . $missing_key_msg . '</p></div>';
         }
 
         $templates = isset($settings['templates']) && is_array($settings['templates']) ? $settings['templates'] : [];
@@ -1780,11 +2756,17 @@ final class SettingsPage
         if ($configured_templates) {
             echo '<div class="notice notice-info inline"><p>' . sprintf(
                 /* translators: %d: number of configured templates. */
-                esc_html__('%d Brevo templates configured for confirmations and RTB stages.', 'fp-experiences'),
+                esc_html__(
+                    '%d template Brevo configurati (conferme e fasi RTB).',
+                    'fp-experiences'
+                ),
                 count($configured_templates)
             ) . '</p></div>';
         } else {
-            echo '<div class="notice notice-info inline"><p>' . esc_html__('Transactional templates are optional; the plugin falls back to WooCommerce emails when none are provided.', 'fp-experiences') . '</p></div>';
+            echo '<div class="notice notice-info inline"><p>' . esc_html__(
+                'I template transazionali sono facoltativi: senza ID il plugin usa le email WooCommerce / wp_mail di fallback dove previsto.',
+                'fp-experiences'
+            ) . '</p></div>';
         }
 
         $notices = get_transient('fp_exp_brevo_notices');
@@ -1813,6 +2795,7 @@ final class SettingsPage
     public function render_calendar_help(): void
     {
         echo '<p>' . esc_html__('Create an OAuth client in Google Cloud and add the redirect URI below. After saving credentials, connect the account to sync reservations.', 'fp-experiences') . '</p>';
+        echo '<p>' . esc_html__('For company-wide visibility, select a shared corporate calendar and grant staff read access directly in Google Calendar.', 'fp-experiences') . '</p>';
     }
 
     /**
@@ -2069,72 +3052,7 @@ final class SettingsPage
      */
     private function get_tracking_channel_fields(): array
     {
-        return [
-            [
-                'key' => 'ga4[enabled]',
-                'label' => esc_html__('Enable Google Analytics 4', 'fp-experiences'),
-                'type' => 'checkbox',
-                'description' => esc_html__('Loads Google Tag Manager or the GA4 gtag snippet when consent allows.', 'fp-experiences'),
-            ],
-            [
-                'key' => 'ga4[gtm_id]',
-                'label' => esc_html__('Google Tag Manager ID', 'fp-experiences'),
-                'type' => 'text',
-                'placeholder' => 'GTM-XXXXXXX',
-            ],
-            [
-                'key' => 'ga4[measurement_id]',
-                'label' => esc_html__('GA4 Measurement ID', 'fp-experiences'),
-                'type' => 'text',
-                'placeholder' => 'G-XXXXXXX',
-            ],
-            [
-                'key' => 'google_ads[enabled]',
-                'label' => esc_html__('Enable Google Ads conversions', 'fp-experiences'),
-                'type' => 'checkbox',
-            ],
-            [
-                'key' => 'google_ads[conversion_id]',
-                'label' => esc_html__('Conversion ID', 'fp-experiences'),
-                'type' => 'text',
-                'placeholder' => 'AW-XXXXXXX',
-            ],
-            [
-                'key' => 'google_ads[conversion_label]',
-                'label' => esc_html__('Conversion label', 'fp-experiences'),
-                'type' => 'text',
-            ],
-            [
-                'key' => 'google_ads[enhanced_conversions]',
-                'label' => esc_html__('Enable enhanced conversions hashing', 'fp-experiences'),
-                'type' => 'checkbox',
-            ],
-            [
-                'key' => 'meta_pixel[enabled]',
-                'label' => esc_html__('Enable Meta Pixel', 'fp-experiences'),
-                'type' => 'checkbox',
-            ],
-            [
-                'key' => 'meta_pixel[pixel_id]',
-                'label' => esc_html__('Pixel ID', 'fp-experiences'),
-                'type' => 'text',
-            ],
-            [
-                'key' => 'meta_pixel[capi_token]',
-                'label' => esc_html__('CAPI token (optional)', 'fp-experiences'),
-                'type' => 'text',
-            ],
-            [
-                'key' => 'clarity[enabled]',
-                'label' => esc_html__('Enable Microsoft Clarity', 'fp-experiences'),
-                'type' => 'checkbox',
-            ],
-            [
-                'key' => 'clarity[project_id]',
-                'label' => esc_html__('Clarity project ID', 'fp-experiences'),
-                'type' => 'text',
-            ],
-        ];
+        return [];
     }
 
     /**
@@ -2179,15 +3097,18 @@ final class SettingsPage
                 'options' => [
                     'off' => esc_html__('Disabled', 'fp-experiences'),
                     'confirm' => esc_html__('Confirm without payment', 'fp-experiences'),
-                    'pay_later' => esc_html__('Confirm and request payment later', 'fp-experiences'),
+                    'pay_later' => esc_html__('Conferma manuale, poi richiedi pagamento', 'fp-experiences'),
                 ],
-                'description' => esc_html__('Choose how request-to-book approvals are processed globally.', 'fp-experiences'),
+                'description' => esc_html__('Con "Conferma manuale, poi richiedi pagamento" le richieste restano in attesa nella pagina Richieste: voi approvate o rifiutate. Solo dopo l\'approvazione il cliente riceve il link di pagamento; l\'addebito avviene al pagamento. Potete rifiutare richieste quando preferite.', 'fp-experiences'),
             ],
             [
                 'key' => 'timeout',
                 'label' => esc_html__('Hold timeout (minutes)', 'fp-experiences'),
                 'type' => 'number',
-                'description' => esc_html__('How long to reserve capacity for a pending request before it is released automatically.', 'fp-experiences'),
+                'description' => esc_html__(
+                    'Durata massima in cui la richiesta RTB resta in attesa di approvazione prima che lo slot venga liberato automaticamente. Valori molto bassi (es. 30 min) possono far sparire la richiesta dalla lista se lo staff risponde dopo: valuta almeno alcune ore o un giorno per flussi con conferma manuale.',
+                    'fp-experiences'
+                ),
             ],
             [
                 'key' => 'block_capacity',
@@ -2204,10 +3125,10 @@ final class SettingsPage
     private function get_rtb_template_fields(): array
     {
         $events = [
-            'request' => esc_html__('Request received (customer)', 'fp-experiences'),
-            'approved' => esc_html__('Request approved', 'fp-experiences'),
-            'declined' => esc_html__('Request declined', 'fp-experiences'),
-            'payment' => esc_html__('Payment required', 'fp-experiences'),
+            'request' => esc_html__('Richiesta ricevuta (cliente)', 'fp-experiences'),
+            'approved' => esc_html__('Richiesta approvata', 'fp-experiences'),
+            'declined' => esc_html__('Richiesta rifiutata', 'fp-experiences'),
+            'payment' => esc_html__('Pagamento richiesto', 'fp-experiences'),
         ];
 
         $fields = [];
@@ -2243,48 +3164,187 @@ final class SettingsPage
         return [
             [
                 'key' => 'enabled',
-                'label' => esc_html__('Enable Brevo', 'fp-experiences'),
+                'label' => esc_html__('Abilita Brevo per FP Experiences', 'fp-experiences'),
                 'type' => 'checkbox',
+            ],
+            [
+                'key' => 'simulate_mode',
+                'label' => esc_html__('Modalità simulazione (test locale)', 'fp-experiences'),
+                'type' => 'checkbox',
+                'description' => esc_html__(
+                    'Nessuna chiamata esterna: sync, eventi e invii sono solo registrati in log. Utile per provare i flussi senza API key.',
+                    'fp-experiences'
+                ),
             ],
             [
                 'key' => 'api_key',
-                'label' => esc_html__('API key', 'fp-experiences'),
+                'label' => esc_html__('Chiave API Brevo', 'fp-experiences'),
                 'type' => 'text',
                 'placeholder' => esc_html__('xkeysib-...', 'fp-experiences'),
+                'description' => esc_html__(
+                    'Se usi FP Marketing Tracking Layer con Brevo attivo, la chiave viene applicata automaticamente; altrimenti incollala qui.',
+                    'fp-experiences'
+                ),
             ],
             [
                 'key' => 'webhook_secret',
-                'label' => esc_html__('Webhook secret', 'fp-experiences'),
+                'label' => esc_html__('Segreto webhook', 'fp-experiences'),
                 'type' => 'text',
-                'description' => esc_html__('Used to validate Brevo webhook signatures.', 'fp-experiences'),
+                'description' => esc_html__(
+                    'Opzionale: verifica la firma delle richieste al webhook REST di FP Experiences (`/fp-exp/v1/brevo/webhook`).',
+                    'fp-experiences'
+                ),
             ],
             [
                 'key' => 'list_id',
-                'label' => esc_html__('Default list ID', 'fp-experiences'),
+                'label' => esc_html__('ID lista predefinita', 'fp-experiences'),
                 'type' => 'number',
                 'min' => 1,
-                'description' => esc_html__('Optional: contacts will be subscribed to this list on sync.', 'fp-experiences'),
+                'description' => esc_html__(
+                    'Lista Brevo a cui iscrivere il contatto in sync (ripiego se mancano le liste per lingua).',
+                    'fp-experiences'
+                ),
             ],
             [
                 'key' => 'lists[it]',
-                'label' => esc_html__('Italian list ID', 'fp-experiences'),
+                'label' => esc_html__('ID lista italiano', 'fp-experiences'),
                 'type' => 'number',
                 'min' => 1,
-                'description' => esc_html__('Used when the reservation prefix starts with “ita”. Falls back to the default list when empty.', 'fp-experiences'),
+                'description' => esc_html__(
+                    'Usata per prenotazioni con prefisso lingua ITA. Se vuota, si usa la lista predefinita.',
+                    'fp-experiences'
+                ),
             ],
             [
                 'key' => 'lists[en]',
-                'label' => esc_html__('English list ID', 'fp-experiences'),
+                'label' => esc_html__('ID lista inglese / altre lingue', 'fp-experiences'),
                 'type' => 'number',
                 'min' => 1,
-                'description' => esc_html__('Used for all other reservations. Falls back to the default list when empty.', 'fp-experiences'),
+                'description' => esc_html__(
+                    'Usata per le altre lingue. Se vuota, si usa la lista predefinita.',
+                    'fp-experiences'
+                ),
             ],
             [
                 'key' => 'subscribe_to_list',
-                'label' => esc_html__('Subscribe contact to list on sync', 'fp-experiences'),
+                'label' => esc_html__('Iscrivi il contatto alla lista in sync', 'fp-experiences'),
                 'type' => 'checkbox',
             ],
         ];
+    }
+
+    /**
+     * Campi canale cliente Brevo vs wp_mail e template transazionali.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function get_brevo_customer_delivery_fields(): array
+    {
+        $channel_options = [
+            Brevo::CUSTOMER_CHANNEL_WORDPRESS => esc_html__('WordPress (wp_mail)', 'fp-experiences'),
+            Brevo::CUSTOMER_CHANNEL_BREVO => esc_html__('Brevo — eventi (e opzionalmente template transazionali)', 'fp-experiences'),
+        ];
+
+        return [
+            [
+                'key' => Brevo::CUSTOMER_CONFIRMATION_CHANNEL_KEY,
+                'label' => esc_html__('Canale conferma e aggiornamenti prenotazione', 'fp-experiences'),
+                'type' => 'select',
+                'description' => esc_html__(
+                    'Conferma pagamento, annullo, riprogrammazione e email RTB (richiesta / approvata / rifiutata / pagamento). WordPress = template del plugin; Brevo = template API e/o Automation.',
+                    'fp-experiences'
+                ),
+                'options' => $channel_options,
+            ],
+            [
+                'key' => Brevo::CUSTOMER_REMINDER_CHANNEL_KEY,
+                'label' => esc_html__('Canale promemoria pre-esperienza', 'fp-experiences'),
+                'type' => 'select',
+                'description' => esc_html__(
+                    'Promemoria (es. 24h prima). Puoi lasciare WordPress per il promemoria e usare Brevo solo per la conferma, o viceversa.',
+                    'fp-experiences'
+                ),
+                'options' => $channel_options,
+            ],
+            [
+                'key' => Brevo::CUSTOMER_FOLLOWUP_CHANNEL_KEY,
+                'label' => esc_html__('Canale follow-up post-esperienza', 'fp-experiences'),
+                'type' => 'select',
+                'description' => esc_html__(
+                    'Email dopo l’esperienza (ringraziamento / survey). Indipendente dagli altri due canali.',
+                    'fp-experiences'
+                ),
+                'options' => $channel_options,
+            ],
+            [
+                'key' => 'send_transactional_templates',
+                'label' => esc_html__('Template transazionali Brevo (SMTP API)', 'fp-experiences'),
+                'type' => 'select',
+                'description' => esc_html__(
+                    'Disattiva se invii le email al cliente solo tramite automazioni Brevo attivate dagli eventi (nessun invio con template ID).',
+                    'fp-experiences'
+                ),
+                'options' => [
+                    '1' => esc_html__('Sì, usa gli ID template configurati sotto', 'fp-experiences'),
+                    '0' => esc_html__('No, solo eventi Automation', 'fp-experiences'),
+                ],
+            ],
+        ];
+    }
+
+    public function render_brevo_customer_delivery_intro(): void
+    {
+        echo '<p>' . esc_html__(
+            'Qui non configuri la chiave API (è in FP Marketing Tracking Layer oppure nel blocco «Connessione e account» se non usi il layer): scegli per ogni tipo di messaggio se arriva con wp_mail o tramite Brevo.',
+            'fp-experiences'
+        ) . '</p>';
+        echo '<p>' . esc_html__(
+            'Gli eventi verso le Automation Brevo e la sync contatti restano attivi con «Abilita Brevo» in alto, anche se per uno o più tipi scegli WordPress.',
+            'fp-experiences'
+        ) . '</p>';
+        echo '<p class="description">' . esc_html__(
+            'Predefinito consigliato: WordPress per tutti e tre i canali. Puoi mescolare (es. conferma Brevo, promemoria WordPress). Allinea la scheda Email (provider) al flusso che usi di più.',
+            'fp-experiences'
+        ) . '</p>';
+    }
+
+    public function render_brevo_track_events_field(): void
+    {
+        $settings = $this->getOptions()->get('fp_exp_brevo', []);
+        $settings = is_array($settings) ? $settings : [];
+        $enabled = [];
+        if (isset($settings['track_events']) && is_array($settings['track_events'])) {
+            $enabled = array_map('sanitize_key', $settings['track_events']);
+        } else {
+            $enabled = Brevo::TRACK_EVENT_IDS;
+        }
+
+        $labels = [
+            'reservation_paid' => esc_html__('Pagamento confermato', 'fp-experiences'),
+            'reservation_cancelled' => esc_html__('Prenotazione annullata', 'fp-experiences'),
+            'reservation_rescheduled' => esc_html__('Prenotazione riprogrammata', 'fp-experiences'),
+            'reservation_reminder_scheduled' => esc_html__('Promemoria pianificato (dati per Automation)', 'fp-experiences'),
+            'reservation_followup_scheduled' => esc_html__('Follow-up post-esperienza pianificato', 'fp-experiences'),
+            'rtb_request' => esc_html__('RTB — richiesta ricevuta', 'fp-experiences'),
+            'rtb_approved' => esc_html__('RTB — approvata', 'fp-experiences'),
+            'rtb_declined' => esc_html__('RTB — rifiutata', 'fp-experiences'),
+            'rtb_payment' => esc_html__('RTB — richiesta pagamento', 'fp-experiences'),
+        ];
+
+        echo '<fieldset class="fp-exp-brevo-track-events"><legend class="screen-reader-text">' . esc_html__('Eventi', 'fp-experiences') . '</legend>';
+        echo '<input type="hidden" name="fp_exp_brevo[track_events_submitted]" value="1" />';
+        foreach (Brevo::TRACK_EVENT_IDS as $id) {
+            $checked = in_array($id, $enabled, true);
+            echo '<label style="display:block;margin:0.35em 0;">';
+            echo '<input type="checkbox" name="fp_exp_brevo[track_events][' . esc_attr($id) . ']" value="1" ' . checked($checked, true, false) . ' /> ';
+            echo esc_html($labels[$id] ?? $id);
+            echo '</label>';
+        }
+        echo '</fieldset>';
+        echo '<p class="description">' . esc_html__(
+            'Solo gli eventi selezionati vengono inviati a Brevo (trackEvent) usando la stessa chiave API dell’integrazione (centralizzata o locale). Puoi disattivarli tutti se usi unicamente i template transazionali SMTP API.',
+            'fp-experiences'
+        ) . '</p>';
     }
 
     /**
@@ -2400,17 +3460,23 @@ final class SettingsPage
     {
         return [
             [
+                'key' => 'simulate_mode',
+                'label' => esc_html__('Simulation mode (local test)', 'fp-experiences'),
+                'type' => 'checkbox',
+                'description' => esc_html__('Enable local simulation without Google credentials. Events are simulated and logged without external API calls.', 'fp-experiences'),
+            ],
+            [
                 'key' => 'calendar_id',
                 'label' => esc_html__('Calendar', 'fp-experiences'),
                 'type' => 'calendar_select',
-                'description' => esc_html__('Select the target calendar for new reservations. Save credentials and connect to load calendars.', 'fp-experiences'),
+                'description' => esc_html__('Select the target calendar for new reservations. Use a shared company calendar so all staff can see updates.', 'fp-experiences'),
             ],
         ];
     }
 
     public function render_branding_field(array $field): void
     {
-        $branding = get_option('fp_exp_branding', []);
+        $branding = $this->getOptions()->get('fp_exp_branding', []);
         $branding = is_array($branding) ? $branding : [];
         $key = $field['key'];
         $value = array_key_exists($key, $branding)
@@ -2464,7 +3530,7 @@ final class SettingsPage
 
     public function render_listing_field(array $field): void
     {
-        $settings = get_option('fp_exp_listing', []);
+        $settings = $this->getOptions()->get('fp_exp_listing', []);
         $settings = is_array($settings) ? $settings : [];
         $defaults = Helpers::listing_settings();
 
@@ -2591,11 +3657,28 @@ final class SettingsPage
 
             echo '</div>';
         } elseif ('toggle' === $field['type']) {
-            $checked = ! empty($value);
-            echo '<label class="fp-exp-settings__toggle">';
-            echo '<input type="checkbox" name="fp_exp_listing[' . esc_attr($key) . ']" value="1" ' . checked($checked, true, false) . ' />';
-            echo ' <span>' . esc_html__('Enabled', 'fp-experiences') . '</span>';
-            echo '</label>';
+            // Use Field Renderer Strategy for consistent toggle styling
+            // Handle both boolean and 'yes'/'no' values
+            $toggle_value = in_array($value, [true, 1, '1', 'yes', 'true'], true) ? 'yes' : 'no';
+            $field_name = 'fp_exp_listing[' . esc_attr($key) . ']';
+            
+            $field_def = new FieldDefinition(
+                name: $field_name,
+                type: 'toggle',
+                label: '', // Empty label - WordPress shows it via add_settings_field
+                value: $toggle_value,
+                options: [
+                    'toggle_class' => 'fp-exp-settings__toggle',
+                    'add_hidden_input' => true, // Ensure value is sent even when unchecked
+                    'label_text' => esc_html__('Enabled', 'fp-experiences'),
+                ],
+                description: null,
+                required: false,
+                attributes: []
+            );
+
+            $renderer = $this->getFieldRendererFactory()->getRenderer('toggle');
+            echo $renderer->render($field_def, '');
         }
 
         if (! empty($field['description'])) {
@@ -2670,81 +3753,219 @@ final class SettingsPage
 
     public function render_rtb_field(array $field): void
     {
-        $settings = get_option('fp_exp_rtb', []);
+        $settings = $this->getOptions()->get('fp_exp_rtb', []);
         $settings = is_array($settings) ? $settings : [];
-        $value = $this->extract_nested_value($settings, $field['key']);
-        $name = $this->build_input_name('fp_exp_rtb', $field['key']);
-
+        $key = $field['key'] ?? '';
         $type = $field['type'] ?? 'text';
-
-        if ('checkbox' === $type) {
-            $checked = ! empty($value);
-            echo '<label><input type="checkbox" name="' . esc_attr($name) . '" value="1" ' . checked($checked, true, false) . '/> ' . esc_html__('Enabled', 'fp-experiences') . '</label>';
-        } elseif ('select' === $type) {
-            echo '<select name="' . esc_attr($name) . '">';
-            foreach ($field['options'] as $option_value => $label) {
-                $selected = ((string) $value === (string) $option_value) ? 'selected' : '';
-                echo '<option value="' . esc_attr((string) $option_value) . '" ' . $selected . '>' . esc_html($label) . '</option>';
-            }
-            echo '</select>';
-        } elseif ('number' === $type) {
-            echo '<input type="number" class="small-text" name="' . esc_attr($name) . '" value="' . esc_attr((string) $value) . '" min="0" />';
-        } elseif ('textarea' === $type) {
-            echo '<textarea name="' . esc_attr($name) . '" rows="4" class="large-text">' . esc_textarea((string) $value) . '</textarea>';
-        } else {
-            $placeholder = $field['placeholder'] ?? '';
-            echo '<input type="text" class="regular-text" name="' . esc_attr($name) . '" value="' . esc_attr((string) $value) . '" placeholder="' . esc_attr((string) $placeholder) . '" />';
+        $description = $field['description'] ?? '';
+        
+        // Get nested value
+        $value = $this->extract_nested_value($settings, $key);
+        
+        // Build field name for nested option
+        $path = $this->parse_key_segments($key);
+        if (empty($path)) {
+            return;
         }
-
-        if (! empty($field['description'])) {
-            echo '<p class="description">' . esc_html($field['description']) . '</p>';
+        
+        $field_name = 'fp_exp_rtb';
+        foreach ($path as $segment) {
+            $field_name .= '[' . esc_attr($segment) . ']';
         }
+        
+        $field_id = 'fp_exp_rtb_' . implode('_', $path);
+        
+        // Debug logging
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('[FP-Exp render_rtb_field] key=' . $key . ', field_name=' . $field_name . ', value=' . print_r($value, true));
+        }
+        
+        // Render based on type
+        switch ($type) {
+            case 'select':
+                $options = $field['options'] ?? [];
+                echo '<select id="' . esc_attr($field_id) . '" name="' . esc_attr($field_name) . '" class="regular-text">';
+                foreach ($options as $opt_value => $opt_label) {
+                    $selected = ($value === $opt_value) ? ' selected="selected"' : '';
+                    echo '<option value="' . esc_attr($opt_value) . '"' . $selected . '>' . esc_html($opt_label) . '</option>';
+                }
+                echo '</select>';
+                break;
+                
+            case 'number':
+                $min = $field['min'] ?? 0;
+                echo '<input type="number" id="' . esc_attr($field_id) . '" name="' . esc_attr($field_name) . '" value="' . esc_attr((string) $value) . '" min="' . esc_attr((string) $min) . '" class="small-text" />';
+                break;
+                
+            case 'checkbox':
+                // Hidden field to ensure value is always sent
+                echo '<input type="hidden" name="' . esc_attr($field_name) . '" value="0" />';
+                $checked = ($value === 'yes' || $value === '1' || $value === true || $value === 1) ? ' checked="checked"' : '';
+                echo '<input type="checkbox" id="' . esc_attr($field_id) . '" name="' . esc_attr($field_name) . '" value="yes"' . $checked . ' />';
+                break;
+                
+            default:
+                echo '<input type="text" id="' . esc_attr($field_id) . '" name="' . esc_attr($field_name) . '" value="' . esc_attr((string) $value) . '" class="regular-text" />';
+        }
+        
+        if ($description) {
+            echo '<p class="description">' . esc_html($description) . '</p>';
+        }
+    }
+
+    /**
+     * Get HTML attributes for field type.
+     * 
+     * @return array<string, string>
+     */
+    private function get_field_attributes(string $type): array
+    {
+        return match($type) {
+            'number' => ['class' => 'small-text'],
+            'textarea' => ['class' => 'large-text', 'rows' => '4'],
+            default => ['class' => 'regular-text'],
+        };
     }
 
     public function render_tracking_field(array $field): void
     {
-        $settings = get_option('fp_exp_tracking', []);
+        $settings = $this->getOptions()->get('fp_exp_tracking', []);
         $settings = is_array($settings) ? $settings : [];
         $value = $this->extract_nested_value($settings, $field['key']);
-        $name = $this->build_input_name('fp_exp_tracking', $field['key']);
-
-        if ('checkbox' === $field['type']) {
-            $checked = ! empty($value);
-            echo '<label><input type="checkbox" name="' . esc_attr($name) . '" value="1" ' . checked($checked, true, false) . ' /> ' . esc_html__('Enabled', 'fp-experiences') . '</label>';
-        } elseif ('number' === $field['type']) {
-            $min = isset($field['min']) ? max(0, (int) $field['min']) : 0;
-            echo '<input type="number" class="small-text" inputmode="numeric" pattern="[0-9]*" step="1" min="' . esc_attr((string) $min) . '" name="' . esc_attr($name) . '" value="' . esc_attr((string) $value) . '" />';
-        } else {
-            $placeholder = $field['placeholder'] ?? '';
-            echo '<input type="text" class="regular-text" name="' . esc_attr($name) . '" value="' . esc_attr((string) $value) . '" placeholder="' . esc_attr((string) $placeholder) . '" />';
+        $path = $this->parse_key_segments($field['key'] ?? '');
+        
+        if (empty($path)) {
+            return;
         }
 
-        if (! empty($field['description'])) {
-            echo '<p class="description">' . esc_html($field['description']) . '</p>';
+        $type = $field['type'] ?? 'text';
+        $base_type = match($type) {
+            'checkbox' => 'toggle',
+            'number' => 'number',
+            default => 'text',
+        };
+
+        // Show status badge for key tracking fields
+        $status_badge = '';
+        if (in_array($field['key'], ['ga4[enabled]', 'meta_pixel[enabled]', 'google_ads[enabled]', 'clarity[enabled]'], true)) {
+            $is_enabled = !empty($value);
+            $status_class = $is_enabled ? 'active' : 'inactive';
+            $status_text = $is_enabled ? esc_html__('Attivo', 'fp-experiences') : esc_html__('Non configurato', 'fp-experiences');
+            $status_badge = '<span class="fp-exp-integration-status fp-exp-integration-status--' . esc_attr($status_class) . '">' . $status_text . '</span> ';
         }
+
+        $field_html = $this->render_field_inline(
+            name: implode('_', $path),
+            type: 'nested_' . $base_type,
+            options: [
+                'path' => $path,
+                'base_type' => $base_type,
+                'option_name' => 'fp_exp_tracking',
+                'description' => $field['description'] ?? null,
+                'attributes' => array_merge(
+                    $this->get_field_attributes($type),
+                    $type === 'number' ? ['inputmode' => 'numeric', 'pattern' => '[0-9]*', 'step' => '1'] : []
+                ),
+                'min' => isset($field['min']) ? max(0, (int) $field['min']) : 0,
+                'placeholder' => $field['placeholder'] ?? '',
+            ]
+        );
+
+        echo $status_badge . $field_html;
     }
 
     public function render_brevo_field(array $field): void
     {
-        $settings = get_option('fp_exp_brevo', []);
+        $settings = $this->getOptions()->get('fp_exp_brevo', []);
         $settings = is_array($settings) ? $settings : [];
         $value = $this->extract_nested_value($settings, $field['key']);
-        $name = $this->build_input_name('fp_exp_brevo', $field['key']);
 
-        if ('checkbox' === $field['type']) {
-            $checked = ! empty($value);
-            echo '<label><input type="checkbox" name="' . esc_attr($name) . '" value="1" ' . checked($checked, true, false) . ' /> ' . esc_html__('Enabled', 'fp-experiences') . '</label>';
-        } elseif ('number' === $field['type']) {
-            $min = isset($field['min']) ? max(0, (int) $field['min']) : 0;
-            echo '<input type="number" class="small-text" inputmode="numeric" pattern="[0-9]*" step="1" min="' . esc_attr((string) $min) . '" name="' . esc_attr($name) . '" value="' . esc_attr((string) $value) . '" />';
-        } else {
-            $placeholder = $field['placeholder'] ?? '';
-            echo '<input type="text" class="regular-text" name="' . esc_attr($name) . '" value="' . esc_attr((string) $value) . '" placeholder="' . esc_attr((string) $placeholder) . '" />';
+        if (in_array($field['key'] ?? '', [
+            Brevo::CUSTOMER_CONFIRMATION_CHANNEL_KEY,
+            Brevo::CUSTOMER_REMINDER_CHANNEL_KEY,
+            Brevo::CUSTOMER_FOLLOWUP_CHANNEL_KEY,
+        ], true)) {
+            if ($value === '' || $value === null) {
+                $legacy = isset($settings['customer_messages_channel'])
+                    ? sanitize_key((string) $settings['customer_messages_channel'])
+                    : Brevo::CUSTOMER_CHANNEL_WORDPRESS;
+                if (! in_array($legacy, [Brevo::CUSTOMER_CHANNEL_BREVO, Brevo::CUSTOMER_CHANNEL_WORDPRESS], true)) {
+                    $legacy = Brevo::CUSTOMER_CHANNEL_WORDPRESS;
+                }
+                $value = $legacy;
+            }
         }
 
-        if (! empty($field['description'])) {
-            echo '<p class="description">' . esc_html($field['description']) . '</p>';
+        $path = $this->parse_key_segments($field['key'] ?? '');
+        
+        if (empty($path)) {
+            return;
         }
+
+        $type = $field['type'] ?? 'text';
+        $base_type = match($type) {
+            'checkbox' => 'toggle',
+            'select' => 'select',
+            'number' => 'number',
+            'textarea' => 'textarea',
+            default => 'text',
+        };
+
+        // Show status badge for Brevo enabled field
+        $status_badge = '';
+        if ($field['key'] === 'enabled') {
+            $is_enabled = !empty($value);
+            $has_api_key = !empty($settings['api_key'] ?? '');
+            $simulate_mode = !empty($settings['simulate_mode'] ?? false);
+            $tracking_central = $this->is_fp_tracking_brevo_centralized();
+
+            if ($is_enabled && $simulate_mode) {
+                $status_badge = '<span class="fp-exp-integration-status fp-exp-integration-status--warning">' . esc_html__('Simulazione', 'fp-experiences') . '</span> ';
+            } elseif ($is_enabled && $has_api_key) {
+                $status_badge = '<span class="fp-exp-integration-status fp-exp-integration-status--active">' . esc_html__('Attivo', 'fp-experiences') . '</span> ';
+            } elseif ($is_enabled && !$has_api_key && $tracking_central) {
+                $status_badge = '<span class="fp-exp-integration-status fp-exp-integration-status--active">' . esc_html__('Chiave da FP Tracking', 'fp-experiences') . '</span> ';
+            } elseif ($is_enabled && !$has_api_key) {
+                $status_badge = '<span class="fp-exp-integration-status fp-exp-integration-status--warning">' . esc_html__('API key mancante', 'fp-experiences') . '</span> ';
+            } else {
+                $status_badge = '<span class="fp-exp-integration-status fp-exp-integration-status--inactive">' . esc_html__('Non configurato', 'fp-experiences') . '</span> ';
+            }
+        }
+
+        $tracking_field_keys = ['api_key', 'list_id', 'lists[it]', 'lists[en]'];
+        if ($this->is_fp_tracking_brevo_centralized() && in_array($field['key'], $tracking_field_keys, true)) {
+            $fp_tracking_anchor = '<a href="' . esc_url($this->get_fp_tracking_brevo_admin_url()) . '">' . esc_html__('FP Marketing Tracking Layer', 'fp-experiences') . '</a>';
+            echo '<p class="description">' . wp_kses_post(
+                sprintf(
+                    /* translators: %s: HTML link to FP Marketing Tracking Layer */
+                    __(
+                        'Valore fornito da %s (Brevo → sorgente Experiences). Per modificarlo apri quella pagina; qui vedi solo l’anteprima aggregata.',
+                        'fp-experiences'
+                    ),
+                    $fp_tracking_anchor
+                )
+            ) . '</p>';
+        }
+
+        $field_html = $this->render_field_inline(
+            name: implode('_', $path),
+            type: 'nested_' . $base_type,
+            options: [
+                'path' => $path,
+                'base_type' => $base_type,
+                'option_name' => 'fp_exp_brevo',
+                'description' => $field['description'] ?? null,
+                'attributes' => array_merge(
+                    $this->get_field_attributes($type),
+                    $type === 'number' ? ['inputmode' => 'numeric', 'pattern' => '[0-9]*', 'step' => '1'] : []
+                ),
+                'choices' => $field['options'] ?? [],
+                'min' => isset($field['min']) ? max(0, (int) $field['min']) : 0,
+                'placeholder' => $field['placeholder'] ?? '',
+            ]
+        );
+
+        echo $status_badge . $field_html;
     }
 
     public function render_calendar_field(array $field): void
@@ -2753,7 +3974,24 @@ final class SettingsPage
         $value = $this->extract_nested_value($settings, $field['key']);
         $name = $this->build_input_name('fp_exp_google_calendar', $field['key']);
 
-        if ('calendar_select' === $field['type']) {
+        // Show status badge for Google Calendar enabled
+        if ($field['key'] === 'enabled') {
+            $is_enabled = !empty($value);
+            $has_credentials = !empty($settings['credentials_json'] ?? '');
+            
+            if ($is_enabled && $has_credentials) {
+                echo '<span class="fp-exp-integration-status fp-exp-integration-status--active">' . esc_html__('Connesso', 'fp-experiences') . '</span> ';
+            } elseif ($is_enabled && !$has_credentials) {
+                echo '<span class="fp-exp-integration-status fp-exp-integration-status--warning">' . esc_html__('Credenziali mancanti', 'fp-experiences') . '</span> ';
+            } else {
+                echo '<span class="fp-exp-integration-status fp-exp-integration-status--inactive">' . esc_html__('Disabilitato', 'fp-experiences') . '</span> ';
+            }
+        }
+
+        if ('checkbox' === ($field['type'] ?? '')) {
+            echo '<label><input type="checkbox" name="' . esc_attr($name) . '" value="1" ' . checked(! empty($value), true, false) . ' /> ';
+            echo esc_html__('Enabled', 'fp-experiences') . '</label>';
+        } elseif ('calendar_select' === $field['type']) {
             $choices = $this->get_calendar_choices();
             if ($choices) {
                 echo '<select name="' . esc_attr($name) . '">';
@@ -2778,7 +4016,7 @@ final class SettingsPage
 
     private function render_branding_contrast(): void
     {
-        $branding = get_option('fp_exp_branding', []);
+        $branding = $this->getOptions()->get('fp_exp_branding', []);
         $branding = is_array($branding) ? $branding : [];
         $palette = Theme::resolve_palette($branding);
         $report = Theme::contrast_report($palette);
@@ -2816,7 +4054,9 @@ final class SettingsPage
     private function render_calendar_status(): void
     {
         $settings = $this->get_calendar_settings();
-        $connected = ! empty($settings['access_token']) && ! empty($settings['calendar_id']);
+        $simulation = ! empty($settings['simulate_mode']);
+        $connected = (! empty($settings['access_token']) && ! empty($settings['calendar_id']))
+            || ($simulation && ! empty($settings['calendar_id']));
         $status = $connected
             ? esc_html__('Google Calendar is connected.', 'fp-experiences')
             : esc_html__('Google Calendar is not connected.', 'fp-experiences');
@@ -2826,6 +4066,10 @@ final class SettingsPage
 
         if ($connected) {
             echo '<div class="notice notice-success inline"><p>' . esc_html__('Reservations will create or update events on the linked calendar.', 'fp-experiences') . '</p></div>';
+            echo '<div class="notice notice-info inline"><p>' . esc_html__('Tip: if staff members need visibility, share this Google calendar with their company accounts.', 'fp-experiences') . '</p></div>';
+            if ($simulation) {
+                echo '<div class="notice notice-warning inline"><p>' . esc_html__('Simulation mode active: events are not sent to Google, but local create/update/delete flow is fully simulated.', 'fp-experiences') . '</p></div>';
+            }
         } else {
             echo '<div class="notice notice-info inline"><p>' . esc_html__('Connect a Google account to synchronise confirmed reservations with your calendar.', 'fp-experiences') . '</p></div>';
         }
@@ -3122,7 +4366,9 @@ final class SettingsPage
             $orderby = $defaults['orderby'];
         }
 
-        $show_price_from = ! empty($value['show_price_from']);
+        // Handle both 'yes'/'no' from toggle and 1/0 from legacy checkbox
+        $show_price_from_raw = $value['show_price_from'] ?? false;
+        $show_price_from = in_array($show_price_from_raw, ['yes', '1', 1, true, 'true'], true);
 
         $experience_badges = $this->sanitize_experience_badge_settings($value['experience_badges'] ?? []);
 
@@ -3269,8 +4515,12 @@ final class SettingsPage
             return [];
         }
 
+        $existing = get_option('fp_exp_brevo', []);
+        $existing = is_array($existing) ? $existing : [];
+
         $sanitised = [];
         $sanitised['enabled'] = ! empty($value['enabled']);
+        $sanitised['simulate_mode'] = ! empty($value['simulate_mode']);
         $sanitised['api_key'] = isset($value['api_key']) ? sanitize_text_field((string) $value['api_key']) : '';
         $sanitised['webhook_secret'] = isset($value['webhook_secret']) ? sanitize_text_field((string) $value['webhook_secret']) : '';
         $sanitised['list_id'] = isset($value['list_id']) ? absint($value['list_id']) : 0;
@@ -3306,6 +4556,65 @@ final class SettingsPage
         }
         $sanitised['templates'] = $templates;
 
+        $legacy = isset($existing['customer_messages_channel'])
+            ? sanitize_key((string) $existing['customer_messages_channel'])
+            : Brevo::CUSTOMER_CHANNEL_WORDPRESS;
+        if (! in_array($legacy, [Brevo::CUSTOMER_CHANNEL_BREVO, Brevo::CUSTOMER_CHANNEL_WORDPRESS], true)) {
+            $legacy = Brevo::CUSTOMER_CHANNEL_WORDPRESS;
+        }
+
+        $sanitize_channel = static function ($raw, string $fallback) {
+            $ch = sanitize_key((string) $raw);
+            if (! in_array($ch, [Brevo::CUSTOMER_CHANNEL_BREVO, Brevo::CUSTOMER_CHANNEL_WORDPRESS], true)) {
+                return $fallback;
+            }
+
+            return $ch;
+        };
+
+        $sanitised[Brevo::CUSTOMER_CONFIRMATION_CHANNEL_KEY] = $sanitize_channel(
+            $value[Brevo::CUSTOMER_CONFIRMATION_CHANNEL_KEY] ?? ($existing[Brevo::CUSTOMER_CONFIRMATION_CHANNEL_KEY] ?? $legacy),
+            $legacy
+        );
+        $sanitised[Brevo::CUSTOMER_REMINDER_CHANNEL_KEY] = $sanitize_channel(
+            $value[Brevo::CUSTOMER_REMINDER_CHANNEL_KEY] ?? ($existing[Brevo::CUSTOMER_REMINDER_CHANNEL_KEY] ?? $legacy),
+            $legacy
+        );
+        $sanitised[Brevo::CUSTOMER_FOLLOWUP_CHANNEL_KEY] = $sanitize_channel(
+            $value[Brevo::CUSTOMER_FOLLOWUP_CHANNEL_KEY] ?? ($existing[Brevo::CUSTOMER_FOLLOWUP_CHANNEL_KEY] ?? $legacy),
+            $legacy
+        );
+
+        $sanitised['customer_messages_channel'] =
+            ($sanitised[Brevo::CUSTOMER_CONFIRMATION_CHANNEL_KEY] === Brevo::CUSTOMER_CHANNEL_BREVO
+                || $sanitised[Brevo::CUSTOMER_REMINDER_CHANNEL_KEY] === Brevo::CUSTOMER_CHANNEL_BREVO
+                || $sanitised[Brevo::CUSTOMER_FOLLOWUP_CHANNEL_KEY] === Brevo::CUSTOMER_CHANNEL_BREVO)
+                ? Brevo::CUSTOMER_CHANNEL_BREVO
+                : Brevo::CUSTOMER_CHANNEL_WORDPRESS;
+
+        if (isset($value['send_transactional_templates'])) {
+            $txn = (string) $value['send_transactional_templates'];
+            $sanitised['send_transactional_templates'] = ($txn === '0' || $txn === 'false') ? '0' : '1';
+        } else {
+            $prev = $existing['send_transactional_templates'] ?? '1';
+            $sanitised['send_transactional_templates'] = ((string) $prev === '0') ? '0' : '1';
+        }
+
+        if (! empty($value['track_events_submitted'])) {
+            $sanitised['track_events'] = [];
+            if (isset($value['track_events']) && is_array($value['track_events'])) {
+                foreach (Brevo::TRACK_EVENT_IDS as $id) {
+                    if (! empty($value['track_events'][$id])) {
+                        $sanitised['track_events'][] = $id;
+                    }
+                }
+            }
+        } else {
+            $sanitised['track_events'] = isset($existing['track_events']) && is_array($existing['track_events'])
+                ? array_values(array_intersect(Brevo::TRACK_EVENT_IDS, array_map('sanitize_key', $existing['track_events'])))
+                : Brevo::TRACK_EVENT_IDS;
+        }
+
         return $sanitised;
     }
 
@@ -3314,13 +4623,14 @@ final class SettingsPage
         $value = is_array($value) ? $value : [];
 
         $mode = isset($value['mode']) ? sanitize_key((string) $value['mode']) : 'off';
+
         if (! in_array($mode, ['off', 'confirm', 'pay_later'], true)) {
             $mode = 'off';
         }
 
         $clean = [
             'mode' => $mode,
-            'timeout' => max(5, absint($value['timeout'] ?? 30)),
+            'timeout' => max(5, absint($value['timeout'] ?? 1440)),
             'block_capacity' => ! empty($value['block_capacity']),
             'templates' => [],
             'fallback' => [],
@@ -3369,6 +4679,7 @@ final class SettingsPage
         $sanitised['client_secret'] = isset($value['client_secret']) ? sanitize_text_field((string) $value['client_secret']) : ($existing['client_secret'] ?? '');
         $sanitised['redirect_uri'] = isset($value['redirect_uri']) ? sanitize_text_field((string) $value['redirect_uri']) : ($existing['redirect_uri'] ?? '');
         $sanitised['calendar_id'] = isset($value['calendar_id']) ? sanitize_text_field((string) $value['calendar_id']) : ($existing['calendar_id'] ?? '');
+        $sanitised['simulate_mode'] = ! empty($value['simulate_mode']) ? 1 : 0;
 
         return $sanitised;
     }
@@ -3420,7 +4731,7 @@ final class SettingsPage
                 'fp_exp_calendar_action' => 'oauth',
             ], admin_url('admin.php'));
             $settings['redirect_uri'] = $redirect_uri;
-            update_option('fp_exp_google_calendar', $settings, false);
+            $this->getOptions()->set('fp_exp_google_calendar', $settings, false);
         }
 
         $state = wp_generate_password(16, false, false);
@@ -3446,7 +4757,7 @@ final class SettingsPage
     {
         $settings = $this->get_calendar_settings();
         unset($settings['access_token'], $settings['refresh_token'], $settings['expires_at']);
-        update_option('fp_exp_google_calendar', $settings, false);
+        $this->getOptions()->set('fp_exp_google_calendar', $settings, false);
         add_settings_error('fp_exp_settings', 'fp_exp_calendar_disconnected', esc_html__('Google Calendar disconnected.', 'fp-experiences'), 'updated');
         wp_safe_redirect(add_query_arg([
             'page' => $this->menu_slug,
@@ -3514,7 +4825,7 @@ final class SettingsPage
         $settings['access_token'] = (string) $body['access_token'];
         $settings['refresh_token'] = (string) ($body['refresh_token'] ?? ($settings['refresh_token'] ?? ''));
         $settings['expires_at'] = time() + (int) ($body['expires_in'] ?? 3600);
-        update_option('fp_exp_google_calendar', $settings, false);
+        $this->getOptions()->set('fp_exp_google_calendar', $settings, false);
 
         add_settings_error('fp_exp_settings', 'fp_exp_calendar_connected', esc_html__('Google Calendar connected successfully.', 'fp-experiences'), 'updated');
         wp_safe_redirect(add_query_arg([
@@ -3595,7 +4906,7 @@ final class SettingsPage
      */
     private function get_calendar_settings(): array
     {
-        $settings = get_option('fp_exp_google_calendar', []);
+        $settings = $this->getOptions()->get('fp_exp_google_calendar', []);
 
         return is_array($settings) ? $settings : [];
     }
@@ -3606,6 +4917,12 @@ final class SettingsPage
     private function get_calendar_choices(): array
     {
         $settings = $this->get_calendar_settings();
+        if (! empty($settings['simulate_mode'])) {
+            return [
+                'fp-exp-company-main' => esc_html__('FP Company Calendar (Simulated)', 'fp-experiences'),
+                'fp-exp-company-operations' => esc_html__('FP Operations Calendar (Simulated)', 'fp-experiences'),
+            ];
+        }
         $token = $this->ensure_calendar_token($settings);
 
         if (! $token) {
@@ -3698,8 +5015,102 @@ final class SettingsPage
 
         $settings['access_token'] = (string) $body['access_token'];
         $settings['expires_at'] = time() + (int) ($body['expires_in'] ?? 3600);
-        update_option('fp_exp_google_calendar', $settings, false);
+        $this->getOptions()->set('fp_exp_google_calendar', $settings, false);
 
         return $settings['access_token'];
+    }
+
+    /**
+     * Renders preview notice for branding settings
+     */
+    private function render_preview_notice(): void
+    {
+        // Get a published experience for preview
+        $experiences = get_posts([
+            'post_type' => 'fp_experience',
+            'post_status' => 'publish',
+            'posts_per_page' => 1,
+            'orderby' => 'date',
+            'order' => 'DESC',
+        ]);
+
+        if (empty($experiences)) {
+            echo '<div class="fp-exp-preview-notice">';
+            echo '<p>';
+            echo '<span class="dashicons dashicons-info"></span> ';
+            echo esc_html__('Crea un\'esperienza per vedere l\'anteprima del branding.', 'fp-experiences');
+            echo ' <a href="' . esc_url(admin_url('post-new.php?post_type=fp_experience')) . '">' . esc_html__('Crea ora', 'fp-experiences') . ' →</a>';
+            echo '</p>';
+            echo '</div>';
+            return;
+        }
+
+        $experience = $experiences[0];
+        $preview_url = get_permalink($experience);
+
+        echo '<div class="fp-exp-preview-notice fp-exp-preview-notice--success">';
+        echo '<p>';
+        echo '<span class="dashicons dashicons-visibility"></span> ';
+        echo esc_html__('Visualizza le modifiche al branding:', 'fp-experiences');
+        echo ' <a href="' . esc_url($preview_url) . '" target="_blank" class="fp-exp-preview-link">';
+        echo esc_html__('Anteprima Esperienza', 'fp-experiences');
+        echo ' <span class="dashicons dashicons-external"></span>';
+        echo '</a>';
+        echo '</p>';
+        echo '</div>';
+    }
+
+    /**
+     * Get GetSettingsUseCase from container if available.
+     */
+    private function getGetSettingsUseCase(): ?GetSettingsUseCase
+    {
+        if ($this->getSettingsUseCase !== null) {
+            return $this->getSettingsUseCase;
+        }
+
+        try {
+            $kernel = \FP_Exp\Core\Bootstrap\Bootstrap::kernel();
+            if ($kernel === null) {
+                return null;
+            }
+
+            $container = $kernel->container();
+            if (!$container->has(GetSettingsUseCase::class)) {
+                return null;
+            }
+
+            $this->getSettingsUseCase = $container->make(GetSettingsUseCase::class);
+            return $this->getSettingsUseCase;
+        } catch (\Throwable $e) {
+            return null;
+        }
+    }
+
+    /**
+     * Get UpdateSettingsUseCase from container if available.
+     */
+    private function getUpdateSettingsUseCase(): ?UpdateSettingsUseCase
+    {
+        if ($this->updateSettingsUseCase !== null) {
+            return $this->updateSettingsUseCase;
+        }
+
+        try {
+            $kernel = \FP_Exp\Core\Bootstrap\Bootstrap::kernel();
+            if ($kernel === null) {
+                return null;
+            }
+
+            $container = $kernel->container();
+            if (!$container->has(UpdateSettingsUseCase::class)) {
+                return null;
+            }
+
+            $this->updateSettingsUseCase = $container->make(UpdateSettingsUseCase::class);
+            return $this->updateSettingsUseCase;
+        } catch (\Throwable $e) {
+            return null;
+        }
     }
 }

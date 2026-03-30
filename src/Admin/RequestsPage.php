@@ -217,17 +217,27 @@ final class RequestsPage implements HookableInterface
         settings_errors('fp_exp_rtb_requests');
 
         $statuses = Reservations::request_statuses();
+        $status_filter_options = $statuses + [
+            Reservations::REQUEST_FILTER_HOLD_EXPIRED => esc_html__('Hold scaduto (automatico)', 'fp-experiences'),
+        ];
         $status_filter = isset($_GET['status']) ? sanitize_key((string) wp_unslash($_GET['status'])) : 'all'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-        $query_statuses = 'all' === $status_filter ? array_keys($statuses) : [$status_filter];
-        if ('all' !== $status_filter && ! isset($statuses[$status_filter])) {
-            $query_statuses = array_keys($statuses);
+        if ('all' !== $status_filter && ! isset($status_filter_options[$status_filter])) {
             $status_filter = 'all';
         }
 
-        $requests = Reservations::get_requests([
-            'statuses' => $query_statuses,
-            'per_page' => 50,
-        ]);
+        if (Reservations::REQUEST_FILTER_HOLD_EXPIRED === $status_filter) {
+            $requests = Reservations::get_requests([
+                'rtb_hold_expired_only' => true,
+                'per_page' => 50,
+            ]);
+        } else {
+            $query_statuses = 'all' === $status_filter ? array_keys($statuses) : [$status_filter];
+            $requests = Reservations::get_requests([
+                'statuses' => $query_statuses,
+                'include_expired_rtb_holds' => 'all' === $status_filter,
+                'per_page' => 50,
+            ]);
+        }
 
         $date_format = get_option('date_format', 'F j, Y');
         $time_format = get_option('time_format', 'H:i');
@@ -255,7 +265,7 @@ final class RequestsPage implements HookableInterface
         echo '<input type="hidden" name="page" value="fp_exp_requests" />';
         echo '<label for="fp-exp-requests-status">' . esc_html__('Filtra per stato', 'fp-experiences') . '</label> ';
         echo '<select id="fp-exp-requests-status" name="status">';
-        $options = ['all' => esc_html__('Tutti gli stati', 'fp-experiences')] + $statuses;
+        $options = ['all' => esc_html__('Tutti gli stati', 'fp-experiences')] + $status_filter_options;
         foreach ($options as $key => $label) {
             $selected = selected($status_filter, $key, false);
             echo '<option value="' . esc_attr($key) . '" ' . $selected . '>' . esc_html($label) . '</option>';
@@ -311,7 +321,10 @@ final class RequestsPage implements HookableInterface
 
                 $status = Reservations::normalize_status((string) ($request['status'] ?? ''));
                 $mode = $this->request_to_book->resolve_mode_for_reservation($request);
-                $status_label = $statuses[$status] ?? ucwords(str_replace('_', ' ', $status));
+                $is_hold_expired_row = Reservations::STATUS_CANCELLED === $status && ! empty($request['hold_expires_at']);
+                $status_label = $is_hold_expired_row
+                    ? esc_html__('Hold scaduto (automatico)', 'fp-experiences')
+                    : ($statuses[$status] ?? ucwords(str_replace('_', ' ', $status)));
                 $mode_label = 'pay_later' === $mode
                     ? esc_html__('Richiesta pagamento', 'fp-experiences')
                     : esc_html__('Conferma prenotazione', 'fp-experiences');
@@ -338,7 +351,10 @@ final class RequestsPage implements HookableInterface
                 }
 
                 echo '<tr>';
-                echo '<th scope="row" class="check-column"><input type="checkbox" name="reservation_ids[]" value="' . esc_attr((string) $reservation_id) . '" aria-label="' . esc_attr(sprintf(/* translators: %d: reservation ID */ __('Seleziona richiesta #%d', 'fp-experiences'), $reservation_id)) . '" /></th>';
+                $checkbox_attrs = $is_hold_expired_row
+                    ? 'disabled aria-disabled="true"'
+                    : '';
+                echo '<th scope="row" class="check-column"><input type="checkbox" name="reservation_ids[]" value="' . esc_attr((string) $reservation_id) . '" ' . $checkbox_attrs . ' aria-label="' . esc_attr(sprintf(/* translators: %d: reservation ID */ __('Seleziona richiesta #%d', 'fp-experiences'), $reservation_id)) . '" /></th>';
                 echo '<td>' . esc_html($experience_title ?: sprintf('#%d', absint($request['experience_id'] ?? 0))) . '</td>';
                 echo '<td>' . esc_html($start_label) . '</td>';
                 echo '<td>';
@@ -359,20 +375,27 @@ final class RequestsPage implements HookableInterface
                 echo '</td>';
                 echo '<td>';
 
-                echo '<form method="post" class="fp-exp-requests__action">';
-                wp_nonce_field('fp_exp_rtb_approve_' . $reservation_id, 'fp_exp_rtb_nonce');
-                echo '<input type="hidden" name="reservation_id" value="' . esc_attr((string) $reservation_id) . '" />';
-                echo '<input type="hidden" name="fp_exp_rtb_action" value="approve" />';
-                echo '<button type="submit" class="button button-primary">' . esc_html__('Approva', 'fp-experiences') . '</button>';
-                echo '</form>';
+                if ($is_hold_expired_row) {
+                    echo '<p class="description">' . esc_html__(
+                        'La richiesta non è stata approvata entro il tempo di hold: la capacità è stata liberata. Contatta il cliente per una nuova richiesta se necessario.',
+                        'fp-experiences'
+                    ) . '</p>';
+                } else {
+                    echo '<form method="post" class="fp-exp-requests__action">';
+                    wp_nonce_field('fp_exp_rtb_approve_' . $reservation_id, 'fp_exp_rtb_nonce');
+                    echo '<input type="hidden" name="reservation_id" value="' . esc_attr((string) $reservation_id) . '" />';
+                    echo '<input type="hidden" name="fp_exp_rtb_action" value="approve" />';
+                    echo '<button type="submit" class="button button-primary">' . esc_html__('Approva', 'fp-experiences') . '</button>';
+                    echo '</form>';
 
-                echo '<form method="post" class="fp-exp-requests__action">';
-                wp_nonce_field('fp_exp_rtb_decline_' . $reservation_id, 'fp_exp_rtb_nonce');
-                echo '<input type="hidden" name="reservation_id" value="' . esc_attr((string) $reservation_id) . '" />';
-                echo '<input type="hidden" name="fp_exp_rtb_action" value="decline" />';
-                echo '<input type="text" name="reason" class="regular-text" placeholder="' . esc_attr__('Motivo opzionale', 'fp-experiences') . '" />';
-                echo '<button type="submit" class="button">' . esc_html__('Rifiuta', 'fp-experiences') . '</button>';
-                echo '</form>';
+                    echo '<form method="post" class="fp-exp-requests__action">';
+                    wp_nonce_field('fp_exp_rtb_decline_' . $reservation_id, 'fp_exp_rtb_nonce');
+                    echo '<input type="hidden" name="reservation_id" value="' . esc_attr((string) $reservation_id) . '" />';
+                    echo '<input type="hidden" name="fp_exp_rtb_action" value="decline" />';
+                    echo '<input type="text" name="reason" class="regular-text" placeholder="' . esc_attr__('Motivo opzionale', 'fp-experiences') . '" />';
+                    echo '<button type="submit" class="button">' . esc_html__('Rifiuta', 'fp-experiences') . '</button>';
+                    echo '</form>';
+                }
 
                 if ($payment_url && Reservations::STATUS_APPROVED_PENDING_PAYMENT === $status) {
                     echo '<a class="button button-secondary" href="' . esc_url($payment_url) . '" target="_blank" rel="noopener">' . esc_html__('Apri link pagamento', 'fp-experiences') . '</a>';

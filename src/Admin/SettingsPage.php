@@ -3105,7 +3105,10 @@ final class SettingsPage implements HookableInterface
                 'key' => 'timeout',
                 'label' => esc_html__('Hold timeout (minutes)', 'fp-experiences'),
                 'type' => 'number',
-                'description' => esc_html__('How long to reserve capacity for a pending request before it is released automatically.', 'fp-experiences'),
+                'description' => esc_html__(
+                    'Durata massima in cui la richiesta RTB resta in attesa di approvazione prima che lo slot venga liberato automaticamente. Valori molto bassi (es. 30 min) possono far sparire la richiesta dalla lista se lo staff risponde dopo: valuta almeno alcune ore o un giorno per flussi con conferma manuale.',
+                    'fp-experiences'
+                ),
             ],
             [
                 'key' => 'block_capacity',
@@ -4627,7 +4630,7 @@ final class SettingsPage implements HookableInterface
 
         $clean = [
             'mode' => $mode,
-            'timeout' => max(5, absint($value['timeout'] ?? 30)),
+            'timeout' => max(5, absint($value['timeout'] ?? 1440)),
             'block_capacity' => ! empty($value['block_capacity']),
             'templates' => [],
             'fallback' => [],

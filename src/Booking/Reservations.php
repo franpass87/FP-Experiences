@@ -29,6 +29,11 @@ final class Reservations
     public const STATUS_DECLINED = 'declined';
     public const STATUS_PAID = 'paid';
     public const STATUS_CANCELLED = 'cancelled';
+
+    /**
+     * Pseudo-stato per filtro admin: richieste RTB passate a cancelled dal cron hold scaduto.
+     */
+    public const REQUEST_FILTER_HOLD_EXPIRED = 'hold_expired';
     public const STATUS_CHECKED_IN = 'checked_in';
 
     public static function table_name(): string
@@ -364,7 +369,9 @@ final class Reservations
     /**
      * Retrieve request-style reservations for administrative workflows.
      *
-     * @param array<string, mixed> $args
+     * @param array<string, mixed> $args Keys: statuses (string[]), experience_id (int), per_page (int), paged (int),
+     *                                   include_expired_rtb_holds (bool) Unisce righe cancelled con hold_expires_at valorizzato (cron hold scaduto),
+     *                                   rtb_hold_expired_only (bool) Solo quelle righe.
      *
      * @return array<int, array<string, mixed>>
      */
@@ -381,21 +388,12 @@ final class Reservations
             'experience_id' => 0,
             'per_page' => 20,
             'paged' => 1,
+            'include_expired_rtb_holds' => false,
+            'rtb_hold_expired_only' => false,
         ];
 
         $args = wp_parse_args($args, $defaults);
 
-        $statuses = array_filter((array) ($args['statuses'] ?? []));
-        if (! $statuses) {
-            $statuses = $defaults['statuses'];
-        }
-
-        $normalized_statuses = [];
-        foreach ($statuses as $status) {
-            $normalized_statuses[] = self::normalize_status((string) $status);
-        }
-
-        $placeholders = implode(',', array_fill(0, count($normalized_statuses), '%s'));
         $per_page = max(1, absint($args['per_page']));
         $paged = max(1, absint($args['paged']));
         $offset = ($paged - 1) * $per_page;
@@ -405,9 +403,39 @@ final class Reservations
         $posts_table = $wpdb->posts;
 
         $where = [];
-        $params = $normalized_statuses;
+        $params = [];
 
-        $where[] = "r.status IN ({$placeholders})";
+        $hold_expired_only = ! empty($args['rtb_hold_expired_only']);
+        if ($hold_expired_only) {
+            $where[] = 'r.status = %s';
+            $params[] = self::STATUS_CANCELLED;
+            $where[] = 'r.hold_expires_at IS NOT NULL';
+        } else {
+            $statuses = array_filter((array) ($args['statuses'] ?? []));
+            if (! $statuses) {
+                $statuses = [
+                    self::STATUS_PENDING_REQUEST,
+                    self::STATUS_APPROVED_PENDING_PAYMENT,
+                    self::STATUS_APPROVED_CONFIRMED,
+                ];
+            }
+
+            $normalized_statuses = [];
+            foreach ($statuses as $status) {
+                $normalized_statuses[] = self::normalize_status((string) $status);
+            }
+
+            $placeholders = implode(',', array_fill(0, count($normalized_statuses), '%s'));
+            $params = $normalized_statuses;
+
+            $include_expired = ! empty($args['include_expired_rtb_holds']);
+            if ($include_expired && $normalized_statuses !== []) {
+                $where[] = "(r.status IN ({$placeholders}) OR (r.status = %s AND r.hold_expires_at IS NOT NULL))";
+                $params[] = self::STATUS_CANCELLED;
+            } else {
+                $where[] = "r.status IN ({$placeholders})";
+            }
+        }
 
         $experience_id = absint($args['experience_id']);
         if ($experience_id > 0) {

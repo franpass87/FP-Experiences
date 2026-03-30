@@ -2,6 +2,16 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.5.18] - 2026-03-30
+
+### Fixed
+
+- Pagina **Richieste RTB**: le richieste scadute per hold (cron che imposta `cancelled` con `hold_expires_at` valorizzato) non comparivano più in elenco pur essendo stata inviata l’email allo staff — ora compaiono in vista «Tutti gli stati» e nel filtro dedicato **Hold scaduto (automatico)**, senza azioni Approva/Rifiuta.
+
+### Changed
+
+- Default **Hold timeout (minutes)** per nuove configurazioni senza valore salvato: da 30 a **1440** (24 h), più adatto alla conferma manuale operatore; testo guida in impostazioni RTB sul rischio di timeout troppo breve.
+
 ## [1.5.17] - 2026-03-25
 
 ### Fixed

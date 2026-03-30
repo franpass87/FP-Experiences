@@ -1238,7 +1238,7 @@ final class Helpers
     {
         $settings = self::rtb_settings();
 
-        return max(5, absint($settings['timeout'] ?? 30));
+        return max(5, absint($settings['timeout'] ?? 1440));
     }
 
     public static function experience_uses_rtb(int $experience_id): bool

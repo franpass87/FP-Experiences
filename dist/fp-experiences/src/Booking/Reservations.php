@@ -6,6 +6,7 @@ namespace FP_Exp\Booking;
 
 use DateTimeInterface;
 use FP_Exp\Utils\Helpers;
+use FP_Exp\Utils\Logger;
 use wpdb;
 
 use function __;
@@ -28,23 +29,61 @@ final class Reservations
     public const STATUS_DECLINED = 'declined';
     public const STATUS_PAID = 'paid';
     public const STATUS_CANCELLED = 'cancelled';
+
+    /**
+     * Pseudo-stato per filtro admin: richieste RTB passate a cancelled dal cron hold scaduto.
+     */
+    public const REQUEST_FILTER_HOLD_EXPIRED = 'hold_expired';
     public const STATUS_CHECKED_IN = 'checked_in';
 
     public static function table_name(): string
     {
-        global $wpdb;
+        // Try to get from container first
+        $kernel = \FP_Exp\Core\Bootstrap\Bootstrap::kernel();
+        if ($kernel !== null) {
+            $container = $kernel->container();
+            if ($container->has(\FP_Exp\Services\Database\DatabaseInterface::class)) {
+                try {
+                    $database = $container->make(\FP_Exp\Services\Database\DatabaseInterface::class);
+                    return $database->getPrefix() . 'fp_exp_reservations';
+                } catch (\Throwable $e) {
+                    // Fall through to global $wpdb
+                }
+            }
+        }
 
+        // Fallback to global $wpdb for backward compatibility
+        global $wpdb;
         return $wpdb->prefix . 'fp_exp_reservations';
     }
 
     public static function create_table(): void
     {
-        global $wpdb;
-
         require_once ABSPATH . 'wp-admin/includes/upgrade.php';
 
         $table_name = self::table_name();
-        $charset_collate = $wpdb->get_charset_collate();
+        
+        // Try to get charset_collate from DatabaseInterface if available
+        $kernel = \FP_Exp\Core\Bootstrap\Bootstrap::kernel();
+        $charset_collate = '';
+        
+        if ($kernel !== null) {
+            $container = $kernel->container();
+            if ($container->has(\FP_Exp\Services\Database\DatabaseInterface::class)) {
+                try {
+                    $database = $container->make(\FP_Exp\Services\Database\DatabaseInterface::class);
+                    $charset_collate = $database->getCharsetCollate();
+                } catch (\Throwable $e) {
+                    // Fall through to global $wpdb
+                }
+            }
+        }
+        
+        // Fallback to global $wpdb for backward compatibility
+        if (empty($charset_collate)) {
+            global $wpdb;
+            $charset_collate = $wpdb->get_charset_collate();
+        }
 
         $sql = "CREATE TABLE {$table_name} (
             id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -204,6 +243,11 @@ final class Reservations
         $result = $wpdb->insert($table, $prepared);
 
         if (false === $result) {
+            Logger::log('booking', sprintf(
+                'Reservations::create failed — %s | data: %s',
+                $wpdb->last_error,
+                wp_json_encode($prepared)
+            ));
             return 0;
         }
 
@@ -221,6 +265,24 @@ final class Reservations
                 'order_id' => absint($order_id),
             ]
         );
+    }
+
+    /**
+     * Delete a single reservation by ID.
+     */
+    public static function delete(int $reservation_id): bool
+    {
+        global $wpdb;
+
+        $table = self::table_name();
+        $deleted = $wpdb->delete(
+            $table,
+            [
+                'id' => absint($reservation_id),
+            ]
+        );
+
+        return false !== $deleted && $deleted > 0;
     }
 
     /**
@@ -307,7 +369,9 @@ final class Reservations
     /**
      * Retrieve request-style reservations for administrative workflows.
      *
-     * @param array<string, mixed> $args
+     * @param array<string, mixed> $args Keys: statuses (string[]), experience_id (int), per_page (int), paged (int),
+     *                                   include_expired_rtb_holds (bool) Unisce righe cancelled con hold_expires_at valorizzato (cron hold scaduto),
+     *                                   rtb_hold_expired_only (bool) Solo quelle righe.
      *
      * @return array<int, array<string, mixed>>
      */
@@ -324,21 +388,12 @@ final class Reservations
             'experience_id' => 0,
             'per_page' => 20,
             'paged' => 1,
+            'include_expired_rtb_holds' => false,
+            'rtb_hold_expired_only' => false,
         ];
 
         $args = wp_parse_args($args, $defaults);
 
-        $statuses = array_filter((array) ($args['statuses'] ?? []));
-        if (! $statuses) {
-            $statuses = $defaults['statuses'];
-        }
-
-        $normalized_statuses = [];
-        foreach ($statuses as $status) {
-            $normalized_statuses[] = self::normalize_status((string) $status);
-        }
-
-        $placeholders = implode(',', array_fill(0, count($normalized_statuses), '%s'));
         $per_page = max(1, absint($args['per_page']));
         $paged = max(1, absint($args['paged']));
         $offset = ($paged - 1) * $per_page;
@@ -348,9 +403,39 @@ final class Reservations
         $posts_table = $wpdb->posts;
 
         $where = [];
-        $params = $normalized_statuses;
+        $params = [];
 
-        $where[] = "r.status IN ({$placeholders})";
+        $hold_expired_only = ! empty($args['rtb_hold_expired_only']);
+        if ($hold_expired_only) {
+            $where[] = 'r.status = %s';
+            $params[] = self::STATUS_CANCELLED;
+            $where[] = 'r.hold_expires_at IS NOT NULL';
+        } else {
+            $statuses = array_filter((array) ($args['statuses'] ?? []));
+            if (! $statuses) {
+                $statuses = [
+                    self::STATUS_PENDING_REQUEST,
+                    self::STATUS_APPROVED_PENDING_PAYMENT,
+                    self::STATUS_APPROVED_CONFIRMED,
+                ];
+            }
+
+            $normalized_statuses = [];
+            foreach ($statuses as $status) {
+                $normalized_statuses[] = self::normalize_status((string) $status);
+            }
+
+            $placeholders = implode(',', array_fill(0, count($normalized_statuses), '%s'));
+            $params = $normalized_statuses;
+
+            $include_expired = ! empty($args['include_expired_rtb_holds']);
+            if ($include_expired && $normalized_statuses !== []) {
+                $where[] = "(r.status IN ({$placeholders}) OR (r.status = %s AND r.hold_expires_at IS NOT NULL))";
+                $params[] = self::STATUS_CANCELLED;
+            } else {
+                $where[] = "r.status IN ({$placeholders})";
+            }
+        }
 
         $experience_id = absint($args['experience_id']);
         if ($experience_id > 0) {
@@ -381,6 +466,91 @@ final class Reservations
                 $row['utm'] = maybe_unserialize($row['utm']);
                 $row['meta'] = maybe_unserialize($row['meta']);
 
+                return $row;
+            },
+            $rows
+        );
+    }
+
+    /**
+     * Get reservations for export (CSV) with optional date range, experience and status filters.
+     *
+     * @param array<string, mixed> $args Keys: date_from (Y-m-d), date_to (Y-m-d), experience_id (int), statuses (string[]), limit (int).
+     * @return array<int, array<string, mixed>>
+     */
+    public static function get_for_export(array $args = []): array
+    {
+        global $wpdb;
+
+        $defaults = [
+            'date_from' => '',
+            'date_to' => '',
+            'experience_id' => 0,
+            'statuses' => [],
+            'limit' => 10000,
+        ];
+        $args = wp_parse_args($args, $defaults);
+
+        $reservations_table = self::table_name();
+        $slots_table = Slots::table_name();
+        $posts_table = $wpdb->posts;
+
+        $where = ['1=1'];
+        $params = [];
+
+        $date_from = is_string($args['date_from']) ? trim($args['date_from']) : '';
+        $date_to = is_string($args['date_to']) ? trim($args['date_to']) : '';
+        if ('' !== $date_from) {
+            $where[] = 's.start_datetime >= %s';
+            $params[] = $date_from . ' 00:00:00';
+        }
+        if ('' !== $date_to) {
+            $where[] = 's.start_datetime <= %s';
+            $params[] = $date_to . ' 23:59:59';
+        }
+
+        $experience_id = absint($args['experience_id']);
+        if ($experience_id > 0) {
+            $where[] = 'r.experience_id = %d';
+            $params[] = $experience_id;
+        }
+
+        $statuses = array_filter((array) ($args['statuses'] ?? []));
+        if ($statuses !== []) {
+            $normalized = [];
+            foreach ($statuses as $s) {
+                $normalized[] = self::normalize_status((string) $s);
+            }
+            $placeholders = implode(',', array_fill(0, count($normalized), '%s'));
+            $where[] = "r.status IN ({$placeholders})";
+            foreach ($normalized as $s) {
+                $params[] = $s;
+            }
+        }
+
+        $limit = max(1, min(10000, absint($args['limit'])));
+        $params[] = $limit;
+        $where_clause = implode(' AND ', $where);
+
+        $sql = $wpdb->prepare(
+            "SELECT r.*, s.start_datetime, s.end_datetime, p.post_title AS experience_title FROM {$reservations_table} r " .
+            "LEFT JOIN {$slots_table} s ON r.slot_id = s.id " .
+            "LEFT JOIN {$posts_table} p ON r.experience_id = p.ID WHERE {$where_clause} " .
+            'ORDER BY s.start_datetime ASC, r.id ASC LIMIT %d',
+            ...$params
+        );
+
+        $rows = $wpdb->get_results($sql, ARRAY_A);
+        if (! $rows) {
+            return [];
+        }
+
+        return array_map(
+            static function (array $row): array {
+                $row['pax'] = maybe_unserialize($row['pax']);
+                $row['addons'] = maybe_unserialize($row['addons']);
+                $row['utm'] = maybe_unserialize($row['utm']);
+                $row['meta'] = maybe_unserialize($row['meta']);
                 return $row;
             },
             $rows

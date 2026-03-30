@@ -4,6 +4,22 @@ declare(strict_types=1);
 
 namespace FP_Exp\Utils;
 
+if (! defined('ABSPATH')) {
+    exit;
+}
+
+use FP_Exp\Core\Bootstrap\Bootstrap;
+use FP_Exp\Core\Container\ContainerInterface;
+use FP_Exp\Services\Cache\CacheInterface;
+use FP_Exp\Services\Logger\LoggerInterface;
+use FP_Exp\Services\Options\OptionsInterface;
+use FP_Exp\Utils\Helpers\AssetHelper;
+use FP_Exp\Utils\Helpers\ExperienceHelper;
+use FP_Exp\Utils\Helpers\GiftHelper;
+use FP_Exp\Utils\Helpers\PermissionHelper;
+use FP_Exp\Utils\Helpers\RTBHelper;
+use FP_Exp\Utils\Helpers\TrackingHelper;
+use FP_Exp\Utils\Helpers\UtilityHelper;
 use WP_REST_Request;
 
 use function absint;
@@ -20,6 +36,7 @@ use function esc_url_raw;
 use function filemtime;
 use function function_exists;
 use function get_current_user_id;
+use function get_role;
 use function get_option;
 use function get_post_meta;
 use function get_transient;
@@ -47,6 +64,7 @@ use function wp_parse_args;
 use function wp_unslash;
 use function wp_verify_nonce;
 use function wp_get_current_user;
+use function is_user_logged_in;
 
 use const FP_EXP_PLUGIN_DIR;
 use const FP_EXP_VERSION;
@@ -61,9 +79,14 @@ final class Helpers
     /**
      * Clear the asset version cache.
      */
+    /**
+     * Clear asset version cache (delegated to AssetHelper).
+     *
+     * @deprecated Use AssetHelper::clearCache() instead
+     */
     public static function clear_asset_version_cache(): void
     {
-        self::$asset_version_cache = [];
+        AssetHelper::clearCache();
     }
 
     /**
@@ -93,6 +116,11 @@ final class Helpers
 
     public const COGNITIVE_BIAS_MAX_SELECTION = 6;
 
+    /**
+     * Get cognitive bias max selection (delegated to ExperienceHelper).
+     *
+     * @deprecated Use ExperienceHelper::cognitiveBiasMaxSelection() instead
+     */
     public static function cognitive_bias_max_selection(): int
     {
         $max = apply_filters('fp_exp_cognitive_bias_max_selection', self::COGNITIVE_BIAS_MAX_SELECTION);
@@ -110,162 +138,137 @@ final class Helpers
         return $max;
     }
 
+    /**
+     * Get OptionsInterface instance.
+     * Tries container first, falls back to direct instantiation for backward compatibility.
+     *
+     * @return OptionsInterface
+     */
+    private static function getOptions(): OptionsInterface
+    {
+        static $options = null;
+        
+        if ($options !== null) {
+            return $options;
+        }
+
+        // Try to get from container
+        $kernel = Bootstrap::kernel();
+        if ($kernel !== null) {
+            $container = $kernel->container();
+            if ($container->has(OptionsInterface::class)) {
+                try {
+                    $options = $container->make(OptionsInterface::class);
+                    return $options;
+                } catch (\Throwable $e) {
+                    // Fall through to direct instantiation
+                }
+            }
+        }
+
+        // Fallback to direct instantiation
+        $options = new \FP_Exp\Services\Options\Options();
+        return $options;
+    }
+
+    /**
+     * Check if user can manage FP Experiences (delegated to PermissionHelper).
+     *
+     * @deprecated Use PermissionHelper::canManage() instead
+     */
     public static function can_manage_fp(): bool
     {
-        $user = wp_get_current_user();
-
-        if ($user && ! empty($user->allcaps['fp_exp_admin_access'])) {
-            return true;
-        }
-
-        if ($user && ! empty($user->allcaps['fp_exp_manage'])) {
-            return true;
-        }
-
-        return $user && ! empty($user->allcaps['manage_options']);
+        return PermissionHelper::canManage();
     }
 
+    /**
+     * Ensure that administrators (role and current user) always retain the FP Experiences capabilities.
+     *
+     * Called on admin_init to repair installations where role propagation did not run correctly.
+     */
+    /**
+     * Ensure admin capabilities (delegated to PermissionHelper).
+     *
+     * @deprecated Use PermissionHelper::ensureAdminCapabilities() instead
+     */
+    public static function ensure_admin_capabilities(): void
+    {
+        PermissionHelper::ensureAdminCapabilities();
+    }
+
+    /**
+     * Check if user can operate FP Experiences (delegated to PermissionHelper).
+     *
+     * @deprecated Use PermissionHelper::canOperate() instead
+     */
     public static function can_operate_fp(): bool
     {
-        $user = wp_get_current_user();
-
-        if ($user && ! empty($user->allcaps['fp_exp_operate'])) {
-            return true;
-        }
-
-        if ($user && (! empty($user->allcaps['manage_woocommerce']) || ! empty($user->allcaps['edit_shop_orders']))) {
-            return true;
-        }
-
-        return self::can_manage_fp();
+        return PermissionHelper::canOperate();
     }
 
+    /**
+     * Check if user can access guides (delegated to PermissionHelper).
+     *
+     * @deprecated Use PermissionHelper::canAccessGuides() instead
+     */
     public static function can_access_guides(): bool
     {
-        $user = wp_get_current_user();
-
-        if ($user && ! empty($user->allcaps['fp_exp_guide'])) {
-            return true;
-        }
-
-        return self::can_operate_fp();
+        return PermissionHelper::canAccessGuides();
     }
 
+    /**
+     * Get management capability (delegated to PermissionHelper).
+     *
+     * @deprecated Use PermissionHelper::managementCapability() instead
+     */
     public static function management_capability(): string
     {
-        $user = wp_get_current_user();
-
-        if ($user && ! empty($user->allcaps['fp_exp_admin_access'])) {
-            return 'fp_exp_admin_access';
-        }
-
-        if ($user && ! empty($user->allcaps['fp_exp_manage'])) {
-            return 'fp_exp_manage';
-        }
-
-        return 'manage_options';
+        return PermissionHelper::managementCapability();
     }
 
+    /**
+     * Get operations capability (delegated to PermissionHelper).
+     *
+     * @deprecated Use PermissionHelper::operationsCapability() instead
+     */
     public static function operations_capability(): string
     {
-        $user = wp_get_current_user();
-
-        if ($user && ! empty($user->allcaps['fp_exp_operate'])) {
-            return 'fp_exp_operate';
-        }
-
-        if ($user && ! empty($user->allcaps['fp_exp_manage'])) {
-            return 'fp_exp_manage';
-        }
-
-        if ($user && ! empty($user->allcaps['fp_exp_admin_access'])) {
-            return 'fp_exp_admin_access';
-        }
-
-        if ($user && ! empty($user->allcaps['manage_woocommerce'])) {
-            return 'manage_woocommerce';
-        }
-
-        return self::management_capability();
+        return PermissionHelper::operationsCapability();
     }
 
+    /**
+     * Get guide capability (delegated to PermissionHelper).
+     *
+     * @deprecated Use PermissionHelper::guideCapability() instead
+     */
     public static function guide_capability(): string
     {
-        $user = wp_get_current_user();
-
-        if ($user && ! empty($user->allcaps['fp_exp_guide'])) {
-            return 'fp_exp_guide';
-        }
-
-        if ($user && ! empty($user->allcaps['fp_exp_operate'])) {
-            return 'fp_exp_operate';
-        }
-
-        if ($user && ! empty($user->allcaps['fp_exp_manage'])) {
-            return 'fp_exp_manage';
-        }
-
-        if ($user && ! empty($user->allcaps['fp_exp_admin_access'])) {
-            return 'fp_exp_admin_access';
-        }
-
-        if ($user && ! empty($user->allcaps['manage_woocommerce'])) {
-            return 'manage_woocommerce';
-        }
-
-        return self::management_capability();
+        return PermissionHelper::guideCapability();
     }
 
     /**
      * @return array<string, mixed>
      */
+    /**
+     * Get tracking settings (delegated to TrackingHelper).
+     *
+     * @deprecated Use TrackingHelper::getSettings() instead
+     *
+     * @return array<string, mixed>
+     */
     public static function tracking_settings(): array
     {
-        $settings = get_option('fp_exp_tracking', []);
-
-        return is_array($settings) ? $settings : [];
+        return TrackingHelper::getSettings();
     }
 
+    /**
+     * Get asset version (delegated to AssetHelper).
+     *
+     * @deprecated Use AssetHelper::getVersion() instead
+     */
     public static function asset_version(string $relative_path): string
     {
-        $relative_path = ltrim($relative_path, '/');
-
-        if (isset(self::$asset_version_cache[$relative_path])) {
-            return self::$asset_version_cache[$relative_path];
-        }
-
-        // In production, usa sempre la versione del plugin per garantire cache busting
-        // ad ogni release, indipendentemente dai timestamp dei file
-        if (defined('FP_EXP_VERSION') && FP_EXP_VERSION !== '') {
-            $version = FP_EXP_VERSION;
-            
-            // In development (WP_DEBUG attivo), aggiungi il timestamp per cache busting immediato
-            if (defined('WP_DEBUG') && WP_DEBUG) {
-                $absolute_path = trailingslashit(FP_EXP_PLUGIN_DIR) . $relative_path;
-                if (is_readable($absolute_path)) {
-                    $mtime = filemtime($absolute_path);
-                    if (false !== $mtime) {
-                        $version .= '.' . $mtime;
-                    }
-                }
-            }
-            
-            self::$asset_version_cache[$relative_path] = $version;
-            return self::$asset_version_cache[$relative_path];
-        }
-
-        // Fallback: usa il timestamp del file se la versione non è definita
-        $absolute_path = trailingslashit(FP_EXP_PLUGIN_DIR) . $relative_path;
-        if (is_readable($absolute_path)) {
-            $mtime = filemtime($absolute_path);
-            if (false !== $mtime) {
-                self::$asset_version_cache[$relative_path] = (string) $mtime;
-                return self::$asset_version_cache[$relative_path];
-            }
-        }
-
-        self::$asset_version_cache[$relative_path] = '1.0.0';
-        return self::$asset_version_cache[$relative_path];
+        return AssetHelper::getVersion($relative_path);
     }
 
     /**
@@ -274,6 +277,13 @@ final class Helpers
      * If a preferred (typically minified) asset is older than a later fallback candidate, the fallback is used to avoid stale bundles.
      *
      * @param array<int, string> $candidates relative paths ordered by preference (minified first)
+     */
+    /**
+     * Resolve asset path (delegated to AssetHelper).
+     *
+     * @deprecated Use AssetHelper::resolveAssetPath() instead
+     *
+     * @param array<int, string> $candidates
      */
     public static function resolve_asset_rel(array $candidates): string
     {
@@ -390,7 +400,7 @@ final class Helpers
             ],
         ];
 
-        $settings = get_option('fp_exp_listing', []);
+        $settings = self::getOptions()->get('fp_exp_listing', []);
         $settings = is_array($settings) ? $settings : [];
 
         $filters = $settings['filters'] ?? $defaults['filters'];
@@ -515,66 +525,16 @@ final class Helpers
     /**
      * @return array<string, mixed>
      */
+    /**
+     * Get gift settings (delegated to GiftHelper).
+     *
+     * @deprecated Use GiftHelper::getSettings() instead
+     *
+     * @return array<string, mixed>
+     */
     public static function gift_settings(): array
     {
-        $defaults = [
-            'enabled' => false,
-            'validity_days' => 365,
-            'reminders' => [30, 7, 1],
-            'reminder_time' => '09:00',
-            'redeem_page' => '',
-        ];
-
-        $settings = get_option('fp_exp_gift', []);
-        $settings = is_array($settings) ? $settings : [];
-
-        $enabled = self::normalize_bool_option($settings['enabled'] ?? $defaults['enabled'], false);
-
-        $validity = absint((int) ($settings['validity_days'] ?? $defaults['validity_days']));
-        if ($validity <= 0) {
-            $validity = $defaults['validity_days'];
-        }
-
-        $reminders = $settings['reminders'] ?? $defaults['reminders'];
-        if (is_string($reminders)) {
-            $reminders = array_map('trim', explode(',', $reminders));
-        }
-
-        $reminders = is_array($reminders) ? $reminders : [];
-        $reminders = array_values(array_unique(array_filter(array_map(static function ($value) {
-            if ('' === $value) {
-                return null;
-            }
-
-            if (is_numeric($value)) {
-                $number = absint((string) $value);
-
-                return $number > 0 ? $number : null;
-            }
-
-            return null;
-        }, $reminders))));
-
-        if (empty($reminders)) {
-            $reminders = $defaults['reminders'];
-        }
-
-        sort($reminders);
-
-        $time = isset($settings['reminder_time']) ? sanitize_text_field((string) $settings['reminder_time']) : $defaults['reminder_time'];
-        if (! preg_match('/^\d{2}:\d{2}$/', $time)) {
-            $time = $defaults['reminder_time'];
-        }
-
-        $redeem_page = isset($settings['redeem_page']) ? esc_url_raw((string) $settings['redeem_page']) : '';
-
-        return [
-            'enabled' => $enabled,
-            'validity_days' => $validity,
-            'reminders' => $reminders,
-            'reminder_time' => $time,
-            'redeem_page' => $redeem_page,
-        ];
+        return GiftHelper::getSettings();
     }
 
     public static function gift_enabled(): bool
@@ -627,35 +587,15 @@ final class Helpers
     }
 
     /**
+     * Get RTB settings (delegated to RTBHelper).
+     *
+     * @deprecated Use RTBHelper::getSettings() instead
+     *
      * @return array<string, mixed>
      */
     public static function rtb_settings(): array
     {
-        $settings = get_option('fp_exp_rtb', []);
-        $settings = is_array($settings) ? $settings : [];
-
-        $defaults = [
-            'mode' => 'off',
-            'timeout' => 30,
-            'block_capacity' => false,
-            'templates' => [],
-            'fallback' => [],
-        ];
-
-        $settings = wp_parse_args($settings, $defaults);
-
-        $mode = is_string($settings['mode']) ? strtolower(sanitize_text_field($settings['mode'])) : 'off';
-        if (! in_array($mode, ['off', 'confirm', 'pay_later'], true)) {
-            $mode = 'off';
-        }
-
-        $settings['mode'] = $mode;
-        $settings['timeout'] = max(5, absint($settings['timeout']));
-        $settings['block_capacity'] = ! empty($settings['block_capacity']);
-        $settings['templates'] = is_array($settings['templates']) ? $settings['templates'] : [];
-        $settings['fallback'] = is_array($settings['fallback']) ? $settings['fallback'] : [];
-
-        return $settings;
+        return RTBHelper::getSettings();
     }
 
     /**
@@ -1053,7 +993,7 @@ final class Helpers
             ];
         }
 
-        $listing_settings = get_option('fp_exp_listing', []);
+        $listing_settings = self::getOptions()->get('fp_exp_listing', []);
         if (is_array($listing_settings) && isset($listing_settings['experience_badges']) && is_array($listing_settings['experience_badges'])) {
             $badge_settings = $listing_settings['experience_badges'];
 
@@ -1269,15 +1209,25 @@ final class Helpers
 
     public static function verify_public_rest_request(WP_REST_Request $request): bool
     {
+        // Prima verifica: nonce REST valido
         if (self::verify_rest_nonce($request, 'wp_rest', ['_wpnonce'])) {
             return true;
         }
 
+        // Seconda verifica: referer stesso dominio (solo per richieste pubbliche sicure)
         $referer = sanitize_text_field((string) $request->get_header('referer'));
         if ($referer) {
             $home = home_url();
-            if ($home && strpos($referer, $home) === 0) {
-                return true;
+            if ($home) {
+                $parsed_home = wp_parse_url($home);
+                $parsed_referer = wp_parse_url($referer);
+                
+                // Verifica che il dominio sia identico (non solo prefisso)
+                if ($parsed_home && $parsed_referer && 
+                    isset($parsed_home['host'], $parsed_referer['host']) &&
+                    $parsed_home['host'] === $parsed_referer['host']) {
+                    return true;
+                }
             }
         }
 
@@ -1288,7 +1238,7 @@ final class Helpers
     {
         $settings = self::rtb_settings();
 
-        return max(5, absint($settings['timeout'] ?? 30));
+        return max(5, absint($settings['timeout'] ?? 1440));
     }
 
     public static function experience_uses_rtb(int $experience_id): bool
@@ -1297,8 +1247,37 @@ final class Helpers
             return false;
         }
 
+        // Controlla se RTB è abilitato globalmente
+        $global_rtb_mode = self::rtb_mode();
+        $global_rtb_enabled = ('off' !== $global_rtb_mode);
+
+        // Controlla se l'esperienza ha un override specifico
+        // IMPORTANTE: usa metadata_exists() per distinguere tra "mai impostato" e "impostato a false"
+        $meta_exists = metadata_exists('post', $experience_id, '_fp_use_rtb');
         $value = get_post_meta($experience_id, '_fp_use_rtb', true);
 
+        // Debug logging per tracciare la decisione RTB
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('[FP-Exp Helpers] experience_uses_rtb(' . $experience_id . '): global_mode=' . $global_rtb_mode . ', global_enabled=' . ($global_rtb_enabled ? 'true' : 'false') . ', meta_exists=' . ($meta_exists ? 'true' : 'false') . ', exp_meta=' . print_r($value, true));
+        }
+
+        // Se il meta field non esiste nel database, usa l'impostazione globale
+        if (! $meta_exists) {
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('[FP-Exp Helpers] experience_uses_rtb(' . $experience_id . '): Meta not exists, using global setting -> ' . ($global_rtb_enabled ? 'true' : 'false'));
+            }
+            return $global_rtb_enabled;
+        }
+
+        // Se il meta field è vuoto/null ma esiste, considera come "usa globale"
+        if ($value === '' || $value === null) {
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('[FP-Exp Helpers] experience_uses_rtb(' . $experience_id . '): Meta is empty, using global setting -> ' . ($global_rtb_enabled ? 'true' : 'false'));
+            }
+            return $global_rtb_enabled;
+        }
+
+        // Se il meta field è impostato, rispetta la scelta specifica dell'esperienza
         if (is_bool($value)) {
             return $value;
         }
@@ -1329,12 +1308,12 @@ final class Helpers
 
     public static function meeting_points_enabled(): bool
     {
-        return self::normalize_yes_no_option(get_option('fp_exp_enable_meeting_points', 'yes'), true);
+        return self::normalize_yes_no_option(self::getOptions()->get('fp_exp_enable_meeting_points', 'yes'), true);
     }
 
     public static function meeting_points_import_enabled(): bool
     {
-        return self::normalize_yes_no_option(get_option('fp_exp_enable_meeting_point_import', 'no'), false);
+        return self::normalize_yes_no_option(self::getOptions()->get('fp_exp_enable_meeting_point_import', 'no'), false);
     }
 
     /**
@@ -1343,6 +1322,15 @@ final class Helpers
      * @param array<int|string, mixed> $default
      *
      * @return array<int, string>
+     */
+    /**
+     * Get meta array (delegated to UtilityHelper).
+     *
+     * @deprecated Use UtilityHelper::getMetaArray() instead
+     *
+     * @param array<string, mixed> $default
+     *
+     * @return array<string, mixed>
      */
     public static function get_meta_array(int $post_id, string $key, array $default = []): array
     {
@@ -1415,6 +1403,13 @@ final class Helpers
     /**
      * @return array<string, string>
      */
+    /**
+     * Read UTM cookie (delegated to TrackingHelper).
+     *
+     * @deprecated Use TrackingHelper::readUtmCookie() instead
+     *
+     * @return array<string, string>
+     */
     public static function read_utm_cookie(): array
     {
         if (empty($_COOKIE['fp_exp_utm'])) {
@@ -1439,6 +1434,11 @@ final class Helpers
         return $sanitised;
     }
 
+    /**
+     * Check if rate limit is hit (delegated to UtilityHelper).
+     *
+     * @deprecated Use UtilityHelper::hitRateLimit() instead
+     */
     public static function hit_rate_limit(string $key, int $limit, int $window): bool
     {
         $limit = max(1, $limit);
@@ -1468,6 +1468,11 @@ final class Helpers
         return false;
     }
 
+    /**
+     * Generate client fingerprint (delegated to UtilityHelper).
+     *
+     * @deprecated Use UtilityHelper::clientFingerprint() instead
+     */
     public static function client_fingerprint(): string
     {
         $user_id = get_current_user_id();
@@ -1506,9 +1511,21 @@ final class Helpers
         return 'ip_' . hash('sha256', $identifier);
     }
 
+    /**
+     * Check if debug logging is enabled (delegated to UtilityHelper).
+     *
+     * @deprecated Use UtilityHelper::isDebugLoggingEnabled() instead
+     */
     public static function debug_logging_enabled(): bool
     {
-        $option = get_option('fp_exp_debug_logging', 'yes');
+        // Try to use new Options service if available
+        $options = self::getService(OptionsInterface::class);
+        if ($options instanceof OptionsInterface) {
+            $option = $options->get('fp_exp_debug_logging', 'yes');
+        } else {
+            // Fallback to direct get_option for backward compatibility
+            $option = self::getOptions()->get('fp_exp_debug_logging', 'yes');
+        }
 
         if (is_bool($option)) {
             $enabled = $option;
@@ -1525,26 +1542,75 @@ final class Helpers
     }
 
     /**
-     * @param array<string, mixed> $context
+     * Log a debug message.
+     *
+     * @param string $channel Log channel
+     * @param string $message Log message
+     * @param array<string, mixed> $context Additional context
+     */
+    /**
+     * Log a debug message.
+     *
+     * @deprecated 1.2.0 Use LoggerInterface::log() or LoggerInterface::debug() instead.
+     *                   This method is kept for backward compatibility but will be removed in version 2.0.0.
+     * @see \FP_Exp\Services\Logger\LoggerInterface
+     * @param string $channel Log channel name
+     * @param string $message Log message
+     * @param array<string, mixed> $context Additional context data
+     * @return void
      */
     public static function log_debug(string $channel, string $message, array $context = []): void
     {
+        if (WP_DEBUG && function_exists('_deprecated_function')) {
+            _deprecated_function(
+                __METHOD__,
+                '1.2.1',
+                'LoggerInterface::log() or LoggerInterface::debug()'
+            );
+        }
+
         if (! self::debug_logging_enabled()) {
             return;
         }
 
-        Logger::log($channel, $message, $context);
+        // Try to use new Logger service if available
+        $logger = self::getService(LoggerInterface::class);
+        if ($logger instanceof LoggerInterface) {
+            $logger->log($channel, $message, $context);
+        } else {
+            // Fallback to legacy Logger for backward compatibility
+            Logger::log($channel, $message, $context);
+        }
     }
 
+    /**
+     * Clear experience transients (delegated to ExperienceHelper).
+     *
+     * @deprecated Use ExperienceHelper::clearExperienceTransients() instead
+     */
     public static function clear_experience_transients(int $experience_id): void
     {
-        delete_transient('fp_exp_pricing_notice_' . $experience_id);
-        delete_transient('fp_exp_calendar_choices');
-        delete_transient('fp_exp_price_from_' . $experience_id);
+        // Try to use new Cache service if available
+        $cache = self::getService(CacheInterface::class);
+        if ($cache instanceof CacheInterface) {
+            $cache->delete('fp_exp_pricing_notice_' . $experience_id);
+            $cache->delete('fp_exp_calendar_choices');
+            $cache->delete('fp_exp_price_from_' . $experience_id);
+        } else {
+            // Fallback to direct delete_transient for backward compatibility
+            delete_transient('fp_exp_pricing_notice_' . $experience_id);
+            delete_transient('fp_exp_calendar_choices');
+            delete_transient('fp_exp_price_from_' . $experience_id);
+        }
 
         do_action('fp_exp_experience_transients_cleared', $experience_id);
     }
 
+    /**
+     * Get currency code (delegated to UtilityHelper).
+     *
+     * @deprecated Use UtilityHelper::currencyCode() instead
+     */
     public static function currency_code(): string
     {
         if (function_exists('get_woocommerce_currency')) {
@@ -1554,12 +1620,46 @@ final class Helpers
             }
         }
 
-        $option = get_option('woocommerce_currency');
+        // Try to use new Options service if available
+        $options = self::getService(OptionsInterface::class);
+        if ($options instanceof OptionsInterface) {
+            $option = $options->get('woocommerce_currency', '');
+        } else {
+            // Fallback to direct get_option for backward compatibility
+            $option = get_option('woocommerce_currency', '');
+        }
+
         if (is_string($option) && '' !== $option) {
             return $option;
         }
 
         return 'EUR';
+    }
+
+    /**
+     * Get a service from the container if available.
+     *
+     * @param string $service Service interface/class name
+     * @return object|null Service instance or null if not available
+     */
+    private static function getService(string $service): ?object
+    {
+        try {
+            $kernel = Bootstrap::kernel();
+            if ($kernel === null) {
+                return null;
+            }
+
+            $container = $kernel->container();
+            if (!$container->has($service)) {
+                return null;
+            }
+
+            return $container->make($service);
+        } catch (\Throwable $e) {
+            // If container is not available, return null to use fallback
+            return null;
+        }
     }
 
     /**
