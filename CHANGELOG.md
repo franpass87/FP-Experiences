@@ -2,6 +2,16 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.5.21] - 2026-03-30
+
+### Fixed
+
+- **Richieste RTB**: colonna **Azioni** di nuovo coerente con il layout FP (rimossi override larghezza/flex sui pulsanti che creavano allineamenti errati).
+
+### Changed
+
+- Righe con **data/orario slot già passato**: in tabella compaiono solo nota + modulo **Rifiuta** (niente Approva, niente link pagamento). Messaggi distinti per hold scaduto vs altri stati. **`approve()`** rifiuta lato server qualsiasi approvazione se l’inizio slot è nel passato (`Reservations::is_reservation_slot_start_in_past`).
+
 ## [1.5.20] - 2026-03-30
 
 ### Changed

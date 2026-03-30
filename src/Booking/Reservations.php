@@ -56,6 +56,36 @@ final class Reservations
         return isset($meta['rtb']) && is_array($meta['rtb']);
     }
 
+    /**
+     * True se l'inizio dello slot collegato alla prenotazione è già passato (UTC vs ora sito).
+     *
+     * @param array<string, mixed> $reservation Record con slot_id valorizzato.
+     */
+    public static function is_reservation_slot_start_in_past(array $reservation): bool
+    {
+        $slot_id = absint($reservation['slot_id'] ?? 0);
+        if ($slot_id <= 0) {
+            return false;
+        }
+
+        $slot = Slots::get_slot($slot_id);
+        if (! is_array($slot)) {
+            return false;
+        }
+
+        $start = isset($slot['start_datetime']) ? (string) $slot['start_datetime'] : '';
+        if ($start === '') {
+            return false;
+        }
+
+        $ts = strtotime($start . ' UTC');
+        if (false === $ts) {
+            return false;
+        }
+
+        return $ts < current_time('timestamp', true);
+    }
+
     public static function table_name(): string
     {
         // Try to get from container first

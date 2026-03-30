@@ -696,6 +696,13 @@ final class RequestToBook implements HookableInterface
             return new WP_Error('fp_exp_rtb_missing', __('The request could not be found.', 'fp-experiences'));
         }
 
+        if (Reservations::is_reservation_slot_start_in_past($reservation)) {
+            return new WP_Error(
+                'fp_exp_rtb_slot_past',
+                __('Non è possibile approvare: la data/orario dello slot è già passata. Usa Rifiuta per chiudere la richiesta.', 'fp-experiences')
+            );
+        }
+
         $current_status = Reservations::normalize_status((string) ($reservation['status'] ?? ''));
         $from_expired_rtb_hold = Reservations::is_rtb_hold_expired_cancellation($reservation);
 

@@ -2131,17 +2131,17 @@ html.fp-exp-dark body.fp-exp-admin-shell .wrap .notice {
     padding: 4px 8px;
 }
 
-/* Righe con slot già passato: layout compatto */
+/* Righe con slot già passato: dati compatti, azioni = solo rifiuto (stessi token colonna Azioni FP) */
 .fp-exp-requests__table tr.fp-exp-requests__row--past td,
 .fp-exp-requests__table tr.fp-exp-requests__row--past th.check-column {
-    padding-top: 6px !important;
-    padding-bottom: 6px !important;
+    padding-top: 8px !important;
+    padding-bottom: 8px !important;
     font-size: 12px;
     vertical-align: middle;
 }
 
 .fp-exp-requests__table tr.fp-exp-requests__row--past td {
-    line-height: 1.35;
+    line-height: 1.4;
 }
 
 .fp-exp-requests__slot-past-label {
@@ -2199,60 +2199,28 @@ html.fp-exp-dark body.fp-exp-admin-shell .wrap .notice {
     font-size: 11px;
 }
 
-.fp-exp-requests__table tr.fp-exp-requests__row--past td:last-child {
-    width: auto !important;
-    min-width: 200px !important;
-    max-width: 300px !important;
-    padding: 8px !important;
-    vertical-align: middle !important;
-}
-
-.fp-exp-requests__table tr.fp-exp-requests__row--past .fp-exp-requests__actions-wrap {
+.fp-exp-requests__td-actions--past .fp-exp-requests__past-note {
     display: flex;
-    flex-wrap: wrap;
-    align-items: center;
+    align-items: flex-start;
     gap: 6px;
+    margin: 0 0 10px;
+    font-size: 12px;
+    line-height: 1.45;
+    color: #646970;
 }
 
-.fp-exp-requests__table tr.fp-exp-requests__row--past .fp-exp-requests__action {
-    display: inline-flex;
-    flex-direction: row;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 4px;
-    margin: 0 !important;
-}
-
-.fp-exp-requests__table tr.fp-exp-requests__row--past .fp-exp-requests__action .button,
-.fp-exp-requests__table tr.fp-exp-requests__row--past .fp-exp-requests__action .button-primary,
-.fp-exp-requests__table tr.fp-exp-requests__row--past .fp-exp-requests__action .button-secondary {
-    width: auto !important;
-    min-width: 0;
-    padding: 3px 10px !important;
-    font-size: 11px !important;
-    line-height: 1.35 !important;
-    min-height: 28px !important;
-}
-
-.fp-exp-requests__table tr.fp-exp-requests__row--past .fp-exp-requests__action input.regular-text {
-    width: 7rem !important;
-    min-height: 28px;
-    padding: 2px 6px !important;
-    font-size: 11px !important;
-}
-
-.fp-exp-requests__table tr.fp-exp-requests__row--past .fp-exp-requests__past-hint {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 22px;
-    height: 22px;
-    margin: 0 2px 0 0;
-    font-size: 16px;
+.fp-exp-requests__td-actions--past .fp-exp-requests__past-note .dashicons {
+    width: 18px;
+    height: 18px;
+    font-size: 18px;
     line-height: 1;
-    color: #50575e;
-    cursor: help;
     flex-shrink: 0;
+    margin-top: 1px;
+    color: #50575e;
+}
+
+.fp-exp-requests__td-actions--past .fp-exp-requests__action {
+    margin-bottom: 0;
 }
 
 html.fp-exp-dark .fp-exp-requests__slot-past-badge {
@@ -2262,6 +2230,14 @@ html.fp-exp-dark .fp-exp-requests__slot-past-badge {
 
 html.fp-exp-dark .fp-exp-requests__table tr.fp-exp-requests__row--past .fp-exp-requests__status-compact .description,
 html.fp-exp-dark .fp-exp-requests__table tr.fp-exp-requests__row--past .fp-exp-requests__hold-left {
+    color: var(--fp-exp-color-muted, #a0a7b0);
+}
+
+html.fp-exp-dark .fp-exp-requests__td-actions--past .fp-exp-requests__past-note {
+    color: var(--fp-exp-color-muted, #a0a7b0);
+}
+
+html.fp-exp-dark .fp-exp-requests__td-actions--past .fp-exp-requests__past-note .dashicons {
     color: var(--fp-exp-color-muted, #a0a7b0);
 }
 
