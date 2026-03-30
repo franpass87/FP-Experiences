@@ -5,13 +5,21 @@ declare(strict_types=1);
 namespace FP_Exp\Booking;
 
 use Exception;
+use FP_Exp\Core\Hook\HookableInterface;
+use FP_Exp\Booking\Email\Mailer;
+use FP_Exp\Booking\Email\Senders\CustomerEmailSender;
+use FP_Exp\Booking\Email\Templates\RtbApprovedTemplate;
+use FP_Exp\Booking\Email\Templates\RtbDeclinedTemplate;
+use FP_Exp\Booking\Email\Templates\RtbPaymentRequestTemplate;
+use FP_Exp\Booking\Email\Templates\RtbRequestReceivedTemplate;
 use FP_Exp\Integrations\Brevo;
+use FP_Exp\Services\Options\OptionsInterface;
 use Throwable;
 use FP_Exp\MeetingPoints\Repository;
 use FP_Exp\Utils\Helpers;
 use FP_Exp\Utils\Logger;
 use WC_Order;
-use WC_Order_Item;
+use WC_Order_Item_Product;
 use WP_Error;
 use WP_REST_Request;
 use WP_REST_Response;
@@ -22,6 +30,8 @@ use function add_action;
 use function apply_filters;
 use function do_action;
 use function current_time;
+use function esc_html;
+use function esc_html__;
 use function function_exists;
 use function get_option;
 use function get_permalink;
@@ -39,23 +49,58 @@ use function sanitize_email;
 use function sanitize_key;
 use function sanitize_text_field;
 use function sanitize_textarea_field;
+use function nl2br;
 use function strtotime;
 use function wc_create_order;
 use function wc_get_order;
 use function wp_date;
 use function wp_json_encode;
-use function wp_mail;
+
 use function wp_verify_nonce;
 
 use const MINUTE_IN_SECONDS;
 
-final class RequestToBook
+final class RequestToBook implements HookableInterface
 {
     private Brevo $brevo;
+    private Mailer $mailer;
+    private ?CustomerEmailSender $customer_sender = null;
+    private ?OptionsInterface $options = null;
 
-    public function __construct(Brevo $brevo)
+    public function __construct(Brevo $brevo, Mailer $mailer, ?OptionsInterface $options = null)
     {
         $this->brevo = $brevo;
+        $this->mailer = $mailer;
+        $this->options = $options;
+    }
+
+    /**
+     * Get OptionsInterface instance.
+     * Tries container first, falls back to direct instantiation for backward compatibility.
+     */
+    private function getOptions(): OptionsInterface
+    {
+        if ($this->options !== null) {
+            return $this->options;
+        }
+
+        // Try to get from container
+        $kernel = \FP_Exp\Core\Bootstrap\Bootstrap::kernel();
+        if ($kernel !== null) {
+            $container = $kernel->container();
+            if ($container->has(OptionsInterface::class)) {
+                try {
+                    $this->options = $container->make(OptionsInterface::class);
+                    return $this->options;
+                } catch (\Throwable $e) {
+                    // Fall through to direct instantiation
+                }
+            }
+        }
+
+        // Fallback to direct instantiation
+        $this->options = new \FP_Exp\Services\Options\Options();
+        return $this->options;
     }
 
     public function register_hooks(): void
@@ -65,22 +110,30 @@ final class RequestToBook
 
     public function register_rest_route(): void
     {
+        $this->debug_log('Registering RTB endpoints');
+        
+        // Usiamo __return_true come permission_callback perché:
+        // 1. WordPress REST middleware controlla i cookie PRIMA del permission_callback
+        // 2. Se l'utente è loggato, WP si aspetta un nonce wp_rest nell'header
+        // 3. Noi usiamo un nonce custom nel body, verificato nell'handler
         register_rest_route(
             'fp-exp/v1',
             '/rtb/request',
             [
                 'methods' => 'POST',
-                'permission_callback' => [$this, 'check_rtb_permission'],
+                'permission_callback' => '__return_true',
                 'callback' => [$this, 'handle_request'],
             ]
         );
+        
+        $this->debug_log('RTB request endpoint registered');
 
         register_rest_route(
             'fp-exp/v1',
             '/rtb/quote',
             [
                 'methods' => 'POST',
-                'permission_callback' => [$this, 'check_rtb_permission'],
+                'permission_callback' => '__return_true',
                 'callback' => [$this, 'handle_quote'],
             ]
         );
@@ -88,7 +141,26 @@ final class RequestToBook
 
     public function check_rtb_permission(WP_REST_Request $request): bool
     {
-        return Helpers::verify_rest_nonce($request, 'fp-exp-rtb');
+        $this->debug_log('RTB permission check invoked', [
+            'method' => $request->get_method(),
+            'referer_present' => (bool) $request->get_header('referer'),
+        ]);
+        
+        // Verifica nonce nell'header
+        if (Helpers::verify_rest_nonce($request, 'fp-exp-rtb')) {
+            $this->debug_log('RTB permission granted via header nonce');
+            return true;
+        }
+
+        // In alternativa verifica il nonce nel body della richiesta
+        $nonce = $request->get_param('nonce');
+        if (is_string($nonce) && $nonce && wp_verify_nonce($nonce, 'fp-exp-rtb')) {
+            $this->debug_log('RTB permission granted via body nonce');
+            return true;
+        }
+
+        $this->debug_log('RTB permission denied: nonce missing or invalid');
+        return false;
     }
 
     /**
@@ -96,14 +168,19 @@ final class RequestToBook
      */
     public function handle_request(WP_REST_Request $request)
     {
+        $this->debug_log('RTB handle_request invoked');
         nocache_headers();
 
-        $nonce = (string) $request->get_param('nonce');
-
-        if (! wp_verify_nonce($nonce, 'fp-exp-rtb')) {
-            return new WP_Error('fp_exp_rtb_nonce', __('La sessione è scaduta. Aggiorna la pagina e riprova.', 'fp-experiences'), ['status' => 403]);
+        // Verifica referer per protezione CSRF base
+        $referer = $request->get_header('referer');
+        $referer_host = $referer ? wp_parse_url($referer, PHP_URL_HOST) : '';
+        $home_host = wp_parse_url(home_url(), PHP_URL_HOST);
+        if ($referer_host && $referer_host !== $home_host) {
+            $this->debug_log('RTB request denied: invalid referer', ['referer' => $referer]);
+            return new WP_Error('fp_exp_rtb_invalid_referer', __('Richiesta non valida. Ricarica la pagina e riprova.', 'fp-experiences'), ['status' => 403]);
         }
 
+        // Rate limiting per prevenire abusi
         if (Helpers::hit_rate_limit('rtb_' . Helpers::client_fingerprint(), 5, MINUTE_IN_SECONDS)) {
             return new WP_Error('fp_exp_rtb_rate_limited', __('Attendi prima di inviare un’altra richiesta.', 'fp-experiences'), ['status' => 429]);
         }
@@ -124,6 +201,12 @@ final class RequestToBook
                 return new WP_Error('fp_exp_rtb_invalid', __('Seleziona data e ora prima di inviare la richiesta.', 'fp-experiences'), ['status' => 400]);
             }
             $slot_id = Slots::ensure_slot_for_occurrence($experience_id, $start, $end);
+            
+            // Handle WP_Error from ensure_slot_for_occurrence
+            if (is_wp_error($slot_id)) {
+                return $slot_id; // Pass through the detailed error
+            }
+            
             if ($slot_id <= 0) {
                 return new WP_Error('fp_exp_rtb_slot', __('Lo slot selezionato non è più disponibile.', 'fp-experiences'), ['status' => 404]);
             }
@@ -132,6 +215,12 @@ final class RequestToBook
         $slot = Slots::get_slot($slot_id);
         if (! $slot || (int) $slot['experience_id'] !== $experience_id) {
             return new WP_Error('fp_exp_rtb_slot', __('Lo slot selezionato non è più disponibile.', 'fp-experiences'), ['status' => 404]);
+        }
+
+        $tickets_total = (int) array_sum(array_map('absint', $tickets));
+        $party_max = absint((string) get_post_meta($experience_id, '_fp_party_max', true));
+        if ($party_max > 0 && $tickets_total > $party_max) {
+            return new WP_Error('fp_exp_rtb_party_max', __('Il numero di biglietti supera il limite massimo per questa esperienza.', 'fp-experiences'), ['status' => 400]);
         }
 
         $capacity = Slots::check_capacity($slot_id, $tickets);
@@ -145,6 +234,10 @@ final class RequestToBook
 
         if (! $contact['email']) {
             return new WP_Error('fp_exp_rtb_contact', __('Fornisci un indirizzo email valido per poterti rispondere.', 'fp-experiences'), ['status' => 400]);
+        }
+
+        if (! $contact['phone']) {
+            return new WP_Error('fp_exp_rtb_contact', __('Fornisci un numero di telefono per poterti contattare.', 'fp-experiences'), ['status' => 400]);
         }
 
         if (empty($request->get_param('consent')['privacy'])) {
@@ -163,6 +256,15 @@ final class RequestToBook
         $timeout_minutes = Helpers::rtb_hold_timeout();
         $hold_expires = current_time('timestamp', true) + ($timeout_minutes * MINUTE_IN_SECONDS);
 
+        // Rileva la lingua con cui il cliente sta navigando
+        // Usa il prefisso telefonico come fallback se il plugin multilingua non rileva la lingua
+        $phone_number = $contact['phone'] ?? '';
+        $customer_locale = $this->detect_customer_locale($phone_number);
+        $this->debug_log('RTB customer locale detected', [
+            'locale' => $customer_locale,
+            'phone' => $phone_number ? 'present' : 'missing',
+        ]);
+
         $reservation_id = Reservations::create([
             'order_id' => 0,
             'experience_id' => $experience_id,
@@ -171,7 +273,7 @@ final class RequestToBook
             'pax' => $tickets,
             'addons' => $addons,
             'utm' => array_merge(Helpers::read_utm_cookie(), ['rtb' => true]),
-            'locale' => sanitize_text_field((string) get_option('WPLANG', '')), // phpcs:ignore WordPress.WP.I18n.NonSingularStringLiteralDomain
+            'locale' => $customer_locale,
             'total_gross' => $grand_total,
             'tax_total' => 0.0,
             'hold_expires_at' => gmdate('Y-m-d H:i:s', $hold_expires),
@@ -225,6 +327,19 @@ final class RequestToBook
 
         do_action('fp_exp_rtb_request_created', $reservation_id, $context);
 
+        // Tracking: fires fp_tracking_event via GA4 bridge in TrackingBridge
+        do_action('fp_exp_rtb_submitted', $experience_id, $reservation_id, [
+            'value'    => $grand_total,
+            'currency' => $breakdown['currency'] ?? 'EUR',
+            'tickets'  => $tickets,
+            'contact'  => [
+                'em' => sanitize_email((string) ($contact['email'] ?? '')),
+                'fn' => sanitize_text_field((string) ($contact['first_name'] ?? '')),
+                'ln' => sanitize_text_field((string) ($contact['last_name'] ?? '')),
+                'ph' => sanitize_text_field((string) ($contact['phone'] ?? '')),
+            ],
+        ]);
+
         Logger::log('rtb', 'Request-to-book created', [
             'reservation_id' => $reservation_id,
             'experience_id' => $experience_id,
@@ -244,15 +359,9 @@ final class RequestToBook
     {
         nocache_headers();
 
-        $nonce = (string) $request->get_param('nonce');
-
-        if (! wp_verify_nonce($nonce, 'fp-exp-rtb')) {
-            // Log per debug
-            error_log('[FP-EXP] Quote nonce verification failed: ' . $nonce);
-            return new WP_Error('fp_exp_rtb_nonce', __('La sessione è scaduta. Aggiorna la pagina e riprova.', 'fp-experiences'), ['status' => 403]);
-        }
-
-        if (Helpers::hit_rate_limit('rtb_quote_' . Helpers::client_fingerprint(), 20, MINUTE_IN_SECONDS)) {
+        // La quote è una richiesta di sola lettura (calcolo prezzo), non richiede nonce
+        // Protetta solo da rate limiting per prevenire abusi
+        if (Helpers::hit_rate_limit('rtb_quote_' . Helpers::client_fingerprint(), 30, MINUTE_IN_SECONDS)) {
             return new WP_Error('fp_exp_rtb_rate_limited', __('Attendi prima di richiedere un nuovo preventivo.', 'fp-experiences'), ['status' => 429]);
         }
 
@@ -263,15 +372,14 @@ final class RequestToBook
         $tickets = $this->normalize_array($request->get_param('tickets'));
         $addons = $this->normalize_array($request->get_param('addons'));
 
-        // Log per debug
-        error_log('[FP-EXP] Quote request params: ' . json_encode([
+        $this->debug_log('RTB quote request received', [
             'experience_id' => $experience_id,
             'slot_id' => $slot_id,
             'start' => $start,
             'end' => $end,
-            'tickets' => $tickets,
-            'addons' => $addons
-        ]));
+            'tickets_total' => array_sum(array_map('intval', $tickets)),
+            'addons_count' => count($addons),
+        ]);
 
         if ($experience_id <= 0) {
             return new WP_Error('fp_exp_rtb_invalid', __('Seleziona data e ora prima di proseguire.', 'fp-experiences'), ['status' => 400]);
@@ -279,18 +387,101 @@ final class RequestToBook
 
         if ($slot_id <= 0) {
             if (! $start || ! $end) {
+                $this->debug_log('RTB quote error: missing start/end', [
+                    'start' => $start,
+                    'end' => $end,
+                ]);
                 return new WP_Error('fp_exp_rtb_invalid', __('Seleziona data e ora prima di proseguire.', 'fp-experiences'), ['status' => 400]);
             }
+            
+            // Convert dates to UTC format if they contain timezone info
+            try {
+                // Se start è solo una data (senza orario), cerca di costruirla da end
+                if ($start && strpos($start, 'T') === false && $end && strpos($end, 'T') !== false) {
+                    // start è solo data (es. "2026-01-29"), end ha orario completo (es. "2026-01-29T18:00:00+01:00")
+                    // Estrai la data da start e costruisci start con l'orario di inizio
+                    // Per ora, usa la data di start con l'orario di end meno 2 ore (durata tipica)
+                    $end_dt = new \DateTimeImmutable($end);
+                    // Usa la data di start ma con l'orario calcolato da end (meno durata)
+                    $start = $end_dt->modify('-2 hours')->format('Y-m-d\TH:i:sP');
+                }
+                
+                // Try to parse as ISO datetime with timezone
+                $start_dt = new \DateTimeImmutable($start);
+                $end_dt = new \DateTimeImmutable($end);
+                
+                // Convert to UTC
+                $start = $start_dt->setTimezone(new \DateTimeZone('UTC'))->format('Y-m-d H:i:s');
+                $end = $end_dt->setTimezone(new \DateTimeZone('UTC'))->format('Y-m-d H:i:s');
+            } catch (\Exception $e) {
+                // If parsing fails, return error
+                $this->debug_log('RTB quote: date parsing failed', [
+                    'start' => $start,
+                    'end' => $end,
+                    'error' => $e->getMessage(),
+                ]);
+                return new WP_Error('fp_exp_rtb_invalid', __('Formato data non valido. Riprova.', 'fp-experiences'), ['status' => 400]);
+            }
+            
+            // Verifica che end sia dopo start
+            $start_dt_check = new \DateTimeImmutable($start, new \DateTimeZone('UTC'));
+            $end_dt_check = new \DateTimeImmutable($end, new \DateTimeZone('UTC'));
+            if ($end_dt_check <= $start_dt_check) {
+                $this->debug_log('RTB quote error: end is not after start', [
+                    'experience_id' => $experience_id,
+                    'start' => $start,
+                    'end' => $end,
+                    'start_iso' => $start_dt_check->format('c'),
+                    'end_iso' => $end_dt_check->format('c'),
+                ]);
+                return new WP_Error('fp_exp_rtb_invalid', __('La data di fine deve essere dopo la data di inizio.', 'fp-experiences'), ['status' => 400]);
+            }
+            
+            $this->debug_log('RTB quote ensuring slot for occurrence', [
+                'experience_id' => $experience_id,
+                'start' => $start,
+                'end' => $end,
+            ]);
+            
             $slot_id = Slots::ensure_slot_for_occurrence($experience_id, $start, $end);
+            
+            // Handle WP_Error from ensure_slot_for_occurrence
+            if (is_wp_error($slot_id)) {
+                $this->debug_log('RTB quote error from ensure_slot_for_occurrence', [
+                    'error_code' => $slot_id->get_error_code(),
+                    'error_message' => $slot_id->get_error_message(),
+                    'error_data' => $slot_id->get_error_data(),
+                ]);
+                return $slot_id; // Pass through the detailed error
+            }
+            
             if ($slot_id <= 0) {
+                $this->debug_log('RTB quote error: ensure_slot_for_occurrence returned zero', [
+                    'experience_id' => $experience_id,
+                    'start' => $start,
+                    'end' => $end,
+                ]);
                 return new WP_Error('fp_exp_rtb_slot', __('Lo slot selezionato non è più disponibile.', 'fp-experiences'), ['status' => 404]);
             }
+            
+            $this->debug_log('RTB quote slot ensured successfully', [
+                'slot_id' => $slot_id,
+            ]);
         }
 
         $slot = Slots::get_slot($slot_id);
         if (! $slot || (int) $slot['experience_id'] !== $experience_id) {
+            $this->debug_log('RTB quote error: slot not found or mismatch', [
+                'slot' => $slot,
+                'expected_experience' => $experience_id,
+            ]);
             return new WP_Error('fp_exp_rtb_slot', __('Lo slot selezionato non è più disponibile.', 'fp-experiences'), ['status' => 404]);
         }
+
+        $this->debug_log('RTB quote calculating pricing', [
+            'slot_id' => $slot_id,
+            'tickets_total' => array_sum(array_map('intval', $tickets)),
+        ]);
 
         try {
             $breakdown = Pricing::calculate_breakdown(
@@ -301,16 +492,27 @@ final class RequestToBook
             );
 
             if (! is_array($breakdown)) {
-                error_log('[FP-EXP] Pricing calculation returned invalid result: ' . json_encode($breakdown));
+                $this->debug_log('RTB quote error: pricing calculation returned invalid result', [
+                    'breakdown' => $breakdown,
+                    'experience_id' => $experience_id,
+                    'slot_id' => $slot_id,
+                ]);
                 return new WP_Error('fp_exp_pricing_error', __('Errore nel calcolo del prezzo. Riprova.', 'fp-experiences'), ['status' => 500]);
             }
+
+            $this->debug_log('RTB quote pricing calculated successfully', [
+                'total' => $breakdown['total'] ?? 0,
+            ]);
 
             return rest_ensure_response([
                 'success' => true,
                 'breakdown' => $breakdown,
             ]);
         } catch (Throwable $e) {
-            error_log('[FP-EXP] Pricing calculation exception: ' . $e->getMessage());
+            $this->debug_log('RTB quote pricing exception', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
             return new WP_Error('fp_exp_pricing_error', __('Errore nel calcolo del prezzo. Riprova.', 'fp-experiences'), ['status' => 500]);
         }
     }
@@ -494,13 +696,61 @@ final class RequestToBook
             return new WP_Error('fp_exp_rtb_missing', __('The request could not be found.', 'fp-experiences'));
         }
 
+        $current_status = Reservations::normalize_status((string) ($reservation['status'] ?? ''));
+        $from_expired_rtb_hold = Reservations::is_rtb_hold_expired_cancellation($reservation);
+
+        if ($current_status !== Reservations::STATUS_PENDING_REQUEST && ! $from_expired_rtb_hold) {
+            return new WP_Error(
+                'fp_exp_rtb_invalid_status',
+                sprintf(
+                    /* translators: %s: reservation status slug */
+                    __('Cannot approve: reservation status is "%s", expected "pending_request" or recoverable expired RTB hold.', 'fp-experiences'),
+                    $current_status
+                )
+            );
+        }
+
+        if ($from_expired_rtb_hold) {
+            $experience_id = absint($reservation['experience_id'] ?? 0);
+            $slot_id = absint($reservation['slot_id'] ?? 0);
+            $tickets = is_array($reservation['pax'] ?? null) ? $reservation['pax'] : [];
+
+            if ($experience_id <= 0 || $slot_id <= 0 || $tickets === []) {
+                return new WP_Error('fp_exp_rtb_slot', __('Lo slot non è più valido per questa richiesta.', 'fp-experiences'));
+            }
+
+            $slot = Slots::get_slot($slot_id);
+            if (! $slot || (int) ($slot['experience_id'] ?? 0) !== $experience_id) {
+                return new WP_Error('fp_exp_rtb_slot', __('Lo slot selezionato non è più disponibile.', 'fp-experiences'));
+            }
+
+            $tickets_total = (int) array_sum(array_map('absint', $tickets));
+            $party_max = absint((string) get_post_meta($experience_id, '_fp_party_max', true));
+            if ($party_max > 0 && $tickets_total > $party_max) {
+                return new WP_Error(
+                    'fp_exp_rtb_party_max',
+                    __('Il numero di ospiti supera il limite massimo per questa esperienza.', 'fp-experiences')
+                );
+            }
+
+            $capacity = Slots::check_capacity($slot_id, $tickets);
+            if (empty($capacity['allowed'])) {
+                $message = isset($capacity['message']) ? (string) $capacity['message'] : __(
+                    'Lo slot non ha più capacità sufficiente. Contatta il cliente o proponi un altro orario.',
+                    'fp-experiences'
+                );
+
+                return new WP_Error('fp_exp_rtb_capacity', $message);
+            }
+        }
+
         $context = $this->get_request_context($reservation_id);
 
         if (! $context) {
             return new WP_Error('fp_exp_rtb_context', __('Unable to load the request details.', 'fp-experiences'));
         }
 
-        $status = Reservations::normalize_status((string) ($reservation['status'] ?? ''));
+        $status = $current_status;
         $mode = $this->resolve_mode($reservation);
         $stage = 'approved';
 
@@ -526,12 +776,17 @@ final class RequestToBook
             'hold_expires_at' => null,
         ]);
 
+        $decision = [
+            'mode' => $mode,
+            'approved_by' => get_current_user_id(),
+            'approved_at' => current_time('mysql', true),
+        ];
+        if ($from_expired_rtb_hold) {
+            $decision['recovered_from_expired_hold'] = true;
+        }
+
         Reservations::update_meta($reservation_id, [
-            'rtb_decision' => [
-                'mode' => $mode,
-                'approved_by' => get_current_user_id(),
-                'approved_at' => current_time('mysql', true),
-            ],
+            'rtb_decision' => $decision,
         ]);
 
         $context['reservation']['status'] = ('pay_later' === $mode)
@@ -546,6 +801,7 @@ final class RequestToBook
             'reservation_id' => $reservation_id,
             'mode' => $mode,
             'status' => $status,
+            'recovered_from_expired_hold' => $from_expired_rtb_hold,
         ]);
 
         return $context;
@@ -560,6 +816,20 @@ final class RequestToBook
 
         if (! $reservation) {
             return new WP_Error('fp_exp_rtb_missing', __('The request could not be found.', 'fp-experiences'));
+        }
+
+        $current_status = Reservations::normalize_status((string) ($reservation['status'] ?? ''));
+        $from_expired_rtb_hold = Reservations::is_rtb_hold_expired_cancellation($reservation);
+
+        if ($current_status !== Reservations::STATUS_PENDING_REQUEST && ! $from_expired_rtb_hold) {
+            return new WP_Error(
+                'fp_exp_rtb_invalid_status',
+                sprintf(
+                    /* translators: %s: reservation status slug */
+                    __('Cannot decline: reservation status is "%s", expected "pending_request" or recoverable expired RTB hold.', 'fp-experiences'),
+                    $current_status
+                )
+            );
         }
 
         $context = $this->get_request_context($reservation_id);
@@ -581,13 +851,18 @@ final class RequestToBook
             'hold_expires_at' => null,
         ]);
 
+        $decline_decision = [
+            'mode' => $this->resolve_mode($reservation),
+            'declined_by' => get_current_user_id(),
+            'declined_at' => current_time('mysql', true),
+            'reason' => $reason,
+        ];
+        if ($from_expired_rtb_hold) {
+            $decline_decision['after_expired_hold'] = true;
+        }
+
         Reservations::update_meta($reservation_id, [
-            'rtb_decision' => [
-                'mode' => $this->resolve_mode($reservation),
-                'declined_by' => get_current_user_id(),
-                'declined_at' => current_time('mysql', true),
-                'reason' => $reason,
-            ],
+            'rtb_decision' => $decline_decision,
         ]);
 
         $context['reservation']['status'] = Reservations::STATUS_DECLINED;
@@ -616,7 +891,7 @@ final class RequestToBook
         if ($existing_id > 0) {
             $existing = wc_get_order($existing_id);
 
-            if ($existing instanceof WC_Order) {
+            if ($existing instanceof WC_Order && ! $existing->has_status(['trash', 'cancelled', 'failed'])) {
                 return $existing;
             }
         }
@@ -676,22 +951,23 @@ final class RequestToBook
         $order->set_billing_city('');
         $order->set_billing_address_1('');
 
-        $item = new WC_Order_Item();
-        $item->set_type('fp_experience_item');
+        $item = new WC_Order_Item_Product();
         $item->set_name($context['experience']['title'] ?? __('Experience booking', 'fp-experiences'));
 
         $total = (float) ($context['totals']['total'] ?? 0.0);
         $item->set_total($total);
         $item->set_subtotal($total);
+        $item->add_meta_data('_fp_exp_item_type', 'rtb', true);
 
         $slot = $context['slot'] ?? [];
-        $item->add_meta_data('experience_id', absint($context['experience']['id'] ?? 0), true);
-        $item->add_meta_data('experience_title', sanitize_text_field((string) ($context['experience']['title'] ?? '')), true);
-        $item->add_meta_data('slot_id', absint($reservation['slot_id'] ?? 0), true);
-        $item->add_meta_data('slot_start', sanitize_text_field((string) ($slot['start_datetime'] ?? '')), true);
-        $item->add_meta_data('slot_end', sanitize_text_field((string) ($slot['end_datetime'] ?? '')), true);
-        $item->add_meta_data('tickets', $context['tickets'] ?? [], true);
-        $item->add_meta_data('addons', $context['addons'] ?? [], true);
+        // Use underscore prefix so WooCommerce hides these automatically from frontend
+        $item->add_meta_data('_experience_id', absint($context['experience']['id'] ?? 0), true);
+        $item->add_meta_data('_experience_title', sanitize_text_field((string) ($context['experience']['title'] ?? '')), true);
+        $item->add_meta_data('_slot_id', absint($reservation['slot_id'] ?? 0), true);
+        $item->add_meta_data('_slot_start', sanitize_text_field((string) ($slot['start_datetime'] ?? '')), true);
+        $item->add_meta_data('_slot_end', sanitize_text_field((string) ($slot['end_datetime'] ?? '')), true);
+        $item->add_meta_data('_tickets', $context['tickets'] ?? [], true);
+        $item->add_meta_data('_addons', $context['addons'] ?? [], true);
 
         $order->add_item($item);
 
@@ -781,6 +1057,12 @@ final class RequestToBook
         $slot = $this->format_slot($slot);
         $currency = $breakdown['currency'] ?? get_option('woocommerce_currency', 'EUR');
 
+        // Recupera il titolo tradotto dell'esperienza (se disponibile)
+        $experience_title = '';
+        if ($experience) {
+            $experience_title = $this->get_translated_title($experience, $reservation_id);
+        }
+
         return [
             'reservation_id' => $reservation_id,
             'reservation' => [
@@ -788,7 +1070,7 @@ final class RequestToBook
             ],
             'experience' => [
                 'id' => $experience_id,
-                'title' => $experience ? $experience->post_title : '',
+                'title' => $experience_title,
                 'permalink' => $experience ? get_permalink($experience) : '',
                 'meeting_point' => Repository::get_primary_summary_for_experience($experience_id),
             ],
@@ -810,27 +1092,64 @@ final class RequestToBook
      */
     private function notify_customer(array $context, string $stage): void
     {
+        $reservation_id = (int) ($context['reservation_id'] ?? 0);
+        $customer_locale = '';
+
+        if ($reservation_id > 0) {
+            $reservation = Reservations::get($reservation_id);
+            $customer_locale = $reservation['locale'] ?? '';
+        }
+
+        $original_locale = get_locale();
+        if ($customer_locale && function_exists('switch_to_locale')) {
+            switch_to_locale($customer_locale);
+        }
+
         $settings = Helpers::rtb_settings();
         $templates = $settings['templates'] ?? [];
         $template_id = isset($templates[$stage]) ? absint($templates[$stage]) : 0;
 
         if ($this->brevo->is_enabled() && $template_id > 0) {
+            $context['language_locale'] = $customer_locale;
+            $context['locale'] = $customer_locale;
+
             $sent = $this->brevo->send_rtb_notification($stage, $context, (int) $context['reservation_id'], $template_id);
             if ($sent) {
+                if (function_exists('restore_current_locale') && $customer_locale && $customer_locale !== $original_locale) {
+                    restore_current_locale();
+                }
                 return;
             }
         }
 
-        $fallbacks = $settings['fallback'] ?? [];
-        $message = $fallbacks[$stage] ?? [];
+        $context['language'] = $customer_locale ?: 'it';
 
-        $subject = ! empty($message['subject']) ? $message['subject'] : __('We received your experience request', 'fp-experiences');
-        $body = ! empty($message['body']) ? $message['body'] : __('Grazie per la richiesta. Il nostro team ti ricontatterà a breve.', 'fp-experiences');
+        if ($this->customer_sender === null) {
+            $this->customer_sender = new CustomerEmailSender($this->mailer, $this->getOptions());
+        }
 
-        $payload = $this->replace_tokens($subject, $body, $context);
+        $template = null;
+        switch ($stage) {
+            case 'request':
+                $template = new RtbRequestReceivedTemplate();
+                break;
+            case 'approved':
+                $template = new RtbApprovedTemplate();
+                break;
+            case 'declined':
+                $template = new RtbDeclinedTemplate();
+                break;
+            case 'payment':
+                $template = new RtbPaymentRequestTemplate();
+                break;
+        }
 
-        if ($payload['body']) {
-            wp_mail($context['customer']['email'], $payload['subject'], $payload['body']);
+        if ($template !== null) {
+            $this->customer_sender->send($template, $context, true);
+        }
+
+        if (function_exists('restore_current_locale') && $customer_locale && $customer_locale !== $original_locale) {
+            restore_current_locale();
         }
     }
 
@@ -839,7 +1158,7 @@ final class RequestToBook
      */
     private function notify_staff(array $context): void
     {
-        $emails = get_option('fp_exp_emails', []);
+        $emails = $this->getOptions()->get('fp_exp_emails', []);
         $emails = is_array($emails) ? $emails : [];
         $structure = '';
         $webmaster = '';
@@ -850,10 +1169,10 @@ final class RequestToBook
             $webmaster = sanitize_email((string) $emails['sender']['webmaster']);
         }
         if (! $structure) {
-            $structure = sanitize_email((string) get_option('fp_exp_structure_email', ''));
+            $structure = sanitize_email((string) $this->getOptions()->get('fp_exp_structure_email', ''));
         }
         if (! $webmaster) {
-            $webmaster = sanitize_email((string) get_option('fp_exp_webmaster_email', ''));
+            $webmaster = sanitize_email((string) $this->getOptions()->get('fp_exp_webmaster_email', ''));
         }
 
         $recipients = array_filter(apply_filters('fp_exp_email_recipients', [$structure, $webmaster], $context['reservation_id'], 0));
@@ -862,27 +1181,48 @@ final class RequestToBook
             return;
         }
 
+        $original_locale = get_locale();
+        if (function_exists('switch_to_locale')) {
+            switch_to_locale('it_IT');
+        }
+
         $subject = sprintf(
-            /* translators: %s: experience title. */
-            __('New request-to-book for %s', 'fp-experiences'),
+            __('Nuova richiesta per %s', 'fp-experiences'),
             $context['experience']['title']
         );
 
-        $lines = [];
-        $lines[] = sprintf(__('Customer: %s (%s)', 'fp-experiences'), $context['customer']['name'] ?: __('Unknown', 'fp-experiences'), $context['customer']['email']);
-        if (! empty($context['customer']['phone'])) {
-            $lines[] = sprintf(__('Phone: %s', 'fp-experiences'), $context['customer']['phone']);
-        }
-        $lines[] = sprintf(__('Ospiti: %d', 'fp-experiences'), (int) ($context['totals']['guests'] ?? 0));
-        $lines[] = sprintf(__('Requested slot: %s', 'fp-experiences'), $context['slot']['start_label'] ?? $context['slot']['start_datetime'] ?? '');
-        if (! empty($context['notes'])) {
-            $lines[] = __('Notes:', 'fp-experiences');
-            $lines[] = $context['notes'];
-        }
+        $customer_name = (string) ($context['customer']['name'] ?: __('Sconosciuto', 'fp-experiences'));
+        $customer_email = (string) ($context['customer']['email'] ?? '');
+        $customer_phone = (string) ($context['customer']['phone'] ?? '');
+        $guests = (int) ($context['totals']['guests'] ?? 0);
+        $slot_label = (string) ($context['slot']['start_label'] ?? $context['slot']['start_datetime'] ?? '');
+        $notes = trim((string) ($context['notes'] ?? ''));
 
-        $body = implode("\n", $lines);
+        $body = '<div style="font-family:\'Helvetica Neue\',Arial,sans-serif;line-height:1.6;color:#1f2933;">';
+        $body .= '<p style="margin:0 0 12px;">' . esc_html__('Nuova richiesta ricevuta dal frontend RTB.', 'fp-experiences') . '</p>';
+        $body .= '<table role="presentation" style="width:100%;border-collapse:collapse;margin:0 0 12px;">';
+        $body .= '<tr><td style="padding:6px 0;color:#64748b;">' . esc_html__('Cliente', 'fp-experiences') . '</td><td style="padding:6px 0;text-align:right;">' . esc_html($customer_name) . '</td></tr>';
+        $body .= '<tr><td style="padding:6px 0;color:#64748b;">' . esc_html__('Email', 'fp-experiences') . '</td><td style="padding:6px 0;text-align:right;">' . esc_html($customer_email) . '</td></tr>';
+        if ($customer_phone !== '') {
+            $body .= '<tr><td style="padding:6px 0;color:#64748b;">' . esc_html__('Telefono', 'fp-experiences') . '</td><td style="padding:6px 0;text-align:right;">' . esc_html($customer_phone) . '</td></tr>';
+        }
+        $body .= '<tr><td style="padding:6px 0;color:#64748b;">' . esc_html__('Ospiti', 'fp-experiences') . '</td><td style="padding:6px 0;text-align:right;">' . esc_html((string) $guests) . '</td></tr>';
+        $body .= '<tr><td style="padding:6px 0;color:#64748b;">' . esc_html__('Slot richiesto', 'fp-experiences') . '</td><td style="padding:6px 0;text-align:right;">' . esc_html($slot_label) . '</td></tr>';
+        $body .= '</table>';
+        if ($notes !== '') {
+            $body .= '<div style="padding:12px;border:1px solid #fde68a;background:#fffbeb;border-radius:8px;color:#78350f;">';
+            $body .= '<strong>' . esc_html__('Note cliente', 'fp-experiences') . '</strong><br>' . nl2br(esc_html($notes));
+            $body .= '</div>';
+        }
+        $body .= '</div>';
 
-        wp_mail($recipients, $subject, $body);
+        $body = (string) apply_filters('fp_exp_email_branding', $body, 'it');
+
+        $this->mailer->send($recipients, $subject, $body);
+
+        if (function_exists('restore_current_locale') && $original_locale !== 'it_IT') {
+            restore_current_locale();
+        }
     }
 
     /**
@@ -918,5 +1258,70 @@ final class RequestToBook
             'subject' => $subject,
             'body' => $body,
         ];
+    }
+
+    /**
+     * Rileva la lingua con cui il cliente sta navigando.
+     * Usa il layer di compatibilità multilingua unificato.
+     * Se disponibile, usa anche il prefisso telefonico come fallback.
+     *
+     * @param string|null $phone_number Optional phone number to detect language from prefix
+     * @see \FP_Exp\Compatibility\Multilanguage
+     */
+    private function detect_customer_locale(?string $phone_number = null): string
+    {
+        // Usa la classe di compatibilità unificata con fallback al prefisso telefonico
+        return \FP_Exp\Compatibility\Multilanguage::get_current_locale(null, $phone_number);
+    }
+
+    /**
+     * Recupera il titolo tradotto dell'esperienza in base alla lingua del cliente.
+     * Usa il layer di compatibilità multilingua unificato.
+     *
+     * @param \WP_Post $experience    Post dell'esperienza
+     * @param int      $reservation_id ID della reservation per recuperare la locale
+     * @return string Titolo tradotto o originale
+     */
+    private function get_translated_title(\WP_Post $experience, int $reservation_id): string
+    {
+        // Recupera la locale del cliente dalla reservation
+        $customer_locale = '';
+        if ($reservation_id > 0) {
+            $reservation = Reservations::get($reservation_id);
+            $customer_locale = $reservation['locale'] ?? '';
+        }
+
+        // Se la lingua è italiana o non specificata, usa il titolo originale
+        if (! $customer_locale || $customer_locale === 'it_IT' || $customer_locale === 'it') {
+            return $experience->post_title;
+        }
+
+        // Estrai il codice lingua dalla locale (es. 'en_US' -> 'en')
+        $target_lang = substr($customer_locale, 0, 2);
+
+        // Usa il layer di compatibilità multilingua per trovare la traduzione
+        $translated_id = \FP_Exp\Compatibility\Multilanguage::get_translated_post_id(
+            $experience->ID,
+            $target_lang
+        );
+
+        if ($translated_id > 0 && $translated_id !== $experience->ID) {
+            $translated_post = get_post($translated_id);
+            if ($translated_post && $translated_post->post_status !== 'trash') {
+                return $translated_post->post_title;
+            }
+        }
+
+        // Fallback: titolo originale
+        return $experience->post_title;
+    }
+
+    private function debug_log(string $message, array $context = []): void
+    {
+        if (! Helpers::debug_logging_enabled()) {
+            return;
+        }
+
+        Helpers::log_debug('rtb', $message, $context);
     }
 }

@@ -2,6 +2,16 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.5.19] - 2026-03-30
+
+### Added
+
+- RTB con **hold scaduto** (`cancelled` da cron): da **Richieste** è di nuovo possibile **Approva** / **Rifiuta** (e azioni di gruppo). In approvazione il plugin **ricontrolla slot, party max e capacità** prima di confermare o creare l’ordine di pagamento; in `rtb_decision` viene salvato `recovered_from_expired_hold` / `after_expired_hold`.
+
+### Changed
+
+- Testo guida in tabella per righe hold scaduto: spiega che l’operatore può comunque gestire la richiesta.
+
 ## [1.5.18] - 2026-03-30
 
 ### Fixed

@@ -697,11 +697,51 @@ final class RequestToBook implements HookableInterface
         }
 
         $current_status = Reservations::normalize_status((string) ($reservation['status'] ?? ''));
-        if ($current_status !== Reservations::STATUS_PENDING_REQUEST) {
+        $from_expired_rtb_hold = Reservations::is_rtb_hold_expired_cancellation($reservation);
+
+        if ($current_status !== Reservations::STATUS_PENDING_REQUEST && ! $from_expired_rtb_hold) {
             return new WP_Error(
                 'fp_exp_rtb_invalid_status',
-                sprintf(__('Cannot approve: reservation status is "%s", expected "pending_request".', 'fp-experiences'), $current_status)
+                sprintf(
+                    /* translators: %s: reservation status slug */
+                    __('Cannot approve: reservation status is "%s", expected "pending_request" or recoverable expired RTB hold.', 'fp-experiences'),
+                    $current_status
+                )
             );
+        }
+
+        if ($from_expired_rtb_hold) {
+            $experience_id = absint($reservation['experience_id'] ?? 0);
+            $slot_id = absint($reservation['slot_id'] ?? 0);
+            $tickets = is_array($reservation['pax'] ?? null) ? $reservation['pax'] : [];
+
+            if ($experience_id <= 0 || $slot_id <= 0 || $tickets === []) {
+                return new WP_Error('fp_exp_rtb_slot', __('Lo slot non è più valido per questa richiesta.', 'fp-experiences'));
+            }
+
+            $slot = Slots::get_slot($slot_id);
+            if (! $slot || (int) ($slot['experience_id'] ?? 0) !== $experience_id) {
+                return new WP_Error('fp_exp_rtb_slot', __('Lo slot selezionato non è più disponibile.', 'fp-experiences'));
+            }
+
+            $tickets_total = (int) array_sum(array_map('absint', $tickets));
+            $party_max = absint((string) get_post_meta($experience_id, '_fp_party_max', true));
+            if ($party_max > 0 && $tickets_total > $party_max) {
+                return new WP_Error(
+                    'fp_exp_rtb_party_max',
+                    __('Il numero di ospiti supera il limite massimo per questa esperienza.', 'fp-experiences')
+                );
+            }
+
+            $capacity = Slots::check_capacity($slot_id, $tickets);
+            if (empty($capacity['allowed'])) {
+                $message = isset($capacity['message']) ? (string) $capacity['message'] : __(
+                    'Lo slot non ha più capacità sufficiente. Contatta il cliente o proponi un altro orario.',
+                    'fp-experiences'
+                );
+
+                return new WP_Error('fp_exp_rtb_capacity', $message);
+            }
         }
 
         $context = $this->get_request_context($reservation_id);
@@ -736,12 +776,17 @@ final class RequestToBook implements HookableInterface
             'hold_expires_at' => null,
         ]);
 
+        $decision = [
+            'mode' => $mode,
+            'approved_by' => get_current_user_id(),
+            'approved_at' => current_time('mysql', true),
+        ];
+        if ($from_expired_rtb_hold) {
+            $decision['recovered_from_expired_hold'] = true;
+        }
+
         Reservations::update_meta($reservation_id, [
-            'rtb_decision' => [
-                'mode' => $mode,
-                'approved_by' => get_current_user_id(),
-                'approved_at' => current_time('mysql', true),
-            ],
+            'rtb_decision' => $decision,
         ]);
 
         $context['reservation']['status'] = ('pay_later' === $mode)
@@ -756,6 +801,7 @@ final class RequestToBook implements HookableInterface
             'reservation_id' => $reservation_id,
             'mode' => $mode,
             'status' => $status,
+            'recovered_from_expired_hold' => $from_expired_rtb_hold,
         ]);
 
         return $context;
@@ -773,10 +819,16 @@ final class RequestToBook implements HookableInterface
         }
 
         $current_status = Reservations::normalize_status((string) ($reservation['status'] ?? ''));
-        if ($current_status !== Reservations::STATUS_PENDING_REQUEST) {
+        $from_expired_rtb_hold = Reservations::is_rtb_hold_expired_cancellation($reservation);
+
+        if ($current_status !== Reservations::STATUS_PENDING_REQUEST && ! $from_expired_rtb_hold) {
             return new WP_Error(
                 'fp_exp_rtb_invalid_status',
-                sprintf(__('Cannot decline: reservation status is "%s", expected "pending_request".', 'fp-experiences'), $current_status)
+                sprintf(
+                    /* translators: %s: reservation status slug */
+                    __('Cannot decline: reservation status is "%s", expected "pending_request" or recoverable expired RTB hold.', 'fp-experiences'),
+                    $current_status
+                )
             );
         }
 
@@ -799,13 +851,18 @@ final class RequestToBook implements HookableInterface
             'hold_expires_at' => null,
         ]);
 
+        $decline_decision = [
+            'mode' => $this->resolve_mode($reservation),
+            'declined_by' => get_current_user_id(),
+            'declined_at' => current_time('mysql', true),
+            'reason' => $reason,
+        ];
+        if ($from_expired_rtb_hold) {
+            $decline_decision['after_expired_hold'] = true;
+        }
+
         Reservations::update_meta($reservation_id, [
-            'rtb_decision' => [
-                'mode' => $this->resolve_mode($reservation),
-                'declined_by' => get_current_user_id(),
-                'declined_at' => current_time('mysql', true),
-                'reason' => $reason,
-            ],
+            'rtb_decision' => $decline_decision,
         ]);
 
         $context['reservation']['status'] = Reservations::STATUS_DECLINED;

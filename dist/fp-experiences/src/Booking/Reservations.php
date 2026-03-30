@@ -36,6 +36,26 @@ final class Reservations
     public const REQUEST_FILTER_HOLD_EXPIRED = 'hold_expired';
     public const STATUS_CHECKED_IN = 'checked_in';
 
+    /**
+     * True se la riga è una RTB passata a cancelled dal cron scadenza hold (capacità già liberata in snapshot).
+     *
+     * @param array<string, mixed> $reservation Record da Reservations::get() o get_requests.
+     */
+    public static function is_rtb_hold_expired_cancellation(array $reservation): bool
+    {
+        $status = self::normalize_status((string) ($reservation['status'] ?? ''));
+        if (self::STATUS_CANCELLED !== $status || empty($reservation['hold_expires_at'])) {
+            return false;
+        }
+
+        $meta = $reservation['meta'] ?? [];
+        if (! is_array($meta)) {
+            return false;
+        }
+
+        return isset($meta['rtb']) && is_array($meta['rtb']);
+    }
+
     public static function table_name(): string
     {
         // Try to get from container first
