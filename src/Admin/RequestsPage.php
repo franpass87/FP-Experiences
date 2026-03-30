@@ -83,6 +83,7 @@ final class RequestsPage implements HookableInterface
             [],
             Helpers::asset_version($admin_css)
         );
+        wp_enqueue_style('dashicons');
     }
 
     public function maybe_handle_action(): void
@@ -331,6 +332,8 @@ final class RequestsPage implements HookableInterface
 
                 $start = isset($request['start_datetime']) ? (string) $request['start_datetime'] : '';
                 $start_label = $start ? wp_date($date_format . ' ' . $time_format, strtotime($start . ' UTC')) : esc_html__('Sconosciuto', 'fp-experiences');
+                $slot_ts = ('' !== $start) ? strtotime($start . ' UTC') : false;
+                $slot_in_past = false !== $slot_ts && $slot_ts < current_time('timestamp', true);
 
                 $hold_display = '';
                 if (! empty($request['hold_expires_at'])) {
@@ -350,33 +353,89 @@ final class RequestsPage implements HookableInterface
                     $payment_url = (string) $context['payment_url'];
                 }
 
-                echo '<tr>';
+                $row_class = $slot_in_past ? 'fp-exp-requests__row--past' : '';
+                echo '<tr' . ($row_class ? ' class="' . esc_attr($row_class) . '"' : '') . '>';
                 echo '<th scope="row" class="check-column"><input type="checkbox" name="reservation_ids[]" value="' . esc_attr((string) $reservation_id) . '" aria-label="' . esc_attr(sprintf(/* translators: %d: reservation ID */ __('Seleziona richiesta #%d', 'fp-experiences'), $reservation_id)) . '" /></th>';
                 echo '<td>' . esc_html($experience_title ?: sprintf('#%d', absint($request['experience_id'] ?? 0))) . '</td>';
-                echo '<td>' . esc_html($start_label) . '</td>';
-                echo '<td>';
-                echo esc_html($customer_name ?: esc_html__('Sconosciuto', 'fp-experiences'));
-                if ($customer_email) {
-                    echo '<br><a href="mailto:' . esc_attr($customer_email) . '">' . esc_html($customer_email) . '</a>';
+                if ($slot_in_past) {
+                    echo '<td><span class="fp-exp-requests__slot-past-label">' . esc_html($start_label) . '</span> ';
+                    echo '<span class="fp-exp-requests__slot-past-badge">' . esc_html__('Passata', 'fp-experiences') . '</span></td>';
+                } else {
+                    echo '<td>' . esc_html($start_label) . '</td>';
                 }
-                if ($customer_phone) {
-                    echo '<br>' . esc_html($customer_phone);
+                echo '<td>';
+                if ($slot_in_past) {
+                    $title_attr = trim($customer_name . ($customer_email !== '' ? ' · ' . $customer_email : '') . ($customer_phone !== '' ? ' · ' . $customer_phone : ''));
+                    echo '<span class="fp-exp-requests__client-inline" title="' . esc_attr($title_attr) . '">';
+                    $sep_inner = ' <span class="fp-exp-requests__client-sep" aria-hidden="true">·</span> ';
+                    $client_out = false;
+                    if ($customer_name !== '') {
+                        echo esc_html($customer_name);
+                        $client_out = true;
+                    }
+                    if ($customer_email !== '') {
+                        if ($client_out) {
+                            echo $sep_inner;
+                        }
+                        echo '<a href="mailto:' . esc_attr($customer_email) . '">' . esc_html($customer_email) . '</a>';
+                        $client_out = true;
+                    }
+                    if ($customer_phone !== '') {
+                        if ($client_out) {
+                            echo $sep_inner;
+                        }
+                        echo esc_html($customer_phone);
+                        $client_out = true;
+                    }
+                    if (! $client_out) {
+                        echo esc_html__('Sconosciuto', 'fp-experiences');
+                    }
+                    echo '</span>';
+                } else {
+                    echo esc_html($customer_name ?: esc_html__('Sconosciuto', 'fp-experiences'));
+                    if ($customer_email) {
+                        echo '<br><a href="mailto:' . esc_attr($customer_email) . '">' . esc_html($customer_email) . '</a>';
+                    }
+                    if ($customer_phone) {
+                        echo '<br>' . esc_html($customer_phone);
+                    }
                 }
                 echo '</td>';
                 echo '<td>' . esc_html((string) $pax) . '</td>';
-                echo '<td>' . esc_html($status_label);
-                echo '<br><span class="description">' . esc_html($mode_label) . '</span>';
-                if ($hold_display) {
-                    echo '<br><span class="description">' . esc_html($hold_display) . '</span>';
+                echo '<td>';
+                if ($slot_in_past) {
+                    echo '<span class="fp-exp-requests__status-compact">';
+                    echo esc_html($status_label);
+                    echo ' <span class="fp-exp-requests__status-sep" aria-hidden="true">·</span> ';
+                    echo '<span class="description">' . esc_html($mode_label) . '</span>';
+                    echo '</span>';
+                    if ($hold_display) {
+                        echo '<br><span class="description fp-exp-requests__hold-left">' . esc_html($hold_display) . '</span>';
+                    }
+                } else {
+                    echo esc_html($status_label);
+                    echo '<br><span class="description">' . esc_html($mode_label) . '</span>';
+                    if ($hold_display) {
+                        echo '<br><span class="description">' . esc_html($hold_display) . '</span>';
+                    }
                 }
                 echo '</td>';
-                echo '<td>';
+                echo '<td class="' . esc_attr($slot_in_past ? 'fp-exp-requests__td-actions fp-exp-requests__td-actions--compact' : 'fp-exp-requests__td-actions') . '">';
 
+                if ($slot_in_past) {
+                    echo '<div class="fp-exp-requests__actions-wrap">';
+                }
+
+                $hold_hint_text = esc_html__(
+                    'Hold automatico scaduto: la capacità era stata liberata. Puoi comunque approvare (se c\'è ancora posto) o rifiutare; in approvazione il sistema ricontrolla la disponibilità.',
+                    'fp-experiences'
+                );
                 if ($is_hold_expired_row) {
-                    echo '<p class="description">' . esc_html__(
-                        'Hold automatico scaduto: la capacità era stata liberata. Puoi comunque approvare (se c\'è ancora posto) o rifiutare; in approvazione il sistema ricontrolla la disponibilità.',
-                        'fp-experiences'
-                    ) . '</p>';
+                    if ($slot_in_past) {
+                        echo '<span class="dashicons dashicons-info fp-exp-requests__past-hint" title="' . esc_attr($hold_hint_text) . '" aria-label="' . esc_attr($hold_hint_text) . '"></span>';
+                    } else {
+                        echo '<p class="description">' . esc_html($hold_hint_text) . '</p>';
+                    }
                 }
 
                 echo '<form method="post" class="fp-exp-requests__action">';
@@ -396,6 +455,10 @@ final class RequestsPage implements HookableInterface
 
                 if ($payment_url && Reservations::STATUS_APPROVED_PENDING_PAYMENT === $status) {
                     echo '<a class="button button-secondary" href="' . esc_url($payment_url) . '" target="_blank" rel="noopener">' . esc_html__('Apri link pagamento', 'fp-experiences') . '</a>';
+                }
+
+                if ($slot_in_past) {
+                    echo '</div>';
                 }
 
                 echo '</td>';

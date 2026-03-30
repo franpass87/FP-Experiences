@@ -2,6 +2,8 @@
 /node_modules/
 *.map
 *.min.*
+!assets/css/dist/fp-experiences-admin.min.css
+!build/fp-experiences/assets/css/dist/fp-experiences-admin.min.css
 *.zip
 *.png
 *.jpg

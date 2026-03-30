@@ -7,6 +7,96 @@
     --fp-exp-color-muted: #6b7280;
     --fp-exp-color-primary: #2563eb;
     --fp-exp-color-danger: #dc2626;
+
+    /* FP Design System (grafica unificata) */
+    --fpdms-gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+/* ============================================
+   Empty State Component (v1.0.3)
+   ============================================ */
+.fp-exp-empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    max-width: 480px;
+    margin: 40px auto;
+    background: #f9fafb;
+    border-radius: 8px;
+    border: 2px dashed #e5e7eb;
+}
+
+.fp-exp-empty-state__icon {
+    display: inline-block;
+    font-size: 64px;
+    width: 64px;
+    height: 64px;
+    color: var(--fp-exp-color-muted, #6b7280);
+    margin-bottom: 20px;
+    opacity: 0.6;
+}
+
+.fp-exp-empty-state__icon::before {
+    display: inline-block;
+}
+
+.fp-exp-empty-state__title {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--fp-exp-color-text, #1f2937);
+    margin: 0 0 12px 0;
+    line-height: 1.4;
+}
+
+.fp-exp-empty-state__description {
+    font-size: 14px;
+    color: var(--fp-exp-color-muted, #6b7280);
+    line-height: 1.6;
+    margin: 0 0 24px 0;
+}
+
+.fp-exp-empty-state__cta {
+    margin-top: 8px;
+}
+
+@media (prefers-color-scheme: dark) {
+    .fp-exp-empty-state {
+        background: #1f2937;
+        border-color: #374151;
+    }
+    
+    .fp-exp-empty-state__icon {
+        color: #9ca3af;
+    }
+    
+    .fp-exp-empty-state__title {
+        color: #f9fafb;
+    }
+    
+    .fp-exp-empty-state__description {
+        color: #9ca3af;
+    }
+}
+
+@media screen and (max-width: 782px) {
+    .fp-exp-empty-state {
+        padding: 40px 16px;
+        margin: 20px auto;
+    }
+    
+    .fp-exp-empty-state__icon {
+        font-size: 48px;
+        width: 48px;
+        height: 48px;
+        margin-bottom: 16px;
+    }
+    
+    .fp-exp-empty-state__title {
+        font-size: 16px;
+    }
+    
+    .fp-exp-empty-state__description {
+        font-size: 13px;
+    }
 }
 
 body.fp-exp-admin-shell {
@@ -24,7 +114,7 @@ body.fp-exp-admin-shell #wpbody-content {
 }
 
 body.fp-exp-admin-shell #wpbody-content > .wrap {
-    margin: 0 auto;
+    margin: 12px auto 0;
     max-width: 1200px;
     width: 100%;
     padding: 0;
@@ -59,6 +149,71 @@ body.fp-exp-admin-shell #screen-meta-links {
     gap: 24px;
 }
 
+/* Page Header — gradiente viola (design system FP) */
+.fpexp-page-header {
+    background: var(--fpdms-gradient-primary);
+    padding: 24px 28px;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.fpexp-page-header .fp-exp-admin__breadcrumb,
+.fpexp-page-header .fp-exp-dashboard__breadcrumb {
+    width: 100%;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.85);
+}
+
+.fpexp-page-header .fp-exp-admin__breadcrumb a,
+.fpexp-page-header .fp-exp-dashboard__breadcrumb a {
+    color: rgba(255, 255, 255, 0.95);
+}
+
+.fpexp-page-header .fp-exp-admin__breadcrumb a:hover,
+.fpexp-page-header .fp-exp-dashboard__breadcrumb a:hover {
+    color: #fff;
+}
+
+.fpexp-page-header-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.fpexp-page-header .fpexp-page-header-title,
+.fpexp-page-header .fp-exp-admin__title {
+    margin: 0 0 4px;
+    font-size: 22px;
+    font-weight: 700;
+    color: #fff !important;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+
+.fpexp-page-header .fpexp-page-header-desc,
+.fpexp-page-header .fp-exp-admin__intro {
+    margin: 0;
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.88) !important;
+}
+
+.fpexp-page-header-badge {
+    background: rgba(255, 255, 255, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 999px;
+    padding: 5px 12px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #fff;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+/* Legacy header (se usato fuori dal banner) */
 .fp-exp-admin__header {
     display: grid;
     gap: 8px;
@@ -105,33 +260,38 @@ body.fp-exp-admin-shell #screen-meta-links {
     z-index: 20;
     display: flex;
     flex-wrap: wrap;
-    gap: 4px;
-    padding: 12px 16px;
+    gap: 6px;
+    padding: 16px 20px;
     background: #ffffff;
-    border-bottom: 1px solid var(--fp-exp-admin-border);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.02);
 }
 
 .fp-exp-tab {
     background: transparent;
     border: 1px solid transparent;
-    border-radius: 6px;
-    padding: 8px 16px;
+    border-radius: 8px;
+    padding: 10px 18px;
     font-size: 14px;
     font-weight: 500;
-    color: var(--fp-exp-color-muted);
+    color: var(--fp-exp-color-muted, #6b7280);
     cursor: pointer;
-    transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    line-height: 1.5;
 }
 
 .fp-exp-tab:hover {
-    color: var(--fp-exp-color-text);
-    background: #f3f4f6;
+    color: var(--fp-exp-color-text, #1f2937);
+    background: #f9fafb;
+    transform: translateY(-1px);
 }
 
 .fp-exp-tab[aria-selected="true"] {
-    color: var(--fp-exp-color-primary);
-    background: #eff6ff;
-    border-color: #dbeafe;
+    color: var(--fp-exp-color-primary, #2563eb);
+    background: #f0f7ff;
+    border-color: rgba(37, 99, 235, 0.15);
+    font-weight: 600;
+    box-shadow: 0 1px 2px rgba(37, 99, 235, 0.08);
 }
 
 .fp-exp-tab:focus-visible {
@@ -141,9 +301,9 @@ body.fp-exp-admin-shell #screen-meta-links {
 
 .fp-exp-tab-panels {
     display: grid;
-    gap: 24px;
-    padding: 24px;
-    background: #fff;
+    gap: 36px;
+    padding: 36px;
+    background: #f8f9fa;
 }
 
 .fp-exp-tab-panel[hidden] {
@@ -152,15 +312,34 @@ body.fp-exp-admin-shell #screen-meta-links {
 
 .fp-exp-tab-panel {
     display: grid;
-    gap: 24px;
+    gap: 32px;
 }
 
 .fp-exp-fieldset {
-    border: 1px solid var(--fp-exp-admin-border);
-    border-radius: var(--fp-exp-admin-radius);
-    padding: 20px;
-    margin: 0 0 20px;
+    border: 1px solid rgba(0, 0, 0, 0.12);
+    border-radius: 12px;
+    padding: 32px;
+    margin: 0 0 36px;
     background: #ffffff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+    transition: box-shadow 0.2s ease, border-color 0.2s ease;
+    position: relative;
+}
+
+.fp-exp-fieldset::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, rgba(37, 99, 235, 0.15) 0%, rgba(37, 99, 235, 0.08) 100%);
+    border-radius: 12px 12px 0 0;
+}
+
+.fp-exp-fieldset:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    border-color: rgba(0, 0, 0, 0.12);
 }
 
 .fp-exp-fieldset:last-of-type {
@@ -168,15 +347,42 @@ body.fp-exp-admin-shell #screen-meta-links {
 }
 
 .fp-exp-fieldset legend {
-    font-weight: 600;
-    padding: 0 8px;
+    font-weight: 700;
+    font-size: 17px;
+    padding: 0;
+    margin-left: 0;
+    margin-right: 0;
+    color: var(--fp-exp-color-text, #111827);
+    letter-spacing: -0.02em;
+    margin-bottom: 6px;
+    line-height: 1.4;
 }
 
 .fp-exp-field {
     display: flex;
     flex-direction: column;
-    gap: 6px;
-    margin-bottom: 16px;
+    gap: 8px;
+    margin-bottom: 24px;
+}
+
+.fp-exp-field:last-child {
+    margin-bottom: 0;
+}
+
+/* Separatore visivo tra campi (solo quando ci sono più campi consecutivi) */
+.fp-exp-fieldset > .fp-exp-field:not(:last-child):not(.fp-exp-field--columns) {
+    padding-bottom: 24px;
+    margin-bottom: 24px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+/* Rimuovi bordo per campi in colonne (già raggruppati visivamente) */
+.fp-exp-field--columns {
+    margin-bottom: 24px;
+}
+
+.fp-exp-field--columns .fp-exp-field {
+    margin-bottom: 0;
 }
 
 .fp-exp-field--columns {
@@ -423,15 +629,114 @@ body.fp-exp-admin-shell #screen-meta-links {
     color: var(--fp-exp-color-muted, #5f5f5f);
 }
 
+/* =============================================
+ * Stili per .fp-exp-gallery (DetailsMetaBoxHandler)
+ * ============================================= */
+.fp-exp-gallery {
+    display: grid;
+    gap: 12px;
+}
+
+.fp-exp-gallery__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 12px;
+}
+
+.fp-exp-gallery__item {
+    position: relative;
+    border: 1px dashed rgba(15, 23, 42, 0.18);
+    border-radius: 8px;
+    overflow: hidden;
+    background: #f6f7f7;
+    aspect-ratio: 4 / 3;
+}
+
+.fp-exp-gallery__item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.fp-exp-gallery__remove {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    border: none;
+    border-radius: 999px;
+    width: 28px;
+    height: 28px;
+    display: grid;
+    place-items: center;
+    background: rgba(218, 41, 28, 0.9);
+    color: #fff;
+    cursor: pointer;
+    font-size: 16px;
+    line-height: 1;
+    padding: 0;
+}
+
+.fp-exp-gallery__remove::before {
+    content: "×";
+    font-size: 18px;
+    font-weight: bold;
+}
+
+.fp-exp-gallery__remove .screen-reader-text {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    padding: 0 !important;
+    margin: -1px !important;
+    overflow: hidden !important;
+    clip: rect(0, 0, 0, 0) !important;
+    white-space: nowrap !important;
+    border: 0 !important;
+}
+
+.fp-exp-gallery__remove:hover,
+.fp-exp-gallery__remove:focus {
+    background: rgba(218, 41, 28, 1);
+    color: #fff;
+    outline: 2px solid rgba(218, 41, 28, 0.3);
+    outline-offset: 2px;
+}
+
 .fp-exp-field__label {
     font-weight: 600;
-    color: var(--fp-exp-color-text, #1f1f1f);
+    font-size: 14px;
+    color: var(--fp-exp-color-text, #111827);
+    margin-bottom: 4px;
+    letter-spacing: -0.01em;
+    line-height: 1.5;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.fp-exp-field__subtitle {
+    font-weight: 700;
+    font-size: 17px;
+    color: var(--fp-exp-color-text, #111827);
+    margin: 0 0 16px 0;
+    padding: 0 0 14px 0;
+    border-bottom: 2px solid rgba(0, 0, 0, 0.1);
+    letter-spacing: -0.02em;
+    line-height: 1.4;
+}
+
+/* Allinea i subtitle quando NON sono dentro un fieldset per corrispondere al padding del fieldset (32px) */
+.fp-exp-tab-panel > .fp-exp-field > .fp-exp-field__subtitle,
+.fp-exp-tab-panel .fp-exp-field:not(.fp-exp-fieldset .fp-exp-field) > .fp-exp-field__subtitle {
+    padding-left: 32px;
 }
 
 .fp-exp-field__description {
-    font-size: 12px;
-    color: var(--fp-exp-color-muted, #5f5f5f);
+    font-size: 13px;
+    color: var(--fp-exp-color-muted, #6b7280);
     margin: 0;
+    line-height: 1.6;
     position: relative; /* evita che le card la sorvolino visivamente */
     z-index: 1;
 }
@@ -588,39 +893,123 @@ body.fp-exp-admin-shell #screen-meta-links {
     z-index: 100;
     background: var(--fp-exp-color-text, #1f1f1f);
     color: #fff;
-    padding: 6px 8px;
-    border-radius: 4px;
+    padding: 8px 10px;
+    border-radius: 6px;
     font-size: 12px;
+    line-height: 1.5;
     width: 220px;
-    transform: translate(-50%, calc(100% + 6px));
+    max-width: 220px;
+    pointer-events: none;
+    white-space: normal;
+    word-wrap: break-word;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    /* Posizionamento: il content è ora DENTRO il tooltip, quindi si posiziona relativamente ad esso */
+    top: calc(100% + 8px);
     left: 50%;
+    transform: translateX(-50%);
+    margin-top: 0;
 }
 
-.fp-exp-tooltip:focus + .fp-exp-tooltip__content,
-.fp-exp-tooltip:hover + .fp-exp-tooltip__content {
-    display: block;
+/* Il tooltip viene mostrato solo tramite JavaScript, non tramite CSS :hover */
+.fp-exp-tooltip__content[aria-hidden="false"] {
+    display: block !important;
+}
+
+/* 
+ * Supporto per tooltip con data-tooltip (usati dai Handler)
+ * NOTA: Il tooltip content viene creato dinamicamente via JavaScript in ExperienceMetaBoxes.php
+ * e mostrato tramite le regole .fp-exp-tooltip__content sopra.
+ * Rimossa la regola ::after per evitare doppio tooltip.
+ */
+.fp-exp-tooltip[data-tooltip] {
+    position: relative;
 }
 
 .fp-exp-repeater {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 20px;
 }
 
 .fp-exp-repeater__items {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 20px;
+}
+
+/* Repeater Item (Biglietti, Addon, ecc.) */
+.fp-exp-repeater__item {
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 12px;
+    background: #ffffff;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+    transition: all 0.2s ease;
+    overflow: hidden;
+}
+
+.fp-exp-repeater__item:hover {
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+    border-color: rgba(0, 0, 0, 0.12);
+}
+
+.fp-exp-repeater__item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    background: #f9fafb;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.fp-exp-repeater__item-title {
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--fp-exp-color-text, #111827);
+    margin: 0;
+    letter-spacing: -0.02em;
+    line-height: 1.4;
+}
+
+.fp-exp-repeater__item-title span[data-repeater-index] {
+    font-weight: 600;
+    color: var(--fp-exp-color-muted, #6b7280);
+    font-size: 13px;
+}
+
+.fp-exp-repeater__item-remove {
+    color: var(--fp-exp-color-danger, #dc2626);
+    font-size: 13px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.fp-exp-repeater__item-remove:hover {
+    background: rgba(220, 38, 38, 0.1);
+    color: var(--fp-exp-color-danger, #dc2626);
+}
+
+.fp-exp-repeater__item-content {
+    padding: 20px;
+    display: grid;
+    gap: 20px;
 }
 
 .fp-exp-repeater-row {
     display: flex;
     align-items: flex-start;
-    gap: 12px;
-    padding: 16px;
-    border: 1px solid var(--fp-exp-admin-border);
-    border-radius: var(--fp-exp-admin-radius);
+    gap: 16px;
+    padding: 20px;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 12px;
     background: #ffffff;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+    transition: all 0.2s ease;
+}
+
+.fp-exp-repeater-row:hover {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    border-color: rgba(0, 0, 0, 0.12);
 }
 
 .fp-exp-repeater-row[draggable="true"] {
@@ -943,6 +1332,14 @@ body.fp-exp-admin-shell #screen-meta-links {
 
 .fp-exp-repeater__actions {
     margin: 0;
+    padding-top: 8px;
+}
+
+.fp-exp-repeater__actions .button {
+    font-weight: 600;
+    padding: 10px 20px;
+    border-radius: 8px;
+    transition: all 0.2s ease;
 }
 
 .fp-exp-repeater__hint {
@@ -1121,6 +1518,35 @@ body.fp-exp-admin-shell #screen-meta-links {
 .fp-exp-tab-panel select,
 .fp-exp-tab-panel textarea {
     width: 100%;
+    border: 1px solid rgba(0, 0, 0, 0.12);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--fp-exp-color-text, #1f2937);
+    background: #ffffff;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+}
+
+.fp-exp-tab-panel input[type="text"]:focus,
+.fp-exp-tab-panel input[type="number"]:focus,
+.fp-exp-tab-panel input[type="time"]:focus,
+.fp-exp-tab-panel input[type="date"]:focus,
+.fp-exp-tab-panel select:focus,
+.fp-exp-tab-panel textarea:focus {
+    outline: none;
+    border-color: var(--fp-exp-color-primary, #2563eb);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1), 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.fp-exp-tab-panel input[type="text"]:hover,
+.fp-exp-tab-panel input[type="number"]:hover,
+.fp-exp-tab-panel input[type="time"]:hover,
+.fp-exp-tab-panel input[type="date"]:hover,
+.fp-exp-tab-panel select:hover,
+.fp-exp-tab-panel textarea:hover {
+    border-color: rgba(0, 0, 0, 0.18);
 }
 
 .fp-exp-dashboard {
@@ -1307,6 +1733,18 @@ body.fp-exp-admin-shell #screen-meta-links {
     margin-top: 6px;
     font-size: 13px;
     color: var(--fp-exp-color-muted, #5f5f5f);
+}
+
+/* Override per pagine con data-fp-exp-admin - maggiore specificità */
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form .description {
+    margin-top: 8px !important;
+    font-size: 13px !important;
+    color: var(--fp-exp-color-muted) !important;
+    line-height: 1.5 !important;
+    padding: 8px 12px !important;
+    background: #f8fafc !important;
+    border-left: 3px solid var(--fp-exp-color-primary) !important;
+    border-radius: 4px !important;
 }
 
 .fp-exp-settings__form p.submit {
@@ -1654,6 +2092,177 @@ html.fp-exp-dark body.fp-exp-admin-shell .wrap .notice {
     border-radius: 6px;
     padding: 8px 16px;
     font-weight: 500;
+}
+
+/* Tabella richieste RTB */
+.fp-exp-requests__table {
+    table-layout: fixed;
+    width: 100%;
+}
+
+.fp-exp-requests__table th:last-child,
+.fp-exp-requests__table td:last-child {
+    width: 180px;
+    min-width: 180px;
+    vertical-align: top;
+    padding: 12px 8px !important;
+}
+
+.fp-exp-requests__table td:last-child .button,
+.fp-exp-requests__table td:last-child .button-secondary,
+.fp-exp-requests__table td:last-child .button-primary {
+    width: 100%;
+    box-sizing: border-box;
+    text-align: center;
+    white-space: nowrap;
+    padding: 6px 10px !important;
+    font-size: 12px !important;
+}
+
+.fp-exp-requests__action .button {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.fp-exp-requests__action input[type="text"] {
+    width: 100%;
+    box-sizing: border-box;
+    font-size: 12px;
+    padding: 4px 8px;
+}
+
+/* Righe con slot già passato: layout compatto */
+.fp-exp-requests__table tr.fp-exp-requests__row--past td,
+.fp-exp-requests__table tr.fp-exp-requests__row--past th.check-column {
+    padding-top: 6px !important;
+    padding-bottom: 6px !important;
+    font-size: 12px;
+    vertical-align: middle;
+}
+
+.fp-exp-requests__table tr.fp-exp-requests__row--past td {
+    line-height: 1.35;
+}
+
+.fp-exp-requests__slot-past-label {
+    font-weight: 500;
+}
+
+.fp-exp-requests__slot-past-badge {
+    display: inline-block;
+    margin-left: 6px;
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    background: #fef3c7;
+    color: #92400e;
+    vertical-align: middle;
+}
+
+.fp-exp-requests__table tr.fp-exp-requests__row--past .fp-exp-requests__client-inline {
+    display: block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.fp-exp-requests__table tr.fp-exp-requests__row--past .fp-exp-requests__client-inline a {
+    word-break: break-all;
+}
+
+.fp-exp-requests__client-sep {
+    color: #9ca3af;
+    font-weight: 400;
+}
+
+.fp-exp-requests__table tr.fp-exp-requests__row--past .fp-exp-requests__status-compact {
+    display: block;
+    font-size: 12px;
+}
+
+.fp-exp-requests__table tr.fp-exp-requests__row--past .fp-exp-requests__status-compact .description {
+    display: inline;
+    font-size: 11px;
+    color: #646970;
+}
+
+.fp-exp-requests__table tr.fp-exp-requests__row--past .fp-exp-requests__status-sep {
+    color: #9ca3af;
+    margin: 0 4px;
+}
+
+.fp-exp-requests__table tr.fp-exp-requests__row--past .fp-exp-requests__hold-left {
+    font-size: 11px;
+}
+
+.fp-exp-requests__table tr.fp-exp-requests__row--past td:last-child {
+    width: auto !important;
+    min-width: 200px !important;
+    max-width: 300px !important;
+    padding: 8px !important;
+    vertical-align: middle !important;
+}
+
+.fp-exp-requests__table tr.fp-exp-requests__row--past .fp-exp-requests__actions-wrap {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+}
+
+.fp-exp-requests__table tr.fp-exp-requests__row--past .fp-exp-requests__action {
+    display: inline-flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px;
+    margin: 0 !important;
+}
+
+.fp-exp-requests__table tr.fp-exp-requests__row--past .fp-exp-requests__action .button,
+.fp-exp-requests__table tr.fp-exp-requests__row--past .fp-exp-requests__action .button-primary,
+.fp-exp-requests__table tr.fp-exp-requests__row--past .fp-exp-requests__action .button-secondary {
+    width: auto !important;
+    min-width: 0;
+    padding: 3px 10px !important;
+    font-size: 11px !important;
+    line-height: 1.35 !important;
+    min-height: 28px !important;
+}
+
+.fp-exp-requests__table tr.fp-exp-requests__row--past .fp-exp-requests__action input.regular-text {
+    width: 7rem !important;
+    min-height: 28px;
+    padding: 2px 6px !important;
+    font-size: 11px !important;
+}
+
+.fp-exp-requests__table tr.fp-exp-requests__row--past .fp-exp-requests__past-hint {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    margin: 0 2px 0 0;
+    font-size: 16px;
+    line-height: 1;
+    color: #50575e;
+    cursor: help;
+    flex-shrink: 0;
+}
+
+html.fp-exp-dark .fp-exp-requests__slot-past-badge {
+    background: rgba(251, 191, 36, 0.2);
+    color: #fcd34d;
+}
+
+html.fp-exp-dark .fp-exp-requests__table tr.fp-exp-requests__row--past .fp-exp-requests__status-compact .description,
+html.fp-exp-dark .fp-exp-requests__table tr.fp-exp-requests__row--past .fp-exp-requests__hold-left {
+    color: var(--fp-exp-color-muted, #a0a7b0);
 }
 
 .fp-exp-settings__panel {
@@ -2016,6 +2625,61 @@ html.fp-exp-dark body.fp-exp-admin-shell .wrap .notice {
     color: #1f2933;
 }
 
+.fp-exp-calendar__reservations {
+    margin-top: 8px;
+    padding: 8px 10px;
+    background: #f0f6fc;
+    border-radius: 4px;
+    font-size: 12px;
+}
+
+.fp-exp-calendar__reservation-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 0;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.fp-exp-calendar__reservation-row:last-child {
+    border-bottom: 0;
+}
+
+.fp-exp-calendar__reservation-name {
+    font-weight: 600;
+    color: #1f2933;
+}
+
+.fp-exp-calendar__reservation-pax {
+    color: #50575e;
+}
+
+.fp-exp-calendar__reservation-status {
+    display: inline-block;
+    padding: 1px 8px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #fff;
+    background: #64748b;
+    margin-left: auto;
+}
+
+.fp-exp-calendar__reservation-status.is-paid { background: #16a34a; }
+.fp-exp-calendar__reservation-status.is-approved_confirmed { background: #16a34a; }
+.fp-exp-calendar__reservation-status.is-checked_in { background: #0b7285; }
+.fp-exp-calendar__reservation-status.is-pending { background: #d97706; }
+.fp-exp-calendar__reservation-status.is-pending_request { background: #9333ea; }
+.fp-exp-calendar__reservation-status.is-approved_pending_payment { background: #ea580c; }
+
+.fp-exp-calendar__grid-booked {
+    font-size: 10px;
+    font-weight: 600;
+    color: #0b7285;
+    margin-top: 2px;
+}
+
 .fp-exp-calendar__empty {
     padding: 12px 16px;
     color: #50575e;
@@ -2024,14 +2688,38 @@ html.fp-exp-dark body.fp-exp-admin-shell .wrap .notice {
 .fp-exp-email-previews {
     margin-top: 24px;
     display: grid;
-    gap: 16px;
+    gap: 32px;
+}
+
+.fp-exp-email-previews__group {
+    display: grid;
+    gap: 12px;
+}
+
+.fp-exp-email-previews__group-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 17px;
+    font-weight: 700;
+    color: #0b3d2e;
+    margin: 0 0 4px;
+    padding: 0 0 10px;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.fp-exp-email-previews__group-title .dashicons {
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+    color: #0f4c81;
 }
 
 .fp-exp-email-previews__item {
     border: 1px solid var(--fp-exp-admin-border);
     border-radius: var(--fp-exp-admin-radius);
     background: #ffffff;
-    padding: 0 0 16px;
+    padding: 0;
 }
 
 .fp-exp-email-previews__item[open] {
@@ -2040,13 +2728,14 @@ html.fp-exp-dark body.fp-exp-admin-shell .wrap .notice {
 
 .fp-exp-email-previews__summary {
     cursor: pointer;
-    padding: 18px 22px;
+    padding: 16px 22px;
     font-weight: 600;
     font-size: 15px;
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 12px;
+    list-style: none;
 }
 
 .fp-exp-email-previews__summary::-webkit-details-marker {
@@ -2058,10 +2747,49 @@ html.fp-exp-dark body.fp-exp-admin-shell .wrap .notice {
     font-size: 12px;
     color: #475569;
     transition: transform 0.2s ease;
+    flex-shrink: 0;
 }
 
 .fp-exp-email-previews__item[open] .fp-exp-email-previews__summary::after {
     transform: rotate(-180deg);
+}
+
+.fp-exp-email-previews__summary-text {
+    flex: 1 1 auto;
+}
+
+.fp-exp-email-previews__dest {
+    flex-shrink: 0;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #ffffff;
+    background: #475569;
+    padding: 3px 10px;
+    border-radius: 999px;
+    line-height: 1.4;
+}
+
+.fp-exp-email-previews__trigger {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    padding: 10px 22px 14px;
+    font-size: 13px;
+    line-height: 1.5;
+    color: #64748b;
+    background: #f8fafc;
+    border-top: 1px solid #f1f5f9;
+}
+
+.fp-exp-email-previews__trigger .dashicons {
+    font-size: 14px;
+    width: 14px;
+    height: 14px;
+    margin-top: 2px;
+    color: #94a3b8;
+    flex-shrink: 0;
 }
 
 .fp-exp-email-previews__body {
@@ -2093,6 +2821,25 @@ html.fp-exp-dark body.fp-exp-admin-shell .wrap .notice {
     border-radius: 12px;
     padding: 16px;
     box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.25);
+}
+
+.fp-exp-email-previews__empty {
+    padding: 16px;
+    color: #64748b;
+    font-style: italic;
+    text-align: center;
+    background: #f8fafc;
+    border-radius: 8px;
+    margin: 0;
+}
+
+.fp-exp-email-previews__error {
+    padding: 12px 16px;
+    color: #d63638;
+    background: #fcf0f1;
+    border-radius: 8px;
+    border: 1px solid #f5c6cb;
+    margin-bottom: 16px;
 }
 
 /* Importer Page Styles */
@@ -2194,4 +2941,1414 @@ html.fp-exp-dark body.fp-exp-admin-shell .wrap .notice {
     margin-top: 8px;
     font-size: 13px;
     color: var(--fp-exp-color-muted, #5f5f5f);
+}
+
+/* ============================================
+   MIGLIORAMENTI ESTETICI - Settings Page
+   ============================================ */
+
+/* Tab con icone - Migliore spaziatura e allineamento */
+.fp-exp-tabs .nav-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 16px;
+    transition: all 0.2s ease;
+}
+
+.fp-exp-tabs .nav-tab .dashicons {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    opacity: 0.7;
+    transition: opacity 0.2s ease;
+}
+
+.fp-exp-tabs .nav-tab:hover .dashicons,
+.fp-exp-tabs .nav-tab-active .dashicons {
+    opacity: 1;
+}
+
+/* Header con gradiente moderno */
+.fp-exp-settings .fp-exp-admin__header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 32px 24px;
+    border-radius: 12px 12px 0 0;
+    margin: -24px -24px 24px -24px;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+}
+
+.fp-exp-settings .fp-exp-admin__title {
+    color: white;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.fp-exp-settings .fp-exp-admin__intro {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.fp-exp-settings .fp-exp-admin__breadcrumb {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.fp-exp-settings .fp-exp-admin__breadcrumb a {
+    color: rgba(255, 255, 255, 0.9);
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.fp-exp-settings .fp-exp-admin__breadcrumb a:hover {
+    color: white;
+}
+
+/* Tools Cards con hover effect */
+.fp-exp-tools__card {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 20px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.fp-exp-tools__card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+    border-color: #d1d5db;
+}
+
+.fp-exp-tools__card h3 {
+    margin: 0 0 8px 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #111827;
+}
+
+.fp-exp-tools__card p {
+    margin: 0 0 16px 0;
+    font-size: 14px;
+    color: #6b7280;
+    line-height: 1.5;
+}
+
+.fp-exp-tools__card .button-primary {
+    width: 100%;
+    justify-content: center;
+    background: #2563eb;
+    border-color: #2563eb;
+    transition: background 0.2s, transform 0.1s;
+}
+
+.fp-exp-tools__card .button-primary:hover {
+    background: #1d4ed8;
+    border-color: #1d4ed8;
+    transform: scale(1.02);
+}
+
+/* Toggle Switch Moderno */
+.fp-exp-toggle,
+.fp-exp-settings__toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    position: relative;
+}
+
+/* Hide checkbox inputs in toggle switches - use display:none since label[for] handles clicks */
+.fp-exp-toggle input[type="checkbox"],
+.fp-exp-settings__toggle input[type="checkbox"],
+input.fp-exp-toggle__input,
+.fp-exp-toggle__input,
+label.fp-exp-settings__toggle input[type="checkbox"],
+label.fp-exp-toggle input[type="checkbox"] {
+    display: none !important;
+}
+
+/* Ensure hidden inputs are never visible */
+input[type="hidden"][name*="fp_exp_"] {
+    display: none !important;
+    visibility: hidden !important;
+    position: absolute !important;
+    left: -9999px !important;
+}
+
+.fp-exp-toggle__switch {
+    position: relative;
+    display: inline-block;
+    width: 44px;
+    height: 24px;
+    background: #cbd5e1;
+    border-radius: 24px;
+    transition: background 0.3s ease;
+    flex-shrink: 0;
+}
+
+.fp-exp-toggle__switch::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 20px;
+    height: 20px;
+    background: white;
+    border-radius: 50%;
+    transition: transform 0.3s ease;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+/* Toggle checked states - need both class variants */
+.fp-exp-toggle input[type="checkbox"]:checked + .fp-exp-toggle__switch,
+.fp-exp-settings__toggle input[type="checkbox"]:checked + .fp-exp-toggle__switch,
+label.fp-exp-toggle input:checked + .fp-exp-toggle__switch,
+label.fp-exp-settings__toggle input:checked + .fp-exp-toggle__switch {
+    background: #2563eb !important;
+}
+
+.fp-exp-toggle input[type="checkbox"]:checked + .fp-exp-toggle__switch::after,
+.fp-exp-settings__toggle input[type="checkbox"]:checked + .fp-exp-toggle__switch::after,
+label.fp-exp-toggle input:checked + .fp-exp-toggle__switch::after,
+label.fp-exp-settings__toggle input:checked + .fp-exp-toggle__switch::after {
+    transform: translateX(20px) !important;
+}
+
+.fp-exp-toggle input[type="checkbox"]:focus + .fp-exp-toggle__switch,
+.fp-exp-settings__toggle input[type="checkbox"]:focus + .fp-exp-toggle__switch {
+    outline: 2px solid #2563eb;
+    outline-offset: 2px;
+}
+
+.fp-exp-toggle__label {
+    font-size: 14px;
+    color: #374151;
+    font-weight: 500;
+}
+
+/* Stati visivi per integrazioni */
+.fp-exp-integration-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1.4;
+    margin-right: 8px;
+    vertical-align: middle;
+}
+
+.fp-exp-integration-status::before {
+    content: '';
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+}
+
+.fp-exp-integration-status--active {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.fp-exp-integration-status--active::before {
+    background: #22c55e;
+    box-shadow: 0 0 4px #22c55e;
+}
+
+.fp-exp-integration-status--inactive {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.fp-exp-integration-status--inactive::before {
+    background: #ef4444;
+}
+
+.fp-exp-integration-status--warning {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.fp-exp-integration-status--warning::before {
+    background: #f59e0b;
+}
+
+/* Badge contatori */
+.fp-exp-tab-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
+    background: #2563eb;
+    color: white;
+    font-size: 11px;
+    font-weight: 600;
+    border-radius: 10px;
+    line-height: 1;
+}
+
+.nav-tab .fp-exp-tab-badge {
+    margin-left: 4px;
+}
+
+.nav-tab-active .fp-exp-tab-badge {
+    background: #1d4ed8;
+}
+
+/* Form fields migliorati */
+.fp-exp-settings__form .form-table th {
+    font-weight: 600;
+    color: #111827;
+}
+
+.fp-exp-settings__form .form-table td {
+    color: #374151;
+}
+
+.fp-exp-settings__form .description {
+    color: #6b7280;
+    font-size: 13px;
+    line-height: 1.5;
+    margin-top: 6px;
+}
+
+/* Input focus states migliorati */
+.fp-exp-settings__form input[type="text"]:focus,
+.fp-exp-settings__form input[type="email"]:focus,
+.fp-exp-settings__form input[type="number"]:focus,
+.fp-exp-settings__form textarea:focus,
+.fp-exp-settings__form select:focus {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 1px #2563eb;
+    outline: none;
+}
+
+/* Sezioni con migliore spaziatura */
+.fp-exp-settings__form .form-table {
+    margin-top: 0;
+}
+
+.fp-exp-settings__form h2 {
+    margin: 32px 0 16px 0;
+    padding-bottom: 12px;
+    border-bottom: 2px solid #e5e7eb;
+    color: #111827;
+    font-size: 20px;
+    font-weight: 600;
+}
+
+.fp-exp-settings__form h2:first-child {
+    margin-top: 0;
+}
+
+/* Button submit migliorato */
+.fp-exp-settings__form .submit {
+    margin: 24px 0 0 0;
+    padding-top: 24px;
+    border-top: 1px solid #e5e7eb;
+}
+
+.fp-exp-settings__form .button-primary {
+    background: #2563eb;
+    border-color: #2563eb;
+    padding: 8px 24px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.fp-exp-settings__form .button-primary:hover,
+.fp-exp-settings__form .button-primary:focus {
+    background: #1d4ed8;
+    border-color: #1d4ed8;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(37, 99, 235, 0.2);
+}
+
+/* Notice migliorati */
+.fp-exp-settings .notice {
+    border-left-width: 4px;
+    border-radius: 4px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.fp-exp-settings .notice-success {
+    border-left-color: #22c55e;
+    background: #f0fdf4;
+}
+
+.fp-exp-settings .notice-error {
+    border-left-color: #ef4444;
+    background: #fef2f2;
+}
+
+.fp-exp-settings .notice-warning {
+    border-left-color: #f59e0b;
+    background: #fffbeb;
+}
+
+.fp-exp-settings .notice-info {
+    border-left-color: #3b82f6;
+    background: #eff6ff;
+}
+
+/* Setup Checklist Banner */
+.fp-exp-setup-banner {
+    background: linear-gradient(135deg, #eff6ff 0%, #e0e7ff 100%);
+    border: 1px solid #bfdbfe;
+    border-radius: 8px;
+    padding: 20px 24px;
+    margin-bottom: 24px;
+}
+
+.fp-exp-setup-banner__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    gap: 16px;
+}
+
+.fp-exp-setup-banner__title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #1e40af;
+}
+
+.fp-exp-setup-banner__title .dashicons {
+    color: #2563eb;
+}
+
+.fp-exp-setup-banner__progress {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.fp-exp-setup-banner__percentage {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1e40af;
+    min-width: 40px;
+    text-align: right;
+}
+
+.fp-exp-setup-banner__bar {
+    width: 200px;
+    height: 8px;
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.fp-exp-setup-banner__bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #2563eb 0%, #3b82f6 100%);
+    border-radius: 8px;
+    transition: width 0.3s ease;
+}
+
+.fp-exp-setup-banner__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 12px;
+}
+
+.fp-exp-setup-banner__item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: rgba(255, 255, 255, 0.6);
+    border-radius: 6px;
+    font-size: 14px;
+}
+
+.fp-exp-setup-banner__item--done {
+    color: #166534;
+}
+
+.fp-exp-setup-banner__item--done .dashicons {
+    color: #22c55e;
+}
+
+.fp-exp-setup-banner__item--pending {
+    color: #374151;
+}
+
+.fp-exp-setup-banner__item--pending .dashicons {
+    color: #9ca3af;
+}
+
+.fp-exp-setup-banner__item-text {
+    flex: 1;
+}
+
+.fp-exp-setup-banner__action {
+    color: #2563eb;
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 13px;
+    transition: color 0.2s;
+}
+
+.fp-exp-setup-banner__action:hover {
+    color: #1d4ed8;
+    text-decoration: underline;
+}
+
+/* Responsive adjustments */
+@media (max-width: 782px) {
+    .fp-exp-settings .fp-exp-admin__header {
+        padding: 24px 16px;
+        margin: -16px -16px 16px -16px;
+    }
+    
+    .fp-exp-tabs .nav-tab {
+        padding: 8px 12px;
+        font-size: 13px;
+    }
+    
+    .fp-exp-tabs .nav-tab .dashicons {
+        font-size: 16px;
+        width: 16px;
+        height: 16px;
+    }
+
+    .fp-exp-setup-banner__header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .fp-exp-setup-banner__progress {
+        width: 100%;
+    }
+
+    .fp-exp-setup-banner__bar {
+        flex: 1;
+    }
+}
+
+/* Empty States */
+.fp-exp-empty-state {
+    text-align: center;
+    padding: 48px 24px;
+    background: #fafafa;
+    border-radius: 8px;
+    border: 2px dashed #e5e7eb;
+}
+
+.fp-exp-empty-state__icon {
+    margin-bottom: 16px;
+}
+
+.fp-exp-empty-state__icon .dashicons {
+    font-size: 64px;
+    width: 64px;
+    height: 64px;
+    color: #d1d5db;
+}
+
+.fp-exp-empty-state__title {
+    margin: 0 0 8px 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: #374151;
+}
+
+.fp-exp-empty-state__message {
+    margin: 0 0 20px 0;
+    font-size: 14px;
+    color: #6b7280;
+    max-width: 400px;
+    margin-left: auto;
+    margin-right: auto;
+    line-height: 1.5;
+}
+
+.fp-exp-empty-state__button {
+    background: #2563eb;
+    border-color: #2563eb;
+    font-weight: 500;
+}
+
+.fp-exp-empty-state__button:hover,
+.fp-exp-empty-state__button:focus {
+    background: #1d4ed8;
+    border-color: #1d4ed8;
+}
+
+/* Toast Notifications */
+.fp-exp-toast-container {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 999999;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-width: 400px;
+}
+
+.fp-exp-toast {
+    background: white;
+    padding: 16px 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transform: translateX(400px);
+    opacity: 0;
+    transition: transform 0.3s ease, opacity 0.3s ease;
+    border-left: 4px solid #2563eb;
+}
+
+.fp-exp-toast--show {
+    transform: translateX(0);
+    opacity: 1;
+}
+
+.fp-exp-toast--success {
+    border-left-color: #22c55e;
+}
+
+.fp-exp-toast--error {
+    border-left-color: #ef4444;
+}
+
+.fp-exp-toast--warning {
+    border-left-color: #f59e0b;
+}
+
+.fp-exp-toast--info {
+    border-left-color: #3b82f6;
+}
+
+.fp-exp-toast__icon {
+    flex-shrink: 0;
+}
+
+.fp-exp-toast--success .fp-exp-toast__icon {
+    color: #22c55e;
+}
+
+.fp-exp-toast--error .fp-exp-toast__icon {
+    color: #ef4444;
+}
+
+.fp-exp-toast--warning .fp-exp-toast__icon {
+    color: #f59e0b;
+}
+
+.fp-exp-toast--info .fp-exp-toast__icon {
+    color: #3b82f6;
+}
+
+.fp-exp-toast__message {
+    flex: 1;
+    font-size: 14px;
+    color: #374151;
+    line-height: 1.5;
+}
+
+.fp-exp-toast__close {
+    flex-shrink: 0;
+    background: transparent;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    color: #9ca3af;
+    transition: color 0.2s;
+    line-height: 1;
+}
+
+.fp-exp-toast__close:hover {
+    color: #374151;
+}
+
+.fp-exp-toast__close .dashicons {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+}
+
+@media (max-width: 782px) {
+    .fp-exp-toast-container {
+        left: 16px;
+        right: 16px;
+        bottom: 16px;
+        max-width: none;
+    }
+
+    .fp-exp-toast {
+        padding: 14px 16px;
+    }
+}
+
+/* Help Tooltips */
+.fp-exp-help-tip {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    background: #2563eb;
+    color: white;
+    border-radius: 50%;
+    text-align: center;
+    line-height: 16px;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: help;
+    margin-left: 6px;
+    position: relative;
+}
+
+.fp-exp-help-tip:hover {
+    background: #1d4ed8;
+}
+
+.fp-exp-help-tip::before {
+    content: '?';
+}
+
+.fp-exp-help-tip[data-tip] {
+    position: relative;
+}
+
+.fp-exp-help-tip[data-tip]::after {
+    content: attr(data-tip);
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: #1f2937;
+    color: white;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 400;
+    line-height: 1.4;
+    white-space: nowrap;
+    max-width: 300px;
+    white-space: normal;
+    width: max-content;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+    z-index: 10000;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.fp-exp-help-tip[data-tip]:hover::after {
+    opacity: 1;
+}
+
+.fp-exp-help-tip[data-tip]::before {
+    content: '';
+    position: absolute;
+    bottom: calc(100% + 2px);
+    left: 50%;
+    transform: translateX(-50%);
+    border: 6px solid transparent;
+    border-top-color: #1f2937;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+    z-index: 10001;
+}
+
+.fp-exp-help-tip[data-tip]:hover::before {
+    opacity: 1;
+}
+
+/* Preview Notice */
+.fp-exp-preview-notice {
+    margin: 24px 0;
+    padding: 16px 20px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-radius: 8px;
+    border-left-width: 4px;
+    border-left-color: #3b82f6;
+}
+
+.fp-exp-preview-notice--success {
+    background: #f0fdf4;
+    border-color: #bbf7d0;
+    border-left-color: #22c55e;
+}
+
+.fp-exp-preview-notice p {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: #374151;
+}
+
+.fp-exp-preview-notice .dashicons {
+    color: #3b82f6;
+    flex-shrink: 0;
+}
+
+.fp-exp-preview-notice--success .dashicons {
+    color: #22c55e;
+}
+
+.fp-exp-preview-link {
+    color: #2563eb;
+    text-decoration: none;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: color 0.2s;
+}
+
+.fp-exp-preview-link:hover {
+    color: #1d4ed8;
+    text-decoration: underline;
+}
+
+.fp-exp-preview-link .dashicons {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+}
+
+/* ============================================
+   RESTYLING GRAFICO PAGINE BACKEND
+   Stile minimal migliorativo simile alle metabox esperienze
+   ============================================ */
+
+/* Miglioramenti generali per tutte le pagine admin */
+.fp-exp-admin[data-fp-exp-admin] {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06) !important;
+    border: 1px solid rgba(0, 0, 0, 0.06) !important;
+}
+
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-admin__header {
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%) !important;
+    border-bottom: 1px solid var(--fp-exp-admin-border) !important;
+    padding: 28px 32px !important;
+    margin: -24px -24px 24px -24px !important;
+}
+
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-admin__title {
+    font-size: 26px !important;
+    font-weight: 600 !important;
+    letter-spacing: -0.02em !important;
+    margin-bottom: 8px !important;
+}
+
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-admin__intro {
+    font-size: 15px !important;
+    line-height: 1.6 !important;
+    color: var(--fp-exp-color-muted) !important;
+}
+
+/* Tabs migliorate - Specificità aumentata per sovrascrivere stili esistenti */
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-tabs.nav-tab-wrapper,
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-tabs {
+    background: #ffffff !important;
+    border-bottom: 1px solid var(--fp-exp-admin-border) !important;
+    padding: 0 24px !important;
+    margin: 0 -24px 24px -24px !important;
+    gap: 4px !important;
+}
+
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-tabs .nav-tab {
+    padding: 10px 18px !important;
+    font-size: 14px !important;
+    font-weight: 500 !important;
+    border-radius: 6px 6px 0 0 !important;
+    margin-bottom: -1px !important;
+    transition: all 0.2s ease !important;
+}
+
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-tabs .nav-tab:hover {
+    background: #f8fafc !important;
+    color: var(--fp-exp-color-text) !important;
+}
+
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-tabs .nav-tab.nav-tab-active {
+    background: #ffffff !important;
+    border-bottom-color: #ffffff !important;
+    color: var(--fp-exp-color-primary) !important;
+    box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.02) !important;
+}
+
+.fp-exp-tabs .nav-tab .dashicons {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+    margin-right: 6px;
+    vertical-align: middle;
+}
+
+/* Form table migliorato */
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form .form-table {
+    background: #ffffff !important;
+    border-radius: var(--fp-exp-admin-radius) !important;
+    padding: 28px !important;
+    border: 1px solid var(--fp-exp-admin-border) !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04) !important;
+}
+
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form .form-table tr {
+    padding: 20px 0 !important;
+    border-bottom: 1px solid #f1f5f9 !important;
+    transition: background-color 0.15s ease !important;
+}
+
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form .form-table tr:hover {
+    background: #fafbfc !important;
+    margin: 0 -28px !important;
+    padding-left: 28px !important;
+    padding-right: 28px !important;
+}
+
+.fp-exp-settings__form .form-table tr:last-child {
+    border-bottom: 0;
+}
+
+.fp-exp-settings__form .form-table th {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--fp-exp-color-text);
+    padding-right: 24px;
+    vertical-align: top;
+    padding-top: 8px;
+}
+
+.fp-exp-settings__form .form-table td {
+    vertical-align: top;
+}
+
+/* Input fields migliorati */
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form input[type="text"],
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form input[type="email"],
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form input[type="number"],
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form input[type="url"],
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form textarea,
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form select {
+    border: 1px solid #d1d5db !important;
+    border-radius: 6px !important;
+    padding: 8px 12px !important;
+    font-size: 14px !important;
+    transition: all 0.2s ease !important;
+    background: #ffffff !important;
+}
+
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form input[type="text"]:focus,
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form input[type="email"]:focus,
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form input[type="number"]:focus,
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form input[type="url"]:focus,
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form textarea:focus,
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form select:focus {
+    border-color: var(--fp-exp-color-primary) !important;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1) !important;
+    outline: none !important;
+}
+
+.fp-exp-settings__form textarea {
+    min-height: 100px;
+    resize: vertical;
+}
+
+/* Description migliorata - Specificità aumentata per sovrascrivere stili esistenti */
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form .form-table .description,
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form .description {
+    margin-top: 8px !important;
+    font-size: 13px !important;
+    color: var(--fp-exp-color-muted) !important;
+    line-height: 1.5 !important;
+    padding: 8px 12px !important;
+    background: #f8fafc !important;
+    border-left: 3px solid var(--fp-exp-color-primary) !important;
+    border-radius: 4px !important;
+}
+
+/* Submit button migliorato */
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form .submit {
+    margin-top: 32px !important;
+    padding-top: 24px !important;
+    border-top: 1px solid var(--fp-exp-admin-border) !important;
+}
+
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form .button-primary {
+    background: var(--fp-exp-color-primary) !important;
+    border-color: var(--fp-exp-color-primary) !important;
+    padding: 10px 24px !important;
+    font-size: 14px !important;
+    font-weight: 500 !important;
+    border-radius: 6px !important;
+    box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2) !important;
+    transition: all 0.2s ease !important;
+}
+
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form .button-primary:hover {
+    background: #1d4ed8 !important;
+    border-color: #1d4ed8 !important;
+    box-shadow: 0 4px 8px rgba(37, 99, 235, 0.3) !important;
+    transform: translateY(-1px) !important;
+}
+
+/* Email page improvements */
+.fp-exp-emails-page .fp-exp-admin[data-fp-exp-admin] .fp-exp-admin__header {
+    background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%) !important;
+}
+
+.fp-exp-emails-page .fp-exp-email-previews__item {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    transition: all 0.2s ease;
+}
+
+.fp-exp-emails-page .fp-exp-email-previews__item:hover {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+}
+
+.fp-exp-emails-page .fp-exp-email-previews__summary {
+    color: var(--fp-exp-color-text);
+    padding: 16px 24px;
+}
+
+.fp-exp-emails-page .fp-exp-email-previews__body {
+    padding: 0 24px 24px;
+}
+
+/* Tools cards migliorate */
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-tools__card {
+    background: #ffffff !important;
+    border: 1px solid var(--fp-exp-admin-border) !important;
+    border-radius: var(--fp-exp-admin-radius) !important;
+    padding: 24px !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04) !important;
+    transition: all 0.2s ease !important;
+}
+
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-tools__card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
+    transform: translateY(-2px) !important;
+}
+
+.fp-exp-tools__card h3 {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--fp-exp-color-text);
+    margin-bottom: 12px;
+}
+
+.fp-exp-tools__card p {
+    font-size: 14px;
+    color: var(--fp-exp-color-muted);
+    line-height: 1.6;
+    margin-bottom: 16px;
+}
+
+/* Notice migliorati */
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-admin__body .notice {
+    border-radius: var(--fp-exp-admin-radius) !important;
+    padding: 16px 20px !important;
+    border-left-width: 4px !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04) !important;
+}
+
+.fp-exp-admin__body .notice-success {
+    background: #f0fdf4;
+    border-left-color: #22c55e;
+}
+
+.fp-exp-admin__body .notice-error {
+    background: #fef2f2;
+    border-left-color: #ef4444;
+}
+
+.fp-exp-admin__body .notice-warning {
+    background: #fffbeb;
+    border-left-color: #f59e0b;
+}
+
+.fp-exp-admin__body .notice-info {
+    background: #eff6ff;
+    border-left-color: #3b82f6;
+}
+
+/* ============================================
+   MIGLIORAMENTI ESTETICI AVANZATI
+   ============================================ */
+
+/* Header con gradiente più elegante e icona */
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-admin__header {
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 50%, #e2e8f0 100%) !important;
+    position: relative;
+    overflow: hidden;
+}
+
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-admin__header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 200px;
+    height: 200px;
+    background: radial-gradient(circle, rgba(37, 99, 235, 0.08) 0%, transparent 70%);
+    border-radius: 50%;
+    transform: translate(30%, -30%);
+    pointer-events: none;
+}
+
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-admin__title {
+    position: relative;
+    z-index: 1;
+}
+
+/* Tab con animazioni più fluide e icone più visibili */
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-tabs .nav-tab {
+    position: relative;
+    overflow: hidden;
+}
+
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-tabs .nav-tab::before {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--fp-exp-color-primary) 0%, #3b82f6 100%);
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border-radius: 3px 3px 0 0;
+}
+
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-tabs .nav-tab:hover::before {
+    width: 100%;
+}
+
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-tabs .nav-tab.nav-tab-active::before {
+    width: 100%;
+}
+
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-tabs .nav-tab .dashicons {
+    transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-tabs .nav-tab:hover .dashicons {
+    transform: scale(1.1);
+    color: var(--fp-exp-color-primary);
+}
+
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-tabs .nav-tab.nav-tab-active .dashicons {
+    color: var(--fp-exp-color-primary);
+    transform: scale(1.05);
+}
+
+/* Form table con card effect più pronunciato */
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form .form-table {
+    background: linear-gradient(to bottom, #ffffff 0%, #fafbfc 100%) !important;
+    box-shadow: 
+        0 1px 3px rgba(0, 0, 0, 0.04),
+        0 0 0 1px rgba(0, 0, 0, 0.02) !important;
+    transition: box-shadow 0.3s ease !important;
+}
+
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form .form-table:hover {
+    box-shadow: 
+        0 4px 12px rgba(0, 0, 0, 0.06),
+        0 0 0 1px rgba(0, 0, 0, 0.04) !important;
+}
+
+/* Righe del form con hover più elegante */
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form .form-table tr {
+    position: relative;
+    border-radius: 6px;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form .form-table tr::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 0;
+    background: linear-gradient(180deg, var(--fp-exp-color-primary) 0%, #3b82f6 100%);
+    transition: width 0.2s ease;
+    border-radius: 0 3px 3px 0;
+}
+
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form .form-table tr:hover::before {
+    width: 3px;
+}
+
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form .form-table tr:hover {
+    background: linear-gradient(to right, #fafbfc 0%, #ffffff 100%) !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03) !important;
+    transform: translateX(2px);
+}
+
+/* Input fields con focus ring più moderno */
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form input[type="text"]:focus,
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form input[type="email"]:focus,
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form input[type="number"]:focus,
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form input[type="url"]:focus,
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form textarea:focus,
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form select:focus {
+    border-color: var(--fp-exp-color-primary) !important;
+    box-shadow: 
+        0 0 0 3px rgba(37, 99, 235, 0.1),
+        0 2px 4px rgba(0, 0, 0, 0.05) !important;
+    transform: translateY(-1px);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* Toggle switches con animazione più fluida */
+.fp-exp-toggle__switch,
+.fp-exp-settings__toggle .fp-exp-toggle__switch {
+    box-shadow: 
+        inset 0 2px 4px rgba(0, 0, 0, 0.1),
+        0 1px 2px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.fp-exp-toggle__switch::after,
+.fp-exp-settings__toggle .fp-exp-toggle__switch::after {
+    box-shadow: 
+        0 2px 4px rgba(0, 0, 0, 0.2),
+        0 1px 2px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.fp-exp-toggle input[type="checkbox"]:checked + .fp-exp-toggle__switch,
+.fp-exp-settings__toggle input[type="checkbox"]:checked + .fp-exp-toggle__switch {
+    box-shadow: 
+        inset 0 2px 4px rgba(37, 99, 235, 0.2),
+        0 0 0 2px rgba(37, 99, 235, 0.1);
+}
+
+/* Description con icona e stile migliorato */
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form .form-table .description::before {
+    content: 'ℹ';
+    display: inline-block;
+    margin-right: 6px;
+    font-size: 12px;
+    opacity: 0.6;
+    vertical-align: middle;
+}
+
+/* Submit button con gradiente e animazione */
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form .button-primary {
+    background: linear-gradient(135deg, var(--fp-exp-color-primary) 0%, #3b82f6 100%) !important;
+    border: none !important;
+    position: relative;
+    overflow: hidden;
+}
+
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form .button-primary::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s ease;
+}
+
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form .button-primary:hover::before {
+    left: 100%;
+}
+
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form .button-primary:hover {
+    background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%) !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 
+        0 8px 16px rgba(37, 99, 235, 0.3),
+        0 0 0 1px rgba(37, 99, 235, 0.1) !important;
+}
+
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form .button-primary:active {
+    transform: translateY(0) !important;
+}
+
+/* Tools cards con effetto glassmorphism */
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-tools__card {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.95) 100%) !important;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.8) !important;
+    position: relative;
+    overflow: hidden;
+}
+
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-tools__card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--fp-exp-color-primary), #3b82f6, #8b5cf6);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.3s ease;
+}
+
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-tools__card:hover::before {
+    transform: scaleX(1);
+}
+
+/* Notice con animazione di entrata */
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-admin__body .notice {
+    animation: slideInFromTop 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+}
+
+@keyframes slideInFromTop {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Breadcrumb con separatori più eleganti */
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-admin__breadcrumb span[aria-hidden="true"] {
+    color: rgba(0, 0, 0, 0.2);
+    margin: 0 8px;
+    font-weight: 300;
+}
+
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-admin__breadcrumb a {
+    transition: color 0.2s ease, text-decoration 0.2s ease;
+    text-decoration: none;
+}
+
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-admin__breadcrumb a:hover {
+    color: var(--fp-exp-color-primary);
+    text-decoration: underline;
+}
+
+/* Miglioramenti per sezioni con molti campi */
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form .form-table tr:first-child {
+    padding-top: 0 !important;
+}
+
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form .form-table tr:last-child {
+    padding-bottom: 0 !important;
+    border-bottom: none !important;
+}
+
+/* Responsive improvements */
+@media (max-width: 782px) {
+    .fp-exp-admin__header {
+        padding: 20px 16px;
+        margin: -16px -16px 16px -16px;
+    }
+    
+    .fp-exp-admin__title {
+        font-size: 22px;
+    }
+    
+    .fp-exp-settings__form .form-table {
+        padding: 20px;
+    }
+    
+    .fp-exp-settings__form .form-table tr {
+        grid-template-columns: 1fr;
+        padding: 16px 0;
+    }
+    
+    .fp-exp-settings__form .form-table th {
+        padding-right: 0;
+        margin-bottom: 8px;
+    }
+    
+    .fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form .form-table tr:hover {
+        transform: none;
+        margin: 0;
+        padding-left: 0;
+        padding-right: 0;
+    }
+}
+
+/* --- Fix: prevent clipping on emails page --- */
+body.fp-exp-emails-body,
+body.fp-exp-emails-body #wpwrap,
+body.fp-exp-emails-body #wpcontent,
+body.fp-exp-emails-body #wpbody,
+body.fp-exp-emails-body #wpbody-content,
+body.fp-exp-emails-body .wrap,
+.fp-exp-emails-page,
+.fp-exp-emails-page .fp-exp-admin,
+.fp-exp-emails-page .fp-exp-admin__body,
+.fp-exp-emails-page .fp-exp-admin__layout,
+.fp-exp-emails-page .fp-exp-settings__panel,
+.fp-exp-emails-page .fp-exp-settings__form,
+.fp-exp-emails-page .fp-exp-settings__form .form-table {
+    overflow: visible !important;
+    max-height: none !important;
+    height: auto !important;
+}
+
+.fp-exp-emails-page .fp-exp-settings__form .submit {
+    position: sticky;
+    bottom: 0;
+    z-index: 10;
+    background: #ffffff;
+    margin: 24px -24px -24px !important;
+    padding: 16px 24px !important;
+    border-top: 1px solid var(--fp-exp-admin-border, #e5e7eb);
+    border-radius: 0 0 var(--fp-exp-admin-radius, 8px) var(--fp-exp-admin-radius, 8px);
+}
+
+/* --- Test email button --- */
+.fp-exp-test-email-wrap {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.fp-exp-test-email-wrap .button {
+    white-space: nowrap;
+}
+
+.fp-exp-test-email-wrap .spinner {
+    float: none;
+    margin: 0;
+}
+
+.fp-exp-test-email-result {
+    width: 100%;
+    padding: 10px 14px;
+    border-radius: 6px;
+    font-size: 13px;
+    line-height: 1.5;
+    display: none;
+}
+
+.fp-exp-test-email-result.success {
+    display: block;
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    color: #166534;
+}
+
+.fp-exp-test-email-result.error {
+    display: block;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #991b1b;
 }

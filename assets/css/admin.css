@@ -2131,6 +2131,140 @@ html.fp-exp-dark body.fp-exp-admin-shell .wrap .notice {
     padding: 4px 8px;
 }
 
+/* Righe con slot già passato: layout compatto */
+.fp-exp-requests__table tr.fp-exp-requests__row--past td,
+.fp-exp-requests__table tr.fp-exp-requests__row--past th.check-column {
+    padding-top: 6px !important;
+    padding-bottom: 6px !important;
+    font-size: 12px;
+    vertical-align: middle;
+}
+
+.fp-exp-requests__table tr.fp-exp-requests__row--past td {
+    line-height: 1.35;
+}
+
+.fp-exp-requests__slot-past-label {
+    font-weight: 500;
+}
+
+.fp-exp-requests__slot-past-badge {
+    display: inline-block;
+    margin-left: 6px;
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    background: #fef3c7;
+    color: #92400e;
+    vertical-align: middle;
+}
+
+.fp-exp-requests__table tr.fp-exp-requests__row--past .fp-exp-requests__client-inline {
+    display: block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.fp-exp-requests__table tr.fp-exp-requests__row--past .fp-exp-requests__client-inline a {
+    word-break: break-all;
+}
+
+.fp-exp-requests__client-sep {
+    color: #9ca3af;
+    font-weight: 400;
+}
+
+.fp-exp-requests__table tr.fp-exp-requests__row--past .fp-exp-requests__status-compact {
+    display: block;
+    font-size: 12px;
+}
+
+.fp-exp-requests__table tr.fp-exp-requests__row--past .fp-exp-requests__status-compact .description {
+    display: inline;
+    font-size: 11px;
+    color: #646970;
+}
+
+.fp-exp-requests__table tr.fp-exp-requests__row--past .fp-exp-requests__status-sep {
+    color: #9ca3af;
+    margin: 0 4px;
+}
+
+.fp-exp-requests__table tr.fp-exp-requests__row--past .fp-exp-requests__hold-left {
+    font-size: 11px;
+}
+
+.fp-exp-requests__table tr.fp-exp-requests__row--past td:last-child {
+    width: auto !important;
+    min-width: 200px !important;
+    max-width: 300px !important;
+    padding: 8px !important;
+    vertical-align: middle !important;
+}
+
+.fp-exp-requests__table tr.fp-exp-requests__row--past .fp-exp-requests__actions-wrap {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+}
+
+.fp-exp-requests__table tr.fp-exp-requests__row--past .fp-exp-requests__action {
+    display: inline-flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px;
+    margin: 0 !important;
+}
+
+.fp-exp-requests__table tr.fp-exp-requests__row--past .fp-exp-requests__action .button,
+.fp-exp-requests__table tr.fp-exp-requests__row--past .fp-exp-requests__action .button-primary,
+.fp-exp-requests__table tr.fp-exp-requests__row--past .fp-exp-requests__action .button-secondary {
+    width: auto !important;
+    min-width: 0;
+    padding: 3px 10px !important;
+    font-size: 11px !important;
+    line-height: 1.35 !important;
+    min-height: 28px !important;
+}
+
+.fp-exp-requests__table tr.fp-exp-requests__row--past .fp-exp-requests__action input.regular-text {
+    width: 7rem !important;
+    min-height: 28px;
+    padding: 2px 6px !important;
+    font-size: 11px !important;
+}
+
+.fp-exp-requests__table tr.fp-exp-requests__row--past .fp-exp-requests__past-hint {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    margin: 0 2px 0 0;
+    font-size: 16px;
+    line-height: 1;
+    color: #50575e;
+    cursor: help;
+    flex-shrink: 0;
+}
+
+html.fp-exp-dark .fp-exp-requests__slot-past-badge {
+    background: rgba(251, 191, 36, 0.2);
+    color: #fcd34d;
+}
+
+html.fp-exp-dark .fp-exp-requests__table tr.fp-exp-requests__row--past .fp-exp-requests__status-compact .description,
+html.fp-exp-dark .fp-exp-requests__table tr.fp-exp-requests__row--past .fp-exp-requests__hold-left {
+    color: var(--fp-exp-color-muted, #a0a7b0);
+}
+
 .fp-exp-settings__panel {
     background: #ffffff;
     border-radius: var(--fp-exp-admin-radius);

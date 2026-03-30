@@ -2,6 +2,12 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.5.20] - 2026-03-30
+
+### Changed
+
+- Pagina **Richieste RTB**: per le righe il cui **orario di inizio slot è già passato** (rispetto all’ora del sito), tabella in **visualizzazione compatta** — cliente su una riga con separatori, stato su una riga, badge **Passata** sullo slot, azioni in riga con pulsanti più piccoli; testo lungo sull’hold scaduto sostituito da icona **info** (tooltip) se applicabile.
+
 ## [1.5.19] - 2026-03-30
 
 ### Added
