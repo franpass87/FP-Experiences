@@ -86,6 +86,43 @@ final class Reservations
         return $ts < current_time('timestamp', true);
     }
 
+    /**
+     * ID prenotazioni con slot già iniziato (UTC) e stato ancora in coda RTB prima del rifiuto automatico.
+     * Il meta `rtb` viene verificato in PHP da {@see RequestToBook::auto_decline_rtb_if_slot_in_past()}.
+     *
+     * @return array<int, int>
+     */
+    public static function find_rtb_past_slot_pending_auto_decline_ids(int $limit = 100): array
+    {
+        global $wpdb;
+
+        $table = self::table_name();
+        $slots_table = Slots::table_name();
+        $limit = max(1, min(500, $limit));
+        $now = gmdate('Y-m-d H:i:s', current_time('timestamp', true));
+
+        $sql = $wpdb->prepare(
+            "SELECT r.id FROM {$table} r " .
+            "INNER JOIN {$slots_table} s ON r.slot_id = s.id AND s.start_datetime IS NOT NULL AND s.start_datetime != '' " .
+            'WHERE s.start_datetime < %s AND (' .
+            'r.status = %s OR r.status = %s OR (r.status = %s AND r.hold_expires_at IS NOT NULL)' .
+            ') ORDER BY r.id ASC LIMIT %d',
+            $now,
+            self::STATUS_PENDING_REQUEST,
+            self::STATUS_APPROVED_PENDING_PAYMENT,
+            self::STATUS_CANCELLED,
+            $limit
+        );
+
+        $col = $wpdb->get_col($sql);
+
+        if (empty($col)) {
+            return [];
+        }
+
+        return array_map('intval', $col);
+    }
+
     public static function table_name(): string
     {
         // Try to get from container first

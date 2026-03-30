@@ -2,6 +2,16 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.5.23] - 2026-03-30
+
+### Added
+
+- **RTB — slot nel passato**: chiusura automatica in stato `declined` (motivo salvato in `rtb_decision.auto_slot_past`, `declined_by` = 0). Esecuzione a ogni tick del cron `fp_exp_expire_rtb_holds` e in batch all’apertura della pagina **Richieste**. Viene inviata la stessa email di rifiuto al cliente. Action: `fp_exp_rtb_auto_declined_past_slot`.
+
+### Changed
+
+- **Richieste RTB**: righe con slot passato e stato `declined` — niente campo motivo né pulsante Rifiuta; messaggio compatto (distinzione chiusura automatica vs rifiuto manuale). Checkbox disabilitata per le righe `declined`. Testo informativo aggiornato per le righe ancora chiudibili manualmente.
+
 ## [1.5.22] - 2026-03-30
 
 ### Fixed

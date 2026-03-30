@@ -886,6 +886,117 @@ final class RequestToBook implements HookableInterface
     }
 
     /**
+     * Elabora in batch le richieste RTB il cui slot è già iniziato: rifiuto automatico e notifica cliente.
+     *
+     * @return int Numero di prenotazioni aggiornate.
+     */
+    public function process_rtb_past_slot_auto_declines(int $limit = 100): int
+    {
+        $ids = Reservations::find_rtb_past_slot_pending_auto_decline_ids($limit);
+        $count = 0;
+
+        foreach ($ids as $reservation_id) {
+            if ($this->auto_decline_rtb_if_slot_in_past($reservation_id)) {
+                ++$count;
+            }
+        }
+
+        return $count;
+    }
+
+    /**
+     * Rifiuta automaticamente una singola RTB se lo slot è nel passato e lo stato è ancora gestibile.
+     *
+     * @return bool True se è stata eseguita una transizione a `declined`.
+     */
+    public function auto_decline_rtb_if_slot_in_past(int $reservation_id): bool
+    {
+        $reservation = Reservations::get($reservation_id);
+
+        if (! $reservation) {
+            return false;
+        }
+
+        $meta = is_array($reservation['meta'] ?? null) ? $reservation['meta'] : [];
+
+        if (! isset($meta['rtb']) || ! is_array($meta['rtb'])) {
+            return false;
+        }
+
+        if (! Reservations::is_reservation_slot_start_in_past($reservation)) {
+            return false;
+        }
+
+        $status = Reservations::normalize_status((string) ($reservation['status'] ?? ''));
+
+        if (Reservations::STATUS_DECLINED === $status) {
+            return false;
+        }
+
+        $from_expired_hold = Reservations::is_rtb_hold_expired_cancellation($reservation);
+        $allowed = in_array(
+            $status,
+            [Reservations::STATUS_PENDING_REQUEST, Reservations::STATUS_APPROVED_PENDING_PAYMENT],
+            true
+        ) || $from_expired_hold;
+
+        if (! $allowed) {
+            return false;
+        }
+
+        $reason = __(
+            'Lo slot dell’esperienza è trascorso; la richiesta è stata chiusa automaticamente.',
+            'fp-experiences'
+        );
+        $reason = sanitize_textarea_field($reason);
+
+        $context = $this->get_request_context($reservation_id);
+
+        if (! $context) {
+            return false;
+        }
+
+        if ($reason !== '') {
+            $context['notes'] = trim(($context['notes'] ?? '') . "\n" . $reason);
+            $context['decline_reason'] = $reason;
+        }
+
+        Reservations::update_fields($reservation_id, [
+            'status' => Reservations::STATUS_DECLINED,
+            'hold_expires_at' => null,
+        ]);
+
+        $decline_decision = [
+            'mode' => $this->resolve_mode($reservation),
+            'declined_by' => 0,
+            'declined_at' => current_time('mysql', true),
+            'reason' => $reason,
+            'auto_slot_past' => true,
+        ];
+
+        if ($from_expired_hold) {
+            $decline_decision['after_expired_hold'] = true;
+        }
+
+        Reservations::update_meta($reservation_id, [
+            'rtb_decision' => $decline_decision,
+        ]);
+
+        $context['reservation']['status'] = Reservations::STATUS_DECLINED;
+
+        $this->notify_customer($context, 'declined');
+
+        do_action('fp_exp_rtb_request_declined', $reservation_id, $context, $reason);
+        do_action('fp_exp_rtb_auto_declined_past_slot', $reservation_id, $context);
+
+        Logger::log('rtb', 'Request-to-book auto-declined (slot start in past)', [
+            'reservation_id' => $reservation_id,
+        ]);
+
+        return true;
+    }
+
+    /**
      * @param array<string, mixed> $reservation
      * @param array<string, mixed> $context
      *
