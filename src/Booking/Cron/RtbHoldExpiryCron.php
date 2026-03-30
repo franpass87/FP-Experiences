@@ -62,21 +62,19 @@ final class RtbHoldExpiryCron implements HookableInterface
             $now
         ));
 
-        if (empty($expired_ids)) {
-            return;
-        }
-
-        $count = 0;
-        foreach ($expired_ids as $id) {
-            $reservation_id = (int) $id;
-            if (Reservations::update_status($reservation_id, Reservations::STATUS_CANCELLED)) {
-                $count++;
-                do_action('fp_exp_rtb_hold_expired', $reservation_id);
+        if (! empty($expired_ids)) {
+            $count = 0;
+            foreach ($expired_ids as $id) {
+                $reservation_id = (int) $id;
+                if (Reservations::update_status($reservation_id, Reservations::STATUS_CANCELLED)) {
+                    ++$count;
+                    do_action('fp_exp_rtb_hold_expired', $reservation_id);
+                }
             }
-        }
 
-        if ($count > 0) {
-            Logger::log('cron', sprintf('RTB hold expiry: %d reservation(s) cancelled', $count));
+            if ($count > 0) {
+                Logger::log('cron', sprintf('RTB hold expiry: %d reservation(s) cancelled', $count));
+            }
         }
 
         $request_to_book = Bootstrap::get(RequestToBook::class);

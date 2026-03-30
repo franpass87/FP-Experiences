@@ -2,6 +2,12 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.5.24] - 2026-03-30
+
+### Fixed
+
+- **Cron RTB** (`fp_exp_expire_rtb_holds`): il rifiuto automatico per **slot nel passato** non veniva eseguito quando in quel tick **non** c’erano hold scaduti da cancellare (return anticipato). Ora la chiusura slot-passato gira **sempre** a fine tick, indipendentemente dagli hold.
+
 ## [1.5.23] - 2026-03-30
 
 ### Added
