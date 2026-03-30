@@ -55,6 +55,7 @@ use function wc_create_order;
 use function wc_get_order;
 use function wp_date;
 use function wp_json_encode;
+use function wp_strip_all_tags;
 
 use function wp_verify_nonce;
 
@@ -827,13 +828,23 @@ final class RequestToBook implements HookableInterface
 
         $current_status = Reservations::normalize_status((string) ($reservation['status'] ?? ''));
         $from_expired_rtb_hold = Reservations::is_rtb_hold_expired_cancellation($reservation);
+        $meta_for_rtb = is_array($reservation['meta'] ?? null) ? $reservation['meta'] : [];
+        $has_rtb_meta = isset($meta_for_rtb['rtb']) && is_array($meta_for_rtb['rtb']);
+        $is_approved_pending_payment = Reservations::STATUS_APPROVED_PENDING_PAYMENT === $current_status;
 
-        if ($current_status !== Reservations::STATUS_PENDING_REQUEST && ! $from_expired_rtb_hold) {
+        $can_decline = Reservations::STATUS_PENDING_REQUEST === $current_status
+            || $from_expired_rtb_hold
+            || ($is_approved_pending_payment && $has_rtb_meta);
+
+        if (! $can_decline) {
             return new WP_Error(
                 'fp_exp_rtb_invalid_status',
                 sprintf(
                     /* translators: %s: reservation status slug */
-                    __('Cannot decline: reservation status is "%s", expected "pending_request" or recoverable expired RTB hold.', 'fp-experiences'),
+                    __(
+                        'Cannot decline: reservation status is "%s", expected "pending_request", "approved_pending_payment" (RTB), or recoverable expired RTB hold.',
+                        'fp-experiences'
+                    ),
                     $current_status
                 )
             );
@@ -853,10 +864,18 @@ final class RequestToBook implements HookableInterface
             $context['decline_reason'] = $reason;
         }
 
-        Reservations::update_fields($reservation_id, [
+        $prev_rtb_order_id = ($is_approved_pending_payment && $has_rtb_meta) ? absint($reservation['order_id'] ?? 0) : 0;
+
+        $fields_to_update = [
             'status' => Reservations::STATUS_DECLINED,
             'hold_expires_at' => null,
-        ]);
+        ];
+
+        if ($prev_rtb_order_id > 0) {
+            $fields_to_update['order_id'] = 0;
+        }
+
+        Reservations::update_fields($reservation_id, $fields_to_update);
 
         $decline_decision = [
             'mode' => $this->resolve_mode($reservation),
@@ -873,6 +892,8 @@ final class RequestToBook implements HookableInterface
         ]);
 
         $context['reservation']['status'] = Reservations::STATUS_DECLINED;
+
+        $this->cancel_rtb_payment_order_unpaid($prev_rtb_order_id);
 
         $this->notify_customer($context, 'declined');
 
@@ -961,10 +982,20 @@ final class RequestToBook implements HookableInterface
             $context['decline_reason'] = $reason;
         }
 
-        Reservations::update_fields($reservation_id, [
+        $prev_rtb_order_id = Reservations::STATUS_APPROVED_PENDING_PAYMENT === $status
+            ? absint($reservation['order_id'] ?? 0)
+            : 0;
+
+        $fields_to_update = [
             'status' => Reservations::STATUS_DECLINED,
             'hold_expires_at' => null,
-        ]);
+        ];
+
+        if ($prev_rtb_order_id > 0) {
+            $fields_to_update['order_id'] = 0;
+        }
+
+        Reservations::update_fields($reservation_id, $fields_to_update);
 
         $decline_decision = [
             'mode' => $this->resolve_mode($reservation),
@@ -984,6 +1015,8 @@ final class RequestToBook implements HookableInterface
 
         $context['reservation']['status'] = Reservations::STATUS_DECLINED;
 
+        $this->cancel_rtb_payment_order_unpaid($prev_rtb_order_id);
+
         $this->notify_customer($context, 'declined');
 
         do_action('fp_exp_rtb_request_declined', $reservation_id, $context, $reason);
@@ -994,6 +1027,35 @@ final class RequestToBook implements HookableInterface
         ]);
 
         return true;
+    }
+
+    /**
+     * Annulla l'ordine WooCommerce RTB ancora non pagato dopo che la prenotazione è stata scollegata (order_id azzerato).
+     */
+    private function cancel_rtb_payment_order_unpaid(int $order_id): void
+    {
+        if ($order_id <= 0 || ! function_exists('wc_get_order')) {
+            return;
+        }
+
+        $order = wc_get_order($order_id);
+
+        if (! $order instanceof WC_Order) {
+            return;
+        }
+
+        $via = (string) $order->get_created_via();
+
+        if ('fp-exp-rtb' !== $via && 'yes' !== (string) $order->get_meta('_fp_exp_isolated_checkout')) {
+            return;
+        }
+
+        if ($order->has_status(['pending', 'on-hold', 'failed'])) {
+            $order->update_status(
+                'cancelled',
+                wp_strip_all_tags(__('Richiesta RTB rifiutata (ordine collegato annullato).', 'fp-experiences'))
+            );
+        }
     }
 
     /**

@@ -2,6 +2,13 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.5.25] - 2026-03-30
+
+### Fixed
+
+- **RTB Rifiuta**: `decline()` accettava solo `pending_request` o hold scaduto — le richieste in **Waiting payment** (`approved_pending_payment`, es. Michele Vinci con slot passato) restituivano errore e il pulsante **Rifiuta** sembrava non avere effetto. Ora il rifiuto è consentito per tutte le RTB con meta `rtb` in attesa pagamento; la prenotazione viene scollegata dall’ordine (`order_id` → 0) e l’ordine WooCommerce RTB viene messo in **cancelled** se ancora `pending` / `on-hold` / `failed` (evita che il hook ordine riporti la prenotazione a `cancelled` sovrascrivendo `declined`).
+- **Auto-decline slot passato**: stessa pulizia ordine WooCommerce quando lo stato era `approved_pending_payment`.
+
 ## [1.5.24] - 2026-03-30
 
 ### Fixed
