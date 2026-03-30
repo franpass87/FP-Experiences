@@ -2,6 +2,12 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.5.22] - 2026-03-30
+
+### Fixed
+
+- **Admin CSS**: `assets/css/dist/fp-experiences-admin.min.css` era **incompleto** (solo una parte delle regole rispetto a `admin.css`), quindi WordPress caricava il `.min` per primo e **mancavano** filtri richieste, banner FP e molti stili condivisi — layout FP apparentemente «rotto» su tutte le pagine admin. Il bundle minificato è stato **rigenerato** integralmente da `admin.css` (clean-css-cli).
+
 ## [1.5.21] - 2026-03-30
 
 ### Fixed
