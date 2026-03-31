@@ -7,7 +7,6 @@ namespace FP_Exp\Booking\Email\Templates;
 use FP_Exp\Booking\EmailTranslator;
 
 use function __;
-use function esc_html;
 use function sanitize_email;
 use function sprintf;
 
@@ -40,14 +39,14 @@ final class BookingRescheduledTemplate extends AbstractEmailTemplate
             return sprintf(
                 /* translators: %s: experience title. */
                 __('Aggiornamento prenotazione: %s', 'fp-experiences'),
-                esc_html((string) $experience_title)
+                $this->plainTextForEmailSubject((string) $experience_title)
             );
         }
 
         return sprintf(
             /* translators: %s: experience title. */
             __('Reservation updated: %s', 'fp-experiences'),
-            esc_html((string) $experience_title)
+            $this->plainTextForEmailSubject((string) $experience_title)
         );
     }
 

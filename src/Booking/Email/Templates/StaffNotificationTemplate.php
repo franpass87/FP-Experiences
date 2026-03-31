@@ -14,7 +14,6 @@ use function array_map;
 use function array_merge;
 use function array_unique;
 use function array_values;
-use function esc_html;
 use function get_option;
 use function sanitize_email;
 
@@ -63,14 +62,14 @@ final class StaffNotificationTemplate extends AbstractEmailTemplate
                 return sprintf(
                     /* translators: %s: experience title. */
                     __('Prenotazione cancellata: %s', 'fp-experiences'),
-                    esc_html($experience_title)
+                    $this->plainTextForEmailSubject((string) $experience_title)
                 );
             }
 
             return sprintf(
                 /* translators: %s: experience title. */
                 __('Booking cancelled: %s', 'fp-experiences'),
-                esc_html($experience_title)
+                $this->plainTextForEmailSubject((string) $experience_title)
             );
         }
 
@@ -78,14 +77,14 @@ final class StaffNotificationTemplate extends AbstractEmailTemplate
             return sprintf(
                 /* translators: %s: experience title. */
                 __('Nuova prenotazione: %s', 'fp-experiences'),
-                esc_html($experience_title)
+                $this->plainTextForEmailSubject((string) $experience_title)
             );
         }
 
         return sprintf(
             /* translators: %s: experience title. */
             __('New booking: %s', 'fp-experiences'),
-            esc_html($experience_title)
+            $this->plainTextForEmailSubject((string) $experience_title)
         );
     }
 

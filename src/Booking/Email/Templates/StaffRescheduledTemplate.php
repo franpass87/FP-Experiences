@@ -14,7 +14,6 @@ use function array_map;
 use function array_merge;
 use function array_unique;
 use function array_values;
-use function esc_html;
 use function get_option;
 use function sanitize_email;
 use function sprintf;
@@ -48,14 +47,14 @@ final class StaffRescheduledTemplate extends AbstractEmailTemplate
             return sprintf(
                 /* translators: %s: experience title. */
                 __('Prenotazione riprogrammata: %s', 'fp-experiences'),
-                esc_html((string) $experience_title)
+                $this->plainTextForEmailSubject((string) $experience_title)
             );
         }
 
         return sprintf(
             /* translators: %s: experience title. */
             __('Reservation rescheduled: %s', 'fp-experiences'),
-            esc_html((string) $experience_title)
+            $this->plainTextForEmailSubject((string) $experience_title)
         );
     }
 

@@ -11,6 +11,9 @@ use function file_exists;
 use function ob_get_clean;
 use function ob_start;
 use function sanitize_email;
+use function sanitize_text_field;
+use function wp_specialchars_decode;
+use function wp_strip_all_tags;
 
 use const FP_EXP_PLUGIN_DIR;
 
@@ -35,6 +38,20 @@ abstract class AbstractEmailTemplate implements EmailTemplateInterface
      * @param array<string, mixed> $context
      */
     abstract protected function getDefaultSubject(array $context): string;
+
+    /**
+     * Normalizza testo per l’header Subject (MIME non è HTML: no entità tipo &amp;).
+     *
+     * @param string $text Titolo o frammento grezzo (es. `post_title`).
+     * @return string Testo senza tag, entità decodificate, adatto a `sanitize_text_field`.
+     */
+    protected function plainTextForEmailSubject(string $text): string
+    {
+        $text = wp_strip_all_tags($text);
+        $text = wp_specialchars_decode($text, ENT_QUOTES | ENT_HTML5);
+
+        return sanitize_text_field($text);
+    }
 
     /**
      * Get email subject.

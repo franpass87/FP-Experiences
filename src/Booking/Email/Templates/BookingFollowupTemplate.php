@@ -7,7 +7,6 @@ namespace FP_Exp\Booking\Email\Templates;
 use FP_Exp\Booking\EmailTranslator;
 
 use function __;
-use function esc_html;
 use function sanitize_email;
 
 use const FP_EXP_PLUGIN_DIR;
@@ -47,14 +46,14 @@ final class BookingFollowupTemplate extends AbstractEmailTemplate
             return sprintf(
                 /* translators: %s: experience title. */
                 __('Come è andata: %s', 'fp-experiences'),
-                esc_html($experience_title)
+                $this->plainTextForEmailSubject((string) $experience_title)
             );
         }
 
         return sprintf(
             /* translators: %s: experience title. */
             __('How was it: %s', 'fp-experiences'),
-            esc_html($experience_title)
+            $this->plainTextForEmailSubject((string) $experience_title)
         );
     }
 

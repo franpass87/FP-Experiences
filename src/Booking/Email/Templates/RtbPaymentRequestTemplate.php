@@ -7,7 +7,6 @@ namespace FP_Exp\Booking\Email\Templates;
 use FP_Exp\Booking\EmailTranslator;
 
 use function __;
-use function esc_html;
 
 use const FP_EXP_PLUGIN_DIR;
 
@@ -46,14 +45,14 @@ final class RtbPaymentRequestTemplate extends AbstractEmailTemplate
             return sprintf(
                 /* translators: %s: experience title. */
                 __('Completa il pagamento per %s', 'fp-experiences'),
-                esc_html($experience_title)
+                $this->plainTextForEmailSubject((string) $experience_title)
             );
         }
 
         return sprintf(
             /* translators: %s: experience title. */
             __('Complete your payment for %s', 'fp-experiences'),
-            esc_html($experience_title)
+            $this->plainTextForEmailSubject((string) $experience_title)
         );
     }
 

@@ -2,6 +2,12 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.5.26] - 2026-03-31
+
+### Fixed
+
+- **Oggetto email**: il titolo esperienza nell’header `Subject` usava `esc_html()`, che trasforma `&` in `&amp;` (testo visibile nei client come `Wine Tour &amp; Tasting`). L’oggetto non è HTML: ora il titolo viene normalizzato con testo plain (`plainTextForEmailSubject` su tutti i template che lo inseriscono nel subject).
+
 ## [1.5.25] - 2026-03-30
 
 ### Fixed
