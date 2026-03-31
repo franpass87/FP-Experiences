@@ -1067,10 +1067,20 @@ final class Brevo implements HookableInterface
             }
         }
 
+        // Non usare array_filter($attributes) senza callback: in PHP la stringa '0' (consenso marketing no) è
+        // "empty" e verrebbe rimossa; se restano zero chiavi, json_encode produce [] e Brevo risponde 400
+        // "attributes should be an object".
+        $filtered = array_filter(
+            $attributes,
+            static function ($value): bool {
+                return $value !== null && $value !== '';
+            }
+        );
+
         $payload = [
             'email' => sanitize_email((string) ($customer['email'] ?? '')),
             'updateEnabled' => true,
-            'attributes' => array_filter($attributes),
+            'attributes' => $filtered === [] ? new \stdClass() : $filtered,
         ];
 
         if ($tags) {

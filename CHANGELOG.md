@@ -2,6 +2,12 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.5.28] - 2026-03-31
+
+### Fixed
+
+- **Brevo contact sync (HTTP 400)**: il payload usava `array_filter($attributes)` senza callback, che in PHP rimuove anche la stringa `'0'` (consenso marketing disattivo). Con nome/cognome/telefono vuoti `attributes` diventava un array JSON `[]` invece di un oggetto `{}`, e l’API Brevo rispondeva `invalid_parameter` / *attributes should be an object*. Ora si filtrano solo `null` e stringa vuota e, se non resta nessun attributo, si invia `{}`.
+
 ## [1.5.27] - 2026-03-31
 
 ### Fixed
