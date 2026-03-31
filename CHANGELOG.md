@@ -2,6 +2,12 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.5.27] - 2026-03-31
+
+### Fixed
+
+- **Calendario admin (Operazioni)**: nel select esperienze e nei messaggi JS comparivano entità letterali (`&#038;`, `&#039;`) perché le stringhe i18n passate a `wp_localize_script` usavano `esc_html__()` (destinato all’HTML, non al testo mostrato via `textContent`). Ora si usa `__()` per `fpExpCalendar.i18n` e i titoli esperienza sono normalizzati con decodifica entità per le liste.
+
 ## [1.5.26] - 2026-03-31
 
 ### Fixed

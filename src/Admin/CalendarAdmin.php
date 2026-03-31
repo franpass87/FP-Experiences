@@ -29,6 +29,8 @@ use function esc_html;
 use function esc_html__;
 use function esc_url;
 use function get_post_type;
+use function __;
+use function html_entity_decode;
 use function get_option;
 use function get_posts;
 use function get_the_title;
@@ -53,6 +55,7 @@ use function wp_localize_script;
 use function wp_nonce_field;
 use function wp_unslash;
 use function wp_kses_post;
+use function wp_strip_all_tags;
 use function wp_timezone;
 use function current_user_can;
 
@@ -130,7 +133,7 @@ final class CalendarAdmin implements HookableInterface
         foreach ($experiences as $post) {
             $experience_options[] = [
                 'id' => (int) $post->ID,
-                'title' => get_the_title((int) $post->ID),
+                'title' => $this->experience_title_for_calendar_select($post),
             ];
         }
 
@@ -144,33 +147,45 @@ final class CalendarAdmin implements HookableInterface
             'nonce' => wp_create_nonce('wp_rest'),
             'experiences' => $experience_options,
             'has_experiences' => !empty($experience_options),
+            // Plain text per JS (textContent / option label): no esc_html__ — evita &#038; / &#039; letterali nel calendario admin.
             'i18n' => [
-                'month' => esc_html__('Mese', 'fp-experiences'),
-                'week' => esc_html__('Settimana', 'fp-experiences'),
-                'day' => esc_html__('Giorno', 'fp-experiences'),
-                'previous' => esc_html__('Precedente', 'fp-experiences'),
-                'next' => esc_html__('Successivo', 'fp-experiences'),
-                'noSlots' => esc_html__('Nessuno slot programmato per questo periodo.', 'fp-experiences'),
-                'capacityPrompt' => esc_html__('Nuova capacità totale per questo slot', 'fp-experiences'),
-                'perTypePrompt' => esc_html__('Capacità opzionale per %s (lascia vuoto per mantenere corrente)', 'fp-experiences'),
-                'moveConfirm' => esc_html__('Spostare lo slot a %s alle %s?', 'fp-experiences'),
-                'updateSuccess' => esc_html__('Slot aggiornato con successo.', 'fp-experiences'),
-                'updateError' => esc_html__('Impossibile aggiornare lo slot. Riprova.', 'fp-experiences'),
-                'seatsAvailable' => esc_html__('posti disponibili', 'fp-experiences'),
-                'bookedLabel' => esc_html__('prenotati', 'fp-experiences'),
-                'untitledExperience' => esc_html__('Esperienza senza titolo', 'fp-experiences'),
-                'loadError' => esc_html__('Impossibile caricare il calendario. Riprova.', 'fp-experiences'),
-                'selectExperience' => esc_html__('Seleziona esperienza', 'fp-experiences'),
-                'selectExperienceFirst' => esc_html__('Seleziona un\'esperienza per visualizzare la disponibilità', 'fp-experiences'),
-                'accessDenied' => esc_html__('Accesso negato. Ricarica la pagina e riprova.', 'fp-experiences'),
-                'notFound' => esc_html__('Risorsa non trovata.', 'fp-experiences'),
-                'serverError' => esc_html__('Errore del server. Riprova tra qualche minuto.', 'fp-experiences'),
-                'listView' => esc_html__('Lista', 'fp-experiences'),
-                'calendarView' => esc_html__('Calendario', 'fp-experiences'),
+                'month' => __('Mese', 'fp-experiences'),
+                'week' => __('Settimana', 'fp-experiences'),
+                'day' => __('Giorno', 'fp-experiences'),
+                'previous' => __('Precedente', 'fp-experiences'),
+                'next' => __('Successivo', 'fp-experiences'),
+                'noSlots' => __('Nessuno slot programmato per questo periodo.', 'fp-experiences'),
+                'capacityPrompt' => __('Nuova capacità totale per questo slot', 'fp-experiences'),
+                'perTypePrompt' => __('Capacità opzionale per %s (lascia vuoto per mantenere corrente)', 'fp-experiences'),
+                'moveConfirm' => __('Spostare lo slot a %s alle %s?', 'fp-experiences'),
+                'updateSuccess' => __('Slot aggiornato con successo.', 'fp-experiences'),
+                'updateError' => __('Impossibile aggiornare lo slot. Riprova.', 'fp-experiences'),
+                'seatsAvailable' => __('posti disponibili', 'fp-experiences'),
+                'bookedLabel' => __('prenotati', 'fp-experiences'),
+                'untitledExperience' => __('Esperienza senza titolo', 'fp-experiences'),
+                'loadError' => __('Impossibile caricare il calendario. Riprova.', 'fp-experiences'),
+                'selectExperience' => __('Seleziona esperienza', 'fp-experiences'),
+                'selectExperienceFirst' => __('Seleziona un\'esperienza per visualizzare la disponibilità', 'fp-experiences'),
+                'accessDenied' => __('Accesso negato. Ricarica la pagina e riprova.', 'fp-experiences'),
+                'notFound' => __('Risorsa non trovata.', 'fp-experiences'),
+                'serverError' => __('Errore del server. Riprova tra qualche minuto.', 'fp-experiences'),
+                'listView' => __('Lista', 'fp-experiences'),
+                'calendarView' => __('Calendario', 'fp-experiences'),
             ],
         ];
 
         wp_localize_script('fp-exp-admin', 'fpExpCalendar', $bootstrap);
+    }
+
+    /**
+     * Titolo esperienza per il select del calendario admin (testo reale, non entità HTML).
+     */
+    private function experience_title_for_calendar_select(\WP_Post $post): string
+    {
+        $title = get_the_title($post);
+        $title = wp_strip_all_tags((string) $title);
+
+        return html_entity_decode($title, ENT_QUOTES | ENT_HTML5, 'UTF-8');
     }
 
     public function render_page(): void
@@ -956,9 +971,12 @@ final class CalendarAdmin implements HookableInterface
 
         $experiences = [];
         foreach ($posts as $post) {
+            if (! $post instanceof \WP_Post) {
+                continue;
+            }
             $experiences[] = [
                 'id' => (int) $post->ID,
-                'title' => (string) get_the_title((int) $post->ID),
+                'title' => $this->experience_title_for_calendar_select($post),
             ];
         }
 
