@@ -193,15 +193,15 @@ final class SettingsPage implements HookableInterface
         }
         echo '</div>';
 
+        $this->render_settings_tab_shell_open($active_tab, $tabs);
+
         if ('tools' === $active_tab) {
-            $this->render_tools_panel();
+            $this->render_tools_panel(false);
         } elseif ('booking' === $active_tab) {
             $this->render_booking_rules_panel();
         } elseif ('logs' === $active_tab) {
             $this->render_logs_overview();
         } else {
-            echo '<div class="fp-exp-dms-card fp-exp-settings__options-card">';
-            echo '<div class="fp-exp-dms-card-body">';
             if ('calendar' === $active_tab) {
                 $this->render_calendar_status();
             }
@@ -238,8 +238,9 @@ final class SettingsPage implements HookableInterface
 
             submit_button();
             echo '</form>';
-            echo '</div></div>';
         }
+
+        $this->render_settings_tab_shell_close();
 
         echo '</div>';
         echo '</div>';
@@ -1731,14 +1732,20 @@ final class SettingsPage implements HookableInterface
 
     /**
      * Pannello azioni diagnostiche (scheda Strumenti in Impostazioni e pagina Strumenti dedicata).
+     *
+     * @param bool $standalone Con true (default) mostra anche la card introduttiva; con false solo descrizione + griglia (scheda Impostazioni con header card comune).
      */
-    public function render_tools_panel(): void
+    public function render_tools_panel(bool $standalone = true): void
     {
         echo '<div class="fp-exp-tools" data-fp-exp-tools="1">';
-        echo '<div class="fp-exp-dms-card fp-exp-tools__intro">';
-        echo '<div class="fp-exp-dms-card-body">';
-        echo '<p class="description">' . esc_html__('Run diagnostic and recovery actions. These operations execute immediately and their results are logged for auditing.', 'fp-experiences') . '</p>';
-        echo '</div></div>';
+        if ($standalone) {
+            echo '<div class="fp-exp-dms-card fp-exp-tools__intro">';
+            echo '<div class="fp-exp-dms-card-body">';
+            echo '<p class="description">' . esc_html__('Run diagnostic and recovery actions. These operations execute immediately and their results are logged for auditing.', 'fp-experiences') . '</p>';
+            echo '</div></div>';
+        } else {
+            echo '<p class="description fp-exp-tools__intro-text">' . esc_html__('Run diagnostic and recovery actions. These operations execute immediately and their results are logged for auditing.', 'fp-experiences') . '</p>';
+        }
         echo '<div class="fp-exp-tools__grid">';
         foreach ($this->get_tool_actions() as $action) {
             $icon_class = esc_attr($this->tool_action_icon_class((string) $action['slug']));
@@ -1781,7 +1788,7 @@ final class SettingsPage implements HookableInterface
     }
 
     /**
-     * Scheda Impostazioni «Booking Rules»: riepilogo regole con link alle schede correlate.
+     * Scheda Impostazioni «Booking Rules»: riepilogo regole con link alle schede correlate (corpo sotto header card comune).
      */
     private function render_booking_rules_panel(): void
     {
@@ -1796,12 +1803,7 @@ final class SettingsPage implements HookableInterface
             default => esc_html__('Disattivato', 'fp-experiences'),
         };
 
-        echo '<div class="fp-exp-dms-card fp-exp-settings__dms-panel fp-exp-settings__panel--booking">';
-        echo '<div class="fp-exp-dms-card-header"><div class="fp-exp-dms-card-header-left">';
-        echo '<span class="dashicons dashicons-calendar-alt" aria-hidden="true"></span>';
-        echo '<h2>' . esc_html__('Regole attive', 'fp-experiences') . '</h2>';
-        echo '</div></div>';
-        echo '<div class="fp-exp-dms-card-body">';
+        echo '<p class="description">' . esc_html__('Riepilogo delle regole attualmente effettive. Modifica i dettagli dalle schede indicate sotto.', 'fp-experiences') . '</p>';
         echo '<ul class="fp-exp-settings__list">';
         echo '<li>' . esc_html__('Meeting point: ', 'fp-experiences') . ($meeting_points_enabled ? esc_html__('abilitati', 'fp-experiences') : esc_html__('disabilitati', 'fp-experiences')) . '</li>';
         echo '<li>' . esc_html__('Import meeting point: ', 'fp-experiences') . ($meeting_point_import_enabled ? esc_html__('abilitato (avanzato)', 'fp-experiences') : esc_html__('disabilitato', 'fp-experiences')) . '</li>';
@@ -1832,11 +1834,10 @@ final class SettingsPage implements HookableInterface
         echo '<li><a href="' . $rtb_link . '">' . esc_html__('RTB', 'fp-experiences') . '</a></li>';
         echo '<li><a href="' . $calendar_link . '">' . esc_html__('Calendar', 'fp-experiences') . '</a></li>';
         echo '</ul>';
-        echo '</div></div>';
     }
 
     /**
-     * Scheda Impostazioni «Logs»: anteprima ultime righe di log e link al registro completo.
+     * Scheda Impostazioni «Logs»: anteprima ultime righe di log e link al registro completo (corpo sotto header card comune).
      */
     private function render_logs_overview(): void
     {
@@ -1844,12 +1845,7 @@ final class SettingsPage implements HookableInterface
             'limit' => 10,
         ]);
 
-        echo '<div class="fp-exp-dms-card fp-exp-settings__dms-panel fp-exp-settings__panel--logs">';
-        echo '<div class="fp-exp-dms-card-header"><div class="fp-exp-dms-card-header-left">';
-        echo '<span class="dashicons dashicons-media-text" aria-hidden="true"></span>';
-        echo '<h2>' . esc_html__('Ultime attività', 'fp-experiences') . '</h2>';
-        echo '</div></div>';
-        echo '<div class="fp-exp-dms-card-body">';
+        echo '<p class="description">' . esc_html__('Ultime voci registrate; per lo storico completo apri il registro dedicato.', 'fp-experiences') . '</p>';
 
         if (! $logs) {
             echo '<p>' . esc_html__('Nessun evento registrato nei log.', 'fp-experiences') . '</p>';
@@ -1875,7 +1871,6 @@ final class SettingsPage implements HookableInterface
 
         $logs_url = esc_url(admin_url('admin.php?page=fp_exp_logs'));
         echo '<p><a class="button" href="' . $logs_url . '">' . esc_html__('Apri registro completo', 'fp-experiences') . '</a></p>';
-        echo '</div></div>';
     }
 
     /**
@@ -2023,6 +2018,65 @@ final class SettingsPage implements HookableInterface
         }
 
         return $requested;
+    }
+
+    /**
+     * Classe dashicon per l’intestazione card della scheda Impostazioni.
+     */
+    private function get_settings_tab_icon_class(string $slug): string
+    {
+        return match ($slug) {
+            'general' => 'dashicons-admin-settings',
+            'gift' => 'dashicons-tickets-alt',
+            'branding' => 'dashicons-art',
+            'booking' => 'dashicons-calendar-alt',
+            'calendar' => 'dashicons-calendar',
+            'tracking' => 'dashicons-chart-line',
+            'rtb' => 'dashicons-email',
+            'webhook' => 'dashicons-admin-links',
+            'listing' => 'dashicons-list-view',
+            'tools' => 'dashicons-admin-tools',
+            'logs' => 'dashicons-media-text',
+            default => 'dashicons-admin-generic',
+        };
+    }
+
+    /**
+     * Titolo scheda in testo semplice (come la label del nav-tab, senza span dashicon).
+     *
+     * @param array<string, string> $tabs Tab da `get_tabs()` dopo filtro.
+     */
+    private function get_settings_tab_heading_plain(string $slug, array $tabs): string
+    {
+        $label_html = $tabs[$slug] ?? '';
+        $plain = trim(wp_strip_all_tags((string) $label_html));
+
+        return $plain !== '' ? $plain : __('Impostazioni', 'fp-experiences');
+    }
+
+    /**
+     * Apre il contenitore card comune per ogni scheda Impostazioni.
+     *
+     * @param array<string, string> $tabs
+     */
+    private function render_settings_tab_shell_open(string $slug, array $tabs): void
+    {
+        $icon = esc_attr($this->get_settings_tab_icon_class($slug));
+        $title = esc_html($this->get_settings_tab_heading_plain($slug, $tabs));
+        echo '<div class="fp-exp-dms-card fp-exp-settings__tab-card">';
+        echo '<div class="fp-exp-dms-card-header"><div class="fp-exp-dms-card-header-left">';
+        echo '<span class="dashicons ' . $icon . '" aria-hidden="true"></span>';
+        echo '<h2>' . $title . '</h2>';
+        echo '</div></div>';
+        echo '<div class="fp-exp-dms-card-body fp-exp-settings__tab-card-body">';
+    }
+
+    /**
+     * Chiude il contenitore card della scheda Impostazioni.
+     */
+    private function render_settings_tab_shell_close(): void
+    {
+        echo '</div></div>';
     }
 
     public function render_email_field(array $args): void

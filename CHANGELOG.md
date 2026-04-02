@@ -2,6 +2,13 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.5.38] - 2026-04-02
+
+### Changed
+
+- **Impostazioni — tutte le schede**: un solo contenitore **`fp-exp-settings__tab-card`** per tab (header con dashicon + titolo testuale dalla label del nav-tab, così rispetta anche `fp_exp_settings_tabs`); corpo comune `fp-exp-settings__tab-card-body` per Tools, Booking, Logs e per il form `options.php`.
+- **Tools (scheda Impostazioni)**: `render_tools_panel( false )` — niente card intro ridondante; descrizione in paragrafo sotto l’header comune. Pagina **Strumenti** dedicata invariata (`render_tools_panel()` default).
+
 ## [1.5.37] - 2026-04-02
 
 ### Changed

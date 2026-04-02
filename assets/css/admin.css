@@ -2447,19 +2447,20 @@ html.fp-exp-dark .fp-exp-requests__td-actions--past .fp-exp-requests__past-note 
     border: 1px solid var(--fp-exp-admin-border);
 }
 
-/* Impostazioni: form opzioni + schede booking/logs in card DMS */
-.fp-exp-settings .fp-exp-settings__options-card {
+/* Impostazioni: una card DMS per ogni scheda (titolo = label nav-tab) */
+.fp-exp-settings .fp-exp-settings__tab-card {
     margin-top: 1rem;
 }
 
-.fp-exp-settings .fp-exp-settings__options-card .fp-exp-calendar-status {
+.fp-exp-settings .fp-exp-settings__tab-card-body .fp-exp-calendar-status {
     margin-bottom: 1.25rem;
     padding-bottom: 1rem;
     border-bottom: 1px solid var(--fpdms-border-light);
 }
 
-.fp-exp-settings .fp-exp-settings__dms-panel {
-    margin-top: 1rem;
+.fp-exp-settings .fp-exp-settings__tab-card-body > .fp-exp-tools .fp-exp-tools__intro-text {
+    margin-top: 0;
+    margin-bottom: 1rem;
 }
 
 .fp-exp-settings__list {
