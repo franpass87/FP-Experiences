@@ -2,6 +2,12 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.5.32] - 2026-04-02
+
+### Changed
+
+- **Admin banner**: stili `.fpexp-page-header` allineati a **FP Mail SMTP** (`admin.css` — stessi padding, `font-size` titolo `1.5rem`, paragrafo `0.95rem` / `opacity: 0.95`, badge `0.8rem` / `600`, `color: #fff` sul titolo come Mail); contenitore con prefisso `.fp-exp-admin-page .fpexp-page-header`; regole notice dentro `.wrap.fp-exp-admin-page` come Mail.
+
 ## [1.5.31] - 2026-04-02
 
 ### Changed

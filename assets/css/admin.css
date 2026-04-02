@@ -185,8 +185,21 @@ body.fp-exp-admin-shell #screen-meta-links {
     gap: 24px;
 }
 
-/* Page Header — allineato a FP Mail SMTP / fp-admin-ui-design-system.mdc (no shadow sul gradiente) */
-.fpexp-page-header {
+/*
+ * Page header — valori identici a FP-Mail-SMTP/assets/css/admin.css
+ * (.fpmail-admin-page .fpmail-page-header, titolo, p, badge)
+ * + flex-wrap per breadcrumb a tutta larghezza sopra titolo/descrizione.
+ */
+.wrap.fp-exp-admin-page > .notice,
+.wrap.fp-exp-admin-page > div.updated,
+.wrap.fp-exp-admin-page > div.error {
+    float: none;
+    clear: both;
+    box-sizing: border-box;
+    max-width: 100%;
+}
+
+.fp-exp-admin-page .fpexp-page-header {
     background: var(--fpdms-gradient-primary);
     border-radius: var(--radius-xl);
     padding: 1.5rem 2rem;
@@ -194,14 +207,14 @@ body.fp-exp-admin-shell #screen-meta-links {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    gap: 16px;
-    flex-wrap: wrap;
     color: #fff;
+    flex-wrap: wrap;
 }
 
 .fpexp-page-header .fp-exp-admin__breadcrumb,
 .fpexp-page-header .fp-exp-dashboard__breadcrumb {
     width: 100%;
+    flex-basis: 100%;
     font-size: 12px;
     color: rgba(255, 255, 255, 0.85);
 }
@@ -221,12 +234,12 @@ body.fp-exp-admin-shell #screen-meta-links {
     min-width: 200px;
 }
 
+/* come .fpmail-page-header .fpmail-page-header-title */
 .fpexp-page-header .fpexp-page-header-title,
 .fpexp-page-header .fp-exp-admin__title {
     margin: 0 0 0.25rem 0;
-    color: #fff !important;
+    color: #fff;
     font-size: 1.5rem;
-    font-weight: 600;
 }
 
 .fpexp-page-header .fpexp-page-header-title .dashicons {
@@ -237,23 +250,22 @@ body.fp-exp-admin-shell #screen-meta-links {
     vertical-align: middle;
 }
 
+/* come .fpmail-page-header p */
+.fpexp-page-header p,
 .fpexp-page-header .fpexp-page-header-desc,
 .fpexp-page-header .fp-exp-admin__intro {
     margin: 0;
     opacity: 0.95;
     font-size: 0.95rem;
-    color: #fff !important;
 }
 
+/* come .fpmail-page-header-badge */
 .fpexp-page-header-badge {
     background: rgba(255, 255, 255, 0.25);
     padding: 0.25rem 0.75rem;
     border-radius: var(--radius-pill);
     font-size: 0.8rem;
     font-weight: 600;
-    color: #fff;
-    white-space: nowrap;
-    flex-shrink: 0;
 }
 
 /* Legacy header (se usato fuori dal banner) */
