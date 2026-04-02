@@ -2,6 +2,16 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.5.46] - 2026-04-02
+
+### Fixed
+
+- **Admin — FOUC / stili che “rimbalzano”**: `fp-exp-admin` CSS ora dipende da `colors` (dopo `wp-admin` / `buttons` / schema colori) così tab e bottoni DMS non vengono sovrascritti da fogli core caricati dopo; reset esplicito su `.nav-tab` nel guscio `[data-fp-exp-admin]` (`float`, `margin-bottom`, `border-bottom`); rinforzo `!important` su `.button.button-primary` dentro `body.fp-exp-admin-shell.wp-core-ui` (e tema scuro) per coesistenza con WooCommerce e altri enqueue tardivi.
+
+### Added
+
+- Filtro documentato: `fp_exp_admin_style_dependencies` (default `['colors']`) per estendere le dipendenze dello stile admin del plugin.
+
 ## [1.5.45] - 2026-04-02
 
 ### Added

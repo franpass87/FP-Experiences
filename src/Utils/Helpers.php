@@ -272,6 +272,16 @@ final class Helpers
     }
 
     /**
+     * Dipendenze per `wp_enqueue_style( 'fp-exp-admin', ... )`: dopo `colors` (scheme admin WP).
+     *
+     * @return list<string>
+     */
+    public static function admin_style_dependencies(): array
+    {
+        return AssetHelper::adminStyleDependencies();
+    }
+
+    /**
      * Resolve the first existing readable asset path (relative to plugin dir), falling back to the last candidate.
      *
      * If a preferred (typically minified) asset is older than a later fallback candidate, the fallback is used to avoid stale bundles.

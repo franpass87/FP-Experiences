@@ -2061,6 +2061,35 @@ body.fp-exp-admin-shell .wrap .page-title-action:focus-visible,
     outline-offset: 2px;
 }
 
+/* Altri fogli admin (es. WooCommerce) dopo fp-exp-admin: mantiene gradiente DMS sui primari */
+body.fp-exp-admin-shell.wp-admin.wp-core-ui .wrap .button.button-primary,
+body.fp-exp-admin-shell.wp-admin.wp-core-ui .wrap .submit .button.button-primary,
+body.fp-exp-admin-shell.wp-admin.wp-core-ui .wrap .page-title-action,
+body.fp-exp-admin-shell.wp-admin.wp-core-ui .tablenav .actions .button.button-primary {
+    background: var(--fpdms-gradient-primary) !important;
+    border: none !important;
+    color: #fff !important;
+    text-shadow: none !important;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3) !important;
+}
+
+body.fp-exp-admin-shell.wp-admin.wp-core-ui .wrap .button.button-primary:hover,
+body.fp-exp-admin-shell.wp-admin.wp-core-ui .wrap .submit .button.button-primary:hover,
+body.fp-exp-admin-shell.wp-admin.wp-core-ui .wrap .page-title-action:hover,
+body.fp-exp-admin-shell.wp-admin.wp-core-ui .tablenav .actions .button.button-primary:hover {
+    color: #fff !important;
+    filter: brightness(1.06);
+    box-shadow: 0 4px 14px rgba(102, 126, 234, 0.4) !important;
+}
+
+body.fp-exp-admin-shell.wp-admin.wp-core-ui .wrap .button.button-primary:focus-visible,
+body.fp-exp-admin-shell.wp-admin.wp-core-ui .wrap .submit .button.button-primary:focus-visible,
+body.fp-exp-admin-shell.wp-admin.wp-core-ui .wrap .page-title-action:focus-visible,
+body.fp-exp-admin-shell.wp-admin.wp-core-ui .tablenav .actions .button.button-primary:focus-visible {
+    outline: 2px solid var(--fpdms-primary) !important;
+    outline-offset: 2px;
+}
+
 /* Bottoni secondari, outline e azioni neutre
    IMPORTANTE: non usare solo `.button` — in WP i primari sono `button button-primary` e matcherebbero anche `.button`, sovrascrivendo il gradiente (stesso specificità, regola successiva). */
 body.fp-exp-admin-shell .wrap .button:not(.button-primary),
@@ -2313,6 +2342,17 @@ html.fp-exp-dark body.fp-exp-admin-shell .tablenav .actions .button-primary {
     color: #fff;
     border: none;
 }
+
+html.fp-exp-dark body.fp-exp-admin-shell.wp-admin.wp-core-ui .wrap .button.button-primary,
+html.fp-exp-dark body.fp-exp-admin-shell.wp-admin.wp-core-ui .wrap .submit .button.button-primary,
+html.fp-exp-dark body.fp-exp-admin-shell.wp-admin.wp-core-ui .wrap .page-title-action,
+html.fp-exp-dark body.fp-exp-admin-shell.wp-admin.wp-core-ui .tablenav .actions .button.button-primary {
+    background: var(--fpdms-gradient-primary) !important;
+    border: none !important;
+    color: #fff !important;
+    box-shadow: 0 8px 24px rgba(102, 126, 234, 0.45) !important;
+}
+
 html.fp-exp-dark body.fp-exp-admin-shell .wrap .button:not(.button-primary),
 html.fp-exp-dark body.fp-exp-admin-shell .wrap .button-secondary {
     background: rgba(255, 255, 255, 0.08);
@@ -4499,8 +4539,11 @@ label.fp-exp-settings__toggle input:checked + .fp-exp-toggle__switch::after {
     margin: 0 0 1.25rem 0 !important;
 }
 
+/* Reset core .nav-tab (float, margini WP) + chip DMS; barra attiva via ::after */
 .fp-exp-admin[data-fp-exp-admin] .fp-exp-tabs .nav-tab,
 .fp-exp-admin[data-fp-exp-admin] .fp-exp-operator-nav .nav-tab {
+    float: none !important;
+    margin-left: 0 !important;
     display: inline-flex !important;
     align-items: center !important;
     gap: 8px !important;
@@ -4510,7 +4553,9 @@ label.fp-exp-settings__toggle input:checked + .fp-exp-toggle__switch::after {
     font-weight: 600 !important;
     border-radius: var(--radius-md) !important;
     margin-bottom: 0 !important;
+    line-height: 1.25 !important;
     border: 1px solid transparent !important;
+    border-bottom: 1px solid transparent !important;
     background: transparent !important;
     color: var(--fpdms-text-muted) !important;
     box-shadow: none !important;
@@ -4527,6 +4572,8 @@ label.fp-exp-settings__toggle input:checked + .fp-exp-toggle__switch::after {
 .fp-exp-admin[data-fp-exp-admin] .fp-exp-operator-nav .nav-tab.nav-tab-active {
     background: rgba(102, 126, 234, 0.12) !important;
     border-color: rgba(102, 126, 234, 0.28) !important;
+    border-bottom: 1px solid transparent !important;
+    margin-bottom: 0 !important;
     color: var(--fpdms-primary-dark) !important;
     box-shadow: 0 1px 2px rgba(102, 126, 234, 0.12) !important;
 }

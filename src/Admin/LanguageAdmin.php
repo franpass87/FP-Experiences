@@ -84,7 +84,7 @@ final class LanguageAdmin implements HookableInterface
         wp_enqueue_style(
             'fp-exp-admin',
             FP_EXP_PLUGIN_URL . $admin_css,
-            [],
+            Helpers::admin_style_dependencies(),
             Helpers::asset_version($admin_css)
         );
     }

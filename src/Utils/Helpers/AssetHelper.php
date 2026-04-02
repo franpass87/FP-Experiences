@@ -82,6 +82,32 @@ final class AssetHelper
 
         return $candidates[0] ?? '';
     }
+
+    /**
+     * Style handles registered by WordPress that must load before `fp-exp-admin` CSS.
+     * Default `colors` pulls in the admin color scheme after `wp-admin` / `buttons`, so FP DMS
+     * rules sort later and win over core `.nav-tab` / `.button-primary` without competing FOUC.
+     *
+     * @return list<string>
+     */
+    public static function adminStyleDependencies(): array
+    {
+        $deps = ['colors'];
+        $filtered = apply_filters('fp_exp_admin_style_dependencies', $deps);
+
+        if (! is_array($filtered)) {
+            return $deps;
+        }
+
+        $out = [];
+        foreach ($filtered as $handle) {
+            if (is_string($handle) && $handle !== '') {
+                $out[] = $handle;
+            }
+        }
+
+        return $out !== [] ? $out : $deps;
+    }
 }
 
 
