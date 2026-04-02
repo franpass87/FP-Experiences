@@ -2,6 +2,12 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.5.34] - 2026-04-02
+
+### Changed
+
+- **Admin banner**: CSS titolo / paragrafo / badge **allineato alle stesse dichiarazioni** di `FP-Mail-SMTP/assets/css/admin.css` (niente `gap`, `line-height` o `font-weight` extra sul titolo); unica differenza strutturale documentata: breadcrumb nel banner con `margin-bottom: 0.75rem`.
+
 ## [1.5.33] - 2026-04-02
 
 ### Changed

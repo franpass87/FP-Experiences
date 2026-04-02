@@ -186,9 +186,10 @@ body.fp-exp-admin-shell #screen-meta-links {
 }
 
 /*
- * Page header — allineato a FP Mail SMTP + fp-admin-ui-design-system.mdc.
- * Mail: .fpmail-page-header-content avvolge h2 + p (flusso a colonna); qui
- * lo rendiamo esplicito con flex+gap. Breadcrumb extra: row-gap tra le righe flex.
+ * Page header — box + titolo + p + badge: stesse dichiarazioni di
+ * FP-Mail-SMTP/assets/css/admin.css (righe 47–89). Unica estensione FP Exp:
+ * breadcrumb nel banner (flex-wrap + margine sotto), .fpexp-page-header-content
+ * come .fpmail-page-header-content (solo flex:1 / min-width, senza gap extra).
  */
 .wrap.fp-exp-admin-page > .notice,
 .wrap.fp-exp-admin-page > div.updated,
@@ -199,6 +200,7 @@ body.fp-exp-admin-shell #screen-meta-links {
     max-width: 100%;
 }
 
+/* Copia .fpmail-admin-page .fpmail-page-header + flex-wrap solo per riga breadcrumb */
 .fp-exp-admin-page .fpexp-page-header {
     background: var(--fpdms-gradient-primary);
     border-radius: var(--radius-xl);
@@ -209,17 +211,15 @@ body.fp-exp-admin-shell #screen-meta-links {
     align-items: center;
     color: #fff;
     flex-wrap: wrap;
-    row-gap: 1rem;
-    column-gap: 1.5rem;
 }
 
+/* Solo FP Exp: separa breadcrumb dal blocco titolo/descrizione/badge (Mail non ha breadcrumb qui) */
 .fpexp-page-header .fp-exp-admin__breadcrumb,
 .fpexp-page-header .fp-exp-dashboard__breadcrumb {
     width: 100%;
     flex-basis: 100%;
+    margin-bottom: 0.75rem;
     font-size: 12px;
-    line-height: 1.5;
-    letter-spacing: 0.01em;
     color: rgba(255, 255, 255, 0.85);
 }
 
@@ -233,25 +233,18 @@ body.fp-exp-admin-shell #screen-meta-links {
     color: #fff;
 }
 
-/* Come colonna Mail (h2 + p dentro .fpmail-page-header-content) */
+/* Come blocco sinistro Mail (nessun gap aggiuntivo: spazio h2→p solo da margin titolo) */
 .fpexp-page-header-content {
     flex: 1;
     min-width: 200px;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.5rem;
 }
 
-/* come .fpmail-page-header .fpmail-page-header-title + design system (font-weight 600) */
+/* Copia .fpmail-page-header .fpmail-page-header-title */
 .fpexp-page-header .fpexp-page-header-title,
 .fpexp-page-header .fp-exp-admin__title {
-    margin: 0;
-    padding: 0;
+    margin: 0 0 0.25rem 0;
     color: #fff;
     font-size: 1.5rem;
-    font-weight: 600;
-    line-height: 1.35;
 }
 
 .fpexp-page-header .fpexp-page-header-title .dashicons {
@@ -262,27 +255,22 @@ body.fp-exp-admin-shell #screen-meta-links {
     vertical-align: middle;
 }
 
-/* come .fpmail-page-header p + line-height per respiro come nel banner Mail */
+/* Copia .fpmail-page-header p */
 .fpexp-page-header p,
 .fpexp-page-header .fpexp-page-header-desc,
 .fpexp-page-header .fp-exp-admin__intro {
     margin: 0;
-    padding: 0;
     opacity: 0.95;
     font-size: 0.95rem;
-    line-height: 1.5;
-    color: #fff;
 }
 
-/* come .fpmail-page-header-badge */
+/* Copia .fpmail-page-header-badge */
 .fpexp-page-header-badge {
-    align-self: center;
     background: rgba(255, 255, 255, 0.25);
     padding: 0.25rem 0.75rem;
     border-radius: var(--radius-pill);
     font-size: 0.8rem;
     font-weight: 600;
-    line-height: 1.35;
 }
 
 /* Legacy header (se usato fuori dal banner) */
