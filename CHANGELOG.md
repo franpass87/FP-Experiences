@@ -2,6 +2,12 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.5.42] - 2026-04-02
+
+### Fixed
+
+- **Admin — bottoni primari**: la regola `body.fp-exp-admin-shell .wrap .button` coincideva con gli elementi `class="button button-primary"` (entrambe le classi presenti). Con uguale specificità, la regola su `.button` — dopo nel foglio — impostava sfondo bianco e annullava il gradiente viola, con effetto “flash” al caricamento. I secondari usano ora `.button:not(.button-primary)` (e analogo in tema scuro).
+
 ## [1.5.41] - 2026-04-02
 
 ### Changed

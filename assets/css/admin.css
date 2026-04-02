@@ -2034,8 +2034,9 @@ body.fp-exp-admin-shell .wrap .page-title-action:focus-visible,
     outline-offset: 2px;
 }
 
-/* Bottoni secondari, outline e azioni neutre */
-body.fp-exp-admin-shell .wrap .button,
+/* Bottoni secondari, outline e azioni neutre
+   IMPORTANTE: non usare solo `.button` — in WP i primari sono `button button-primary` e matcherebbero anche `.button`, sovrascrivendo il gradiente (stesso specificità, regola successiva). */
+body.fp-exp-admin-shell .wrap .button:not(.button-primary),
 body.fp-exp-admin-shell .wrap .button-secondary,
 body.fp-exp-admin-shell .wrap .page-title-action.button-secondary {
     border: 2px solid var(--fpdms-border);
@@ -2048,14 +2049,14 @@ body.fp-exp-admin-shell .wrap .page-title-action.button-secondary {
     transition: var(--transition);
 }
 
-body.fp-exp-admin-shell .wrap .button:hover,
+body.fp-exp-admin-shell .wrap .button:not(.button-primary):hover,
 body.fp-exp-admin-shell .wrap .button-secondary:hover {
     background: var(--fpdms-bg-light);
     border-color: var(--fpdms-text-muted);
     color: var(--fpdms-text);
 }
 
-body.fp-exp-admin-shell .wrap .button:focus-visible,
+body.fp-exp-admin-shell .wrap .button:not(.button-primary):focus-visible,
 body.fp-exp-admin-shell .wrap .button-secondary:focus-visible {
     outline: 2px solid var(--fpdms-primary);
     outline-offset: 2px;
@@ -2233,13 +2234,13 @@ html.fp-exp-dark body.fp-exp-admin-shell .tablenav .actions .button-primary {
     color: #fff;
     border: none;
 }
-html.fp-exp-dark body.fp-exp-admin-shell .wrap .button,
+html.fp-exp-dark body.fp-exp-admin-shell .wrap .button:not(.button-primary),
 html.fp-exp-dark body.fp-exp-admin-shell .wrap .button-secondary {
     background: rgba(255, 255, 255, 0.08);
     border-color: rgba(230, 232, 235, 0.18);
     color: #e5e7eb;
 }
-html.fp-exp-dark body.fp-exp-admin-shell .wrap .button:hover,
+html.fp-exp-dark body.fp-exp-admin-shell .wrap .button:not(.button-primary):hover,
 html.fp-exp-dark body.fp-exp-admin-shell .wrap .button-secondary:hover {
     background: rgba(255, 255, 255, 0.12);
     border-color: rgba(230, 232, 235, 0.28);
