@@ -2,6 +2,12 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.5.45] - 2026-04-02
+
+### Added
+
+- **Documentazione**: in `docs/ADMIN-SCREENS.md` sezione **Checklist verifica** con esiti PASS (smoke browser su fp-development.local, 2026-04-02) per pagine custom, tab Impostazioni/Email, viste Calendario, Richieste, Check-in, CPT/tassonomia e editor esperienza; note su limiti (salvataggi, Tools REST, dashboard solo guida, ispezione DOM completa).
+
 ## [1.5.44] - 2026-04-02
 
 ### Changed

@@ -44,3 +44,48 @@ Riferimento per revisione UI (design system FP: `fpexp-page-header`, `fp-exp-adm
 - **Email**: stesso pattern.
 - **Viste calendario** (overview / calendario / manuale): stesso pattern dentro pagina Calendario.
 - **Operatore** (salti tra Calendario, RTB, Check-in, Ordini): `nav.fp-exp-operator-nav.nav-tab-wrapper` — stessi stili DMS delle altre tab (CSS condiviso con `.fp-exp-tabs`).
+
+## Checklist verifica (tracciamento release)
+
+Sessione di controllo sistematico su **https://fp-development.local** (2026-04-02), utente con capacità di gestione FP Experiences (`fp_exp_manage`). Criteri: caricamento pagina senza fatal, titolo schermata coerente, **nessun errore console attribuibile a script FP Experiences** (restano warning WP core tipo JQMIGRATE e, nell’editor blocco, errori deprecazione blocchi di altri plugin: FP Privacy, WPML, ecc.).
+
+**Struttura DOM** (`.wrap.fp-exp-admin-page`, `h1.screen-reader-text`, `body.fp-exp-admin-shell`, notice fuori dal banner): non ispezionata elemento-per-elemento in questa sessione; si assume allineamento all’inventario sopra e ai template correnti. Per regressioni UI usare DevTools su una pagina campione.
+
+**Non eseguito in sessione**: salvataggio form su ogni tab Impostazioni/Email; esecuzione azione REST dalla pagina Tools; scenario “dashboard solo guida” (utente senza `manage`); click su ogni tab meta box esperienza per `aria-selected` (caricato editor post=10 con pannello Dettagli e sezioni Meeting Point visibili).
+
+| Pagina / contesto | Tab o vista | Data | Esito | Note |
+|-------------------|-------------|------|-------|------|
+| Dashboard manager | — | 2026-04-02 | PASS | Titolo “FP Experiences”; URL `fp_exp_dashboard`. |
+| Guida & shortcode | — | 2026-04-02 | PASS | `fp_exp_help`. |
+| Strumenti | — | 2026-04-02 | PASS | `fp_exp_tools`; azione card non invocata. |
+| Log | — | 2026-04-02 | PASS | `fp_exp_logs`. |
+| Importer | — | 2026-04-02 | PASS | `fp_exp_importer`. |
+| Crea pagina esperienza | — | 2026-04-02 | PASS | `fp_exp_create_page`. |
+| Ordini (redirect WC) | — | 2026-04-02 | PASS | Redirect a `admin.php?page=wc-orders&fp_exp_filter=experiences`. |
+| Impostazioni | general | 2026-04-02 | PASS | |
+| Impostazioni | gift | 2026-04-02 | PASS | |
+| Impostazioni | branding | 2026-04-02 | PASS | |
+| Impostazioni | booking | 2026-04-02 | PASS | |
+| Impostazioni | calendar | 2026-04-02 | PASS | |
+| Impostazioni | tracking | 2026-04-02 | PASS | |
+| Impostazioni | rtb | 2026-04-02 | PASS | RTB visibile in menu (modulo non “off”). |
+| Impostazioni | webhook | 2026-04-02 | PASS | |
+| Impostazioni | listing | 2026-04-02 | PASS | |
+| Impostazioni | tools | 2026-04-02 | PASS | |
+| Impostazioni | logs | 2026-04-02 | PASS | |
+| Email | senders | 2026-04-02 | PASS | |
+| Email | branding | 2026-04-02 | PASS | |
+| Email | config | 2026-04-02 | PASS | |
+| Email | previews | 2026-04-02 | PASS | Contenuto esteso (anteprime). |
+| Email | brevo | 2026-04-02 | PASS | Nessun fatal con tab aperta. |
+| Calendario | view=overview | 2026-04-02 | PASS | Link operatore Calendario / Richieste / Check-in / Ordini e tab Panoramica / Calendario / Prenotazione manuale presenti nello snapshot. |
+| Calendario | view=calendar | 2026-04-02 | PASS | |
+| Calendario | view=manual | 2026-04-02 | PASS | |
+| Richieste RTB | — | 2026-04-02 | PASS | `fp_exp_requests`; barra operatore attesa come su Calendario. |
+| Check-in | — | 2026-04-02 | PASS | `fp_exp_checkin`. |
+| Lista esperienze | — | 2026-04-02 | PASS | `edit.php?post_type=fp_experience`. |
+| Lista meeting point | — | 2026-04-02 | PASS | `edit.php?post_type=fp_meeting_point`. |
+| Lista gift voucher | — | 2026-04-02 | PASS | `edit.php?post_type=fp_exp_gift_voucher`. |
+| Tassonomia lingue | — | 2026-04-02 | PASS | `edit-tags.php?taxonomy=fp_exp_language&post_type=fp_experience`. |
+| Modifica esperienza | meta Dettagli (+ altre tab) | 2026-04-02 | PASS | `post.php?post=10&action=edit`; tabpanel “Dettagli” e blocchi Meeting Point visibili; tab aggiuntive non cliccate una per una. |
+| Dashboard solo guida | — | — | N/A | Richiede utente senza `fp_exp_manage`; da ripetere in QA dedicato. |
