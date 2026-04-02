@@ -103,7 +103,7 @@ final class EmailsPage implements HookableInterface
 		$tabs = $this->get_tabs();
 		$active_tab = $this->get_active_tab($tabs);
 
-        echo '<div class="wrap fp-exp-emails-page">';
+        echo '<div class="wrap fp-exp-emails-page fp-exp-admin-page">';
         echo '<h1 class="screen-reader-text">' . esc_html__('Gestione email', 'fp-experiences') . '</h1>';
         echo '<div class="fp-exp-admin" data-fp-exp-admin>';
         echo '<div class="fp-exp-admin__body">';

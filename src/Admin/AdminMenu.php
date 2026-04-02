@@ -285,7 +285,7 @@ final class AdminMenu implements HookableInterface
         $post_type = $screen->post_type ?? '';
 
         $is_plugin_screen = 'toplevel_page_fp_exp_dashboard' === $screen_id
-            || ('' !== $screen_id && 0 === strpos($screen_id, 'fp-exp-dashboard_page_fp_exp_'));
+            || ('' !== $screen_id && 0 === strpos($screen_id, 'fp-exp-dashboard_page_'));
         $root_meta = $this->admin_bar_meta($is_plugin_screen || 'fp_experience' === $post_type);
 
         $admin_bar->add_node([
@@ -493,7 +493,7 @@ final class AdminMenu implements HookableInterface
         ];
 
         // Verifica se lo screen ID corrisponde o inizia con il prefisso
-        $is_managed = in_array($screen_id, $managed_screens, true) || 0 === strpos($screen_id, 'fp-exp-dashboard_page_fp_exp_');
+        $is_managed = in_array($screen_id, $managed_screens, true) || 0 === strpos($screen_id, 'fp-exp-dashboard_page_');
         
         // Fallback: verifica anche il parametro page nella query string
         if (! $is_managed && isset($_GET['page'])) {
@@ -511,6 +511,7 @@ final class AdminMenu implements HookableInterface
                 'fp_exp_importer',
                 'fp_exp_help',
                 'fp_exp_create_page',
+                'fp-exp-meeting-points-import',
             ];
             $is_managed = in_array($page, $fp_exp_pages, true);
         }
@@ -590,7 +591,7 @@ final class AdminMenu implements HookableInterface
             'fp_meeting_point',
         ];
 
-        $is_managed = in_array($screen_id, $managed_screens, true) || 0 === strpos($screen_id, 'fp-exp-dashboard_page_fp_exp_');
+        $is_managed = in_array($screen_id, $managed_screens, true) || 0 === strpos($screen_id, 'fp-exp-dashboard_page_');
         if ($is_managed && false === strpos($classes, 'fp-exp-admin-shell')) {
             $classes .= ' fp-exp-admin-shell';
         }

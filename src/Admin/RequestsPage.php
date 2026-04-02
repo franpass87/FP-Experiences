@@ -245,7 +245,7 @@ final class RequestsPage implements HookableInterface
         $date_format = get_option('date_format', 'F j, Y');
         $time_format = get_option('time_format', 'H:i');
 
-        echo '<div class="wrap fp-exp-requests">';
+        echo '<div class="wrap fp-exp-requests fp-exp-admin-page">';
         echo '<h1 class="screen-reader-text">' . esc_html__('Request-to-Book', 'fp-experiences') . '</h1>';
         echo '<div class="fp-exp-admin" data-fp-exp-admin>';
         echo '<div class="fp-exp-admin__body">';

@@ -211,7 +211,7 @@ final class ImporterPage implements HookableInterface
             }
         }
 
-        echo '<div class="wrap fp-exp-importer-page">';
+        echo '<div class="wrap fp-exp-importer-page fp-exp-admin-page">';
         echo '<h1 class="screen-reader-text">' . esc_html__('Importer Esperienze', 'fp-experiences') . '</h1>';
         echo '<div class="fp-exp-admin" data-fp-exp-admin>';
         echo '<div class="fp-exp-admin__body">';

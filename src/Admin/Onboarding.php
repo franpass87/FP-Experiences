@@ -88,7 +88,7 @@ final class Onboarding implements HookableInterface
         $completed = $status['completed'] ?? false;
         $action_url = admin_url('admin-post.php');
 
-        echo '<div class="wrap fp-exp-onboarding">';
+        echo '<div class="wrap fp-exp-onboarding fp-exp-admin-page">';
         echo '<h1 class="screen-reader-text">' . esc_html__('Onboarding FP Experiences', 'fp-experiences') . '</h1>';
         echo '<div class="fp-exp-admin" data-fp-exp-admin>';
         echo '<div class="fp-exp-admin__body">';

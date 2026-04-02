@@ -54,7 +54,7 @@ final class HelpPage
             wp_die(esc_html__('Non hai i permessi per accedere alla guida di FP Experiences.', 'fp-experiences'));
         }
 
-        echo '<div class="wrap fp-exp-help">';
+        echo '<div class="wrap fp-exp-help fp-exp-admin-page">';
         echo '<h1 class="screen-reader-text">' . esc_html__('Guida & Shortcode', 'fp-experiences') . '</h1>';
         echo '<div class="fp-exp-admin" data-fp-exp-admin>';
         echo '<div class="fp-exp-admin__body">';

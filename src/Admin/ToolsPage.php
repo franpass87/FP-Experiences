@@ -151,7 +151,7 @@ final class ToolsPage implements HookableInterface
         </script>
         <?php
 
-        echo '<div class="wrap fp-exp-tools-page">';
+        echo '<div class="wrap fp-exp-tools-page fp-exp-admin-page">';
         echo '<h1 class="screen-reader-text">' . esc_html__('Strumenti operativi', 'fp-experiences') . '</h1>';
         echo '<div class="fp-exp-admin" data-fp-exp-admin>';
         echo '<div class="fp-exp-admin__body">';

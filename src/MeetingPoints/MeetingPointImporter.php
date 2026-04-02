@@ -86,7 +86,7 @@ final class MeetingPointImporter implements HookableInterface
 
         $action = admin_url('admin-post.php');
         ?>
-        <div class="wrap">
+        <div class="wrap fp-exp-admin-page">
             <h1><?php esc_html_e('Import meeting points', 'fp-experiences'); ?></h1>
             <p><?php esc_html_e('Incolla qui un CSV con le colonne: title,address,lat,lng,notes,phone,email,opening_hours.', 'fp-experiences'); ?></p>
             <form method="post" action="<?php echo esc_attr($action); ?>">

@@ -237,7 +237,7 @@ final class CheckinPage implements HookableInterface
         $scan_preview = get_transient($this->preview_transient_key());
         $scan_preview = is_array($scan_preview) ? $scan_preview : null;
 
-        echo '<div class="wrap fp-exp-checkin">';
+        echo '<div class="wrap fp-exp-checkin fp-exp-admin-page">';
         echo '<h1 class="screen-reader-text">' . esc_html__('Console check-in', 'fp-experiences') . '</h1>';
         echo '<div class="fp-exp-admin" data-fp-exp-admin>';
         echo '<div class="fp-exp-admin__body">';

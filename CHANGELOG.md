@@ -2,6 +2,13 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.5.30] - 2026-04-02
+
+### Changed
+
+- **Admin UI — Fase 2**: classe `fp-exp-admin-page` sul `.wrap` di Impostazioni, Email, Richieste, Calendario, Tools, Logs, Guida, Onboarding, Importer, Crea pagina esperienza, Check-in e import meeting points (CSV).
+- **AdminMenu**: prefisso schermate `fp-exp-dashboard_page_` (invece di `fp_exp_` solo) per enqueue CSS/JS, body `fp-exp-admin-shell` e admin bar — copre tutte le sottopagine incluso **Import Meeting Points** (`fp-exp-meeting-points-import` nel fallback `$_GET['page']`).
+
 ## [1.5.29] - 2026-04-02
 
 ### Added
