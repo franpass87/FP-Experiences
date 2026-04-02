@@ -2,6 +2,19 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.5.41] - 2026-04-02
+
+### Changed
+
+- **Admin — bottoni**: nel body `fp-exp-admin-shell`, `.button-primary` / `.page-title-action` usano il **gradiente DMS** e ombra come `.fp-exp-btn-primary`; secondari con bordo `--fpdms-border` e `font-weight: 600`; stile **`.button.delete`** (es. cancella log) con token danger DMS; varianti **small/large** e stati **:focus-visible**; tema scuro allineato al gradiente viola condiviso.
+- **Calendario admin**: tab vista attiva e cella “oggi” con colori `--fpdms-*`.
+- **Repeater**: pulsante “aggiungi” con bordo/token DMS.
+- **Classe body**: `fp-exp-admin-shell` estesa a **`edit-fp_exp_language`** (lista termini lingua esperienza).
+
+### Added
+
+- **CSS**: utilità **`.fp-exp-btn-secondary`** (outline coerente con `.fp-exp-btn`) per uso opzionale accanto alle classi WP.
+
 ## [1.5.40] - 2026-04-02
 
 ### Fixed
