@@ -35,6 +35,7 @@ use function array_merge;
 use function checked;
 use function current_user_can;
 use function delete_transient;
+use function do_settings_fields;
 use function esc_attr;
 use function esc_html;
 use function esc_html__;
@@ -206,37 +207,41 @@ final class SettingsPage implements HookableInterface
                 $this->render_calendar_status();
             }
 
-            echo '<form action="options.php" method="post" class="fp-exp-settings__form">';
+            echo '<form action="options.php" method="post" class="fp-exp-settings__form fp-exp-settings__form--layout-fp">';
 
             if ('branding' === $active_tab) {
                 settings_fields('fp_exp_settings_branding');
-                do_settings_sections('fp_exp_settings_branding');
+                $this->render_fp_settings_sections('fp_exp_settings_branding');
                 $this->render_branding_contrast();
                 $this->render_preview_notice();
             } elseif ('gift' === $active_tab) {
                 settings_fields('fp_exp_settings_gift');
-                do_settings_sections('fp_exp_settings_gift');
+                $this->render_fp_settings_sections('fp_exp_settings_gift');
             } elseif ('listing' === $active_tab) {
                 settings_fields('fp_exp_settings_listing');
-                do_settings_sections('fp_exp_settings_listing');
+                $this->render_fp_settings_sections('fp_exp_settings_listing');
             } elseif ('tracking' === $active_tab) {
                 settings_fields('fp_exp_settings_tracking');
-                do_settings_sections('fp_exp_settings_tracking');
+                $this->render_fp_settings_sections('fp_exp_settings_tracking');
             } elseif ('rtb' === $active_tab) {
                 settings_fields('fp_exp_settings_rtb');
-                do_settings_sections('fp_exp_settings_rtb');
+                $this->render_fp_settings_sections('fp_exp_settings_rtb');
             } elseif ('webhook' === $active_tab) {
                 settings_fields('fp_exp_settings_webhook');
-                do_settings_sections('fp_exp_settings_webhook');
+                $this->render_fp_settings_sections('fp_exp_settings_webhook');
             } elseif ('calendar' === $active_tab) {
                 settings_fields('fp_exp_settings_calendar');
-                do_settings_sections('fp_exp_settings_calendar');
+                $this->render_fp_settings_sections('fp_exp_settings_calendar');
             } else {
                 settings_fields('fp_exp_settings_general');
-                do_settings_sections('fp_exp_settings_general');
+                $this->render_fp_settings_sections('fp_exp_settings_general');
             }
 
-            submit_button();
+            echo '<p class="fp-exp-settings__form-actions submit">';
+            submit_button(null, 'primary', 'submit', false, [
+                'class' => 'button button-primary fp-exp-btn fp-exp-btn-primary',
+            ]);
+            echo '</p>';
             echo '</form>';
         }
 
@@ -2077,6 +2082,69 @@ final class SettingsPage implements HookableInterface
     private function render_settings_tab_shell_close(): void
     {
         echo '</div></div>';
+    }
+
+    /**
+     * Stampa le sezioni Settings API come card annidate (design system FP), equivalente a `do_settings_sections()` senza `<h2>` + tabella piatta.
+     *
+     * @param string $page Slug pagina registrato in `add_settings_section` / `add_settings_field`.
+     */
+    private function render_fp_settings_sections(string $page): void
+    {
+        global $wp_settings_sections, $wp_settings_fields;
+
+        if (! isset($wp_settings_sections[$page])) {
+            return;
+        }
+
+        foreach ((array) $wp_settings_sections[$page] as $section) {
+            $before = $section['before_section'] ?? '';
+            if ('' !== $before) {
+                $section_class = $section['section_class'] ?? '';
+                if ('' !== $section_class) {
+                    echo wp_kses_post(sprintf($before, esc_attr($section_class)));
+                } else {
+                    echo wp_kses_post($before);
+                }
+            }
+
+            $section_id = $section['id'] ?? '';
+            $has_fields = isset($wp_settings_fields[$page][$section_id])
+                && is_array($wp_settings_fields[$page][$section_id])
+                && $wp_settings_fields[$page][$section_id] !== [];
+
+            $title_raw = $section['title'] ?? '';
+            $has_title = is_string($title_raw) && trim(wp_strip_all_tags($title_raw)) !== '';
+
+            echo '<div class="fp-exp-dms-card fp-exp-settings__section-card">';
+
+            if ($has_title) {
+                echo '<div class="fp-exp-dms-card-header"><div class="fp-exp-dms-card-header-left">';
+                echo '<span class="dashicons dashicons-admin-settings" aria-hidden="true"></span>';
+                echo '<h3 class="fp-exp-settings__section-title">' . esc_html(trim(wp_strip_all_tags($title_raw))) . '</h3>';
+                echo '</div></div>';
+            }
+
+            echo '<div class="fp-exp-dms-card-body fp-exp-settings__section-body">';
+
+            $callback = $section['callback'] ?? null;
+            if (is_callable($callback)) {
+                call_user_func($callback, $section);
+            }
+
+            if ($has_fields) {
+                echo '<table class="form-table fp-exp-settings__fields-table" role="presentation">';
+                do_settings_fields($page, $section_id);
+                echo '</table>';
+            }
+
+            echo '</div></div>';
+
+            $after = $section['after_section'] ?? '';
+            if ('' !== $after) {
+                echo wp_kses_post($after);
+            }
+        }
     }
 
     public function render_email_field(array $args): void

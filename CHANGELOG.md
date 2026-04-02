@@ -2,6 +2,13 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.5.39] - 2026-04-02
+
+### Changed
+
+- **Impostazioni (dentro le tab)**: rendering Settings API con **`render_fp_settings_sections()`** — ogni sezione è una **`fp-exp-dms-card`** (header + body), campi in tabella `fp-exp-settings__fields-table` senza doppio “box” bianco; form con classe **`fp-exp-settings__form--layout-fp`**; salvataggio con **`fp-exp-btn-primary`** coerente col design system. La pagina **Email** resta sul layout legacy (senza `--layout-fp`).
+- **CSS**: token `--fpdms-*`, griglia righe campo/valore, descrizioni campi senza riquadro forzato da regole `[data-fp-exp-admin]`; responsive colonna singola sotto 782px.
+
 ## [1.5.38] - 2026-04-02
 
 ### Changed

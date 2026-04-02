@@ -2463,6 +2463,120 @@ html.fp-exp-dark .fp-exp-requests__td-actions--past .fp-exp-requests__past-note 
     margin-bottom: 1rem;
 }
 
+/* Impostazioni — layout FP: una card DMS per sezione Settings API (Email page resta senza --layout-fp) */
+.fp-exp-settings__form--layout-fp {
+    gap: 0;
+}
+
+.fp-exp-settings__form--layout-fp > .fp-exp-settings__section-card {
+    margin-bottom: 1.25rem;
+}
+
+.fp-exp-settings__form--layout-fp > .fp-exp-contrast-notice,
+.fp-exp-settings__form--layout-fp > .fp-exp-preview-notice {
+    margin-top: 1.25rem;
+}
+
+.fp-exp-settings__form--layout-fp .fp-exp-settings__section-title {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--fpdms-text);
+}
+
+.fp-exp-settings__form--layout-fp .fp-exp-settings__section-body .fp-exp-settings__fields-table.form-table {
+    margin: 0;
+    width: 100%;
+    border-spacing: 0;
+    background: transparent !important;
+    border: none !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+}
+
+.fp-exp-settings__form--layout-fp .fp-exp-settings__section-body .fp-exp-settings__fields-table tr {
+    display: grid;
+    grid-template-columns: minmax(200px, 0.95fr) minmax(0, 1.35fr);
+    gap: 1rem 1.25rem;
+    padding: 1rem 0;
+    border-bottom: 1px solid var(--fpdms-border-light);
+    align-items: start;
+}
+
+.fp-exp-settings__form--layout-fp .fp-exp-settings__section-body .fp-exp-settings__fields-table tr:first-child {
+    padding-top: 0;
+}
+
+.fp-exp-settings__form--layout-fp .fp-exp-settings__section-body .fp-exp-settings__fields-table tr:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.fp-exp-settings__form--layout-fp .fp-exp-settings__section-body .fp-exp-settings__fields-table th {
+    padding: 0;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--fpdms-text);
+    line-height: 1.4;
+}
+
+.fp-exp-settings__form--layout-fp .fp-exp-settings__section-body .fp-exp-settings__fields-table td {
+    padding: 0;
+    color: var(--fpdms-text-light);
+}
+
+.fp-exp-settings__form--layout-fp .fp-exp-settings__section-body .fp-exp-settings__fields-table fieldset {
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+
+.fp-exp-settings__form--layout-fp .fp-exp-settings__section-body .description,
+.fp-exp-settings__form--layout-fp .fp-exp-settings__section-body .form-table .description {
+    margin-top: 0.35rem;
+    font-size: 0.85rem;
+    color: var(--fpdms-text-muted);
+    line-height: 1.5;
+    padding: 0 !important;
+    background: transparent !important;
+    border: none !important;
+    border-left: 0 !important;
+    border-radius: 0 !important;
+}
+
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form--layout-fp .fp-exp-settings__section-body .description {
+    margin-top: 0.35rem !important;
+    padding: 0 !important;
+    background: transparent !important;
+    border: none !important;
+    border-left: 0 !important;
+}
+
+.fp-exp-settings__form--layout-fp .fp-exp-settings__form-actions {
+    margin-top: 1.5rem;
+    margin-bottom: 0;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--fpdms-border-light);
+}
+
+.fp-exp-settings__form--layout-fp .fp-exp-settings__form-actions .button-primary.fp-exp-btn-primary {
+    border: none;
+    background: var(--fpdms-gradient-primary);
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.35);
+    padding: 0.5rem 1.25rem;
+    font-weight: 600;
+    border-radius: var(--radius-md);
+}
+
+.fp-exp-settings__form--layout-fp .fp-exp-settings__form-actions .button-primary.fp-exp-btn-primary:hover,
+.fp-exp-settings__form--layout-fp .fp-exp-settings__form-actions .button-primary.fp-exp-btn-primary:focus {
+    color: #fff;
+    filter: brightness(1.05);
+    box-shadow: 0 4px 14px rgba(102, 126, 234, 0.4);
+}
+
 .fp-exp-settings__list {
     margin: 0 0 16px;
     padding-left: 18px;
@@ -2609,6 +2723,11 @@ html.fp-exp-dark .fp-exp-requests__td-actions--past .fp-exp-requests__past-note 
     .fp-exp-settings__form .form-table tr {
         grid-template-columns: 1fr;
         padding: 16px 0;
+    }
+
+    .fp-exp-settings__form--layout-fp .fp-exp-settings__section-body .fp-exp-settings__fields-table tr {
+        grid-template-columns: 1fr;
+        padding: 0.85rem 0;
     }
 
     .fp-exp-requests__filters,
