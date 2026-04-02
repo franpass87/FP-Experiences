@@ -44,7 +44,6 @@ use function selected;
 use function sprintf;
 use function strpos;
 use function strtotime;
-use function submit_button;
 use function wp_create_nonce;
 use function wp_die;
 use function wp_date;
@@ -336,6 +335,9 @@ final class CalendarAdmin implements HookableInterface
         echo '</div>';
     }
 
+    /**
+     * Form prenotazione manuale nel calendario admin: layout `fp-exp-fields-grid` + `fp-exp-btn` (design system FP).
+     */
     private function render_manual_form(): void
     {
         $experiences = get_posts([
@@ -383,17 +385,19 @@ final class CalendarAdmin implements HookableInterface
         wp_nonce_field('fp_exp_manual_booking', 'fp_exp_manual_booking_nonce');
         echo '<input type="hidden" name="fp_exp_manual_booking" value="1" />';
 
-        echo '<table class="form-table">';
-        echo '<tr><th scope="row"><label for="fp-exp-experience">' . esc_html__('Esperienza', 'fp-experiences') . '</label></th><td>';
+        echo '<div class="fp-exp-fields-grid fp-exp-calendar-manual-form">';
+        echo '<div class="fp-exp-field">';
+        echo '<label for="fp-exp-experience" class="fp-exp-field__label">' . esc_html__('Esperienza', 'fp-experiences') . '</label>';
         echo '<select id="fp-exp-experience" name="experience_id" onchange="this.form.submit()">';
         foreach ($experiences as $experience) {
             echo '<option value="' . esc_attr((string) $experience->ID) . '" ' . selected($selected_experience, $experience->ID, false) . '>' . esc_html($experience->post_title) . '</option>';
         }
         echo '</select>';
-        echo '<p class="description">' . esc_html__('Selezionando un\'esperienza diversa verranno ricaricati gli slot disponibili.', 'fp-experiences') . '</p>';
-        echo '</td></tr>';
+        echo '<p class="fp-exp-hint">' . esc_html__('Selezionando un\'esperienza diversa verranno ricaricati gli slot disponibili.', 'fp-experiences') . '</p>';
+        echo '</div>';
 
-        echo '<tr><th scope="row"><label for="fp-exp-slot">' . esc_html__('Slot', 'fp-experiences') . '</label></th><td>';
+        echo '<div class="fp-exp-field">';
+        echo '<label for="fp-exp-slot" class="fp-exp-field__label">' . esc_html__('Slot', 'fp-experiences') . '</label>';
         $selected_slot_id = isset($_POST['slot_id']) ? absint((string) $_POST['slot_id']) : 0;
 
         if ($slots) {
@@ -409,67 +413,76 @@ final class CalendarAdmin implements HookableInterface
             }
             echo '</select>';
         } else {
-            echo '<p>' . esc_html__('Nessuno slot disponibile per questa esperienza.', 'fp-experiences') . '</p>';
+            echo '<p class="fp-exp-hint">' . esc_html__('Nessuno slot disponibile per questa esperienza.', 'fp-experiences') . '</p>';
         }
-        echo '</td></tr>';
+        echo '</div>';
 
-        echo '<tr><th scope="row"><label>' . esc_html__('Biglietti', 'fp-experiences') . '</label></th><td>';
+        echo '<div class="fp-exp-field fp-exp-field--full">';
+        echo '<span class="fp-exp-field__label">' . esc_html__('Biglietti', 'fp-experiences') . '</span>';
         if ($ticket_config) {
             foreach ($ticket_config as $slug => $ticket) {
                 $label = $ticket['label'] ?? $slug;
                 $max = isset($ticket['max']) ? absint((string) $ticket['max']) : 0;
                 $value = $posted_tickets[$slug] ?? 0;
                 $max_attr = $max > 0 ? ' max="' . esc_attr((string) $max) . '"' : '';
-                echo '<p><label>' . esc_html($label) . ' <input type="number" min="0"' . $max_attr . ' name="tickets[' . esc_attr($slug) . ']" value="' . esc_attr((string) $value) . '" class="small-text" /></label></p>';
+                echo '<p class="fp-exp-calendar-manual-form__ticket-row"><label><span class="fp-exp-calendar-manual-form__ticket-label">' . esc_html($label) . '</span> ';
+                echo '<input type="number" min="0"' . $max_attr . ' name="tickets[' . esc_attr($slug) . ']" value="' . esc_attr((string) $value) . '" class="small-text" /></label></p>';
             }
         } else {
-            echo '<p>' . esc_html__('Configure ticket types for this experience to enable manual bookings.', 'fp-experiences') . '</p>';
+            echo '<p class="fp-exp-hint">' . esc_html__('Configure ticket types for this experience to enable manual bookings.', 'fp-experiences') . '</p>';
         }
-        echo '</td></tr>';
+        echo '</div>';
 
-        echo '<tr><th scope="row"><label>' . esc_html__('Extra', 'fp-experiences') . '</label></th><td>';
+        echo '<div class="fp-exp-field fp-exp-field--full">';
+        echo '<span class="fp-exp-field__label">' . esc_html__('Extra', 'fp-experiences') . '</span>';
         if ($addon_config) {
             $currency = (string) get_option('woocommerce_currency', 'EUR');
             foreach ($addon_config as $slug => $addon) {
                 $label = $addon['label'] ?? $slug;
                 $price = isset($addon['price']) ? (float) $addon['price'] : 0.0;
                 $price_label = $price > 0 ? ' (' . esc_html(sprintf('%s %s', $currency, number_format_i18n($price, 2))) . ')' : '';
-                $description = ! empty($addon['description']) ? '<span class="description">' . esc_html($addon['description']) . '</span>' : '';
+                $description = ! empty($addon['description']) ? ' <span class="fp-exp-hint">' . esc_html($addon['description']) . '</span>' : '';
 
                 if (! empty($addon['allow_multiple'])) {
                     $value = isset($posted_addons[$slug]) ? (float) $posted_addons[$slug] : 0.0;
-                    echo '<p class="fp-exp-addon-field"><label>' . esc_html($label) . $price_label . ' <input type="number" min="0" step="1" name="addons[' . esc_attr($slug) . ']" value="' . esc_attr((string) $value) . '" class="small-text" /></label> ' . $description . '</p>';
+                    echo '<p class="fp-exp-addon-field"><label>' . esc_html($label) . $price_label . ' <input type="number" min="0" step="1" name="addons[' . esc_attr($slug) . ']" value="' . esc_attr((string) $value) . '" class="small-text" /></label>' . $description . '</p>';
                 } else {
                     $checked = ! empty($posted_addons[$slug]);
-                    echo '<p class="fp-exp-addon-field"><label><input type="checkbox" name="addons[' . esc_attr($slug) . ']" value="1" ' . checked($checked, true, false) . ' /> ' . esc_html($label) . $price_label . '</label> ' . $description . '</p>';
+                    echo '<p class="fp-exp-addon-field"><label><input type="checkbox" name="addons[' . esc_attr($slug) . ']" value="1" ' . checked($checked, true, false) . ' /> ' . esc_html($label) . $price_label . '</label>' . $description . '</p>';
                 }
             }
         } else {
-            echo '<p>' . esc_html__('Nessun extra configurato per questa esperienza.', 'fp-experiences') . '</p>';
+            echo '<p class="fp-exp-hint">' . esc_html__('Nessun extra configurato per questa esperienza.', 'fp-experiences') . '</p>';
         }
-        echo '</td></tr>';
+        echo '</div>';
 
         $first_name = $contact['first_name'] ?? '';
         $last_name = $contact['last_name'] ?? '';
-        echo '<tr><th scope="row"><label for="fp-exp-first-name">' . esc_html__('Customer name', 'fp-experiences') . '</label></th><td>';
+        echo '<div class="fp-exp-field fp-exp-field--full">';
+        echo '<span class="fp-exp-field__label" id="fp-exp-customer-name-label">' . esc_html__('Customer name', 'fp-experiences') . '</span>';
+        echo '<div class="fp-exp-field__inputs" role="group" aria-labelledby="fp-exp-customer-name-label">';
         echo '<input type="text" id="fp-exp-first-name" name="contact[first_name]" placeholder="' . esc_attr__('First name', 'fp-experiences') . '" value="' . esc_attr($first_name) . '" class="regular-text" />';
-        echo '<input type="text" name="contact[last_name]" placeholder="' . esc_attr__('Last name', 'fp-experiences') . '" value="' . esc_attr($last_name) . '" class="regular-text" style="margin-left:10px;" />';
-        echo '</td></tr>';
+        echo '<input type="text" name="contact[last_name]" placeholder="' . esc_attr__('Last name', 'fp-experiences') . '" value="' . esc_attr($last_name) . '" class="regular-text" />';
+        echo '</div></div>';
 
         $email = $contact['email'] ?? '';
-        echo '<tr><th scope="row"><label for="fp-exp-email">' . esc_html__('Customer email', 'fp-experiences') . '</label></th><td>';
+        echo '<div class="fp-exp-field">';
+        echo '<label for="fp-exp-email" class="fp-exp-field__label">' . esc_html__('Customer email', 'fp-experiences') . '</label>';
         echo '<input type="email" id="fp-exp-email" name="contact[email]" value="' . esc_attr($email) . '" class="regular-text" />';
-        echo '</td></tr>';
+        echo '</div>';
 
         $phone = $contact['phone'] ?? '';
-        echo '<tr><th scope="row"><label for="fp-exp-phone">' . esc_html__('Phone', 'fp-experiences') . '</label></th><td>';
+        echo '<div class="fp-exp-field">';
+        echo '<label for="fp-exp-phone" class="fp-exp-field__label">' . esc_html__('Phone', 'fp-experiences') . '</label>';
         echo '<input type="text" id="fp-exp-phone" name="contact[phone]" value="' . esc_attr($phone) . '" class="regular-text" />';
-        echo '</td></tr>';
+        echo '</div>';
 
-        echo '</table>';
+        echo '</div>';
 
         if ($slots) {
-            submit_button(esc_html__('Crea prenotazione manuale', 'fp-experiences'));
+            echo '<p class="fp-exp-calendar-manual-form__submit">';
+            echo '<button type="submit" class="fp-exp-btn fp-exp-btn-primary">' . esc_html__('Crea prenotazione manuale', 'fp-experiences') . '</button>';
+            echo '</p>';
         }
 
         echo '</form>';

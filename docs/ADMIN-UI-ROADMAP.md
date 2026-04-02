@@ -14,9 +14,10 @@ Allineamento progressivo a `fp-admin-ui-design-system.mdc` (token FP DMS, banner
 - `fp-exp-admin-page` sul `.wrap` di: Impostazioni, Email, Richieste, Calendario, Tools, Logs, Guida, Onboarding, Importer esperienze, Crea pagina esperienza, Check-in, Import meeting points (CSV).
 - **Enqueue**: slug `fp-exp-meeting-points-import` incluso nel fallback `$_GET['page']` così il CSS admin carica anche su quella schermata.
 
-## Fase 3 — Form e azioni
+## Fase 3 — Form e azioni *(in corso)*
 
-- Sostituire progressivamente `form-table` e `submit_button()` con `fp-exp-fields-grid` e `fp-exp-btn` (iniziare da Calendario / sezioni più piccole).
+- **Fatto (v1.5.31)**: form *Crea prenotazione manuale* in Calendario — `fp-exp-fields-grid`, `fp-exp-field`, `fp-exp-btn-primary`; CSS condiviso in `admin.css`.
+- **Da fare**: altri `form-table` / `submit_button()` (Impostazioni tab, Richieste filtri, ecc.).
 
 ## Fase 4 — Tabelle e card
 

@@ -2,6 +2,12 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.5.31] - 2026-04-02
+
+### Changed
+
+- **Admin UI — Fase 3 (primo blocco)**: form *Crea prenotazione manuale* nel Calendario senza `form-table` / `submit_button()` — griglia `fp-exp-fields-grid`, campi `fp-exp-field`, invio con `button.fp-exp-btn-primary`; hint con `fp-exp-hint`. Aggiunti stili riutilizzabili in `assets/css/admin.css`.
+
 ## [1.5.30] - 2026-04-02
 
 ### Changed
