@@ -2,6 +2,12 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.5.37] - 2026-04-02
+
+### Changed
+
+- **Impostazioni**: form `options.php` (tutte le schede con salvataggio) avvolto in `fp-exp-dms-card` + body; schede **Booking Rules** e **Logs** con header/card DMS e dashicon; separatore visivo tra blocco stato Google Calendar e form sulla scheda Calendar.
+
 ## [1.5.36] - 2026-04-02
 
 ### Changed

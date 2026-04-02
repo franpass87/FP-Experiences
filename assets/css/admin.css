@@ -2447,6 +2447,21 @@ html.fp-exp-dark .fp-exp-requests__td-actions--past .fp-exp-requests__past-note 
     border: 1px solid var(--fp-exp-admin-border);
 }
 
+/* Impostazioni: form opzioni + schede booking/logs in card DMS */
+.fp-exp-settings .fp-exp-settings__options-card {
+    margin-top: 1rem;
+}
+
+.fp-exp-settings .fp-exp-settings__options-card .fp-exp-calendar-status {
+    margin-bottom: 1.25rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--fpdms-border-light);
+}
+
+.fp-exp-settings .fp-exp-settings__dms-panel {
+    margin-top: 1rem;
+}
+
 .fp-exp-settings__list {
     margin: 0 0 16px;
     padding-left: 18px;

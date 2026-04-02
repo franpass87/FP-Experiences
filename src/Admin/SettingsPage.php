@@ -200,6 +200,8 @@ final class SettingsPage implements HookableInterface
         } elseif ('logs' === $active_tab) {
             $this->render_logs_overview();
         } else {
+            echo '<div class="fp-exp-dms-card fp-exp-settings__options-card">';
+            echo '<div class="fp-exp-dms-card-body">';
             if ('calendar' === $active_tab) {
                 $this->render_calendar_status();
             }
@@ -236,6 +238,7 @@ final class SettingsPage implements HookableInterface
 
             submit_button();
             echo '</form>';
+            echo '</div></div>';
         }
 
         echo '</div>';
@@ -1777,6 +1780,9 @@ final class SettingsPage implements HookableInterface
         };
     }
 
+    /**
+     * Scheda Impostazioni «Booking Rules»: riepilogo regole con link alle schede correlate.
+     */
     private function render_booking_rules_panel(): void
     {
         $meeting_points_enabled = Helpers::meeting_points_enabled();
@@ -1790,8 +1796,12 @@ final class SettingsPage implements HookableInterface
             default => esc_html__('Disattivato', 'fp-experiences'),
         };
 
-        echo '<div class="fp-exp-settings__panel fp-exp-settings__panel--booking">';
+        echo '<div class="fp-exp-dms-card fp-exp-settings__dms-panel fp-exp-settings__panel--booking">';
+        echo '<div class="fp-exp-dms-card-header"><div class="fp-exp-dms-card-header-left">';
+        echo '<span class="dashicons dashicons-calendar-alt" aria-hidden="true"></span>';
         echo '<h2>' . esc_html__('Regole attive', 'fp-experiences') . '</h2>';
+        echo '</div></div>';
+        echo '<div class="fp-exp-dms-card-body">';
         echo '<ul class="fp-exp-settings__list">';
         echo '<li>' . esc_html__('Meeting point: ', 'fp-experiences') . ($meeting_points_enabled ? esc_html__('abilitati', 'fp-experiences') : esc_html__('disabilitati', 'fp-experiences')) . '</li>';
         echo '<li>' . esc_html__('Import meeting point: ', 'fp-experiences') . ($meeting_point_import_enabled ? esc_html__('abilitato (avanzato)', 'fp-experiences') : esc_html__('disabilitato', 'fp-experiences')) . '</li>';
@@ -1822,17 +1832,24 @@ final class SettingsPage implements HookableInterface
         echo '<li><a href="' . $rtb_link . '">' . esc_html__('RTB', 'fp-experiences') . '</a></li>';
         echo '<li><a href="' . $calendar_link . '">' . esc_html__('Calendar', 'fp-experiences') . '</a></li>';
         echo '</ul>';
-        echo '</div>';
+        echo '</div></div>';
     }
 
+    /**
+     * Scheda Impostazioni «Logs»: anteprima ultime righe di log e link al registro completo.
+     */
     private function render_logs_overview(): void
     {
         $logs = Logger::query([
             'limit' => 10,
         ]);
 
-        echo '<div class="fp-exp-settings__panel fp-exp-settings__panel--logs">';
+        echo '<div class="fp-exp-dms-card fp-exp-settings__dms-panel fp-exp-settings__panel--logs">';
+        echo '<div class="fp-exp-dms-card-header"><div class="fp-exp-dms-card-header-left">';
+        echo '<span class="dashicons dashicons-media-text" aria-hidden="true"></span>';
         echo '<h2>' . esc_html__('Ultime attività', 'fp-experiences') . '</h2>';
+        echo '</div></div>';
+        echo '<div class="fp-exp-dms-card-body">';
 
         if (! $logs) {
             echo '<p>' . esc_html__('Nessun evento registrato nei log.', 'fp-experiences') . '</p>';
@@ -1858,7 +1875,7 @@ final class SettingsPage implements HookableInterface
 
         $logs_url = esc_url(admin_url('admin.php?page=fp_exp_logs'));
         echo '<p><a class="button" href="' . $logs_url . '">' . esc_html__('Apri registro completo', 'fp-experiences') . '</a></p>';
-        echo '</div>';
+        echo '</div></div>';
     }
 
     /**
