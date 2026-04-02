@@ -2,6 +2,12 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.5.40] - 2026-04-02
+
+### Fixed
+
+- **Admin — Impostazioni (`--layout-fp`)**: i selettori legacy legati a `.fp-exp-settings__form .form-table`, descrizioni e controlli (anche con `[data-fp-exp-admin]`) applicavano ancora box, hover sulle righe, barra `tr::before` e riquadri descrizione perché la tabella campi ha ancora la classe `form-table`. Ora quei selettori sono ristretti a **`.fp-exp-settings__form:not(.fp-exp-settings__form--layout-fp)`**, così il layout FP resta pulito; aggiunti stili espliciti per input/select/textarea nel body sezione e disattivato `::before` sulle descrizioni. Rigenerato **`fp-experiences-admin.min.css`**.
+
 ## [1.5.39] - 2026-04-02
 
 ### Changed

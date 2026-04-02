@@ -1878,7 +1878,7 @@ body.fp-exp-admin-shell #screen-meta-links {
     gap: 24px;
 }
 
-.fp-exp-settings__form .form-table {
+.fp-exp-settings__form:not(.fp-exp-settings__form--layout-fp) .form-table {
     margin: 0;
     width: 100%;
     border-spacing: 0;
@@ -1888,12 +1888,12 @@ body.fp-exp-admin-shell #screen-meta-links {
     border: 1px solid var(--fp-exp-admin-border);
 }
 
-.fp-exp-settings__form .form-table tbody {
+.fp-exp-settings__form:not(.fp-exp-settings__form--layout-fp) .form-table tbody {
     display: grid;
     gap: 0;
 }
 
-.fp-exp-settings__form .form-table tr {
+.fp-exp-settings__form:not(.fp-exp-settings__form--layout-fp) .form-table tr {
     display: grid;
     gap: 16px;
     grid-template-columns: minmax(220px, 1fr) minmax(0, 1.6fr);
@@ -1901,40 +1901,40 @@ body.fp-exp-admin-shell #screen-meta-links {
     border-bottom: 1px solid var(--fp-exp-admin-border);
 }
 
-.fp-exp-settings__form .form-table tr:first-child {
+.fp-exp-settings__form:not(.fp-exp-settings__form--layout-fp) .form-table tr:first-child {
     padding-top: 0;
 }
 
-.fp-exp-settings__form .form-table tr:last-child {
+.fp-exp-settings__form:not(.fp-exp-settings__form--layout-fp) .form-table tr:last-child {
     border-bottom: 0;
     padding-bottom: 0;
 }
 
-.fp-exp-settings__form .form-table th {
+.fp-exp-settings__form:not(.fp-exp-settings__form--layout-fp) .form-table th {
     padding: 0;
     font-size: 14px;
     font-weight: 600;
     color: var(--fp-exp-color-text, #1f1f1f);
 }
 
-.fp-exp-settings__form .form-table td {
+.fp-exp-settings__form:not(.fp-exp-settings__form--layout-fp) .form-table td {
     padding: 0;
 }
 
-.fp-exp-settings__form .form-table fieldset {
+.fp-exp-settings__form:not(.fp-exp-settings__form--layout-fp) .form-table fieldset {
     margin: 0;
     padding: 0;
     border: 0;
 }
 
-.fp-exp-settings__form .description {
+.fp-exp-settings__form:not(.fp-exp-settings__form--layout-fp) .description {
     margin-top: 6px;
     font-size: 13px;
     color: var(--fp-exp-color-muted, #5f5f5f);
 }
 
 /* Override per pagine con data-fp-exp-admin - maggiore specificità */
-.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form .description {
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form:not(.fp-exp-settings__form--layout-fp) .description {
     margin-top: 8px !important;
     font-size: 13px !important;
     color: var(--fp-exp-color-muted) !important;
@@ -1945,7 +1945,7 @@ body.fp-exp-admin-shell #screen-meta-links {
     border-radius: 4px !important;
 }
 
-.fp-exp-settings__form p.submit {
+.fp-exp-settings__form:not(.fp-exp-settings__form--layout-fp) p.submit {
     margin: 0;
 }
 
@@ -2532,6 +2532,41 @@ html.fp-exp-dark .fp-exp-requests__td-actions--past .fp-exp-requests__past-note 
     border: 0;
 }
 
+/* Controlli nativi WP — design system (senza box legacy su td/celle) */
+.fp-exp-settings__form--layout-fp .fp-exp-settings__section-body input[type="text"],
+.fp-exp-settings__form--layout-fp .fp-exp-settings__section-body input[type="email"],
+.fp-exp-settings__form--layout-fp .fp-exp-settings__section-body input[type="number"],
+.fp-exp-settings__form--layout-fp .fp-exp-settings__section-body input[type="url"],
+.fp-exp-settings__form--layout-fp .fp-exp-settings__section-body input[type="password"],
+.fp-exp-settings__form--layout-fp .fp-exp-settings__section-body input[type="search"],
+.fp-exp-settings__form--layout-fp .fp-exp-settings__section-body textarea,
+.fp-exp-settings__form--layout-fp .fp-exp-settings__section-body select {
+    border: 2px solid var(--fpdms-border);
+    border-radius: var(--radius-md);
+    padding: 0.5rem 0.75rem;
+    font-size: 14px;
+    line-height: 1.45;
+    background: var(--fpdms-bg-white);
+    color: var(--fpdms-text);
+    max-width: 100%;
+    box-sizing: border-box;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.fp-exp-settings__form--layout-fp .fp-exp-settings__section-body input:focus,
+.fp-exp-settings__form--layout-fp .fp-exp-settings__section-body textarea:focus,
+.fp-exp-settings__form--layout-fp .fp-exp-settings__section-body select:focus {
+    border-color: var(--fpdms-primary);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+}
+
+.fp-exp-settings__form--layout-fp .fp-exp-settings__section-body .description::before,
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form--layout-fp .fp-exp-settings__section-body .form-table .description::before {
+    content: none !important;
+    display: none !important;
+}
+
 .fp-exp-settings__form--layout-fp .fp-exp-settings__section-body .description,
 .fp-exp-settings__form--layout-fp .fp-exp-settings__section-body .form-table .description {
     margin-top: 0.35rem;
@@ -2680,7 +2715,7 @@ html.fp-exp-dark .fp-exp-requests__td-actions--past .fp-exp-requests__past-note 
         padding: 24px;
     }
 
-    .fp-exp-settings__form .form-table tr {
+    .fp-exp-settings__form:not(.fp-exp-settings__form--layout-fp) .form-table tr {
         grid-template-columns: minmax(200px, 1fr) minmax(0, 1fr);
     }
 }
@@ -2716,11 +2751,11 @@ html.fp-exp-dark .fp-exp-requests__td-actions--past .fp-exp-requests__past-note 
         padding: 8px 16px;
     }
 
-    .fp-exp-settings__form .form-table {
+    .fp-exp-settings__form:not(.fp-exp-settings__form--layout-fp) .form-table {
         padding: 20px;
     }
 
-    .fp-exp-settings__form .form-table tr {
+    .fp-exp-settings__form:not(.fp-exp-settings__form--layout-fp) .form-table tr {
         grid-template-columns: 1fr;
         padding: 16px 0;
     }
@@ -3714,16 +3749,16 @@ label.fp-exp-settings__toggle input:checked + .fp-exp-toggle__switch::after {
 }
 
 /* Form fields migliorati */
-.fp-exp-settings__form .form-table th {
+.fp-exp-settings__form:not(.fp-exp-settings__form--layout-fp) .form-table th {
     font-weight: 600;
     color: #111827;
 }
 
-.fp-exp-settings__form .form-table td {
+.fp-exp-settings__form:not(.fp-exp-settings__form--layout-fp) .form-table td {
     color: #374151;
 }
 
-.fp-exp-settings__form .description {
+.fp-exp-settings__form:not(.fp-exp-settings__form--layout-fp) .description {
     color: #6b7280;
     font-size: 13px;
     line-height: 1.5;
@@ -3731,22 +3766,22 @@ label.fp-exp-settings__toggle input:checked + .fp-exp-toggle__switch::after {
 }
 
 /* Input focus states migliorati */
-.fp-exp-settings__form input[type="text"]:focus,
-.fp-exp-settings__form input[type="email"]:focus,
-.fp-exp-settings__form input[type="number"]:focus,
-.fp-exp-settings__form textarea:focus,
-.fp-exp-settings__form select:focus {
+.fp-exp-settings__form:not(.fp-exp-settings__form--layout-fp) input[type="text"]:focus,
+.fp-exp-settings__form:not(.fp-exp-settings__form--layout-fp) input[type="email"]:focus,
+.fp-exp-settings__form:not(.fp-exp-settings__form--layout-fp) input[type="number"]:focus,
+.fp-exp-settings__form:not(.fp-exp-settings__form--layout-fp) textarea:focus,
+.fp-exp-settings__form:not(.fp-exp-settings__form--layout-fp) select:focus {
     border-color: #2563eb;
     box-shadow: 0 0 0 1px #2563eb;
     outline: none;
 }
 
 /* Sezioni con migliore spaziatura */
-.fp-exp-settings__form .form-table {
+.fp-exp-settings__form:not(.fp-exp-settings__form--layout-fp) .form-table {
     margin-top: 0;
 }
 
-.fp-exp-settings__form h2 {
+.fp-exp-settings__form:not(.fp-exp-settings__form--layout-fp) h2 {
     margin: 32px 0 16px 0;
     padding-bottom: 12px;
     border-bottom: 2px solid #e5e7eb;
@@ -3755,18 +3790,18 @@ label.fp-exp-settings__toggle input:checked + .fp-exp-toggle__switch::after {
     font-weight: 600;
 }
 
-.fp-exp-settings__form h2:first-child {
+.fp-exp-settings__form:not(.fp-exp-settings__form--layout-fp) h2:first-child {
     margin-top: 0;
 }
 
 /* Button submit migliorato */
-.fp-exp-settings__form .submit {
+.fp-exp-settings__form:not(.fp-exp-settings__form--layout-fp) .submit {
     margin: 24px 0 0 0;
     padding-top: 24px;
     border-top: 1px solid #e5e7eb;
 }
 
-.fp-exp-settings__form .button-primary {
+.fp-exp-settings__form:not(.fp-exp-settings__form--layout-fp) .button-primary {
     background: #2563eb;
     border-color: #2563eb;
     padding: 8px 24px;
@@ -3774,8 +3809,8 @@ label.fp-exp-settings__toggle input:checked + .fp-exp-toggle__switch::after {
     transition: all 0.2s ease;
 }
 
-.fp-exp-settings__form .button-primary:hover,
-.fp-exp-settings__form .button-primary:focus {
+.fp-exp-settings__form:not(.fp-exp-settings__form--layout-fp) .button-primary:hover,
+.fp-exp-settings__form:not(.fp-exp-settings__form--layout-fp) .button-primary:focus {
     background: #1d4ed8;
     border-color: #1d4ed8;
     transform: translateY(-1px);
@@ -4311,7 +4346,7 @@ label.fp-exp-settings__toggle input:checked + .fp-exp-toggle__switch::after {
 }
 
 /* Form table migliorato */
-.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form .form-table {
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form:not(.fp-exp-settings__form--layout-fp) .form-table {
     background: #ffffff !important;
     border-radius: var(--fp-exp-admin-radius) !important;
     padding: 28px !important;
@@ -4319,24 +4354,24 @@ label.fp-exp-settings__toggle input:checked + .fp-exp-toggle__switch::after {
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04) !important;
 }
 
-.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form .form-table tr {
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form:not(.fp-exp-settings__form--layout-fp) .form-table tr {
     padding: 20px 0 !important;
     border-bottom: 1px solid #f1f5f9 !important;
     transition: background-color 0.15s ease !important;
 }
 
-.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form .form-table tr:hover {
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form:not(.fp-exp-settings__form--layout-fp) .form-table tr:hover {
     background: #fafbfc !important;
     margin: 0 -28px !important;
     padding-left: 28px !important;
     padding-right: 28px !important;
 }
 
-.fp-exp-settings__form .form-table tr:last-child {
+.fp-exp-settings__form:not(.fp-exp-settings__form--layout-fp) .form-table tr:last-child {
     border-bottom: 0;
 }
 
-.fp-exp-settings__form .form-table th {
+.fp-exp-settings__form:not(.fp-exp-settings__form--layout-fp) .form-table th {
     font-size: 14px;
     font-weight: 600;
     color: var(--fp-exp-color-text);
@@ -4345,17 +4380,17 @@ label.fp-exp-settings__toggle input:checked + .fp-exp-toggle__switch::after {
     padding-top: 8px;
 }
 
-.fp-exp-settings__form .form-table td {
+.fp-exp-settings__form:not(.fp-exp-settings__form--layout-fp) .form-table td {
     vertical-align: top;
 }
 
 /* Input fields migliorati */
-.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form input[type="text"],
-.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form input[type="email"],
-.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form input[type="number"],
-.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form input[type="url"],
-.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form textarea,
-.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form select {
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form:not(.fp-exp-settings__form--layout-fp) input[type="text"],
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form:not(.fp-exp-settings__form--layout-fp) input[type="email"],
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form:not(.fp-exp-settings__form--layout-fp) input[type="number"],
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form:not(.fp-exp-settings__form--layout-fp) input[type="url"],
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form:not(.fp-exp-settings__form--layout-fp) textarea,
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form:not(.fp-exp-settings__form--layout-fp) select {
     border: 1px solid #d1d5db !important;
     border-radius: 6px !important;
     padding: 8px 12px !important;
@@ -4364,25 +4399,25 @@ label.fp-exp-settings__toggle input:checked + .fp-exp-toggle__switch::after {
     background: #ffffff !important;
 }
 
-.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form input[type="text"]:focus,
-.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form input[type="email"]:focus,
-.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form input[type="number"]:focus,
-.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form input[type="url"]:focus,
-.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form textarea:focus,
-.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form select:focus {
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form:not(.fp-exp-settings__form--layout-fp) input[type="text"]:focus,
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form:not(.fp-exp-settings__form--layout-fp) input[type="email"]:focus,
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form:not(.fp-exp-settings__form--layout-fp) input[type="number"]:focus,
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form:not(.fp-exp-settings__form--layout-fp) input[type="url"]:focus,
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form:not(.fp-exp-settings__form--layout-fp) textarea:focus,
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form:not(.fp-exp-settings__form--layout-fp) select:focus {
     border-color: var(--fp-exp-color-primary) !important;
     box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1) !important;
     outline: none !important;
 }
 
-.fp-exp-settings__form textarea {
+.fp-exp-settings__form:not(.fp-exp-settings__form--layout-fp) textarea {
     min-height: 100px;
     resize: vertical;
 }
 
 /* Description migliorata - Specificità aumentata per sovrascrivere stili esistenti */
-.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form .form-table .description,
-.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form .description {
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form:not(.fp-exp-settings__form--layout-fp) .form-table .description,
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form:not(.fp-exp-settings__form--layout-fp) .description {
     margin-top: 8px !important;
     font-size: 13px !important;
     color: var(--fp-exp-color-muted) !important;
@@ -4394,13 +4429,13 @@ label.fp-exp-settings__toggle input:checked + .fp-exp-toggle__switch::after {
 }
 
 /* Submit button migliorato */
-.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form .submit {
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form:not(.fp-exp-settings__form--layout-fp) .submit {
     margin-top: 32px !important;
     padding-top: 24px !important;
     border-top: 1px solid var(--fp-exp-admin-border) !important;
 }
 
-.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form .button-primary {
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form:not(.fp-exp-settings__form--layout-fp) .button-primary {
     background: var(--fp-exp-color-primary) !important;
     border-color: var(--fp-exp-color-primary) !important;
     padding: 10px 24px !important;
@@ -4411,7 +4446,7 @@ label.fp-exp-settings__toggle input:checked + .fp-exp-toggle__switch::after {
     transition: all 0.2s ease !important;
 }
 
-.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form .button-primary:hover {
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form:not(.fp-exp-settings__form--layout-fp) .button-primary:hover {
     background: #1d4ed8 !important;
     border-color: #1d4ed8 !important;
     box-shadow: 0 4px 8px rgba(37, 99, 235, 0.3) !important;
@@ -4539,7 +4574,7 @@ label.fp-exp-settings__toggle input:checked + .fp-exp-toggle__switch::after {
 }
 
 /* Form table con card effect più pronunciato */
-.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form .form-table {
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form:not(.fp-exp-settings__form--layout-fp) .form-table {
     background: linear-gradient(to bottom, #ffffff 0%, #fafbfc 100%) !important;
     box-shadow: 
         0 1px 3px rgba(0, 0, 0, 0.04),
@@ -4547,20 +4582,20 @@ label.fp-exp-settings__toggle input:checked + .fp-exp-toggle__switch::after {
     transition: box-shadow 0.3s ease !important;
 }
 
-.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form .form-table:hover {
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form:not(.fp-exp-settings__form--layout-fp) .form-table:hover {
     box-shadow: 
         0 4px 12px rgba(0, 0, 0, 0.06),
         0 0 0 1px rgba(0, 0, 0, 0.04) !important;
 }
 
 /* Righe del form con hover più elegante */
-.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form .form-table tr {
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form:not(.fp-exp-settings__form--layout-fp) .form-table tr {
     position: relative;
     border-radius: 6px;
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
-.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form .form-table tr::before {
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form:not(.fp-exp-settings__form--layout-fp) .form-table tr::before {
     content: '';
     position: absolute;
     left: 0;
@@ -4572,23 +4607,23 @@ label.fp-exp-settings__toggle input:checked + .fp-exp-toggle__switch::after {
     border-radius: 0 3px 3px 0;
 }
 
-.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form .form-table tr:hover::before {
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form:not(.fp-exp-settings__form--layout-fp) .form-table tr:hover::before {
     width: 3px;
 }
 
-.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form .form-table tr:hover {
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form:not(.fp-exp-settings__form--layout-fp) .form-table tr:hover {
     background: linear-gradient(to right, #fafbfc 0%, #ffffff 100%) !important;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03) !important;
     transform: translateX(2px);
 }
 
 /* Input fields con focus ring più moderno */
-.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form input[type="text"]:focus,
-.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form input[type="email"]:focus,
-.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form input[type="number"]:focus,
-.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form input[type="url"]:focus,
-.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form textarea:focus,
-.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form select:focus {
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form:not(.fp-exp-settings__form--layout-fp) input[type="text"]:focus,
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form:not(.fp-exp-settings__form--layout-fp) input[type="email"]:focus,
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form:not(.fp-exp-settings__form--layout-fp) input[type="number"]:focus,
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form:not(.fp-exp-settings__form--layout-fp) input[type="url"]:focus,
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form:not(.fp-exp-settings__form--layout-fp) textarea:focus,
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form:not(.fp-exp-settings__form--layout-fp) select:focus {
     border-color: var(--fp-exp-color-primary) !important;
     box-shadow: 
         0 0 0 3px rgba(37, 99, 235, 0.1),
@@ -4622,7 +4657,7 @@ label.fp-exp-settings__toggle input:checked + .fp-exp-toggle__switch::after {
 }
 
 /* Description con icona e stile migliorato */
-.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form .form-table .description::before {
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form:not(.fp-exp-settings__form--layout-fp) .form-table .description::before {
     content: 'ℹ';
     display: inline-block;
     margin-right: 6px;
@@ -4632,14 +4667,14 @@ label.fp-exp-settings__toggle input:checked + .fp-exp-toggle__switch::after {
 }
 
 /* Submit button con gradiente e animazione */
-.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form .button-primary {
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form:not(.fp-exp-settings__form--layout-fp) .button-primary {
     background: linear-gradient(135deg, var(--fp-exp-color-primary) 0%, #3b82f6 100%) !important;
     border: none !important;
     position: relative;
     overflow: hidden;
 }
 
-.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form .button-primary::before {
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form:not(.fp-exp-settings__form--layout-fp) .button-primary::before {
     content: '';
     position: absolute;
     top: 0;
@@ -4650,11 +4685,11 @@ label.fp-exp-settings__toggle input:checked + .fp-exp-toggle__switch::after {
     transition: left 0.5s ease;
 }
 
-.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form .button-primary:hover::before {
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form:not(.fp-exp-settings__form--layout-fp) .button-primary:hover::before {
     left: 100%;
 }
 
-.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form .button-primary:hover {
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form:not(.fp-exp-settings__form--layout-fp) .button-primary:hover {
     background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%) !important;
     transform: translateY(-2px) !important;
     box-shadow: 
@@ -4662,7 +4697,7 @@ label.fp-exp-settings__toggle input:checked + .fp-exp-toggle__switch::after {
         0 0 0 1px rgba(37, 99, 235, 0.1) !important;
 }
 
-.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form .button-primary:active {
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form:not(.fp-exp-settings__form--layout-fp) .button-primary:active {
     transform: translateY(0) !important;
 }
 
@@ -4701,11 +4736,11 @@ label.fp-exp-settings__toggle input:checked + .fp-exp-toggle__switch::after {
 }
 
 /* Miglioramenti per sezioni con molti campi */
-.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form .form-table tr:first-child {
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form:not(.fp-exp-settings__form--layout-fp) .form-table tr:first-child {
     padding-top: 0 !important;
 }
 
-.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form .form-table tr:last-child {
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form:not(.fp-exp-settings__form--layout-fp) .form-table tr:last-child {
     padding-bottom: 0 !important;
     border-bottom: none !important;
 }
@@ -4721,21 +4756,21 @@ label.fp-exp-settings__toggle input:checked + .fp-exp-toggle__switch::after {
         font-size: 22px;
     }
     
-    .fp-exp-settings__form .form-table {
+    .fp-exp-settings__form:not(.fp-exp-settings__form--layout-fp) .form-table {
         padding: 20px;
     }
     
-    .fp-exp-settings__form .form-table tr {
+    .fp-exp-settings__form:not(.fp-exp-settings__form--layout-fp) .form-table tr {
         grid-template-columns: 1fr;
         padding: 16px 0;
     }
     
-    .fp-exp-settings__form .form-table th {
+    .fp-exp-settings__form:not(.fp-exp-settings__form--layout-fp) .form-table th {
         padding-right: 0;
         margin-bottom: 8px;
     }
     
-    .fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form .form-table tr:hover {
+    .fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form:not(.fp-exp-settings__form--layout-fp) .form-table tr:hover {
         transform: none;
         margin: 0;
         padding-left: 0;
@@ -4756,13 +4791,13 @@ body.fp-exp-emails-body .wrap,
 .fp-exp-emails-page .fp-exp-admin__layout,
 .fp-exp-emails-page .fp-exp-settings__panel,
 .fp-exp-emails-page .fp-exp-settings__form,
-.fp-exp-emails-page .fp-exp-settings__form .form-table {
+.fp-exp-emails-page .fp-exp-settings__form:not(.fp-exp-settings__form--layout-fp) .form-table {
     overflow: visible !important;
     max-height: none !important;
     height: auto !important;
 }
 
-.fp-exp-emails-page .fp-exp-settings__form .submit {
+.fp-exp-emails-page .fp-exp-settings__form:not(.fp-exp-settings__form--layout-fp) .submit {
     position: sticky;
     bottom: 0;
     z-index: 10;
