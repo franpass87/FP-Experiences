@@ -44,6 +44,137 @@
 }
 
 /* ============================================
+   Interno pagine admin — card / griglia / badge
+   (stesso modello di FP-Mail-SMTP .fpmail-* → prefisso fp-exp-dms-*)
+   ============================================ */
+.fp-exp-dms-card {
+    background: var(--fpdms-bg-white);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+    margin-bottom: 1.5rem;
+    overflow: hidden;
+}
+
+.fp-exp-dms-card:hover {
+    box-shadow: var(--shadow-lg);
+    transition: var(--transition);
+}
+
+.fp-exp-dms-card-header {
+    background: var(--fpdms-bg-light);
+    border-bottom: 2px solid var(--fpdms-border-light);
+    padding: 1rem 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.fp-exp-dms-card-header-left {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.fp-exp-dms-card-header .dashicons {
+    color: var(--fpdms-primary);
+}
+
+.fp-exp-dms-card-header h2,
+.fp-exp-dms-card-header h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--fpdms-text);
+}
+
+.fp-exp-dms-card-body {
+    padding: 1.5rem;
+}
+
+.fp-exp-dms-card-body .description {
+    margin-bottom: 1rem;
+    color: var(--fpdms-text-light);
+}
+
+.fp-exp-dms-card-body .description:last-child {
+    margin-bottom: 0;
+}
+
+.fp-exp-dms-badge {
+    display: inline-block;
+    padding: 0.2rem 0.6rem;
+    border-radius: var(--radius-pill);
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.fp-exp-dms-badge-success {
+    background: var(--fpdms-success-bg);
+    color: var(--fpdms-success-text);
+}
+
+.fp-exp-dms-badge-danger {
+    background: var(--fpdms-danger-bg);
+    color: var(--fpdms-danger-text);
+}
+
+.fp-exp-dms-badge-warning {
+    background: var(--fpdms-warning-bg);
+    color: var(--fpdms-warning-text);
+}
+
+.fp-exp-dms-badge-neutral {
+    background: var(--fpdms-border-light);
+    color: var(--fpdms-text-muted);
+}
+
+.fp-exp-dms-badge-info {
+    background: var(--fpdms-info-bg);
+    color: var(--fpdms-info-text);
+}
+
+.fp-exp-dms-fields-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.25rem;
+}
+
+.fp-exp-dms-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.fp-exp-dms-field label {
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.fp-exp-dms-field input[type="text"],
+.fp-exp-dms-field input[type="email"],
+.fp-exp-dms-field input[type="number"],
+.fp-exp-dms-field input[type="password"],
+.fp-exp-dms-field select {
+    border: 2px solid var(--fpdms-border);
+    border-radius: var(--radius-md);
+    padding: 0.5rem 0.75rem;
+    max-width: 100%;
+}
+
+.fp-exp-dms-field input:focus,
+.fp-exp-dms-field select:focus {
+    border-color: var(--fpdms-primary);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+}
+
+.fp-exp-dms-hint {
+    font-size: 0.85rem;
+    color: var(--fpdms-text-muted);
+}
+
+/* ============================================
    Empty State Component (v1.0.3)
    ============================================ */
 .fp-exp-empty-state {
@@ -881,36 +1012,43 @@ body.fp-exp-admin-shell #screen-meta-links {
 .fp-exp-tools {
     display: flex;
     flex-direction: column;
-    gap: 16px;
-    margin-top: 16px;
+    gap: 1.25rem;
+    margin-top: 0;
+}
+
+.fp-exp-tools__intro {
+    margin-bottom: 0;
 }
 
 .fp-exp-tools__grid {
     display: grid;
-    gap: 16px;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1.25rem;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
 }
 
-.fp-exp-tools__card {
-    background: #ffffff;
-    border: 1px solid var(--fp-exp-admin-border);
-    border-radius: var(--fp-exp-admin-radius);
+.fp-exp-tools__grid .fp-exp-dms-card {
+    margin-bottom: 0;
+    height: 100%;
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    padding: 16px;
 }
 
-.fp-exp-tools__card h3 {
-    font-size: 16px;
-    margin: 0;
+.fp-exp-tools__grid .fp-exp-dms-card-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
 }
 
-.fp-exp-tools__card p {
-    color: var(--fp-exp-color-muted, #5f5f5f);
-    font-size: 13px;
-    line-height: 1.4;
-    margin: 0;
+.fp-exp-tools__grid .fp-exp-dms-card-body .description {
+    flex: 1;
+    margin-bottom: 1rem;
+}
+
+.fp-exp-tools__grid .fp-exp-dms-card-body .fp-exp-btn {
+    margin-top: auto;
+    width: 100%;
+    box-sizing: border-box;
+    min-height: 40px;
 }
 
 .fp-exp-tools__output {
@@ -3178,49 +3316,6 @@ html.fp-exp-dark .fp-exp-requests__td-actions--past .fp-exp-requests__past-note 
     color: white;
 }
 
-/* Tools Cards con hover effect */
-.fp-exp-tools__card {
-    background: white;
-    border: 1px solid #e5e7eb;
-    border-radius: 8px;
-    padding: 20px;
-    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
-}
-
-.fp-exp-tools__card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
-    border-color: #d1d5db;
-}
-
-.fp-exp-tools__card h3 {
-    margin: 0 0 8px 0;
-    font-size: 16px;
-    font-weight: 600;
-    color: #111827;
-}
-
-.fp-exp-tools__card p {
-    margin: 0 0 16px 0;
-    font-size: 14px;
-    color: #6b7280;
-    line-height: 1.5;
-}
-
-.fp-exp-tools__card .button-primary {
-    width: 100%;
-    justify-content: center;
-    background: #2563eb;
-    border-color: #2563eb;
-    transition: background 0.2s, transform 0.1s;
-}
-
-.fp-exp-tools__card .button-primary:hover {
-    background: #1d4ed8;
-    border-color: #1d4ed8;
-    transform: scale(1.02);
-}
-
 /* Toggle Switch Moderno */
 .fp-exp-toggle,
 .fp-exp-settings__toggle {
@@ -4102,35 +4197,6 @@ label.fp-exp-settings__toggle input:checked + .fp-exp-toggle__switch::after {
     padding: 0 24px 24px;
 }
 
-/* Tools cards migliorate */
-.fp-exp-admin[data-fp-exp-admin] .fp-exp-tools__card {
-    background: #ffffff !important;
-    border: 1px solid var(--fp-exp-admin-border) !important;
-    border-radius: var(--fp-exp-admin-radius) !important;
-    padding: 24px !important;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04) !important;
-    transition: all 0.2s ease !important;
-}
-
-.fp-exp-admin[data-fp-exp-admin] .fp-exp-tools__card:hover {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
-    transform: translateY(-2px) !important;
-}
-
-.fp-exp-tools__card h3 {
-    font-size: 16px;
-    font-weight: 600;
-    color: var(--fp-exp-color-text);
-    margin-bottom: 12px;
-}
-
-.fp-exp-tools__card p {
-    font-size: 14px;
-    color: var(--fp-exp-color-muted);
-    line-height: 1.6;
-    margin-bottom: 16px;
-}
-
 /* Notice migliorati */
 .fp-exp-admin[data-fp-exp-admin] .fp-exp-admin__body .notice {
     border-radius: var(--fp-exp-admin-radius) !important;
@@ -4354,32 +4420,6 @@ label.fp-exp-settings__toggle input:checked + .fp-exp-toggle__switch::after {
 
 .fp-exp-admin[data-fp-exp-admin] .fp-exp-settings__form .button-primary:active {
     transform: translateY(0) !important;
-}
-
-/* Tools cards con effetto glassmorphism */
-.fp-exp-admin[data-fp-exp-admin] .fp-exp-tools__card {
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.95) 100%) !important;
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.8) !important;
-    position: relative;
-    overflow: hidden;
-}
-
-.fp-exp-admin[data-fp-exp-admin] .fp-exp-tools__card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 2px;
-    background: linear-gradient(90deg, var(--fp-exp-color-primary), #3b82f6, #8b5cf6);
-    transform: scaleX(0);
-    transform-origin: left;
-    transition: transform 0.3s ease;
-}
-
-.fp-exp-admin[data-fp-exp-admin] .fp-exp-tools__card:hover::before {
-    transform: scaleX(1);
 }
 
 /* Notice con animazione di entrata */

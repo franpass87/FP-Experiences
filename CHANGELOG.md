@@ -2,6 +2,17 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.5.35] - 2026-04-02
+
+### Added
+
+- **Admin UI (interno pagine)**: componenti `fp-exp-dms-card` / header / body, badge e `fp-exp-dms-fields-grid` in `admin.css` (stesso modello di FP Mail SMTP) per riuso sotto il banner.
+- **Strumenti**: pannello con card introduttiva, griglia card con header (dashicon + titolo), corpo con descrizione e pulsante `fp-exp-btn-primary`; metodo `tool_action_icon_class()` per icone per slug.
+
+### Changed
+
+- **Strumenti**: rimossi blocchi CSS duplicati / glassmorphism su `.fp-exp-tools__card`; griglia allineata a `minmax(300px, 1fr)` e gap 1.25rem come griglia campi Mail.
+
 ## [1.5.34] - 2026-04-02
 
 ### Changed

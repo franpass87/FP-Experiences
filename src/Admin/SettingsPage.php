@@ -1726,21 +1726,55 @@ final class SettingsPage implements HookableInterface
         return apply_filters('fp_exp_settings_tabs', $tabs);
     }
 
+    /**
+     * Pannello azioni diagnostiche (scheda Strumenti in Impostazioni e pagina Strumenti dedicata).
+     */
     public function render_tools_panel(): void
     {
         echo '<div class="fp-exp-tools" data-fp-exp-tools="1">';
-        echo '<p>' . esc_html__('Run diagnostic and recovery actions. These operations execute immediately and their results are logged for auditing.', 'fp-experiences') . '</p>';
+        echo '<div class="fp-exp-dms-card fp-exp-tools__intro">';
+        echo '<div class="fp-exp-dms-card-body">';
+        echo '<p class="description">' . esc_html__('Run diagnostic and recovery actions. These operations execute immediately and their results are logged for auditing.', 'fp-experiences') . '</p>';
+        echo '</div></div>';
         echo '<div class="fp-exp-tools__grid">';
         foreach ($this->get_tool_actions() as $action) {
-            echo '<div class="fp-exp-tools__card">';
+            $icon_class = esc_attr($this->tool_action_icon_class((string) $action['slug']));
+            echo '<div class="fp-exp-dms-card fp-exp-tools__action">';
+            echo '<div class="fp-exp-dms-card-header">';
+            echo '<div class="fp-exp-dms-card-header-left">';
+            echo '<span class="dashicons ' . $icon_class . '" aria-hidden="true"></span>';
             echo '<h3>' . esc_html($action['label']) . '</h3>';
-            echo '<p>' . esc_html($action['description']) . '</p>';
-            echo '<button type="button" class="button button-primary" data-action="' . esc_attr($action['slug']) . '">' . esc_html($action['button']) . '</button>';
-            echo '</div>';
+            echo '</div></div>';
+            echo '<div class="fp-exp-dms-card-body">';
+            echo '<p class="description">' . esc_html($action['description']) . '</p>';
+            echo '<button type="button" class="fp-exp-btn fp-exp-btn-primary" data-action="' . esc_attr($action['slug']) . '">' . esc_html($action['button']) . '</button>';
+            echo '</div></div>';
         }
         echo '</div>';
         echo '<div class="fp-exp-tools__output" aria-live="polite"></div>';
         echo '</div>';
+    }
+
+    /**
+     * Classe dashicon per l’intestazione della card tool (allineamento visivo a FP Mail).
+     *
+     * @param string $slug Slug azione tool.
+     * @return string Classe CSS dashicons-*.
+     */
+    private function tool_action_icon_class(string $slug): string
+    {
+        return match ($slug) {
+            'resync-brevo', 'resync-roles', 'resync-pages' => 'dashicons-update',
+            'replay-events' => 'dashicons-controls-repeat',
+            'verify-tracking-simulation' => 'dashicons-chart-line',
+            'ping' => 'dashicons-networking',
+            'backup-branding' => 'dashicons-download',
+            'restore-branding' => 'dashicons-upload',
+            'clear-cache' => 'dashicons-trash',
+            'recreate-virtual-product', 'fix-virtual-product-quantity', 'fix-experience-prices' => 'dashicons-cart',
+            'migrate-reservations' => 'dashicons-database-export',
+            default => 'dashicons-admin-tools',
+        };
     }
 
     private function render_booking_rules_panel(): void
