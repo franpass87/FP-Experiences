@@ -1840,38 +1840,65 @@ body.fp-exp-admin-shell #screen-meta-links {
 
 .fp-exp-settings .nav-tab-wrapper {
     margin-top: 12px;
-    padding: 0;
-    border-bottom: 0;
+    padding: 8px 10px;
+    border: 1px solid var(--fpdms-border-light);
+    border-radius: var(--radius-lg);
+    background: var(--fpdms-bg-light);
     display: flex;
     flex-wrap: wrap;
-    gap: 8px;
+    align-items: center;
+    gap: 6px;
 }
 
 .fp-exp-settings .nav-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    position: relative;
     border: 1px solid transparent;
-    border-radius: 6px;
-    padding: 8px 16px;
+    border-radius: var(--radius-md);
+    padding: 10px 14px 14px 14px;
     font-size: 14px;
-    font-weight: 500;
+    font-weight: 600;
     background: transparent;
-    color: var(--fp-exp-color-muted);
-    transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
+    color: var(--fpdms-text-muted);
+    transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .fp-exp-settings .nav-tab:hover {
-    color: var(--fp-exp-color-text);
-    background: #f3f4f6;
+    color: var(--fpdms-text);
+    background: rgba(102, 126, 234, 0.08);
 }
 
 .fp-exp-settings .nav-tab:focus-visible {
-    outline: 2px solid var(--fp-exp-color-primary);
+    outline: 2px solid var(--fpdms-primary);
     outline-offset: 2px;
 }
 
 .fp-exp-settings .nav-tab.nav-tab-active {
-    color: var(--fp-exp-color-primary);
-    background: #eff6ff;
-    border-color: #dbeafe;
+    color: var(--fpdms-primary-dark);
+    background: rgba(102, 126, 234, 0.12);
+    border-color: rgba(102, 126, 234, 0.28);
+    box-shadow: 0 1px 2px rgba(102, 126, 234, 0.12);
+}
+
+/* Barra gradiente attiva (stesso linguaggio di .fp-exp-admin[data-fp-exp-admin] .fp-exp-tabs) */
+.fp-exp-settings .nav-tab::after {
+    content: '';
+    position: absolute;
+    left: 10px;
+    right: 10px;
+    bottom: 4px;
+    height: 3px;
+    border-radius: 2px;
+    background: transparent;
+    opacity: 0;
+    transition: opacity 0.2s ease, background 0.2s ease;
+}
+
+.fp-exp-settings .nav-tab.nav-tab-active::after {
+    background: var(--fpdms-gradient-primary);
+    opacity: 1;
 }
 
 .fp-exp-settings__form {
@@ -2194,6 +2221,53 @@ html.fp-exp-dark .fp-exp-tab[aria-selected="true"] {
 }
 
 html.fp-exp-dark .fp-exp-tab-panels { background: #15181d; }
+
+/* Tab Impostazioni (nav-tab) in tema scuro */
+html.fp-exp-dark .fp-exp-settings .nav-tab-wrapper,
+html.fp-exp-dark .fp-exp-admin[data-fp-exp-admin] .fp-exp-tabs.nav-tab-wrapper,
+html.fp-exp-dark .fp-exp-admin[data-fp-exp-admin] .fp-exp-tabs {
+    background: rgba(255, 255, 255, 0.04) !important;
+    border-color: rgba(230, 232, 235, 0.1) !important;
+}
+
+html.fp-exp-dark .fp-exp-settings .nav-tab {
+    color: var(--fp-exp-color-muted);
+}
+
+html.fp-exp-dark .fp-exp-settings .nav-tab:hover {
+    background: rgba(102, 126, 234, 0.14);
+    color: var(--fp-exp-color-text);
+}
+
+html.fp-exp-dark .fp-exp-settings .nav-tab.nav-tab-active {
+    background: rgba(102, 126, 234, 0.22);
+    border-color: rgba(102, 126, 234, 0.4);
+    color: #e9ecfe;
+    box-shadow: none;
+}
+
+html.fp-exp-dark .fp-exp-admin[data-fp-exp-admin] .fp-exp-tabs .nav-tab {
+    color: var(--fp-exp-color-muted) !important;
+}
+
+html.fp-exp-dark .fp-exp-admin[data-fp-exp-admin] .fp-exp-tabs .nav-tab:hover {
+    background: rgba(102, 126, 234, 0.14) !important;
+    color: var(--fp-exp-color-text) !important;
+}
+
+html.fp-exp-dark .fp-exp-admin[data-fp-exp-admin] .fp-exp-tabs .nav-tab.nav-tab-active {
+    background: rgba(102, 126, 234, 0.22) !important;
+    border-color: rgba(102, 126, 234, 0.4) !important;
+    color: #e9ecfe !important;
+}
+
+html.fp-exp-dark .fp-exp-admin[data-fp-exp-admin] .fp-exp-tabs .nav-tab.nav-tab-active .dashicons {
+    color: #c4b5fd !important;
+}
+
+html.fp-exp-dark .nav-tab-active .fp-exp-tab-badge {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
 
 html.fp-exp-dark .fp-exp-fieldset {
     background: linear-gradient(135deg, #1a1e24 0%, rgba(18, 21, 25, 0.94) 100%);
@@ -3633,20 +3707,21 @@ html.fp-exp-dark .fp-exp-requests__td-actions--past .fp-exp-requests__past-note 
    MIGLIORAMENTI ESTETICI - Settings Page
    ============================================ */
 
-/* Tab con icone - Migliore spaziatura e allineamento */
+/* Tab con icone — allineamento DMS (specificità su Impostazioni da regole [data-fp-exp-admin]) */
 .fp-exp-tabs .nav-tab {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    padding: 10px 16px;
-    transition: all 0.2s ease;
+    gap: 8px;
+    padding: 10px 14px 14px 14px;
+    transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, opacity 0.2s ease;
 }
 
 .fp-exp-tabs .nav-tab .dashicons {
-    font-size: 18px;
-    width: 18px;
-    height: 18px;
-    opacity: 0.7;
+    font-size: 17px;
+    width: 17px;
+    height: 17px;
+    opacity: 0.8;
+    color: inherit;
     transition: opacity 0.2s ease;
 }
 
@@ -3825,11 +3900,11 @@ label.fp-exp-settings__toggle input:checked + .fp-exp-toggle__switch::after {
     min-width: 20px;
     height: 20px;
     padding: 0 6px;
-    background: #2563eb;
-    color: white;
+    background: var(--fpdms-primary);
+    color: #fff;
     font-size: 11px;
     font-weight: 600;
-    border-radius: 10px;
+    border-radius: var(--radius-pill);
     line-height: 1;
 }
 
@@ -3838,7 +3913,7 @@ label.fp-exp-settings__toggle input:checked + .fp-exp-toggle__switch::after {
 }
 
 .nav-tab-active .fp-exp-tab-badge {
-    background: #1d4ed8;
+    background: var(--fpdms-primary-dark);
 }
 
 /* Form fields migliorati */
@@ -4399,43 +4474,48 @@ label.fp-exp-settings__toggle input:checked + .fp-exp-toggle__switch::after {
     color: var(--fp-exp-color-muted) !important;
 }
 
-/* Tabs migliorate - Specificità aumentata per sovrascrivere stili esistenti */
+/* Tab Impostazioni — design system DMS (chip + contenitore, non stile WP blu) */
 .fp-exp-admin[data-fp-exp-admin] .fp-exp-tabs.nav-tab-wrapper,
 .fp-exp-admin[data-fp-exp-admin] .fp-exp-tabs {
-    background: #ffffff !important;
-    border-bottom: 1px solid var(--fp-exp-admin-border) !important;
-    padding: 0 24px !important;
-    margin: 0 -24px 24px -24px !important;
-    gap: 4px !important;
+    background: var(--fpdms-bg-light) !important;
+    border: 1px solid var(--fpdms-border-light) !important;
+    border-radius: var(--radius-lg) !important;
+    padding: 8px 10px !important;
+    margin: 0 -24px 1.25rem -24px !important;
+    gap: 6px !important;
+    display: flex !important;
+    flex-wrap: wrap !important;
+    align-items: center !important;
+    box-shadow: none !important;
 }
 
 .fp-exp-admin[data-fp-exp-admin] .fp-exp-tabs .nav-tab {
-    padding: 10px 18px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    position: relative !important;
+    padding: 10px 14px 14px 14px !important;
     font-size: 14px !important;
-    font-weight: 500 !important;
-    border-radius: 6px 6px 0 0 !important;
-    margin-bottom: -1px !important;
-    transition: all 0.2s ease !important;
+    font-weight: 600 !important;
+    border-radius: var(--radius-md) !important;
+    margin-bottom: 0 !important;
+    border: 1px solid transparent !important;
+    background: transparent !important;
+    color: var(--fpdms-text-muted) !important;
+    box-shadow: none !important;
+    transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease !important;
 }
 
 .fp-exp-admin[data-fp-exp-admin] .fp-exp-tabs .nav-tab:hover {
-    background: #f8fafc !important;
-    color: var(--fp-exp-color-text) !important;
+    background: rgba(102, 126, 234, 0.08) !important;
+    color: var(--fpdms-text) !important;
 }
 
 .fp-exp-admin[data-fp-exp-admin] .fp-exp-tabs .nav-tab.nav-tab-active {
-    background: #ffffff !important;
-    border-bottom-color: #ffffff !important;
-    color: var(--fp-exp-color-primary) !important;
-    box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.02) !important;
-}
-
-.fp-exp-tabs .nav-tab .dashicons {
-    font-size: 16px;
-    width: 16px;
-    height: 16px;
-    margin-right: 6px;
-    vertical-align: middle;
+    background: rgba(102, 126, 234, 0.12) !important;
+    border-color: rgba(102, 126, 234, 0.28) !important;
+    color: var(--fpdms-primary-dark) !important;
+    box-shadow: 0 1px 2px rgba(102, 126, 234, 0.12) !important;
 }
 
 /* Form table migliorato */
@@ -4626,44 +4706,42 @@ label.fp-exp-settings__toggle input:checked + .fp-exp-toggle__switch::after {
     z-index: 1;
 }
 
-/* Tab con animazioni più fluide e icone più visibili */
-.fp-exp-admin[data-fp-exp-admin] .fp-exp-tabs .nav-tab {
-    position: relative;
-    overflow: hidden;
+/* Indicatore attivo: barra gradiente DMS sotto la scheda (senza doppia linea WP) */
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-tabs .nav-tab::before {
+    display: none;
 }
 
-.fp-exp-admin[data-fp-exp-admin] .fp-exp-tabs .nav-tab::before {
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-tabs .nav-tab::after {
     content: '';
     position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 0;
+    left: 10px;
+    right: 10px;
+    bottom: 4px;
     height: 3px;
-    background: linear-gradient(90deg, var(--fp-exp-color-primary) 0%, #3b82f6 100%);
-    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    border-radius: 3px 3px 0 0;
+    border-radius: 2px;
+    background: transparent;
+    transition: background 0.2s ease, opacity 0.2s ease;
+    opacity: 0;
 }
 
-.fp-exp-admin[data-fp-exp-admin] .fp-exp-tabs .nav-tab:hover::before {
-    width: 100%;
-}
-
-.fp-exp-admin[data-fp-exp-admin] .fp-exp-tabs .nav-tab.nav-tab-active::before {
-    width: 100%;
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-tabs .nav-tab.nav-tab-active::after {
+    background: var(--fpdms-gradient-primary);
+    opacity: 1;
 }
 
 .fp-exp-admin[data-fp-exp-admin] .fp-exp-tabs .nav-tab .dashicons {
-    transition: transform 0.2s ease, color 0.2s ease;
+    color: inherit;
+    opacity: 0.85;
+    transition: opacity 0.2s ease, transform 0.2s ease;
 }
 
-.fp-exp-admin[data-fp-exp-admin] .fp-exp-tabs .nav-tab:hover .dashicons {
-    transform: scale(1.1);
-    color: var(--fp-exp-color-primary);
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-tabs .nav-tab:hover .dashicons,
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-tabs .nav-tab.nav-tab-active .dashicons {
+    opacity: 1;
 }
 
 .fp-exp-admin[data-fp-exp-admin] .fp-exp-tabs .nav-tab.nav-tab-active .dashicons {
-    color: var(--fp-exp-color-primary);
-    transform: scale(1.05);
+    color: var(--fpdms-primary);
 }
 
 /* Form table con card effect più pronunciato */

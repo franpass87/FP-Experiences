@@ -2,6 +2,12 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.5.43] - 2026-04-02
+
+### Changed
+
+- **Admin — tab Impostazioni** (`.fp-exp-tabs.nav-tab-wrapper` / `.fp-exp-settings .nav-tab-wrapper`): aspetto allineato al design system DMS — contenitore con `--fpdms-bg-light`, bordo `--fpdms-border-light`, chip con hover lavanda, scheda attiva con testo `--fpdms-primary-dark` e **indicatore inferiore** con `var(--fpdms-gradient-primary)` al posto del blu WordPress e della “linguetta” classica; badge `.fp-exp-tab-badge` con token viola; regole **tema scuro** (`html.fp-exp-dark`) per wrapper e tab.
+
 ## [1.5.42] - 2026-04-02
 
 ### Fixed
