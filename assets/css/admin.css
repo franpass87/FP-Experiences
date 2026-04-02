@@ -2750,6 +2750,115 @@ html.fp-exp-dark .fp-exp-requests__td-actions--past .fp-exp-requests__past-note 
     margin-right: 0.5rem;
 }
 
+/* Operazioni / Calendario admin — card interne (Panoramica + tab Calendario + Manuale) */
+.fp-exp-operator-overview {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.fp-exp-calendar-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1rem;
+    margin: 0.5rem 0 1.25rem;
+}
+
+.fp-exp-calendar-kpi {
+    background: var(--fpdms-bg-light);
+    border: 1px solid var(--fpdms-border-light);
+    border-radius: var(--radius-md);
+    padding: 0.75rem 1rem;
+}
+
+.fp-exp-calendar-kpi__label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--fpdms-text-muted);
+    margin-bottom: 6px;
+}
+
+.fp-exp-calendar-kpi__value {
+    font-size: 1.625rem;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--fpdms-text);
+}
+
+.fp-exp-operator-overview__quick-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.fp-exp-operator-overview__filters {
+    margin: 0 0 1rem;
+    padding: 0;
+    border: none;
+    background: transparent;
+}
+
+.fp-exp-operator-overview__filters-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 0.75rem 1rem;
+    align-items: end;
+}
+
+.fp-exp-operator-overview__filter-field {
+    display: block;
+    margin: 0;
+}
+
+.fp-exp-operator-overview__filter-label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--fpdms-text-muted);
+    margin-bottom: 6px;
+}
+
+.fp-exp-operator-overview__filters select,
+.fp-exp-operator-overview__filters input[type="date"] {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    border: 2px solid var(--fpdms-border);
+    border-radius: var(--radius-md);
+    padding: 0.4rem 0.5rem;
+    min-height: 36px;
+}
+
+.fp-exp-operator-overview__filters-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.fp-exp-operator-overview__table-wrap {
+    margin-top: 0.5rem;
+    overflow-x: auto;
+}
+
+.fp-exp-calendar__panel {
+    margin-bottom: 0;
+}
+
+.fp-exp-calendar__panel-body > .fp-exp-calendar {
+    margin-top: 0;
+}
+
+.fp-exp-calendar-manual__summary {
+    margin-top: 1.25rem;
+    margin-bottom: 0;
+}
+
+.fp-exp-calendar-manual__panel .fp-exp-fields-grid {
+    margin-bottom: 0;
+}
+
 .fp-exp-calendar {
     display: grid;
     gap: 16px;

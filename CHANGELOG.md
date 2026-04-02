@@ -2,6 +2,14 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.5.36] - 2026-04-02
+
+### Changed
+
+- **Admin Operazioni / Calendario**: Panoramica operatore in **due card** FP Mail-style (dashboard + KPI, poi filtri/tabella); KPI e form filtri senza stili inline, classi `fp-exp-calendar-kpi-*` e `fp-exp-operator-overview__*`.
+- **Tab Calendario**: area app `#fp-exp-calendar-app` avvolta in `fp-exp-dms-card` con titolo «Calendario slot e disponibilità».
+- **Tab Prenotazione manuale**: form in card con header; eventuale **Riepilogo prezzi** in sotto-card annidata.
+
 ## [1.5.35] - 2026-04-02
 
 ### Added

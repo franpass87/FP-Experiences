@@ -276,6 +276,13 @@ final class CalendarAdmin implements HookableInterface
             ],
         ];
 
+        echo '<div class="fp-exp-dms-card fp-exp-calendar__panel">';
+        echo '<div class="fp-exp-dms-card-header"><div class="fp-exp-dms-card-header-left">';
+        echo '<span class="dashicons dashicons-calendar-alt" aria-hidden="true"></span>';
+        echo '<h2>' . esc_html__('Calendario slot e disponibilità', 'fp-experiences') . '</h2>';
+        echo '</div></div>';
+        echo '<div class="fp-exp-dms-card-body fp-exp-calendar__panel-body">';
+
         echo '<div id="fp-exp-calendar-app" class="fp-exp-calendar" data-loading-text="' . esc_attr__('Loading…', 'fp-experiences') . '" data-bootstrap="' . esc_attr(wp_json_encode($bootstrap)) . '">';
 
         // Mostra messaggio informativo se non ci sono esperienze pubblicate
@@ -333,6 +340,8 @@ final class CalendarAdmin implements HookableInterface
         }
         echo '</noscript>';
         echo '</div>';
+
+        echo '</div></div>';
     }
 
     /**
@@ -380,6 +389,13 @@ final class CalendarAdmin implements HookableInterface
         }
 
         $contact = isset($_POST['contact']) && is_array($_POST['contact']) ? array_map('sanitize_text_field', wp_unslash($_POST['contact'])) : [];
+
+        echo '<div class="fp-exp-dms-card fp-exp-calendar-manual__panel">';
+        echo '<div class="fp-exp-dms-card-header"><div class="fp-exp-dms-card-header-left">';
+        echo '<span class="dashicons dashicons-welcome-write-blog" aria-hidden="true"></span>';
+        echo '<h2>' . esc_html__('Prenotazione manuale', 'fp-experiences') . '</h2>';
+        echo '</div></div>';
+        echo '<div class="fp-exp-dms-card-body">';
 
         echo '<form method="post" action="">';
         wp_nonce_field('fp_exp_manual_booking', 'fp_exp_manual_booking_nonce');
@@ -489,13 +505,21 @@ final class CalendarAdmin implements HookableInterface
 
         $breakdown = $this->preview_breakdown($selected_experience, $selected_slot_id, $posted_tickets, $posted_addons, $slots);
         if ($breakdown) {
-            echo '<h3>' . esc_html__('Pricing summary', 'fp-experiences') . '</h3>';
+            echo '<div class="fp-exp-dms-card fp-exp-calendar-manual__summary">';
+            echo '<div class="fp-exp-dms-card-header"><div class="fp-exp-dms-card-header-left">';
+            echo '<span class="dashicons dashicons-money-alt" aria-hidden="true"></span>';
+            echo '<h3>' . esc_html__('Riepilogo prezzi', 'fp-experiences') . '</h3>';
+            echo '</div></div>';
+            echo '<div class="fp-exp-dms-card-body">';
             echo '<table class="widefat fixed">';
             echo '<tbody>';
             echo '<tr><th>' . esc_html__('Subtotal', 'fp-experiences') . '</th><td>' . esc_html(number_format_i18n((float) $breakdown['subtotal'], 2)) . '</td></tr>';
             echo '<tr><th>' . esc_html__('Total', 'fp-experiences') . '</th><td>' . esc_html(number_format_i18n((float) $breakdown['total'], 2)) . '</td></tr>';
             echo '</tbody></table>';
+            echo '</div></div>';
         }
+
+        echo '</div></div>';
     }
 
     /**
@@ -665,11 +689,17 @@ final class CalendarAdmin implements HookableInterface
         $rows = $this->get_filtered_operator_reservations($filters, 30);
         $experiences = $this->get_operator_experiences();
 
-        echo '<section class="fp-exp-operator-overview">';
-        echo '<h2>' . esc_html__('Dashboard Operatore', 'fp-experiences') . '</h2>';
+        echo '<div class="fp-exp-operator-overview">';
+
+        echo '<div class="fp-exp-dms-card fp-exp-operator-overview__intro">';
+        echo '<div class="fp-exp-dms-card-header"><div class="fp-exp-dms-card-header-left">';
+        echo '<span class="dashicons dashicons-dashboard" aria-hidden="true"></span>';
+        echo '<h2>' . esc_html__('Dashboard operatore', 'fp-experiences') . '</h2>';
+        echo '</div></div>';
+        echo '<div class="fp-exp-dms-card-body">';
         echo '<p class="description">' . esc_html__('Controllo rapido di calendario e prenotazioni con filtri operativi.', 'fp-experiences') . '</p>';
 
-        echo '<div class="fp-exp-operator-overview__kpis" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin:16px 0;">';
+        echo '<div class="fp-exp-calendar-kpi-grid" role="list">';
         $kpi_items = [
             [
                 'label' => esc_html__('Richieste in attesa', 'fp-experiences'),
@@ -689,27 +719,36 @@ final class CalendarAdmin implements HookableInterface
             ],
         ];
         foreach ($kpi_items as $item) {
-            echo '<div style="background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:12px;">';
-            echo '<div style="font-size:12px;color:#6b7280;margin-bottom:4px;">' . esc_html((string) $item['label']) . '</div>';
-            echo '<div style="font-size:26px;font-weight:700;line-height:1;">' . esc_html(number_format_i18n((int) $item['value'])) . '</div>';
+            echo '<div class="fp-exp-calendar-kpi" role="listitem">';
+            echo '<div class="fp-exp-calendar-kpi__label">' . esc_html((string) $item['label']) . '</div>';
+            echo '<div class="fp-exp-calendar-kpi__value">' . esc_html(number_format_i18n((int) $item['value'])) . '</div>';
             echo '</div>';
         }
         echo '</div>';
 
-        echo '<div class="fp-exp-operator-overview__quick-actions" style="display:flex;flex-wrap:wrap;gap:8px;margin:0 0 16px;">';
+        echo '<div class="fp-exp-operator-overview__quick-actions">';
         echo '<a class="button button-secondary" href="' . esc_url(admin_url('admin.php?page=fp_exp_requests')) . '">' . esc_html__('Apri Richieste RTB', 'fp-experiences') . '</a>';
         echo '<a class="button button-secondary" href="' . esc_url(admin_url('admin.php?page=fp_exp_checkin')) . '">' . esc_html__('Apri Check-in', 'fp-experiences') . '</a>';
         echo '<a class="button button-secondary" href="' . esc_url(admin_url('admin.php?page=fp_exp_calendar&view=calendar')) . '">' . esc_html__('Apri Calendario Slot', 'fp-experiences') . '</a>';
         echo '<a class="button button-primary" href="' . esc_url(admin_url('admin.php?page=fp_exp_calendar&view=manual')) . '">' . esc_html__('Nuova Prenotazione Manuale', 'fp-experiences') . '</a>';
         echo '</div>';
 
-        echo '<form method="get" style="margin:0 0 12px;padding:12px;background:#fff;border:1px solid #e5e7eb;border-radius:10px;">';
+        echo '</div></div>';
+
+        echo '<div class="fp-exp-dms-card fp-exp-operator-overview__list">';
+        echo '<div class="fp-exp-dms-card-header"><div class="fp-exp-dms-card-header-left">';
+        echo '<span class="dashicons dashicons-filter" aria-hidden="true"></span>';
+        echo '<h2>' . esc_html__('Prenotazioni e filtri', 'fp-experiences') . '</h2>';
+        echo '</div></div>';
+        echo '<div class="fp-exp-dms-card-body">';
+
+        echo '<form method="get" class="fp-exp-operator-overview__filters">';
         echo '<input type="hidden" name="page" value="fp_exp_calendar" />';
         echo '<input type="hidden" name="view" value="overview" />';
-        echo '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;align-items:end;">';
+        echo '<div class="fp-exp-operator-overview__filters-grid">';
 
-        echo '<label><span style="display:block;font-size:12px;color:#6b7280;margin-bottom:4px;">' . esc_html__('Esperienza', 'fp-experiences') . '</span>';
-        echo '<select name="experience_id" style="width:100%;">';
+        echo '<label class="fp-exp-operator-overview__filter-field"><span class="fp-exp-operator-overview__filter-label">' . esc_html__('Esperienza', 'fp-experiences') . '</span>';
+        echo '<select name="experience_id">';
         echo '<option value="0">' . esc_html__('Tutte', 'fp-experiences') . '</option>';
         foreach ($experiences as $experience) {
             $exp_id = (int) ($experience['id'] ?? 0);
@@ -733,22 +772,22 @@ final class CalendarAdmin implements HookableInterface
             Reservations::STATUS_CANCELLED => esc_html__('Cancellata', 'fp-experiences'),
             Reservations::STATUS_DECLINED => esc_html__('Rifiutata', 'fp-experiences'),
         ];
-        echo '<label><span style="display:block;font-size:12px;color:#6b7280;margin-bottom:4px;">' . esc_html__('Stato', 'fp-experiences') . '</span>';
-        echo '<select name="status" style="width:100%;">';
+        echo '<label class="fp-exp-operator-overview__filter-field"><span class="fp-exp-operator-overview__filter-label">' . esc_html__('Stato', 'fp-experiences') . '</span>';
+        echo '<select name="status">';
         foreach ($status_options as $status_key => $status_label) {
             echo '<option value="' . esc_attr((string) $status_key) . '" ' . selected($filters['status'], $status_key, false) . '>' . esc_html($status_label) . '</option>';
         }
         echo '</select></label>';
 
-        echo '<label><span style="display:block;font-size:12px;color:#6b7280;margin-bottom:4px;">' . esc_html__('Da data', 'fp-experiences') . '</span>';
-        echo '<input type="date" name="date_from" value="' . esc_attr($filters['date_from']) . '" style="width:100%;" />';
+        echo '<label class="fp-exp-operator-overview__filter-field"><span class="fp-exp-operator-overview__filter-label">' . esc_html__('Da data', 'fp-experiences') . '</span>';
+        echo '<input type="date" name="date_from" value="' . esc_attr($filters['date_from']) . '" />';
         echo '</label>';
 
-        echo '<label><span style="display:block;font-size:12px;color:#6b7280;margin-bottom:4px;">' . esc_html__('A data', 'fp-experiences') . '</span>';
-        echo '<input type="date" name="date_to" value="' . esc_attr($filters['date_to']) . '" style="width:100%;" />';
+        echo '<label class="fp-exp-operator-overview__filter-field"><span class="fp-exp-operator-overview__filter-label">' . esc_html__('A data', 'fp-experiences') . '</span>';
+        echo '<input type="date" name="date_to" value="' . esc_attr($filters['date_to']) . '" />';
         echo '</label>';
 
-        echo '<div>';
+        echo '<div class="fp-exp-operator-overview__filters-actions">';
         echo '<button type="submit" class="button button-secondary">' . esc_html__('Applica filtri', 'fp-experiences') . '</button> ';
         echo '<a class="button" href="' . esc_url(admin_url('admin.php?page=fp_exp_calendar&view=overview')) . '">' . esc_html__('Reset', 'fp-experiences') . '</a>';
         echo '</div>';
@@ -758,10 +797,11 @@ final class CalendarAdmin implements HookableInterface
 
         if (! $rows) {
             echo '<p>' . esc_html__('Nessuna prenotazione trovata con i filtri selezionati.', 'fp-experiences') . '</p>';
-            echo '</section>';
+            echo '</div></div></div>';
             return;
         }
 
+        echo '<div class="fp-exp-operator-overview__table-wrap">';
         echo '<table class="widefat striped">';
         echo '<thead><tr>';
         echo '<th>' . esc_html__('Esperienza', 'fp-experiences') . '</th>';
@@ -803,7 +843,8 @@ final class CalendarAdmin implements HookableInterface
         }
 
         echo '</tbody></table>';
-        echo '</section>';
+        echo '</div>';
+        echo '</div></div></div>';
     }
 
     /**
