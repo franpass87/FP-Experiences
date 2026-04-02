@@ -2,6 +2,12 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.5.33] - 2026-04-02
+
+### Changed
+
+- **Admin banner**: respiro tra breadcrumb e blocco titolo (`row-gap` / `column-gap`); `.fpexp-page-header-content` in colonna con `gap` tra titolo e descrizione (come la coppia h2+p di FP Mail); `line-height` su titolo, sottotitolo e breadcrumb; `font-weight: 600` sul titolo (design system); badge con `align-self: center` e `line-height` esplicito.
+
 ## [1.5.32] - 2026-04-02
 
 ### Changed

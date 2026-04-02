@@ -186,9 +186,9 @@ body.fp-exp-admin-shell #screen-meta-links {
 }
 
 /*
- * Page header — valori identici a FP-Mail-SMTP/assets/css/admin.css
- * (.fpmail-admin-page .fpmail-page-header, titolo, p, badge)
- * + flex-wrap per breadcrumb a tutta larghezza sopra titolo/descrizione.
+ * Page header — allineato a FP Mail SMTP + fp-admin-ui-design-system.mdc.
+ * Mail: .fpmail-page-header-content avvolge h2 + p (flusso a colonna); qui
+ * lo rendiamo esplicito con flex+gap. Breadcrumb extra: row-gap tra le righe flex.
  */
 .wrap.fp-exp-admin-page > .notice,
 .wrap.fp-exp-admin-page > div.updated,
@@ -209,6 +209,8 @@ body.fp-exp-admin-shell #screen-meta-links {
     align-items: center;
     color: #fff;
     flex-wrap: wrap;
+    row-gap: 1rem;
+    column-gap: 1.5rem;
 }
 
 .fpexp-page-header .fp-exp-admin__breadcrumb,
@@ -216,6 +218,8 @@ body.fp-exp-admin-shell #screen-meta-links {
     width: 100%;
     flex-basis: 100%;
     font-size: 12px;
+    line-height: 1.5;
+    letter-spacing: 0.01em;
     color: rgba(255, 255, 255, 0.85);
 }
 
@@ -229,17 +233,25 @@ body.fp-exp-admin-shell #screen-meta-links {
     color: #fff;
 }
 
+/* Come colonna Mail (h2 + p dentro .fpmail-page-header-content) */
 .fpexp-page-header-content {
     flex: 1;
     min-width: 200px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
 }
 
-/* come .fpmail-page-header .fpmail-page-header-title */
+/* come .fpmail-page-header .fpmail-page-header-title + design system (font-weight 600) */
 .fpexp-page-header .fpexp-page-header-title,
 .fpexp-page-header .fp-exp-admin__title {
-    margin: 0 0 0.25rem 0;
+    margin: 0;
+    padding: 0;
     color: #fff;
     font-size: 1.5rem;
+    font-weight: 600;
+    line-height: 1.35;
 }
 
 .fpexp-page-header .fpexp-page-header-title .dashicons {
@@ -250,22 +262,27 @@ body.fp-exp-admin-shell #screen-meta-links {
     vertical-align: middle;
 }
 
-/* come .fpmail-page-header p */
+/* come .fpmail-page-header p + line-height per respiro come nel banner Mail */
 .fpexp-page-header p,
 .fpexp-page-header .fpexp-page-header-desc,
 .fpexp-page-header .fp-exp-admin__intro {
     margin: 0;
+    padding: 0;
     opacity: 0.95;
     font-size: 0.95rem;
+    line-height: 1.5;
+    color: #fff;
 }
 
 /* come .fpmail-page-header-badge */
 .fpexp-page-header-badge {
+    align-self: center;
     background: rgba(255, 255, 255, 0.25);
     padding: 0.25rem 0.75rem;
     border-radius: var(--radius-pill);
     font-size: 0.8rem;
     font-weight: 600;
+    line-height: 1.35;
 }
 
 /* Legacy header (se usato fuori dal banner) */
