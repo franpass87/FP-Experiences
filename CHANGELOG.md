@@ -2,6 +2,18 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.5.29] - 2026-04-02
+
+### Added
+
+- **Roadmap admin UI**: documento `docs/ADMIN-UI-ROADMAP.md` con fasi di allineamento al design system FP.
+
+### Changed
+
+- **Admin — Fase 1 (pilota Dashboard)**: classe `fp-exp-admin-page` sul `.wrap` della bacheca; icona `dashicons-dashboard` nel titolo del banner.
+- **CSS admin**: token `:root` allineati a FP DMS (`--fpdms-*`, `--shadow-md`, `--radius-xl`, …); banner `.fpexp-page-header` conforme a `fp-admin-ui-design-system.mdc` (niente ombra/testo ombra sul gradiente, tipografia e badge versione canonici); regola `body[class*="fp-exp"]` + `.wrap.fp-exp-admin-page` per spaziatura rispetto alle notice.
+- **Build**: rigenerato `assets/css/dist/fp-experiences-admin.min.css` da `admin.css`.
+
 ## [1.5.28] - 2026-03-31
 
 ### Fixed

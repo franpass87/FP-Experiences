@@ -1,4 +1,38 @@
 :root {
+    /* FP Digital Marketing Suite — token admin condivisi (fp-admin-ui-design-system.mdc) */
+    --fpdms-primary: #667eea;
+    --fpdms-primary-dark: #764ba2;
+    --fpdms-gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --fpdms-secondary: #11998e;
+    --fpdms-gradient-secondary: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+    --fpdms-success: #10b981;
+    --fpdms-success-bg: #d1fae5;
+    --fpdms-success-text: #065f46;
+    --fpdms-warning: #f59e0b;
+    --fpdms-warning-bg: #fef3c7;
+    --fpdms-warning-text: #92400e;
+    --fpdms-danger: #ef4444;
+    --fpdms-danger-bg: #fee2e2;
+    --fpdms-danger-text: #991b1b;
+    --fpdms-info: #3b82f6;
+    --fpdms-info-bg: #dbeafe;
+    --fpdms-info-text: #1e40af;
+    --fpdms-text: #1f2937;
+    --fpdms-text-light: #4b5563;
+    --fpdms-text-muted: #9ca3af;
+    --fpdms-border: #e5e7eb;
+    --fpdms-border-light: #f3f4f6;
+    --fpdms-bg-white: #ffffff;
+    --fpdms-bg-light: #f9fafb;
+    --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.08);
+    --shadow-lg: 0 8px 30px rgba(0, 0, 0, 0.12);
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --radius-xl: 16px;
+    --radius-pill: 999px;
+    --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+
+    /* Legacy / specifiche plugin (compatibilità nel resto del foglio) */
     --fp-exp-admin-spacing: 16px;
     --fp-exp-admin-radius: 8px;
     --fp-exp-admin-card-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
@@ -7,9 +41,6 @@
     --fp-exp-color-muted: #6b7280;
     --fp-exp-color-primary: #2563eb;
     --fp-exp-color-danger: #dc2626;
-
-    /* FP Design System (grafica unificata) */
-    --fpdms-gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
 
 /* ============================================
@@ -120,6 +151,11 @@ body.fp-exp-admin-shell #wpbody-content > .wrap {
     padding: 0;
 }
 
+/* Notice WordPress: aria tra notice e contenuto (fp-admin-ui-design-system.mdc) */
+body[class*="fp-exp"] #wpbody-content > .wrap.fp-exp-admin-page {
+    margin-top: 12px;
+}
+
 body.fp-exp-admin-shell #wpbody-content > .wrap > :first-child {
     margin-top: 0;
 }
@@ -149,18 +185,18 @@ body.fp-exp-admin-shell #screen-meta-links {
     gap: 24px;
 }
 
-/* Page Header — gradiente viola (design system FP) */
+/* Page Header — allineato a FP Mail SMTP / fp-admin-ui-design-system.mdc (no shadow sul gradiente) */
 .fpexp-page-header {
     background: var(--fpdms-gradient-primary);
-    padding: 24px 28px;
-    border-radius: 12px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-    margin-bottom: 4px;
+    border-radius: var(--radius-xl);
+    padding: 1.5rem 2rem;
+    margin-bottom: 1.5rem;
     display: flex;
-    align-items: center;
     justify-content: space-between;
+    align-items: center;
     gap: 16px;
     flex-wrap: wrap;
+    color: #fff;
 }
 
 .fpexp-page-header .fp-exp-admin__breadcrumb,
@@ -182,31 +218,38 @@ body.fp-exp-admin-shell #screen-meta-links {
 
 .fpexp-page-header-content {
     flex: 1;
-    min-width: 0;
+    min-width: 200px;
 }
 
 .fpexp-page-header .fpexp-page-header-title,
 .fpexp-page-header .fp-exp-admin__title {
-    margin: 0 0 4px;
-    font-size: 22px;
-    font-weight: 700;
+    margin: 0 0 0.25rem 0;
     color: #fff !important;
-    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.fpexp-page-header .fpexp-page-header-title .dashicons {
+    font-size: 1.5rem;
+    width: 1.5rem;
+    height: 1.5rem;
+    margin-right: 0.5rem;
+    vertical-align: middle;
 }
 
 .fpexp-page-header .fpexp-page-header-desc,
 .fpexp-page-header .fp-exp-admin__intro {
     margin: 0;
-    font-size: 13px;
-    color: rgba(255, 255, 255, 0.88) !important;
+    opacity: 0.95;
+    font-size: 0.95rem;
+    color: #fff !important;
 }
 
 .fpexp-page-header-badge {
-    background: rgba(255, 255, 255, 0.18);
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    border-radius: 999px;
-    padding: 5px 12px;
-    font-size: 11px;
+    background: rgba(255, 255, 255, 0.25);
+    padding: 0.25rem 0.75rem;
+    border-radius: var(--radius-pill);
+    font-size: 0.8rem;
     font-weight: 600;
     color: #fff;
     white-space: nowrap;

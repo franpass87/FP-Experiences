@@ -50,7 +50,7 @@ final class Dashboard
             'agenda_experience_id' => $agenda_experience_id,
         ]);
 
-        echo '<div class="wrap fp-exp-dashboard">';
+        echo '<div class="wrap fp-exp-dashboard fp-exp-admin-page">';
         echo '<h1 class="screen-reader-text">' . esc_html__('Dashboard FP Experiences', 'fp-experiences') . '</h1>';
         echo '<div class="fp-exp-admin" data-fp-exp-admin>';
         echo '<div class="fp-exp-admin__body">';
@@ -62,7 +62,7 @@ final class Dashboard
         echo '<span>' . esc_html__('Dashboard', 'fp-experiences') . '</span>';
         echo '</nav>';
         echo '<div class="fpexp-page-header-content">';
-        echo '<h2 class="fpexp-page-header-title" aria-hidden="true">' . esc_html__('Dashboard FP Experiences', 'fp-experiences') . '</h2>';
+        echo '<h2 class="fpexp-page-header-title" aria-hidden="true"><span class="dashicons dashicons-dashboard" aria-hidden="true"></span>' . esc_html__('Dashboard FP Experiences', 'fp-experiences') . '</h2>';
         echo '<p class="fpexp-page-header-desc">' . esc_html__('Panoramica operativa e agenda.', 'fp-experiences') . '</p>';
         echo '</div>';
         echo '<span class="fpexp-page-header-badge">v' . esc_html( defined( 'FP_EXP_VERSION' ) ? FP_EXP_VERSION : '0' ) . '</span>';
