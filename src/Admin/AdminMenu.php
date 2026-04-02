@@ -576,7 +576,7 @@ final class AdminMenu implements HookableInterface
     }
 
     /**
-     * Aggiunge `fp-exp-admin-shell` sulle schermate gestite dal plugin (CSS bottoni/token DMS coerenti).
+     * Aggiunge `fp-exp-admin-shell` sulle schermate gestite dal plugin (CSS bottoni/tab/token DMS coerenti).
      */
     public function add_admin_body_class(string $classes): string
     {
@@ -593,6 +593,8 @@ final class AdminMenu implements HookableInterface
             'edit-fp_meeting_point',
             'fp_meeting_point',
             'edit-fp_exp_language',
+            'edit-fp_exp_gift_voucher',
+            'fp_exp_gift_voucher',
         ];
 
         $is_managed = in_array($screen_id, $managed_screens, true) || 0 === strpos($screen_id, 'fp-exp-dashboard_page_');

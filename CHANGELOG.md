@@ -2,6 +2,17 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.5.44] - 2026-04-02
+
+### Changed
+
+- **Admin — navigazione operatore** (`.fp-exp-operator-nav.nav-tab-wrapper` su Calendario, Richieste RTB, Check-in): stessi contenitori/chip/barra gradiente attiva e tema scuro delle tab Impostazioni/Email (`.fp-exp-tabs`), con margine orizzontale neutro rispetto al full-bleed delle tab interne alla pagina Calendario.
+- **Body class**: `fp-exp-admin-shell` estesa a **`edit-fp_exp_gift_voucher`** e **`fp_exp_gift_voucher`** (coerenza con enqueue CSS già presente).
+
+### Added
+
+- **Documentazione**: `docs/ADMIN-SCREENS.md` — inventario pagine custom, CPT/tassonomie, pattern HTML e tipi di tab.
+
 ## [1.5.43] - 2026-04-02
 
 ### Changed

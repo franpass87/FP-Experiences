@@ -2225,6 +2225,7 @@ html.fp-exp-dark .fp-exp-tab-panels { background: #15181d; }
 /* Tab Impostazioni (nav-tab) in tema scuro */
 html.fp-exp-dark .fp-exp-settings .nav-tab-wrapper,
 html.fp-exp-dark .fp-exp-admin[data-fp-exp-admin] .fp-exp-tabs.nav-tab-wrapper,
+html.fp-exp-dark .fp-exp-admin[data-fp-exp-admin] .fp-exp-operator-nav.nav-tab-wrapper,
 html.fp-exp-dark .fp-exp-admin[data-fp-exp-admin] .fp-exp-tabs {
     background: rgba(255, 255, 255, 0.04) !important;
     border-color: rgba(230, 232, 235, 0.1) !important;
@@ -2246,22 +2247,26 @@ html.fp-exp-dark .fp-exp-settings .nav-tab.nav-tab-active {
     box-shadow: none;
 }
 
-html.fp-exp-dark .fp-exp-admin[data-fp-exp-admin] .fp-exp-tabs .nav-tab {
+html.fp-exp-dark .fp-exp-admin[data-fp-exp-admin] .fp-exp-tabs .nav-tab,
+html.fp-exp-dark .fp-exp-admin[data-fp-exp-admin] .fp-exp-operator-nav .nav-tab {
     color: var(--fp-exp-color-muted) !important;
 }
 
-html.fp-exp-dark .fp-exp-admin[data-fp-exp-admin] .fp-exp-tabs .nav-tab:hover {
+html.fp-exp-dark .fp-exp-admin[data-fp-exp-admin] .fp-exp-tabs .nav-tab:hover,
+html.fp-exp-dark .fp-exp-admin[data-fp-exp-admin] .fp-exp-operator-nav .nav-tab:hover {
     background: rgba(102, 126, 234, 0.14) !important;
     color: var(--fp-exp-color-text) !important;
 }
 
-html.fp-exp-dark .fp-exp-admin[data-fp-exp-admin] .fp-exp-tabs .nav-tab.nav-tab-active {
+html.fp-exp-dark .fp-exp-admin[data-fp-exp-admin] .fp-exp-tabs .nav-tab.nav-tab-active,
+html.fp-exp-dark .fp-exp-admin[data-fp-exp-admin] .fp-exp-operator-nav .nav-tab.nav-tab-active {
     background: rgba(102, 126, 234, 0.22) !important;
     border-color: rgba(102, 126, 234, 0.4) !important;
     color: #e9ecfe !important;
 }
 
-html.fp-exp-dark .fp-exp-admin[data-fp-exp-admin] .fp-exp-tabs .nav-tab.nav-tab-active .dashicons {
+html.fp-exp-dark .fp-exp-admin[data-fp-exp-admin] .fp-exp-tabs .nav-tab.nav-tab-active .dashicons,
+html.fp-exp-dark .fp-exp-admin[data-fp-exp-admin] .fp-exp-operator-nav .nav-tab.nav-tab-active .dashicons {
     color: #c4b5fd !important;
 }
 
@@ -4474,8 +4479,9 @@ label.fp-exp-settings__toggle input:checked + .fp-exp-toggle__switch::after {
     color: var(--fp-exp-color-muted) !important;
 }
 
-/* Tab Impostazioni — design system DMS (chip + contenitore, non stile WP blu) */
+/* Tab Impostazioni / Email + navigazione operatore — design system DMS */
 .fp-exp-admin[data-fp-exp-admin] .fp-exp-tabs.nav-tab-wrapper,
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-operator-nav.nav-tab-wrapper,
 .fp-exp-admin[data-fp-exp-admin] .fp-exp-tabs {
     background: var(--fpdms-bg-light) !important;
     border: 1px solid var(--fpdms-border-light) !important;
@@ -4489,7 +4495,12 @@ label.fp-exp-settings__toggle input:checked + .fp-exp-toggle__switch::after {
     box-shadow: none !important;
 }
 
-.fp-exp-admin[data-fp-exp-admin] .fp-exp-tabs .nav-tab {
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-operator-nav.nav-tab-wrapper {
+    margin: 0 0 1.25rem 0 !important;
+}
+
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-tabs .nav-tab,
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-operator-nav .nav-tab {
     display: inline-flex !important;
     align-items: center !important;
     gap: 8px !important;
@@ -4506,12 +4517,14 @@ label.fp-exp-settings__toggle input:checked + .fp-exp-toggle__switch::after {
     transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease !important;
 }
 
-.fp-exp-admin[data-fp-exp-admin] .fp-exp-tabs .nav-tab:hover {
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-tabs .nav-tab:hover,
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-operator-nav .nav-tab:hover {
     background: rgba(102, 126, 234, 0.08) !important;
     color: var(--fpdms-text) !important;
 }
 
-.fp-exp-admin[data-fp-exp-admin] .fp-exp-tabs .nav-tab.nav-tab-active {
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-tabs .nav-tab.nav-tab-active,
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-operator-nav .nav-tab.nav-tab-active {
     background: rgba(102, 126, 234, 0.12) !important;
     border-color: rgba(102, 126, 234, 0.28) !important;
     color: var(--fpdms-primary-dark) !important;
@@ -4707,11 +4720,13 @@ label.fp-exp-settings__toggle input:checked + .fp-exp-toggle__switch::after {
 }
 
 /* Indicatore attivo: barra gradiente DMS sotto la scheda (senza doppia linea WP) */
-.fp-exp-admin[data-fp-exp-admin] .fp-exp-tabs .nav-tab::before {
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-tabs .nav-tab::before,
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-operator-nav .nav-tab::before {
     display: none;
 }
 
-.fp-exp-admin[data-fp-exp-admin] .fp-exp-tabs .nav-tab::after {
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-tabs .nav-tab::after,
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-operator-nav .nav-tab::after {
     content: '';
     position: absolute;
     left: 10px;
@@ -4724,23 +4739,28 @@ label.fp-exp-settings__toggle input:checked + .fp-exp-toggle__switch::after {
     opacity: 0;
 }
 
-.fp-exp-admin[data-fp-exp-admin] .fp-exp-tabs .nav-tab.nav-tab-active::after {
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-tabs .nav-tab.nav-tab-active::after,
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-operator-nav .nav-tab.nav-tab-active::after {
     background: var(--fpdms-gradient-primary);
     opacity: 1;
 }
 
-.fp-exp-admin[data-fp-exp-admin] .fp-exp-tabs .nav-tab .dashicons {
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-tabs .nav-tab .dashicons,
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-operator-nav .nav-tab .dashicons {
     color: inherit;
     opacity: 0.85;
     transition: opacity 0.2s ease, transform 0.2s ease;
 }
 
 .fp-exp-admin[data-fp-exp-admin] .fp-exp-tabs .nav-tab:hover .dashicons,
-.fp-exp-admin[data-fp-exp-admin] .fp-exp-tabs .nav-tab.nav-tab-active .dashicons {
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-tabs .nav-tab.nav-tab-active .dashicons,
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-operator-nav .nav-tab:hover .dashicons,
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-operator-nav .nav-tab.nav-tab-active .dashicons {
     opacity: 1;
 }
 
-.fp-exp-admin[data-fp-exp-admin] .fp-exp-tabs .nav-tab.nav-tab-active .dashicons {
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-tabs .nav-tab.nav-tab-active .dashicons,
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-operator-nav .nav-tab.nav-tab-active .dashicons {
     color: var(--fpdms-primary);
 }
 
