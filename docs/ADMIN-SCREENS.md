@@ -45,13 +45,31 @@ Riferimento per revisione UI (design system FP: `fpexp-page-header`, `fp-exp-adm
 - **Viste calendario** (overview / calendario / manuale): stesso pattern dentro pagina Calendario.
 - **Operatore** (salti tra Calendario, RTB, Check-in, Ordini): `nav.fp-exp-operator-nav.nav-tab-wrapper` — stessi stili DMS delle altre tab (CSS condiviso con `.fp-exp-tabs`).
 
+## Meta box «Impostazioni esperienza» (editor `fp_experience`)
+
+Markup: `.fp-exp-admin[data-fp-exp-admin]` con `role="tablist"` e pulsanti `.fp-exp-tab` (`role="tab"`, `data-tab="{slug}"`). Ordine definito in `ExperienceMetaBoxes::get_tab_labels()`.
+
+| Slug `data-tab` | Etichetta (IT) | Handler |
+|-----------------|----------------|---------|
+| `details` | Dettagli | `DetailsMetaBoxHandler` |
+| `pricing` | Biglietti & Prezzi | `PricingMetaBoxHandler` |
+| `calendar` | Calendario & Slot | `CalendarMetaBoxHandler` |
+| `meeting-point` | Meeting Point | `MeetingPointMetaBoxHandler` |
+| `extras` | Extra | `ExtrasMetaBoxHandler` |
+| `policy` | Policy/FAQ | `PolicyMetaBoxHandler` |
+| `seo` | SEO/Schema | `SEOMetaBoxHandler` |
+
+**Nota:** se è attivo un plugin SEO riconosciuto da `ExperienceMetaBoxes::is_seo_plugin_active()` (es. FP SEO Manager / FP SEO Performance), il tab **`seo`** non viene mostrato e il pannello non viene renderizzato; in quel caso controllare solo le **sei** tab rimanenti.
+
 ## Checklist verifica (tracciamento release)
 
 Sessione di controllo sistematico su **https://fp-development.local** (2026-04-02), utente con capacità di gestione FP Experiences (`fp_exp_manage`). Criteri: caricamento pagina senza fatal, titolo schermata coerente, **nessun errore console attribuibile a script FP Experiences** (restano warning WP core tipo JQMIGRATE e, nell’editor blocco, errori deprecazione blocchi di altri plugin: FP Privacy, WPML, ecc.).
 
 **Struttura DOM** (`.wrap.fp-exp-admin-page`, `h1.screen-reader-text`, `body.fp-exp-admin-shell`, notice fuori dal banner): non ispezionata elemento-per-elemento in questa sessione; si assume allineamento all’inventario sopra e ai template correnti. Per regressioni UI usare DevTools su una pagina campione.
 
-**Non eseguito in sessione**: salvataggio form su ogni tab Impostazioni/Email; esecuzione azione REST dalla pagina Tools; scenario “dashboard solo guida” (utente senza `manage`); click su ogni tab meta box esperienza per `aria-selected` (caricato editor post=10 con pannello Dettagli e sezioni Meeting Point visibili).
+**Non eseguito in sessione (prima tornata)**: salvataggio form su ogni tab Impostazioni/Email; esecuzione azione REST dalla pagina Tools; scenario “dashboard solo guida” (utente senza `manage`); click sistematico su ogni tab del meta box esperienza.
+
+**Follow-up tab meta box (2026-04-02)**: automazione browser non ripetibile — `https://fp-development.local` risponde **HTTP 500** (stesso esito da shell: `Invoke-WebRequest` su `wp-login.php`). Elenco tab e logica SEO documentati sopra; ripetere smoke click **a sito ripristinato** (ordine: Dettagli → Biglietti & Prezzi → Calendario & Slot → Meeting Point → Extra → Policy/FAQ → SEO/Schema se visibile).
 
 | Pagina / contesto | Tab o vista | Data | Esito | Note |
 |-------------------|-------------|------|-------|------|
@@ -87,5 +105,11 @@ Sessione di controllo sistematico su **https://fp-development.local** (2026-04-0
 | Lista meeting point | — | 2026-04-02 | PASS | `edit.php?post_type=fp_meeting_point`. |
 | Lista gift voucher | — | 2026-04-02 | PASS | `edit.php?post_type=fp_exp_gift_voucher`. |
 | Tassonomia lingue | — | 2026-04-02 | PASS | `edit-tags.php?taxonomy=fp_exp_language&post_type=fp_experience`. |
-| Modifica esperienza | meta Dettagli (+ altre tab) | 2026-04-02 | PASS | `post.php?post=10&action=edit`; tabpanel “Dettagli” e blocchi Meeting Point visibili; tab aggiuntive non cliccate una per una. |
+| Modifica esperienza | meta `details` | 2026-04-02 | PASS | `post.php?post=10&action=edit`; tabpanel Dettagli visibile (sessione precedente). |
+| Modifica esperienza | meta `pricing` | — | PENDING | Click UI: bloccato da HTTP 500 in follow-up. |
+| Modifica esperienza | meta `calendar` | — | PENDING | Idem. |
+| Modifica esperienza | meta `meeting-point` | — | PENDING | Idem. |
+| Modifica esperienza | meta `extras` | — | PENDING | Idem. |
+| Modifica esperienza | meta `policy` | — | PENDING | Idem. |
+| Modifica esperienza | meta `seo` | — | N/A* | Nascosto se plugin SEO FP attivo; altrimenti PENDING come sopra. |
 | Dashboard solo guida | — | — | N/A | Richiede utente senza `fp_exp_manage`; da ripetere in QA dedicato. |

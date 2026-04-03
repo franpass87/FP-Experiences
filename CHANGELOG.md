@@ -2,6 +2,12 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.5.47] - 2026-04-02
+
+### Changed
+
+- **Documentazione**: `docs/ADMIN-SCREENS.md` — tabella tab meta box «Impostazioni esperienza» (slug, etichette, handler, nota tab SEO nascosto con plugin SEO attivo); checklist editor scomposta per tab; nota follow-up smoke click bloccata da HTTP 500 su ambiente locale.
+
 ## [1.5.46] - 2026-04-02
 
 ### Fixed
