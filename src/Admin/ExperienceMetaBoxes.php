@@ -787,7 +787,11 @@ final class ExperienceMetaBoxes implements HookableInterface
         // Show sync button for existing WPML translations with empty meta
         $this->maybe_render_sync_button($post->ID, $source_post_id);
         ?>
-        <div class="fp-exp-admin" data-fp-exp-admin>
+        <div class="fp-exp-admin fp-exp-experience-metabox" data-fp-exp-admin>
+            <div class="fp-exp-metabox-sticky-head">
+                <p id="fp-exp-metabox-tablist-label" class="fp-exp-metabox-tablist__label">
+                    <?php esc_html_e('Sezioni dell’esperienza — scegli una scheda; i campi da compilare sono nei riquadri sotto.', 'fp-experiences'); ?>
+                </p>
             <div class="fp-exp-tabs" role="tablist" aria-label="<?php echo esc_attr(esc_html__('Sezioni esperienza', 'fp-experiences')); ?>">
                 <?php 
                 $seo_plugin_active = $this->is_seo_plugin_active();
@@ -810,6 +814,7 @@ final class ExperienceMetaBoxes implements HookableInterface
                         <?php echo $label; ?>
                     </button>
                 <?php endforeach; ?>
+            </div>
             </div>
 
             <div class="fp-exp-tab-panels">

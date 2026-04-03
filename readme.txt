@@ -5,7 +5,7 @@ Tags: experiences, booking, wooocommerce, shortcodes, calendar
 Requires at least: 6.0
 Tested up to: 6.4
 Requires PHP: 8.0
-Stable tag: 1.5.50
+Stable tag: 1.5.51
 Last updated: 2026-03-22
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -123,6 +123,9 @@ If Brevo credentials are provided, confirmations, reminders, and cancellations u
 FP Experiences stores reservation details inside custom tables linked to WooCommerce orders. Marketing consent is recorded per order (`_fp_exp_consent_marketing`) and forwarded to Brevo only when enabled. UTM parameters are captured in the `fp_exp_utm` cookie, copied to reservation/order meta, and never displayed publicly. Site owners can export or erase booking data through WooCommerce personal data tools; deleting an order removes the associated reservation payload. API credentials (Brevo, Google Calendar) are kept in WordPress options and can be revoked at any time from the Settings screen.
 
 == Changelog ==
+
+= 1.5.51 - 2026-04-03 =
+* **Changed**: Editor esperienza — meta box «Impostazioni esperienza»: etichetta guida, barra tab e pannelli distinti (DMS); fieldset come sottosezioni con accento teal; fix conflitto CSS che applicava le tab Impostazioni anche all’editor.
 
 = 1.5.50 - 2026-04-03 =
 * **Changed**: Admin calendario — gerarchia tra navigazione operatore e sottoviste (Panoramica / Calendario / Manuale): etichetta esplicativa, contenitore con accento teal e tab compatte senza barra gradiente viola.

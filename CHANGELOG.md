@@ -2,6 +2,12 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.5.51] - 2026-04-03
+
+### Changed
+
+- **Admin — editor esperienza (meta box)**: wrapper `fp-exp-experience-metabox` + testata sticky (`fp-exp-metabox-sticky-head`) con etichetta che spiega tab vs riquadri; tab principali in stile DMS (token `--fpdms-*`); pannelli e `fieldset` come sottosezioni con bordo superiore **gradient secondary** (teal) e `legend` in stile etichetta maiuscola. **Fix**: rimosso il selettore `.fp-exp-admin .fp-exp-tabs` dalle regole condivise con Impostazioni/Email così l’editor non ereditava margini negativi e chip `nav-tab` sui `button.fp-exp-tab`.
+
 ## [1.5.50] - 2026-04-03
 
 ### Changed
