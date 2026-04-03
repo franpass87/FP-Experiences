@@ -2,6 +2,12 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.5.54] - 2026-04-03
+
+### Changed
+
+- **Barra CTA sticky pagina esperienza**: margini orizzontali aumentati e calcolati come `safe-area + clamp(2.75rem … 4rem)`; variabile ereditata `--fp-exp-sticky-gutter-x` (default sulla barra, override possibile su `.fp-exp-page`) per ridurre sovrapposizioni con pulsanti fissi (es. accessibilità, impostazioni, privacy).
+
 ## [1.5.53] - 2026-04-03
 
 ### Changed

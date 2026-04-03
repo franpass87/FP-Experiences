@@ -4581,11 +4581,16 @@ body.fp-modal-open {
 
 .fp-exp-page__sticky-bar {
     position: fixed;
-    /* Margine dai bordi del viewport: evita sovrapposizioni con tasti privacy, back-to-top, ecc. */
-    left: max(1.35rem, env(safe-area-inset-left, 0px));
-    right: max(1.35rem, env(safe-area-inset-right, 0px));
+    /*
+     * Gutter orizzontale = safe-area + margine extra (non solo max tra i due).
+     * Min ~2.75rem lato utile per non coprire FAB/accessibility (~48px) tipici di temi/plugin.
+     * Override: .fp-exp-page { --fp-exp-sticky-gutter-x: 3.5rem; }
+     */
+    --fp-exp-sticky-gutter-x: clamp(2.75rem, 11vw, 4rem);
+    left: calc(env(safe-area-inset-left, 0px) + var(--fp-exp-sticky-gutter-x));
+    right: calc(env(safe-area-inset-right, 0px) + var(--fp-exp-sticky-gutter-x));
     bottom: 0;
-    padding: 0.75rem clamp(0.65rem, 3vw, 1.25rem);
+    padding: 0.75rem clamp(0.5rem, 2.5vw, 1rem);
     background: rgba(255, 255, 255, 0.95);
     box-shadow: 0 -12px 30px rgba(0, 0, 0, 0.12);
     border-radius: var(--fp-exp-radius-base, 12px) var(--fp-exp-radius-base, 12px) 0 0;
