@@ -689,7 +689,8 @@
                 return;
             }
             const availableSlots = slotsEl.querySelectorAll('.fp-exp-slots__item:not(.is-disabled)');
-            if (availableSlots.length === 1) {
+            // UI calendario/fasce nascosta: seleziona il primo slot disponibile (stesso giorno evento)
+            if (availableSlots.length >= 1) {
                 availableSlots[0].click();
             }
         };

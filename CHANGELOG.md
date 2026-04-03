@@ -2,6 +2,12 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.5.48] - 2026-04-03
+
+### Changed
+
+- **Widget — evento a data singola**: rimossi calendario espandibile e blocco fasce in pagina; resta il box con data/ora in grande. Calendario e lista slot restano nel DOM in area “assist” nascosta per il JS (caricamento slot + checkout). Selezione automatica del **primo** slot disponibile quando ce n’è almeno uno (prima solo se unico slot).
+
 ## [1.5.47] - 2026-04-03
 
 ### Changed

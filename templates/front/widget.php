@@ -305,27 +305,18 @@ $dataset = [
                     <?php if ($is_single_event_mode) : ?>
                         <div class="fp-exp-single-event-info" data-fp-single-event-info>
                             <?php if ('' !== $event_date_label) : ?>
-                                <p class="fp-exp-single-event-info__date">
-                                    <strong><?php esc_html_e('Data evento:', 'fp-experiences'); ?></strong>
-                                    <?php echo esc_html($event_date_label); ?>
+                                <p class="fp-exp-single-event-info__datetime"><?php echo esc_html($event_date_label); ?></p>
+                            <?php endif; ?>
+                            <?php if ($event_is_sold_out) : ?>
+                                <p class="fp-exp-single-event-info__note">
+                                    <?php esc_html_e('Evento al completo.', 'fp-experiences'); ?>
                                 </p>
                             <?php endif; ?>
-                            <p class="fp-exp-single-event-info__note">
-                                <?php echo $event_is_sold_out
-                                    ? esc_html__('Evento al completo. Controlla eventuali disponibilità alternative nel calendario.', 'fp-experiences')
-                                    : esc_html__('Evento a data unica. Il calendario completo è disponibile qui sotto.', 'fp-experiences'); ?>
-                            </p>
                         </div>
+                        <div class="fp-exp-single-event-booking-assist" aria-hidden="true">
                     <?php endif; ?>
 
-                    <?php if ($is_single_event_mode) : ?>
-                    <details class="fp-exp-calendar-advanced">
-                        <summary class="fp-exp-calendar-advanced__summary">
-                            <?php esc_html_e('Mostra calendario completo', 'fp-experiences'); ?>
-                        </summary>
-                    <?php endif; ?>
-
-                    <!-- Calendario con navigazione mesi -->
+                    <!-- Calendario con navigazione mesi (nascosto in UI per evento a data singola; serve al JS per caricare slot) -->
                     <div class="fp-exp-calendar-nav" data-fp-calendar-nav>
                         <div class="fp-exp-calendar-nav__header">
                             <button type="button" class="fp-exp-calendar-nav__prev-month" data-action="prev-month">
@@ -375,10 +366,6 @@ $dataset = [
                         </div>
                     </div>
 
-                    <?php if ($is_single_event_mode) : ?>
-                    </details>
-                    <?php endif; ?>
-
                     <div class="fp-exp-slots" aria-live="polite">
                         <p class="fp-exp-slots__placeholder">
                             <?php echo $is_single_event_mode
@@ -386,6 +373,10 @@ $dataset = [
                                 : esc_html__('Seleziona una data per vedere le fasce orarie', 'fp-experiences'); ?>
                         </p>
                     </div>
+
+                    <?php if ($is_single_event_mode) : ?>
+                        </div>
+                    <?php endif; ?>
                 </div>
             </li>
             <li class="fp-exp-step fp-exp-step--party" data-fp-step="party">
