@@ -605,6 +605,47 @@
             clearTimeout(resizeTimeout);
         });
 
+        /**
+         * Barra CTA fissa pagina esperienza: alcuni temi (es. Salient Material) wrappano il contenuto in
+         * .ocm-effect-wrap con z-index basso — un position:fixed interno non può mai stare sopra il footer
+         * (footer reveal, ecc.). Spostiamo il nodo su document.body e copiamo le custom properties da .fp-exp.
+         */
+        (function elevateExperienceStickyBar() {
+            const stickyBar = document.querySelector('[data-fp-sticky-bar]');
+            if (!stickyBar || stickyBar.getAttribute('data-fp-sticky-portal') === 'done') {
+                return;
+            }
+            const source = document.querySelector('.fp-exp.fp-exp-page') || document.querySelector('.fp-exp');
+            if (!source || !document.body) {
+                return;
+            }
+            try {
+                const cs = window.getComputedStyle(source);
+                const propsToCopy = [
+                    '--fp-exp-sticky-gutter-x',
+                    '--fp-exp-radius-base',
+                    '--fp-font-family',
+                    '--fp-color-text',
+                    '--fp-color-text-muted',
+                    '--fp-color-primary',
+                    '--fp-color-on-primary',
+                    '--fp-focus-ring',
+                    '--fp-focus-ring-soft',
+                    '--fp-shadow',
+                ];
+                propsToCopy.forEach((prop) => {
+                    const v = cs.getPropertyValue(prop).trim();
+                    if (v) {
+                        stickyBar.style.setProperty(prop, v);
+                    }
+                });
+                document.body.appendChild(stickyBar);
+                stickyBar.setAttribute('data-fp-sticky-portal', 'done');
+            } catch (e) {
+                /* Silenzioso: se il tema non crea stacking strani, la barra resta nel markup originale */
+            }
+        })();
+
         if (!widget) {
             return; // nessun widget in pagina
         }

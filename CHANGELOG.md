@@ -2,6 +2,12 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.6.2] - 2026-04-03
+
+### Fixed
+
+- **Pagina esperienza — barra CTA fissa (mobile)**: con temi che avvolgono il contenuto in uno stacking context a basso `z-index` (es. Salient *Material* `.ocm-effect-wrap`), un `position: fixed` interno non può dipingere sopra il footer (anche con *footer reveal*). La barra `[data-fp-sticky-bar]` viene spostata su `document.body` all’init e riceve le custom properties da `.fp-exp` (gutter, colori, radius). `z-index` della barra impostato a `2147483640` (sotto il modale regalo).
+
 ## [1.6.1] - 2026-04-03
 
 ### Changed

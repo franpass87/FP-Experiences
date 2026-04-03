@@ -4648,7 +4648,8 @@ body.fp-modal-open {
     justify-content: space-between;
     gap: 0.75rem;
     flex-wrap: wrap;
-    z-index: 9999999;
+    /* Sotto il modale regalo (2147483647); sopra footer reveal / wrapper tema quando il nodo è su body */
+    z-index: 2147483640;
     opacity: 1;
     transform: translateY(0);
     transition: transform 0.3s ease, opacity 0.3s ease;
