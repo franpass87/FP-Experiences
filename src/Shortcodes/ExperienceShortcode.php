@@ -302,11 +302,12 @@ final class ExperienceShortcode extends BaseShortcode
                     $cid = sanitize_key($clabel);
                 }
                 $cdesc = isset($entry['description']) ? sanitize_text_field((string) $entry['description']) : '';
+                $cicon = isset($entry['icon']) ? (string) $entry['icon'] : 'default';
                 $experience_badges[] = [
                     'id' => $cid,
                     'label' => $clabel,
                     'description' => $cdesc,
-                    'icon' => 'default',
+                    'icon' => Helpers::sanitize_experience_badge_icon_key($cicon),
                 ];
             }
         }

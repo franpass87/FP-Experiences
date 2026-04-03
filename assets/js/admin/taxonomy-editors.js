@@ -55,8 +55,97 @@
         item.remove();
     }
 
+    /**
+     * Badge personalizzati esperienza: clone template, indice __INDEX__, rimozione riga.
+     *
+     * @param {ParentNode} root
+     */
+    function initExperienceBadgeCustomEditors(root) {
+        if (!root) {
+            return;
+        }
+
+        const editors = root.querySelectorAll('[data-fp-exp-badge-custom-editor]');
+
+        editors.forEach((editor) => {
+            if (!(editor instanceof HTMLElement) || editor.dataset.fpExpBadgeCustomInit === '1') {
+                return;
+            }
+
+            const template = editor.querySelector('template[data-fp-exp-badge-template]');
+            const addButton = editor.querySelector('[data-fp-exp-badge-add]');
+            const list = editor.querySelector('[data-fp-exp-badge-custom-list]');
+
+            if (!template || !list || !(addButton instanceof HTMLElement)) {
+                return;
+            }
+
+            editor.dataset.fpExpBadgeCustomInit = '1';
+
+            function assignTemplateNames(scope) {
+                scope.querySelectorAll('[data-name]').forEach((field) => {
+                    if (field.closest('template')) {
+                        return;
+                    }
+
+                    const templateName = field.getAttribute('data-name');
+                    if (!templateName) {
+                        return;
+                    }
+
+                    field.setAttribute('name', templateName);
+                    field.removeAttribute('data-name');
+                });
+            }
+
+            function bindRemove(target) {
+                target.querySelectorAll('[data-fp-exp-badge-remove]').forEach((button) => {
+                    button.addEventListener('click', (event) => {
+                        event.preventDefault();
+                        const item = button.closest('[data-fp-exp-badge-item]');
+                        if (item) {
+                            item.remove();
+                        }
+                    });
+                });
+            }
+
+            function addRow(focus) {
+                const nextIndex = parseInt(editor.dataset.fpExpBadgeNextIndex || '0', 10) || 0;
+                const html = template.innerHTML.replace(/__INDEX__/g, String(nextIndex));
+                const wrapper = document.createElement('div');
+                wrapper.innerHTML = html.trim();
+                const row = wrapper.firstElementChild;
+
+                if (!row) {
+                    return;
+                }
+
+                assignTemplateNames(row);
+                bindRemove(row);
+                list.appendChild(row);
+                editor.dataset.fpExpBadgeNextIndex = String(nextIndex + 1);
+
+                if (focus) {
+                    const focusable = row.querySelector('input, select, textarea');
+                    if (focusable) {
+                        focusable.focus();
+                    }
+                }
+            }
+
+            addButton.addEventListener('click', (event) => {
+                event.preventDefault();
+                addRow(true);
+            });
+
+            bindRemove(list);
+        });
+    }
+
     // Esporta funzioni
     window.fpExpAdmin = window.fpExpAdmin || {};
     window.fpExpAdmin.initTaxonomyEditors = initTaxonomyEditors;
+    window.fpExpAdmin.initExperienceBadgeCustomEditors = initExperienceBadgeCustomEditors;
 
 })();

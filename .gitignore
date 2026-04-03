@@ -3,6 +3,7 @@
 *.map
 *.min.*
 !assets/css/dist/fp-experiences-admin.min.css
+!assets/js/dist/fp-experiences-admin.min.js
 !build/fp-experiences/assets/css/dist/fp-experiences-admin.min.css
 *.zip
 *.png

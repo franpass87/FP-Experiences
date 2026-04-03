@@ -34,6 +34,10 @@
         if (window.fpExpAdmin.initTaxonomyEditors) {
             window.fpExpAdmin.initTaxonomyEditors(root);
         }
+
+        if (window.fpExpAdmin.initExperienceBadgeCustomEditors) {
+            window.fpExpAdmin.initExperienceBadgeCustomEditors(root);
+        }
         
         if (window.fpExpAdmin.initRepeaters) {
             window.fpExpAdmin.initRepeaters(root);

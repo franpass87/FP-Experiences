@@ -8,9 +8,11 @@ use FP_Exp\Admin\ExperienceMetaBoxes\BaseMetaBoxHandler;
 use FP_Exp\Admin\ExperienceMetaBoxes\Traits\MetaBoxHelpers;
 use FP_Exp\Utils\LanguageHelper;
 use FP_Exp\Utils\Helpers;
+use FP_Exp\Utils\SpecialRequestsOptions;
 
 use function absint;
 use function checked;
+use function selected;
 use function esc_attr;
 use function esc_html;
 use function esc_textarea;
@@ -18,8 +20,10 @@ use function esc_url;
 use function get_terms;
 use function sanitize_key;
 use function sanitize_text_field;
+use function sanitize_textarea_field;
 use function wp_get_post_terms;
 use function wp_attachment_is_image;
+use function wp_json_encode;
 
 /**
  * Handler for Details tab in Experience Meta Box.
@@ -43,6 +47,38 @@ final class DetailsMetaBoxHandler extends BaseMetaBoxHandler
         $is_event = !empty($data['is_event']);
         $event_datetime = $data['event_datetime'] ?? '';
         $event_datetime_input = $this->format_event_datetime_for_input((string) $event_datetime);
+        $event_ticket_sales_end = $data['event_ticket_sales_end'] ?? '';
+        $event_ticket_sales_end_input = $this->format_event_datetime_for_input((string) $event_ticket_sales_end);
+        $single_event_sr_mode = isset($data['single_event_special_requests_mode']) ? (string) $data['single_event_special_requests_mode'] : 'default';
+        if (! in_array($single_event_sr_mode, ['default', 'notes_only', 'hidden'], true)) {
+            $single_event_sr_mode = 'default';
+        }
+        $single_event_sr_title = isset($data['single_event_special_requests_title']) ? (string) $data['single_event_special_requests_title'] : '';
+        $single_event_sr_notes_label = isset($data['single_event_special_requests_notes_label']) ? (string) $data['single_event_special_requests_notes_label'] : '';
+        $single_event_sr_help = isset($data['single_event_special_requests_help']) ? (string) $data['single_event_special_requests_help'] : '';
+        $sr_enabled_presets = isset($data['special_requests_enabled_presets']) && is_array($data['special_requests_enabled_presets'])
+            ? array_values(array_filter(array_map(
+                static fn ($v): string => sanitize_key((string) $v),
+                $data['special_requests_enabled_presets']
+            )))
+            : SpecialRequestsOptions::PRESET_ORDER;
+        $sr_custom_rows = isset($data['special_requests_custom_rows']) && is_array($data['special_requests_custom_rows'])
+            ? $data['special_requests_custom_rows']
+            : [];
+        $sr_preset_catalog = SpecialRequestsOptions::preset_catalog();
+        $sr_groups = [
+            'food' => [],
+            'access' => [],
+            'celebration' => [],
+        ];
+        foreach (SpecialRequestsOptions::PRESET_ORDER as $sr_pid) {
+            if (isset($sr_preset_catalog[$sr_pid])) {
+                $g = $sr_preset_catalog[$sr_pid]['group'];
+                if (isset($sr_groups[$g])) {
+                    $sr_groups[$g][] = $sr_pid;
+                }
+            }
+        }
         $hero_image = $data['hero_image'] ?? ['id' => 0, 'url' => '', 'width' => 0, 'height' => 0];
         $gallery = $data['gallery'] ?? ['items' => [], 'ids' => []];
         $language_details = $data['languages'] ?? [];
@@ -123,6 +159,18 @@ final class DetailsMetaBoxHandler extends BaseMetaBoxHandler
                             aria-describedby="fp-exp-event-help"
                         />
                         <p class="fp-exp-field__description" id="fp-exp-event-help"><?php esc_html_e('Seleziona data e ora di partenza dell’evento.', 'fp-experiences'); ?></p>
+                        <label class="fp-exp-field__label" for="fp-exp-event-ticket-sales-end">
+                            <?php esc_html_e('Fine vendite biglietti (opzionale)', 'fp-experiences'); ?>
+                        </label>
+                        <input
+                            type="datetime-local"
+                            id="fp-exp-event-ticket-sales-end"
+                            name="fp_exp_details[event_ticket_sales_end]"
+                            value="<?php echo esc_attr((string) $event_ticket_sales_end_input); ?>"
+                            class="regular-text"
+                            aria-describedby="fp-exp-event-ticket-sales-end-help"
+                        />
+                        <p class="fp-exp-field__description" id="fp-exp-event-ticket-sales-end-help"><?php esc_html_e('Dopo questa data/ora le vendite si chiudono automaticamente; restano chiuse anche dopo l’inizio dell’evento. Vuoto = vendite possibili fino all’inizio dell’evento.', 'fp-experiences'); ?></p>
                     </div>
                     <div>
                         <span class="fp-exp-field__label">
@@ -202,6 +250,100 @@ final class DetailsMetaBoxHandler extends BaseMetaBoxHandler
                             <p class="fp-exp-field__description fp-exp-field__description--muted"><?php esc_html_e('Nessuna lingua selezionata al momento.', 'fp-experiences'); ?></p>
                         <?php endif; ?>
                         <p class="fp-exp-field__description" id="fp-exp-language-badge-help"><?php esc_html_e('Le lingue selezionate vengono mostrate nei badge pubblici, nel widget e nei filtri.', 'fp-experiences'); ?></p>
+                    </div>
+                </div>
+
+                <div class="fp-exp-field" style="margin-top:1.25rem;padding-top:1.25rem;border-top:1px solid rgba(0,0,0,.08);">
+                    <span class="fp-exp-field__label">
+                        <?php esc_html_e('Widget — step «Richieste speciali»', 'fp-experiences'); ?>
+                    </span>
+                    <label class="fp-exp-field__label" for="fp-exp-widget-sr-mode">
+                        <?php esc_html_e('Comportamento', 'fp-experiences'); ?>
+                    </label>
+                    <select id="fp-exp-widget-sr-mode" name="fp_exp_details[single_event_special_requests_mode]">
+                        <option value="default" <?php selected($single_event_sr_mode, 'default', true); ?>><?php esc_html_e('Standard — checkbox e note', 'fp-experiences'); ?></option>
+                        <option value="notes_only" <?php selected($single_event_sr_mode, 'notes_only', true); ?>><?php esc_html_e('Solo campo note libere', 'fp-experiences'); ?></option>
+                        <option value="hidden" <?php selected($single_event_sr_mode, 'hidden', true); ?>><?php esc_html_e('Nascondi lo step', 'fp-experiences'); ?></option>
+                    </select>
+                    <p class="fp-exp-field__description"><?php esc_html_e('Vale per il widget di prenotazione su questa esperienza (eventi a data fissa e ricorrenti). Se nascondi lo step, il riepilogo riprende la numerazione corretta.', 'fp-experiences'); ?></p>
+
+                    <label class="fp-exp-field__label" for="fp-exp-widget-sr-title"><?php esc_html_e('Titolo step personalizzato (opzionale)', 'fp-experiences'); ?></label>
+                    <input type="text" class="regular-text" id="fp-exp-widget-sr-title" name="fp_exp_details[single_event_special_requests_title]" value="<?php echo esc_attr($single_event_sr_title); ?>" placeholder="<?php echo esc_attr__('Richieste speciali', 'fp-experiences'); ?>" />
+
+                    <label class="fp-exp-field__label" for="fp-exp-widget-sr-notes-label"><?php esc_html_e('Etichetta note (opzionale)', 'fp-experiences'); ?></label>
+                    <input type="text" class="regular-text" id="fp-exp-widget-sr-notes-label" name="fp_exp_details[single_event_special_requests_notes_label]" value="<?php echo esc_attr($single_event_sr_notes_label); ?>" placeholder="<?php echo esc_attr__('Altre richieste o note', 'fp-experiences'); ?>" />
+
+                    <label class="fp-exp-field__label" for="fp-exp-widget-sr-help"><?php esc_html_e('Testo di aiuto sotto le note (opzionale)', 'fp-experiences'); ?></label>
+                    <textarea id="fp-exp-widget-sr-help" name="fp_exp_details[single_event_special_requests_help]" rows="2" class="large-text"><?php echo esc_textarea($single_event_sr_help); ?></textarea>
+
+                    <input type="hidden" name="fp_exp_details[special_requests_items_touched]" value="1" />
+
+                    <p class="fp-exp-field__label" style="margin-top:1.25rem;">
+                        <?php esc_html_e('Checkbox nello step (solo se comportamento «Standard»)', 'fp-experiences'); ?>
+                    </p>
+                    <p class="fp-exp-field__description"><?php esc_html_e('Se non salvi nulla qui, restano tutte le opzioni predefinite. Deseleziona le checkbox che non servono e aggiungi righe personalizzate (etichetta obbligatoria; slug opzionale, generato automaticamente se vuoto).', 'fp-experiences'); ?></p>
+
+                    <?php foreach ($sr_groups as $sr_gkey => $sr_pids) : ?>
+                        <?php if (empty($sr_pids)) {
+                            continue;
+                        } ?>
+                        <div class="fp-exp-field" style="margin-top:0.75rem;">
+                            <span class="fp-exp-field__label"><?php echo esc_html(SpecialRequestsOptions::group_title($sr_gkey)); ?></span>
+                            <?php foreach ($sr_pids as $sr_pid) :
+                                $sr_plabel = $sr_preset_catalog[$sr_pid]['label'] ?? $sr_pid;
+                                ?>
+                                <label class="fp-exp-field__checkbox" style="display:block;margin:0.35rem 0;">
+                                    <input
+                                        type="checkbox"
+                                        name="fp_exp_details[special_requests_enabled_presets][]"
+                                        value="<?php echo esc_attr($sr_pid); ?>"
+                                        <?php checked(in_array($sr_pid, $sr_enabled_presets, true)); ?>
+                                    />
+                                    <span><?php echo esc_html($sr_plabel); ?></span>
+                                </label>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php endforeach; ?>
+
+                    <div class="fp-exp-field" style="margin-top:1rem;">
+                        <span class="fp-exp-field__label"><?php echo esc_html(SpecialRequestsOptions::group_title('custom')); ?></span>
+                        <p class="fp-exp-field__description"><?php esc_html_e('Slug tecnico (opzionale): solo lettere, numeri e trattini; usato nel dato inviato al carrello. Se vuoto, viene derivato dall’etichetta.', 'fp-experiences'); ?></p>
+                        <?php
+                        $sr_cr_index = 0;
+                        foreach ($sr_custom_rows as $sr_cr) :
+                            if (! is_array($sr_cr)) {
+                                continue;
+                            }
+                            $sr_cr_label = isset($sr_cr['label']) ? (string) $sr_cr['label'] : '';
+                            $sr_cr_slug = isset($sr_cr['slug']) ? (string) $sr_cr['slug'] : '';
+                            ?>
+                            <div class="fp-exp-field fp-exp-field--columns" style="margin-bottom:0.5rem;align-items:flex-end;">
+                                <div>
+                                    <label class="fp-exp-field__label" for="fp-exp-sr-custom-label-<?php echo esc_attr((string) $sr_cr_index); ?>"><?php esc_html_e('Etichetta', 'fp-experiences'); ?></label>
+                                    <input
+                                        type="text"
+                                        class="regular-text"
+                                        id="fp-exp-sr-custom-label-<?php echo esc_attr((string) $sr_cr_index); ?>"
+                                        name="fp_exp_details[special_requests_custom_rows][<?php echo esc_attr((string) $sr_cr_index); ?>][label]"
+                                        value="<?php echo esc_attr($sr_cr_label); ?>"
+                                    />
+                                </div>
+                                <div>
+                                    <label class="fp-exp-field__label" for="fp-exp-sr-custom-slug-<?php echo esc_attr((string) $sr_cr_index); ?>"><?php esc_html_e('Slug (opz.)', 'fp-experiences'); ?></label>
+                                    <input
+                                        type="text"
+                                        class="regular-text"
+                                        id="fp-exp-sr-custom-slug-<?php echo esc_attr((string) $sr_cr_index); ?>"
+                                        name="fp_exp_details[special_requests_custom_rows][<?php echo esc_attr((string) $sr_cr_index); ?>][slug]"
+                                        value="<?php echo esc_attr($sr_cr_slug); ?>"
+                                        placeholder="<?php echo esc_attr__('auto', 'fp-experiences'); ?>"
+                                    />
+                                </div>
+                            </div>
+                            <?php
+                            ++$sr_cr_index;
+                        endforeach;
+                        ?>
                     </div>
                 </div>
             <?php $this->render_metabox_section_close(); ?>
@@ -574,30 +716,122 @@ final class DetailsMetaBoxHandler extends BaseMetaBoxHandler
     }
 
     /**
-     * Render experience badges field.
+     * Render experience badges field (predefiniti + personalizzati con aggiunta dinamica).
      */
     private function render_experience_badges_field(array $data, int $post_id): void
     {
-        $custom_badges_existing = get_post_meta($post_id, '_fp_experience_badge_custom', true);
-        $custom_badges_existing = is_array($custom_badges_existing) ? $custom_badges_existing : [];
+        $eb = $data['experience_badges'] ?? [];
+        $badge_choices = isset($eb['choices']) && is_array($eb['choices']) ? $eb['choices'] : [];
+        $selected_slugs = isset($eb['selected']) && is_array($eb['selected'])
+            ? array_values(array_filter(array_map(static function ($v): string {
+                return sanitize_key((string) $v);
+            }, $eb['selected'])))
+            : [];
+        $custom_rows = isset($data['experience_badges_custom']) && is_array($data['experience_badges_custom'])
+            ? $data['experience_badges_custom']
+            : [];
+        $icon_options = Helpers::experience_badge_icon_admin_options();
+        $next_custom_index = count($custom_rows);
         ?>
-        <div class="fp-exp-field fp-exp-field--taxonomies">
+        <div class="fp-exp-field fp-exp-field--taxonomies" id="fp-exp-experience-badges">
             <div class="fp-exp-field">
                 <span class="fp-exp-field__label">
-                    <?php esc_html_e('Badge esperienza', 'fp-experiences'); ?>
-                    <?php $this->render_tooltip('fp-exp-experience-badges-help', esc_html__('Aggiungi i badge per questa esperienza compilando i campi sottostanti. I badge inseriti verranno mostrati nella pagina esperienza, nelle liste e nei badge rapidi. Se compili almeno un campo (titolo o descrizione), il badge verrà visualizzato automaticamente.', 'fp-experiences')); ?>
+                    <?php esc_html_e('Caratteristiche predefinite', 'fp-experiences'); ?>
+                    <?php $this->render_tooltip(
+                        'fp-exp-experience-badges-preset-help',
+                        esc_html__(
+                            'Seleziona i tipi di esperienza (ognuno ha un\'icona). Puoi combinarli con badge personalizzati sotto.',
+                            'fp-experiences'
+                        )
+                    ); ?>
                 </span>
-                <div class="fp-exp-taxonomy-editor fp-exp-taxonomy-editor--compact" aria-describedby="fp-exp-experience-badges-help">
-                    <div class="fp-exp-taxonomy-editor__list">
+                <?php if (! empty($badge_choices)) : ?>
+                    <div class="fp-exp-checkbox-grid fp-exp-checkbox-grid--experience-badges" aria-describedby="fp-exp-experience-badges-preset-desc">
+                        <?php foreach ($badge_choices as $choice) :
+                            if (! is_array($choice)) {
+                                continue;
+                            }
+                            $bid = isset($choice['id']) ? sanitize_key((string) $choice['id']) : '';
+                            $blabel = isset($choice['label']) ? (string) $choice['label'] : '';
+                            if ('' === $bid || '' === $blabel) {
+                                continue;
+                            }
+                            $bdesc = isset($choice['description']) ? (string) $choice['description'] : '';
+                            $bicon = isset($choice['icon']) ? (string) $choice['icon'] : '';
+                            $icon_svg = Helpers::experience_badge_icon_svg($bicon);
+                            ?>
+                            <label class="fp-exp-checkbox-grid__item fp-exp-checkbox-grid__item--experience-badge">
+                                <input
+                                    type="checkbox"
+                                    name="fp_exp_details[experience_badges][]"
+                                    value="<?php echo esc_attr($bid); ?>"
+                                    <?php checked(in_array($bid, $selected_slugs, true)); ?>
+                                />
+                                <span class="fp-exp-checkbox-grid__content">
+                                    <span class="fp-exp-checkbox-grid__icon" aria-hidden="true"><?php echo $icon_svg; ?></span>
+                                    <span class="fp-exp-checkbox-grid__body">
+                                        <span class="fp-exp-checkbox-grid__title"><?php echo esc_html($blabel); ?></span>
+                                        <?php if ('' !== $bdesc) : ?>
+                                            <span class="fp-exp-checkbox-grid__description"><?php echo esc_html($bdesc); ?></span>
+                                        <?php endif; ?>
+                                    </span>
+                                </span>
+                            </label>
+                        <?php endforeach; ?>
+                    </div>
+                    <p class="fp-exp-field__description" id="fp-exp-experience-badges-preset-desc">
+                        <?php esc_html_e('Le etichette possono essere personalizzate in Impostazioni → Listing.', 'fp-experiences'); ?>
+                    </p>
+                <?php else : ?>
+                    <p class="fp-exp-field__description fp-exp-field__description--muted">
+                        <?php esc_html_e('Nessuna caratteristica predefinita disponibile.', 'fp-experiences'); ?>
+                    </p>
+                <?php endif; ?>
+            </div>
+
+            <div class="fp-exp-field" style="margin-top:1.25rem;padding-top:1.25rem;border-top:1px solid rgba(0,0,0,.08);">
+                <span class="fp-exp-field__label">
+                    <?php esc_html_e('Badge personalizzati', 'fp-experiences'); ?>
+                    <?php $this->render_tooltip(
+                        'fp-exp-experience-badges-custom-help',
+                        esc_html__(
+                            'Aggiungi solo le righe che servono: titolo obbligatorio; descrizione e icona facoltativi.',
+                            'fp-experiences'
+                        )
+                    ); ?>
+                </span>
+                <p class="fp-exp-field__description" id="fp-exp-experience-badges-custom-help-text">
+                    <?php esc_html_e('Usa «Aggiungi badge» per inserire una riga. Rimuovi le righe non necessarie prima di salvare.', 'fp-experiences'); ?>
+                </p>
+                <div
+                    class="fp-exp-taxonomy-editor fp-exp-exp-badge-custom-editor"
+                    data-fp-exp-badge-custom-editor
+                    data-fp-exp-badge-next-index="<?php echo esc_attr((string) $next_custom_index); ?>"
+                >
+                    <div class="fp-exp-taxonomy-editor__list fp-exp-exp-badge-custom-list" data-fp-exp-badge-custom-list>
                         <?php
                         $badge_index = 0;
-                        foreach ($custom_badges_existing as $entry) :
+                        foreach ($custom_rows as $entry) :
+                            if (! is_array($entry)) {
+                                continue;
+                            }
                             $cid = sanitize_key((string) ($entry['id'] ?? ''));
                             $clabel = sanitize_text_field((string) ($entry['label'] ?? ''));
                             $cdesc = sanitize_text_field((string) ($entry['description'] ?? ''));
+                            $cicon = Helpers::sanitize_experience_badge_icon_key((string) ($entry['icon'] ?? 'default'));
                             ?>
-                            <div class="fp-exp-taxonomy-editor__item">
+                            <div class="fp-exp-taxonomy-editor__item fp-exp-exp-badge-custom-item" data-fp-exp-badge-item>
                                 <input type="hidden" name="fp_exp_details[experience_badges_custom][<?php echo $badge_index; ?>][id]" value="<?php echo esc_attr($cid); ?>" />
+                                <label class="fp-exp-taxonomy-editor__field">
+                                    <span class="fp-exp-field__label"><?php esc_html_e('Icona', 'fp-experiences'); ?></span>
+                                    <select name="fp_exp_details[experience_badges_custom][<?php echo $badge_index; ?>][icon]">
+                                        <?php foreach ($icon_options as $opt_slug => $opt_label) : ?>
+                                            <option value="<?php echo esc_attr($opt_slug); ?>" <?php selected($cicon, $opt_slug, true); ?>>
+                                                <?php echo esc_html($opt_label); ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </label>
                                 <label class="fp-exp-taxonomy-editor__field">
                                     <span class="fp-exp-field__label"><?php esc_html_e('Titolo badge', 'fp-experiences'); ?></span>
                                     <input type="text" name="fp_exp_details[experience_badges_custom][<?php echo $badge_index; ?>][label]" value="<?php echo esc_attr($clabel); ?>" />
@@ -606,28 +840,50 @@ final class DetailsMetaBoxHandler extends BaseMetaBoxHandler
                                     <span class="fp-exp-field__label"><?php esc_html_e('Descrizione badge', 'fp-experiences'); ?></span>
                                     <textarea rows="2" name="fp_exp_details[experience_badges_custom][<?php echo $badge_index; ?>][description]"><?php echo esc_textarea($cdesc); ?></textarea>
                                 </label>
+                                <p class="fp-exp-exp-badge-custom__remove-wrap">
+                                    <button type="button" class="button-link-delete" data-fp-exp-badge-remove>
+                                        <?php esc_html_e('Rimuovi', 'fp-experiences'); ?>
+                                    </button>
+                                </p>
                             </div>
-                        <?php
-                            $badge_index++;
+                            <?php
+                            ++$badge_index;
                         endforeach;
                         ?>
-                        <?php for ($i = 0; $i < 6; $i++) : ?>
-                            <div class="fp-exp-taxonomy-editor__item">
-                                <input type="hidden" name="fp_exp_details[experience_badges_custom][<?php echo $badge_index; ?>][id]" value="" />
-                                <label class="fp-exp-taxonomy-editor__field">
-                                    <span class="fp-exp-field__label"><?php esc_html_e('Titolo badge', 'fp-experiences'); ?></span>
-                                    <input type="text" name="fp_exp_details[experience_badges_custom][<?php echo $badge_index; ?>][label]" value="" />
-                                </label>
-                                <label class="fp-exp-taxonomy-editor__field">
-                                    <span class="fp-exp-field__label"><?php esc_html_e('Descrizione badge', 'fp-experiences'); ?></span>
-                                    <textarea rows="2" name="fp_exp_details[experience_badges_custom][<?php echo $badge_index; ?>][description]"></textarea>
-                                </label>
-                            </div>
-                        <?php
-                            $badge_index++;
-                        endfor;
-                        ?>
                     </div>
+                    <p style="margin:0.65rem 0 0;">
+                        <button type="button" class="button" data-fp-exp-badge-add>
+                            <?php esc_html_e('Aggiungi badge', 'fp-experiences'); ?>
+                        </button>
+                    </p>
+                    <template data-fp-exp-badge-template>
+                        <div class="fp-exp-taxonomy-editor__item fp-exp-exp-badge-custom-item" data-fp-exp-badge-item>
+                            <input type="hidden" data-name="fp_exp_details[experience_badges_custom][__INDEX__][id]" value="" />
+                            <label class="fp-exp-taxonomy-editor__field">
+                                <span class="fp-exp-field__label"><?php esc_html_e('Icona', 'fp-experiences'); ?></span>
+                                <select data-name="fp_exp_details[experience_badges_custom][__INDEX__][icon]">
+                                    <?php foreach ($icon_options as $opt_slug => $opt_label) : ?>
+                                        <option value="<?php echo esc_attr($opt_slug); ?>" <?php selected('default', $opt_slug, true); ?>>
+                                            <?php echo esc_html($opt_label); ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </label>
+                            <label class="fp-exp-taxonomy-editor__field">
+                                <span class="fp-exp-field__label"><?php esc_html_e('Titolo badge', 'fp-experiences'); ?></span>
+                                <input type="text" data-name="fp_exp_details[experience_badges_custom][__INDEX__][label]" value="" />
+                            </label>
+                            <label class="fp-exp-taxonomy-editor__field">
+                                <span class="fp-exp-field__label"><?php esc_html_e('Descrizione badge', 'fp-experiences'); ?></span>
+                                <textarea rows="2" data-name="fp_exp_details[experience_badges_custom][__INDEX__][description]"></textarea>
+                            </label>
+                            <p class="fp-exp-exp-badge-custom__remove-wrap">
+                                <button type="button" class="button-link-delete" data-fp-exp-badge-remove>
+                                    <?php esc_html_e('Rimuovi', 'fp-experiences'); ?>
+                                </button>
+                            </p>
+                        </div>
+                    </template>
                 </div>
             </div>
         </div>
@@ -651,7 +907,7 @@ final class DetailsMetaBoxHandler extends BaseMetaBoxHandler
                 <?php $this->render_tooltip('fp-exp-linked-page-help', esc_html__('Ogni esperienza pubblicata genera una pagina WordPress con lo shortcode completo.', 'fp-experiences')); ?>
             </label>
             <?php if ($page_id && $page_url) : ?>
-                <div class="fp-exp-field__buttons" role="group" aria-describedby="fp-exp-linked-page-desc">
+                <div class="fp-exp-field__buttons" role="group" aria-describedby="fp-exp-linked-page-help">
                     <a
                         class="button button-secondary"
                         href="<?php echo esc_url($page_url); ?>"
@@ -666,9 +922,9 @@ final class DetailsMetaBoxHandler extends BaseMetaBoxHandler
                         </a>
                     <?php endif; ?>
                 </div>
-                <p class="fp-exp-field__description" id="fp-exp-linked-page-desc">
-                    <?php
-                    if ($page_status) {
+                <?php if ($page_status) : ?>
+                    <p class="fp-exp-field__description" id="fp-exp-linked-page-help">
+                        <?php
                         echo esc_html(
                             sprintf(
                                 /* translators: %s: current page status label. */
@@ -676,13 +932,11 @@ final class DetailsMetaBoxHandler extends BaseMetaBoxHandler
                                 $page_status
                             )
                         );
-                    } else {
-                        esc_html_e('Usa i pulsanti per aprire la pagina esperienza o modificarla in WordPress.', 'fp-experiences');
-                    }
-                    ?>
-                </p>
+                        ?>
+                    </p>
+                <?php endif; ?>
             <?php else : ?>
-                <p class="fp-exp-field__description" id="fp-exp-linked-page-desc">
+                <p class="fp-exp-field__description" id="fp-exp-linked-page-help">
                     <?php esc_html_e("La pagina viene generata automaticamente alla pubblicazione dell'esperienza.", 'fp-experiences'); ?>
                 </p>
             <?php endif; ?>
@@ -1029,6 +1283,34 @@ final class DetailsMetaBoxHandler extends BaseMetaBoxHandler
             $this->update_or_delete_meta($post_id, 'event_datetime', null);
         }
 
+        $event_ticket_sales_end_raw = $this->sanitize_text($raw['event_ticket_sales_end'] ?? '');
+        $event_ticket_sales_end = $this->normalize_event_datetime($event_ticket_sales_end_raw);
+        if ($is_event && $event_ticket_sales_end !== '') {
+            if ($event_datetime !== '' && strcmp($event_ticket_sales_end, $event_datetime) > 0) {
+                $event_ticket_sales_end = $event_datetime;
+            }
+            $this->update_or_delete_meta($post_id, 'event_ticket_sales_end', $event_ticket_sales_end);
+        } else {
+            $this->update_or_delete_meta($post_id, 'event_ticket_sales_end', null);
+        }
+
+        $sr_mode = sanitize_key((string) ($raw['single_event_special_requests_mode'] ?? 'default'));
+        if (! in_array($sr_mode, ['default', 'notes_only', 'hidden'], true)) {
+            $sr_mode = 'default';
+        }
+        $this->update_or_delete_meta($post_id, 'single_event_special_requests_mode', $sr_mode);
+
+        $sr_title = $this->sanitize_text($raw['single_event_special_requests_title'] ?? '');
+        $this->update_or_delete_meta($post_id, 'single_event_special_requests_title', $sr_title !== '' ? $sr_title : null);
+
+        $sr_notes_label = $this->sanitize_text($raw['single_event_special_requests_notes_label'] ?? '');
+        $this->update_or_delete_meta($post_id, 'single_event_special_requests_notes_label', $sr_notes_label !== '' ? $sr_notes_label : null);
+
+        $sr_help = $this->sanitize_textarea($raw['single_event_special_requests_help'] ?? '');
+        $this->update_or_delete_meta($post_id, 'single_event_special_requests_help', $sr_help !== '' ? $sr_help : null);
+
+        $this->save_widget_special_requests_items($post_id, $raw);
+
         // Hero image
         $hero_image_id = isset($raw['hero_image_id']) ? absint((string) $raw['hero_image_id']) : 0;
         if ($hero_image_id > 0 && wp_attachment_is_image($hero_image_id)) {
@@ -1055,28 +1337,51 @@ final class DetailsMetaBoxHandler extends BaseMetaBoxHandler
         $gallery_video_url = isset($raw['gallery_video_url']) ? esc_url_raw((string) $raw['gallery_video_url']) : '';
         $this->update_or_delete_meta($post_id, 'gallery_video_url', $gallery_video_url !== '' ? $gallery_video_url : null);
 
-        // Experience badges custom
+        // Experience badges predefiniti (slug validi rispetto a Helpers::experience_badge_choices)
+        $experience_badges_slugs = [];
+        if (isset($raw['experience_badges']) && is_array($raw['experience_badges'])) {
+            foreach ($raw['experience_badges'] as $slug) {
+                $s = sanitize_key((string) $slug);
+                if ('' !== $s) {
+                    $experience_badges_slugs[] = $s;
+                }
+            }
+        }
+        $experience_badges_slugs = array_values(array_unique($experience_badges_slugs));
+        $valid_badge_ids = array_keys(Helpers::experience_badge_choices());
+        $experience_badges_slugs = array_values(array_filter(
+            $experience_badges_slugs,
+            static fn (string $s): bool => in_array($s, $valid_badge_ids, true)
+        ));
+        $this->update_or_delete_meta($post_id, 'experience_badges', [] !== $experience_badges_slugs ? $experience_badges_slugs : null);
+
+        // Experience badges personalizzati (titolo obbligatorio; icona da registry)
         $experience_badges_custom = isset($raw['experience_badges_custom']) && is_array($raw['experience_badges_custom'])
             ? $raw['experience_badges_custom']
             : [];
         $sanitized_badges = [];
         foreach ($experience_badges_custom as $badge) {
-            if (!is_array($badge)) {
+            if (! is_array($badge)) {
                 continue;
             }
             $badge_id = sanitize_key((string) ($badge['id'] ?? ''));
             $badge_label = sanitize_text_field((string) ($badge['label'] ?? ''));
             $badge_desc = $this->sanitize_textarea($badge['description'] ?? '');
-            // Only save if at least one field is filled
-            if ($badge_id !== '' || $badge_label !== '' || $badge_desc !== '') {
-                $sanitized_badges[] = [
-                    'id' => $badge_id,
-                    'label' => $badge_label,
-                    'description' => $badge_desc,
-                ];
+            $badge_icon = Helpers::sanitize_experience_badge_icon_key((string) ($badge['icon'] ?? 'default'));
+            if ('' === $badge_label) {
+                continue;
             }
+            if ('' === $badge_id) {
+                $badge_id = sanitize_key($badge_label);
+            }
+            $sanitized_badges[] = [
+                'id' => $badge_id,
+                'label' => $badge_label,
+                'description' => $badge_desc,
+                'icon' => $badge_icon,
+            ];
         }
-        $this->update_or_delete_meta($post_id, 'experience_badge_custom', !empty($sanitized_badges) ? $sanitized_badges : null);
+        $this->update_or_delete_meta($post_id, 'experience_badge_custom', ! empty($sanitized_badges) ? $sanitized_badges : null);
 
         // Min party and capacity
         $min_party = isset($raw['min_party']) ? absint((string) $raw['min_party']) : 0;
@@ -1228,11 +1533,29 @@ final class DetailsMetaBoxHandler extends BaseMetaBoxHandler
         // Get gallery video URL
         $gallery_video_url = esc_url((string) $this->get_meta_value($post_id, 'gallery_video_url', ''));
 
-        // Get experience badges custom
-        $experience_badges_custom = $this->get_meta_value($post_id, 'experience_badge_custom', []);
-        if (!is_array($experience_badges_custom)) {
-            $experience_badges_custom = [];
+        $experience_badges_custom_raw = $this->get_meta_value($post_id, 'experience_badge_custom', []);
+        if (! is_array($experience_badges_custom_raw)) {
+            $experience_badges_custom_raw = [];
         }
+        $experience_badges_custom = [];
+        foreach ($experience_badges_custom_raw as $row) {
+            if (! is_array($row)) {
+                continue;
+            }
+            $experience_badges_custom[] = [
+                'id' => sanitize_key((string) ($row['id'] ?? '')),
+                'label' => sanitize_text_field((string) ($row['label'] ?? '')),
+                'description' => sanitize_textarea_field((string) ($row['description'] ?? '')),
+                'icon' => Helpers::sanitize_experience_badge_icon_key((string) ($row['icon'] ?? 'default')),
+            ];
+        }
+
+        $badge_choice_map = Helpers::experience_badge_choices();
+        $experience_badges_selected = Helpers::get_meta_array($post_id, '_fp_experience_badges', []);
+        $experience_badges_selected = array_values(array_filter(
+            array_map(static fn ($s): string => sanitize_key((string) $s), $experience_badges_selected),
+            static fn (string $s): bool => '' !== $s && isset($badge_choice_map[$s])
+        ));
 
         // Get linked page details
         $linked_page = $this->get_linked_page_details($post_id);
@@ -1249,12 +1572,51 @@ final class DetailsMetaBoxHandler extends BaseMetaBoxHandler
         // Get event fields (evento a data singola)
         $is_event = (bool) $this->get_meta_value($post_id, 'is_event', false);
         $event_datetime = (string) $this->get_meta_value($post_id, 'event_datetime', '');
+        $event_ticket_sales_end = (string) $this->get_meta_value($post_id, 'event_ticket_sales_end', '');
+        $single_event_sr_mode = (string) $this->get_meta_value($post_id, 'single_event_special_requests_mode', 'default');
+        if (! in_array($single_event_sr_mode, ['default', 'notes_only', 'hidden'], true)) {
+            $single_event_sr_mode = 'default';
+        }
+        $single_event_sr_title = sanitize_text_field((string) $this->get_meta_value($post_id, 'single_event_special_requests_title', ''));
+        $single_event_sr_notes_label = sanitize_text_field((string) $this->get_meta_value($post_id, 'single_event_special_requests_notes_label', ''));
+        $single_event_sr_help = sanitize_textarea_field((string) $this->get_meta_value($post_id, 'single_event_special_requests_help', ''));
+
+        $raw_sr_items = $this->get_meta_value($post_id, 'widget_special_requests_items', '');
+        $parsed_sr_items = SpecialRequestsOptions::parse_stored_meta($raw_sr_items);
+        if ($parsed_sr_items === null) {
+            $special_requests_enabled_presets = SpecialRequestsOptions::PRESET_ORDER;
+            $special_requests_custom_rows = [];
+        } else {
+            $special_requests_enabled_presets = [];
+            $special_requests_custom_rows = [];
+            foreach ($parsed_sr_items as $sr_row) {
+                if (($sr_row['kind'] ?? '') === 'preset') {
+                    $special_requests_enabled_presets[] = (string) ($sr_row['id'] ?? '');
+                } elseif (($sr_row['kind'] ?? '') === 'custom') {
+                    $special_requests_custom_rows[] = [
+                        'slug' => (string) ($sr_row['slug'] ?? ''),
+                        'label' => (string) ($sr_row['label'] ?? ''),
+                    ];
+                }
+            }
+            $special_requests_enabled_presets = array_values(array_filter($special_requests_enabled_presets));
+        }
+        for ($sr_pad = 0; $sr_pad < 2; $sr_pad++) {
+            $special_requests_custom_rows[] = ['slug' => '', 'label' => ''];
+        }
 
         return [
             'short_desc' => $short_desc,
             'duration_minutes' => $duration_minutes,
             'is_event' => $is_event,
             'event_datetime' => $event_datetime,
+            'event_ticket_sales_end' => $event_ticket_sales_end,
+            'single_event_special_requests_mode' => $single_event_sr_mode,
+            'single_event_special_requests_title' => $single_event_sr_title,
+            'single_event_special_requests_notes_label' => $single_event_sr_notes_label,
+            'single_event_special_requests_help' => $single_event_sr_help,
+            'special_requests_enabled_presets' => $special_requests_enabled_presets,
+            'special_requests_custom_rows' => $special_requests_custom_rows,
             'hero_image' => $hero_image,
             'gallery' => $gallery,
             'gallery_video_url' => $gallery_video_url,
@@ -1272,6 +1634,11 @@ final class DetailsMetaBoxHandler extends BaseMetaBoxHandler
                 'choices' => $cognitive_biases_choices,
                 'selected' => $cognitive_biases_selected,
             ],
+            'experience_badges' => [
+                'choices' => array_values($badge_choice_map),
+                'selected' => $experience_badges_selected,
+            ],
+            'experience_badges_custom' => $experience_badges_custom,
             'linked_page' => $linked_page,
             'min_party' => $min_party,
             'capacity_slot' => $capacity_slot,
@@ -1281,6 +1648,85 @@ final class DetailsMetaBoxHandler extends BaseMetaBoxHandler
             'age_max' => $age_max,
             'rules_children' => $rules_children,
         ];
+    }
+
+    /**
+     * Salva elenco checkbox richieste speciali widget (JSON) o rimuove meta se equivale al predefinito.
+     *
+     * @param array<string, mixed> $raw
+     */
+    private function save_widget_special_requests_items(int $post_id, array $raw): void
+    {
+        if (empty($raw['special_requests_items_touched'])) {
+            return;
+        }
+
+        $catalog = SpecialRequestsOptions::preset_catalog();
+        $enabled = isset($raw['special_requests_enabled_presets']) && is_array($raw['special_requests_enabled_presets'])
+            ? array_values(array_unique(array_filter(array_map(
+                static fn ($v): string => sanitize_key((string) $v),
+                $raw['special_requests_enabled_presets']
+            ))))
+            : [];
+        $enabled = array_values(array_filter($enabled, static fn (string $id): bool => isset($catalog[$id])));
+
+        $items = [];
+        foreach (SpecialRequestsOptions::PRESET_ORDER as $pid) {
+            if (in_array($pid, $enabled, true)) {
+                $items[] = ['kind' => 'preset', 'id' => $pid];
+            }
+        }
+
+        $custom_raw = isset($raw['special_requests_custom_rows']) && is_array($raw['special_requests_custom_rows'])
+            ? $raw['special_requests_custom_rows']
+            : [];
+
+        $reserved = array_flip(SpecialRequestsOptions::PRESET_ORDER);
+        foreach ($items as $pit) {
+            if (($pit['kind'] ?? '') === 'preset' && isset($pit['id'])) {
+                $reserved[(string) $pit['id']] = true;
+            }
+        }
+
+        foreach ($custom_raw as $crow) {
+            if (! is_array($crow)) {
+                continue;
+            }
+            $label = sanitize_text_field((string) ($crow['label'] ?? ''));
+            if ($label === '') {
+                continue;
+            }
+            $slug_in = sanitize_key((string) ($crow['slug'] ?? ''));
+            $slug = $slug_in !== '' ? $slug_in : SpecialRequestsOptions::slug_from_label($label);
+            $slug = substr(sanitize_key($slug), 0, 60);
+            if ($slug === '') {
+                $slug = 'opt_' . substr(md5($label), 0, 8);
+            }
+            $base = $slug;
+            $n = 1;
+            while (isset($reserved[$slug])) {
+                $slug = substr($base . '_' . (string) $n, 0, 60);
+                ++$n;
+                if ($n > 500) {
+                    $slug = substr($base . '_' . wp_generate_password(4, false, false), 0, 60);
+                    break;
+                }
+            }
+            $reserved[$slug] = true;
+            $items[] = ['kind' => 'custom', 'slug' => $slug, 'label' => $label];
+        }
+
+        if (SpecialRequestsOptions::is_equivalent_to_default($items)) {
+            $this->update_or_delete_meta($post_id, 'widget_special_requests_items', null);
+
+            return;
+        }
+
+        $json = wp_json_encode($items, JSON_UNESCAPED_UNICODE);
+        if (false === $json) {
+            $json = '[]';
+        }
+        $this->update_or_delete_meta($post_id, 'widget_special_requests_items', $json);
     }
 
     private function normalize_event_datetime(string $raw): string

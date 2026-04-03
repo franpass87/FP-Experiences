@@ -1201,6 +1201,53 @@ final class Helpers
         return $icons[$icon];
     }
 
+    /**
+     * Normalizza la chiave icona verso una presente nel registry SVG.
+     */
+    public static function sanitize_experience_badge_icon_key(string $icon): string
+    {
+        self::experience_badge_icon_svg('default');
+        $icons = self::$experience_badge_icon_cache ?? [];
+        $icon = sanitize_key($icon);
+        if ('' === $icon || ! isset($icons[$icon])) {
+            return 'default';
+        }
+
+        return $icon;
+    }
+
+    /**
+     * Slug icona => etichetta per select in admin (estende le chiavi del registry, inclusi filtri).
+     *
+     * @return array<string, string>
+     */
+    public static function experience_badge_icon_admin_options(): array
+    {
+        self::experience_badge_icon_svg('default');
+        $icons = self::$experience_badge_icon_cache ?? [];
+        if (! is_array($icons) || [] === $icons) {
+            return ['default' => __('Generica', 'fp-experiences')];
+        }
+
+        $keys = array_keys($icons);
+        sort($keys);
+        $labels = [
+            'craft' => __('Artigianato', 'fp-experiences'),
+            'default' => __('Generica', 'fp-experiences'),
+            'family' => __('Famiglia / bambini', 'fp-experiences'),
+            'olive' => __('Olio / oliva', 'fp-experiences'),
+            'outdoor' => __('Outdoor', 'fp-experiences'),
+            'taste' => __('Gastronomia', 'fp-experiences'),
+            'wine' => __('Vino', 'fp-experiences'),
+        ];
+        $out = [];
+        foreach ($keys as $k) {
+            $out[$k] = $labels[$k] ?? $k;
+        }
+
+        return $out;
+    }
+
     public static function rtb_mode(): string
     {
         $settings = self::rtb_settings();
