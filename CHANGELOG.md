@@ -2,6 +2,12 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.6.8] - 2026-04-03
+
+### Changed
+
+- **Modale regalo (estetica)**: backdrop con alone colore primario e blur più morbido; `::before` sul dialog (striscia gradient brand); dialog con doppio gradient e ombre più profonde; focus ring sul dialog legato al primario; pulsante chiudi con bordo e stato hover tintato; intro con bordo sinistro e alone leggero; titolo con sottolinea gradient; griglia form, ticket row, fieldset addon e card addon con gradient/ombre coerenti; input con raggio 12px, ombra interna leggera e hover; footer con alone primario in `inset`; nota pre-checkout come card; CTA con hover/active e `prefers-reduced-motion` per disabilitare translate su submit/addon.
+
 ## [1.6.7] - 2026-04-03
 
 ### Fixed

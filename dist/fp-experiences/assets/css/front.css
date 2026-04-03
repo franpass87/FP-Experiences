@@ -3584,13 +3584,20 @@ body.fp-modal-open {
 .fp-gift-modal__backdrop {
     position: absolute;
     inset: 0;
-    background: linear-gradient(180deg, rgba(9, 15, 32, 0.56) 0%, rgba(19, 29, 56, 0.74) 100%);
-    backdrop-filter: blur(4px);
+    background:
+        radial-gradient(120% 80% at 50% 0%, rgba(37, 99, 235, 0.14) 0%, transparent 55%),
+        linear-gradient(180deg, rgba(9, 15, 32, 0.58) 0%, rgba(19, 29, 56, 0.78) 100%);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
 }
 
 @media (min-width: 1024px) {
     .fp-gift-modal__backdrop {
-        background: linear-gradient(180deg, rgba(7, 12, 26, 0.62) 0%, rgba(19, 29, 56, 0.8) 100%);
+        background:
+            radial-gradient(100% 70% at 50% -10%, color-mix(in srgb, var(--fp-color-primary, #2563eb) 18%, transparent) 0%, transparent 50%),
+            linear-gradient(180deg, rgba(7, 12, 26, 0.64) 0%, rgba(19, 29, 56, 0.82) 100%);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
     }
 }
 
@@ -3604,17 +3611,41 @@ body.fp-modal-open {
     overflow: hidden;
     border-radius: clamp(18px, 2vw, 24px);
     outline: none;
-    background: linear-gradient(165deg, #ffffff 0%, #f4f7fd 48%, #fafbfd 100%);
-    border: 1px solid rgba(19, 29, 56, 0.09);
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.97) 0%, rgba(255, 255, 255, 0) 28%),
+        linear-gradient(165deg, #ffffff 0%, #eef2fb 42%, #f8f9fd 72%, #fafbfd 100%);
+    border: 1px solid rgba(19, 29, 56, 0.08);
     box-shadow:
-        0 28px 64px -24px rgba(19, 29, 56, 0.5),
-        0 0 0 1px rgba(255, 255, 255, 0.6) inset;
+        0 32px 72px -28px rgba(19, 29, 56, 0.55),
+        0 0 0 1px rgba(255, 255, 255, 0.75) inset,
+        0 1px 0 rgba(255, 255, 255, 0.95) inset;
     padding: 0;
     transform: translateY(18px) scale(0.985);
     opacity: 0;
     transition:
         transform 0.28s cubic-bezier(0.22, 1, 0.36, 1),
-        opacity 0.26s ease;
+        opacity 0.26s ease,
+        box-shadow 0.28s ease;
+}
+
+/* Striscia brand in alto sul dialog */
+.fp-gift-modal__dialog::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    z-index: 3;
+    pointer-events: none;
+    border-radius: clamp(18px, 2vw, 24px) clamp(18px, 2vw, 24px) 0 0;
+    background: linear-gradient(
+        90deg,
+        color-mix(in srgb, var(--fp-color-primary, #2563eb) 92%, #1e1b4b) 0%,
+        var(--fp-color-primary, #2563eb) 45%,
+        color-mix(in srgb, var(--fp-color-primary, #2563eb) 55%, #6366f1) 100%
+    );
+    opacity: 0.95;
 }
 
 .fp-gift-modal.is-open .fp-gift-modal__dialog {
@@ -3630,32 +3661,47 @@ body.fp-modal-open {
 }
 
 .fp-gift-modal__dialog:focus {
-    box-shadow: 0 0 0 3px rgba(19, 29, 56, 0.16);
+    box-shadow:
+        0 32px 72px -28px rgba(19, 29, 56, 0.55),
+        0 0 0 1px rgba(255, 255, 255, 0.75) inset,
+        0 0 0 3px color-mix(in srgb, var(--fp-color-primary, #2563eb) 28%, transparent);
 }
 
 .fp-gift-modal__close {
     position: absolute;
     top: 0.95rem;
     right: 0.95rem;
-    border: none;
-    background: rgba(255, 255, 255, 0.92);
+    z-index: 4;
+    border: 1px solid rgba(19, 29, 56, 0.08);
+    background: rgba(255, 255, 255, 0.94);
     border-radius: 999px;
-    width: 2.35rem;
-    height: 2.35rem;
+    width: 2.4rem;
+    height: 2.4rem;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     color: var(--fp-color-text, #131d38);
     cursor: pointer;
-    transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
-    box-shadow: 0 8px 20px rgba(19, 29, 56, 0.18);
+    transition:
+        transform 0.2s ease,
+        background 0.2s ease,
+        box-shadow 0.2s ease,
+        border-color 0.2s ease,
+        color 0.2s ease;
+    box-shadow:
+        0 6px 18px rgba(19, 29, 56, 0.14),
+        0 0 0 1px rgba(255, 255, 255, 0.8) inset;
 }
 
 .fp-gift-modal__close:hover,
 .fp-gift-modal__close:focus-visible {
-    transform: scale(1.07);
+    transform: scale(1.06);
     background: #fff;
-    box-shadow: 0 10px 24px rgba(19, 29, 56, 0.24);
+    border-color: color-mix(in srgb, var(--fp-color-primary, #2563eb) 35%, rgba(19, 29, 56, 0.12));
+    color: var(--fp-color-primary, #2563eb);
+    box-shadow:
+        0 10px 26px rgba(19, 29, 56, 0.2),
+        0 0 0 1px color-mix(in srgb, var(--fp-color-primary, #2563eb) 15%, transparent) inset;
     outline: none;
 }
 
@@ -3674,6 +3720,10 @@ body.fp-modal-open {
         width: 100%;
         max-height: calc(100vh - 0.7rem);
         border-radius: 20px 20px 14px 14px;
+    }
+
+    .fp-gift-modal__dialog::before {
+        border-radius: 20px 20px 0 0;
     }
 
     .fp-gift-modal__close {
@@ -3746,9 +3796,11 @@ body.fp-modal-open {
     margin-left: calc(-1 * clamp(1.25rem, 2.5vw, 2rem));
     margin-right: calc(-1 * clamp(1.25rem, 2.5vw, 2rem));
     margin-top: 0.15rem;
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.55) 0%, rgba(248, 250, 255, 0.98) 45%, #f8faff 100%);
-    border-top: 1px solid rgba(19, 29, 56, 0.09);
-    box-shadow: 0 -14px 32px -22px rgba(19, 29, 56, 0.35);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.4) 0%, rgba(248, 250, 255, 0.97) 38%, #f3f6ff 100%);
+    border-top: 1px solid rgba(19, 29, 56, 0.07);
+    box-shadow:
+        0 -18px 40px -24px rgba(19, 29, 56, 0.28),
+        inset 0 1px 0 color-mix(in srgb, var(--fp-color-primary, #2563eb) 14%, transparent);
 }
 
 .fp-gift__footer .fp-gift__note {
@@ -3761,18 +3813,45 @@ body.fp-modal-open {
     letter-spacing: 0.02em;
     min-height: 48px;
     width: 100%;
-    box-shadow: 0 10px 28px -12px color-mix(in srgb, var(--fp-color-primary, #2563eb) 55%, transparent);
+    border-radius: 12px;
+    box-shadow:
+        0 12px 32px -14px color-mix(in srgb, var(--fp-color-primary, #2563eb) 60%, transparent),
+        0 1px 0 rgba(255, 255, 255, 0.22) inset;
+    transition: transform 0.18s ease, box-shadow 0.2s ease, filter 0.2s ease;
+}
+
+.fp-gift__submit:hover:not(:disabled) {
+    transform: translateY(-1px);
+    filter: brightness(1.03);
+    box-shadow:
+        0 16px 36px -12px color-mix(in srgb, var(--fp-color-primary, #2563eb) 65%, transparent),
+        0 1px 0 rgba(255, 255, 255, 0.28) inset;
+}
+
+.fp-gift__submit:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .fp-gift__submit:hover:not(:disabled),
+    .fp-gift__submit:active:not(:disabled) {
+        transform: none;
+    }
+
+    .fp-gift__addon:hover {
+        transform: none;
+    }
 }
 
 .fp-gift__group-label {
     grid-column: 1 / -1;
     margin: 0;
-    padding: 0.15rem 0 0.05rem;
-    font-size: 0.72rem;
+    padding: 0.2rem 0 0.1rem;
+    font-size: 0.7rem;
     font-weight: 700;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.1em;
     text-transform: uppercase;
-    color: var(--fp-color-text-muted, rgba(19, 29, 56, 0.55));
+    color: color-mix(in srgb, var(--fp-color-primary, #2563eb) 55%, var(--fp-color-text-muted, rgba(19, 29, 56, 0.55)));
 }
 
 .fp-gift__group-label:not(:first-child) {
@@ -3808,20 +3887,28 @@ body.fp-modal-open {
 .fp-gift__title::after {
     content: '';
     display: block;
-    width: 2.75rem;
-    height: 3px;
-    margin-top: 0.5rem;
+    width: 3rem;
+    height: 4px;
+    margin-top: 0.55rem;
     border-radius: 999px;
-    background: var(--fp-color-primary, #2563eb);
-    opacity: 0.88;
+    background: linear-gradient(
+        90deg,
+        var(--fp-color-primary, #2563eb) 0%,
+        color-mix(in srgb, var(--fp-color-primary, #2563eb) 45%, #818cf8) 100%
+    );
+    opacity: 0.92;
 }
 
 .fp-gift__intro {
     margin: 0 0 0.85rem;
+    padding: 0.55rem 0 0.55rem 0.85rem;
+    border-left: 3px solid color-mix(in srgb, var(--fp-color-primary, #2563eb) 35%, transparent);
     color: var(--fp-color-text-muted, rgba(19, 29, 56, 0.68));
     font-size: 0.94rem;
-    line-height: 1.45;
+    line-height: 1.5;
     max-width: 58ch;
+    background: linear-gradient(90deg, color-mix(in srgb, var(--fp-color-primary, #2563eb) 6%, transparent) 0%, transparent 100%);
+    border-radius: 0 10px 10px 0;
 }
 
 .fp-gift__grid {
@@ -3830,11 +3917,13 @@ body.fp-modal-open {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     margin-bottom: 0.75rem;
     align-items: start;
-    padding: 0.95rem 1rem 1rem;
-    background: rgba(255, 255, 255, 0.72);
+    padding: 1rem 1.05rem 1.05rem;
+    background: linear-gradient(165deg, rgba(255, 255, 255, 0.94) 0%, rgba(248, 250, 255, 0.88) 100%);
     border: 1px solid rgba(19, 29, 56, 0.07);
-    border-radius: 16px;
-    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.9) inset;
+    border-radius: 18px;
+    box-shadow:
+        0 4px 28px -10px rgba(19, 29, 56, 0.14),
+        0 1px 0 rgba(255, 255, 255, 0.95) inset;
 }
 
 .fp-gift__field {
@@ -3867,15 +3956,21 @@ body.fp-modal-open {
     width: 100%;
     max-width: 100%;
     min-width: 0;
-    border-radius: 10px;
-    border: 1px solid rgba(19, 29, 56, 0.12);
-    padding: 0.58rem 0.8rem;
+    border-radius: 12px;
+    border: 1px solid rgba(19, 29, 56, 0.11);
+    padding: 0.6rem 0.85rem;
     font: inherit;
     line-height: 1.45;
     color: var(--fp-color-text, #131d38);
     background: #fff;
-    transition: border 0.2s ease, box-shadow 0.2s ease;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
     box-sizing: border-box;
+    box-shadow: 0 1px 2px rgba(19, 29, 56, 0.04) inset;
+}
+
+.fp-gift__field input:hover:not(:disabled):not(:focus),
+.fp-gift__field textarea:hover:not(:disabled):not(:focus) {
+    border-color: rgba(19, 29, 56, 0.18);
 }
 
 /* Date/time: stessa larghezza degli altri campi (prima max-width dedicata creava disallineamento) */
@@ -3893,7 +3988,9 @@ body.fp-modal-open {
 .fp-gift__field input:focus,
 .fp-gift__field textarea:focus {
     border-color: var(--fp-color-primary);
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+    box-shadow:
+        0 0 0 3px color-mix(in srgb, var(--fp-color-primary, #2563eb) 22%, transparent),
+        0 1px 2px rgba(19, 29, 56, 0.05) inset;
     outline: none;
 }
 
@@ -3945,9 +4042,10 @@ body.fp-modal-open {
     justify-content: space-between;
     gap: 0.65rem;
     border: 1px solid rgba(19, 29, 56, 0.08);
-    border-radius: 10px;
-    padding: 0.5rem 0.7rem;
-    background: rgba(248, 250, 255, 0.85);
+    border-radius: 12px;
+    padding: 0.52rem 0.75rem;
+    background: linear-gradient(180deg, #fff 0%, rgba(248, 250, 255, 0.92) 100%);
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.9) inset;
 }
 
 .fp-gift__ticket-label {
@@ -3963,11 +4061,12 @@ body.fp-modal-open {
 }
 
 .fp-gift__addons {
-    border: 1px solid rgba(19, 29, 56, 0.08);
-    border-radius: 14px;
-    padding: 0.75rem 0.95rem;
+    border: 1px solid rgba(19, 29, 56, 0.07);
+    border-radius: 16px;
+    padding: 0.8rem 1rem;
     margin: 0 0 0.65rem;
-    background: rgba(255, 255, 255, 0.6);
+    background: linear-gradient(165deg, rgba(255, 255, 255, 0.92) 0%, rgba(246, 248, 255, 0.75) 100%);
+    box-shadow: 0 2px 16px -8px rgba(19, 29, 56, 0.1);
 }
 
 .fp-gift__addons legend {
@@ -3991,16 +4090,16 @@ body.fp-modal-open {
     row-gap: 0.2rem;
     align-items: flex-start;
     border: 1px solid rgba(19, 29, 56, 0.09);
-    border-radius: 10px;
-    padding: 0.55rem 0.72rem;
-    background: rgba(255, 255, 255, 0.95);
+    border-radius: 12px;
+    padding: 0.58rem 0.75rem;
+    background: rgba(255, 255, 255, 0.98);
     cursor: pointer;
     transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
 }
 
 .fp-gift__addon:hover {
-    border-color: rgba(19, 29, 56, 0.3);
-    box-shadow: 0 10px 24px -24px rgba(19, 29, 56, 0.7);
+    border-color: color-mix(in srgb, var(--fp-color-primary, #2563eb) 32%, rgba(19, 29, 56, 0.15));
+    box-shadow: 0 12px 28px -18px color-mix(in srgb, var(--fp-color-primary, #2563eb) 35%, rgba(19, 29, 56, 0.4));
     transform: translateY(-1px);
 }
 
@@ -4039,11 +4138,17 @@ body.fp-modal-open {
     font-size: 0.875rem;
     color: var(--fp-color-text-muted, rgba(19, 29, 56, 0.66));
     margin: 0.35rem 0 0.85rem;
-    line-height: 1.45;
-    padding: 0.65rem 0.85rem;
-    background: rgba(19, 29, 56, 0.04);
-    border-radius: 10px;
+    line-height: 1.48;
+    padding: 0.7rem 0.9rem;
+    background: linear-gradient(
+        100deg,
+        color-mix(in srgb, var(--fp-color-primary, #2563eb) 9%, #fff) 0%,
+        rgba(255, 255, 255, 0.65) 100%
+    );
+    border-radius: 12px;
+    border: 1px solid color-mix(in srgb, var(--fp-color-primary, #2563eb) 14%, rgba(19, 29, 56, 0.08));
     border-left: 3px solid var(--fp-color-primary, #2563eb);
+    box-shadow: 0 2px 12px -6px rgba(19, 29, 56, 0.12);
 }
 
 .fp-gift__feedback,
