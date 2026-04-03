@@ -45,8 +45,13 @@ final class PolicyMetaBoxHandler extends BaseMetaBoxHandler
             aria-labelledby="fp-exp-tab-policy"
             data-tab-panel="policy"
         >
-            <fieldset class="fp-exp-fieldset">
-                <legend><?php esc_html_e('Policy di cancellazione', 'fp-experiences'); ?></legend>
+            <?php
+            $this->render_metabox_section_open(
+                esc_html__('Policy di cancellazione', 'fp-experiences'),
+                'dashicons-clipboard',
+                'policy-cancel'
+            );
+            ?>
                 <div class="fp-exp-field">
                     <label class="fp-exp-field__label" for="fp-exp-cancellation">
                         <?php esc_html_e('Regole di cancellazione', 'fp-experiences'); ?>
@@ -66,10 +71,15 @@ final class PolicyMetaBoxHandler extends BaseMetaBoxHandler
                         <?php esc_html_e('Descrivi le regole di cancellazione e rimborso per questa esperienza.', 'fp-experiences'); ?>
                     </p>
                 </div>
-            </fieldset>
+            <?php $this->render_metabox_section_close(); ?>
 
-            <fieldset class="fp-exp-fieldset">
-                <legend><?php esc_html_e('FAQ', 'fp-experiences'); ?></legend>
+            <?php
+            $this->render_metabox_section_open(
+                esc_html__('FAQ', 'fp-experiences'),
+                'dashicons-editor-help',
+                'policy-faq'
+            );
+            ?>
                 <div class="fp-exp-repeater" data-repeater="faq" data-repeater-next-index="<?php echo esc_attr((string) count($faqs)); ?>">
                     <div class="fp-exp-repeater__items">
                         <?php foreach ($faqs as $index => $item) : ?>
@@ -83,7 +93,7 @@ final class PolicyMetaBoxHandler extends BaseMetaBoxHandler
                         <button type="button" class="button button-secondary" data-repeater-add><?php esc_html_e('Aggiungi FAQ', 'fp-experiences'); ?></button>
                     </p>
                 </div>
-            </fieldset>
+            <?php $this->render_metabox_section_close(); ?>
         </section>
         <?php
     }

@@ -20,6 +20,7 @@ use function sanitize_key;
 use function sanitize_text_field;
 use function wp_get_post_terms;
 use function wp_list_pluck;
+use function wp_unique_id;
 
 /**
  * Trait with common helper methods for Experience Meta Box handlers.
@@ -222,6 +223,39 @@ trait MetaBoxHelpers
         }
 
         return '';
+    }
+
+    /**
+     * Apre una sezione a card (design system FP: `.fp-exp-dms-card` + header con dashicon).
+     *
+     * @param string $title    Titolo già tradotto (es. da `esc_html__()`).
+     * @param string $dashicon Classe dashicons completa (es. `dashicons-info`).
+     * @param string $id_suffix Suffisso stabile per id univoci del titolo (es. `details-general`).
+     */
+    protected function render_metabox_section_open(string $title, string $dashicon, string $id_suffix): void
+    {
+        $heading_id = 'fp-exp-metabox-' . sanitize_key($id_suffix) . '-' . wp_unique_id();
+        ?>
+        <div class="fp-exp-dms-card fp-exp-metabox-section" role="group" aria-labelledby="<?php echo esc_attr($heading_id); ?>">
+            <div class="fp-exp-dms-card-header">
+                <div class="fp-exp-dms-card-header-left">
+                    <span class="dashicons <?php echo esc_attr($dashicon); ?>" aria-hidden="true"></span>
+                    <h3 class="fp-exp-metabox-section__title" id="<?php echo esc_attr($heading_id); ?>"><?php echo esc_html($title); ?></h3>
+                </div>
+            </div>
+            <div class="fp-exp-dms-card-body fp-exp-metabox-section__body">
+        <?php
+    }
+
+    /**
+     * Chiude la card aperta con {@see self::render_metabox_section_open()}.
+     */
+    protected function render_metabox_section_close(): void
+    {
+        ?>
+            </div>
+        </div>
+        <?php
     }
 }
 

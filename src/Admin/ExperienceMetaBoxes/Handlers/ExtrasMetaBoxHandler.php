@@ -45,8 +45,13 @@ final class ExtrasMetaBoxHandler extends BaseMetaBoxHandler
             data-tab-panel="extras"
             hidden
         >
-            <fieldset class="fp-exp-fieldset">
-                <legend><?php esc_html_e("Cosa include l'esperienza", 'fp-experiences'); ?></legend>
+            <?php
+            $this->render_metabox_section_open(
+                esc_html__('Cosa include l\'esperienza', 'fp-experiences'),
+                'dashicons-list-view',
+                'extras-main'
+            );
+            ?>
                 <div class="fp-exp-field">
                     <label class="fp-exp-field__label" for="fp-exp-highlights">
                         <?php esc_html_e('Highlight (uno per riga)', 'fp-experiences'); ?>
@@ -84,7 +89,7 @@ final class ExtrasMetaBoxHandler extends BaseMetaBoxHandler
                     </label>
                     <textarea id="fp-exp-notes" name="fp_exp_extras[notes]" rows="3"><?php echo esc_textarea($notes); ?></textarea>
                 </div>
-            </fieldset>
+            <?php $this->render_metabox_section_close(); ?>
         </section>
         <?php
     }

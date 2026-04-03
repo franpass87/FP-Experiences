@@ -2,6 +2,12 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.5.52] - 2026-04-03
+
+### Changed
+
+- **Admin — meta box esperienza (design system FP)**: ogni sezione usa **`.fp-exp-dms-card`** con `fp-exp-dms-card-header` (dashicon + `h3`) e `fp-exp-dms-card-body`, tramite `MetaBoxHelpers::render_metabox_section_open()` / `close()`. Sostituiti i `fieldset` negli handler Details (4 card: generale, media, contenuto/fiducia, pubblicazione), Pricing, Calendar (2), Meeting point, Extras, Policy (2), SEO (2). CSS: separatori tra campi nel body, **bordo 2px + focus ring viola** sui controlli nel body della card; tema scuro per card header/body. I metodi deprecati in `ExperienceMetaBoxes.php` che ancora usano `fieldset` restano per retrocompatibilità.
+
 ## [1.5.51] - 2026-04-03
 
 ### Changed

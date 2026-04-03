@@ -44,9 +44,13 @@ final class SEOMetaBoxHandler extends BaseMetaBoxHandler
             data-tab-panel="seo"
             hidden
         >
-            <fieldset class="fp-exp-fieldset">
-                <legend><?php esc_html_e('Meta Tags SEO', 'fp-experiences'); ?></legend>
-                
+            <?php
+            $this->render_metabox_section_open(
+                esc_html__('Meta tag SEO', 'fp-experiences'),
+                'dashicons-search',
+                'seo-meta'
+            );
+            ?>
                 <div class="fp-exp-field">
                     <label class="fp-exp-field__label" for="fp-exp-meta-title">
                         <?php esc_html_e('Titolo SEO', 'fp-experiences'); ?>
@@ -85,11 +89,15 @@ final class SEOMetaBoxHandler extends BaseMetaBoxHandler
                         <?php esc_html_e('Massimo 160 caratteri consigliati per i risultati di ricerca.', 'fp-experiences'); ?>
                     </p>
                 </div>
-            </fieldset>
+            <?php $this->render_metabox_section_close(); ?>
 
-            <fieldset class="fp-exp-fieldset">
-                <legend><?php esc_html_e('Schema.org / Structured Data', 'fp-experiences'); ?></legend>
-                
+            <?php
+            $this->render_metabox_section_open(
+                esc_html__('Schema.org / dati strutturati', 'fp-experiences'),
+                'dashicons-editor-code',
+                'seo-schema'
+            );
+            ?>
                 <div class="fp-exp-field">
                     <label class="fp-exp-field__label" for="fp-exp-schema-type">
                         <?php esc_html_e('Tipo Schema', 'fp-experiences'); ?>
@@ -155,7 +163,7 @@ final class SEOMetaBoxHandler extends BaseMetaBoxHandler
                         </p>
                     </div>
                 </div>
-            </fieldset>
+            <?php $this->render_metabox_section_close(); ?>
         </section>
         <?php
     }

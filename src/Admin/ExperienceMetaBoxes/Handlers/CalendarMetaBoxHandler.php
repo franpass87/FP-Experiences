@@ -68,9 +68,13 @@ final class CalendarMetaBoxHandler extends BaseMetaBoxHandler
                 ])); ?>"
                 data-experience-id="<?php echo esc_attr((string) $post_id); ?>"
             >
-                <fieldset class="fp-exp-fieldset">
-                    <legend><?php esc_html_e('Disponibilità Generale', 'fp-experiences'); ?></legend>
-                    
+                <?php
+                $this->render_metabox_section_open(
+                    esc_html__('Disponibilità generale', 'fp-experiences'),
+                    'dashicons-calendar-alt',
+                    'calendar-general'
+                );
+                ?>
                     <div class="fp-exp-field fp-exp-field--columns">
                         <div>
                             <label class="fp-exp-field__label" for="fp-exp-slot-capacity">
@@ -146,7 +150,7 @@ final class CalendarMetaBoxHandler extends BaseMetaBoxHandler
                             </p>
                         </div>
                     </div>
-                </fieldset>
+                <?php $this->render_metabox_section_close(); ?>
 
                 <?php $this->render_recurrence_section($recurrence, $time_slots); ?>
             </div>
@@ -163,9 +167,13 @@ final class CalendarMetaBoxHandler extends BaseMetaBoxHandler
         $days = $recurrence['days'] ?? [];
         $frequency = $recurrence['frequency'] ?? 'weekly';
         ?>
-        <fieldset class="fp-exp-fieldset">
-            <legend><?php esc_html_e('Ricorrenza e Slot Orari', 'fp-experiences'); ?></legend>
-            
+        <?php
+        $this->render_metabox_section_open(
+            esc_html__('Ricorrenza e slot orari', 'fp-experiences'),
+            'dashicons-backup',
+            'calendar-recurrence'
+        );
+        ?>
             <div class="fp-exp-field">
                 <label class="fp-exp-field__label" for="fp-exp-recurrence-duration">
                     <?php esc_html_e('Durata predefinita slot (minuti)', 'fp-experiences'); ?>
@@ -231,7 +239,7 @@ final class CalendarMetaBoxHandler extends BaseMetaBoxHandler
                     </p>
                 </div>
             </div>
-        </fieldset>
+        <?php $this->render_metabox_section_close(); ?>
         <?php
     }
 

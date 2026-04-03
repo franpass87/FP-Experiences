@@ -58,8 +58,13 @@ final class DetailsMetaBoxHandler extends BaseMetaBoxHandler
             aria-labelledby="fp-exp-tab-details"
             data-tab-panel="details"
         >
-            <fieldset class="fp-exp-fieldset">
-                <legend><?php esc_html_e('Informazioni generali', 'fp-experiences'); ?></legend>
+            <?php
+            $this->render_metabox_section_open(
+                esc_html__('Informazioni generali', 'fp-experiences'),
+                'dashicons-info',
+                'details-general'
+            );
+            ?>
                 <div class="fp-exp-field">
                     <label class="fp-exp-field__label" for="fp-exp-short-desc">
                         <?php esc_html_e('Descrizione breve', 'fp-experiences'); ?>
@@ -199,18 +204,44 @@ final class DetailsMetaBoxHandler extends BaseMetaBoxHandler
                         <p class="fp-exp-field__description" id="fp-exp-language-badge-help"><?php esc_html_e('Le lingue selezionate vengono mostrate nei badge pubblici, nel widget e nei filtri.', 'fp-experiences'); ?></p>
                     </div>
                 </div>
+            <?php $this->render_metabox_section_close(); ?>
 
+            <?php
+            $this->render_metabox_section_open(
+                esc_html__('Media e anteprima', 'fp-experiences'),
+                'dashicons-format-gallery',
+                'details-media'
+            );
+            ?>
                 <?php $this->render_hero_image_field($hero_image); ?>
                 <?php $this->render_gallery_field($gallery); ?>
                 <?php $this->render_gallery_video_field($data); ?>
+            <?php $this->render_metabox_section_close(); ?>
+
+            <?php
+            $this->render_metabox_section_open(
+                esc_html__('Contenuto, categorie e fiducia', 'fp-experiences'),
+                'dashicons-tag',
+                'details-content'
+            );
+            ?>
                 <?php $this->render_experience_badges_field($data, $post_id); ?>
                 <?php $this->render_taxonomy_fields($data, $post_id); ?>
                 <?php $this->render_trust_badges_field($data); ?>
+            <?php $this->render_metabox_section_close(); ?>
+
+            <?php
+            $this->render_metabox_section_open(
+                esc_html__('Pubblicazione e partecipanti', 'fp-experiences'),
+                'dashicons-groups',
+                'details-publish'
+            );
+            ?>
                 <?php $this->render_linked_page_field($data); ?>
                 <?php $this->render_capacity_fields($data); ?>
                 <?php $this->render_age_fields($data); ?>
                 <?php $this->render_children_rules_field($data); ?>
-            </fieldset>
+            <?php $this->render_metabox_section_close(); ?>
         </section>
         <?php
     }

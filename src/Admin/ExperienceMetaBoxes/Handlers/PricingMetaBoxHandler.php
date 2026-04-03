@@ -64,9 +64,13 @@ final class PricingMetaBoxHandler extends BaseMetaBoxHandler
             data-tab-panel="pricing"
             hidden
         >
-            <fieldset class="fp-exp-fieldset">
-                <legend><?php esc_html_e('Prezzi e Biglietti', 'fp-experiences'); ?></legend>
-                
+            <?php
+            $this->render_metabox_section_open(
+                esc_html__('Prezzi e biglietti', 'fp-experiences'),
+                'dashicons-tickets-alt',
+                'pricing-main'
+            );
+            ?>
                 <div class="fp-exp-field">
                     <label class="fp-exp-field__label" for="fp-exp-base-price">
                         <?php 
@@ -115,7 +119,7 @@ final class PricingMetaBoxHandler extends BaseMetaBoxHandler
                 <?php $this->render_tickets_section($tickets); ?>
                 <?php $this->render_group_pricing_section($group); ?>
                 <?php $this->render_addons_section($addons); ?>
-            </fieldset>
+            <?php $this->render_metabox_section_close(); ?>
         </section>
         <?php
     }

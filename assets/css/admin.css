@@ -2290,18 +2290,32 @@ html.fp-exp-dark .fp-exp-experience-metabox .fp-exp-tab-panels {
     border-color: rgba(230, 232, 235, 0.1) !important;
 }
 
-html.fp-exp-dark .fp-exp-experience-metabox .fp-exp-fieldset {
+html.fp-exp-dark .fp-exp-experience-metabox .fp-exp-metabox-section.fp-exp-dms-card {
     background: rgba(255, 255, 255, 0.03) !important;
-    border-color: rgba(230, 232, 235, 0.1) !important;
     box-shadow: none !important;
 }
 
-html.fp-exp-dark .fp-exp-experience-metabox .fp-exp-fieldset legend {
-    color: var(--fp-exp-color-muted) !important;
+html.fp-exp-dark .fp-exp-experience-metabox .fp-exp-metabox-section .fp-exp-dms-card-header {
+    background: rgba(0, 0, 0, 0.2) !important;
+    border-bottom-color: rgba(230, 232, 235, 0.1) !important;
 }
 
-html.fp-exp-dark .fp-exp-experience-metabox .fp-exp-fieldset::before {
-    background: linear-gradient(90deg, #11998e 0%, #38ef7d 100%) !important;
+html.fp-exp-dark .fp-exp-experience-metabox .fp-exp-metabox-section__title {
+    color: var(--fp-exp-color-text) !important;
+}
+
+html.fp-exp-dark .fp-exp-experience-metabox .fp-exp-metabox-section__body input[type="text"],
+html.fp-exp-dark .fp-exp-experience-metabox .fp-exp-metabox-section__body input[type="number"],
+html.fp-exp-dark .fp-exp-experience-metabox .fp-exp-metabox-section__body input[type="url"],
+html.fp-exp-dark .fp-exp-experience-metabox .fp-exp-metabox-section__body input[type="email"],
+html.fp-exp-dark .fp-exp-experience-metabox .fp-exp-metabox-section__body input[type="time"],
+html.fp-exp-dark .fp-exp-experience-metabox .fp-exp-metabox-section__body input[type="date"],
+html.fp-exp-dark .fp-exp-experience-metabox .fp-exp-metabox-section__body input[type="datetime-local"],
+html.fp-exp-dark .fp-exp-experience-metabox .fp-exp-metabox-section__body select,
+html.fp-exp-dark .fp-exp-experience-metabox .fp-exp-metabox-section__body textarea {
+    background: rgba(0, 0, 0, 0.25) !important;
+    border-color: rgba(230, 232, 235, 0.15) !important;
+    color: var(--fp-exp-color-text) !important;
 }
 
 html.fp-exp-dark .fp-exp-settings .nav-tab {
@@ -4699,39 +4713,62 @@ label.fp-exp-settings__toggle input:checked + .fp-exp-toggle__switch::after {
 }
 
 .fp-exp-experience-metabox .fp-exp-tab-panel {
-    gap: 20px !important;
+    gap: 0 !important;
 }
 
-.fp-exp-experience-metabox .fp-exp-fieldset {
-    margin: 0 0 20px !important;
-    padding: 18px 20px 20px !important;
-    background: var(--fpdms-bg-white) !important;
-    border: 1px solid var(--fpdms-border) !important;
-    border-radius: var(--radius-md) !important;
-    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06) !important;
+/* Sezioni DMS dentro la meta box (sostituiscono i fieldset): spaziatura e campi per design system FP */
+.fp-exp-experience-metabox .fp-exp-metabox-section.fp-exp-dms-card {
+    margin-bottom: 1.25rem !important;
 }
 
-.fp-exp-experience-metabox .fp-exp-fieldset:last-of-type {
+.fp-exp-experience-metabox .fp-exp-tab-panel > .fp-exp-metabox-section.fp-exp-dms-card:last-child,
+.fp-exp-experience-metabox [data-fp-exp-calendar-admin] > .fp-exp-metabox-section.fp-exp-dms-card:last-child {
     margin-bottom: 0 !important;
 }
 
-.fp-exp-experience-metabox .fp-exp-fieldset::before {
-    height: 3px !important;
-    background: var(--fpdms-gradient-secondary) !important;
-    border-radius: var(--radius-md) var(--radius-md) 0 0 !important;
+.fp-exp-experience-metabox .fp-exp-metabox-section__body > .fp-exp-field:not(:last-child):not(.fp-exp-field--columns) {
+    padding-bottom: 1rem;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid var(--fpdms-border-light);
 }
 
-.fp-exp-experience-metabox .fp-exp-fieldset legend {
-    font-size: 11px !important;
-    font-weight: 700 !important;
-    text-transform: uppercase !important;
-    letter-spacing: 0.06em !important;
-    color: var(--fpdms-text-light) !important;
-    margin-bottom: 14px !important;
+.fp-exp-experience-metabox .fp-exp-metabox-section__body .fp-exp-field--columns {
+    border-bottom: 1px solid var(--fpdms-border-light);
+    padding-bottom: 1rem;
+    margin-bottom: 1rem;
 }
 
-.fp-exp-experience-metabox .fp-exp-fieldset > .fp-exp-field:not(:last-child):not(.fp-exp-field--columns) {
-    border-bottom-color: var(--fpdms-border-light) !important;
+.fp-exp-experience-metabox .fp-exp-metabox-section__body .fp-exp-field:last-child {
+    margin-bottom: 0;
+}
+
+/* Input / select / textarea — token DMS (allineamento fp-admin-ui-design-system.mdc) */
+.fp-exp-experience-metabox .fp-exp-metabox-section__body input[type="text"],
+.fp-exp-experience-metabox .fp-exp-metabox-section__body input[type="number"],
+.fp-exp-experience-metabox .fp-exp-metabox-section__body input[type="url"],
+.fp-exp-experience-metabox .fp-exp-metabox-section__body input[type="email"],
+.fp-exp-experience-metabox .fp-exp-metabox-section__body input[type="time"],
+.fp-exp-experience-metabox .fp-exp-metabox-section__body input[type="date"],
+.fp-exp-experience-metabox .fp-exp-metabox-section__body input[type="datetime-local"],
+.fp-exp-experience-metabox .fp-exp-metabox-section__body select,
+.fp-exp-experience-metabox .fp-exp-metabox-section__body textarea {
+    border: 2px solid var(--fpdms-border) !important;
+    border-radius: var(--radius-md) !important;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.fp-exp-experience-metabox .fp-exp-metabox-section__body input[type="text"]:focus,
+.fp-exp-experience-metabox .fp-exp-metabox-section__body input[type="number"]:focus,
+.fp-exp-experience-metabox .fp-exp-metabox-section__body input[type="url"]:focus,
+.fp-exp-experience-metabox .fp-exp-metabox-section__body input[type="email"]:focus,
+.fp-exp-experience-metabox .fp-exp-metabox-section__body input[type="time"]:focus,
+.fp-exp-experience-metabox .fp-exp-metabox-section__body input[type="date"]:focus,
+.fp-exp-experience-metabox .fp-exp-metabox-section__body input[type="datetime-local"]:focus,
+.fp-exp-experience-metabox .fp-exp-metabox-section__body select:focus,
+.fp-exp-experience-metabox .fp-exp-metabox-section__body textarea:focus {
+    border-color: var(--fpdms-primary) !important;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.22) !important;
+    outline: none !important;
 }
 
 /*

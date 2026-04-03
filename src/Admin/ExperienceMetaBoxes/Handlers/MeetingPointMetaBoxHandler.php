@@ -42,9 +42,13 @@ final class MeetingPointMetaBoxHandler extends BaseMetaBoxHandler
             data-tab-panel="meeting-point"
             hidden
         >
-            <fieldset class="fp-exp-fieldset">
-                <legend><?php esc_html_e('Meeting Point', 'fp-experiences'); ?></legend>
-                
+            <?php
+            $this->render_metabox_section_open(
+                esc_html__('Meeting point', 'fp-experiences'),
+                'dashicons-location',
+                'meeting-point'
+            );
+            ?>
                 <div class="fp-exp-field">
                     <label class="fp-exp-field__label" for="fp-exp-meeting-primary">
                         <?php esc_html_e('Meeting Point Principale', 'fp-experiences'); ?>
@@ -95,7 +99,7 @@ final class MeetingPointMetaBoxHandler extends BaseMetaBoxHandler
                         <?php esc_html_e('Usa CTRL/CMD + clic per selezionare più voci.', 'fp-experiences'); ?>
                     </p>
                 </div>
-            </fieldset>
+            <?php $this->render_metabox_section_close(); ?>
         </section>
         <?php
     }
