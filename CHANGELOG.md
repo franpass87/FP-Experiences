@@ -2,6 +2,12 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.5.51] - 2026-04-03
+
+### Changed
+
+- **Widget — step Richieste speciali**: le stesse opzioni in **Dettagli** (modalità standard / solo note / step nascosto; titolo, etichetta note, aiuto) valgono per **tutte** le esperienze, non solo per gli eventi a data fissa. Le meta `_fp_single_event_special_requests_*` non vengono più azzerate passando a esperienza ricorrente.
+
 ## [1.5.50] - 2026-04-03
 
 ### Added

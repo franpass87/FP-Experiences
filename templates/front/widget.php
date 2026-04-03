@@ -56,12 +56,12 @@ $special_requests_defaults = [
 $special_requests_config = isset($special_requests_config) && is_array($special_requests_config)
     ? array_merge($special_requests_defaults, $special_requests_config)
     : $special_requests_defaults;
-$sr_mode_effective = $is_single_event_mode ? (string) ($special_requests_config['mode'] ?? 'default') : 'default';
+$sr_mode_effective = (string) ($special_requests_config['mode'] ?? 'default');
 if (! in_array($sr_mode_effective, ['default', 'notes_only', 'hidden'], true)) {
     $sr_mode_effective = 'default';
 }
-$special_requests_step_hidden = $is_single_event_mode && 'hidden' === $sr_mode_effective;
-$special_requests_notes_only = $is_single_event_mode && 'notes_only' === $sr_mode_effective;
+$special_requests_step_hidden = 'hidden' === $sr_mode_effective;
+$special_requests_notes_only = 'notes_only' === $sr_mode_effective;
 $sr_step_title_custom = trim((string) ($special_requests_config['step_title'] ?? ''));
 $sr_notes_label_custom = trim((string) ($special_requests_config['notes_label'] ?? ''));
 $sr_help_custom = trim((string) ($special_requests_config['help_text'] ?? ''));
