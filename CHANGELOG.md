@@ -2,6 +2,12 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.5.52] - 2026-04-03
+
+### Changed
+
+- **Pagina esperienza — barra CTA fissa (mobile)**: margini orizzontali rispetto al viewport (`left`/`right` + `safe-area`) e angoli superiori arrotondati, per ridurre sovrapposizioni con cookie/privacy e pulsanti tipo back-to-top; testo **«Prenota il tuo posto»** reso più grande (`clamp` su `.fp-exp-page__sticky-button`).
+
 ## [1.5.51] - 2026-04-03
 
 ### Changed
