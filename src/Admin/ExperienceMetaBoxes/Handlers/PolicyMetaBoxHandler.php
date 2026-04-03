@@ -44,6 +44,7 @@ final class PolicyMetaBoxHandler extends BaseMetaBoxHandler
             tabindex="0"
             aria-labelledby="fp-exp-tab-policy"
             data-tab-panel="policy"
+            hidden
         >
             <?php
             $this->render_metabox_section_open(
@@ -53,7 +54,7 @@ final class PolicyMetaBoxHandler extends BaseMetaBoxHandler
             );
             ?>
                 <div class="fp-exp-field">
-                    <label class="fp-exp-field__label" for="fp-exp-cancellation">
+                    <label class="fp-exp-field__label" for="fp-exp-policy-text">
                         <?php esc_html_e('Regole di cancellazione', 'fp-experiences'); ?>
                     </label>
                     <textarea

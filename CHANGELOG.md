@@ -2,6 +2,14 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.5.54] - 2026-04-03
+
+### Fixed
+
+- **Meta box — tab Policy/FAQ**: aggiunto `hidden` sul `<section class="fp-exp-tab-panel" data-tab-panel="policy">` come sulle altre tab non predefinite, per evitare che il pannello sia visibile insieme a «Dettagli» finché non gira `initTabs` (griglia `.fp-exp-tab-panels`).
+- **Policy**: `label for` allineato a `id="fp-exp-policy-text"` sulla textarea cancellazione (accessibilità).
+- **CSS meta box**: `.fp-exp-field__subtitle` nel body delle card DMS senza `padding-left: 32px` ereditato dalle regole pensate per i vecchi fieldset (allineamento sottosezioni es. «Biglietti» nella tab prezzi).
+
 ## [1.5.53] - 2026-04-03
 
 ### Fixed

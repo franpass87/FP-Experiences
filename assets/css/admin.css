@@ -4753,6 +4753,11 @@ label.fp-exp-settings__toggle input:checked + .fp-exp-toggle__switch::after {
     overflow: visible;
 }
 
+/* Sottotitoli (es. «Biglietti») nel body card: niente padding orizzontale legacy da fieldset */
+.fp-exp-experience-metabox .fp-exp-metabox-section__body .fp-exp-field > .fp-exp-field__subtitle {
+    padding-left: 0 !important;
+}
+
 .fp-exp-experience-metabox .fp-exp-tab-panel > .fp-exp-metabox-section.fp-exp-dms-card:last-child,
 .fp-exp-experience-metabox [data-fp-exp-calendar-admin] > .fp-exp-metabox-section.fp-exp-dms-card:last-child {
     margin-bottom: 0 !important;
