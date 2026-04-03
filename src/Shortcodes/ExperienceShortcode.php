@@ -459,7 +459,7 @@ final class ExperienceShortcode extends BaseShortcode
                 'date_label' => $event_date_label,
             ],
             'gift' => [
-                'enabled' => Helpers::gift_enabled(),
+                'enabled' => Helpers::gift_enabled_for_experience($experience_id),
                 'experience_id' => $experience_id,
                 'experience_title' => $post->post_title,
                 'tickets' => $tickets,

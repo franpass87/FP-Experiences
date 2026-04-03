@@ -554,6 +554,34 @@ final class Helpers
         return ! empty($settings['enabled']);
     }
 
+    /**
+     * Whether gift vouchers are allowed for experiences marked as single-date events (_fp_is_event).
+     */
+    public static function gift_allow_single_date_events(): bool
+    {
+        $settings = self::gift_settings();
+        $raw = $settings['allow_gift_single_date'] ?? 'yes';
+
+        return in_array($raw, ['yes', '1', 1, true, 'true'], true);
+    }
+
+    /**
+     * Whether gift purchase/UI is allowed for a given experience (global gift + single-date policy).
+     */
+    public static function gift_enabled_for_experience(int $experience_id): bool
+    {
+        if (! self::gift_enabled() || $experience_id <= 0) {
+            return false;
+        }
+
+        $is_event = (bool) get_post_meta($experience_id, '_fp_is_event', true);
+        if (! $is_event) {
+            return true;
+        }
+
+        return self::gift_allow_single_date_events();
+    }
+
     public static function gift_validity_days(): int
     {
         $settings = self::gift_settings();

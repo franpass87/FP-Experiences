@@ -110,6 +110,13 @@ final class VoucherValidationService
             );
         }
 
+        if (! Helpers::gift_enabled_for_experience($experience_id)) {
+            return new WP_Error(
+                'fp_exp_gift_single_date_disabled',
+                esc_html__('Il regalo esperienza non è disponibile per questo evento a data singola.', 'fp-experiences')
+            );
+        }
+
         $ticket_types = Pricing::get_ticket_types($experience_id);
         $ticket_quantities = is_array($payload['ticket_quantities'] ?? null) ? $payload['ticket_quantities'] : [];
         $ticket_slug = sanitize_key((string) ($payload['ticket_slug'] ?? ''));

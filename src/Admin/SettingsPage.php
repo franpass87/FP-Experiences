@@ -887,6 +887,14 @@ final class SettingsPage implements HookableInterface
         );
 
         add_settings_field(
+            'fp_exp_gift_allow_single_date',
+            esc_html__('Regalo su eventi a data singola', 'fp-experiences'),
+            [$this, 'render_gift_single_date_toggle'],
+            'fp_exp_settings_gift',
+            'fp_exp_settings_gift_main'
+        );
+
+        add_settings_field(
             'fp_exp_gift_validity',
             esc_html__('Default validity (days)', 'fp-experiences'),
             [$this, 'render_gift_validity_field'],
@@ -965,8 +973,12 @@ final class SettingsPage implements HookableInterface
 
         $redeem_page = isset($value['redeem_page']) ? esc_url_raw((string) $value['redeem_page']) : '';
 
+        $allow_single_raw = $value['allow_gift_single_date'] ?? 'yes';
+        $allow_gift_single_date = in_array($allow_single_raw, ['yes', '1', 1, true, 'true'], true) ? 'yes' : 'no';
+
         return [
             'enabled' => $enabled,
+            'allow_gift_single_date' => $allow_gift_single_date,
             'validity_days' => $validity,
             'reminders' => $normalized_reminders,
             'reminder_time' => $time,
@@ -997,6 +1009,35 @@ final class SettingsPage implements HookableInterface
                 'toggle_class' => 'fp-exp-settings__toggle',
                 'add_hidden_input' => true, // Ensure value is sent even when unchecked
                 'label_text' => esc_html__('Allow customers to purchase gift vouchers and send them via email.', 'fp-experiences'),
+            ],
+            description: null,
+            required: false,
+            attributes: []
+        );
+
+        $renderer = $this->getFieldRendererFactory()->getRenderer('toggle');
+        echo $renderer->render($field, '');
+    }
+
+    /**
+     * Toggle: show gift CTA / allow purchase for experiences with a fixed event datetime.
+     */
+    public function render_gift_single_date_toggle(): void
+    {
+        $settings = Helpers::gift_settings();
+        $raw = $settings['allow_gift_single_date'] ?? 'yes';
+        $allowed = in_array($raw, ['yes', '1', 1, true, 'true'], true);
+        $toggle_value = $allowed ? 'yes' : 'no';
+
+        $field = new FieldDefinition(
+            name: 'fp_exp_gift[allow_gift_single_date]',
+            type: 'toggle',
+            label: '',
+            value: $toggle_value,
+            options: [
+                'toggle_class' => 'fp-exp-settings__toggle',
+                'add_hidden_input' => true,
+                'label_text' => esc_html__('Consenti “Regala questa esperienza” per eventi a data singola. Disattiva per nascondere il pulsante e bloccare l’acquisto voucher su quelle esperienze.', 'fp-experiences'),
             ],
             description: null,
             required: false,

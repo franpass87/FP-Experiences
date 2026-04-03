@@ -2,6 +2,16 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.5.49] - 2026-04-03
+
+### Added
+
+- **Impostazioni → Gift**: opzione **Regalo su eventi a data singola** (`allow_gift_single_date`, default attivo). Se disattivata, il pulsante «Regala questa esperienza» non compare sulle esperienze con data evento fissa e l’API voucher rifiuta l’acquisto (`VoucherValidationService`).
+
+### Changed
+
+- `Helpers::gift_enabled_for_experience( int $id )` e `Helpers::gift_allow_single_date_events()` per la policy; contesto shortcode pagina esperienza usa `gift.enabled` coerente con l’esperienza.
+
 ## [1.5.48] - 2026-04-03
 
 ### Changed
