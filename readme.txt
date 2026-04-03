@@ -5,7 +5,7 @@ Tags: experiences, booking, wooocommerce, shortcodes, calendar
 Requires at least: 6.0
 Tested up to: 6.4
 Requires PHP: 8.0
-Stable tag: 1.5.57
+Stable tag: 1.5.47
 Last updated: 2026-03-22
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -124,40 +124,8 @@ FP Experiences stores reservation details inside custom tables linked to WooComm
 
 == Changelog ==
 
-= 1.5.57 - 2026-04-03 =
-* **Changed**: Tooltip admin (icona info + bolla) — colori e ombre allineati al design system DMS (viola FP); tema scuro dedicato.
-
-= 1.5.56 - 2026-04-03 =
-* **Changed**: Badge di fiducia e griglia checkbox correlate — colori e bordi allineati ai token DMS (`--fpdms-*`), card selezionabili con stato checked/hover viola; campo ricerca coerente; tema scuro.
-* **Fixed**: Classe body `fp-exp-admin-shell` anche su `post.php` per CPT `fp_experience`, `fp_meeting_point`, `fp_exp_gift_voucher` (bottoni meta box in stile FP).
-
-= 1.5.55 - 2026-04-03 =
-* **Changed**: Editor esperienza — barra tab meta box **non più sticky** (scorre con il contenuto della meta box).
-
-= 1.5.54 - 2026-04-03 =
-* **Fixed**: Tab Policy/FAQ — attributo `hidden` sul pannello (coerenza altre tab, niente doppio contenuto prima dell’init JS); label cancellazione allineata all’`id` della textarea.
-* **Fixed**: CSS — sottotitoli campo (`.fp-exp-field__subtitle`) nelle card meta box senza padding orizzontale legacy da fieldset.
-
-= 1.5.53 - 2026-04-03 =
-* **Fixed**: Editor esperienza — titoli sezione e icone dashicons nelle card delle tab non più tagliati in alto (`overflow` e padding header allineati).
-
-= 1.5.52 - 2026-04-03 =
-* **Changed**: Editor esperienza — sezioni meta box come **card DMS** (`.fp-exp-dms-card`: header con dashicon + titolo, body); tab Dettagli suddivisa in 4 card; focus/input allineati ai token FP; tema scuro per le card.
-
-= 1.5.51 - 2026-04-03 =
-* **Changed**: Editor esperienza — meta box «Impostazioni esperienza»: etichetta guida, barra tab e pannelli distinti (DMS); fieldset come sottosezioni con accento teal; fix conflitto CSS che applicava le tab Impostazioni anche all’editor.
-
-= 1.5.50 - 2026-04-03 =
-* **Changed**: Admin calendario — gerarchia tra navigazione operatore e sottoviste (Panoramica / Calendario / Manuale): etichetta esplicativa, contenitore con accento teal e tab compatte senza barra gradiente viola.
-
-= 1.5.49 - 2026-04-03 =
-* **Fixed**: Menu admin — voce **Dashboard** visibile nel sottomenu FP Experiences; registrazione menu a priorità 5 prima di Onboarding/import (evita clone WordPress con lo stesso titolo del top-level).
-
-= 1.5.48 - 2026-04-03 =
-* **Changed**: Documentazione — `docs/ADMIN-SCREENS.md` checklist meta box editor (smoke 2026-04-03, ambiente locale ripristinato).
-
-= 1.5.47 - 2026-04-02 =
-* **Changed**: Documentazione — `docs/ADMIN-SCREENS.md`: tab meta box esperienza (slug/handler), checklist per tab editor, nota smoke click bloccata da HTTP 500 su ambiente locale.
+= 1.5.47 - 2026-04-03 =
+* **Changed**: Frontend — hero evento a data singola: data/ora più grande e badge più evidente (tipografia, contrasto, bordo leggero).
 
 = 1.5.46 - 2026-04-02 =
 * **Fixed**: Admin — enqueue CSS dopo `colors`; reset tab core e primari rinforzati (meno flash viola/bianco e tab blu WP). Filtro `fp_exp_admin_style_dependencies`.

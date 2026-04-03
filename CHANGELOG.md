@@ -2,79 +2,11 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
-## [1.5.57] - 2026-04-03
+## [1.5.47] - 2026-04-03
 
 ### Changed
 
-- **Admin — tooltip** (`.fp-exp-tooltip` / `.fp-exp-tooltip__content`): trigger circolare con bordo/sfondo viola DMS, dashicons proporzionati, hover/focus-visible coerenti; bolla con testo `--fpdms-text`, bordo viola leggero, sfondo bianco con gradiente da accento, ombre `shadow-md` + alone viola; `cursor: help`. **Dark** (`html.fp-exp-dark`): trigger e bolla con palette viola/chiaro su fondo scuro.
-
-## [1.5.56] - 2026-04-03
-
-### Changed
-
-- **Admin — badge di fiducia (cognitive biases)**: griglia `.fp-exp-checkbox-grid__item` come card DMS (bordo 2px, raggio `--radius-md`, hover viola, stato `:has(input:checked)` con sfondo/bordo primario FP). Icona in tile viola chiaro; titolo/tagline/descrizione con `--fpdms-text` / `--fpdms-primary-dark` / `--fpdms-text-light`. Campo ricerca `.fp-exp-checkbox-grid__search-input` allineato a bordi/token DMS e focus ring. Variante `.fp-exp-checkbox-grid__badge` e contatore max selezione aggiornati ai colori DMS (niente più accent burgundy `#8b1e3f`). `.fp-exp-field__description--status` in viola DMS.
-- **Dark admin**: regole per search, card item, icona e testi nella griglia badge di fiducia.
-
-### Fixed
-
-- **`fp-exp-admin-shell` su editor CPT**: quando `screen->base === 'post'` e `post_type` è `fp_experience`, `fp_meeting_point` o `fp_exp_gift_voucher`, viene aggiunta la classe body così i bottoni WP nella meta box ereditano gli stili DMS (gradiente primario, secondari bordo FP) anche dove lo `screen->id` non coincide con gli id in lista.
-
-## [1.5.55] - 2026-04-03
-
-### Changed
-
-- **Admin — meta box esperienza**: rimosso `position: sticky` da `.fp-exp-metabox-sticky-head` (ora `static`); l’etichetta e la riga tab **non restano fisse** scorrendo la pagina, restano nel flusso della meta box.
-
-## [1.5.54] - 2026-04-03
-
-### Fixed
-
-- **Meta box — tab Policy/FAQ**: aggiunto `hidden` sul `<section class="fp-exp-tab-panel" data-tab-panel="policy">` come sulle altre tab non predefinite, per evitare che il pannello sia visibile insieme a «Dettagli» finché non gira `initTabs` (griglia `.fp-exp-tab-panels`).
-- **Policy**: `label for` allineato a `id="fp-exp-policy-text"` sulla textarea cancellazione (accessibilità).
-- **CSS meta box**: `.fp-exp-field__subtitle` nel body delle card DMS senza `padding-left: 32px` ereditato dalle regole pensate per i vecchi fieldset (allineamento sottosezioni es. «Biglietti» nella tab prezzi).
-
-## [1.5.53] - 2026-04-03
-
-### Fixed
-
-- **Admin — meta box esperienza**: titoli delle sezioni (`.fp-exp-metabox-section__title`) e icone nell’header delle card risultavano **tagliati in alto** per `overflow: hidden` sul wrapper meta box / sulle card DMS in combinazione con `border-radius`. Wrapper `.fp-exp-experience-metabox` e sezioni `.fp-exp-metabox-section.fp-exp-dms-card` usano `overflow: visible`; header sezione con padding verticale maggiore, `line-height` titolo 1.45, dashicons 20×20px con `flex-shrink: 0`.
-
-## [1.5.52] - 2026-04-03
-
-### Changed
-
-- **Admin — meta box esperienza (design system FP)**: ogni sezione usa **`.fp-exp-dms-card`** con `fp-exp-dms-card-header` (dashicon + `h3`) e `fp-exp-dms-card-body`, tramite `MetaBoxHelpers::render_metabox_section_open()` / `close()`. Sostituiti i `fieldset` negli handler Details (4 card: generale, media, contenuto/fiducia, pubblicazione), Pricing, Calendar (2), Meeting point, Extras, Policy (2), SEO (2). CSS: separatori tra campi nel body, **bordo 2px + focus ring viola** sui controlli nel body della card; tema scuro per card header/body. I metodi deprecati in `ExperienceMetaBoxes.php` che ancora usano `fieldset` restano per retrocompatibilità.
-
-## [1.5.51] - 2026-04-03
-
-### Changed
-
-- **Admin — editor esperienza (meta box)**: wrapper `fp-exp-experience-metabox` + testata sticky (`fp-exp-metabox-sticky-head`) con etichetta che spiega tab vs riquadri; tab principali in stile DMS (token `--fpdms-*`); pannelli e `fieldset` come sottosezioni con bordo superiore **gradient secondary** (teal) e `legend` in stile etichetta maiuscola. **Fix**: rimosso il selettore `.fp-exp-admin .fp-exp-tabs` dalle regole condivise con Impostazioni/Email così l’editor non ereditava margini negativi e chip `nav-tab` sui `button.fp-exp-tab`.
-
-## [1.5.50] - 2026-04-03
-
-### Changed
-
-- **Admin — Calendario**: distinzione visiva tra **navigazione operatore** (Calendario & prenotazioni / RTB / Check-in / Ordini) e **sottoviste** della pagina calendario. Aggiunti contenitore `fp-exp-calendar-view-chooser` con etichetta «Contenuto della sezione …», tab in `fp-exp-calendar-view-tabs` (stile compatto, accento `--fpdms-secondary`, niente underline gradiente DMS); tema scuro dedicato.
-
-## [1.5.49] - 2026-04-03
-
-### Fixed
-
-- **Admin menu**: voce **Dashboard** sempre nel sottomenu FP Experiences (`add_submenu_page` dedicata, callback vuota perché `add_menu_page` aggancia già `render_home_page`). Hook `register_menu` a priorità **5** così la struttura viene creata **prima** di Onboarding e Import Meeting Points (priorità 10): altrimenti il loro primo `add_submenu_page` faceva generare a WordPress solo la riga clone del parent con titolo «FP Experiences» (come prima voce), poco distinguibile dalla testata del sottomenu.
-
-## [1.5.48] - 2026-04-03
-
-### Changed
-
-- **Documentazione**: `docs/ADMIN-SCREENS.md` — checklist meta box editor esperienza aggiornata (2026-04-03): PASS per `pricing`, `calendar`, `meeting-point`, `extras`, `policy` tramite smoke su `post=10` dopo ripristino ambiente locale; nota su limiti snapshot a11y (tab `.fp-exp-tab` non come controlli interattivi nel browser MCP).
-- **Documentazione**: `docs/ADMIN-SCREENS.md` — nota **ripetizione smoke** stesso giorno (navigazione sequenziale): dashboard, tab Email Brevo, tre viste Calendario, Richieste, Check-in, CPT/tassonomia, nuova esperienza, editor `post=10`.
-
-## [1.5.47] - 2026-04-02
-
-### Changed
-
-- **Documentazione**: `docs/ADMIN-SCREENS.md` — tabella tab meta box «Impostazioni esperienza» (slug, etichette, handler, nota tab SEO nascosto con plugin SEO attivo); checklist editor scomposta per tab; nota follow-up smoke click bloccata da HTTP 500 su ambiente locale.
+- **Frontend — hero evento a data singola**: data/ora sotto al titolo resa più leggibile (`clamp` ~1.2–1.7rem), badge con più contrasto, bordo e ombra leggera (`front.css` `.fp-exp-hero__event-date`).
 
 ## [1.5.46] - 2026-04-02
 
