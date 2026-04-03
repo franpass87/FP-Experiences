@@ -2,6 +2,12 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.5.57] - 2026-04-03
+
+### Changed
+
+- **Admin — tooltip** (`.fp-exp-tooltip` / `.fp-exp-tooltip__content`): trigger circolare con bordo/sfondo viola DMS, dashicons proporzionati, hover/focus-visible coerenti; bolla con testo `--fpdms-text`, bordo viola leggero, sfondo bianco con gradiente da accento, ombre `shadow-md` + alone viola; `cursor: help`. **Dark** (`html.fp-exp-dark`): trigger e bolla con palette viola/chiaro su fondo scuro.
+
 ## [1.5.56] - 2026-04-03
 
 ### Changed

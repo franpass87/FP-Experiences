@@ -1073,34 +1073,58 @@ body.fp-exp-admin-shell #screen-meta-links {
     align-items: center;
     justify-content: center;
     margin-left: 6px;
-    width: 18px;
-    height: 18px;
+    width: 20px;
+    height: 20px;
     border-radius: 50%;
-    border: 1px solid var(--fp-exp-color-primary, #8b1e3f);
-    color: var(--fp-exp-color-primary, #8b1e3f);
-    background: transparent;
-    cursor: pointer;
+    border: 2px solid rgba(102, 126, 234, 0.45);
+    color: var(--fpdms-primary-dark);
+    background: rgba(102, 126, 234, 0.1);
+    cursor: help;
     font-size: 11px;
     line-height: 1;
     position: relative;
+    vertical-align: middle;
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.fp-exp-tooltip .dashicons {
+    width: 14px;
+    height: 14px;
+    font-size: 14px;
+    line-height: 1;
+    color: inherit;
+}
+
+.fp-exp-tooltip:hover,
+.fp-exp-tooltip:focus-within {
+    background: rgba(102, 126, 234, 0.18);
+    border-color: var(--fpdms-primary);
+    color: var(--fpdms-primary-dark);
+}
+
+.fp-exp-tooltip:focus-visible {
+    outline: 2px solid var(--fpdms-primary);
+    outline-offset: 2px;
 }
 
 .fp-exp-tooltip__content {
     display: none;
     position: absolute;
     z-index: 100;
-    background: var(--fp-exp-color-text, #1f1f1f);
-    color: #fff;
-    padding: 8px 10px;
-    border-radius: 6px;
+    background: linear-gradient(160deg, rgba(102, 126, 234, 0.06) 0%, var(--fpdms-bg-white) 28%, var(--fpdms-bg-white) 100%);
+    color: var(--fpdms-text);
+    padding: 10px 12px;
+    border-radius: var(--radius-md);
     font-size: 12px;
-    line-height: 1.5;
-    width: 220px;
-    max-width: 220px;
+    line-height: 1.55;
+    font-weight: 500;
+    width: 240px;
+    max-width: min(240px, 85vw);
     pointer-events: none;
     white-space: normal;
     word-wrap: break-word;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    border: 2px solid rgba(102, 126, 234, 0.28);
+    box-shadow: var(--shadow-md), 0 0 0 1px rgba(102, 126, 234, 0.06);
     /* Posizionamento: il content è ora DENTRO il tooltip, quindi si posiziona relativamente ad esso */
     top: calc(100% + 8px);
     left: 50%;
@@ -1121,6 +1145,26 @@ body.fp-exp-admin-shell #screen-meta-links {
  */
 .fp-exp-tooltip[data-tooltip] {
     position: relative;
+}
+
+html.fp-exp-dark .fp-exp-tooltip {
+    border-color: rgba(196, 181, 253, 0.55);
+    color: #c4b5fd;
+    background: rgba(102, 126, 234, 0.15);
+}
+
+html.fp-exp-dark .fp-exp-tooltip:hover,
+html.fp-exp-dark .fp-exp-tooltip:focus-within {
+    background: rgba(102, 126, 234, 0.26);
+    border-color: #c4b5fd;
+    color: #e9ecfe;
+}
+
+html.fp-exp-dark .fp-exp-tooltip__content {
+    background: linear-gradient(160deg, rgba(102, 126, 234, 0.14) 0%, rgba(30, 27, 46, 0.98) 32%, #1a1827 100%);
+    color: #e5e7eb;
+    border-color: rgba(129, 140, 248, 0.45);
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(102, 126, 234, 0.12);
 }
 
 .fp-exp-repeater {
