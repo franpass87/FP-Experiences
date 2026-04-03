@@ -83,7 +83,10 @@ final class AdminMenu implements HookableInterface
 
     public function register_hooks(): void
     {
-        add_action('admin_menu', [$this, 'register_menu']);
+        // Priority 5: must run before Onboarding / Meeting Point Importer (default 10), otherwise their
+        // first add_submenu_page triggers WP’s auto “parent clone” row titled like the top-level menu
+        // (“FP Experiences”) instead of a recognizable Dashboard entry.
+        add_action('admin_menu', [$this, 'register_menu'], 5);
         add_action('admin_menu', [$this, 'remove_duplicate_cpt_menus'], 99);
         add_action('admin_bar_menu', [$this, 'register_admin_bar_links'], 80);
         add_action('admin_enqueue_scripts', [$this, 'enqueue_shared_assets']);
@@ -91,6 +94,9 @@ final class AdminMenu implements HookableInterface
         add_filter('admin_body_class', [$this, 'add_admin_body_class']);
     }
 
+    /**
+     * Registra top-level, prima voce “Dashboard” e sottomenu; priorità hook 5 per precedere Onboarding/import.
+     */
     public function register_menu(): void
     {
         add_menu_page(
@@ -103,8 +109,15 @@ final class AdminMenu implements HookableInterface
             '56.3'
         );
 
-        // The top-level callback already appears as the first submenu item, so we avoid
-        // registering an explicit "Dashboard" entry to prevent duplicate menu rows.
+        // Explicit first submenu so operators see “Dashboard” (empty callback: add_menu_page already hooked render_home_page).
+        add_submenu_page(
+            'fp_exp_dashboard',
+            esc_html__('FP Experiences', 'fp-experiences'),
+            esc_html__('Dashboard', 'fp-experiences'),
+            Helpers::guide_capability(),
+            'fp_exp_dashboard',
+            ''
+        );
 
         add_submenu_page(
             'fp_exp_dashboard',

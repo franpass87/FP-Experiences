@@ -2,6 +2,12 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.5.49] - 2026-04-03
+
+### Fixed
+
+- **Admin menu**: voce **Dashboard** sempre nel sottomenu FP Experiences (`add_submenu_page` dedicata, callback vuota perché `add_menu_page` aggancia già `render_home_page`). Hook `register_menu` a priorità **5** così la struttura viene creata **prima** di Onboarding e Import Meeting Points (priorità 10): altrimenti il loro primo `add_submenu_page` faceva generare a WordPress solo la riga clone del parent con titolo «FP Experiences» (come prima voce), poco distinguibile dalla testata del sottomenu.
+
 ## [1.5.48] - 2026-04-03
 
 ### Changed

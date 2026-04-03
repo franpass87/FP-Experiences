@@ -6,7 +6,7 @@ Riferimento per revisione UI (design system FP: `fpexp-page-header`, `fp-exp-adm
 
 | Voce menu | Slug / screen | Classe wrap | Banner | Note |
 |-----------|---------------|-------------|--------|------|
-| Dashboard (manager) | `fp_exp_dashboard` | `fp-exp-dashboard` | `fpexp-page-header` | KPI, agenda, export |
+| Dashboard (manager) | `fp_exp_dashboard` | `fp-exp-dashboard` | `fpexp-page-header` | KPI, agenda, export; **prima voce sottomenu** etichettata «Dashboard» (`AdminMenu` priorità 5 + `add_submenu_page` esplicito) |
 | Dashboard (solo guida) | idem | `fp-exp-help` | sì | Chi non gestisce vede Help |
 | Impostazioni | `fp_exp_settings` | `fp-exp-settings` | sì | Tab `fp-exp-tabs` + form `--layout-fp` |
 | Email | `fp_exp_emails` | `fp-exp-emails` | sì | Tab `fp-exp-tabs`; form legacy senza `--layout-fp` |
