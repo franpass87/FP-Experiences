@@ -46,6 +46,8 @@ $event_meta = isset($event_meta) && is_array($event_meta) ? $event_meta : [];
 $is_single_event_mode = 'single_event' === $event_mode;
 $event_date_label = isset($event_meta['date_label']) ? (string) $event_meta['date_label'] : '';
 $event_is_sold_out = ! empty($event_meta['is_sold_out']);
+$event_ticket_sales_closed = ! empty($event_meta['ticket_sales_closed']);
+$event_ticket_sales_closed_message = isset($event_meta['ticket_sales_closed_message']) ? (string) $event_meta['ticket_sales_closed_message'] : '';
 
 $special_requests_defaults = [
     'mode' => 'default',
@@ -90,6 +92,7 @@ $currency_code = isset($currency) && is_string($currency) ? $currency : (string)
 
 $container_class = 'fp-exp fp-exp-widget ' . esc_attr($scope_class);
 $container_class .= $is_single_event_mode ? ' fp-exp-widget--single-event' : ' fp-exp-widget--recurring';
+$container_class .= $event_ticket_sales_closed ? ' fp-exp-widget--sales-closed' : '';
 $rtb_enabled = ! empty($rtb['enabled']);
 $rtb_mode = isset($rtb['mode']) ? (string) $rtb['mode'] : 'off';
 $rtb_forced = ! empty($rtb['forced']);
@@ -333,6 +336,11 @@ $dataset = [
                             <?php if ($event_is_sold_out) : ?>
                                 <p class="fp-exp-single-event-info__note">
                                     <?php esc_html_e('Evento al completo.', 'fp-experiences'); ?>
+                                </p>
+                            <?php endif; ?>
+                            <?php if ($event_ticket_sales_closed && '' !== $event_ticket_sales_closed_message) : ?>
+                                <p class="fp-exp-single-event-info__note fp-exp-single-event-info__note--sales-closed" role="status">
+                                    <?php echo esc_html($event_ticket_sales_closed_message); ?>
                                 </p>
                             <?php endif; ?>
                         </div>

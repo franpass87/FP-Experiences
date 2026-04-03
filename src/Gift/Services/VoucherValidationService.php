@@ -117,6 +117,11 @@ final class VoucherValidationService
             );
         }
 
+        $ticket_sales_block = Helpers::single_event_ticket_sales_blocked_error($experience_id);
+        if ($ticket_sales_block instanceof WP_Error) {
+            return $ticket_sales_block;
+        }
+
         $ticket_types = Pricing::get_ticket_types($experience_id);
         $ticket_quantities = is_array($payload['ticket_quantities'] ?? null) ? $payload['ticket_quantities'] : [];
         $ticket_slug = sanitize_key((string) ($payload['ticket_slug'] ?? ''));

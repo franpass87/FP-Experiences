@@ -9,6 +9,7 @@ use DateTimeZone;
 use FP_Exp\Api\Middleware\ErrorHandlingMiddleware;
 use FP_Exp\Application\Booking\CheckAvailabilityUseCase;
 use FP_Exp\Booking\AvailabilityService;
+use FP_Exp\Utils\Helpers;
 use WP_Error;
 use WP_REST_Request;
 use WP_REST_Response;
@@ -41,6 +42,10 @@ final class AvailabilityController
             return ErrorHandlingMiddleware::badRequest(
                 __('Parametri non validi.', 'fp-experiences')
             );
+        }
+
+        if (Helpers::single_event_ticket_sales_blocked_error($experience_id) instanceof WP_Error) {
+            return ErrorHandlingMiddleware::success(['slots' => []]);
         }
 
         // Date format validation

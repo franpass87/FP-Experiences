@@ -177,6 +177,11 @@ final class Checkout implements HookableInterface
                             return new WP_Error('fp_exp_set_cart_invalid', __('Experience ID non valido.', 'fp-experiences'), ['status' => 400]);
                         }
 
+                        $sales_guard = Helpers::single_event_ticket_sales_blocked_error($experience_id);
+                        if ($sales_guard instanceof WP_Error) {
+                            return $sales_guard;
+                        }
+
                         $tickets_total = (int) array_sum(array_map('intval', $tickets));
                         $party_max = absint((string) get_post_meta($experience_id, '_fp_party_max', true));
                         if ($party_max > 0 && $tickets_total > $party_max) {
@@ -639,6 +644,22 @@ final class Checkout implements HookableInterface
         $this->debug_log('checkout_process', 'Cart snapshot before validation', [
             'items' => array_map([$this, 'summarize_cart_item'], $cart['items']),
         ]);
+
+        $seen_experience_sales_check = [];
+        foreach ($cart['items'] as $sales_item) {
+            if (! is_array($sales_item)) {
+                continue;
+            }
+            $eid_sales = (int) ($sales_item['experience_id'] ?? 0);
+            if ($eid_sales <= 0 || isset($seen_experience_sales_check[$eid_sales])) {
+                continue;
+            }
+            $seen_experience_sales_check[$eid_sales] = true;
+            $sales_err = Helpers::single_event_ticket_sales_blocked_error($eid_sales);
+            if ($sales_err instanceof WP_Error) {
+                return $sales_err;
+            }
+        }
 
         foreach ($cart['items'] as &$item) { // phpcs:ignore WordPress.CodeAnalysis.AssignmentInCondition.Found
             // Skip slot validation for gift vouchers (they don't have slots until redemption)

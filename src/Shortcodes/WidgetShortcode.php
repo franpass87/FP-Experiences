@@ -140,6 +140,10 @@ final class WidgetShortcode extends BaseShortcode
 
         $language_badges = LanguageHelper::build_language_badges($languages);
 
+        $is_event = (bool) ($repo !== null
+            ? $repo->getMeta($experience_id, '_fp_is_event', false)
+            : get_post_meta($experience_id, '_fp_is_event', true));
+
         $slots = $this->get_upcoming_slots($experience_id, $tickets, 60);
 
         // Fallback: se non ci sono slot persistiti, genera slot virtuali basati sulle meta di disponibilità
@@ -147,6 +151,14 @@ final class WidgetShortcode extends BaseShortcode
             $slots = $this->generate_virtual_slots($experience_id, $tickets, 6, 300);
         }
         $calendar = $this->group_slots_by_day($slots);
+
+        $ticket_sales_err = $is_event ? Helpers::single_event_ticket_sales_blocked_error($experience_id) : null;
+        $event_ticket_sales_closed = $ticket_sales_err instanceof WP_Error;
+        $event_ticket_sales_closed_message = $event_ticket_sales_closed ? $ticket_sales_err->get_error_message() : '';
+        if ($event_ticket_sales_closed) {
+            $slots = [];
+            $calendar = [];
+        }
 
         $display_context = apply_filters('fp_exp_widget_display_context', (string) $attributes['display_context'], $experience_id, $attributes);
 
@@ -230,9 +242,6 @@ final class WidgetShortcode extends BaseShortcode
         $event_datetime = '';
         $event_date_label = '';
         $event_start_iso = '';
-        $is_event = (bool) ($repo !== null
-            ? $repo->getMeta($experience_id, '_fp_is_event', false)
-            : get_post_meta($experience_id, '_fp_is_event', true));
         if ($is_event) {
             $event_datetime = (string) ($repo !== null
                 ? $repo->getMeta($experience_id, '_fp_event_datetime', '')
@@ -253,7 +262,7 @@ final class WidgetShortcode extends BaseShortcode
         }
         $event_mode = $is_event ? 'single_event' : 'recurring';
         $event_is_sold_out = false;
-        if ($is_event) {
+        if ($is_event && ! $event_ticket_sales_closed) {
             $event_is_sold_out = true;
             foreach ($slots as $slot) {
                 if (! is_array($slot)) {
@@ -367,6 +376,8 @@ final class WidgetShortcode extends BaseShortcode
                 'date_label' => $event_date_label,
                 'start_iso' => $event_start_iso,
                 'is_sold_out' => $event_is_sold_out,
+                'ticket_sales_closed' => $event_ticket_sales_closed,
+                'ticket_sales_closed_message' => $event_ticket_sales_closed_message,
             ],
             'behavior' => $behavior,
             'preselected_date' => $preselected_date,

@@ -381,6 +381,10 @@ final class ExperienceCPT implements HookableInterface
                 'type' => 'string',
                 'default' => '',
             ],
+            '_fp_event_ticket_sales_end' => [
+                'type' => 'string',
+                'default' => '',
+            ],
             '_fp_party_default' => [
                 'type' => 'integer',
                 'default' => 0,

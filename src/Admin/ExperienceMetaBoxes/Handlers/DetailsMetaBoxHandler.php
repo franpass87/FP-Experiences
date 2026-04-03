@@ -46,6 +46,8 @@ final class DetailsMetaBoxHandler extends BaseMetaBoxHandler
         $is_event = !empty($data['is_event']);
         $event_datetime = $data['event_datetime'] ?? '';
         $event_datetime_input = $this->format_event_datetime_for_input((string) $event_datetime);
+        $event_ticket_sales_end = $data['event_ticket_sales_end'] ?? '';
+        $event_ticket_sales_end_input = $this->format_event_datetime_for_input((string) $event_ticket_sales_end);
         $single_event_sr_mode = isset($data['single_event_special_requests_mode']) ? (string) $data['single_event_special_requests_mode'] : 'default';
         if (! in_array($single_event_sr_mode, ['default', 'notes_only', 'hidden'], true)) {
             $single_event_sr_mode = 'default';
@@ -156,6 +158,18 @@ final class DetailsMetaBoxHandler extends BaseMetaBoxHandler
                             aria-describedby="fp-exp-event-help"
                         />
                         <p class="fp-exp-field__description" id="fp-exp-event-help"><?php esc_html_e('Seleziona data e ora di partenza dell’evento.', 'fp-experiences'); ?></p>
+                        <label class="fp-exp-field__label" for="fp-exp-event-ticket-sales-end">
+                            <?php esc_html_e('Fine vendite biglietti (opzionale)', 'fp-experiences'); ?>
+                        </label>
+                        <input
+                            type="datetime-local"
+                            id="fp-exp-event-ticket-sales-end"
+                            name="fp_exp_details[event_ticket_sales_end]"
+                            value="<?php echo esc_attr((string) $event_ticket_sales_end_input); ?>"
+                            class="regular-text"
+                            aria-describedby="fp-exp-event-ticket-sales-end-help"
+                        />
+                        <p class="fp-exp-field__description" id="fp-exp-event-ticket-sales-end-help"><?php esc_html_e('Dopo questa data/ora le vendite si chiudono automaticamente; restano chiuse anche dopo l’inizio dell’evento. Vuoto = vendite possibili fino all’inizio dell’evento.', 'fp-experiences'); ?></p>
                     </div>
                     <div>
                         <span class="fp-exp-field__label">
@@ -1154,6 +1168,17 @@ final class DetailsMetaBoxHandler extends BaseMetaBoxHandler
             $this->update_or_delete_meta($post_id, 'event_datetime', null);
         }
 
+        $event_ticket_sales_end_raw = $this->sanitize_text($raw['event_ticket_sales_end'] ?? '');
+        $event_ticket_sales_end = $this->normalize_event_datetime($event_ticket_sales_end_raw);
+        if ($is_event && $event_ticket_sales_end !== '') {
+            if ($event_datetime !== '' && strcmp($event_ticket_sales_end, $event_datetime) > 0) {
+                $event_ticket_sales_end = $event_datetime;
+            }
+            $this->update_or_delete_meta($post_id, 'event_ticket_sales_end', $event_ticket_sales_end);
+        } else {
+            $this->update_or_delete_meta($post_id, 'event_ticket_sales_end', null);
+        }
+
         $sr_mode = sanitize_key((string) ($raw['single_event_special_requests_mode'] ?? 'default'));
         if (! in_array($sr_mode, ['default', 'notes_only', 'hidden'], true)) {
             $sr_mode = 'default';
@@ -1391,6 +1416,7 @@ final class DetailsMetaBoxHandler extends BaseMetaBoxHandler
         // Get event fields (evento a data singola)
         $is_event = (bool) $this->get_meta_value($post_id, 'is_event', false);
         $event_datetime = (string) $this->get_meta_value($post_id, 'event_datetime', '');
+        $event_ticket_sales_end = (string) $this->get_meta_value($post_id, 'event_ticket_sales_end', '');
         $single_event_sr_mode = (string) $this->get_meta_value($post_id, 'single_event_special_requests_mode', 'default');
         if (! in_array($single_event_sr_mode, ['default', 'notes_only', 'hidden'], true)) {
             $single_event_sr_mode = 'default';
@@ -1428,6 +1454,7 @@ final class DetailsMetaBoxHandler extends BaseMetaBoxHandler
             'duration_minutes' => $duration_minutes,
             'is_event' => $is_event,
             'event_datetime' => $event_datetime,
+            'event_ticket_sales_end' => $event_ticket_sales_end,
             'single_event_special_requests_mode' => $single_event_sr_mode,
             'single_event_special_requests_title' => $single_event_sr_title,
             'single_event_special_requests_notes_label' => $single_event_sr_notes_label,

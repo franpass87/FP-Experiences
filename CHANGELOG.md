@@ -2,6 +2,12 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.6.9] - 2026-04-03
+
+### Added
+
+- **Eventi a data singola**: meta opzionale *Fine vendite biglietti* (`_fp_event_ticket_sales_end`) nel tab Dettagli; dopo quella data/ora le vendite si chiudono automaticamente. Senza data di fine, le vendite restano possibili fino all’inizio dell’evento; da quell’istante restano chiuse. Controlli lato server su `cart/set`, checkout, RTB (submit e quote), acquisto voucher regalo e API disponibilità; widget con messaggio, slot vuoti e CTA disabilitate via JS; regalo esperienza nascosto sulla pagina esperienza quando le vendite sono chiuse.
+
 ## [1.6.8] - 2026-04-03
 
 ### Changed

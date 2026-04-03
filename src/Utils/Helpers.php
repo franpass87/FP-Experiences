@@ -20,6 +20,9 @@ use FP_Exp\Utils\Helpers\PermissionHelper;
 use FP_Exp\Utils\Helpers\RTBHelper;
 use FP_Exp\Utils\Helpers\TrackingHelper;
 use FP_Exp\Utils\Helpers\UtilityHelper;
+use DateTimeImmutable;
+use DateTimeZone;
+use WP_Error;
 use WP_REST_Request;
 
 use function absint;
@@ -65,6 +68,7 @@ use function wp_unslash;
 use function wp_verify_nonce;
 use function wp_get_current_user;
 use function is_user_logged_in;
+use function wp_timezone;
 
 use const FP_EXP_PLUGIN_DIR;
 use const FP_EXP_VERSION;
@@ -1672,6 +1676,92 @@ final class Helpers
         }
 
         return 'EUR';
+    }
+
+    /**
+     * Indica se per un evento a data singola le vendite biglietti (widget, checkout, regalo, RTB) sono consentite ora.
+     */
+    public static function single_event_ticket_sales_open(int $experience_id): bool
+    {
+        return self::single_event_ticket_sales_blocked_error($experience_id) === null;
+    }
+
+    /**
+     * Blocco vendite per esperienza impostata come evento a data singola: dopo l’orario di fine vendite (se impostato)
+     * o da quando inizia l’evento.
+     *
+     * @return WP_Error|null Null se le vendite sono consentite.
+     */
+    public static function single_event_ticket_sales_blocked_error(int $experience_id): ?WP_Error
+    {
+        if ($experience_id <= 0) {
+            return null;
+        }
+
+        $is_event = (bool) get_post_meta($experience_id, '_fp_is_event', true);
+        if (! $is_event) {
+            return null;
+        }
+
+        $tz = wp_timezone();
+        $now = new DateTimeImmutable('now', $tz);
+
+        $event_start = self::parse_fp_experience_datetime_meta(
+            (string) get_post_meta($experience_id, '_fp_event_datetime', true),
+            $tz
+        );
+        if ($event_start !== null && $now >= $event_start) {
+            return new WP_Error(
+                'fp_exp_single_event_started',
+                __('Le vendite per questo evento sono chiuse: la data dell’evento è passata.', 'fp-experiences'),
+                ['status' => 400]
+            );
+        }
+
+        $sales_end_raw = trim((string) get_post_meta($experience_id, '_fp_event_ticket_sales_end', true));
+        if ($sales_end_raw !== '') {
+            $sales_end = self::parse_fp_experience_datetime_meta($sales_end_raw, $tz);
+            if ($sales_end !== null && $now >= $sales_end) {
+                return new WP_Error(
+                    'fp_exp_ticket_sales_deadline_passed',
+                    __('Le vendite biglietti per questo evento sono chiuse.', 'fp-experiences'),
+                    ['status' => 400]
+                );
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * @param string $raw Valore meta tipo data/ora esperienza (es. Y-m-d H:i).
+     */
+    private static function parse_fp_experience_datetime_meta(string $raw, DateTimeZone $tz): ?DateTimeImmutable
+    {
+        $value = trim(str_replace('T', ' ', $raw));
+        if ($value === '') {
+            return null;
+        }
+
+        foreach (['Y-m-d H:i:s', 'Y-m-d H:i'] as $fmt) {
+            $dt = DateTimeImmutable::createFromFormat($fmt, $value, $tz);
+            if ($dt instanceof DateTimeImmutable) {
+                return $dt;
+            }
+        }
+
+        $with_t = str_replace(' ', 'T', $value);
+        $dt = DateTimeImmutable::createFromFormat('Y-m-d\TH:i', $with_t, $tz);
+        if ($dt instanceof DateTimeImmutable) {
+            return $dt;
+        }
+
+        $ts = strtotime($value);
+        if (false !== $ts) {
+            return (new DateTimeImmutable('@' . $ts))->setTimezone($tz);
+        }
+
+        return null;
     }
 
     /**

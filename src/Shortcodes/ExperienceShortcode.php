@@ -413,6 +413,10 @@ final class ExperienceShortcode extends BaseShortcode
             }
         }
 
+        $ticket_sales_err = $is_event ? Helpers::single_event_ticket_sales_blocked_error($experience_id) : null;
+        $event_ticket_sales_closed = $ticket_sales_err instanceof WP_Error;
+        $event_ticket_sales_closed_message = $event_ticket_sales_closed ? $ticket_sales_err->get_error_message() : '';
+
         $price_from = $this->calculate_price_from_meta($experience_id);
         $price_from_display = null !== $price_from && $price_from > 0 ? number_format_i18n($price_from, 0) : '';
 
@@ -457,9 +461,11 @@ final class ExperienceShortcode extends BaseShortcode
                 'is_event' => $is_event,
                 'datetime' => $event_datetime,
                 'date_label' => $event_date_label,
+                'ticket_sales_closed' => $event_ticket_sales_closed,
+                'ticket_sales_closed_message' => $event_ticket_sales_closed_message,
             ],
             'gift' => [
-                'enabled' => Helpers::gift_enabled_for_experience($experience_id),
+                'enabled' => Helpers::gift_enabled_for_experience($experience_id) && Helpers::single_event_ticket_sales_open($experience_id),
                 'experience_id' => $experience_id,
                 'experience_title' => $post->post_title,
                 'tickets' => $tickets,

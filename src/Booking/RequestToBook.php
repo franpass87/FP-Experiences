@@ -197,6 +197,11 @@ final class RequestToBook implements HookableInterface
             return new WP_Error('fp_exp_rtb_invalid', __('Seleziona data e ora prima di inviare la richiesta.', 'fp-experiences'), ['status' => 400]);
         }
 
+        $rtb_sales_guard = Helpers::single_event_ticket_sales_blocked_error($experience_id);
+        if ($rtb_sales_guard instanceof WP_Error) {
+            return $rtb_sales_guard;
+        }
+
         if ($slot_id <= 0) {
             if (! $start || ! $end) {
                 return new WP_Error('fp_exp_rtb_invalid', __('Seleziona data e ora prima di inviare la richiesta.', 'fp-experiences'), ['status' => 400]);
@@ -384,6 +389,11 @@ final class RequestToBook implements HookableInterface
 
         if ($experience_id <= 0) {
             return new WP_Error('fp_exp_rtb_invalid', __('Seleziona data e ora prima di proseguire.', 'fp-experiences'), ['status' => 400]);
+        }
+
+        $quote_sales_guard = Helpers::single_event_ticket_sales_blocked_error($experience_id);
+        if ($quote_sales_guard instanceof WP_Error) {
+            return $quote_sales_guard;
         }
 
         if ($slot_id <= 0) {
