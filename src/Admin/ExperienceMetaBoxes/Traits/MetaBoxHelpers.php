@@ -95,16 +95,17 @@ trait MetaBoxHelpers
     /**
      * Render a tooltip trigger (icon + testo in data-tooltip / stile JS admin).
      *
-     * @param string $id Attributo id sull'elemento (può coincidere con aria-describedby del campo).
+     * @param string $id Suffisso logico allineato al testo di descrizione del campo (es. `fp-exp-short-desc-help` sulla `<p class="fp-exp-field__description">`); sull’elemento trigger viene usato `{$id}-tooltip-trigger` per evitare id duplicati nel DOM.
      * @param string $text Testo dell'aiuto (tradotto), usato anche per aria-label.
      */
     protected function render_tooltip(string $id, string $text): void
     {
+        $trigger_id = $id . '-tooltip-trigger';
         ?>
         <span
             class="fp-exp-tooltip"
             data-tooltip="<?php echo esc_attr($text); ?>"
-            id="<?php echo esc_attr($id); ?>"
+            id="<?php echo esc_attr($trigger_id); ?>"
             tabindex="0"
             role="img"
             aria-label="<?php echo esc_attr($text); ?>"
