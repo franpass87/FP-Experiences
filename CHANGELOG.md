@@ -2,6 +2,12 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.5.48] - 2026-04-03
+
+### Changed
+
+- **Documentazione**: `docs/ADMIN-SCREENS.md` — checklist meta box editor esperienza aggiornata (2026-04-03): PASS per `pricing`, `calendar`, `meeting-point`, `extras`, `policy` tramite smoke su `post=10` dopo ripristino ambiente locale; nota su limiti snapshot a11y (tab `.fp-exp-tab` non come controlli interattivi nel browser MCP).
+
 ## [1.5.47] - 2026-04-02
 
 ### Changed
