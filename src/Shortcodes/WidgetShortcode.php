@@ -292,8 +292,6 @@ final class WidgetShortcode extends BaseShortcode
             ),
         ];
 
-        // Try to use repository if available
-        $repo = $this->getExperienceRepository();
         $cognitive_bias_meta = [];
         if ($repo !== null) {
             $cognitive_bias_meta = $repo->getMeta($experience_id, '_fp_cognitive_biases', []);

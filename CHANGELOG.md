@@ -2,6 +2,12 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.5.55] - 2026-04-03
+
+### Fixed
+
+- `WidgetShortcode::get_context()`: rimossa chiamata ridondante a `getExperienceRepository()` (il repository era già risolto all’inizio del metodo).
+
 ## [1.5.54] - 2026-04-03
 
 ### Changed
