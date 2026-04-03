@@ -502,7 +502,7 @@ $sticky_price_display = '' !== $price_from_display ? $format_currency($price_fro
                                             <span class="fp-exp-overview__term-label"><?php echo $page_label_overview_traits; ?></span>
                                         </dt>
                                         <dd class="fp-exp-overview__definition">
-                                            <ul class="fp-exp-overview__list" role="list">
+                                            <ul class="fp-exp-overview__list fp-exp-overview__list--traits" role="list">
                                                 <?php foreach ($overview_experience_badges as $badge) :
                                                     $badge_label = isset($badge['label']) ? (string) $badge['label'] : '';
                                                     if ('' === $badge_label) {
@@ -510,14 +510,20 @@ $sticky_price_display = '' !== $price_from_display ? $format_currency($price_fro
                                                     }
 
                                                     $badge_description = isset($badge['description']) ? (string) $badge['description'] : '';
+                                                    $badge_icon = isset($badge['icon']) ? (string) $badge['icon'] : '';
                                                     ?>
                                                     <li class="fp-exp-overview__list-item">
-                                                        <span class="fp-exp-overview__list-body">
-                                                            <span class="fp-exp-overview__list-text"><?php echo esc_html($badge_label); ?></span>
-                                                            <?php if ('' !== $badge_description) : ?>
-                                                                <span class="fp-exp-overview__list-hint"><?php echo esc_html($badge_description); ?></span>
-                                                            <?php endif; ?>
-                                                        </span>
+                                                        <div class="fp-exp-overview__trait">
+                                                            <span class="fp-exp-overview__trait-icon" aria-hidden="true">
+                                                                <?php echo \FP_Exp\Utils\Helpers::experience_badge_icon_svg($badge_icon); ?>
+                                                            </span>
+                                                            <span class="fp-exp-overview__list-body">
+                                                                <span class="fp-exp-overview__list-text"><?php echo esc_html($badge_label); ?></span>
+                                                                <?php if ('' !== $badge_description) : ?>
+                                                                    <span class="fp-exp-overview__list-hint"><?php echo esc_html($badge_description); ?></span>
+                                                                <?php endif; ?>
+                                                            </span>
+                                                        </div>
                                                     </li>
                                                 <?php endforeach; ?>
                                             </ul>

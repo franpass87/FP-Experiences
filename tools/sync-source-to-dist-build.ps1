@@ -60,6 +60,7 @@ Copy-IfTargetDirExists 'templates/front/experience.php' 'templates/front/experie
 # Bootstrap e localizzazione (spesso toccati insieme a copy/template)
 Copy-IfTargetDirExists 'fp-experiences.php' 'fp-experiences.php'
 Copy-IfTargetDirExists 'src/Localization/AutoTranslator.php' 'src/Localization/AutoTranslator.php'
+Copy-IfTargetDirExists 'src/Admin/ExperienceMetaBoxes.php' 'src/Admin/ExperienceMetaBoxes.php'
 
 # Traduzioni (.po) — allinea tutti i file nella cartella languages
 $langSrc = Join-Path $Root 'languages'

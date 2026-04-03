@@ -2,6 +2,12 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.6.13] - 2026-04-03
+
+### Changed
+
+- **Overview «Caratteristiche esperienza/evento»**: ogni tratto è una card con icona badge (registry SVG), sfondo leggermente tintato, bordo e hover; più spazio sotto il titolo sezione; descrizione secondaria separata da un sottile divisore per gerarchia visiva più chiara.
+
 ## [1.6.12] - 2026-04-03
 
 ### Fixed
