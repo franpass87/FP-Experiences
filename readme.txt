@@ -5,7 +5,7 @@ Tags: experiences, booking, wooocommerce, shortcodes, calendar
 Requires at least: 6.0
 Tested up to: 6.4
 Requires PHP: 8.0
-Stable tag: 1.5.58
+Stable tag: 1.6.10
 Last updated: 2026-03-22
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -92,6 +92,7 @@ Filters:
 * `fp_exp_brevo_contact_payload`, `fp_exp_brevo_tx_payload` – Adjust Brevo payloads before sending.
 * `fp_exp_calendar_event_payload` – Modify Google Calendar event payload before insert/update.
 * `fp_exp_datalayer_purchase` – Filter purchase payload pushed to the dataLayer.
+* `fp_exp_special_requests_checkbox_items` – Customize checkbox rows for the booking widget special-requests step (`$items`, `$experience_id`).
 
 Actions:
 
@@ -124,46 +125,68 @@ FP Experiences stores reservation details inside custom tables linked to WooComm
 
 == Changelog ==
 
-= 1.5.58 - 2026-04-02 =
-* **Changed**: Admin — accenti burgundy residui (placeholder media addon, chip ricorrenza, tab attiva in dark) allineati ai token viola DMS.
-* **Changed**: Tooltip meta box (`render_tooltip`) — `tabindex`, `role`, `aria-label` e icona nascosta agli screen reader per accessibilità.
-* **Removed**: Codice morto in `ExperienceMetaBoxes` (vecchi render/save tab); rimosso log debug temporaneo sul salvataggio cognitive biases.
-* **Build**: rigenerato `fp-experiences-admin.min.css`.
+= 1.6.10 - 2026-04-03 =
+* **Fixed**: Con vendite chiuse per evento a data singola, la CTA non viene più riabilitata da aggiornamenti riepilogo (WooCommerce/RTB).
 
-= 1.5.57 - 2026-04-03 =
-* **Changed**: Tooltip admin (icona info + bolla) — colori e ombre allineati al design system DMS (viola FP); tema scuro dedicato.
+= 1.6.9 - 2026-04-03 =
+* **Added**: Eventi a data singola — data/ora opzionale di fine vendite biglietti; chiusura automatica anche dall’inizio evento; controlli su carrello, checkout, RTB, regalo e API slot; messaggio nel widget e CTA disabilitate.
 
-= 1.5.56 - 2026-04-03 =
-* **Changed**: Badge di fiducia e griglia checkbox correlate — colori e bordi allineati ai token DMS (`--fpdms-*`), card selezionabili con stato checked/hover viola; campo ricerca coerente; tema scuro.
-* **Fixed**: Classe body `fp-exp-admin-shell` anche su `post.php` per CPT `fp_experience`, `fp_meeting_point`, `fp_exp_gift_voucher` (bottoni meta box in stile FP).
+= 1.6.8 - 2026-04-03 =
+* **Changed**: Modale regalo — rifinitura estetica (backdrop, striscia brand sul dialog, ombre e gradienti, intro e griglia form, campi, footer, nota checkout, addon e CTA; rispetto `prefers-reduced-motion` su micro-animazioni).
+
+= 1.6.7 - 2026-04-03 =
+* **Fixed**: Modale regalo — come la barra «Prenota il tuo posto», il markup `[data-fp-gift]` viene spostato su `document.body` (con token CSS copiati da `.fp-exp`) così resta sopra header, footer e barra sticky anche con wrapper del tema a stacking context basso. `setupGiftModal` viene inizializzato prima del gate sul widget così il regalo funziona anche senza sidebar.
+
+= 1.6.6 - 2026-04-03 =
+* **Changed**: Modale regalo — UX/UI: area centrale scrollabile, footer fisso con nota pre-checkout e pulsante «Procedi al pagamento»; intestazioni di sezione «Chi regala» / «Chi riceve il regalo»; animazione apertura dialog; `aria-describedby` include la nota checkout; `autocomplete` sui campi; classe `fp-modal-open` su `body` insieme allo scroll lock.
+* **Changed**: i18n (`AutoTranslator` + `.po` EN/DE) per le nuove etichette di sezione.
+
+= 1.6.5 - 2026-04-03 =
+* **Changed**: Traduzioni `.po` (EN/DE) per le due note pre-checkout del modale regalo (esperienza ricorrente vs evento a data singola).
+* **Added**: Script `tools/sync-source-to-dist-build.ps1` e `npm run sync:dist` per allineare `dist/fp-experiences` e `build/fp-experiences` con `assets/`, `templates/`, `languages/`, `fp-experiences.php`, `AutoTranslator.php`.
+
+= 1.6.4 - 2026-04-03 =
+* **Changed**: Modale regalo — nota pre-checkout per eventi a data singola: chiarisce invio voucher vs data evento già fissa e riscatto senza scelta di un’altra data.
+
+= 1.6.3 - 2026-04-03 =
+* **Changed**: Modale regalo — campo data di consegna a tutta larghezza come nome/email; testo di aiuto con larghezza di lettura massima; dialog con scroll-padding in basso.
+
+= 1.6.2 - 2026-04-03 =
+* **Fixed**: Barra CTA fissa «Prenota» pagina esperienza — con temi che creano stacking context sul wrapper (es. Salient Material `.ocm-effect-wrap`), la barra non restava sopra al footer; ora il markup viene spostato su `body` con variabili token copiate da `.fp-exp`.
+
+= 1.6.1 - 2026-04-03 =
+* **Changed**: Modale «Regala esperienza/evento» — layout più compatto (un solo pannello campi, meno scatole annidate), data consegna a tutta larghezza; ritocchi mobile (griglia, biglietti, nota).
+
+= 1.6.0 - 2026-04-03 =
+* **Added**: Dettagli esperienza — configurazione checkbox step Richieste speciali (preset + personalizzate, meta `_fp_widget_special_requests_items`); filtro `fp_exp_special_requests_checkbox_items`; etichette leggibili inviate al carrello.
 
 = 1.5.55 - 2026-04-03 =
-* **Changed**: Editor esperienza — barra tab meta box **non più sticky** (scorre con il contenuto della meta box).
+* **Fixed**: Widget shortcode — nessun doppio fetch repository in `get_context()`.
 
 = 1.5.54 - 2026-04-03 =
-* **Fixed**: Tab Policy/FAQ — attributo `hidden` sul pannello (coerenza altre tab, niente doppio contenuto prima dell’init JS); label cancellazione allineata all’`id` della textarea.
-* **Fixed**: CSS — sottotitoli campo (`.fp-exp-field__subtitle`) nelle card meta box senza padding orizzontale legacy da fieldset.
+* **Changed**: Barra sticky CTA — margini orizzontali maggiori (safe-area + gutter) per evitare sovrapposizione con FAB esterni.
 
 = 1.5.53 - 2026-04-03 =
-* **Fixed**: Editor esperienza — titoli sezione e icone dashicons nelle card delle tab non più tagliati in alto (`overflow` e padding header allineati).
+* **Changed**: Pagina esperienza — per eventi a data fissa, copy con «evento» (regalo, sezioni highlights/galleria/overview/inclusions, nota regalo).
 
 = 1.5.52 - 2026-04-03 =
-* **Changed**: Editor esperienza — sezioni meta box come **card DMS** (`.fp-exp-dms-card`: header con dashicon + titolo, body); tab Dettagli suddivisa in 4 card; focus/input allineati ai token FP; tema scuro per le card.
+* **Changed**: Barra CTA fissa pagina esperienza — più margine ai lati (meno sovrapposizioni con privacy/back-to-top); CTA più leggibile.
 
 = 1.5.51 - 2026-04-03 =
-* **Changed**: Editor esperienza — meta box «Impostazioni esperienza»: etichetta guida, barra tab e pannelli distinti (DMS); fieldset come sottosezioni con accento teal; fix conflitto CSS che applicava le tab Impostazioni anche all’editor.
+* **Changed**: Step Richieste speciali del widget — opzioni in Dettagli applicate anche alle esperienze ricorrenti (stesse meta `_fp_single_event_special_requests_*`).
 
 = 1.5.50 - 2026-04-03 =
-* **Changed**: Admin calendario — gerarchia tra navigazione operatore e sottoviste (Panoramica / Calendario / Manuale): etichetta esplicativa, contenitore con accento teal e tab compatte senza barra gradiente viola.
+* **Added**: Dettagli esperienza (evento data fissa) — opzioni step Richieste speciali nel widget (standard / solo note / nascosto + testi opzionali).
+* **Changed**: Copy aiuto predefinito richieste speciali per eventi a data singola.
 
 = 1.5.49 - 2026-04-03 =
-* **Fixed**: Menu admin — voce **Dashboard** visibile nel sottomenu FP Experiences; registrazione menu a priorità 5 prima di Onboarding/import (evita clone WordPress con lo stesso titolo del top-level).
+* **Added**: Impostazioni Gift — toggle regalo su eventi a data singola (default: sì); se no, niente CTA regalo e API voucher bloccata per quelle esperienze.
 
 = 1.5.48 - 2026-04-03 =
-* **Changed**: Documentazione — `docs/ADMIN-SCREENS.md` checklist meta box editor (smoke 2026-04-03, ambiente locale ripristinato).
+* **Changed**: Widget evento a data singola — solo data/ora evidente; calendario e fasce nascosti in UI; auto-selezione primo slot disponibile per il flusso pagamento.
 
-= 1.5.47 - 2026-04-02 =
-* **Changed**: Documentazione — `docs/ADMIN-SCREENS.md`: tab meta box esperienza (slug/handler), checklist per tab editor, nota smoke click bloccata da HTTP 500 su ambiente locale.
+= 1.5.47 - 2026-04-03 =
+* **Changed**: Frontend — hero evento a data singola: data/ora più grande e badge più evidente (tipografia, contrasto, bordo leggero).
 
 = 1.5.46 - 2026-04-02 =
 * **Fixed**: Admin — enqueue CSS dopo `colors`; reset tab core e primari rinforzati (meno flash viola/bianco e tab blu WP). Filtro `fp_exp_admin_style_dependencies`.

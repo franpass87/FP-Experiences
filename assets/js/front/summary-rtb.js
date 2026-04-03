@@ -97,6 +97,11 @@
 
         function updateCtaState() {
             if (!_ctx.ctaBtn) return;
+            var em = _ctx.config && _ctx.config.eventMeta;
+            if (em && em.ticket_sales_closed) {
+                _ctx.ctaBtn.disabled = true;
+                return;
+            }
             var tickets = collectTickets();
             var anyTicket = tickets && Object.keys(tickets).length > 0;
             var slotOk = hasSelectedSlot();

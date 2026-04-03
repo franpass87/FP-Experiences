@@ -71,6 +71,11 @@
 
         function updateWooCommerceCtaState() {
             if (!ctaBtn) return;
+            var em = _ctx.config && _ctx.config.eventMeta;
+            if (em && em.ticket_sales_closed) {
+                ctaBtn.disabled = true;
+                return;
+            }
             var tickets = collectTickets();
             var anyTicket = tickets && Object.keys(tickets).length > 0;
             var slotOk = hasSelectedSlot();

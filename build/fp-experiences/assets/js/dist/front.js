@@ -1229,9 +1229,9 @@
                 if (rtbEnabled && startInput) startInput.value = start;
                 if (rtbEnabled && endInput) endInput.value = end;
 
-                // Aggiorna sempre il pulsante (sia RTB che WooCommerce)
+                // Aggiorna sempre il pulsante (sia RTB che WooCommerce), salvo vendite chiuse (evento a data singola)
                 const ctaButton = document.querySelector('.fp-exp-summary__cta');
-                if (ctaButton) {
+                if (ctaButton && !ticketSalesClosed) {
                     ctaButton.disabled = false;
                 }
 
@@ -1259,6 +1259,10 @@
             if (!ctaBtn) return;
 
             const updateWooCommerceCtaState = () => {
+                if (ticketSalesClosed) {
+                    ctaBtn.disabled = true;
+                    return;
+                }
                 const tickets = collectTickets();
                 const anyTicket = tickets && Object.keys(tickets).length > 0;
                 const slotOk = hasSelectedSlot();
@@ -1592,7 +1596,9 @@
                     if (window.fpExpConfig && window.fpExpConfig.debug) console.log('FP-EXP: Nonce ottenuto:', freshCheckoutNonce);
                 } catch (e) {
                     if (window.fpExpConfig && window.fpExpConfig.debug) console.error('FP-EXP: Errore nonce:', e);
-                    ctaBtn.disabled = false;
+                    if (!ticketSalesClosed) {
+                        ctaBtn.disabled = false;
+                    }
                     ctaBtn.textContent = 'Procedi al pagamento';
                     alert('Sessione non valida. Aggiorna la pagina e riprova.');
                     return;
@@ -1733,7 +1739,9 @@
 
                 } catch (error) {
                     // Errore checkout WooCommerce
-                    ctaBtn.disabled = false;
+                    if (!ticketSalesClosed) {
+                        ctaBtn.disabled = false;
+                    }
                     
                     // Messaggio specifico per errori di sessione
                     const errorMessage = error.message || '';
@@ -1937,6 +1945,14 @@
 
             const updateCtaState = () => {
                 if (!ctaBtn) return;
+                if (ticketSalesClosed) {
+                    ctaBtn.disabled = true;
+                    if (ctaHint) {
+                        ctaHint.hidden = true;
+                        ctaHint.textContent = '';
+                    }
+                    return;
+                }
                 const tickets = collectTickets();
                 const anyTicket = tickets && Object.keys(tickets).length > 0;
                 const slotOk = hasSelectedSlot();
@@ -2309,7 +2325,7 @@
                             statusEl.textContent = error.message || statusEl.getAttribute('data-error') || 'Impossibile inviare la richiesta. Riprova.';
                         }
 
-                        if (submitBtn) {
+                        if (submitBtn && !ticketSalesClosed) {
                             submitBtn.disabled = false;
                             submitBtn.textContent = 'Invia richiesta di prenotazione';
                         }
@@ -2567,9 +2583,12 @@
                             giftFeedback.textContent = error.message || 'Si è verificato un errore. Riprova.';
                         }
                     } finally {
-                        // Re-enable submit button
-                        giftSubmitBtn.disabled = false;
-                        giftSubmitBtn.textContent = 'Procedi al pagamento';
+                        if (giftSubmitBtn) {
+                            if (!ticketSalesClosed) {
+                                giftSubmitBtn.disabled = false;
+                            }
+                            giftSubmitBtn.textContent = 'Procedi al pagamento';
+                        }
                     }
                 });
             }
