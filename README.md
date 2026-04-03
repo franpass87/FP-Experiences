@@ -2,7 +2,7 @@
 
 Plugin WordPress per booking di esperienze turistiche stile GetYourGuide. Shortcode/Elementor, carrello e checkout isolati, email transazionali, tracking marketing centralizzato.
 
-[![Version](https://img.shields.io/badge/version-1.6.9-blue.svg)](https://github.com/franpass87/FP-Experiences)
+[![Version](https://img.shields.io/badge/version-1.5.58-blue.svg)](https://github.com/franpass87/FP-Experiences)
 [![License](https://img.shields.io/badge/license-GPLv2%2B-blue.svg)](https://www.gnu.org/licenses/gpl-2.0.html)
 
 ---
@@ -116,7 +116,6 @@ Il servizio `Mailer` centralizzato supporta:
 | `fp_exp_datalayer_purchase` | filter | Dati acquisto per dataLayer |
 | `fp_exp_email_branding` | filter | Branding email (logo, colori) |
 | `fp_exp_price_from` | filter | Prezzo "a partire da" nel widget |
-| `fp_exp_special_requests_checkbox_items` | filter | Elenco voci checkbox step «Richieste speciali» nel widget (`$items`, `$experience_id`) |
 | `fp_exp_admin_style_dependencies` | filter | Handle CSS WordPress da caricare prima di `fp-exp-admin` (default `colors`) |
 
 ### REST Endpoints

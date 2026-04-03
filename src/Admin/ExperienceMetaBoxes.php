@@ -14,80 +14,45 @@ use FP_Exp\Admin\ExperienceMetaBoxes\Handlers\PricingMetaBoxHandler;
 use FP_Exp\Admin\ExperienceMetaBoxes\Handlers\SEOMetaBoxHandler;
 use FP_Exp\Booking\Recurrence;
 use FP_Exp\Booking\Slots;
-use FP_Exp\MeetingPoints\MeetingPointCPT;
-use FP_Exp\MeetingPoints\Repository;
 use FP_Exp\Utils\Helpers;
-use FP_Exp\Utils\LanguageHelper;
-use WP_Error;
 use WP_Post;
 
 use function absint;
 use function add_action;
 use function add_meta_box;
-use function array_filter;
-use function array_map;
-use function array_unique;
 use function array_merge;
-use function array_values;
-use function checked;
 use function current_user_can;
-use function delete_post_meta;
 use function delete_transient;
 use function esc_attr;
-use function esc_attr__;
 use function esc_html;
 use function esc_html__;
 use function esc_html_e;
 use function esc_textarea;
-use function esc_url;
 use function get_current_screen;
-use function get_edit_post_link;
-use function get_permalink;
 use function get_post;
 use function get_post_meta;
-use function get_posts;
 use function get_post_status;
-use function get_post_status_object;
-use function get_transient;
 use function get_post_thumbnail_id;
-use function get_terms;
-use function get_the_title;
+use function get_transient;
 use function in_array;
-use function implode;
 use function is_array;
-use function is_wp_error;
 use function ob_get_clean;
 use function ob_start;
-use function sanitize_key;
+use function remove_meta_box;
+use function rest_url;
 use function sanitize_text_field;
-use function sanitize_textarea_field;
-use function sanitize_title;
-use function selected;
-use function set_transient;
-use function strval;
+use function set_post_thumbnail;
 use function sprintf;
 use function update_post_meta;
+use function wp_create_nonce;
 use function wp_enqueue_media;
 use function wp_enqueue_script;
 use function wp_enqueue_style;
-use function wp_attachment_is_image;
-use function rest_url;
-use function wp_create_nonce;
 use function wp_is_post_autosave;
 use function wp_is_post_revision;
 use function wp_nonce_field;
 use function wp_unslash;
 use function wp_verify_nonce;
-use function wp_get_post_terms;
-use function wp_kses_post;
-use function wp_get_attachment_image_src;
-use function wp_get_attachment_url;
-use function wp_set_post_terms;
-use function remove_meta_box;
-use function term_exists;
-use function wp_insert_term;
-use function set_post_thumbnail;
-use function delete_post_thumbnail;
 
 final class ExperienceMetaBoxes implements HookableInterface
 {
@@ -876,11 +841,6 @@ final class ExperienceMetaBoxes implements HookableInterface
         }
 
         $raw = wp_unslash($_POST);
-
-        // Debug: log raw POST data for cognitive biases (temporaneo)
-        if (defined('WP_DEBUG') && WP_DEBUG && isset($raw['fp_exp_details']['cognitive_biases'])) {
-            error_log('[FP-EXP-DEBUG] Cognitive biases in POST: ' . print_r($raw['fp_exp_details']['cognitive_biases'], true));
-        }
 
         // Protezione contro output non intenzionale che causa corruzione dati 'Array'
         ob_start();

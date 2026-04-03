@@ -93,13 +93,23 @@ trait MetaBoxHelpers
     }
 
     /**
-     * Render a tooltip.
+     * Render a tooltip trigger (icon + testo in data-tooltip / stile JS admin).
+     *
+     * @param string $id Attributo id sull'elemento (può coincidere con aria-describedby del campo).
+     * @param string $text Testo dell'aiuto (tradotto), usato anche per aria-label.
      */
     protected function render_tooltip(string $id, string $text): void
     {
         ?>
-        <span class="fp-exp-tooltip" data-tooltip="<?php echo esc_attr($text); ?>" id="<?php echo esc_attr($id); ?>">
-            <span class="dashicons dashicons-info"></span>
+        <span
+            class="fp-exp-tooltip"
+            data-tooltip="<?php echo esc_attr($text); ?>"
+            id="<?php echo esc_attr($id); ?>"
+            tabindex="0"
+            role="img"
+            aria-label="<?php echo esc_attr($text); ?>"
+        >
+            <span class="dashicons dashicons-info" aria-hidden="true"></span>
         </span>
         <?php
     }
