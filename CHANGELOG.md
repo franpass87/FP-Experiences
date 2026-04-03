@@ -2,6 +2,12 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.6.4] - 2026-04-03
+
+### Changed
+
+- **Pagina esperienza — modale regalo (evento a data singola)**: testo della nota pre-checkout aggiornato — distingue la **data di consegna email** (campo opzionale) dalla **data dell’evento** (già fissa); al riscatto si confermano i dati senza scegliere un’altra data. Allineata voce in `AutoTranslator` (EN).
+
 ## [1.6.3] - 2026-04-03
 
 ### Changed

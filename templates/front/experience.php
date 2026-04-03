@@ -314,7 +314,7 @@ $page_label_overview_traits = $is_single_event_mode
     ? esc_html__('Caratteristiche evento', 'fp-experiences')
     : esc_html__('Caratteristiche esperienza', 'fp-experiences');
 $page_gift_checkout_note = $is_single_event_mode
-    ? esc_html__('Potrai verificare il totale e completare il pagamento al checkout. Il destinatario riceverà il voucher la mattina programmata o immediatamente dopo il pagamento se non è stata selezionata una data. La data dell\'evento verrà scelta dal destinatario in fase di riscatto del voucher.', 'fp-experiences')
+    ? esc_html__('Potrai verificare il totale e completare il pagamento al checkout. Il destinatario riceverà il voucher via email la mattina della data di consegna che eventualmente imposti sopra (campo opzionale), oppure subito dopo il pagamento se lo lasci vuoto. Questo evento ha data e orario già definiti: al riscatto il destinatario confermerà i dati per utilizzare il voucher, senza scegliere un\'altra data.', 'fp-experiences')
     : esc_html__('Potrai verificare il totale e completare il pagamento al checkout. Il destinatario riceverà il voucher la mattina programmata o immediatamente dopo il pagamento se non è stata selezionata una data. La data dell\'esperienza verrà scelta dal destinatario in fase di riscatto del voucher.', 'fp-experiences');
 $price_from_display = isset($experience['price_from_display']) ? (string) $experience['price_from_display'] : '';
 // Non mostrare il prezzo se è 0
