@@ -465,7 +465,9 @@ final class ExperienceShortcode extends BaseShortcode
                 'ticket_sales_closed_message' => $event_ticket_sales_closed_message,
             ],
             'gift' => [
-                'enabled' => Helpers::gift_enabled_for_experience($experience_id) && Helpers::single_event_ticket_sales_open($experience_id),
+                'enabled' => Helpers::gift_enabled_for_experience($experience_id),
+                'purchase_allowed' => ! ($ticket_sales_err instanceof WP_Error),
+                'purchase_blocked_message' => $ticket_sales_err instanceof WP_Error ? $ticket_sales_err->get_error_message() : '',
                 'experience_id' => $experience_id,
                 'experience_title' => $post->post_title,
                 'tickets' => $tickets,

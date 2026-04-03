@@ -96,12 +96,15 @@ $sidebar_data = in_array($sidebar_position, ['left', 'none'], true) ? $sidebar_p
 
 $gift = isset($gift) && is_array($gift) ? $gift : [];
 $gift_enabled = ! empty($gift['enabled']);
+$gift_purchase_allowed = array_key_exists('purchase_allowed', $gift) ? (bool) $gift['purchase_allowed'] : true;
+$gift_purchase_blocked_message = isset($gift['purchase_blocked_message']) ? (string) $gift['purchase_blocked_message'] : '';
 $gift_config = [
     'experienceId' => isset($gift['experience_id']) ? (int) $gift['experience_id'] : 0,
     'experienceTitle' => isset($gift['experience_title']) ? (string) $gift['experience_title'] : '',
     'validityDays' => isset($gift['validity_days']) ? (int) $gift['validity_days'] : 0,
     'redeemPage' => isset($gift['redeem_page']) ? (string) $gift['redeem_page'] : '',
     'currency' => isset($gift['currency']) ? (string) $gift['currency'] : get_option('woocommerce_currency', 'EUR'),
+    'purchaseAllowed' => $gift_purchase_allowed,
 ];
 $gift_tickets = isset($gift['tickets']) && is_array($gift['tickets']) ? $gift['tickets'] : [];
 $gift_addons = isset($gift['addons']) && is_array($gift['addons']) ? $gift['addons'] : [];
@@ -598,6 +601,11 @@ $sticky_price_display = '' !== $price_from_display ? $format_currency($price_fro
                                 <h2 class="fp-exp-gift__title fp-exp-section__title"><?php echo $page_label_gift_title; ?></h2>
                             </div>
                             <p class="fp-exp-gift__description"><?php esc_html_e('Acquista un voucher e invialo con un messaggio personalizzato in pochi clic.', 'fp-experiences'); ?></p>
+                            <?php if (! $gift_purchase_allowed && '' !== $gift_purchase_blocked_message) : ?>
+                                <p class="fp-exp-gift__notice fp-exp-gift__notice--sales-closed" id="fp-exp-gift-hero-sales-notice" role="status">
+                                    <?php echo esc_html($gift_purchase_blocked_message); ?>
+                                </p>
+                            <?php endif; ?>
                         </div>
                         <button
                             type="button"
@@ -606,8 +614,9 @@ $sticky_price_display = '' !== $price_from_display ? $format_currency($price_fro
                             aria-controls="fp-exp-gift"
                             aria-haspopup="dialog"
                             aria-expanded="false"
+                            <?php if (! $gift_purchase_allowed && '' !== $gift_purchase_blocked_message) : ?>aria-describedby="fp-exp-gift-hero-sales-notice"<?php endif; ?>
                         >
-                            <?php echo $page_label_gift_title; ?>
+                            <?php echo $gift_purchase_allowed ? $page_label_gift_title : esc_html__('Informazioni sul regalo', 'fp-experiences'); ?>
                         </button>
                     </div>
                 </section>
@@ -642,8 +651,15 @@ $sticky_price_display = '' !== $price_from_display ? $format_currency($price_fro
                                     <span class="fp-exp-section__icon" aria-hidden="true"><?php echo $get_section_icon('gift'); ?></span>
                                     <h2 class="fp-gift__title" id="fp-exp-gift-title"><?php echo $page_label_gift_title; ?></h2>
                                 </div>
+                                <?php if ($gift_purchase_allowed) : ?>
                                 <p class="fp-gift__intro" id="fp-exp-gift-intro"><?php esc_html_e('Acquista un voucher, personalizza un messaggio e invialo via email in pochi clic.', 'fp-experiences'); ?></p>
+                                <?php else : ?>
+                                <p class="fp-gift__intro fp-gift__intro--blocked" id="fp-exp-gift-intro" role="alert">
+                                    <?php echo '' !== $gift_purchase_blocked_message ? esc_html($gift_purchase_blocked_message) : esc_html__('Al momento non è possibile acquistare un voucher per questa esperienza.', 'fp-experiences'); ?>
+                                </p>
+                                <?php endif; ?>
                                 <div class="fp-gift__feedback" data-fp-gift-feedback aria-live="polite" hidden></div>
+                                <?php if ($gift_purchase_allowed) : ?>
                                 <form class="fp-gift__form" data-fp-gift-form novalidate>
                                     <div class="fp-gift-modal__scroll">
                                         <div class="fp-gift__grid">
@@ -773,6 +789,7 @@ $sticky_price_display = '' !== $price_from_display ? $format_currency($price_fro
                                         </button>
                                     </div>
                                 </form>
+                                <?php endif; ?>
                                 <div class="fp-gift__success" data-fp-gift-success hidden></div>
                             </div>
                         </div>

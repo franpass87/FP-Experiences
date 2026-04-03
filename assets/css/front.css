@@ -2983,6 +2983,57 @@ p.fp-exp-special-requests__group-title,
     box-shadow: var(--fp-shadow);
 }
 
+/* Regalo inline (hero): layout e avviso vendite chiuse */
+.fp-exp-section.fp-exp-gift .fp-exp-gift__body {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: clamp(1rem, 3vw, 1.5rem);
+}
+
+.fp-exp-section.fp-exp-gift .fp-exp-gift__content {
+    flex: 1 1 16rem;
+    min-width: 0;
+}
+
+.fp-exp-section.fp-exp-gift .fp-exp-gift__description {
+    margin: 0.35rem 0 0;
+    color: var(--fp-color-text-muted, rgba(19, 29, 56, 0.68));
+    line-height: 1.55;
+    max-width: 62ch;
+}
+
+.fp-exp-gift__notice {
+    margin: 0.65rem 0 0;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.9rem;
+    line-height: 1.45;
+    border-radius: 10px;
+}
+
+.fp-exp-gift__notice--sales-closed {
+    background: color-mix(in srgb, var(--fp-color-primary, #2563eb) 8%, #fff);
+    border: 1px solid color-mix(in srgb, var(--fp-color-primary, #2563eb) 22%, transparent);
+    color: var(--fp-color-text, #131d38);
+}
+
+.fp-exp-section.fp-exp-gift .fp-exp-button {
+    align-self: center;
+}
+
+@media (max-width: 768px) {
+    .fp-exp-section.fp-exp-gift .fp-exp-gift__body {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .fp-exp-section.fp-exp-gift .fp-exp-button {
+        align-self: stretch;
+        width: 100%;
+    }
+}
+
 .fp-exp-hero {
     padding: clamp(2.5rem, 6vw, 4rem);
     margin-bottom: clamp(2rem, 6vw, 3rem);
@@ -3927,6 +3978,17 @@ body.fp-modal-open {
     max-width: 58ch;
     background: linear-gradient(90deg, color-mix(in srgb, var(--fp-color-primary, #2563eb) 6%, transparent) 0%, transparent 100%);
     border-radius: 0 10px 10px 0;
+}
+
+.fp-gift__intro--blocked {
+    border-left-color: color-mix(in srgb, #b45309 50%, var(--fp-color-primary, #2563eb));
+    color: var(--fp-color-text, #131d38);
+    font-weight: 600;
+    background: linear-gradient(
+        90deg,
+        color-mix(in srgb, #b45309 12%, transparent) 0%,
+        color-mix(in srgb, var(--fp-color-primary, #2563eb) 6%, transparent) 100%
+    );
 }
 
 .fp-gift__grid {
