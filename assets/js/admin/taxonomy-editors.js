@@ -110,6 +110,46 @@
                 });
             }
 
+            function initBadgeIconPreviews(scope) {
+                if (!scope) {
+                    return;
+                }
+
+                scope.querySelectorAll('.fp-exp-badge-icon-select').forEach((selectEl) => {
+                    if (!(selectEl instanceof HTMLSelectElement)) {
+                        return;
+                    }
+                    if (selectEl.dataset.fpBadgeIconPreviewInit === '1') {
+                        return;
+                    }
+                    selectEl.dataset.fpBadgeIconPreviewInit = '1';
+
+                    const field = selectEl.closest('.fp-exp-badge-icon-field');
+                    const preview = field ? field.querySelector('[data-fp-exp-badge-icon-preview]') : null;
+                    if (!preview) {
+                        return;
+                    }
+
+                    function sync() {
+                        while (preview.firstChild) {
+                            preview.removeChild(preview.firstChild);
+                        }
+                        const opt = selectEl.options[selectEl.selectedIndex];
+                        const cls = opt ? opt.getAttribute('data-fp-fa-classes') : '';
+                        if (!cls) {
+                            return;
+                        }
+                        const i = document.createElement('i');
+                        i.setAttribute('class', cls);
+                        i.setAttribute('aria-hidden', 'true');
+                        preview.appendChild(i);
+                    }
+
+                    selectEl.addEventListener('change', sync);
+                    sync();
+                });
+            }
+
             function addRow(focus) {
                 const nextIndex = parseInt(editor.dataset.fpExpBadgeNextIndex || '0', 10) || 0;
                 const html = template.innerHTML.replace(/__INDEX__/g, String(nextIndex));
@@ -124,6 +164,7 @@
                 assignTemplateNames(row);
                 bindRemove(row);
                 list.appendChild(row);
+                initBadgeIconPreviews(row);
                 editor.dataset.fpExpBadgeNextIndex = String(nextIndex + 1);
 
                 if (focus) {
@@ -140,6 +181,7 @@
             });
 
             bindRemove(list);
+            initBadgeIconPreviews(list);
         });
     }
 

@@ -2,6 +2,17 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.6.16] - 2026-04-03
+
+### Added
+
+- **Badge personalizzati (admin)**: campo **Icona** come menu a tendina con etichette descrittive, **anteprima Font Awesome** accanto alla select e ordinamento (voce «Generica» in cima, poi le altre per etichetta). Nuove icone standard nell’elenco: stella, orologio, luogo, cuore, certificato, fotocamera, musica, bus, biglietto, regalo, calendario, info, telefono, email.
+- **Helpers**: `experience_badge_icon_fa_class_map()` e filtro `fp_exp_experience_badge_icon_fa_class_map` per estendere slug → classi FA; registry markup costruito dalla mappa.
+
+### Changed
+
+- **Admin JS/CSS**: sincronizzazione anteprima icona su `change`; stili `.fp-exp-badge-icon-*` (incluso dark mode).
+
 ## [1.6.15] - 2026-04-03
 
 ### Changed

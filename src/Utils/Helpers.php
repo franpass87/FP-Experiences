@@ -1164,6 +1164,49 @@ final class Helpers
     }
 
     /**
+     * Mappa slug icona → classi Font Awesome 6 Solid (set predefinito + icone extra per badge custom).
+     *
+     * Filtro: `fp_exp_experience_badge_icon_fa_class_map`.
+     *
+     * @return array<string, string>
+     */
+    public static function experience_badge_icon_fa_class_map(): array
+    {
+        $map = [
+            'default' => 'fa-solid fa-tag',
+            'family' => 'fa-solid fa-users',
+            'taste' => 'fa-solid fa-utensils',
+            'wine' => 'fa-solid fa-wine-glass-empty',
+            'olive' => 'fa-solid fa-droplet',
+            'outdoor' => 'fa-solid fa-mountain-sun',
+            'craft' => 'fa-solid fa-hammer',
+            'star' => 'fa-solid fa-star',
+            'clock' => 'fa-solid fa-clock',
+            'location' => 'fa-solid fa-location-dot',
+            'heart' => 'fa-solid fa-heart',
+            'certificate' => 'fa-solid fa-certificate',
+            'camera' => 'fa-solid fa-camera',
+            'music' => 'fa-solid fa-music',
+            'bus' => 'fa-solid fa-bus',
+            'ticket' => 'fa-solid fa-ticket',
+            'gift' => 'fa-solid fa-gift',
+            'calendar' => 'fa-solid fa-calendar-days',
+            'info' => 'fa-solid fa-circle-info',
+            'phone' => 'fa-solid fa-phone',
+            'envelope' => 'fa-solid fa-envelope',
+        ];
+
+        /**
+         * Estende le icone Font Awesome disponibili per badge (slug => `fa-solid fa-...`).
+         *
+         * @param array<string, string> $map
+         */
+        $filtered = apply_filters('fp_exp_experience_badge_icon_fa_class_map', $map);
+
+        return is_array($filtered) ? $filtered : $map;
+    }
+
+    /**
      * Markup icona badge esperienza (predefinito: Font Awesome 6 Solid, come sul frontend).
      *
      * Il nome storico del metodo resta `experience_badge_icon_svg`; il filtro può ancora restituire SVG o altro HTML.
@@ -1175,15 +1218,18 @@ final class Helpers
         $icon = sanitize_key($icon);
 
         if (null === self::$experience_badge_icon_cache) {
-            $defaults = [
-                'family' => self::experience_badge_fa_icon_markup('fa-solid fa-users'),
-                'taste' => self::experience_badge_fa_icon_markup('fa-solid fa-utensils'),
-                'wine' => self::experience_badge_fa_icon_markup('fa-solid fa-wine-glass-empty'),
-                'olive' => self::experience_badge_fa_icon_markup('fa-solid fa-droplet'),
-                'outdoor' => self::experience_badge_fa_icon_markup('fa-solid fa-mountain-sun'),
-                'craft' => self::experience_badge_fa_icon_markup('fa-solid fa-hammer'),
-                'default' => self::experience_badge_fa_icon_markup('fa-solid fa-tag'),
-            ];
+            $defaults = [];
+            foreach (self::experience_badge_icon_fa_class_map() as $slug => $classes) {
+                $slug = sanitize_key((string) $slug);
+                if ('' === $slug || ! is_string($classes) || '' === trim($classes)) {
+                    continue;
+                }
+                $defaults[$slug] = self::experience_badge_fa_icon_markup($classes);
+            }
+
+            if (! isset($defaults['default'])) {
+                $defaults['default'] = self::experience_badge_fa_icon_markup('fa-solid fa-tag');
+            }
 
             $registry = apply_filters('fp_exp_experience_badge_icon_registry', $defaults);
             $registry = is_array($registry) ? $registry : $defaults;
@@ -1255,13 +1301,27 @@ final class Helpers
         $keys = array_keys($icons);
         sort($keys);
         $labels = [
-            'craft' => __('Artigianato', 'fp-experiences'),
-            'default' => __('Generica', 'fp-experiences'),
+            'default' => __('Generica (etichetta)', 'fp-experiences'),
             'family' => __('Famiglia / bambini', 'fp-experiences'),
-            'olive' => __('Olio / oliva', 'fp-experiences'),
-            'outdoor' => __('Outdoor', 'fp-experiences'),
             'taste' => __('Gastronomia', 'fp-experiences'),
             'wine' => __('Vino', 'fp-experiences'),
+            'olive' => __('Olio / oliva', 'fp-experiences'),
+            'outdoor' => __('Outdoor / natura', 'fp-experiences'),
+            'craft' => __('Artigianato / laboratorio', 'fp-experiences'),
+            'star' => __('Stella / in evidenza', 'fp-experiences'),
+            'clock' => __('Orologio / durata', 'fp-experiences'),
+            'location' => __('Luogo / pin mappa', 'fp-experiences'),
+            'heart' => __('Cuore / passione', 'fp-experiences'),
+            'certificate' => __('Certificato / qualità', 'fp-experiences'),
+            'camera' => __('Foto / ricordo', 'fp-experiences'),
+            'music' => __('Musica / spettacolo', 'fp-experiences'),
+            'bus' => __('Trasporto / pullman', 'fp-experiences'),
+            'ticket' => __('Biglietto', 'fp-experiences'),
+            'gift' => __('Regalo', 'fp-experiences'),
+            'calendar' => __('Calendario / date', 'fp-experiences'),
+            'info' => __('Informazioni', 'fp-experiences'),
+            'phone' => __('Telefono', 'fp-experiences'),
+            'envelope' => __('Email / messaggio', 'fp-experiences'),
         ];
         $out = [];
         foreach ($keys as $k) {

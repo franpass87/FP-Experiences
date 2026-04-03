@@ -1748,6 +1748,38 @@ label.fp-exp-checkbox-grid__item:focus-within {
     text-align: center;
 }
 
+/* Badge personalizzati — elenco icone + anteprima Font Awesome */
+.fp-exp-badge-icon-field__control {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.fp-exp-badge-icon-preview {
+    display: inline-flex;
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-md);
+    align-items: center;
+    justify-content: center;
+    background: rgba(102, 126, 234, 0.12);
+    color: var(--fpdms-primary-dark);
+    flex-shrink: 0;
+}
+
+.fp-exp-badge-icon-preview .fa-solid,
+.fp-exp-badge-icon-preview .fa-regular,
+.fp-exp-badge-icon-preview .fa-light {
+    font-size: 16px;
+    line-height: 1;
+}
+
+.fp-exp-badge-icon-select.regular-text {
+    min-width: min(100%, 16rem);
+    max-width: 100%;
+}
+
 .fp-exp-checkbox-grid__body {
     display: flex;
     flex-direction: column;
@@ -2435,6 +2467,11 @@ html.fp-exp-dark label.fp-exp-checkbox-grid__item:has(input:checked):not(.is-dis
 }
 
 html.fp-exp-dark .fp-exp-checkbox-grid__icon {
+    background: rgba(102, 126, 234, 0.22) !important;
+    color: #e9ecfe !important;
+}
+
+html.fp-exp-dark .fp-exp-badge-icon-preview {
     background: rgba(102, 126, 234, 0.22) !important;
     color: #e9ecfe !important;
 }

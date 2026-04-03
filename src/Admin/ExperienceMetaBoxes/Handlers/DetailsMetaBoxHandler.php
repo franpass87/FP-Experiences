@@ -716,6 +716,59 @@ final class DetailsMetaBoxHandler extends BaseMetaBoxHandler
     }
 
     /**
+     * Select icona per badge custom con anteprima Font Awesome (opzioni ordinate, default in cima).
+     *
+     * @param array<string, string> $icon_options Slug => etichetta tradotta.
+     * @param array<string, string> $icon_fa_map  Slug => classi FA per `data-fp-fa-classes`.
+     */
+    private function render_badge_custom_icon_control(
+        string $selected_slug,
+        array $icon_options,
+        array $icon_fa_map,
+        string $field_name,
+        bool $use_data_name
+    ): void {
+        ?>
+        <div class="fp-exp-taxonomy-editor__field fp-exp-badge-icon-field">
+            <span class="fp-exp-field__label"><?php esc_html_e('Icona', 'fp-experiences'); ?></span>
+            <div class="fp-exp-badge-icon-field__control">
+                <span class="fp-exp-badge-icon-preview" data-fp-exp-badge-icon-preview aria-hidden="true"></span>
+                <select
+                    class="fp-exp-badge-icon-select regular-text"
+                    <?php
+                    if ($use_data_name) {
+                        echo ' data-name="' . esc_attr($field_name) . '"';
+                    } else {
+                        echo ' name="' . esc_attr($field_name) . '"';
+                    }
+                    ?>
+                >
+                    <?php foreach ($icon_options as $opt_slug => $opt_label) :
+                        $opt_slug = sanitize_key((string) $opt_slug);
+                        if ('' === $opt_slug) {
+                            continue;
+                        }
+                        $fa_preview = $icon_fa_map[$opt_slug] ?? '';
+                        ?>
+                        <option
+                            value="<?php echo esc_attr($opt_slug); ?>"
+                            <?php
+                            if ('' !== $fa_preview) {
+                                echo ' data-fp-fa-classes="' . esc_attr($fa_preview) . '"';
+                            }
+                            ?>
+                            <?php selected($selected_slug, $opt_slug, true); ?>
+                        >
+                            <?php echo esc_html((string) $opt_label); ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+        </div>
+        <?php
+    }
+
+    /**
      * Render experience badges field (predefiniti + personalizzati con aggiunta dinamica).
      */
     private function render_experience_badges_field(array $data, int $post_id): void
@@ -731,6 +784,15 @@ final class DetailsMetaBoxHandler extends BaseMetaBoxHandler
             ? $data['experience_badges_custom']
             : [];
         $icon_options = Helpers::experience_badge_icon_admin_options();
+        $icon_fa_map = Helpers::experience_badge_icon_fa_class_map();
+        if (isset($icon_options['default'])) {
+            $default_opt = $icon_options['default'];
+            unset($icon_options['default']);
+            uasort($icon_options, static fn ($a, $b): int => strcasecmp((string) $a, (string) $b));
+            $icon_options = ['default' => $default_opt] + $icon_options;
+        } else {
+            uasort($icon_options, static fn ($a, $b): int => strcasecmp((string) $a, (string) $b));
+        }
         $next_custom_index = count($custom_rows);
         ?>
         <div class="fp-exp-field fp-exp-field--taxonomies" id="fp-exp-experience-badges">
@@ -801,7 +863,7 @@ final class DetailsMetaBoxHandler extends BaseMetaBoxHandler
                     ); ?>
                 </span>
                 <p class="fp-exp-field__description" id="fp-exp-experience-badges-custom-help-text">
-                    <?php esc_html_e('Usa «Aggiungi badge» per inserire una riga. Rimuovi le righe non necessarie prima di salvare.', 'fp-experiences'); ?>
+                    <?php esc_html_e('Usa «Aggiungi badge» per inserire una riga. Per l’icona scegli una voce dall’elenco (con anteprima). Rimuovi le righe non necessarie prima di salvare.', 'fp-experiences'); ?>
                 </p>
                 <div
                     class="fp-exp-taxonomy-editor fp-exp-exp-badge-custom-editor"
@@ -822,16 +884,15 @@ final class DetailsMetaBoxHandler extends BaseMetaBoxHandler
                             ?>
                             <div class="fp-exp-taxonomy-editor__item fp-exp-exp-badge-custom-item" data-fp-exp-badge-item>
                                 <input type="hidden" name="fp_exp_details[experience_badges_custom][<?php echo $badge_index; ?>][id]" value="<?php echo esc_attr($cid); ?>" />
-                                <label class="fp-exp-taxonomy-editor__field">
-                                    <span class="fp-exp-field__label"><?php esc_html_e('Icona', 'fp-experiences'); ?></span>
-                                    <select name="fp_exp_details[experience_badges_custom][<?php echo $badge_index; ?>][icon]">
-                                        <?php foreach ($icon_options as $opt_slug => $opt_label) : ?>
-                                            <option value="<?php echo esc_attr($opt_slug); ?>" <?php selected($cicon, $opt_slug, true); ?>>
-                                                <?php echo esc_html($opt_label); ?>
-                                            </option>
-                                        <?php endforeach; ?>
-                                    </select>
-                                </label>
+                                <?php
+                                $this->render_badge_custom_icon_control(
+                                    $cicon,
+                                    $icon_options,
+                                    $icon_fa_map,
+                                    'fp_exp_details[experience_badges_custom][' . (string) $badge_index . '][icon]',
+                                    false
+                                );
+                                ?>
                                 <label class="fp-exp-taxonomy-editor__field">
                                     <span class="fp-exp-field__label"><?php esc_html_e('Titolo badge', 'fp-experiences'); ?></span>
                                     <input type="text" name="fp_exp_details[experience_badges_custom][<?php echo $badge_index; ?>][label]" value="<?php echo esc_attr($clabel); ?>" />
@@ -859,16 +920,15 @@ final class DetailsMetaBoxHandler extends BaseMetaBoxHandler
                     <template data-fp-exp-badge-template>
                         <div class="fp-exp-taxonomy-editor__item fp-exp-exp-badge-custom-item" data-fp-exp-badge-item>
                             <input type="hidden" data-name="fp_exp_details[experience_badges_custom][__INDEX__][id]" value="" />
-                            <label class="fp-exp-taxonomy-editor__field">
-                                <span class="fp-exp-field__label"><?php esc_html_e('Icona', 'fp-experiences'); ?></span>
-                                <select data-name="fp_exp_details[experience_badges_custom][__INDEX__][icon]">
-                                    <?php foreach ($icon_options as $opt_slug => $opt_label) : ?>
-                                        <option value="<?php echo esc_attr($opt_slug); ?>" <?php selected('default', $opt_slug, true); ?>>
-                                            <?php echo esc_html($opt_label); ?>
-                                        </option>
-                                    <?php endforeach; ?>
-                                </select>
-                            </label>
+                            <?php
+                            $this->render_badge_custom_icon_control(
+                                'default',
+                                $icon_options,
+                                $icon_fa_map,
+                                'fp_exp_details[experience_badges_custom][__INDEX__][icon]',
+                                true
+                            );
+                            ?>
                             <label class="fp-exp-taxonomy-editor__field">
                                 <span class="fp-exp-field__label"><?php esc_html_e('Titolo badge', 'fp-experiences'); ?></span>
                                 <input type="text" data-name="fp_exp_details[experience_badges_custom][__INDEX__][label]" value="" />
