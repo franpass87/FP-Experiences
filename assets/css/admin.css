@@ -4642,7 +4642,8 @@ label.fp-exp-settings__toggle input:checked + .fp-exp-toggle__switch::after {
 
 .fp-exp-experience-metabox.fp-exp-admin[data-fp-exp-admin] {
     border-radius: var(--radius-lg) !important;
-    overflow: hidden;
+    /* visible: overflow:hidden tagliava in alto header/icona delle card sezione sotto le tab */
+    overflow: visible;
     box-shadow: var(--shadow-md) !important;
 }
 
@@ -4719,6 +4720,37 @@ label.fp-exp-settings__toggle input:checked + .fp-exp-toggle__switch::after {
 /* Sezioni DMS dentro la meta box (sostituiscono i fieldset): spaziatura e campi per design system FP */
 .fp-exp-experience-metabox .fp-exp-metabox-section.fp-exp-dms-card {
     margin-bottom: 1.25rem !important;
+    /* La card globale usa overflow:hidden per il radius; qui clipava titoli/dashicons in cima */
+    overflow: visible !important;
+}
+
+.fp-exp-experience-metabox .fp-exp-metabox-section .fp-exp-dms-card-header {
+    padding: 14px 1.5rem !important;
+    overflow: visible;
+    align-items: center;
+    box-sizing: border-box;
+}
+
+.fp-exp-experience-metabox .fp-exp-metabox-section .fp-exp-dms-card-header-left {
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 24px;
+}
+
+.fp-exp-experience-metabox .fp-exp-metabox-section .fp-exp-dms-card-header .fp-exp-metabox-section__title {
+    margin: 0 !important;
+    line-height: 1.45 !important;
+    padding: 2px 0;
+    overflow: visible;
+}
+
+.fp-exp-experience-metabox .fp-exp-metabox-section .fp-exp-dms-card-header .dashicons {
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    font-size: 20px;
+    line-height: 1;
+    overflow: visible;
 }
 
 .fp-exp-experience-metabox .fp-exp-tab-panel > .fp-exp-metabox-section.fp-exp-dms-card:last-child,

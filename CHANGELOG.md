@@ -2,6 +2,12 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.5.53] - 2026-04-03
+
+### Fixed
+
+- **Admin — meta box esperienza**: titoli delle sezioni (`.fp-exp-metabox-section__title`) e icone nell’header delle card risultavano **tagliati in alto** per `overflow: hidden` sul wrapper meta box / sulle card DMS in combinazione con `border-radius`. Wrapper `.fp-exp-experience-metabox` e sezioni `.fp-exp-metabox-section.fp-exp-dms-card` usano `overflow: visible`; header sezione con padding verticale maggiore, `line-height` titolo 1.45, dashicons 20×20px con `flex-shrink: 0`.
+
 ## [1.5.52] - 2026-04-03
 
 ### Changed
