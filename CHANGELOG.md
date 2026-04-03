@@ -2,6 +2,13 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.6.6] - 2026-04-03
+
+### Changed
+
+- **Modale regalo (UX/UI)**: layout a colonna sul dialog (`flex`); contenuto form in `.fp-gift-modal__scroll` con overflow; footer `.fp-gift__footer` sempre visibile con nota pre-checkout e CTA; etichette di gruppo «Chi regala» / «Chi riceve il regalo»; asterisco visivo sui campi obbligatori (`label:has(+ input[required])`); animazione `transform`+`opacity` all’apertura; `document.body.classList.add('fp-modal-open')` insieme a `overflow: hidden`; `aria-describedby` del dialog esteso alla nota (`fp-exp-gift-checkout-note`); `autocomplete` su nome/email.
+- **i18n**: nuove stringhe in `AutoTranslator` e in `fp-experiences-{en,en_US,de,de_DE}.po`.
+
 ## [1.6.5] - 2026-04-03
 
 ### Added

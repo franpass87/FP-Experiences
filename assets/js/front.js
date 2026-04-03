@@ -2298,7 +2298,8 @@
                     }, 100);
                 }
                 
-                // Prevent body scroll
+                // Prevent body scroll (class + inline for themes that override body)
+                document.body.classList.add('fp-modal-open');
                 document.body.style.overflow = 'hidden';
             };
 
@@ -2314,6 +2315,7 @@
                     giftToggleBtn.setAttribute('aria-expanded', 'false');
                     
                     // Restore body scroll
+                    document.body.classList.remove('fp-modal-open');
                     document.body.style.overflow = '';
                     
                     // Return focus to toggle button

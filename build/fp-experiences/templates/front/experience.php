@@ -628,7 +628,7 @@ $sticky_price_display = '' !== $price_from_display ? $format_currency($price_fro
                         role="dialog"
                         aria-modal="true"
                         aria-labelledby="fp-exp-gift-title"
-                        aria-describedby="fp-exp-gift-intro"
+                        aria-describedby="fp-exp-gift-intro fp-exp-gift-checkout-note"
                         data-fp-gift-dialog
                         tabindex="-1"
                     >
@@ -642,23 +642,26 @@ $sticky_price_display = '' !== $price_from_display ? $format_currency($price_fro
                                 <p class="fp-gift__intro" id="fp-exp-gift-intro"><?php esc_html_e('Acquista un voucher, personalizza un messaggio e invialo via email in pochi clic.', 'fp-experiences'); ?></p>
                                 <div class="fp-gift__feedback" data-fp-gift-feedback aria-live="polite" hidden></div>
                                 <form class="fp-gift__form" data-fp-gift-form novalidate>
-                                    <div class="fp-gift__grid">
-                                        <div class="fp-gift__field">
-                                            <label for="fp-gift-purchaser-name"><?php esc_html_e('Il tuo nome', 'fp-experiences'); ?></label>
-                                            <input type="text" id="fp-gift-purchaser-name" name="purchaser[name]" required />
-                                        </div>
-                                        <div class="fp-gift__field">
-                                            <label for="fp-gift-purchaser-email"><?php esc_html_e('La tua email', 'fp-experiences'); ?></label>
-                                            <input type="email" id="fp-gift-purchaser-email" name="purchaser[email]" required />
-                                        </div>
-                                        <div class="fp-gift__field">
-                                            <label for="fp-gift-recipient-name"><?php esc_html_e('Nome destinatario', 'fp-experiences'); ?></label>
-                                            <input type="text" id="fp-gift-recipient-name" name="recipient[name]" required />
-                                        </div>
-                                        <div class="fp-gift__field">
-                                            <label for="fp-gift-recipient-email"><?php esc_html_e('Email destinatario', 'fp-experiences'); ?></label>
-                                            <input type="email" id="fp-gift-recipient-email" name="recipient[email]" required />
-                                        </div>
+                                    <div class="fp-gift-modal__scroll">
+                                        <div class="fp-gift__grid">
+                                            <p class="fp-gift__group-label" id="fp-gift-group-purchaser"><?php esc_html_e('Chi regala', 'fp-experiences'); ?></p>
+                                            <div class="fp-gift__field">
+                                                <label for="fp-gift-purchaser-name"><?php esc_html_e('Il tuo nome', 'fp-experiences'); ?></label>
+                                                <input type="text" id="fp-gift-purchaser-name" name="purchaser[name]" required autocomplete="name" />
+                                            </div>
+                                            <div class="fp-gift__field">
+                                                <label for="fp-gift-purchaser-email"><?php esc_html_e('La tua email', 'fp-experiences'); ?></label>
+                                                <input type="email" id="fp-gift-purchaser-email" name="purchaser[email]" required autocomplete="email" />
+                                            </div>
+                                            <p class="fp-gift__group-label"><?php esc_html_e('Chi riceve il regalo', 'fp-experiences'); ?></p>
+                                            <div class="fp-gift__field">
+                                                <label for="fp-gift-recipient-name"><?php esc_html_e('Nome destinatario', 'fp-experiences'); ?></label>
+                                                <input type="text" id="fp-gift-recipient-name" name="recipient[name]" required autocomplete="name" />
+                                            </div>
+                                            <div class="fp-gift__field">
+                                                <label for="fp-gift-recipient-email"><?php esc_html_e('Email destinatario', 'fp-experiences'); ?></label>
+                                                <input type="email" id="fp-gift-recipient-email" name="recipient[email]" required autocomplete="email" />
+                                            </div>
                                         <div class="fp-gift__field fp-gift__field--full">
                                             <label for="fp-gift-send-on"><?php esc_html_e('Data di consegna (opzionale)', 'fp-experiences'); ?></label>
                                             <input type="date" id="fp-gift-send-on" name="delivery[send_on]" min="<?php echo esc_attr(gmdate('Y-m-d')); ?>" />
@@ -701,7 +704,7 @@ $sticky_price_display = '' !== $price_from_display ? $format_currency($price_fro
                                             <label for="fp-gift-message"><?php esc_html_e('Messaggio personale (opzionale)', 'fp-experiences'); ?></label>
                                             <textarea id="fp-gift-message" name="message" rows="3"></textarea>
                                         </div>
-                                    </div>
+                                        </div>
                                     <?php if ($gift_addons) : ?>
                                         <?php
                                         // Raggruppa gli addon per gruppo
@@ -759,10 +762,13 @@ $sticky_price_display = '' !== $price_from_display ? $format_currency($price_fro
                                             </fieldset>
                                         <?php endforeach; ?>
                                     <?php endif; ?>
-                                    <p class="fp-gift__note"><?php echo $page_gift_checkout_note; ?></p>
-                                    <button type="submit" class="fp-exp-button" data-fp-gift-submit>
-                                        <?php esc_html_e('Procedi al pagamento', 'fp-experiences'); ?>
-                                    </button>
+                                    </div>
+                                    <div class="fp-gift__footer">
+                                        <p class="fp-gift__note" id="fp-exp-gift-checkout-note"><?php echo $page_gift_checkout_note; ?></p>
+                                        <button type="submit" class="fp-exp-button fp-gift__submit" data-fp-gift-submit>
+                                            <?php esc_html_e('Procedi al pagamento', 'fp-experiences'); ?>
+                                        </button>
+                                    </div>
                                 </form>
                                 <div class="fp-gift__success" data-fp-gift-success hidden></div>
                             </div>

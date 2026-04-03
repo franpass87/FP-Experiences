@@ -515,6 +515,12 @@ msgstr "Geschenkformular schließen"
 msgid "Acquista un voucher, personalizza un messaggio e invialo via email in pochi clic."
 msgstr "Kaufen Sie einen Gutschein, personalisieren Sie eine Nachricht und senden Sie sie per E-Mail in wenigen Klicks."
 
+msgid "Chi regala"
+msgstr "Ihre Angaben"
+
+msgid "Chi riceve il regalo"
+msgstr "Empfänger"
+
 msgid "Il tuo nome"
 msgstr "Ihr Name"
 

@@ -515,6 +515,12 @@ msgstr "Close gift form"
 msgid "Acquista un voucher, personalizza un messaggio e invialo via email in pochi clic."
 msgstr "Purchase a voucher, customize a message and send it via email in a few clicks."
 
+msgid "Chi regala"
+msgstr "Your details"
+
+msgid "Chi riceve il regalo"
+msgstr "Recipient details"
+
 msgid "Il tuo nome"
 msgstr "Your name"
 

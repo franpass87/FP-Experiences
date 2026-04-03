@@ -174,6 +174,8 @@ final class AutoTranslator implements HookableInterface
         'Acquista un voucher e invialo con un messaggio personalizzato in pochi clic.' => 'Buy a voucher and send it with a personalised message in a few clicks.',
         'Chiudi modulo regalo' => 'Close gift form',
         'Acquista un voucher, personalizza un messaggio e invialo via email in pochi clic.' => 'Buy a voucher, personalise a message and send it by email in a few clicks.',
+        'Chi regala' => 'Your details',
+        'Chi riceve il regalo' => 'Recipient details',
         'Il tuo nome' => 'Your name',
         'La tua email' => 'Your email',
         'Nome destinatario' => 'Recipient name',
