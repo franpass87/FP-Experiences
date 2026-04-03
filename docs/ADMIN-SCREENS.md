@@ -71,6 +71,8 @@ Sessione di controllo sistematico su **https://fp-development.local** (2026-04-0
 
 **Follow-up meta box (2026-04-03)**: dopo ripristino sito (fix parse error plugin FP), smoke su **editor esperienza** `post.php?post=10&action=edit` — pagina **200**, titolo coerente. L’albero accessibilità del browser integrato non espone i pulsanti `.fp-exp-tab` come controlli cliccabili (`interactive refs: 0`), ma risultano presenti nel DOM le etichette/contenuti attesi: **Dettagli** (`tabpanel`), sezioni **Biglietti** / prezzo gruppo / **Addon**, **slot** (“Aggiungi slot orario”, durata slot), **Meeting Point** principale/alternativi, **FAQ** (“Aggiungi FAQ”). Tab **SEO/Schema** del plugin nascosto con FP SEO attivo (comportamento documentato sopra).
 
+**Ripetizione smoke (2026-04-03, browser sequenziale — niente navigazioni parallele)**: confermati **PASS** (titolo documento WP coerente, URL atteso, assenza di schermata bianca o messaggio di fatal PHP visibile) per `fp_exp_dashboard`, `fp_exp_emails&tab=brevo`, Calendario con `view=overview`, `view=calendar`, `view=manual`, `fp_exp_requests`, `fp_exp_checkin`, lista esperienze, **Nuova esperienza** (`post-new.php?post_type=fp_experience`), modifica esperienza `post=10`, lista meeting point, lista gift voucher, tassonomia lingue (`edit-tags.php?taxonomy=fp_exp_language&post_type=fp_experience`).
+
 | Pagina / contesto | Tab o vista | Data | Esito | Note |
 |-------------------|-------------|------|-------|------|
 | Dashboard manager | — | 2026-04-02 | PASS | Titolo “FP Experiences”; URL `fp_exp_dashboard`. |
