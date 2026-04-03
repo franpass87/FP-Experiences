@@ -2,6 +2,12 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.6.3] - 2026-04-03
+
+### Changed
+
+- **Modale regalo**: rimosso `max-width` sul `input[type=date]` (allineato agli altri campi sulla riga intera); `min-width: 0` su tutti gli input della griglia per evitare overflow in flex/grid; altezza minima coerente per date/datetime-local/time; nota sotto la data con `max-width` in `ch` solo per leggibilità del testo; `scroll-padding-bottom` sul dialog.
+
 ## [1.6.2] - 2026-04-03
 
 ### Fixed

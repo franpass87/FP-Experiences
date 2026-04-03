@@ -3600,6 +3600,7 @@ body.fp-modal-open {
     max-height: calc(100vh - 2.25rem);
     overflow-y: auto;
     overflow-x: hidden;
+    scroll-padding-bottom: 1.25rem;
     border-radius: clamp(18px, 2vw, 24px);
     outline: none;
     background: linear-gradient(165deg, #ffffff 0%, #f4f7fd 48%, #fafbfd 100%);
@@ -3742,10 +3743,6 @@ body.fp-modal-open {
     grid-column: 1 / -1;
 }
 
-.fp-gift__field--full input[type='date'] {
-    max-width: 18rem;
-}
-
 .fp-gift__field label {
     display: block;
     font-weight: 600;
@@ -3760,6 +3757,7 @@ body.fp-modal-open {
 .fp-gift__field textarea {
     width: 100%;
     max-width: 100%;
+    min-width: 0;
     border-radius: 10px;
     border: 1px solid rgba(19, 29, 56, 0.12);
     padding: 0.58rem 0.8rem;
@@ -3769,6 +3767,18 @@ body.fp-modal-open {
     background: #fff;
     transition: border 0.2s ease, box-shadow 0.2s ease;
     box-sizing: border-box;
+}
+
+/* Date/time: stessa larghezza degli altri campi (prima max-width dedicata creava disallineamento) */
+.fp-gift__field input[type='date'],
+.fp-gift__field input[type='datetime-local'],
+.fp-gift__field input[type='time'] {
+    width: 100%;
+    min-height: 2.65rem;
+}
+
+.fp-gift__field--full .fp-gift__field-note {
+    max-width: min(100%, 65ch);
 }
 
 .fp-gift__field input:focus,
@@ -4021,10 +4031,6 @@ body.fp-modal-open {
     .fp-gift__note {
         padding: 0.55rem 0.72rem;
         font-size: 0.84rem;
-    }
-
-    .fp-gift__field--full input[type='date'] {
-        max-width: 100%;
     }
 
     .fp-gift__form > .fp-exp-button,
