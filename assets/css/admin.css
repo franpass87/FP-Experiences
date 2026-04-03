@@ -4648,9 +4648,10 @@ label.fp-exp-settings__toggle input:checked + .fp-exp-toggle__switch::after {
 }
 
 .fp-exp-experience-metabox .fp-exp-metabox-sticky-head {
-    position: sticky;
-    top: 46px;
-    z-index: 20;
+    /* non sticky: la barra tab scorre con la meta box (niente testata fissa) */
+    position: static;
+    top: auto;
+    z-index: auto;
     margin: 0 !important;
     padding: 12px 12px 10px !important;
     background: var(--fpdms-bg-light) !important;

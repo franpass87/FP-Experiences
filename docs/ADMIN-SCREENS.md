@@ -47,7 +47,7 @@ Riferimento per revisione UI (design system FP: `fpexp-page-header`, `fp-exp-adm
 
 ## Meta box «Impostazioni esperienza» (editor `fp_experience`)
 
-Markup: `.fp-exp-admin.fp-exp-experience-metabox` con testata `fp-exp-metabox-sticky-head` (etichetta + `role="tablist"`) e pulsanti `.fp-exp-tab`. **Sezioni per tab**: card DMS `fp-exp-dms-card fp-exp-metabox-section` (`MetaBoxHelpers::render_metabox_section_open/close`) — header grigio chiaro + icona dashicons + `h3`, body con campi. Ordine tab in `ExperienceMetaBoxes::get_tab_labels()`.
+Markup: `.fp-exp-admin.fp-exp-experience-metabox` con testata `fp-exp-metabox-sticky-head` (etichetta + `role="tablist"`, **flusso normale — non sticky**) e pulsanti `.fp-exp-tab`. **Sezioni per tab**: card DMS `fp-exp-dms-card fp-exp-metabox-section` (`MetaBoxHelpers::render_metabox_section_open/close`) — header grigio chiaro + icona dashicons + `h3`, body con campi. Ordine tab in `ExperienceMetaBoxes::get_tab_labels()`.
 
 | Slug `data-tab` | Etichetta (IT) | Handler |
 |-----------------|----------------|---------|

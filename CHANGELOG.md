@@ -2,6 +2,12 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.5.55] - 2026-04-03
+
+### Changed
+
+- **Admin — meta box esperienza**: rimosso `position: sticky` da `.fp-exp-metabox-sticky-head` (ora `static`); l’etichetta e la riga tab **non restano fisse** scorrendo la pagina, restano nel flusso della meta box.
+
 ## [1.5.54] - 2026-04-03
 
 ### Fixed
