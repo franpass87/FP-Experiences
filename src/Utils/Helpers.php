@@ -35,6 +35,7 @@ use function current_user_can;
 use function delete_transient;
 use function explode;
 use function do_action;
+use function esc_attr;
 use function esc_url_raw;
 use function filemtime;
 use function function_exists;
@@ -1147,19 +1148,41 @@ final class Helpers
         return array_values(array_unique($labels));
     }
 
+    /**
+     * Markup icona Font Awesome per badge esperienza (classi definite dal plugin).
+     *
+     * @param string $fa_classes Es. `fa-solid fa-users`.
+     */
+    private static function experience_badge_fa_icon_markup(string $fa_classes): string
+    {
+        $fa_classes = trim(preg_replace('/\s+/', ' ', $fa_classes) ?? '');
+        if ('' === $fa_classes) {
+            $fa_classes = 'fa-solid fa-tag';
+        }
+
+        return '<i class="' . esc_attr($fa_classes) . '" aria-hidden="true"></i>';
+    }
+
+    /**
+     * Markup icona badge esperienza (predefinito: Font Awesome 6 Solid, come sul frontend).
+     *
+     * Il nome storico del metodo resta `experience_badge_icon_svg`; il filtro può ancora restituire SVG o altro HTML.
+     *
+     * @param string $icon Chiave registry (es. family, wine).
+     */
     public static function experience_badge_icon_svg(string $icon): string
     {
         $icon = sanitize_key($icon);
 
         if (null === self::$experience_badge_icon_cache) {
             $defaults = [
-                'family' => '<svg viewBox="0 0 24 24" role="img" aria-hidden="true"><path fill="currentColor" d="M12 12.88 9.17 10H5a3 3 0 0 0-3 3v7h6v-4h2v4h6v-7a3 3 0 0 0-3-3h-1.17ZM4 6a3 3 0 1 1 3 3 3 3 0 0 1-3-3Zm10 3a3 3 0 1 0-3-3 3 3 0 0 0 3 3Zm7 2h-2.17l-2.4 2.4a4.81 4.81 0 0 1 1.57.93A3 3 0 0 1 22 18v2h-3v2h5v-4a3 3 0 0 0-3-3ZM3 22v-6h3v6Zm10-6v6h3v-6Z"/></svg>',
-                'taste' => '<svg viewBox="0 0 24 24" role="img" aria-hidden="true"><path fill="currentColor" d="M7 2a3 3 0 0 0-3 3v6a5 5 0 0 0 4 4.9V22h2v-6.1a5 5 0 0 0 4-4.9V5a3 3 0 0 0-3-3Zm0 2h4a1 1 0 0 1 1 1v3H6V5a1 1 0 0 1 1-1Zm-1 6h6a3 3 0 0 1-6 0Zm12-4h-2v8a4 4 0 0 0 4 4v2h2V6a2 2 0 0 0-2-2Z"/></svg>',
-                'wine' => '<svg viewBox="0 0 24 24" role="img" aria-hidden="true"><path fill="currentColor" d="M8 2h8l1 9a5 5 0 0 1-3.5 5V20h2v2h-6v-2h2v-4A5 5 0 0 1 7 11Zm2.08 7a3 3 0 0 0 5.84 0Z"/></svg>',
-                'olive' => '<svg viewBox="0 0 24 24" role="img" aria-hidden="true"><path fill="currentColor" d="M19 3a5 5 0 0 0-5 5v1h-1a7 7 0 0 0-7 7 6 6 0 0 0 6 6 7 7 0 0 0 7-7v-1h1a5 5 0 0 0 0-10Zm-7 18a4 4 0 0 1-4-4 5 5 0 0 1 5-5h1v1a5 5 0 0 0 4 4 4 4 0 0 1-4 4Zm7-10h-3V8a3 3 0 0 1 6 0 3 3 0 0 1-3 3Z"/></svg>',
-                'outdoor' => '<svg viewBox="0 0 24 24" role="img" aria-hidden="true"><path fill="currentColor" d="M12 2 3 20h6l3-6 3 6h6Z"/></svg>',
-                'craft' => '<svg viewBox="0 0 24 24" role="img" aria-hidden="true"><path fill="currentColor" d="M21.71 6.29 17.71 2.3a1 1 0 0 0-1.41 0L14.59 4H10l-1 2H5a3 3 0 0 0-3 3v4h2v8h2v-8h2v8h2v-8h3.59l1.71 1.71a1 1 0 0 0 1.41 0l4-4a1 1 0 0 0 0-1.42ZM18 10.17 15.83 12 12 8.17 14.17 6ZM4 11a1 1 0 0 1 1-1h3v2H4Z"/></svg>',
-                'default' => '<svg viewBox="0 0 24 24" role="img" aria-hidden="true"><path fill="currentColor" d="M12 2a5 5 0 0 0-5 5v5a5 5 0 0 0 4 4.9V22h2v-5.1a5 5 0 0 0 4-4.9V7a5 5 0 0 0-5-5Zm0 2a3 3 0 0 1 3 3v5a3 3 0 0 1-6 0V7a3 3 0 0 1 3-3Z"/></svg>',
+                'family' => self::experience_badge_fa_icon_markup('fa-solid fa-users'),
+                'taste' => self::experience_badge_fa_icon_markup('fa-solid fa-utensils'),
+                'wine' => self::experience_badge_fa_icon_markup('fa-solid fa-wine-glass-empty'),
+                'olive' => self::experience_badge_fa_icon_markup('fa-solid fa-droplet'),
+                'outdoor' => self::experience_badge_fa_icon_markup('fa-solid fa-mountain-sun'),
+                'craft' => self::experience_badge_fa_icon_markup('fa-solid fa-hammer'),
+                'default' => self::experience_badge_fa_icon_markup('fa-solid fa-tag'),
             ];
 
             $registry = apply_filters('fp_exp_experience_badge_icon_registry', $defaults);
@@ -1202,7 +1225,7 @@ final class Helpers
     }
 
     /**
-     * Normalizza la chiave icona verso una presente nel registry SVG.
+     * Normalizza la chiave icona verso una presente nel registry (markup / FA / SVG via filtro).
      */
     public static function sanitize_experience_badge_icon_key(string $icon): string
     {

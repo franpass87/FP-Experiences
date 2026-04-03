@@ -542,6 +542,16 @@ final class ExperienceMetaBoxes implements HookableInterface
 
         wp_enqueue_media();
 
+        if (! wp_style_is('fp-exp-fontawesome', 'registered')) {
+            wp_register_style(
+                'fp-exp-fontawesome',
+                'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css',
+                [],
+                '6.5.2'
+            );
+        }
+        wp_enqueue_style('fp-exp-fontawesome');
+
         $admin_css = Helpers::resolve_asset_rel([
             'assets/css/dist/fp-experiences-admin.min.css',
             'assets/css/admin.css',
@@ -549,7 +559,7 @@ final class ExperienceMetaBoxes implements HookableInterface
         wp_enqueue_style(
             'fp-exp-admin',
             FP_EXP_PLUGIN_URL . $admin_css,
-            Helpers::admin_style_dependencies(),
+            array_merge(Helpers::admin_style_dependencies(), ['fp-exp-fontawesome']),
             Helpers::asset_version($admin_css)
         );
 

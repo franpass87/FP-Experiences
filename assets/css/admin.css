@@ -1739,6 +1739,15 @@ label.fp-exp-checkbox-grid__item:focus-within {
     height: 18px;
 }
 
+.fp-exp-checkbox-grid__icon .fa-solid,
+.fp-exp-checkbox-grid__icon .fa-regular,
+.fp-exp-checkbox-grid__icon .fa-light {
+    font-size: 18px;
+    line-height: 1;
+    width: 1em;
+    text-align: center;
+}
+
 .fp-exp-checkbox-grid__body {
     display: flex;
     flex-direction: column;

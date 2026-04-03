@@ -2,6 +2,12 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.6.15] - 2026-04-03
+
+### Changed
+
+- **Badge esperienza (predefiniti)**: icone da set **Font Awesome 6 Solid** (`fa-users`, `fa-utensils`, `fa-wine-glass-empty`, `fa-droplet`, `fa-mountain-sun`, `fa-hammer`, `fa-tag`) al posto degli SVG custom; stesso stile riconoscibile in admin e sul frontend. In modifica esperienza viene caricato Font Awesome 6.5.2 (CDN) come dipendenza del CSS admin. CSS griglia checkbox e pagina esperienza: regole per `.fa-solid` / `.fa-regular` / `.fa-light` accanto agli SVG. Il filtro `fp_exp_experience_badge_icon_registry` può ancora sovrascrivere con SVG o altro HTML.
+
 ## [1.6.14] - 2026-04-03
 
 ### Added

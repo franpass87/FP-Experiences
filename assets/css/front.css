@@ -3248,6 +3248,15 @@ p.fp-exp-special-requests__group-title,
     flex-shrink: 0;
 }
 
+.fp-exp-hero__fact-icon .fa-solid,
+.fp-exp-hero__fact-icon .fa-regular,
+.fp-exp-hero__fact-icon .fa-light {
+    font-size: 1.15rem;
+    line-height: 1;
+    width: 1em;
+    text-align: center;
+}
+
 .fp-exp-hero__fact--languages,
 .fp-exp-hero__fact--duration {
     align-items: flex-start;
@@ -3445,6 +3454,15 @@ p.fp-exp-special-requests__group-title,
     width: 1.35rem;
     height: 1.35rem;
     display: block;
+}
+
+.fp-exp-overview__trait-icon .fa-solid,
+.fp-exp-overview__trait-icon .fa-regular,
+.fp-exp-overview__trait-icon .fa-light {
+    font-size: 1.35rem;
+    line-height: 1;
+    width: 1em;
+    text-align: center;
 }
 
 .fp-exp-overview__list-body {
