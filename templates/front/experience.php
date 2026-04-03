@@ -297,6 +297,25 @@ $event_date_label = isset($event_meta['date_label']) ? (string) $event_meta['dat
 $cta_label = $is_single_event_mode
     ? esc_html__('Prenota il tuo posto', 'fp-experiences')
     : esc_html__('Controlla disponibilità', 'fp-experiences');
+// Copy pubblico: "evento" invece di "esperienza" per eventi a data fissa
+$page_label_gift_title = $is_single_event_mode
+    ? esc_html__('Regala questo evento', 'fp-experiences')
+    : esc_html__('Regala questa esperienza', 'fp-experiences');
+$page_label_why_special = $is_single_event_mode
+    ? esc_html__('Perché questo evento è speciale', 'fp-experiences')
+    : esc_html__('Perché questa esperienza è speciale', 'fp-experiences');
+$page_label_inclusions_summary = $is_single_event_mode
+    ? esc_html__('Cosa aspettarsi il giorno dell\'evento e cosa è a pagamento.', 'fp-experiences')
+    : esc_html__('Cosa aspettarsi il giorno dell\'esperienza e cosa è a pagamento.', 'fp-experiences');
+$page_label_gallery_title = $is_single_event_mode
+    ? esc_html__('Uno sguardo all\'evento', 'fp-experiences')
+    : esc_html__('Uno sguardo all\'esperienza', 'fp-experiences');
+$page_label_overview_traits = $is_single_event_mode
+    ? esc_html__('Caratteristiche evento', 'fp-experiences')
+    : esc_html__('Caratteristiche esperienza', 'fp-experiences');
+$page_gift_checkout_note = $is_single_event_mode
+    ? esc_html__('Potrai verificare il totale e completare il pagamento al checkout. Il destinatario riceverà il voucher la mattina programmata o immediatamente dopo il pagamento se non è stata selezionata una data. La data dell\'evento verrà scelta dal destinatario in fase di riscatto del voucher.', 'fp-experiences')
+    : esc_html__('Potrai verificare il totale e completare il pagamento al checkout. Il destinatario riceverà il voucher la mattina programmata o immediatamente dopo il pagamento se non è stata selezionata una data. La data dell\'esperienza verrà scelta dal destinatario in fase di riscatto del voucher.', 'fp-experiences');
 $price_from_display = isset($experience['price_from_display']) ? (string) $experience['price_from_display'] : '';
 // Non mostrare il prezzo se è 0
 if ('' !== $price_from_display && (float) $price_from_display <= 0) {
@@ -477,7 +496,7 @@ $sticky_price_display = '' !== $price_from_display ? $format_currency($price_fro
                                 <dl class="fp-exp-overview__grid">
                                     <div class="fp-exp-overview__item">
                                         <dt class="fp-exp-overview__term">
-                                            <span class="fp-exp-overview__term-label"><?php esc_html_e('Caratteristiche esperienza', 'fp-experiences'); ?></span>
+                                            <span class="fp-exp-overview__term-label"><?php echo $page_label_overview_traits; ?></span>
                                         </dt>
                                         <dd class="fp-exp-overview__definition">
                                             <ul class="fp-exp-overview__list" role="list">
@@ -514,7 +533,7 @@ $sticky_price_display = '' !== $price_from_display ? $format_currency($price_fro
                     <header class="fp-exp-section__header">
                         <div class="fp-exp-section__heading">
                             <span class="fp-exp-section__icon" aria-hidden="true"><?php echo $get_section_icon('gallery'); ?></span>
-                            <h2 class="fp-exp-section__title"><?php esc_html_e('Uno sguardo all\'esperienza', 'fp-experiences'); ?></h2>
+                            <h2 class="fp-exp-section__title"><?php echo $page_label_gallery_title; ?></h2>
                         </div>
                     </header>
                     <div class="fp-exp-gallery__track" role="list">
@@ -576,7 +595,7 @@ $sticky_price_display = '' !== $price_from_display ? $format_currency($price_fro
                         <div class="fp-exp-gift__content">
                             <div class="fp-exp-section__heading">
                                 <span class="fp-exp-section__icon" aria-hidden="true"><?php echo $get_section_icon('gift'); ?></span>
-                                <h2 class="fp-exp-gift__title fp-exp-section__title"><?php esc_html_e('Regala questa esperienza', 'fp-experiences'); ?></h2>
+                                <h2 class="fp-exp-gift__title fp-exp-section__title"><?php echo $page_label_gift_title; ?></h2>
                             </div>
                             <p class="fp-exp-gift__description"><?php esc_html_e('Acquista un voucher e invialo con un messaggio personalizzato in pochi clic.', 'fp-experiences'); ?></p>
                         </div>
@@ -588,7 +607,7 @@ $sticky_price_display = '' !== $price_from_display ? $format_currency($price_fro
                             aria-haspopup="dialog"
                             aria-expanded="false"
                         >
-                            <?php esc_html_e('Regala questa esperienza', 'fp-experiences'); ?>
+                            <?php echo $page_label_gift_title; ?>
                         </button>
                     </div>
                 </section>
@@ -619,7 +638,7 @@ $sticky_price_display = '' !== $price_from_display ? $format_currency($price_fro
                         </button>
                         <div class="fp-gift">
                             <div class="fp-gift__inner">
-                                <h2 class="fp-gift__title" id="fp-exp-gift-title"><?php esc_html_e('Regala questa esperienza', 'fp-experiences'); ?></h2>
+                                <h2 class="fp-gift__title" id="fp-exp-gift-title"><?php echo $page_label_gift_title; ?></h2>
                                 <p class="fp-gift__intro" id="fp-exp-gift-intro"><?php esc_html_e('Acquista un voucher, personalizza un messaggio e invialo via email in pochi clic.', 'fp-experiences'); ?></p>
                                 <div class="fp-gift__feedback" data-fp-gift-feedback aria-live="polite" hidden></div>
                                 <form class="fp-gift__form" data-fp-gift-form novalidate>
@@ -740,7 +759,7 @@ $sticky_price_display = '' !== $price_from_display ? $format_currency($price_fro
                                             </fieldset>
                                         <?php endforeach; ?>
                                     <?php endif; ?>
-                                    <p class="fp-gift__note"><?php esc_html_e('Potrai verificare il totale e completare il pagamento al checkout. Il destinatario riceverà il voucher la mattina programmata o immediatamente dopo il pagamento se non è stata selezionata una data. La data dell’esperienza verrà scelta dal destinatario in fase di riscatto del voucher.', 'fp-experiences'); ?></p>
+                                    <p class="fp-gift__note"><?php echo $page_gift_checkout_note; ?></p>
                                     <button type="submit" class="fp-exp-button" data-fp-gift-submit>
                                         <?php esc_html_e('Procedi al pagamento', 'fp-experiences'); ?>
                                     </button>
@@ -757,7 +776,7 @@ $sticky_price_display = '' !== $price_from_display ? $format_currency($price_fro
                     <header class="fp-exp-section__header">
                         <div class="fp-exp-section__heading">
                             <span class="fp-exp-section__icon" aria-hidden="true"><?php echo $get_section_icon('highlights'); ?></span>
-                            <h2 class="fp-exp-section__title"><?php esc_html_e('Perché questa esperienza è speciale', 'fp-experiences'); ?></h2>
+                            <h2 class="fp-exp-section__title"><?php echo $page_label_why_special; ?></h2>
                         </div>
                     </header>
                     <div class="fp-exp-section__body">
@@ -785,7 +804,7 @@ $sticky_price_display = '' !== $price_from_display ? $format_currency($price_fro
                             <h2 class="fp-exp-section__title"><?php esc_html_e('Cosa è incluso', 'fp-experiences'); ?></h2>
                         </div>
                         <?php if (! empty($exclusions)) : ?>
-                            <p class="fp-exp-section__summary"><?php esc_html_e('Cosa aspettarsi il giorno dell’esperienza e cosa è a pagamento.', 'fp-experiences'); ?></p>
+                            <p class="fp-exp-section__summary"><?php echo $page_label_inclusions_summary; ?></p>
                         <?php endif; ?>
                     </header>
                     <div class="fp-exp-section__body">

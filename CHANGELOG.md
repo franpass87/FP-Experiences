@@ -2,6 +2,12 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.5.53] - 2026-04-03
+
+### Changed
+
+- **Pagina esperienza (`[fp_exp_page]`) — evento a data fissa**: titoli e testi pubblici usano **«evento»** al posto di **«esperienza»** dove pertinente (regalo, highlights, galleria, caratteristiche in overview, riassunto inclusions, nota checkout regalo). Le esperienze ricorrenti restano invariate.
+
 ## [1.5.52] - 2026-04-03
 
 ### Changed
