@@ -590,6 +590,8 @@ final class AdminMenu implements HookableInterface
 
     /**
      * Aggiunge `fp-exp-admin-shell` sulle schermate gestite dal plugin (CSS bottoni/tab/token DMS coerenti).
+     *
+     * Include l’editor singolo `post.php` per i CPT FP (`fp_experience`, ecc.) quando `screen->base` è `post`.
      */
     public function add_admin_body_class(string $classes): string
     {
@@ -610,7 +612,15 @@ final class AdminMenu implements HookableInterface
             'fp_exp_gift_voucher',
         ];
 
-        $is_managed = in_array($screen_id, $managed_screens, true) || 0 === strpos($screen_id, 'fp-exp-dashboard_page_');
+        $screen_base = $screen->base ?? '';
+        $screen_post_type = $screen->post_type ?? '';
+        // CPT FP con editor post.php: assicura fp-exp-admin-shell (bottoni/token DMS in meta box).
+        $fp_shell_post_types = ['fp_experience', 'fp_meeting_point', 'fp_exp_gift_voucher'];
+
+        $is_managed = in_array($screen_id, $managed_screens, true)
+            || 0 === strpos($screen_id, 'fp-exp-dashboard_page_')
+            || ('post' === $screen_base && in_array($screen_post_type, $fp_shell_post_types, true));
+
         if ($is_managed && false === strpos($classes, 'fp-exp-admin-shell')) {
             $classes .= ' fp-exp-admin-shell';
         }

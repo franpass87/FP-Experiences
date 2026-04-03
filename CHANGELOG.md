@@ -2,6 +2,17 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.5.56] - 2026-04-03
+
+### Changed
+
+- **Admin — badge di fiducia (cognitive biases)**: griglia `.fp-exp-checkbox-grid__item` come card DMS (bordo 2px, raggio `--radius-md`, hover viola, stato `:has(input:checked)` con sfondo/bordo primario FP). Icona in tile viola chiaro; titolo/tagline/descrizione con `--fpdms-text` / `--fpdms-primary-dark` / `--fpdms-text-light`. Campo ricerca `.fp-exp-checkbox-grid__search-input` allineato a bordi/token DMS e focus ring. Variante `.fp-exp-checkbox-grid__badge` e contatore max selezione aggiornati ai colori DMS (niente più accent burgundy `#8b1e3f`). `.fp-exp-field__description--status` in viola DMS.
+- **Dark admin**: regole per search, card item, icona e testi nella griglia badge di fiducia.
+
+### Fixed
+
+- **`fp-exp-admin-shell` su editor CPT**: quando `screen->base === 'post'` e `post_type` è `fp_experience`, `fp_meeting_point` o `fp_exp_gift_voucher`, viene aggiunta la classe body così i bottoni WP nella meta box ereditano gli stili DMS (gradiente primario, secondari bordo FP) anche dove lo `screen->id` non coincide con gli id in lista.
+
 ## [1.5.55] - 2026-04-03
 
 ### Changed
