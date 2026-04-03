@@ -2,164 +2,111 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
-## [1.6.13] - 2026-04-03
+## [1.6.14] - 2026-04-02
+
+### Removed
+
+- **`ExperienceMetaBoxes`**: eliminato il corpo morto (~3300 righe) — vecchi `render_*_tab`, `save_*_meta`, getter e helper duplicati rispetto agli handler; restano bootstrap, meta box, asset, salvataggio delegato agli handler, `maybe_generate_recurrence_slots`, `has_pricing`.
 
 ### Changed
 
-- **Overview «Caratteristiche esperienza/evento»**: ogni tratto è una card con icona badge (registry SVG), sfondo leggermente tintato, bordo e hover; più spazio sotto il titolo sezione; descrizione secondaria separata da un sottile divisore per gerarchia visiva più chiara.
+- **`tools/sync-source-to-dist-build.ps1`**: copia anche `src/Admin/ExperienceMetaBoxes.php` verso `dist/fp-experiences` e `build/fp-experiences`; `npm run sync:dist` allinea i mirror.
 
-## [1.6.12] - 2026-04-03
+## [1.5.59] - 2026-04-02
 
 ### Fixed
 
-- **Box regalo in pagina esperienza**: con evento a data singola e vendite chiuse il blocco non veniva più mostrato perché `gift.enabled` dipendeva dalle vendite aperte. Ora la sezione resta visibile se il regalo è abilitato per l’esperienza; l’acquisto resta bloccato lato contesto/API con messaggio in hero e in modale (senza form).
+- **Accessibilità / HTML**: `MetaBoxHelpers::render_tooltip()` usa `id="{base}-tooltip-trigger"` invece dello stesso id della descrizione campo, eliminando id duplicati nel DOM.
+- **Dettagli (pagina collegata)**: un solo `id="fp-exp-linked-page-desc"` per la descrizione; `role="group"` dei pulsanti sempre con `aria-describedby` risolto; copy di fallback quando la pagina esiste ma manca l’etichetta di stato.
 
-### Added
-
-- **CSS**: layout `.fp-exp-gift__*` in hero, avviso `.fp-exp-gift__notice--sales-closed`, stato `.fp-gift__intro--blocked` in modale.
-
-## [1.6.11] - 2026-04-03
+## [1.5.58] - 2026-04-02
 
 ### Changed
 
-- **Modale regalo**: icona decorativa accanto al titolo (stesso stile `fp-exp-section__icon` / `fa-gift` della sezione hero).
+- **Admin CSS**: residui burgundy su `.fp-exp-addon-media__placeholder`, `.fp-exp-chip` / `.fp-exp-chip__remove` e bordo tab attiva in dark (`html.fp-exp-dark .fp-exp-tab[aria-selected="true"]`) portati su palette DMS (primario `#667eea`).
+- **Meta box — tooltip**: `MetaBoxHelpers::render_tooltip()` con `tabindex="0"`, `role="img"`, `aria-label` sul trigger e `aria-hidden="true"` sull’icona dashicons.
 
-## [1.6.10] - 2026-04-03
+### Removed
+
+- **`ExperienceMetaBoxes`**: eliminati metodi di render/salvataggio tab deprecati non più usati (flusso solo handler); rimosso `error_log` di debug su `cognitive_biases` nel salvataggio; pulizia `use` non referenziati.
 
 ### Fixed
 
-- **Vendite chiuse (evento a data singola)**: il riepilogo WooCommerce e RTB riabilitava la CTA dopo selezione slot o aggiornamento stato; ora rispetta `eventMeta.ticket_sales_closed` in `front.js`, `summary-woo.js` e `summary-rtb.js`.
+- **Build**: rigenerato `assets/css/dist/fp-experiences-admin.min.css` (e copia in `build/fp-experiences/…`) da `admin.css`.
 
-## [1.6.9] - 2026-04-03
-
-### Added
-
-- **Eventi a data singola**: meta opzionale *Fine vendite biglietti* (`_fp_event_ticket_sales_end`) nel tab Dettagli; dopo quella data/ora le vendite si chiudono automaticamente. Senza data di fine, le vendite restano possibili fino all’inizio dell’evento; da quell’istante restano chiuse. Controlli lato server su `cart/set`, checkout, RTB (submit e quote), acquisto voucher regalo e API disponibilità; widget con messaggio, slot vuoti e CTA disabilitate via JS; regalo esperienza nascosto sulla pagina esperienza quando le vendite sono chiuse.
-
-## [1.6.8] - 2026-04-03
+## [1.5.57] - 2026-04-03
 
 ### Changed
 
-- **Modale regalo (estetica)**: backdrop con alone colore primario e blur più morbido; `::before` sul dialog (striscia gradient brand); dialog con doppio gradient e ombre più profonde; focus ring sul dialog legato al primario; pulsante chiudi con bordo e stato hover tintato; intro con bordo sinistro e alone leggero; titolo con sottolinea gradient; griglia form, ticket row, fieldset addon e card addon con gradient/ombre coerenti; input con raggio 12px, ombra interna leggera e hover; footer con alone primario in `inset`; nota pre-checkout come card; CTA con hover/active e `prefers-reduced-motion` per disabilitare translate su submit/addon.
+- **Admin — tooltip** (`.fp-exp-tooltip` / `.fp-exp-tooltip__content`): trigger circolare con bordo/sfondo viola DMS, dashicons proporzionati, hover/focus-visible coerenti; bolla con testo `--fpdms-text`, bordo viola leggero, sfondo bianco con gradiente da accento, ombre `shadow-md` + alone viola; `cursor: help`. **Dark** (`html.fp-exp-dark`): trigger e bolla con palette viola/chiaro su fondo scuro.
 
-## [1.6.7] - 2026-04-03
+## [1.5.56] - 2026-04-03
+
+### Changed
+
+- **Admin — badge di fiducia (cognitive biases)**: griglia `.fp-exp-checkbox-grid__item` come card DMS (bordo 2px, raggio `--radius-md`, hover viola, stato `:has(input:checked)` con sfondo/bordo primario FP). Icona in tile viola chiaro; titolo/tagline/descrizione con `--fpdms-text` / `--fpdms-primary-dark` / `--fpdms-text-light`. Campo ricerca `.fp-exp-checkbox-grid__search-input` allineato a bordi/token DMS e focus ring. Variante `.fp-exp-checkbox-grid__badge` e contatore max selezione aggiornati ai colori DMS (niente più accent burgundy `#8b1e3f`). `.fp-exp-field__description--status` in viola DMS.
+- **Dark admin**: regole per search, card item, icona e testi nella griglia badge di fiducia.
 
 ### Fixed
 
-- **Modale regalo / stacking**: il nodo `[data-fp-gift]` viene portato su `document.body` (stesso approccio della barra sticky), con copia delle custom properties da `.fp-exp`, inserito dopo `[data-fp-sticky-bar]` quando anch’esso è su `body`. Così il modale resta sopra header, footer e barra «Prenota il tuo posto» (`z-index` 2147483647 vs 2147483640). **`setupGiftModal`** è spostato **prima** di `if (!widget) return` così listener e form restano attivi anche con sidebar disattivata.
-
-## [1.6.6] - 2026-04-03
-
-### Changed
-
-- **Modale regalo (UX/UI)**: layout a colonna sul dialog (`flex`); contenuto form in `.fp-gift-modal__scroll` con overflow; footer `.fp-gift__footer` sempre visibile con nota pre-checkout e CTA; etichette di gruppo «Chi regala» / «Chi riceve il regalo»; asterisco visivo sui campi obbligatori (`label:has(+ input[required])`); animazione `transform`+`opacity` all’apertura; `document.body.classList.add('fp-modal-open')` insieme a `overflow: hidden`; `aria-describedby` del dialog esteso alla nota (`fp-exp-gift-checkout-note`); `autocomplete` su nome/email.
-- **i18n**: nuove stringhe in `AutoTranslator` e in `fp-experiences-{en,en_US,de,de_DE}.po`.
-
-## [1.6.5] - 2026-04-03
-
-### Added
-
-- **`tools/sync-source-to-dist-build.ps1`** + **`npm run sync:dist`**: copia da junction verso `dist/fp-experiences` e `build/fp-experiences` i file che divergono più spesso (`assets/css/front.css`, `assets/js/front.js` incluso mirror in `assets/js/dist/`, `templates/front/experience.php`, `fp-experiences.php`, `src/Localization/AutoTranslator.php`, tutti i `languages/*.po` e `fp-experiences.pot`). Lo ZIP di release resta generato da `.github/scripts/build-zip.sh` (rsync dalla root, esclude `dist`/`build`).
-
-### Changed
-
-- **i18n**: aggiornati `fp-experiences-en.po`, `fp-experiences-en_US.po`, `fp-experiences-de.po`, `fp-experiences-de_DE.po` con due `msgid` distinti per la nota modale regalo (esperienza ricorrente vs evento a data singola), allineati a `esc_html__()` nel template.
-
-## [1.6.4] - 2026-04-03
-
-### Changed
-
-- **Pagina esperienza — modale regalo (evento a data singola)**: testo della nota pre-checkout aggiornato — distingue la **data di consegna email** (campo opzionale) dalla **data dell’evento** (già fissa); al riscatto si confermano i dati senza scegliere un’altra data. Allineata voce in `AutoTranslator` (EN).
-
-## [1.6.3] - 2026-04-03
-
-### Changed
-
-- **Modale regalo**: rimosso `max-width` sul `input[type=date]` (allineato agli altri campi sulla riga intera); `min-width: 0` su tutti gli input della griglia per evitare overflow in flex/grid; altezza minima coerente per date/datetime-local/time; nota sotto la data con `max-width` in `ch` solo per leggibilità del testo; `scroll-padding-bottom` sul dialog.
-
-## [1.6.2] - 2026-04-03
-
-### Fixed
-
-- **Pagina esperienza — barra CTA fissa (mobile)**: con temi che avvolgono il contenuto in uno stacking context a basso `z-index` (es. Salient *Material* `.ocm-effect-wrap`), un `position: fixed` interno non può dipingere sopra il footer (anche con *footer reveal*). La barra `[data-fp-sticky-bar]` viene spostata su `document.body` all’init e riceve le custom properties da `.fp-exp` (gutter, colori, radius). `z-index` della barra impostato a `2147483640` (sotto il modale regalo).
-
-## [1.6.1] - 2026-04-03
-
-### Changed
-
-- **Modale regalo (pagina esperienza)**: ridotti margini e annidamenti visivi (griglia unica per i campi, separatore leggero per biglietti/messaggio); dialog con ombra e accento più curati; campo data consegna su riga intera (`fp-gift__field--full`). *(Allineamento larghezza input data vs altri campi in v1.6.3.)*
-- **Responsive**: media query ≤600px aggiornata (padding griglia, titolo, righe biglietto con wrap, quantità a larghezza utile).
-
-## [1.6.0] - 2026-04-03
-
-### Added
-
-- **Esperienza → Dettagli → Widget — Richieste speciali**: scelta delle **checkbox predefinite** (7 opzioni in gruppi alimentari / accessibilità / celebrazioni) e righe **personalizzate** (etichetta + slug opzionale). Configurazione salvata in `_fp_widget_special_requests_items` (JSON). Se coincide con l’elenco predefinito completo, la meta non viene salvata (comportamento come prima).
-- **Filtro** `fp_exp_special_requests_checkbox_items` per alterare l’elenco passato al template del widget.
-- **`SpecialRequestsOptions`** (`src/Utils/SpecialRequestsOptions.php`): catalogo preset e normalizzazione dati.
-- **Frontend**: `data-fp-special-request-label` sulle checkbox; `front.js` invia al carrello/RTB le **etichette** leggibili (con fallback allo slug/valore).
+- **`fp-exp-admin-shell` su editor CPT**: quando `screen->base === 'post'` e `post_type` è `fp_experience`, `fp_meeting_point` o `fp_exp_gift_voucher`, viene aggiunta la classe body così i bottoni WP nella meta box ereditano gli stili DMS (gradiente primario, secondari bordo FP) anche dove lo `screen->id` non coincide con gli id in lista.
 
 ## [1.5.55] - 2026-04-03
 
-### Fixed
+### Changed
 
-- `WidgetShortcode::get_context()`: rimossa chiamata ridondante a `getExperienceRepository()` (il repository era già risolto all’inizio del metodo).
+- **Admin — meta box esperienza**: rimosso `position: sticky` da `.fp-exp-metabox-sticky-head` (ora `static`); l’etichetta e la riga tab **non restano fisse** scorrendo la pagina, restano nel flusso della meta box.
 
 ## [1.5.54] - 2026-04-03
 
-### Changed
+### Fixed
 
-- **Barra CTA sticky pagina esperienza**: margini orizzontali aumentati e calcolati come `safe-area + clamp(2.75rem … 4rem)`; variabile ereditata `--fp-exp-sticky-gutter-x` (default sulla barra, override possibile su `.fp-exp-page`) per ridurre sovrapposizioni con pulsanti fissi (es. accessibilità, impostazioni, privacy).
+- **Meta box — tab Policy/FAQ**: aggiunto `hidden` sul `<section class="fp-exp-tab-panel" data-tab-panel="policy">` come sulle altre tab non predefinite, per evitare che il pannello sia visibile insieme a «Dettagli» finché non gira `initTabs` (griglia `.fp-exp-tab-panels`).
+- **Policy**: `label for` allineato a `id="fp-exp-policy-text"` sulla textarea cancellazione (accessibilità).
+- **CSS meta box**: `.fp-exp-field__subtitle` nel body delle card DMS senza `padding-left: 32px` ereditato dalle regole pensate per i vecchi fieldset (allineamento sottosezioni es. «Biglietti» nella tab prezzi).
 
 ## [1.5.53] - 2026-04-03
 
-### Changed
+### Fixed
 
-- **Pagina esperienza (`[fp_exp_page]`) — evento a data fissa**: titoli e testi pubblici usano **«evento»** al posto di **«esperienza»** dove pertinente (regalo, highlights, galleria, caratteristiche in overview, riassunto inclusions, nota checkout regalo). Le esperienze ricorrenti restano invariate.
+- **Admin — meta box esperienza**: titoli delle sezioni (`.fp-exp-metabox-section__title`) e icone nell’header delle card risultavano **tagliati in alto** per `overflow: hidden` sul wrapper meta box / sulle card DMS in combinazione con `border-radius`. Wrapper `.fp-exp-experience-metabox` e sezioni `.fp-exp-metabox-section.fp-exp-dms-card` usano `overflow: visible`; header sezione con padding verticale maggiore, `line-height` titolo 1.45, dashicons 20×20px con `flex-shrink: 0`.
 
 ## [1.5.52] - 2026-04-03
 
 ### Changed
 
-- **Pagina esperienza — barra CTA fissa (mobile)**: margini orizzontali rispetto al viewport (`left`/`right` + `safe-area`) e angoli superiori arrotondati, per ridurre sovrapposizioni con cookie/privacy e pulsanti tipo back-to-top; testo **«Prenota il tuo posto»** reso più grande (`clamp` su `.fp-exp-page__sticky-button`).
+- **Admin — meta box esperienza (design system FP)**: ogni sezione usa **`.fp-exp-dms-card`** con `fp-exp-dms-card-header` (dashicon + `h3`) e `fp-exp-dms-card-body`, tramite `MetaBoxHelpers::render_metabox_section_open()` / `close()`. Sostituiti i `fieldset` negli handler Details (4 card: generale, media, contenuto/fiducia, pubblicazione), Pricing, Calendar (2), Meeting point, Extras, Policy (2), SEO (2). CSS: separatori tra campi nel body, **bordo 2px + focus ring viola** sui controlli nel body della card; tema scuro per card header/body. I metodi deprecati in `ExperienceMetaBoxes.php` che ancora usano `fieldset` restano per retrocompatibilità.
 
 ## [1.5.51] - 2026-04-03
 
 ### Changed
 
-- **Widget — step Richieste speciali**: le stesse opzioni in **Dettagli** (modalità standard / solo note / step nascosto; titolo, etichetta note, aiuto) valgono per **tutte** le esperienze, non solo per gli eventi a data fissa. Le meta `_fp_single_event_special_requests_*` non vengono più azzerate passando a esperienza ricorrente.
+- **Admin — editor esperienza (meta box)**: wrapper `fp-exp-experience-metabox` + testata sticky (`fp-exp-metabox-sticky-head`) con etichetta che spiega tab vs riquadri; tab principali in stile DMS (token `--fpdms-*`); pannelli e `fieldset` come sottosezioni con bordo superiore **gradient secondary** (teal) e `legend` in stile etichetta maiuscola. **Fix**: rimosso il selettore `.fp-exp-admin .fp-exp-tabs` dalle regole condivise con Impostazioni/Email così l’editor non ereditava margini negativi e chip `nav-tab` sui `button.fp-exp-tab`.
 
 ## [1.5.50] - 2026-04-03
 
-### Added
-
-- **Editor esperienza → Dettagli** (solo con «Evento a data fissa»): controlli sullo step **Richieste speciali** nel widget — modalità standard, solo note libere o step nascosto; titolo step, etichetta note e testo di aiuto opzionali (`_fp_single_event_special_requests_*`).
-
 ### Changed
 
-- **Widget**: per eventi a data singola, testo di aiuto predefinito sotto le richieste speciali riformulato (data/ora già fissi; usare lo spazio per allergie, accessibilità, note per il giorno). Esperienze ricorrenti restano con il copy originale; il campo «Testo di aiuto» in Dettagli resta prioritaria se compilato.
+- **Admin — Calendario**: distinzione visiva tra **navigazione operatore** (Calendario & prenotazioni / RTB / Check-in / Ordini) e **sottoviste** della pagina calendario. Aggiunti contenitore `fp-exp-calendar-view-chooser` con etichetta «Contenuto della sezione …», tab in `fp-exp-calendar-view-tabs` (stile compatto, accento `--fpdms-secondary`, niente underline gradiente DMS); tema scuro dedicato.
 
 ## [1.5.49] - 2026-04-03
 
-### Added
+### Fixed
 
-- **Impostazioni → Gift**: opzione **Regalo su eventi a data singola** (`allow_gift_single_date`, default attivo). Se disattivata, il pulsante «Regala questa esperienza» non compare sulle esperienze con data evento fissa e l’API voucher rifiuta l’acquisto (`VoucherValidationService`).
-
-### Changed
-
-- `Helpers::gift_enabled_for_experience( int $id )` e `Helpers::gift_allow_single_date_events()` per la policy; contesto shortcode pagina esperienza usa `gift.enabled` coerente con l’esperienza.
+- **Admin menu**: voce **Dashboard** sempre nel sottomenu FP Experiences (`add_submenu_page` dedicata, callback vuota perché `add_menu_page` aggancia già `render_home_page`). Hook `register_menu` a priorità **5** così la struttura viene creata **prima** di Onboarding e Import Meeting Points (priorità 10): altrimenti il loro primo `add_submenu_page` faceva generare a WordPress solo la riga clone del parent con titolo «FP Experiences» (come prima voce), poco distinguibile dalla testata del sottomenu.
 
 ## [1.5.48] - 2026-04-03
 
 ### Changed
 
-- **Widget — evento a data singola**: rimossi calendario espandibile e blocco fasce in pagina; resta il box con data/ora in grande. Calendario e lista slot restano nel DOM in area “assist” nascosta per il JS (caricamento slot + checkout). Selezione automatica del **primo** slot disponibile quando ce n’è almeno uno (prima solo se unico slot).
+- **Documentazione**: `docs/ADMIN-SCREENS.md` — checklist meta box editor esperienza aggiornata (2026-04-03): PASS per `pricing`, `calendar`, `meeting-point`, `extras`, `policy` tramite smoke su `post=10` dopo ripristino ambiente locale; nota su limiti snapshot a11y (tab `.fp-exp-tab` non come controlli interattivi nel browser MCP).
+- **Documentazione**: `docs/ADMIN-SCREENS.md` — nota **ripetizione smoke** stesso giorno (navigazione sequenziale): dashboard, tab Email Brevo, tre viste Calendario, Richieste, Check-in, CPT/tassonomia, nuova esperienza, editor `post=10`.
 
-## [1.5.47] - 2026-04-03
+## [1.5.47] - 2026-04-02
 
 ### Changed
 
-- **Frontend — hero evento a data singola**: data/ora sotto al titolo resa più leggibile (`clamp` ~1.2–1.7rem), badge con più contrasto, bordo e ombra leggera (`front.css` `.fp-exp-hero__event-date`).
+- **Documentazione**: `docs/ADMIN-SCREENS.md` — tabella tab meta box «Impostazioni esperienza» (slug, etichette, handler, nota tab SEO nascosto con plugin SEO attivo); checklist editor scomposta per tab; nota follow-up smoke click bloccata da HTTP 500 su ambiente locale.
 
 ## [1.5.46] - 2026-04-02
 
