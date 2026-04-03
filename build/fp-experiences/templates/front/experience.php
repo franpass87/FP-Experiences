@@ -638,7 +638,10 @@ $sticky_price_display = '' !== $price_from_display ? $format_currency($price_fro
                         </button>
                         <div class="fp-gift">
                             <div class="fp-gift__inner">
-                                <h2 class="fp-gift__title" id="fp-exp-gift-title"><?php echo $page_label_gift_title; ?></h2>
+                                <div class="fp-gift__title-row">
+                                    <span class="fp-exp-section__icon" aria-hidden="true"><?php echo $get_section_icon('gift'); ?></span>
+                                    <h2 class="fp-gift__title" id="fp-exp-gift-title"><?php echo $page_label_gift_title; ?></h2>
+                                </div>
                                 <p class="fp-gift__intro" id="fp-exp-gift-intro"><?php esc_html_e('Acquista un voucher, personalizza un messaggio e invialo via email in pochi clic.', 'fp-experiences'); ?></p>
                                 <div class="fp-gift__feedback" data-fp-gift-feedback aria-live="polite" hidden></div>
                                 <form class="fp-gift__form" data-fp-gift-form novalidate>

@@ -2,6 +2,12 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.6.11] - 2026-04-03
+
+### Changed
+
+- **Modale regalo**: icona decorativa accanto al titolo (stesso stile `fp-exp-section__icon` / `fa-gift` della sezione hero).
+
 ## [1.6.10] - 2026-04-03
 
 ### Fixed
