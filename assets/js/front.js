@@ -1544,7 +1544,8 @@
                     // Raccogli richieste speciali (checkbox + textarea)
                     const specialRequestsOptions = [];
                     widget.querySelectorAll('[data-fp-special-request-option]:checked').forEach(function(checkbox) {
-                        specialRequestsOptions.push(checkbox.value);
+                        var srLabel = checkbox.getAttribute('data-fp-special-request-label');
+                        specialRequestsOptions.push(srLabel && srLabel.length ? srLabel : checkbox.value);
                     });
                     
                     const specialRequestsField = widget.querySelector('[data-fp-special-requests]');
@@ -2081,7 +2082,8 @@
                                 // Raccogli checkbox selezionate
                                 const specialRequestsOptions = [];
                                 widget.querySelectorAll('[data-fp-special-request-option]:checked').forEach(function(checkbox) {
-                                    specialRequestsOptions.push(checkbox.value);
+                                    var srLabel = checkbox.getAttribute('data-fp-special-request-label');
+                                    specialRequestsOptions.push(srLabel && srLabel.length ? srLabel : checkbox.value);
                                 });
                                 
                                 // Raccogli testo libero

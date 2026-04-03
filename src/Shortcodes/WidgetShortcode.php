@@ -15,6 +15,7 @@ use FP_Exp\Domain\Booking\Repositories\ExperienceRepositoryInterface;
 use FP_Exp\MeetingPoints\Repository;
 use FP_Exp\Utils\Helpers;
 use FP_Exp\Utils\LanguageHelper;
+use FP_Exp\Utils\SpecialRequestsOptions;
 use FP_Exp\Utils\Theme;
 use WP_Error;
 use WP_Post;
@@ -273,6 +274,18 @@ final class WidgetShortcode extends BaseShortcode
         if (! in_array($sr_mode, ['default', 'notes_only', 'hidden'], true)) {
             $sr_mode = 'default';
         }
+        $sr_items_raw = $repo !== null
+            ? $repo->getMeta($experience_id, '_fp_widget_special_requests_items', '')
+            : get_post_meta($experience_id, '_fp_widget_special_requests_items', true);
+        $checkbox_items = apply_filters(
+            'fp_exp_special_requests_checkbox_items',
+            SpecialRequestsOptions::resolve_items_for_widget($sr_items_raw),
+            $experience_id
+        );
+        if (! is_array($checkbox_items)) {
+            $checkbox_items = SpecialRequestsOptions::resolve_items_for_widget($sr_items_raw);
+        }
+
         $special_requests_config = [
             'mode' => $sr_mode,
             'step_title' => sanitize_text_field(
@@ -290,6 +303,7 @@ final class WidgetShortcode extends BaseShortcode
                     ? $repo->getMeta($experience_id, '_fp_single_event_special_requests_help', '')
                     : get_post_meta($experience_id, '_fp_single_event_special_requests_help', true))
             ),
+            'checkbox_items' => $checkbox_items,
         ];
 
         $cognitive_bias_meta = [];

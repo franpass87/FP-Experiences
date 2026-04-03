@@ -2,6 +2,15 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.6.0] - 2026-04-03
+
+### Added
+
+- **Esperienza → Dettagli → Widget — Richieste speciali**: scelta delle **checkbox predefinite** (7 opzioni in gruppi alimentari / accessibilità / celebrazioni) e righe **personalizzate** (etichetta + slug opzionale). Configurazione salvata in `_fp_widget_special_requests_items` (JSON). Se coincide con l’elenco predefinito completo, la meta non viene salvata (comportamento come prima).
+- **Filtro** `fp_exp_special_requests_checkbox_items` per alterare l’elenco passato al template del widget.
+- **`SpecialRequestsOptions`** (`src/Utils/SpecialRequestsOptions.php`): catalogo preset e normalizzazione dati.
+- **Frontend**: `data-fp-special-request-label` sulle checkbox; `front.js` invia al carrello/RTB le **etichette** leggibili (con fallback allo slug/valore).
+
 ## [1.5.55] - 2026-04-03
 
 ### Fixed

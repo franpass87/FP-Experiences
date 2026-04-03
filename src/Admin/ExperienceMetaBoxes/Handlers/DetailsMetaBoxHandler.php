@@ -8,6 +8,7 @@ use FP_Exp\Admin\ExperienceMetaBoxes\BaseMetaBoxHandler;
 use FP_Exp\Admin\ExperienceMetaBoxes\Traits\MetaBoxHelpers;
 use FP_Exp\Utils\LanguageHelper;
 use FP_Exp\Utils\Helpers;
+use FP_Exp\Utils\SpecialRequestsOptions;
 
 use function absint;
 use function checked;
@@ -21,6 +22,7 @@ use function sanitize_text_field;
 use function sanitize_textarea_field;
 use function wp_get_post_terms;
 use function wp_attachment_is_image;
+use function wp_json_encode;
 
 /**
  * Handler for Details tab in Experience Meta Box.
@@ -51,6 +53,29 @@ final class DetailsMetaBoxHandler extends BaseMetaBoxHandler
         $single_event_sr_title = isset($data['single_event_special_requests_title']) ? (string) $data['single_event_special_requests_title'] : '';
         $single_event_sr_notes_label = isset($data['single_event_special_requests_notes_label']) ? (string) $data['single_event_special_requests_notes_label'] : '';
         $single_event_sr_help = isset($data['single_event_special_requests_help']) ? (string) $data['single_event_special_requests_help'] : '';
+        $sr_enabled_presets = isset($data['special_requests_enabled_presets']) && is_array($data['special_requests_enabled_presets'])
+            ? array_values(array_filter(array_map(
+                static fn ($v): string => sanitize_key((string) $v),
+                $data['special_requests_enabled_presets']
+            )))
+            : SpecialRequestsOptions::PRESET_ORDER;
+        $sr_custom_rows = isset($data['special_requests_custom_rows']) && is_array($data['special_requests_custom_rows'])
+            ? $data['special_requests_custom_rows']
+            : [];
+        $sr_preset_catalog = SpecialRequestsOptions::preset_catalog();
+        $sr_groups = [
+            'food' => [],
+            'access' => [],
+            'celebration' => [],
+        ];
+        foreach (SpecialRequestsOptions::PRESET_ORDER as $sr_pid) {
+            if (isset($sr_preset_catalog[$sr_pid])) {
+                $g = $sr_preset_catalog[$sr_pid]['group'];
+                if (isset($sr_groups[$g])) {
+                    $sr_groups[$g][] = $sr_pid;
+                }
+            }
+        }
         $hero_image = $data['hero_image'] ?? ['id' => 0, 'url' => '', 'width' => 0, 'height' => 0];
         $gallery = $data['gallery'] ?? ['items' => [], 'ids' => []];
         $language_details = $data['languages'] ?? [];
@@ -235,6 +260,76 @@ final class DetailsMetaBoxHandler extends BaseMetaBoxHandler
 
                     <label class="fp-exp-field__label" for="fp-exp-widget-sr-help"><?php esc_html_e('Testo di aiuto sotto le note (opzionale)', 'fp-experiences'); ?></label>
                     <textarea id="fp-exp-widget-sr-help" name="fp_exp_details[single_event_special_requests_help]" rows="2" class="large-text"><?php echo esc_textarea($single_event_sr_help); ?></textarea>
+
+                    <input type="hidden" name="fp_exp_details[special_requests_items_touched]" value="1" />
+
+                    <p class="fp-exp-field__label" style="margin-top:1.25rem;">
+                        <?php esc_html_e('Checkbox nello step (solo se comportamento «Standard»)', 'fp-experiences'); ?>
+                    </p>
+                    <p class="fp-exp-field__description"><?php esc_html_e('Se non salvi nulla qui, restano tutte le opzioni predefinite. Deseleziona le checkbox che non servono e aggiungi righe personalizzate (etichetta obbligatoria; slug opzionale, generato automaticamente se vuoto).', 'fp-experiences'); ?></p>
+
+                    <?php foreach ($sr_groups as $sr_gkey => $sr_pids) : ?>
+                        <?php if (empty($sr_pids)) {
+                            continue;
+                        } ?>
+                        <div class="fp-exp-field" style="margin-top:0.75rem;">
+                            <span class="fp-exp-field__label"><?php echo esc_html(SpecialRequestsOptions::group_title($sr_gkey)); ?></span>
+                            <?php foreach ($sr_pids as $sr_pid) :
+                                $sr_plabel = $sr_preset_catalog[$sr_pid]['label'] ?? $sr_pid;
+                                ?>
+                                <label class="fp-exp-field__checkbox" style="display:block;margin:0.35rem 0;">
+                                    <input
+                                        type="checkbox"
+                                        name="fp_exp_details[special_requests_enabled_presets][]"
+                                        value="<?php echo esc_attr($sr_pid); ?>"
+                                        <?php checked(in_array($sr_pid, $sr_enabled_presets, true)); ?>
+                                    />
+                                    <span><?php echo esc_html($sr_plabel); ?></span>
+                                </label>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php endforeach; ?>
+
+                    <div class="fp-exp-field" style="margin-top:1rem;">
+                        <span class="fp-exp-field__label"><?php echo esc_html(SpecialRequestsOptions::group_title('custom')); ?></span>
+                        <p class="fp-exp-field__description"><?php esc_html_e('Slug tecnico (opzionale): solo lettere, numeri e trattini; usato nel dato inviato al carrello. Se vuoto, viene derivato dall’etichetta.', 'fp-experiences'); ?></p>
+                        <?php
+                        $sr_cr_index = 0;
+                        foreach ($sr_custom_rows as $sr_cr) :
+                            if (! is_array($sr_cr)) {
+                                continue;
+                            }
+                            $sr_cr_label = isset($sr_cr['label']) ? (string) $sr_cr['label'] : '';
+                            $sr_cr_slug = isset($sr_cr['slug']) ? (string) $sr_cr['slug'] : '';
+                            ?>
+                            <div class="fp-exp-field fp-exp-field--columns" style="margin-bottom:0.5rem;align-items:flex-end;">
+                                <div>
+                                    <label class="fp-exp-field__label" for="fp-exp-sr-custom-label-<?php echo esc_attr((string) $sr_cr_index); ?>"><?php esc_html_e('Etichetta', 'fp-experiences'); ?></label>
+                                    <input
+                                        type="text"
+                                        class="regular-text"
+                                        id="fp-exp-sr-custom-label-<?php echo esc_attr((string) $sr_cr_index); ?>"
+                                        name="fp_exp_details[special_requests_custom_rows][<?php echo esc_attr((string) $sr_cr_index); ?>][label]"
+                                        value="<?php echo esc_attr($sr_cr_label); ?>"
+                                    />
+                                </div>
+                                <div>
+                                    <label class="fp-exp-field__label" for="fp-exp-sr-custom-slug-<?php echo esc_attr((string) $sr_cr_index); ?>"><?php esc_html_e('Slug (opz.)', 'fp-experiences'); ?></label>
+                                    <input
+                                        type="text"
+                                        class="regular-text"
+                                        id="fp-exp-sr-custom-slug-<?php echo esc_attr((string) $sr_cr_index); ?>"
+                                        name="fp_exp_details[special_requests_custom_rows][<?php echo esc_attr((string) $sr_cr_index); ?>][slug]"
+                                        value="<?php echo esc_attr($sr_cr_slug); ?>"
+                                        placeholder="<?php echo esc_attr__('auto', 'fp-experiences'); ?>"
+                                    />
+                                </div>
+                            </div>
+                            <?php
+                            ++$sr_cr_index;
+                        endforeach;
+                        ?>
+                    </div>
                 </div>
             <?php $this->render_metabox_section_close(); ?>
 
@@ -1074,6 +1169,8 @@ final class DetailsMetaBoxHandler extends BaseMetaBoxHandler
         $sr_help = $this->sanitize_textarea($raw['single_event_special_requests_help'] ?? '');
         $this->update_or_delete_meta($post_id, 'single_event_special_requests_help', $sr_help !== '' ? $sr_help : null);
 
+        $this->save_widget_special_requests_items($post_id, $raw);
+
         // Hero image
         $hero_image_id = isset($raw['hero_image_id']) ? absint((string) $raw['hero_image_id']) : 0;
         if ($hero_image_id > 0 && wp_attachment_is_image($hero_image_id)) {
@@ -1302,6 +1399,30 @@ final class DetailsMetaBoxHandler extends BaseMetaBoxHandler
         $single_event_sr_notes_label = sanitize_text_field((string) $this->get_meta_value($post_id, 'single_event_special_requests_notes_label', ''));
         $single_event_sr_help = sanitize_textarea_field((string) $this->get_meta_value($post_id, 'single_event_special_requests_help', ''));
 
+        $raw_sr_items = $this->get_meta_value($post_id, 'widget_special_requests_items', '');
+        $parsed_sr_items = SpecialRequestsOptions::parse_stored_meta($raw_sr_items);
+        if ($parsed_sr_items === null) {
+            $special_requests_enabled_presets = SpecialRequestsOptions::PRESET_ORDER;
+            $special_requests_custom_rows = [];
+        } else {
+            $special_requests_enabled_presets = [];
+            $special_requests_custom_rows = [];
+            foreach ($parsed_sr_items as $sr_row) {
+                if (($sr_row['kind'] ?? '') === 'preset') {
+                    $special_requests_enabled_presets[] = (string) ($sr_row['id'] ?? '');
+                } elseif (($sr_row['kind'] ?? '') === 'custom') {
+                    $special_requests_custom_rows[] = [
+                        'slug' => (string) ($sr_row['slug'] ?? ''),
+                        'label' => (string) ($sr_row['label'] ?? ''),
+                    ];
+                }
+            }
+            $special_requests_enabled_presets = array_values(array_filter($special_requests_enabled_presets));
+        }
+        for ($sr_pad = 0; $sr_pad < 2; $sr_pad++) {
+            $special_requests_custom_rows[] = ['slug' => '', 'label' => ''];
+        }
+
         return [
             'short_desc' => $short_desc,
             'duration_minutes' => $duration_minutes,
@@ -1311,6 +1432,8 @@ final class DetailsMetaBoxHandler extends BaseMetaBoxHandler
             'single_event_special_requests_title' => $single_event_sr_title,
             'single_event_special_requests_notes_label' => $single_event_sr_notes_label,
             'single_event_special_requests_help' => $single_event_sr_help,
+            'special_requests_enabled_presets' => $special_requests_enabled_presets,
+            'special_requests_custom_rows' => $special_requests_custom_rows,
             'hero_image' => $hero_image,
             'gallery' => $gallery,
             'gallery_video_url' => $gallery_video_url,
@@ -1337,6 +1460,85 @@ final class DetailsMetaBoxHandler extends BaseMetaBoxHandler
             'age_max' => $age_max,
             'rules_children' => $rules_children,
         ];
+    }
+
+    /**
+     * Salva elenco checkbox richieste speciali widget (JSON) o rimuove meta se equivale al predefinito.
+     *
+     * @param array<string, mixed> $raw
+     */
+    private function save_widget_special_requests_items(int $post_id, array $raw): void
+    {
+        if (empty($raw['special_requests_items_touched'])) {
+            return;
+        }
+
+        $catalog = SpecialRequestsOptions::preset_catalog();
+        $enabled = isset($raw['special_requests_enabled_presets']) && is_array($raw['special_requests_enabled_presets'])
+            ? array_values(array_unique(array_filter(array_map(
+                static fn ($v): string => sanitize_key((string) $v),
+                $raw['special_requests_enabled_presets']
+            ))))
+            : [];
+        $enabled = array_values(array_filter($enabled, static fn (string $id): bool => isset($catalog[$id])));
+
+        $items = [];
+        foreach (SpecialRequestsOptions::PRESET_ORDER as $pid) {
+            if (in_array($pid, $enabled, true)) {
+                $items[] = ['kind' => 'preset', 'id' => $pid];
+            }
+        }
+
+        $custom_raw = isset($raw['special_requests_custom_rows']) && is_array($raw['special_requests_custom_rows'])
+            ? $raw['special_requests_custom_rows']
+            : [];
+
+        $reserved = array_flip(SpecialRequestsOptions::PRESET_ORDER);
+        foreach ($items as $pit) {
+            if (($pit['kind'] ?? '') === 'preset' && isset($pit['id'])) {
+                $reserved[(string) $pit['id']] = true;
+            }
+        }
+
+        foreach ($custom_raw as $crow) {
+            if (! is_array($crow)) {
+                continue;
+            }
+            $label = sanitize_text_field((string) ($crow['label'] ?? ''));
+            if ($label === '') {
+                continue;
+            }
+            $slug_in = sanitize_key((string) ($crow['slug'] ?? ''));
+            $slug = $slug_in !== '' ? $slug_in : SpecialRequestsOptions::slug_from_label($label);
+            $slug = substr(sanitize_key($slug), 0, 60);
+            if ($slug === '') {
+                $slug = 'opt_' . substr(md5($label), 0, 8);
+            }
+            $base = $slug;
+            $n = 1;
+            while (isset($reserved[$slug])) {
+                $slug = substr($base . '_' . (string) $n, 0, 60);
+                ++$n;
+                if ($n > 500) {
+                    $slug = substr($base . '_' . wp_generate_password(4, false, false), 0, 60);
+                    break;
+                }
+            }
+            $reserved[$slug] = true;
+            $items[] = ['kind' => 'custom', 'slug' => $slug, 'label' => $label];
+        }
+
+        if (SpecialRequestsOptions::is_equivalent_to_default($items)) {
+            $this->update_or_delete_meta($post_id, 'widget_special_requests_items', null);
+
+            return;
+        }
+
+        $json = wp_json_encode($items, JSON_UNESCAPED_UNICODE);
+        if (false === $json) {
+            $json = '[]';
+        }
+        $this->update_or_delete_meta($post_id, 'widget_special_requests_items', $json);
     }
 
     private function normalize_event_datetime(string $raw): string
