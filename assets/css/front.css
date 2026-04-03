@@ -3543,6 +3543,15 @@ p.fp-exp-special-requests__group-title,
     height: 20px;
 }
 
+.fp-exp-overview__chip-icon .fa-solid,
+.fp-exp-overview__chip-icon .fa-regular,
+.fp-exp-overview__chip-icon .fa-light {
+    font-size: 1.25rem;
+    line-height: 1;
+    width: 1em;
+    text-align: center;
+}
+
 .fp-exp-overview__chip-body {
     display: flex;
     flex-direction: column;

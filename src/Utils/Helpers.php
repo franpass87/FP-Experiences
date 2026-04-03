@@ -883,14 +883,14 @@ final class Helpers
         }
 
         $defaults = [
-            'shield' => '<svg viewBox="0 0 24 24" role="img" aria-hidden="true" focusable="false"><path fill="currentColor" d="M12 2 4 5v6c0 5.55 3.84 10.74 8 12 4.16-1.26 8-6.45 8-12V5Zm0 15c-2.21-.93-4-4-4-6.74V7.36l4-1.45 4 1.45v2.9C16 13 14.21 16.07 12 17Z"/></svg>',
-            'lock' => '<svg viewBox="0 0 24 24" role="img" aria-hidden="true" focusable="false"><path fill="currentColor" d="M17 8h-1V6a4 4 0 0 0-8 0v2H7a3 3 0 0 0-3 3v8a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3v-8a3 3 0 0 0-3-3Zm-5 9.5A1.5 1.5 0 1 1 13.5 16 1.5 1.5 0 0 1 12 17.5Zm3-9.5H9V6a3 3 0 0 1 6 0Z"/></svg>',
-            'calendar' => '<svg viewBox="0 0 24 24" role="img" aria-hidden="true" focusable="false"><path fill="currentColor" d="M19 3h-1V1h-2v2H8V1H6v2H5a3 3 0 0 0-3 3v14a3 3 0 0 0 3 3h14a3 3 0 0 0 3-3V6a3 3 0 0 0-3-3Zm1 17a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V10h16Zm0-12H4V6a1 1 0 0 1 1-1h1v2h2V5h8v2h2V5h1a1 1 0 0 1 1 1Z"/></svg>',
-            'bolt' => '<svg viewBox="0 0 24 24" role="img" aria-hidden="true" focusable="false"><path fill="currentColor" d="M15.14 3 5 13.65h6l-2.14 7.35L19 9.35h-6Z"/></svg>',
-            'badge' => '<svg viewBox="0 0 24 24" role="img" aria-hidden="true" focusable="false"><path fill="currentColor" d="M19 2H5v20l7-3 7 3Zm-3.21 7.79-4 4a1 1 0 0 1-1.42 0l-2-2 1.42-1.41L11 11.59l3.29-3.3Z"/></svg>',
-            'star' => '<svg viewBox="0 0 24 24" role="img" aria-hidden="true" focusable="false"><path fill="currentColor" d="M12 2 9.18 8.26 2 9.27l5.45 4.86L5.82 21 12 17.27 18.18 21l-1.63-6.87L22 9.27l-7.18-1.01Z"/></svg>',
-            'headset' => '<svg viewBox="0 0 24 24" role="img" aria-hidden="true" focusable="false"><path fill="currentColor" d="M12 2a9 9 0 0 0-9 9v6a3 3 0 0 0 3 3h2v-8H6v-1a6 6 0 0 1 12 0v1h-2v8h2a3 3 0 0 0 3-3v-6a9 9 0 0 0-9-9Zm-1 18h2v2h-2Z"/></svg>',
-            'gift' => '<svg viewBox="0 0 24 24" role="img" aria-hidden="true" focusable="false"><path fill="currentColor" d="M20 7h-1.17A3 3 0 0 0 20 5a3 3 0 0 0-5-2.24L12 5.2 9 2.76A3 3 0 0 0 4 5a3 3 0 0 0 1.17 2H4a2 2 0 0 0-2 2v3a1 1 0 0 0 1 1h1v7a2 2 0 0 0 2 2h4a1 1 0 0 0 1-1v-8h2v8a1 1 0 0 0 1 1h4a2 2 0 0 0 2-2v-7h1a1 1 0 0 0 1-1V9a2 2 0 0 0-2-2ZM6 5a1 1 0 0 1 1.62-.78L11 6H7a1 1 0 0 1-1-1Zm3 15H6v-6h3Zm9 0h-3v-6h3Zm2-8H4V9h16Z"/></svg>',
+            'shield' => self::experience_badge_fa_icon_markup('fa-solid fa-shield-halved'),
+            'lock' => self::experience_badge_fa_icon_markup('fa-solid fa-lock'),
+            'calendar' => self::experience_badge_fa_icon_markup('fa-solid fa-calendar-days'),
+            'bolt' => self::experience_badge_fa_icon_markup('fa-solid fa-bolt'),
+            'badge' => self::experience_badge_fa_icon_markup('fa-solid fa-award'),
+            'star' => self::experience_badge_fa_icon_markup('fa-solid fa-circle-check'),
+            'headset' => self::experience_badge_fa_icon_markup('fa-solid fa-headset'),
+            'gift' => self::experience_badge_fa_icon_markup('fa-solid fa-gift'),
         ];
 
         $registry = apply_filters('fp_exp_cognitive_bias_icon_registry', $defaults);
@@ -925,6 +925,9 @@ final class Helpers
         return self::$cognitive_bias_icon_cache;
     }
 
+    /**
+     * Markup icona badge di fiducia (cognitive bias): predefinito Font Awesome 6 Solid; filtro `fp_exp_cognitive_bias_icon_registry` può restituire SVG/HTML.
+     */
     public static function cognitive_bias_icon_svg(string $icon): string
     {
         $icon = sanitize_key($icon);
@@ -938,9 +941,6 @@ final class Helpers
         return $icons[$icon];
     }
 
-    /**
-     * @return array<string, array{id: string, label: string, description: string, icon: string}>
-     */
     /**
      * @return array<int, array<string, string>>
      */

@@ -2,6 +2,13 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.6.17] - 2026-04-03
+
+### Changed
+
+- **Badge di fiducia (cognitive bias)**: icone predefinite da **Font Awesome 6 Solid** (`fa-shield-halved`, `fa-lock`, `fa-calendar-days`, `fa-bolt`, `fa-award`, `fa-circle-check`, `fa-headset`, `fa-gift`) tramite `experience_badge_fa_icon_markup()`, allineate alla griglia admin e al widget overview. Il filtro `fp_exp_cognitive_bias_icon_registry` può ancora fornire SVG/HTML custom.
+- **CSS frontend**: `.fp-exp-overview__chip-icon` — dimensioni per `.fa-solid` / `.fa-regular` / `.fa-light` come per le altre chip overview.
+
 ## [1.6.16] - 2026-04-03
 
 ### Added
