@@ -1301,7 +1301,7 @@ final class Helpers
         $keys = array_keys($icons);
         sort($keys);
         $labels = [
-            'default' => __('Generica (etichetta)', 'fp-experiences'),
+            'default' => __('Generica', 'fp-experiences'),
             'family' => __('Famiglia / bambini', 'fp-experiences'),
             'taste' => __('Gastronomia', 'fp-experiences'),
             'wine' => __('Vino', 'fp-experiences'),
