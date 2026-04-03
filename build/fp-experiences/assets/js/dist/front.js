@@ -1,9 +1,9 @@
-/**
+﻿/**
  * Frontend JavaScript - Entry point per il frontend
  * Questo file serve come entry point per il frontend
  */
 
-// Inizializza "Leggi di più" IMMEDIATAMENTE (standalone, non aspetta jQuery)
+// Inizializza "Leggi di piÃ¹" IMMEDIATAMENTE (standalone, non aspetta jQuery)
 (function initReadMoreImmediate() {
     'use strict';
     
@@ -34,7 +34,7 @@
             
             const isExpanded = btn.getAttribute('aria-expanded') === 'true';
             const i18n = (window.fpExpConfig && window.fpExpConfig.i18n) || {};
-            const expandText = textSpan.getAttribute('data-expand-text') || i18n.readMore || 'Leggi di più';
+            const expandText = textSpan.getAttribute('data-expand-text') || i18n.readMore || 'Leggi di piÃ¹';
             const collapseText = textSpan.getAttribute('data-collapse-text') || i18n.readLess || 'Mostra meno';
             
             if (isExpanded) {
@@ -50,7 +50,7 @@
             }
         });
         
-        // Nascondi pulsante se testo non è troncato
+        // Nascondi pulsante se testo non Ã¨ troncato
         function checkDescriptions() {
             document.querySelectorAll('[data-fp-text-clamp]').forEach(function(desc) {
                 const wrapper = desc.closest('.fp-listing__description-wrapper');
@@ -148,7 +148,7 @@
     // Delegazione eventi direttamente su document - funziona sempre, anche con contenuti dinamici
     // Usa capture: true per intercettare il click prima di altri listener
     document.addEventListener('click', function(ev) {
-        // Cerca il trigger, anche se il click è sull'icona SVG o sul path
+        // Cerca il trigger, anche se il click Ã¨ sull'icona SVG o sul path
         let trigger = ev.target.closest('[data-fp-accordion-trigger]');
         
         // Se non trovato, potrebbe essere un click diretto sull'icona
@@ -167,7 +167,7 @@
             }
         }
         
-        // Se non è un trigger accordion, esci
+        // Se non Ã¨ un trigger accordion, esci
         if (!trigger) return;
         
         // Verifica che il trigger sia dentro un accordion container
@@ -543,7 +543,7 @@
         return;
     }
     
-    // Inizializza quando il documento è pronto
+    // Inizializza quando il documento Ã¨ pronto
     jQuery(document).ready(function($) {
         // Namespace globale leggero per futura modularizzazione
         if (!window.FPFront) window.FPFront = {};
@@ -607,7 +607,7 @@
 
         /**
          * Barra CTA fissa pagina esperienza: alcuni temi (es. Salient Material) wrappano il contenuto in
-         * .ocm-effect-wrap con z-index basso — un position:fixed interno non può mai stare sopra il footer
+         * .ocm-effect-wrap con z-index basso â€” un position:fixed interno non puÃ² mai stare sopra il footer
          * (footer reveal, ecc.). Spostiamo il nodo su document.body e copiamo le custom properties da .fp-exp.
          */
         (function elevateExperienceStickyBar() {
@@ -646,6 +646,306 @@
             }
         })();
 
+        /**
+         * Modale regalo: stesso stacking della barra sticky â€” su body sta sopra header/footer/CTA tema.
+         * Eseguito prima del gate sul widget cosÃ¬ il portale avviene anche con sidebar disattivata.
+         */
+        (function elevateGiftModalToBody() {
+            const giftModal = document.querySelector('[data-fp-gift]');
+            if (!giftModal || giftModal.getAttribute('data-fp-gift-portal') === 'done' || !document.body) {
+                return;
+            }
+            const source = document.querySelector('.fp-exp.fp-exp-page') || document.querySelector('.fp-exp');
+            try {
+                if (source) {
+                    const cs = window.getComputedStyle(source);
+                    const propsToCopy = [
+                        '--fp-exp-sticky-gutter-x',
+                        '--fp-exp-radius-base',
+                        '--fp-font-family',
+                        '--fp-color-text',
+                        '--fp-color-text-muted',
+                        '--fp-color-primary',
+                        '--fp-color-on-primary',
+                        '--fp-focus-ring',
+                        '--fp-focus-ring-soft',
+                        '--fp-shadow',
+                    ];
+                    propsToCopy.forEach((prop) => {
+                        const v = cs.getPropertyValue(prop).trim();
+                        if (v) {
+                            giftModal.style.setProperty(prop, v);
+                        }
+                    });
+                }
+                const stickyBar = document.querySelector('[data-fp-sticky-bar]');
+                if (stickyBar && stickyBar.parentNode === document.body && stickyBar.nextSibling) {
+                    document.body.insertBefore(giftModal, stickyBar.nextSibling);
+                } else {
+                    document.body.appendChild(giftModal);
+                }
+                giftModal.setAttribute('data-fp-gift-portal', 'done');
+            } catch (e) {
+                /* resta nel markup originale */
+            }
+        })();
+
+        // 7) Gestione modale regalo
+        (function setupGiftModal() {
+            const giftToggleBtn = document.querySelector('[data-fp-gift-toggle]');
+            const giftModal = document.querySelector('[data-fp-gift]');
+            const giftBackdrop = giftModal ? giftModal.querySelector('[data-fp-gift-backdrop]') : null;
+            const giftCloseBtn = giftModal ? giftModal.querySelector('[data-fp-gift-close]') : null;
+            const giftDialog = giftModal ? giftModal.querySelector('[data-fp-gift-dialog]') : null;
+            const giftForm = giftModal ? giftModal.querySelector('[data-fp-gift-form]') : null;
+            const giftSubmitBtn = giftForm ? giftForm.querySelector('[data-fp-gift-submit]') : null;
+            const giftFeedback = giftModal ? giftModal.querySelector('[data-fp-gift-feedback]') : null;
+
+            if (!giftToggleBtn || !giftModal) {
+                return; // No gift functionality on this page
+            }
+
+            // Parse gift configuration
+            let giftConfig = {};
+            try {
+                const configAttr = giftModal.getAttribute('data-fp-gift-config');
+                giftConfig = configAttr ? JSON.parse(configAttr) : {};
+            } catch (e) {
+                // Invalid gift config
+            }
+
+            // Open modal
+            const openGiftModal = () => {
+                giftModal.hidden = false;
+                giftModal.setAttribute('aria-hidden', 'false');
+                giftToggleBtn.setAttribute('aria-expanded', 'true');
+                
+                // Add is-open class for CSS transition
+                setTimeout(() => {
+                    giftModal.classList.add('is-open');
+                }, 10);
+                
+                // Focus on dialog
+                if (giftDialog) {
+                    setTimeout(() => {
+                        giftDialog.focus();
+                    }, 100);
+                }
+                
+                // Prevent body scroll (class + inline for themes that override body)
+                document.body.classList.add('fp-modal-open');
+                document.body.style.overflow = 'hidden';
+            };
+
+            // Close modal
+            const closeGiftModal = () => {
+                // Remove is-open class first for transition
+                giftModal.classList.remove('is-open');
+                
+                // Wait for transition to complete before hiding
+                setTimeout(() => {
+                    giftModal.hidden = true;
+                    giftModal.setAttribute('aria-hidden', 'true');
+                    giftToggleBtn.setAttribute('aria-expanded', 'false');
+                    
+                    // Restore body scroll
+                    document.body.classList.remove('fp-modal-open');
+                    document.body.style.overflow = '';
+                    
+                    // Return focus to toggle button
+                    giftToggleBtn.focus();
+                }, 250); // Match CSS transition duration
+            };
+
+            // Toggle button click
+            giftToggleBtn.addEventListener('click', (ev) => {
+                ev.preventDefault();
+                openGiftModal();
+            });
+
+            // Close button click
+            if (giftCloseBtn) {
+                giftCloseBtn.addEventListener('click', (ev) => {
+                    ev.preventDefault();
+                    closeGiftModal();
+                });
+            }
+
+            // Backdrop click
+            if (giftBackdrop) {
+                giftBackdrop.addEventListener('click', (ev) => {
+                    ev.preventDefault();
+                    closeGiftModal();
+                });
+            }
+
+            // Escape key to close
+            const handleEscapeKey = (ev) => {
+                if (ev.key === 'Escape' && !giftModal.hidden) {
+                    closeGiftModal();
+                }
+            };
+            document.addEventListener('keydown', handleEscapeKey);
+            
+            // Cleanup event listener quando la pagina viene scaricata
+            window.addEventListener('beforeunload', () => {
+                document.removeEventListener('keydown', handleEscapeKey);
+            });
+
+            // Form submission
+            if (giftForm && giftSubmitBtn) {
+                giftForm.addEventListener('submit', async (ev) => {
+                    ev.preventDefault();
+
+                    // Basic validation
+                    if (!giftForm.checkValidity()) {
+                        giftForm.reportValidity();
+                        return;
+                    }
+
+                    // Collect form data
+                    const formData = new FormData(giftForm);
+                    const selectedGiftAddons = [];
+                    giftForm.querySelectorAll('.fp-gift__addons input[type="checkbox"]:checked, .fp-gift__addons input[type="radio"]:checked').forEach((input) => {
+                        const value = (input.value || '').toString().trim();
+                        if (value !== '') {
+                            selectedGiftAddons.push(value);
+                        }
+                    });
+                    const ticketQuantities = {};
+                    let totalGuests = 0;
+                    giftForm.querySelectorAll('input[name^="ticket_quantities["]').forEach((input) => {
+                        const match = input.name.match(/^ticket_quantities\[(.+)\]$/);
+                        if (!match || !match[1]) {
+                            return;
+                        }
+                        const slug = String(match[1]).trim();
+                        const qty = parseInt(input.value, 10) || 0;
+                        if (slug && qty > 0) {
+                            ticketQuantities[slug] = qty;
+                            totalGuests += qty;
+                        }
+                    });
+                    if (Object.keys(ticketQuantities).length > 0 && totalGuests <= 0) {
+                        if (giftFeedback) {
+                            giftFeedback.hidden = false;
+                            giftFeedback.className = 'fp-gift__feedback fp-gift__feedback--error';
+                            giftFeedback.textContent = 'Seleziona almeno 1 biglietto regalo.';
+                        }
+                        return;
+                    }
+                    if (Object.keys(ticketQuantities).length === 0) {
+                        totalGuests = parseInt(formData.get('quantity'), 10) || 1;
+                    }
+                    const firstTicketSlug = Object.keys(ticketQuantities)[0] || '';
+                    const data = {
+                        experience_id: giftConfig.experienceId || 0,
+                        ticket_slug: firstTicketSlug || (formData.get('ticket_slug') || '').toString().trim(),
+                        ticket_quantities: ticketQuantities,
+                        purchaser: {
+                            name: formData.get('purchaser[name]') || '',
+                            email: formData.get('purchaser[email]') || ''
+                        },
+                        recipient: {
+                            name: formData.get('recipient[name]') || '',
+                            email: formData.get('recipient[email]') || ''
+                        },
+                        delivery: {
+                            send_on: formData.get('delivery[send_on]') || ''
+                        },
+                        quantity: totalGuests,
+                        message: formData.get('message') || '',
+                        addons: selectedGiftAddons
+                    };
+
+                    // Disable submit button
+                    giftSubmitBtn.disabled = true;
+                    giftSubmitBtn.textContent = 'Elaborazione...';
+
+                    try {
+                        // Call gift voucher endpoint
+                        const restBaseUrl = (typeof fpExpConfig !== 'undefined' && fpExpConfig.restUrl) 
+                            || (window.wpApiSettings && wpApiSettings.root) 
+                            || (window.location.origin + '/wp-json/fp-exp/v1/');
+                        const response = await fetch(restBaseUrl + 'gift/purchase', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-WP-Nonce': (typeof fpExpConfig !== 'undefined' && fpExpConfig.restNonce) || ''
+                            },
+                            credentials: 'same-origin',
+                            body: JSON.stringify(data)
+                        });
+
+                        if (!response.ok) {
+                            let errorData = {};
+                            try {
+                                errorData = await response.json();
+                            } catch (e) {
+                                // Error parsing gift response
+                            }
+                            throw new Error(errorData.message || 'Errore durante la creazione del voucher regalo');
+                        }
+
+                        const result = await response.json();
+
+                        // Check for payment_url or checkout_url
+                        const checkoutUrl = result.payment_url || result.checkout_url || (result.data && result.data.payment_url);
+
+                        // Tracking: gift_purchase
+                        if (window.FPFront && window.FPFront.tracking) {
+                            var giftQty = data.quantity || 1;
+                            var giftValueRaw = (result && result.value != null) ? parseFloat(result.value) : (result && result.data && result.data.total != null) ? parseFloat(result.data.total) : (giftConfig && giftConfig.priceFrom != null) ? parseFloat(giftConfig.priceFrom) * giftQty : 0;
+                            var giftValue = (typeof giftValueRaw === 'number' && !isNaN(giftValueRaw)) ? giftValueRaw : 0;
+                            window.FPFront.tracking.giftPurchase({
+                                experience_id: data.experience_id,
+                                experience_name: (giftConfig && giftConfig.experienceTitle) || '',
+                                quantity: giftQty,
+                                value: giftValue,
+                                currency: (typeof fpExpConfig !== 'undefined' && fpExpConfig.currency) || 'EUR'
+                            });
+                        }
+
+                        if (checkoutUrl) {
+                            // Redirect to checkout
+                            window.location.href = checkoutUrl;
+                        } else {
+                            // Show success message
+                            if (giftFeedback) {
+                                giftFeedback.hidden = false;
+                                giftFeedback.className = 'fp-gift__feedback fp-gift__feedback--success';
+                                giftFeedback.textContent = 'Voucher regalo creato con successo!';
+                            }
+                            
+                            // Reset form
+                            giftForm.reset();
+                            
+                            // Close modal after 2 seconds
+                            setTimeout(() => {
+                                closeGiftModal();
+                                if (giftFeedback) {
+                                    giftFeedback.hidden = true;
+                                    giftFeedback.textContent = '';
+                                }
+                            }, 2000);
+                        }
+                    } catch (error) {
+                        // Gift voucher error
+                        
+                        // Show error message
+                        if (giftFeedback) {
+                            giftFeedback.hidden = false;
+                            giftFeedback.className = 'fp-gift__feedback fp-gift__feedback--error';
+                            giftFeedback.textContent = error.message || 'Si Ã¨ verificato un errore. Riprova.';
+                        }
+                    } finally {
+                        // Re-enable submit button
+                        giftSubmitBtn.disabled = false;
+                        giftSubmitBtn.textContent = 'Procedi al pagamento';
+                    }
+                });
+            }
+        })();
         if (!widget) {
             return; // nessun widget in pagina
         }
@@ -665,7 +965,7 @@
 
         // 1) Apri il datepicker quando si clicca/focalizza l'input
         if (dateInput) {
-            // su molti browser mobile l'evento click non apre: forziamo focus → showPicker se disponibile
+            // su molti browser mobile l'evento click non apre: forziamo focus â†’ showPicker se disponibile
             const openNativePicker = () => {
                 try {
                     if (typeof dateInput.showPicker === 'function') {
@@ -688,23 +988,23 @@
         const setSlotsLoading = (isLoading) => {
             if (!slotsEl) return;
             if (isLoading) {
-                const defaultLoading = (window.fpExpConfig && window.fpExpConfig.i18n && window.fpExpConfig.i18n.loading) ? window.fpExpConfig.i18n.loading : 'Caricamento…';
+                const defaultLoading = (window.fpExpConfig && window.fpExpConfig.i18n && window.fpExpConfig.i18n.loading) ? window.fpExpConfig.i18n.loading : 'Caricamentoâ€¦';
                 const loadingLabel = (slotsEl.getAttribute('data-loading-label') || defaultLoading);
-                // ✅ XSS fix: usa createElement + textContent invece di innerHTML
+                // âœ… XSS fix: usa createElement + textContent invece di innerHTML
                 const placeholder = document.createElement('p');
                 placeholder.className = 'fp-exp-slots__placeholder';
                 placeholder.textContent = loadingLabel;
                 slotsEl.innerHTML = '';
                 slotsEl.appendChild(placeholder);
             } else {
-                // Rimuovi il loading state - il contenuto verrà sostituito dal renderSlots o dal fallback
+                // Rimuovi il loading state - il contenuto verrÃ  sostituito dal renderSlots o dal fallback
                 slotsEl.innerHTML = '';
             }
         };
 
-        // Funzione semplificata - non più necessaria con input date nativo
+        // Funzione semplificata - non piÃ¹ necessaria con input date nativo
         const showSlotsInline = async (dayElement, date) => {
-            // showSlotsInline non più necessaria - sistema semplificato
+            // showSlotsInline non piÃ¹ necessaria - sistema semplificato
         };
 
         const slotsLoadErrorMsg = (window.fpExpConfig && window.fpExpConfig.i18n && window.fpExpConfig.i18n.slotsLoadError) || 'Impossibile caricare gli slot. Riprova.';
@@ -713,7 +1013,7 @@
         const showSlotsError = (message) => {
             if (!slotsEl) return;
             const text = message || slotsLoadErrorMsg;
-            // ✅ XSS fix: usa createElement + textContent invece di innerHTML
+            // âœ… XSS fix: usa createElement + textContent invece di innerHTML
             const placeholder = document.createElement('p');
             placeholder.className = 'fp-exp-slots__placeholder';
             placeholder.textContent = text;
@@ -742,7 +1042,7 @@
         // Fetch dinamico dagli endpoint REST del plugin
         const fetchAvailability = async (date) => window.FPFront.availability ? window.FPFront.availability.fetchAvailability(date) : [];
 
-        // Cache mensile: { 'YYYY-MM': Set('YYYY-MM-DD'→count) }
+        // Cache mensile: { 'YYYY-MM': Set('YYYY-MM-DD'â†’count) }
         const monthKeyOf = (dateStr) => (window.FPFront.availability ? window.FPFront.availability.monthKeyOf(dateStr) : (dateStr || '').slice(0,7));
         const prefetchMonth = async (yyyyMm) => window.FPFront.availability && window.FPFront.availability.prefetchMonth(yyyyMm);
 
@@ -752,7 +1052,7 @@
             // Availability module initialized
         }
 
-        // Mappa YYYY-MM-DD → array di slot dal dataset (dopo l'inizializzazione!)
+        // Mappa YYYY-MM-DD â†’ array di slot dal dataset (dopo l'inizializzazione!)
         const getCalendarMap = () => (window.FPFront.availability && window.FPFront.availability.getCalendarMap && window.FPFront.availability.getCalendarMap()) || new Map();
         let calendarMap = getCalendarMap();
 
@@ -788,10 +1088,10 @@
                     window.FPFront.slots.renderSlots(items);
                     tryAutoSelectSingleSlot();
                 } else if (isLoading) {
-                    // Fallback: se il modulo slots non è disponibile, rimuovi manualmente il loading
+                    // Fallback: se il modulo slots non Ã¨ disponibile, rimuovi manualmente il loading
                     setSlotsLoading(false);
                     if (items && items.length > 0) {
-                        // Mostra gli slot manualmente se non c'è il modulo
+                        // Mostra gli slot manualmente se non c'Ã¨ il modulo
                         const list = document.createElement('ul');
                         list.className = 'fp-exp-slots__list';
                         items.forEach(slot => {
@@ -869,8 +1169,8 @@
         }
 
         // 3) Click su giorno del calendario con navigazione
-        // Nota: calendarNav viene dichiarato e inizializzato più avanti
-        // Questo codice sarà eseguito dopo l'inizializzazione
+        // Nota: calendarNav viene dichiarato e inizializzato piÃ¹ avanti
+        // Questo codice sarÃ  eseguito dopo l'inizializzazione
         
         // Funzione per aggiornare il mese del calendario
         const updateCalendarMonth = async (calendarNav, date) => {
@@ -914,19 +1214,19 @@
                     calendarMap = getCalendarMap();
                     
                     // Calcola il giorno della settimana del primo giorno del mese
-                    // 0 = Domenica, 1 = Lunedì, ..., 6 = Sabato
+                    // 0 = Domenica, 1 = LunedÃ¬, ..., 6 = Sabato
                     const firstDayOfMonth = new Date(date.getFullYear(), date.getMonth(), 1);
                     // getDay() restituisce 0 (Domenica) - 6 (Sabato)
-                    // Convertiamo in formato Lunedì=0, Martedì=1, ..., Domenica=6
+                    // Convertiamo in formato LunedÃ¬=0, MartedÃ¬=1, ..., Domenica=6
                     let firstDayOfWeek = firstDayOfMonth.getDay();
-                    // Converti: Domenica (0) diventa 6, Lunedì (1) diventa 0, etc.
+                    // Converti: Domenica (0) diventa 6, LunedÃ¬ (1) diventa 0, etc.
                     firstDayOfWeek = firstDayOfWeek === 0 ? 6 : firstDayOfWeek - 1;
                     
                     // Genera tutti i giorni del mese
                     const dayButtons = [];
                     
                     // Aggiungi celle vuote all'inizio per allineare il primo giorno alla colonna corretta
-                    // In questo modo la domenica sarà sempre nella colonna più a destra (7)
+                    // In questo modo la domenica sarÃ  sempre nella colonna piÃ¹ a destra (7)
                     for (let i = 0; i < firstDayOfWeek; i++) {
                         const emptyCell = document.createElement('div');
                         emptyCell.className = 'fp-exp-calendar-nav__day-empty';
@@ -1077,7 +1377,7 @@
             const handleCtaScroll = function(ev) {
                 var btn = ev.target && (ev.target.closest('[data-fp-scroll]'));
                 if (!btn) return;
-                // Evita qualunque navigazione predefinita (es. <a href="…">)
+                // Evita qualunque navigazione predefinita (es. <a href="â€¦">)
                 try { ev.preventDefault(); ev.stopPropagation(); } catch (e) {}
                 var targetKey = btn.getAttribute('data-fp-scroll') || '';
                 if (!targetKey) return;
@@ -1094,7 +1394,7 @@
                     targetEl = document.querySelector('[data-fp-scroll-target="gallery"], .fp-exp-gallery');
                 }
 
-                // Se sezione date è nascosta per configurazione, mostrala
+                // Se sezione date Ã¨ nascosta per configurazione, mostrala
                 if (targetKey === 'calendar' || targetKey === 'dates') {
                     // Se disponibile input data, mettilo a fuoco per invogliare la selezione
                     if (dateInput) {
@@ -1114,11 +1414,11 @@
             });
         })();
 
-        // 4) Click sugli slot → selezione e aggiornamento form RTB o WooCommerce
+        // 4) Click sugli slot â†’ selezione e aggiornamento form RTB o WooCommerce
         (function setupSlotSelection() {
             if (!slotsEl) return;
             
-            // Controlla se RTB è abilitato
+            // Controlla se RTB Ã¨ abilitato
             const rtbEnabled = (config && config.rtb && config.rtb.enabled === true);
             const rtbForm = rtbEnabled ? document.querySelector('form.fp-exp-rtb-form') : null;
             const startInput = rtbForm ? rtbForm.querySelector('input[name="start"]') : null;
@@ -1163,7 +1463,7 @@
                     }
                 }
 
-                // Aggiorna campi RTB solo se RTB è abilitato
+                // Aggiorna campi RTB solo se RTB Ã¨ abilitato
                 if (rtbEnabled && startInput) startInput.value = start;
                 if (rtbEnabled && endInput) endInput.value = end;
 
@@ -1185,13 +1485,13 @@
             if (window.FPFront.slots) window.FPFront.slots.init({ slotsEl });
         })();
 
-        // 5) Controlli quantità biglietti (+ / -)
-        // Inizializza modulo quantità
+        // 5) Controlli quantitÃ  biglietti (+ / -)
+        // Inizializza modulo quantitÃ 
         if (window.FPFront.quantity && window.FPFront.quantity.init) {
             window.FPFront.quantity.init({ widget });
         }
 
-        // Funzione per gestire il flusso WooCommerce quando RTB è disabilitato
+        // Funzione per gestire il flusso WooCommerce quando RTB Ã¨ disabilitato
         function setupWooCommerceFlow() {
             const ctaBtn = document.querySelector('.fp-exp-summary__cta');
             if (!ctaBtn) return;
@@ -1224,7 +1524,7 @@
                 const totalRowEl = summary.querySelector('[data-fp-summary-total-row]');
                 const totalEl = summary.querySelector('[data-fp-summary-total]');
 
-                const loadingLabel = summary.getAttribute('data-loading-label') || 'Aggiornamento prezzo…';
+                const loadingLabel = summary.getAttribute('data-loading-label') || 'Aggiornamento prezzoâ€¦';
                 const errorLabel = summary.getAttribute('data-error-label') || 'Impossibile aggiornare il prezzo. Riprova.';
                 const emptyLabel = summary.getAttribute('data-empty-label') || 'Seleziona i biglietti per vedere il riepilogo';
 
@@ -1299,7 +1599,7 @@
                                 li.className = 'fp-exp-summary__line';
                                 const label = document.createElement('span');
                                 label.className = 'fp-exp-summary__line-label';
-                                label.textContent = `${ticketLabel} × ${qty}`;
+                                label.textContent = `${ticketLabel} Ã— ${qty}`;
                                 const amount = document.createElement('span');
                                 amount.className = 'fp-exp-summary__line-amount';
                                 amount.textContent = formatCurrency(price * qty, currency);
@@ -1321,7 +1621,7 @@
                                 li.className = 'fp-exp-summary__line';
                                 const label = document.createElement('span');
                                 label.className = 'fp-exp-summary__line-label';
-                                label.textContent = `${addonLabel} × ${qty}`;
+                                label.textContent = `${addonLabel} Ã— ${qty}`;
                                 const amount = document.createElement('span');
                                 amount.className = 'fp-exp-summary__line-amount';
                                 amount.textContent = formatCurrency(price * qty, currency);
@@ -1658,7 +1958,7 @@
                         });
                     }
 
-                    // ✅ v0.5.0: Redirect to WooCommerce checkout page
+                    // âœ… v0.5.0: Redirect to WooCommerce checkout page
                     // Cart will be automatically synced via template_redirect hook
                     ctaBtn.textContent = 'Reindirizzamento...';
                     
@@ -1677,7 +1977,7 @@
                     const errorMessage = error.message || '';
                     if (errorMessage.includes('sessione') || errorMessage.includes('scaduta') || errorMessage.includes('session')) {
                         ctaBtn.textContent = 'Sessione scaduta - Ricarica';
-                        alert('La tua sessione è scaduta. Aggiorna la pagina (F5) e riprova.');
+                        alert('La tua sessione Ã¨ scaduta. Aggiorna la pagina (F5) e riprova.');
                     } else {
                         ctaBtn.textContent = 'Errore - Riprova';
                     }
@@ -1690,7 +1990,7 @@
                 }
             });
 
-            // Aggiorna stato del pulsante quando cambiano le quantità o gli slot
+            // Aggiorna stato del pulsante quando cambiano le quantitÃ  o gli slot
             widget.addEventListener('change', updateWooCommerceCtaState);
             widget.addEventListener('input', updateWooCommerceCtaState);
             
@@ -1702,12 +2002,12 @@
             updateWooCommerceCtaState();
         }
 
-        // 6) Aggiornamento riepilogo prezzi (preventivo) al cambio quantità
+        // 6) Aggiornamento riepilogo prezzi (preventivo) al cambio quantitÃ 
         (function setupPriceSummary() {
             const summary = document.querySelector('.fp-exp-summary');
             if (!summary) return;
 
-            // Controlla se RTB è abilitato
+            // Controlla se RTB Ã¨ abilitato
             const rtbEnabled = (config && config.rtb && config.rtb.enabled === true);
             if (!rtbEnabled) {
                 // RTB disabilitato, configurando flusso WooCommerce
@@ -1747,7 +2047,7 @@
             const totalEl = summary.querySelector('[data-fp-summary-total]');
             const disclaimerEl = summary.querySelector('.fp-exp-summary__disclaimer');
 
-            const loadingLabel = summary.getAttribute('data-loading-label') || 'Aggiornamento prezzo…';
+            const loadingLabel = summary.getAttribute('data-loading-label') || 'Aggiornamento prezzoâ€¦';
             const errorLabel = summary.getAttribute('data-error-label') || 'Impossibile aggiornare il prezzo. Riprova.';
             const emptyLabel = summary.getAttribute('data-empty-label') || 'Seleziona i biglietti per vedere il riepilogo';
 
@@ -1800,7 +2100,7 @@
                 return map;
             };
 
-            // Funzione per aggiornare il prezzo nella sticky bar in tempo reale (modalità RTB)
+            // Funzione per aggiornare il prezzo nella sticky bar in tempo reale (modalitÃ  RTB)
             const updateStickyBarPrice = () => {
                 const stickyBar = document.querySelector('[data-fp-sticky-bar]');
                 if (!stickyBar) return;
@@ -1926,7 +2226,7 @@
                     addons: addons,
                 };
 
-                // Non inviamo X-WP-Nonce header perché usiamo un nonce custom nel payload
+                // Non inviamo X-WP-Nonce header perchÃ© usiamo un nonce custom nel payload
                 const quoteHeaders = { 'Content-Type': 'application/json' };
                 
                 fetch(quoteUrl, {
@@ -1957,7 +2257,7 @@
                             li.className = 'fp-exp-summary__line';
                             const label = document.createElement('span');
                             label.className = 'fp-exp-summary__line-label';
-                            label.textContent = `${line.label} × ${line.quantity}`;
+                            label.textContent = `${line.label} Ã— ${line.quantity}`;
                             const amount = document.createElement('span');
                             amount.className = 'fp-exp-summary__line-amount';
                             amount.textContent = formatCurrency(line.line_total, breakdown.currency);
@@ -2022,7 +2322,7 @@
                 debounceTimer = setTimeout(requestQuote, 300);
             };
 
-            // Trigger su cambi quantità biglietti e extra
+            // Trigger su cambi quantitÃ  biglietti e extra
             widget.addEventListener('change', (ev) => {
                 if (ev.target && ev.target.closest('.fp-exp-quantity__input')) {
                     debounceQuote();
@@ -2062,7 +2362,7 @@
             // Gestione submit form RTB via AJAX
             if (rtbForm) {
                 rtbForm.addEventListener('submit', async (ev) => {
-                    if (window.fpExpConfig && window.fpExpConfig.debug) console.log('🔥 RTB SUBMIT HANDLER ESEGUITO - VERSIONE CORRETTA');
+                    if (window.fpExpConfig && window.fpExpConfig.debug) console.log('ðŸ”¥ RTB SUBMIT HANDLER ESEGUITO - VERSIONE CORRETTA');
                     ev.preventDefault();
 
                     const statusEl = rtbForm.querySelector('.fp-exp-rtb-form__status');
@@ -2076,7 +2376,7 @@
                     const phoneInput = rtbForm.querySelector('[name="phone"]');
                     const privacyCheck = rtbForm.querySelector('[name="consent_privacy"]');
                     
-                    if (window.fpExpConfig && window.fpExpConfig.debug) console.log('📝 DEBUG CAMPI:', {
+                    if (window.fpExpConfig && window.fpExpConfig.debug) console.log('ðŸ“ DEBUG CAMPI:', {
                         nameInput: !!nameInput,
                         nameValue: nameInput ? nameInput.value : 'N/A',
                         emailInput: !!emailInput,
@@ -2155,7 +2455,7 @@
                     // Mostra stato loading
                     if (submitBtn) {
                         submitBtn.disabled = true;
-                        submitBtn.textContent = statusEl?.getAttribute('data-loading') || 'Invio della richiesta…';
+                        submitBtn.textContent = statusEl?.getAttribute('data-loading') || 'Invio della richiestaâ€¦';
                     }
 
                     if (statusEl) {
@@ -2176,9 +2476,9 @@
                             || (window.wpApiSettings && wpApiSettings.root) 
                             || (window.location.origin + '/wp-json/fp-exp/v1/');
 
-                        // Non inviamo X-WP-Nonce header perché usiamo un nonce custom nel payload
+                        // Non inviamo X-WP-Nonce header perchÃ© usiamo un nonce custom nel payload
                         // WordPress REST middleware controlla l'header prima del permission_callback
-                        // e fallirebbe con rest_cookie_invalid_nonce perché il nonce non è per wp_rest action
+                        // e fallirebbe con rest_cookie_invalid_nonce perchÃ© il nonce non Ã¨ per wp_rest action
                         const response = await fetch(restBaseUrl + 'rtb/request', {
                             method: 'POST',
                             headers: {
@@ -2188,12 +2488,12 @@
                             body: JSON.stringify(payload),
                         });
 
-                        if (window.fpExpConfig && window.fpExpConfig.debug) console.log('📡 RTB Response Status:', response.status, response.statusText);
+                        if (window.fpExpConfig && window.fpExpConfig.debug) console.log('ðŸ“¡ RTB Response Status:', response.status, response.statusText);
                         const result = await response.json();
-                        if (window.fpExpConfig && window.fpExpConfig.debug) console.log('📦 RTB Response Data:', result);
+                        if (window.fpExpConfig && window.fpExpConfig.debug) console.log('ðŸ“¦ RTB Response Data:', result);
 
                         if (!response.ok || result.success !== true) {
-                            if (window.fpExpConfig && window.fpExpConfig.debug) console.error('❌ RTB Request failed:', result);
+                            if (window.fpExpConfig && window.fpExpConfig.debug) console.error('âŒ RTB Request failed:', result);
                             throw new Error(result.message || 'Errore durante l\'invio della richiesta.');
                         }
 
@@ -2208,7 +2508,7 @@
                         // Successo!
                         if (statusEl) {
                             statusEl.className = 'fp-exp-rtb-form__status fp-exp-rtb-form__status--success';
-                            statusEl.textContent = result.message || statusEl.getAttribute('data-success') || 'Richiesta ricevuta! Ti risponderemo al più presto.';
+                            statusEl.textContent = result.message || statusEl.getAttribute('data-success') || 'Richiesta ricevuta! Ti risponderemo al piÃ¹ presto.';
                         }
 
                         // Reset form dopo 2 secondi
@@ -2222,7 +2522,7 @@
                                 statusEl.textContent = '';
                                 statusEl.className = 'fp-exp-rtb-form__status';
                             }
-                            // Reset quantità biglietti
+                            // Reset quantitÃ  biglietti
                             document.querySelectorAll('.fp-exp-quantity__input').forEach(input => {
                                 input.value = '0';
                             });
@@ -2256,264 +2556,7 @@
             }
         })();
 
-        // 7) Gestione modale regalo
-        (function setupGiftModal() {
-            const giftToggleBtn = document.querySelector('[data-fp-gift-toggle]');
-            const giftModal = document.querySelector('[data-fp-gift]');
-            const giftBackdrop = giftModal ? giftModal.querySelector('[data-fp-gift-backdrop]') : null;
-            const giftCloseBtn = giftModal ? giftModal.querySelector('[data-fp-gift-close]') : null;
-            const giftDialog = giftModal ? giftModal.querySelector('[data-fp-gift-dialog]') : null;
-            const giftForm = giftModal ? giftModal.querySelector('[data-fp-gift-form]') : null;
-            const giftSubmitBtn = giftForm ? giftForm.querySelector('[data-fp-gift-submit]') : null;
-            const giftFeedback = giftModal ? giftModal.querySelector('[data-fp-gift-feedback]') : null;
-
-            if (!giftToggleBtn || !giftModal) {
-                return; // No gift functionality on this page
-            }
-
-            // Parse gift configuration
-            let giftConfig = {};
-            try {
-                const configAttr = giftModal.getAttribute('data-fp-gift-config');
-                giftConfig = configAttr ? JSON.parse(configAttr) : {};
-            } catch (e) {
-                // Invalid gift config
-            }
-
-            // Open modal
-            const openGiftModal = () => {
-                giftModal.hidden = false;
-                giftModal.setAttribute('aria-hidden', 'false');
-                giftToggleBtn.setAttribute('aria-expanded', 'true');
-                
-                // Add is-open class for CSS transition
-                setTimeout(() => {
-                    giftModal.classList.add('is-open');
-                }, 10);
-                
-                // Focus on dialog
-                if (giftDialog) {
-                    setTimeout(() => {
-                        giftDialog.focus();
-                    }, 100);
-                }
-                
-                // Prevent body scroll (class + inline for themes that override body)
-                document.body.classList.add('fp-modal-open');
-                document.body.style.overflow = 'hidden';
-            };
-
-            // Close modal
-            const closeGiftModal = () => {
-                // Remove is-open class first for transition
-                giftModal.classList.remove('is-open');
-                
-                // Wait for transition to complete before hiding
-                setTimeout(() => {
-                    giftModal.hidden = true;
-                    giftModal.setAttribute('aria-hidden', 'true');
-                    giftToggleBtn.setAttribute('aria-expanded', 'false');
-                    
-                    // Restore body scroll
-                    document.body.classList.remove('fp-modal-open');
-                    document.body.style.overflow = '';
-                    
-                    // Return focus to toggle button
-                    giftToggleBtn.focus();
-                }, 250); // Match CSS transition duration
-            };
-
-            // Toggle button click
-            giftToggleBtn.addEventListener('click', (ev) => {
-                ev.preventDefault();
-                openGiftModal();
-            });
-
-            // Close button click
-            if (giftCloseBtn) {
-                giftCloseBtn.addEventListener('click', (ev) => {
-                    ev.preventDefault();
-                    closeGiftModal();
-                });
-            }
-
-            // Backdrop click
-            if (giftBackdrop) {
-                giftBackdrop.addEventListener('click', (ev) => {
-                    ev.preventDefault();
-                    closeGiftModal();
-                });
-            }
-
-            // Escape key to close
-            const handleEscapeKey = (ev) => {
-                if (ev.key === 'Escape' && !giftModal.hidden) {
-                    closeGiftModal();
-                }
-            };
-            document.addEventListener('keydown', handleEscapeKey);
-            
-            // Cleanup event listener quando la pagina viene scaricata
-            window.addEventListener('beforeunload', () => {
-                document.removeEventListener('keydown', handleEscapeKey);
-            });
-
-            // Form submission
-            if (giftForm && giftSubmitBtn) {
-                giftForm.addEventListener('submit', async (ev) => {
-                    ev.preventDefault();
-
-                    // Basic validation
-                    if (!giftForm.checkValidity()) {
-                        giftForm.reportValidity();
-                        return;
-                    }
-
-                    // Collect form data
-                    const formData = new FormData(giftForm);
-                    const selectedGiftAddons = [];
-                    giftForm.querySelectorAll('.fp-gift__addons input[type="checkbox"]:checked, .fp-gift__addons input[type="radio"]:checked').forEach((input) => {
-                        const value = (input.value || '').toString().trim();
-                        if (value !== '') {
-                            selectedGiftAddons.push(value);
-                        }
-                    });
-                    const ticketQuantities = {};
-                    let totalGuests = 0;
-                    giftForm.querySelectorAll('input[name^="ticket_quantities["]').forEach((input) => {
-                        const match = input.name.match(/^ticket_quantities\[(.+)\]$/);
-                        if (!match || !match[1]) {
-                            return;
-                        }
-                        const slug = String(match[1]).trim();
-                        const qty = parseInt(input.value, 10) || 0;
-                        if (slug && qty > 0) {
-                            ticketQuantities[slug] = qty;
-                            totalGuests += qty;
-                        }
-                    });
-                    if (Object.keys(ticketQuantities).length > 0 && totalGuests <= 0) {
-                        if (giftFeedback) {
-                            giftFeedback.hidden = false;
-                            giftFeedback.className = 'fp-gift__feedback fp-gift__feedback--error';
-                            giftFeedback.textContent = 'Seleziona almeno 1 biglietto regalo.';
-                        }
-                        return;
-                    }
-                    if (Object.keys(ticketQuantities).length === 0) {
-                        totalGuests = parseInt(formData.get('quantity'), 10) || 1;
-                    }
-                    const firstTicketSlug = Object.keys(ticketQuantities)[0] || '';
-                    const data = {
-                        experience_id: giftConfig.experienceId || 0,
-                        ticket_slug: firstTicketSlug || (formData.get('ticket_slug') || '').toString().trim(),
-                        ticket_quantities: ticketQuantities,
-                        purchaser: {
-                            name: formData.get('purchaser[name]') || '',
-                            email: formData.get('purchaser[email]') || ''
-                        },
-                        recipient: {
-                            name: formData.get('recipient[name]') || '',
-                            email: formData.get('recipient[email]') || ''
-                        },
-                        delivery: {
-                            send_on: formData.get('delivery[send_on]') || ''
-                        },
-                        quantity: totalGuests,
-                        message: formData.get('message') || '',
-                        addons: selectedGiftAddons
-                    };
-
-                    // Disable submit button
-                    giftSubmitBtn.disabled = true;
-                    giftSubmitBtn.textContent = 'Elaborazione...';
-
-                    try {
-                        // Call gift voucher endpoint
-                        const restBaseUrl = (typeof fpExpConfig !== 'undefined' && fpExpConfig.restUrl) 
-                            || (window.wpApiSettings && wpApiSettings.root) 
-                            || (window.location.origin + '/wp-json/fp-exp/v1/');
-                        const response = await fetch(restBaseUrl + 'gift/purchase', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-WP-Nonce': (typeof fpExpConfig !== 'undefined' && fpExpConfig.restNonce) || ''
-                            },
-                            credentials: 'same-origin',
-                            body: JSON.stringify(data)
-                        });
-
-                        if (!response.ok) {
-                            let errorData = {};
-                            try {
-                                errorData = await response.json();
-                            } catch (e) {
-                                // Error parsing gift response
-                            }
-                            throw new Error(errorData.message || 'Errore durante la creazione del voucher regalo');
-                        }
-
-                        const result = await response.json();
-
-                        // Check for payment_url or checkout_url
-                        const checkoutUrl = result.payment_url || result.checkout_url || (result.data && result.data.payment_url);
-
-                        // Tracking: gift_purchase
-                        if (window.FPFront && window.FPFront.tracking) {
-                            var giftQty = data.quantity || 1;
-                            var giftValueRaw = (result && result.value != null) ? parseFloat(result.value) : (result && result.data && result.data.total != null) ? parseFloat(result.data.total) : (giftConfig && giftConfig.priceFrom != null) ? parseFloat(giftConfig.priceFrom) * giftQty : 0;
-                            var giftValue = (typeof giftValueRaw === 'number' && !isNaN(giftValueRaw)) ? giftValueRaw : 0;
-                            window.FPFront.tracking.giftPurchase({
-                                experience_id: data.experience_id,
-                                experience_name: (giftConfig && giftConfig.experienceTitle) || '',
-                                quantity: giftQty,
-                                value: giftValue,
-                                currency: (typeof fpExpConfig !== 'undefined' && fpExpConfig.currency) || 'EUR'
-                            });
-                        }
-
-                        if (checkoutUrl) {
-                            // Redirect to checkout
-                            window.location.href = checkoutUrl;
-                        } else {
-                            // Show success message
-                            if (giftFeedback) {
-                                giftFeedback.hidden = false;
-                                giftFeedback.className = 'fp-gift__feedback fp-gift__feedback--success';
-                                giftFeedback.textContent = 'Voucher regalo creato con successo!';
-                            }
-                            
-                            // Reset form
-                            giftForm.reset();
-                            
-                            // Close modal after 2 seconds
-                            setTimeout(() => {
-                                closeGiftModal();
-                                if (giftFeedback) {
-                                    giftFeedback.hidden = true;
-                                    giftFeedback.textContent = '';
-                                }
-                            }, 2000);
-                        }
-                    } catch (error) {
-                        // Gift voucher error
-                        
-                        // Show error message
-                        if (giftFeedback) {
-                            giftFeedback.hidden = false;
-                            giftFeedback.className = 'fp-gift__feedback fp-gift__feedback--error';
-                            giftFeedback.textContent = error.message || 'Si è verificato un errore. Riprova.';
-                        }
-                    } finally {
-                        // Re-enable submit button
-                        giftSubmitBtn.disabled = false;
-                        giftSubmitBtn.textContent = 'Procedi al pagamento';
-                    }
-                });
-            }
-        })();
-
-        // 8) Gestione "Leggi di più" - ORA GESTITO IN STANDALONE all'inizio del file
+        // 8) Gestione "Leggi di piÃ¹" - ORA GESTITO IN STANDALONE all'inizio del file
         // (Codice rimosso per evitare duplicati - vedi riga ~7)
     });
     

@@ -2,6 +2,12 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.6.7] - 2026-04-03
+
+### Fixed
+
+- **Modale regalo / stacking**: il nodo `[data-fp-gift]` viene portato su `document.body` (stesso approccio della barra sticky), con copia delle custom properties da `.fp-exp`, inserito dopo `[data-fp-sticky-bar]` quando anch’esso è su `body`. Così il modale resta sopra header, footer e barra «Prenota il tuo posto» (`z-index` 2147483647 vs 2147483640). **`setupGiftModal`** è spostato **prima** di `if (!widget) return` così listener e form restano attivi anche con sidebar disattivata.
+
 ## [1.6.6] - 2026-04-03
 
 ### Changed

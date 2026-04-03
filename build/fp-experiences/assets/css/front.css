@@ -3558,6 +3558,7 @@ body.fp-modal-open {
     overflow: hidden;
 }
 
+/* Il markup viene spostato su body da front.js (elevateGiftModalToBody) per vincere header/footer/sticky tema */
 .fp-gift-modal {
     position: fixed;
     inset: 0;
