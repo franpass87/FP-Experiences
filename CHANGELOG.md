@@ -2,6 +2,13 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.6.1] - 2026-04-03
+
+### Changed
+
+- **Modale regalo (pagina esperienza)**: ridotti margini e annidamenti visivi (griglia unica per i campi, separatore leggero per biglietti/messaggio); dialog con ombra e accento più curati; campo data consegna a tutta larghezza (`fp-gift__field--full`) con `max-width` sul date picker desktop.
+- **Responsive**: media query ≤600px aggiornata (padding griglia, titolo, righe biglietto con wrap, quantità a larghezza utile).
+
 ## [1.6.0] - 2026-04-03
 
 ### Added

@@ -659,7 +659,7 @@ $sticky_price_display = '' !== $price_from_display ? $format_currency($price_fro
                                             <label for="fp-gift-recipient-email"><?php esc_html_e('Email destinatario', 'fp-experiences'); ?></label>
                                             <input type="email" id="fp-gift-recipient-email" name="recipient[email]" required />
                                         </div>
-                                        <div class="fp-gift__field">
+                                        <div class="fp-gift__field fp-gift__field--full">
                                             <label for="fp-gift-send-on"><?php esc_html_e('Data di consegna (opzionale)', 'fp-experiences'); ?></label>
                                             <input type="date" id="fp-gift-send-on" name="delivery[send_on]" min="<?php echo esc_attr(gmdate('Y-m-d')); ?>" />
                                             <p class="fp-gift__field-note"><?php esc_html_e('Invieremo il regalo via email alle 9:00 (Europe/Rome). Lascia vuoto per inviarlo subito dopo il pagamento.', 'fp-experiences'); ?></p>
