@@ -230,7 +230,9 @@ final class CalendarAdmin implements HookableInterface
         echo '<span class="fpexp-page-header-badge">v' . esc_html( defined( 'FP_EXP_VERSION' ) ? FP_EXP_VERSION : '0' ) . '</span>';
         echo '</div>';
         $this->render_operator_navigation($active_tab);
-        echo '<div class="fp-exp-tabs nav-tab-wrapper">';
+        echo '<div class="fp-exp-calendar-view-chooser" role="group" aria-labelledby="fp-exp-calendar-view-chooser-label">';
+        echo '<p id="fp-exp-calendar-view-chooser-label" class="fp-exp-calendar-view-chooser__label">' . esc_html__('Contenuto della sezione «Calendario & prenotazioni»', 'fp-experiences') . '</p>';
+        echo '<nav class="fp-exp-calendar-view-tabs nav-tab-wrapper" aria-label="' . esc_attr__('Sottoviste calendario e prenotazioni', 'fp-experiences') . '">';
         $tabs = [
             'overview' => esc_html__('Panoramica Operatore', 'fp-experiences'),
             'calendar' => esc_html__('Calendario', 'fp-experiences'),
@@ -244,6 +246,7 @@ final class CalendarAdmin implements HookableInterface
             $classes = 'nav-tab' . ($active_tab === $slug ? ' nav-tab-active' : '');
             echo '<a class="' . esc_attr($classes) . '" href="' . esc_attr($url) . '">' . esc_html($label) . '</a>';
         }
+        echo '</nav>';
         echo '</div>';
 
         if ($message) {

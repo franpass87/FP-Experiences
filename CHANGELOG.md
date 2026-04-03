@@ -2,6 +2,12 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.5.50] - 2026-04-03
+
+### Changed
+
+- **Admin — Calendario**: distinzione visiva tra **navigazione operatore** (Calendario & prenotazioni / RTB / Check-in / Ordini) e **sottoviste** della pagina calendario. Aggiunti contenitore `fp-exp-calendar-view-chooser` con etichetta «Contenuto della sezione …», tab in `fp-exp-calendar-view-tabs` (stile compatto, accento `--fpdms-secondary`, niente underline gradiente DMS); tema scuro dedicato.
+
 ## [1.5.49] - 2026-04-03
 
 ### Fixed

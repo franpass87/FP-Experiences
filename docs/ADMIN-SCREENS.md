@@ -42,7 +42,7 @@ Riferimento per revisione UI (design system FP: `fpexp-page-header`, `fp-exp-adm
 
 - **Impostazioni / sotto-tab calendario**: `div.fp-exp-tabs.nav-tab-wrapper` + link `.nav-tab`.
 - **Email**: stesso pattern.
-- **Viste calendario** (overview / calendario / manuale): stesso pattern dentro pagina Calendario.
+- **Viste calendario** (overview / calendario / manuale): contenitore `fp-exp-calendar-view-chooser` + `fp-exp-calendar-view-tabs` (etichetta esplicativa, stile secondario rispetto a `fp-exp-operator-nav`).
 - **Operatore** (salti tra Calendario, RTB, Check-in, Ordini): `nav.fp-exp-operator-nav.nav-tab-wrapper` — stessi stili DMS delle altre tab (CSS condiviso con `.fp-exp-tabs`).
 
 ## Meta box «Impostazioni esperienza» (editor `fp_experience`)

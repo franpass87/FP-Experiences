@@ -2299,6 +2299,38 @@ html.fp-exp-dark .fp-exp-admin[data-fp-exp-admin] .fp-exp-operator-nav .nav-tab.
     color: #c4b5fd !important;
 }
 
+html.fp-exp-dark .fp-exp-calendar-admin .fp-exp-calendar-view-chooser {
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(230, 232, 235, 0.12);
+    border-left-color: #38ef7d;
+    box-shadow: none;
+}
+
+html.fp-exp-dark .fp-exp-calendar-admin .fp-exp-calendar-view-chooser__label {
+    color: var(--fp-exp-color-muted);
+}
+
+html.fp-exp-dark .fp-exp-calendar-admin .fp-exp-calendar-view-tabs.nav-tab-wrapper {
+    background: rgba(0, 0, 0, 0.2) !important;
+    border-color: rgba(230, 232, 235, 0.1) !important;
+}
+
+html.fp-exp-dark .fp-exp-calendar-admin .fp-exp-calendar-view-tabs .nav-tab {
+    color: var(--fp-exp-color-muted) !important;
+}
+
+html.fp-exp-dark .fp-exp-calendar-admin .fp-exp-calendar-view-tabs .nav-tab:hover {
+    background: rgba(56, 239, 125, 0.12) !important;
+    color: var(--fp-exp-color-text) !important;
+}
+
+html.fp-exp-dark .fp-exp-calendar-admin .fp-exp-calendar-view-tabs .nav-tab.nav-tab-active {
+    background: rgba(255, 255, 255, 0.08) !important;
+    border-color: rgba(56, 239, 125, 0.35) !important;
+    color: #e9ecfe !important;
+    box-shadow: none !important;
+}
+
 html.fp-exp-dark .nav-tab-active .fp-exp-tab-badge {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
@@ -4537,6 +4569,78 @@ label.fp-exp-settings__toggle input:checked + .fp-exp-toggle__switch::after {
 
 .fp-exp-admin[data-fp-exp-admin] .fp-exp-operator-nav.nav-tab-wrapper {
     margin: 0 0 1.25rem 0 !important;
+}
+
+/*
+ * Calendario admin — sottoviste (Panoramica / Calendario / Manuale): stile secondario rispetto
+ * a .fp-exp-operator-nav (sezione vs contenuto della sezione «Calendario & prenotazioni»).
+ */
+.fp-exp-calendar-admin .fp-exp-calendar-view-chooser {
+    margin: 0 0 1.25rem 0;
+    padding: 12px 14px 14px 16px;
+    background: var(--fpdms-bg-white);
+    border: 1px solid var(--fpdms-border);
+    border-radius: var(--radius-lg);
+    border-left: 4px solid var(--fpdms-secondary);
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+}
+
+.fp-exp-calendar-admin .fp-exp-calendar-view-chooser__label {
+    margin: 0 0 10px 0;
+    max-width: 52rem;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--fpdms-text-light);
+    line-height: 1.35;
+}
+
+.fp-exp-calendar-admin .fp-exp-calendar-view-tabs.nav-tab-wrapper {
+    margin: 0 !important;
+    padding: 4px !important;
+    gap: 4px !important;
+    background: var(--fpdms-bg-light) !important;
+    border: 1px solid var(--fpdms-border-light) !important;
+    border-radius: var(--radius-md) !important;
+    display: inline-flex !important;
+    flex-wrap: wrap !important;
+    align-items: center !important;
+    max-width: 100%;
+    box-shadow: none !important;
+}
+
+.fp-exp-calendar-admin .fp-exp-calendar-view-tabs .nav-tab {
+    float: none !important;
+    margin: 0 !important;
+    padding: 8px 12px !important;
+    font-size: 13px !important;
+    font-weight: 500 !important;
+    line-height: 1.3 !important;
+    border-radius: var(--radius-md) !important;
+    border: 1px solid transparent !important;
+    border-bottom: 1px solid transparent !important;
+    background: transparent !important;
+    color: var(--fpdms-text-light) !important;
+    box-shadow: none !important;
+}
+
+.fp-exp-calendar-admin .fp-exp-calendar-view-tabs .nav-tab:hover {
+    background: rgba(17, 153, 142, 0.1) !important;
+    color: var(--fpdms-text) !important;
+}
+
+.fp-exp-calendar-admin .fp-exp-calendar-view-tabs .nav-tab.nav-tab-active {
+    background: var(--fpdms-bg-white) !important;
+    border-color: var(--fpdms-border) !important;
+    border-bottom: 1px solid var(--fpdms-border) !important;
+    color: #0f172a !important;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08) !important;
+}
+
+.fp-exp-calendar-admin .fp-exp-calendar-view-tabs .nav-tab::before,
+.fp-exp-calendar-admin .fp-exp-calendar-view-tabs .nav-tab::after {
+    display: none !important;
 }
 
 /* Reset core .nav-tab (float, margini WP) + chip DMS; barra attiva via ::after */
