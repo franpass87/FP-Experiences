@@ -3,6 +3,536 @@
  * Questo file serve come entry point per il frontend
  */
 
+// Inizializza "Leggi di più" IMMEDIATAMENTE (standalone, non aspetta jQuery)
+(function initReadMoreImmediate() {
+    'use strict';
+    
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', setupReadMore);
+    } else {
+        setupReadMore();
+    }
+    
+    function setupReadMore() {
+        const listingSection = document.querySelector('.fp-listing');
+        if (!listingSection) {
+            return;
+        }
+        
+        // Click handler con delegazione
+        listingSection.addEventListener('click', function(ev) {
+            const btn = ev.target.closest('[data-fp-read-more]');
+            if (!btn) return;
+            
+            ev.preventDefault();
+            const wrapper = btn.closest('.fp-listing__description-wrapper');
+            if (!wrapper) return;
+            
+            const description = wrapper.querySelector('[data-fp-text-clamp]');
+            const textSpan = btn.querySelector('.fp-listing__read-more-text');
+            if (!description || !textSpan) return;
+            
+            const isExpanded = btn.getAttribute('aria-expanded') === 'true';
+            const i18n = (window.fpExpConfig && window.fpExpConfig.i18n) || {};
+            const expandText = textSpan.getAttribute('data-expand-text') || i18n.readMore || 'Leggi di più';
+            const collapseText = textSpan.getAttribute('data-collapse-text') || i18n.readLess || 'Mostra meno';
+            
+            if (isExpanded) {
+                description.classList.remove('is-expanded');
+                description.classList.add('is-clamped');
+                btn.setAttribute('aria-expanded', 'false');
+                textSpan.textContent = expandText;
+            } else {
+                description.classList.remove('is-clamped');
+                description.classList.add('is-expanded');
+                btn.setAttribute('aria-expanded', 'true');
+                textSpan.textContent = collapseText;
+            }
+        });
+        
+        // Nascondi pulsante se testo non è troncato
+        function checkDescriptions() {
+            document.querySelectorAll('[data-fp-text-clamp]').forEach(function(desc) {
+                const wrapper = desc.closest('.fp-listing__description-wrapper');
+                if (!wrapper) return;
+                
+                const btn = wrapper.querySelector('[data-fp-read-more]');
+                if (!btn) return;
+                
+                // +2px tolleranza per sub-pixel rendering
+                const isOverflowing = desc.scrollHeight > desc.clientHeight + 2;
+                btn.style.display = isOverflowing ? 'inline-flex' : 'none';
+            });
+        }
+        
+        checkDescriptions();
+        
+        let resizeTimer;
+        const handleResizeReadMore = function() {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(checkDescriptions, 150);
+        };
+        window.addEventListener('resize', handleResizeReadMore);
+        
+        // Cleanup event listener quando la pagina viene scaricata
+        window.addEventListener('beforeunload', () => {
+            window.removeEventListener('resize', handleResizeReadMore);
+            clearTimeout(resizeTimer);
+        });
+    }
+})();
+
+// Tracking: view_item_list + select_item per la lista esperienze
+(function initListingTracking() {
+    'use strict';
+
+    function setup() {
+        var listing = document.querySelector('[data-fp-shortcode="list"]');
+        if (!listing) return;
+
+        var tracking = window.FPFront && window.FPFront.tracking;
+        if (!tracking || !tracking.isEnabled()) return;
+
+        // view_item_list: parse data-fp-items and push
+        var itemsJson = listing.getAttribute('data-fp-items');
+        if (itemsJson) {
+            try {
+                var items = JSON.parse(itemsJson);
+                if (items && items.length) {
+                    tracking.viewItemList(items);
+                }
+            } catch (e) {
+                // Invalid JSON in data-fp-items
+            }
+        }
+
+        // select_item: delegated click on card links
+        listing.addEventListener('click', function (ev) {
+            var link = ev.target.closest('.fp-listing__card a[href]');
+            if (!link) return;
+
+            var card = link.closest('.fp-listing__card');
+            if (!card) return;
+
+            // Find the item data from the parsed items
+            var cardIndex = Array.prototype.indexOf.call(
+                listing.querySelectorAll('.fp-listing__card'),
+                card
+            );
+
+            if (itemsJson) {
+                try {
+                    var allItems = JSON.parse(itemsJson);
+                    if (allItems && allItems[cardIndex]) {
+                        tracking.selectItem(allItems[cardIndex]);
+                    }
+                } catch (e) {
+                    // Ignore
+                }
+            }
+        });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', setup);
+    } else {
+        setup();
+    }
+})();
+
+// Inizializza accordion FAQ IMMEDIATAMENTE (standalone, non aspetta jQuery)
+// Usa delegazione eventi su document per funzionare anche con contenuti caricati dinamicamente
+(function initAccordionImmediate() {
+    'use strict';
+    
+    // Delegazione eventi direttamente su document - funziona sempre, anche con contenuti dinamici
+    // Usa capture: true per intercettare il click prima di altri listener
+    document.addEventListener('click', function(ev) {
+        // Cerca il trigger, anche se il click è sull'icona SVG o sul path
+        let trigger = ev.target.closest('[data-fp-accordion-trigger]');
+        
+        // Se non trovato, potrebbe essere un click diretto sull'icona
+        if (!trigger) {
+            const icon = ev.target.closest('.fp-exp-accordion__icon, .fp-exp-accordion__icon svg, .fp-exp-accordion__icon path');
+            if (icon) {
+                trigger = icon.closest('[data-fp-accordion-trigger]');
+            }
+        }
+        
+        // Se ancora non trovato, potrebbe essere un click sul label
+        if (!trigger) {
+            const label = ev.target.closest('.fp-exp-accordion__label');
+            if (label) {
+                trigger = label.closest('[data-fp-accordion-trigger]');
+            }
+        }
+        
+        // Se non è un trigger accordion, esci
+        if (!trigger) return;
+        
+        // Verifica che il trigger sia dentro un accordion container
+        const accordionContainer = trigger.closest('[data-fp-accordion]');
+        if (!accordionContainer) return;
+        
+        
+        ev.preventDefault();
+        ev.stopPropagation();
+        
+        const panelId = trigger.getAttribute('aria-controls');
+        if (!panelId) return;
+        
+        const panel = document.getElementById(panelId);
+        if (!panel) return;
+        
+        const isExpanded = trigger.getAttribute('aria-expanded') === 'true';
+        const icon = trigger.querySelector('.fp-exp-accordion__icon svg path');
+        
+        if (isExpanded) {
+            // Chiudi
+            trigger.setAttribute('aria-expanded', 'false');
+            panel.hidden = true;
+            if (icon) {
+                // Icona "+" (verticale + orizzontale)
+                icon.setAttribute('d', 'M12 5v14m-7-7h14');
+            }
+        } else {
+            // Apri
+            trigger.setAttribute('aria-expanded', 'true');
+            panel.hidden = false;
+            if (icon) {
+                // Icona "-" (solo orizzontale)
+                icon.setAttribute('d', 'M5 12h14');
+            }
+        }
+    }, { capture: true });
+})();
+
+// Inizializza redeem voucher anche fuori dal flusso widget
+(function initGiftRedeemStandalone() {
+    'use strict';
+
+    const setup = () => {
+        const redeemRoot = document.querySelector('[data-fp-gift-redeem]');
+        if (!redeemRoot) {
+            return;
+        }
+
+        const lookupForm = redeemRoot.querySelector('[data-fp-gift-redeem-lookup]');
+        const lookupSubmit = redeemRoot.querySelector('[data-fp-gift-redeem-lookup-submit]');
+        const codeInput = redeemRoot.querySelector('[data-fp-gift-code]');
+        const lookupFeedback = redeemRoot.querySelector('[data-fp-gift-redeem-feedback]');
+        const details = redeemRoot.querySelector('[data-fp-gift-redeem-details]');
+        const detailsFeedback = redeemRoot.querySelector('[data-fp-gift-redeem-feedback-details]');
+        const redeemForm = redeemRoot.querySelector('[data-fp-gift-redeem-form]');
+        const slotSelect = redeemRoot.querySelector('[data-fp-gift-redeem-slot]');
+        const redeemSubmit = redeemRoot.querySelector('[data-fp-gift-redeem-submit]');
+        const successBox = redeemRoot.querySelector('[data-fp-gift-redeem-success]');
+        const imageEl = redeemRoot.querySelector('[data-fp-gift-redeem-image]');
+        const codeEl = redeemRoot.querySelector('[data-fp-gift-redeem-code]');
+        const titleEl = redeemRoot.querySelector('[data-fp-gift-redeem-title]');
+        const excerptEl = redeemRoot.querySelector('[data-fp-gift-redeem-excerpt]');
+        const quantityEl = redeemRoot.querySelector('[data-fp-gift-redeem-quantity]');
+        const validityEl = redeemRoot.querySelector('[data-fp-gift-redeem-validity]');
+        const valueEl = redeemRoot.querySelector('[data-fp-gift-redeem-value]');
+        const addonsWrapper = redeemRoot.querySelector('[data-fp-gift-redeem-addons-wrapper]');
+        const addonsList = redeemRoot.querySelector('[data-fp-gift-redeem-addons]');
+
+        if (!lookupForm || !lookupSubmit || !codeInput || !details || !redeemForm || !slotSelect || !redeemSubmit) {
+            return;
+        }
+
+        const apiBase = ((typeof fpExpConfig !== 'undefined' && fpExpConfig.restUrl) || (window.wpApiSettings && wpApiSettings.root) || (window.location.origin + '/wp-json/fp-exp/v1/')).replace(/\/?$/, '/');
+        const nonce = (typeof fpExpConfig !== 'undefined' && fpExpConfig.restNonce) ? fpExpConfig.restNonce : '';
+
+        const i18n = (typeof fpExpConfig !== 'undefined' && fpExpConfig.i18n && fpExpConfig.i18n.giftRedeem) ? fpExpConfig.i18n.giftRedeem : {};
+        const labels = {
+            lookupDefault: lookupSubmit.textContent || i18n.lookupDefault || 'Verifica voucher',
+            lookupLoading: i18n.lookupLoading || 'Verifica in corso...',
+            redeemDefault: redeemSubmit.textContent || i18n.redeemDefault || 'Conferma utilizzo',
+            redeemLoading: i18n.redeemLoading || 'Conferma in corso...',
+            redeemDone: i18n.redeemDone || 'Voucher utilizzato',
+            noSlots: i18n.noSlots || 'Nessuna disponibilita trovata per questo voucher.',
+            selectSlot: i18n.selectSlot || 'Seleziona data e ora',
+            redeemSuccess: i18n.redeemSuccess || 'Voucher utilizzato con successo! La prenotazione e stata confermata.',
+            genericLookupError: i18n.genericLookupError || 'Impossibile verificare il voucher. Riprova.',
+            genericRedeemError: i18n.genericRedeemError || 'Impossibile completare il riscatto. Riprova.',
+        };
+
+        let currentVoucher = null;
+
+        const setFeedback = (el, message, type) => {
+            if (!el) {
+                return;
+            }
+            if (!message) {
+                el.hidden = true;
+                el.textContent = '';
+                el.className = 'fp-gift__feedback';
+                return;
+            }
+            el.hidden = false;
+            el.className = 'fp-gift__feedback fp-gift__feedback--' + type;
+            el.textContent = message;
+        };
+
+        const setSuccess = (message) => {
+            if (!successBox) {
+                return;
+            }
+            if (!message) {
+                successBox.hidden = true;
+                successBox.textContent = '';
+                return;
+            }
+            successBox.hidden = false;
+            successBox.textContent = message;
+        };
+
+        const normalizeCode = (value) => {
+            return String(value || '').trim().toLowerCase().replace(/[^a-z0-9-]/g, '');
+        };
+
+        const setLoadingState = (button, isLoading, loadingText, defaultText) => {
+            if (!button) {
+                return;
+            }
+            button.disabled = isLoading;
+            button.textContent = isLoading ? loadingText : defaultText;
+        };
+
+        const formatCurrency = (amount, currency) => {
+            const parsed = Number(amount);
+            if (!Number.isFinite(parsed)) {
+                return '';
+            }
+
+            try {
+                return new Intl.NumberFormat(document.documentElement.lang || 'it-IT', {
+                    style: 'currency',
+                    currency: currency || 'EUR',
+                }).format(parsed);
+            } catch (e) {
+                return parsed.toFixed(2) + ' ' + (currency || 'EUR');
+            }
+        };
+
+        const getResponseData = async (response, fallbackMessage) => {
+            let payload = {};
+            try {
+                payload = await response.json();
+            } catch (e) {
+                payload = {};
+            }
+
+            if (!response.ok) {
+                const message = payload && payload.message ? payload.message : fallbackMessage;
+                throw new Error(message);
+            }
+
+            return payload;
+        };
+
+        const renderSlots = (slots) => {
+            const normalizedSlots = Array.isArray(slots) ? slots : [];
+            slotSelect.innerHTML = '';
+
+            const placeholder = document.createElement('option');
+            placeholder.value = '';
+            placeholder.textContent = labels.selectSlot;
+            placeholder.disabled = true;
+            placeholder.selected = true;
+            slotSelect.appendChild(placeholder);
+
+            if (!normalizedSlots.length) {
+                slotSelect.disabled = true;
+                redeemSubmit.disabled = true;
+                setFeedback(detailsFeedback, labels.noSlots, 'error');
+                return;
+            }
+
+            normalizedSlots.forEach((slot) => {
+                const option = document.createElement('option');
+                const slotId = parseInt(slot.id || slot.slot_id, 10);
+                option.value = Number.isFinite(slotId) ? String(slotId) : '';
+                option.textContent = slot.label || slot.start_label || slot.start_datetime || '';
+                if (!option.value || !option.textContent) {
+                    return;
+                }
+                slotSelect.appendChild(option);
+            });
+
+            slotSelect.disabled = slotSelect.options.length <= 1;
+            redeemSubmit.disabled = true;
+            if (!slotSelect.disabled) {
+                setFeedback(detailsFeedback, '', 'success');
+            }
+        };
+
+        const renderVoucher = (voucher) => {
+            const experience = voucher && voucher.experience ? voucher.experience : {};
+            const addons = Array.isArray(voucher.addons) ? voucher.addons : [];
+
+            codeEl.textContent = voucher.code || '';
+            titleEl.textContent = experience.title || '';
+            excerptEl.textContent = experience.excerpt || '';
+            quantityEl.textContent = String(voucher.quantity || 1);
+            validityEl.textContent = voucher.valid_until_label || '';
+            valueEl.textContent = formatCurrency(voucher.value, voucher.currency);
+
+            if (imageEl) {
+                const image = experience.image || '';
+                if (image) {
+                    imageEl.src = image;
+                    imageEl.alt = experience.title || '';
+                    imageEl.hidden = false;
+                } else {
+                    imageEl.hidden = true;
+                    imageEl.removeAttribute('src');
+                    imageEl.alt = '';
+                }
+            }
+
+            if (addonsWrapper && addonsList) {
+                addonsList.innerHTML = '';
+                if (addons.length) {
+                    addons.forEach((addon) => {
+                        const li = document.createElement('li');
+                        const label = addon.label || addon.slug || '';
+                        const qty = parseInt(addon.quantity, 10);
+                        li.textContent = qty > 1 ? (label + ' x' + qty) : label;
+                        addonsList.appendChild(li);
+                    });
+                    addonsWrapper.hidden = false;
+                } else {
+                    addonsWrapper.hidden = true;
+                }
+            }
+
+            renderSlots(voucher.slots || []);
+            details.hidden = false;
+            setSuccess('');
+            setFeedback(detailsFeedback, '', 'success');
+        };
+
+        const lookupVoucher = async (code) => {
+            const headers = { 'Accept': 'application/json' };
+            if (nonce) {
+                headers['X-WP-Nonce'] = nonce;
+            }
+            const response = await fetch(apiBase + 'gift/voucher/' + encodeURIComponent(code), {
+                method: 'GET',
+                headers,
+                credentials: 'same-origin',
+            });
+
+            return getResponseData(response, labels.genericLookupError);
+        };
+
+        const redeemVoucher = async (code, slotId) => {
+            const headers = {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+            };
+            if (nonce) {
+                headers['X-WP-Nonce'] = nonce;
+            }
+            const response = await fetch(apiBase + 'gift/redeem', {
+                method: 'POST',
+                headers,
+                credentials: 'same-origin',
+                body: JSON.stringify({
+                    code,
+                    slot_id: slotId,
+                }),
+            });
+
+            return getResponseData(response, labels.genericRedeemError);
+        };
+
+        slotSelect.addEventListener('change', () => {
+            redeemSubmit.disabled = !slotSelect.value;
+            setFeedback(detailsFeedback, '', 'success');
+            setSuccess('');
+        });
+
+        lookupForm.addEventListener('submit', async (ev) => {
+            ev.preventDefault();
+            const code = normalizeCode(codeInput.value);
+            if (!code) {
+                setFeedback(lookupFeedback, labels.genericLookupError, 'error');
+                return;
+            }
+
+            setFeedback(lookupFeedback, '', 'success');
+            setFeedback(detailsFeedback, '', 'success');
+            setSuccess('');
+            setLoadingState(lookupSubmit, true, labels.lookupLoading, labels.lookupDefault);
+
+            try {
+                const voucher = await lookupVoucher(code);
+                currentVoucher = voucher;
+                codeInput.value = code;
+                renderVoucher(voucher);
+                setFeedback(lookupFeedback, '', 'success');
+            } catch (error) {
+                details.hidden = true;
+                currentVoucher = null;
+                setFeedback(lookupFeedback, error.message || labels.genericLookupError, 'error');
+            } finally {
+                setLoadingState(lookupSubmit, false, labels.lookupLoading, labels.lookupDefault);
+            }
+        });
+
+        redeemForm.addEventListener('submit', async (ev) => {
+            ev.preventDefault();
+            if (!currentVoucher || !currentVoucher.code) {
+                setFeedback(detailsFeedback, labels.genericLookupError, 'error');
+                return;
+            }
+
+            const slotId = parseInt(slotSelect.value, 10);
+            if (!Number.isFinite(slotId) || slotId <= 0) {
+                setFeedback(detailsFeedback, labels.selectSlot, 'error');
+                return;
+            }
+
+            setFeedback(detailsFeedback, '', 'success');
+            setSuccess('');
+            setLoadingState(redeemSubmit, true, labels.redeemLoading, labels.redeemDefault);
+
+            try {
+                await redeemVoucher(currentVoucher.code, slotId);
+                setSuccess(labels.redeemSuccess);
+                setFeedback(detailsFeedback, '', 'success');
+                slotSelect.disabled = true;
+                redeemSubmit.disabled = true;
+                redeemSubmit.textContent = labels.redeemDone;
+            } catch (error) {
+                setFeedback(detailsFeedback, error.message || labels.genericRedeemError, 'error');
+            } finally {
+                if (redeemSubmit.textContent !== labels.redeemDone) {
+                    setLoadingState(redeemSubmit, false, labels.redeemLoading, labels.redeemDefault);
+                }
+            }
+        });
+
+        const initialFromData = normalizeCode(redeemRoot.getAttribute('data-fp-initial-code'));
+        const initialFromQuery = normalizeCode(new URLSearchParams(window.location.search).get('gift'));
+        const initialCode = initialFromData || initialFromQuery;
+
+        if (initialCode) {
+            codeInput.value = initialCode;
+            lookupForm.dispatchEvent(new Event('submit', { cancelable: true }));
+        }
+    };
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', setup);
+    } else {
+        setup();
+    }
+})();
+
 // Carica i moduli frontend necessari
 (function() {
     'use strict';
@@ -75,6 +605,47 @@
             clearTimeout(resizeTimeout);
         });
 
+        /**
+         * Barra CTA fissa pagina esperienza: alcuni temi (es. Salient Material) wrappano il contenuto in
+         * .ocm-effect-wrap con z-index basso — un position:fixed interno non può mai stare sopra il footer
+         * (footer reveal, ecc.). Spostiamo il nodo su document.body e copiamo le custom properties da .fp-exp.
+         */
+        (function elevateExperienceStickyBar() {
+            const stickyBar = document.querySelector('[data-fp-sticky-bar]');
+            if (!stickyBar || stickyBar.getAttribute('data-fp-sticky-portal') === 'done') {
+                return;
+            }
+            const source = document.querySelector('.fp-exp.fp-exp-page') || document.querySelector('.fp-exp');
+            if (!source || !document.body) {
+                return;
+            }
+            try {
+                const cs = window.getComputedStyle(source);
+                const propsToCopy = [
+                    '--fp-exp-sticky-gutter-x',
+                    '--fp-exp-radius-base',
+                    '--fp-font-family',
+                    '--fp-color-text',
+                    '--fp-color-text-muted',
+                    '--fp-color-primary',
+                    '--fp-color-on-primary',
+                    '--fp-focus-ring',
+                    '--fp-focus-ring-soft',
+                    '--fp-shadow',
+                ];
+                propsToCopy.forEach((prop) => {
+                    const v = cs.getPropertyValue(prop).trim();
+                    if (v) {
+                        stickyBar.style.setProperty(prop, v);
+                    }
+                });
+                document.body.appendChild(stickyBar);
+                stickyBar.setAttribute('data-fp-sticky-portal', 'done');
+            } catch (e) {
+                /* Silenzioso: se il tema non crea stacking strani, la barra resta nel markup originale */
+            }
+        })();
+
         if (!widget) {
             return; // nessun widget in pagina
         }
@@ -89,6 +660,8 @@
         } catch (e) {
             // Config frontend non valida
         }
+        const eventMode = (config && config.eventMode) ? String(config.eventMode) : 'recurring';
+        const isSingleEventMode = eventMode === 'single_event';
 
         // 1) Apri il datepicker quando si clicca/focalizza l'input
         if (dateInput) {
@@ -115,8 +688,14 @@
         const setSlotsLoading = (isLoading) => {
             if (!slotsEl) return;
             if (isLoading) {
-                const loadingLabel = (slotsEl.getAttribute('data-loading-label') || 'Caricamento…');
-                slotsEl.innerHTML = '<p class="fp-exp-slots__placeholder">' + loadingLabel + '</p>';
+                const defaultLoading = (window.fpExpConfig && window.fpExpConfig.i18n && window.fpExpConfig.i18n.loading) ? window.fpExpConfig.i18n.loading : 'Caricamento…';
+                const loadingLabel = (slotsEl.getAttribute('data-loading-label') || defaultLoading);
+                // ✅ XSS fix: usa createElement + textContent invece di innerHTML
+                const placeholder = document.createElement('p');
+                placeholder.className = 'fp-exp-slots__placeholder';
+                placeholder.textContent = loadingLabel;
+                slotsEl.innerHTML = '';
+                slotsEl.appendChild(placeholder);
             } else {
                 // Rimuovi il loading state - il contenuto verrà sostituito dal renderSlots o dal fallback
                 slotsEl.innerHTML = '';
@@ -128,13 +707,34 @@
             // showSlotsInline non più necessaria - sistema semplificato
         };
 
+        const slotsLoadErrorMsg = (window.fpExpConfig && window.fpExpConfig.i18n && window.fpExpConfig.i18n.slotsLoadError) || 'Impossibile caricare gli slot. Riprova.';
+        const slotsEmptyMsg = (window.fpExpConfig && window.fpExpConfig.i18n && window.fpExpConfig.i18n.slotsEmpty) || 'Nessuna fascia disponibile per questa data';
+        const calendarErrorMsg = (window.fpExpConfig && window.fpExpConfig.i18n && window.fpExpConfig.i18n.calendarError) || 'Errore caricamento calendario';
         const showSlotsError = (message) => {
             if (!slotsEl) return;
-            const text = message || 'Impossibile caricare gli slot. Riprova.';
-            slotsEl.innerHTML = '<p class="fp-exp-slots__placeholder">' + text + '</p>';
+            const text = message || slotsLoadErrorMsg;
+            // ✅ XSS fix: usa createElement + textContent invece di innerHTML
+            const placeholder = document.createElement('p');
+            placeholder.className = 'fp-exp-slots__placeholder';
+            placeholder.textContent = text;
+            slotsEl.innerHTML = '';
+            slotsEl.appendChild(placeholder);
         };
 
         const formatTimeRange = (startIso, endIso) => window.FPFront.availability ? window.FPFront.availability.formatTimeRange(startIso, endIso) : 'Slot';
+        const tryAutoSelectSingleSlot = () => {
+            if (!isSingleEventMode || !slotsEl) {
+                return;
+            }
+            if (slotsEl.querySelector('.fp-exp-slots__item.is-selected')) {
+                return;
+            }
+            const availableSlots = slotsEl.querySelectorAll('.fp-exp-slots__item:not(.is-disabled)');
+            // UI calendario/fasce nascosta: seleziona il primo slot disponibile (stesso giorno evento)
+            if (availableSlots.length >= 1) {
+                availableSlots[0].click();
+            }
+        };
 
         // Inizializza modulo slots una volta
         if (window.FPFront.slots) window.FPFront.slots.init({ slotsEl });
@@ -177,7 +777,7 @@
                         items = await fetchAvailability(date);
                     } catch (e) {
                         // API fetch failed
-                        showSlotsError('Impossibile caricare gli slot. Riprova.');
+                        showSlotsError(slotsLoadErrorMsg);
                         items = [];
                         return; // Esci qui per evitare di chiamare renderSlots con errori
                     }
@@ -186,6 +786,7 @@
                 // Renderizza gli slot (rimuove automaticamente il loading state)
                 if (window.FPFront.slots && window.FPFront.slots.renderSlots) {
                     window.FPFront.slots.renderSlots(items);
+                    tryAutoSelectSingleSlot();
                 } else if (isLoading) {
                     // Fallback: se il modulo slots non è disponibile, rimuovi manualmente il loading
                     setSlotsLoading(false);
@@ -204,11 +805,12 @@
                         if (slotsEl) {
                             slotsEl.innerHTML = '';
                             slotsEl.appendChild(list);
+                            tryAutoSelectSingleSlot();
                         }
                     } else {
                         // Nessun slot disponibile
                         if (slotsEl) {
-                            slotsEl.innerHTML = '<p class="fp-exp-slots__placeholder">Nessuna fascia disponibile per questa data</p>';
+                            slotsEl.innerHTML = '<p class="fp-exp-slots__placeholder">' + slotsEmptyMsg + '</p>';
                         }
                     }
                 } else {
@@ -217,6 +819,7 @@
                     if (items && items.length > 0) {
                         if (window.FPFront.slots && window.FPFront.slots.renderSlots) {
                             window.FPFront.slots.renderSlots(items);
+                            tryAutoSelectSingleSlot();
                         } else {
                             // Fallback manuale
                             const list = document.createElement('ul');
@@ -232,12 +835,13 @@
                             if (slotsEl) {
                                 slotsEl.innerHTML = '';
                                 slotsEl.appendChild(list);
+                                tryAutoSelectSingleSlot();
                             }
                         }
                     } else {
                         // Nessun slot disponibile
                         if (slotsEl) {
-                            slotsEl.innerHTML = '<p class="fp-exp-slots__placeholder">Nessuna fascia disponibile per questa data</p>';
+                            slotsEl.innerHTML = '<p class="fp-exp-slots__placeholder">' + slotsEmptyMsg + '</p>';
                         }
                     }
                 }
@@ -246,6 +850,15 @@
                 // prefetch del mese della data selezionata
                 if (window.FPFront.availability && window.FPFront.availability.prefetchMonth && window.FPFront.availability.monthKeyOf) {
                     window.FPFront.availability.prefetchMonth(window.FPFront.availability.monthKeyOf(date));
+                }
+
+                // Tracking dedicato selezione data (compatibile con vecchi eventi funnel)
+                if (window.FPFront && window.FPFront.tracking && typeof window.FPFront.tracking.bookingDateSelected === 'function') {
+                    window.FPFront.tracking.bookingDateSelected({
+                        booking_mode: isSingleEventMode ? 'single_date' : 'multi_date',
+                        selected_date: date,
+                        available_slots: Array.isArray(items) ? items.length : 0
+                    });
                 }
 
                 // Rimosso scroll automatico per evitare il salto verso il basso
@@ -263,11 +876,11 @@
         const updateCalendarMonth = async (calendarNav, date) => {
             const monthKey = date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0');
             
-            // Nomi mesi in italiano
-            const monthNames = [
-                'Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno',
-                'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre'
-            ];
+            // Nomi mesi localizzati (da fpExpConfig.i18n.months o fallback italiano)
+            const monthNames = (window.fpExpConfig && window.fpExpConfig.i18n && window.fpExpConfig.i18n.months) 
+                ? window.fpExpConfig.i18n.months 
+                : ['Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno',
+                   'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre'];
             
             const monthName = monthNames[date.getMonth()];
             const year = date.getFullYear();
@@ -288,7 +901,10 @@
             
             if (grid) {
                 // Pulisce il grid e mostra caricamento
-                grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 2rem; color: var(--fp-color-muted);">Caricamento...</div>';
+                const loadingText = (window.fpExpConfig && window.fpExpConfig.i18n && window.fpExpConfig.i18n.loading) 
+                    ? window.fpExpConfig.i18n.loading 
+                    : 'Caricamento...';
+                grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 2rem; color: var(--fp-color-muted);">' + loadingText + '</div>';
                 
                 try {
                     // Prefetch dell'intero mese in una sola chiamata API
@@ -297,8 +913,25 @@
                     // Get fresh reference to calendarMap after prefetch
                     calendarMap = getCalendarMap();
                     
+                    // Calcola il giorno della settimana del primo giorno del mese
+                    // 0 = Domenica, 1 = Lunedì, ..., 6 = Sabato
+                    const firstDayOfMonth = new Date(date.getFullYear(), date.getMonth(), 1);
+                    // getDay() restituisce 0 (Domenica) - 6 (Sabato)
+                    // Convertiamo in formato Lunedì=0, Martedì=1, ..., Domenica=6
+                    let firstDayOfWeek = firstDayOfMonth.getDay();
+                    // Converti: Domenica (0) diventa 6, Lunedì (1) diventa 0, etc.
+                    firstDayOfWeek = firstDayOfWeek === 0 ? 6 : firstDayOfWeek - 1;
+                    
                     // Genera tutti i giorni del mese
                     const dayButtons = [];
+                    
+                    // Aggiungi celle vuote all'inizio per allineare il primo giorno alla colonna corretta
+                    // In questo modo la domenica sarà sempre nella colonna più a destra (7)
+                    for (let i = 0; i < firstDayOfWeek; i++) {
+                        const emptyCell = document.createElement('div');
+                        emptyCell.className = 'fp-exp-calendar-nav__day-empty';
+                        dayButtons.push(emptyCell);
+                    }
                     
                     for (let day = 1; day <= daysInMonth; day++) {
                         const dateKey = monthKey + '-' + String(day).padStart(2, '0');
@@ -311,11 +944,22 @@
                         
                         const dayButton = document.createElement('button');
                         dayButton.type = 'button';
-                        dayButton.className = 'fp-exp-calendar-nav__day' + (isPast ? ' is-past' : '');
+                        let className = 'fp-exp-calendar-nav__day';
+                        if (isPast) {
+                            className += ' is-past';
+                        } else if (!isAvailable) {
+                            className += ' is-unavailable';
+                        }
+                        dayButton.className = className;
                         dayButton.setAttribute('data-date', dateKey);
                         dayButton.setAttribute('data-available', isAvailable ? '1' : '0');
                         dayButton.setAttribute('data-month', monthKey);
-                        if (isPast || !isAvailable) dayButton.disabled = true;
+                        
+                        // Disabilita sempre i giorni passati
+                        // Disabilita i giorni futuri senza slot (con classe is-unavailable per distinguerli visivamente)
+                        if (isPast || !isAvailable) {
+                            dayButton.disabled = true;
+                        }
                         
                         let slotsHtml = '';
                         if (slotCount > 0) {
@@ -336,7 +980,7 @@
                     
                 } catch (error) {
                     // Errore generazione calendario
-                    grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 2rem; color: var(--fp-color-error);">Errore caricamento calendario</div>';
+                    grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 2rem; color: var(--fp-color-error);">' + calendarErrorMsg + '</div>';
                 }
             }
         };
@@ -417,14 +1061,20 @@
             });
             
             // Inizializza il calendario con il mese corrente
-            const currentDate = new Date();
+            const currentDate = (isSingleEventMode && config.preselectedDate)
+                ? new Date(config.preselectedDate + 'T00:00:00')
+                : new Date();
             updateCalendarMonth(calendarNav, currentDate);
+            if (isSingleEventMode && config.preselectedDate && dateInput) {
+                dateInput.value = config.preselectedDate;
+                dateInput.dispatchEvent(new Event('change', { bubbles: true }));
+            }
         }
 
         // 3.b) Gestisci CTA con data-fp-scroll (hero e sticky): mostra sezione date e scrolla
         (function setupCtaScrollHandlers() {
             // Delega a tutto il documento per coprire sia il bottone in hero sia quello sticky
-            document.addEventListener('click', function(ev) {
+            const handleCtaScroll = function(ev) {
                 var btn = ev.target && (ev.target.closest('[data-fp-scroll]'));
                 if (!btn) return;
                 // Evita qualunque navigazione predefinita (es. <a href="…">)
@@ -435,7 +1085,11 @@
                 // Mappa dei target noti
                 var targetEl = null;
                 if (targetKey === 'calendar' || targetKey === 'dates') {
-                    targetEl = calendarNav || document.querySelector('[data-fp-scroll-target="dates"], .fp-exp-calendar-nav');
+                    if (isSingleEventMode) {
+                        targetEl = document.querySelector('[data-fp-single-event-info]') || document.querySelector('.fp-exp-slots') || calendarNav;
+                    } else {
+                        targetEl = calendarNav || document.querySelector('[data-fp-scroll-target="dates"], .fp-exp-calendar-nav');
+                    }
                 } else if (targetKey === 'gallery') {
                     targetEl = document.querySelector('[data-fp-scroll-target="gallery"], .fp-exp-gallery');
                 }
@@ -451,6 +1105,12 @@
                 if (targetEl && typeof targetEl.scrollIntoView === 'function') {
                     targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 }
+            };
+            document.addEventListener('click', handleCtaScroll);
+            
+            // Cleanup event listener quando la pagina viene scaricata
+            window.addEventListener('beforeunload', () => {
+                document.removeEventListener('click', handleCtaScroll);
             });
         })();
 
@@ -470,11 +1130,38 @@
             slotsEl.addEventListener('click', (ev) => {
                 const li = ev.target && ev.target.closest('.fp-exp-slots__item');
                 if (!li) return;
-                const start = li.getAttribute('data-start') || '';
-                const end = li.getAttribute('data-end') || '';
+                let start = li.getAttribute('data-start') || '';
+                let end = li.getAttribute('data-end') || '';
 
                 clearSelection();
                 li.classList.add('is-selected');
+
+                // IMPORTANTE: Usa sempre start_iso e end_iso se disponibili nel config
+                // Gli attributi data-start e data-end potrebbero essere solo date senza orario
+                if (config && config.slots) {
+                    // Cerca lo slot nel config che corrisponde ai valori data-start/data-end
+                    // Usa la data (senza orario) per trovare lo slot corretto
+                    const startDateOnly = start.includes('T') ? start.split('T')[0] : start;
+                    const endDateOnly = end.includes('T') ? end.split('T')[0] : end;
+                    
+                    const slot = config.slots.find(s => {
+                        const slotStart = s.start_iso || s.start || '';
+                        const slotEnd = s.end_iso || s.end || '';
+                        const slotStartDate = slotStart.includes('T') ? slotStart.split('T')[0] : slotStart;
+                        const slotEndDate = slotEnd.includes('T') ? slotEnd.split('T')[0] : slotEnd;
+                        return (slotStartDate === startDateOnly || slotEndDate === endDateOnly);
+                    });
+                    
+                    if (slot) {
+                        // Usa sempre start_iso e end_iso se disponibili
+                        if (slot.start_iso) {
+                            start = slot.start_iso;
+                        }
+                        if (slot.end_iso) {
+                            end = slot.end_iso;
+                        }
+                    }
+                }
 
                 // Aggiorna campi RTB solo se RTB è abilitato
                 if (rtbEnabled && startInput) startInput.value = start;
@@ -484,6 +1171,15 @@
                 const ctaButton = document.querySelector('.fp-exp-summary__cta');
                 if (ctaButton) {
                     ctaButton.disabled = false;
+                }
+
+                // Tracking dedicato selezione slot (retrocompatibile con booking_step_complete)
+                if (window.FPFront && window.FPFront.tracking && typeof window.FPFront.tracking.bookingSlotSelected === 'function') {
+                    window.FPFront.tracking.bookingSlotSelected({
+                        booking_mode: isSingleEventMode ? 'single_date' : 'multi_date',
+                        slot_start: start,
+                        slot_end: end
+                    });
                 }
             });
             if (window.FPFront.slots) window.FPFront.slots.init({ slotsEl });
@@ -506,12 +1202,13 @@
                 const slotOk = hasSelectedSlot();
                 ctaBtn.disabled = !(anyTicket && slotOk);
                 
+                const i18n = (window.fpExpConfig && window.fpExpConfig.i18n) ? window.fpExpConfig.i18n : {};
                 if (!anyTicket) {
-                    ctaBtn.textContent = 'Seleziona almeno 1 biglietto';
+                    ctaBtn.textContent = i18n.selectAtLeast1Ticket || 'Seleziona almeno 1 biglietto';
                 } else if (!slotOk) {
-                    ctaBtn.textContent = 'Seleziona data e orario';
+                    ctaBtn.textContent = i18n.selectDateTime || 'Seleziona data e orario';
                 } else {
-                    ctaBtn.textContent = 'Procedi al pagamento';
+                    ctaBtn.textContent = i18n.proceedToPayment || 'Procedi al pagamento';
                 }
             };
 
@@ -795,20 +1492,132 @@
                     return;
                 }
 
-                if (!fpExpConfig.checkoutNonce) {
-                    // checkoutNonce mancante
+                // Richiedi nonce fresco prima del checkout per evitare problemi di cache
+                let freshCheckoutNonce = '';
+                
+                // Definisci restBaseUrl FUORI dal try per usarlo in entrambi i blocchi
+                const restBaseUrl = (typeof fpExpConfig !== 'undefined' && fpExpConfig.restUrl) 
+                    || (window.wpApiSettings && wpApiSettings.root) 
+                    || (window.location.origin + '/wp-json/fp-exp/v1/');
+                
+                try {
+                    ctaBtn.disabled = true;
+                    ctaBtn.textContent = 'Preparazione pagamento...';
+                    
+                    // Richiedi nonce fresco da /checkout/nonce
+                    const nonceUrl = new URL(restBaseUrl + 'checkout/nonce', window.location.origin);
+                    const nonceResponse = await fetch(nonceUrl, {
+                        method: 'GET',
+                        credentials: 'same-origin'
+                    });
+                    
+                    if (!nonceResponse.ok) {
+                        throw new Error(`Errore richiesta nonce (${nonceResponse.status})`);
+                    }
+                    
+                    const nonceData = await nonceResponse.json();
+                    if (!nonceData || !nonceData.nonce) {
+                        throw new Error('Nonce non ricevuto dal server');
+                    }
+                    
+                    freshCheckoutNonce = nonceData.nonce;
+                    if (typeof window !== 'undefined') {
+                        if (!window.fpExpConfig) {
+                            window.fpExpConfig = {};
+                        }
+                        window.fpExpConfig.checkoutNonce = freshCheckoutNonce;
+                    }
+                    if (window.fpExpConfig && window.fpExpConfig.debug) console.log('FP-EXP: Nonce ottenuto:', freshCheckoutNonce);
+                } catch (e) {
+                    if (window.fpExpConfig && window.fpExpConfig.debug) console.error('FP-EXP: Errore nonce:', e);
+                    ctaBtn.disabled = false;
+                    ctaBtn.textContent = 'Procedi al pagamento';
                     alert('Sessione non valida. Aggiorna la pagina e riprova.');
                     return;
                 }
 
+                if (window.fpExpConfig && window.fpExpConfig.debug) console.log('FP-EXP: Procedo con cart/set...');
+
                 // Usa il sistema di checkout integrato del plugin
                 try {
-                    ctaBtn.disabled = true;
                     ctaBtn.textContent = 'Aggiunta al carrello...';
+                    if (window.fpExpConfig && window.fpExpConfig.debug) console.log('FP-EXP: Preparazione chiamata cart/set');
+                    
+                    // Verifica variabili PRIMA di procedere
+                    if (window.fpExpConfig && window.fpExpConfig.debug) console.log('FP-EXP: Verifica variabili:', {
+                        experienceId: experienceId,
+                        start: start,
+                        end: end,
+                        tickets: tickets,
+                        hasCollectAddons: typeof collectAddons === 'function'
+                    });
+                    
+                    if (!experienceId) {
+                        throw new Error('Experience ID mancante');
+                    }
+                    if (!start || !end) {
+                        throw new Error('Slot mancante (start/end)');
+                    }
+                    if (!tickets || Object.keys(tickets).length === 0) {
+                        throw new Error('Nessun ticket selezionato');
+                    }
+
+                    if (window.fpExpConfig && window.fpExpConfig.debug) console.log('FP-EXP: Variabili OK, costruisco URL...');
+                    if (window.fpExpConfig && window.fpExpConfig.debug) console.log('FP-EXP: restBaseUrl vale:', restBaseUrl);
+                    if (window.fpExpConfig && window.fpExpConfig.debug) console.log('FP-EXP: window.location.origin vale:', window.location.origin);
 
                     // Aggiungi al carrello interno del plugin
-                    const setCartUrl = new URL('/wp-json/fp-exp/v1/cart/set', window.location.origin);
+                    try {
+                        const setCartUrl = new URL(restBaseUrl + 'cart/set', window.location.origin);
+                        if (window.fpExpConfig && window.fpExpConfig.debug) console.log('FP-EXP: URL costruito:', setCartUrl.toString());
+                    } catch (urlError) {
+                        if (window.fpExpConfig && window.fpExpConfig.debug) console.error('FP-EXP: Errore costruzione URL:', urlError);
+                        throw new Error('Errore costruzione URL: ' + urlError.message);
+                    }
                     
+                    const setCartUrl = new URL(restBaseUrl + 'cart/set', window.location.origin);
+                    if (window.fpExpConfig && window.fpExpConfig.debug) console.log('FP-EXP: URL finale:', setCartUrl.toString());
+                    
+                    // Raccogli lingua selezionata
+                    const languageSelect = widget.querySelector('[data-fp-language-select]');
+                    const selectedLanguage = languageSelect ? languageSelect.value : '';
+                    
+                    // Raccogli richieste speciali (checkbox + textarea)
+                    const specialRequestsOptions = [];
+                    widget.querySelectorAll('[data-fp-special-request-option]:checked').forEach(function(checkbox) {
+                        var srLabel = checkbox.getAttribute('data-fp-special-request-label');
+                        specialRequestsOptions.push(srLabel && srLabel.length ? srLabel : checkbox.value);
+                    });
+                    
+                    const specialRequestsField = widget.querySelector('[data-fp-special-requests]');
+                    const specialRequestsText = specialRequestsField ? specialRequestsField.value.trim() : '';
+                    
+                    // Combina checkbox selezionate e testo libero
+                    let specialRequests = '';
+                    if (specialRequestsOptions.length > 0) {
+                        specialRequests = specialRequestsOptions.join(', ');
+                        if (specialRequestsText) {
+                            specialRequests += '. ' + specialRequestsText;
+                        }
+                    } else {
+                        specialRequests = specialRequestsText;
+                    }
+                    
+                    const cartData = {
+                        experience_id: experienceId,
+                        slot_id: 0,
+                        slot_start: start,
+                        slot_end: end,
+                        tickets: tickets,
+                        addons: (typeof collectAddons === 'function' ? collectAddons() : {}),
+                        language: selectedLanguage || '',
+                        special_requests: specialRequests || ''
+                    };
+                    
+                    if (window.fpExpConfig && window.fpExpConfig.debug) console.log('FP-EXP: Dati carrello preparati:', cartData);
+
+                    if (window.fpExpConfig && window.fpExpConfig.debug) console.log('FP-EXP: Invio fetch a cart/set...');
+
                     const setCartResponse = await fetch(setCartUrl, {
                         method: 'POST',
                         headers: {
@@ -816,15 +1625,11 @@
                             'X-WP-Nonce': (typeof fpExpConfig !== 'undefined' && fpExpConfig.restNonce) || ''
                         },
                         credentials: 'same-origin',
-                        body: JSON.stringify({
-                            experience_id: experienceId,
-                            slot_id: 0, // Il plugin creerà lo slot automaticamente
-                            slot_start: start,
-                            slot_end: end,
-                            tickets: tickets,
-                            addons: collectAddons()
-                        })
+                        body: JSON.stringify(cartData)
                     });
+
+                    if (window.fpExpConfig && window.fpExpConfig.debug) console.log('FP-EXP: Fetch completato!');
+                    if (window.fpExpConfig && window.fpExpConfig.debug) console.log('FP-EXP: Risposta cart/set:', setCartResponse.status, setCartResponse.ok);
 
                     if (!setCartResponse.ok) {
                         let errorData = {};
@@ -837,78 +1642,32 @@
                         throw new Error(errorData.message || `Errore aggiunta al carrello (${setCartResponse.status})`);
                     }
 
-                    ctaBtn.textContent = 'Creazione ordine...';
-
-                    // Ora crea l'ordine direttamente usando l'endpoint di checkout
-                    const checkoutUrl = new URL('/wp-json/fp-exp/v1/checkout', window.location.origin);
-                    
-                    // Inviamo solo il nonce fp-exp-checkout nel body per la verifica specifica del checkout
-                    // NON inviamo X-WP-Nonce nell'header per evitare conflitti con la verifica del nonce
-                    const checkoutResponse = await fetch(checkoutUrl, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        credentials: 'same-origin',
-                        body: JSON.stringify({
-                            nonce: (typeof fpExpConfig !== 'undefined' && fpExpConfig.checkoutNonce) || '',
-                            contact: {
-                                first_name: 'Cliente',
-                                last_name: 'Temporaneo', 
-                                email: 'temp@example.com',
-                                phone: ''
-                            },
-                            billing: {
-                                first_name: 'Cliente',
-                                last_name: 'Temporaneo',
-                                email: 'temp@example.com', 
-                                phone: ''
-                            },
-                            consent: {
-                                privacy: true,
-                                marketing: false
-                            }
-                        })
-                    });
-
-                    if (!checkoutResponse.ok) {
-                        let errorData = {};
-                        try {
-                            const text = await checkoutResponse.text();
-                            errorData = text ? JSON.parse(text) : {};
-                        } catch (e) {
-                            // Impossibile parsare risposta errore
-                        }
-                        throw new Error(errorData.message || `Errore creazione ordine (${checkoutResponse.status})`);
+                    // Tracking: add_to_cart
+                    if (window.FPFront && window.FPFront.tracking) {
+                        var expTitle = '';
+                        try { expTitle = document.querySelector('.fp-exp-hero__content h1, .fp-exp-section h1')?.textContent || ''; } catch (e) { /* ignore */ }
+                        var qty = Object.values(tickets).reduce(function (s, v) { return s + (parseInt(v, 10) || 0); }, 0) || 1;
+                        var priceNum = (config && config.priceFrom != null) ? parseFloat(config.priceFrom) : 0;
+                        var price = (typeof priceNum === 'number' && !isNaN(priceNum)) ? priceNum : 0;
+                        window.FPFront.tracking.addToCart({
+                            item_id: experienceId,
+                            item_name: expTitle,
+                            quantity: qty,
+                            price: price,
+                            currency: (typeof fpExpConfig !== 'undefined' && fpExpConfig.currency) || 'EUR'
+                        });
                     }
 
-                    let result = {};
-                    try {
-                        const text = await checkoutResponse.text();
-                        // Risposta checkout ricevuta
-                        
-                        if (!text || text.trim() === '') {
-                            throw new Error('Risposta vuota dal server');
-                        }
-                        
-                        result = JSON.parse(text);
-                        // Risposta checkout parsata
-                    } catch (e) {
-                        // Impossibile parsare risposta checkout
-                        throw new Error('Risposta non valida dal server');
-                    }
+                    // ✅ v0.5.0: Redirect to WooCommerce checkout page
+                    // Cart will be automatically synced via template_redirect hook
+                    ctaBtn.textContent = 'Reindirizzamento...';
                     
-                    // Verifica se la risposta ha payment_url direttamente o dentro data
-                    const paymentUrl = result.payment_url || (result.data && result.data.payment_url);
+                    if (window.fpExpConfig && window.fpExpConfig.debug) console.log('FP-EXP: Cart/set OK, procedo con redirect...');
                     
-                    if (paymentUrl) {
-                        // Reindirizzamento a pagina di pagamento
-                        // Reindirizza alla pagina di pagamento dell'ordine
-                        window.location.href = paymentUrl;
-                    } else {
-                        // Risposta completa non valida
-                        throw new Error('URL di pagamento non ricevuto');
-                    }
+                    // Redirect to WooCommerce checkout page (with fallback)
+                    const checkoutPageUrl = (typeof fpExpConfig !== 'undefined' && fpExpConfig.checkoutUrl) || '/checkout/';
+                    if (window.fpExpConfig && window.fpExpConfig.debug) console.log('FP-EXP: Redirect a:', checkoutPageUrl);
+                    window.location.href = checkoutPageUrl;
 
                 } catch (error) {
                     // Errore checkout WooCommerce
@@ -1121,11 +1880,12 @@
                 const slotOk = hasSelectedSlot();
                 ctaBtn.disabled = !(anyTicket && slotOk);
                 if (ctaHint) {
+                    const i18nHint = (window.fpExpConfig && window.fpExpConfig.i18n) ? window.fpExpConfig.i18n : {};
                     if (!anyTicket) {
-                        ctaHint.textContent = 'Seleziona almeno 1 biglietto.';
+                        ctaHint.textContent = (i18nHint.selectAtLeast1Ticket || 'Seleziona almeno 1 biglietto') + '.';
                         ctaHint.hidden = false;
                     } else if (!slotOk) {
-                        ctaHint.textContent = 'Seleziona data e orario.';
+                        ctaHint.textContent = (i18nHint.selectDateTime || 'Seleziona data e orario') + '.';
                         ctaHint.hidden = false;
                     } else {
                         ctaHint.textContent = '';
@@ -1166,10 +1926,8 @@
                     addons: addons,
                 };
 
+                // Non inviamo X-WP-Nonce header perché usiamo un nonce custom nel payload
                 const quoteHeaders = { 'Content-Type': 'application/json' };
-                if (typeof fpExpConfig !== 'undefined' && fpExpConfig.restNonce) {
-                    quoteHeaders['X-WP-Nonce'] = fpExpConfig.restNonce;
-                }
                 
                 fetch(quoteUrl, {
                     method: 'POST',
@@ -1300,6 +2058,202 @@
             if (window.FPFront.summaryRtb && window.FPFront.summaryRtb.init) {
                 window.FPFront.summaryRtb.init({ widget, slotsEl, config });
             }
+
+            // Gestione submit form RTB via AJAX
+            if (rtbForm) {
+                rtbForm.addEventListener('submit', async (ev) => {
+                    if (window.fpExpConfig && window.fpExpConfig.debug) console.log('🔥 RTB SUBMIT HANDLER ESEGUITO - VERSIONE CORRETTA');
+                    ev.preventDefault();
+
+                    const statusEl = rtbForm.querySelector('.fp-exp-rtb-form__status');
+                    const submitBtn = rtbForm.querySelector('button[type="submit"]');
+
+                    if (submitBtn && submitBtn.disabled) return;
+
+                    // Validazione base - TEMPORANEAMENTE DISABILITATA PER TEST
+                    const nameInput = rtbForm.querySelector('[name="name"]');
+                    const emailInput = rtbForm.querySelector('[name="email"]');
+                    const phoneInput = rtbForm.querySelector('[name="phone"]');
+                    const privacyCheck = rtbForm.querySelector('[name="consent_privacy"]');
+                    
+                    if (window.fpExpConfig && window.fpExpConfig.debug) console.log('📝 DEBUG CAMPI:', {
+                        nameInput: !!nameInput,
+                        nameValue: nameInput ? nameInput.value : 'N/A',
+                        emailInput: !!emailInput,
+                        emailValue: emailInput ? emailInput.value : 'N/A'
+                    });
+
+                    /* VALIDAZIONE COMMENTATA PER TEST
+                    if (!nameInput || !nameInput.value.trim()) {
+                        alert(rtbForm.getAttribute('data-error-name') || 'Inserisci il tuo nome.');
+                        return;
+                    }
+
+                    if (!emailInput || !emailInput.value.trim()) {
+                        alert(rtbForm.getAttribute('data-error-email') || 'Inserisci il tuo indirizzo email.');
+                        return;
+                    }
+
+                    if (!privacyCheck || !privacyCheck.checked) {
+                        alert(rtbForm.getAttribute('data-error-privacy') || 'Accetta l\'informativa privacy per continuare.');
+                        return;
+                    }
+                    */
+
+                    // Raccogli dati
+                    const payload = {
+                        nonce: rtbForm.getAttribute('data-nonce') || '',
+                        experience_id: parseInt(rtbForm.querySelector('[name="experience_id"]').value, 10),
+                        slot_id: parseInt(rtbForm.querySelector('[name="slot_id"]').value, 10) || 0,
+                        start: startInput ? startInput.value : '',
+                        end: endInput ? endInput.value : '',
+                        tickets: ticketsHidden ? JSON.parse(ticketsHidden.value || '{}') : {},
+                        addons: addonsHidden ? JSON.parse(addonsHidden.value || '{}') : {},
+                        mode: rtbForm.querySelector('[name="mode"]').value || 'confirm',
+                        forced: rtbForm.querySelector('[name="forced"]').value === '1',
+                        contact: {
+                            name: nameInput.value.trim(),
+                            email: emailInput.value.trim(),
+                            phone: phoneInput ? phoneInput.value.trim() : '',
+                            language: (() => {
+                                const langSelect = widget.querySelector('[data-fp-language-select]');
+                                return langSelect ? langSelect.value : '';
+                            })(),
+                            special_requests: (() => {
+                                // Raccogli checkbox selezionate
+                                const specialRequestsOptions = [];
+                                widget.querySelectorAll('[data-fp-special-request-option]:checked').forEach(function(checkbox) {
+                                    var srLabel = checkbox.getAttribute('data-fp-special-request-label');
+                                    specialRequestsOptions.push(srLabel && srLabel.length ? srLabel : checkbox.value);
+                                });
+                                
+                                // Raccogli testo libero
+                                const specialRequestsField = widget.querySelector('[data-fp-special-requests]');
+                                const specialRequestsText = specialRequestsField ? specialRequestsField.value.trim() : '';
+                                
+                                // Combina checkbox e testo
+                                let result = '';
+                                if (specialRequestsOptions.length > 0) {
+                                    result = specialRequestsOptions.join(', ');
+                                    if (specialRequestsText) {
+                                        result += '. ' + specialRequestsText;
+                                    }
+                                } else {
+                                    result = specialRequestsText;
+                                }
+                                
+                                return result;
+                            })(),
+                        },
+                        notes: rtbForm.querySelector('[name="notes"]')?.value || '',
+                        consent: {
+                            privacy: true,
+                            marketing: rtbForm.querySelector('[name="consent_marketing"]')?.checked || false,
+                        },
+                    };
+
+                    // Mostra stato loading
+                    if (submitBtn) {
+                        submitBtn.disabled = true;
+                        submitBtn.textContent = statusEl?.getAttribute('data-loading') || 'Invio della richiesta…';
+                    }
+
+                    if (statusEl) {
+                        statusEl.textContent = '';
+                        statusEl.className = 'fp-exp-rtb-form__status';
+                    }
+
+                    // Tracking: rtbSubmit
+                    if (window.FPFront && window.FPFront.tracking) {
+                        window.FPFront.tracking.rtbSubmit({
+                            experience_id: payload.experience_id,
+                            mode: payload.mode || 'rtb'
+                        });
+                    }
+
+                    try {
+                        const restBaseUrl = (typeof fpExpConfig !== 'undefined' && fpExpConfig.restUrl) 
+                            || (window.wpApiSettings && wpApiSettings.root) 
+                            || (window.location.origin + '/wp-json/fp-exp/v1/');
+
+                        // Non inviamo X-WP-Nonce header perché usiamo un nonce custom nel payload
+                        // WordPress REST middleware controlla l'header prima del permission_callback
+                        // e fallirebbe con rest_cookie_invalid_nonce perché il nonce non è per wp_rest action
+                        const response = await fetch(restBaseUrl + 'rtb/request', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            credentials: 'same-origin',
+                            body: JSON.stringify(payload),
+                        });
+
+                        if (window.fpExpConfig && window.fpExpConfig.debug) console.log('📡 RTB Response Status:', response.status, response.statusText);
+                        const result = await response.json();
+                        if (window.fpExpConfig && window.fpExpConfig.debug) console.log('📦 RTB Response Data:', result);
+
+                        if (!response.ok || result.success !== true) {
+                            if (window.fpExpConfig && window.fpExpConfig.debug) console.error('❌ RTB Request failed:', result);
+                            throw new Error(result.message || 'Errore durante l\'invio della richiesta.');
+                        }
+
+                        // Tracking: rtbSuccess
+                        if (window.FPFront && window.FPFront.tracking) {
+                            window.FPFront.tracking.rtbSuccess({
+                                experience_id: payload.experience_id,
+                                request_id: result.request_id || ''
+                            });
+                        }
+
+                        // Successo!
+                        if (statusEl) {
+                            statusEl.className = 'fp-exp-rtb-form__status fp-exp-rtb-form__status--success';
+                            statusEl.textContent = result.message || statusEl.getAttribute('data-success') || 'Richiesta ricevuta! Ti risponderemo al più presto.';
+                        }
+
+                        // Reset form dopo 2 secondi
+                        setTimeout(() => {
+                            rtbForm.reset();
+                            if (submitBtn) {
+                                submitBtn.textContent = 'Invia richiesta di prenotazione';
+                                submitBtn.disabled = true;
+                            }
+                            if (statusEl) {
+                                statusEl.textContent = '';
+                                statusEl.className = 'fp-exp-rtb-form__status';
+                            }
+                            // Reset quantità biglietti
+                            document.querySelectorAll('.fp-exp-quantity__input').forEach(input => {
+                                input.value = '0';
+                            });
+                            // Deseleziona slot
+                            if (window.FPFront.slots && window.FPFront.slots.clearSelection) {
+                                window.FPFront.slots.clearSelection();
+                            }
+                        }, 3000);
+
+                    } catch (error) {
+                        // Tracking: rtbError
+                        if (window.FPFront && window.FPFront.tracking) {
+                            window.FPFront.tracking.rtbError({
+                                experience_id: payload.experience_id,
+                                error: error.message || 'unknown'
+                            });
+                        }
+
+                        // Errore
+                        if (statusEl) {
+                            statusEl.className = 'fp-exp-rtb-form__status fp-exp-rtb-form__status--error';
+                            statusEl.textContent = error.message || statusEl.getAttribute('data-error') || 'Impossibile inviare la richiesta. Riprova.';
+                        }
+
+                        if (submitBtn) {
+                            submitBtn.disabled = false;
+                            submitBtn.textContent = 'Invia richiesta di prenotazione';
+                        }
+                    }
+                });
+            }
         })();
 
         // 7) Gestione modale regalo
@@ -1390,10 +2344,16 @@
             }
 
             // Escape key to close
-            document.addEventListener('keydown', (ev) => {
+            const handleEscapeKey = (ev) => {
                 if (ev.key === 'Escape' && !giftModal.hidden) {
                     closeGiftModal();
                 }
+            };
+            document.addEventListener('keydown', handleEscapeKey);
+            
+            // Cleanup event listener quando la pagina viene scaricata
+            window.addEventListener('beforeunload', () => {
+                document.removeEventListener('keydown', handleEscapeKey);
             });
 
             // Form submission
@@ -1409,8 +2369,43 @@
 
                     // Collect form data
                     const formData = new FormData(giftForm);
+                    const selectedGiftAddons = [];
+                    giftForm.querySelectorAll('.fp-gift__addons input[type="checkbox"]:checked, .fp-gift__addons input[type="radio"]:checked').forEach((input) => {
+                        const value = (input.value || '').toString().trim();
+                        if (value !== '') {
+                            selectedGiftAddons.push(value);
+                        }
+                    });
+                    const ticketQuantities = {};
+                    let totalGuests = 0;
+                    giftForm.querySelectorAll('input[name^="ticket_quantities["]').forEach((input) => {
+                        const match = input.name.match(/^ticket_quantities\[(.+)\]$/);
+                        if (!match || !match[1]) {
+                            return;
+                        }
+                        const slug = String(match[1]).trim();
+                        const qty = parseInt(input.value, 10) || 0;
+                        if (slug && qty > 0) {
+                            ticketQuantities[slug] = qty;
+                            totalGuests += qty;
+                        }
+                    });
+                    if (Object.keys(ticketQuantities).length > 0 && totalGuests <= 0) {
+                        if (giftFeedback) {
+                            giftFeedback.hidden = false;
+                            giftFeedback.className = 'fp-gift__feedback fp-gift__feedback--error';
+                            giftFeedback.textContent = 'Seleziona almeno 1 biglietto regalo.';
+                        }
+                        return;
+                    }
+                    if (Object.keys(ticketQuantities).length === 0) {
+                        totalGuests = parseInt(formData.get('quantity'), 10) || 1;
+                    }
+                    const firstTicketSlug = Object.keys(ticketQuantities)[0] || '';
                     const data = {
                         experience_id: giftConfig.experienceId || 0,
+                        ticket_slug: firstTicketSlug || (formData.get('ticket_slug') || '').toString().trim(),
+                        ticket_quantities: ticketQuantities,
                         purchaser: {
                             name: formData.get('purchaser[name]') || '',
                             email: formData.get('purchaser[email]') || ''
@@ -1422,9 +2417,9 @@
                         delivery: {
                             send_on: formData.get('delivery[send_on]') || ''
                         },
-                        quantity: parseInt(formData.get('quantity'), 10) || 1,
+                        quantity: totalGuests,
                         message: formData.get('message') || '',
-                        addons: formData.getAll('addons[]') || []
+                        addons: selectedGiftAddons
                     };
 
                     // Disable submit button
@@ -1433,7 +2428,10 @@
 
                     try {
                         // Call gift voucher endpoint
-                        const response = await fetch('/wp-json/fp-exp/v1/gift/purchase', {
+                        const restBaseUrl = (typeof fpExpConfig !== 'undefined' && fpExpConfig.restUrl) 
+                            || (window.wpApiSettings && wpApiSettings.root) 
+                            || (window.location.origin + '/wp-json/fp-exp/v1/');
+                        const response = await fetch(restBaseUrl + 'gift/purchase', {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
@@ -1457,6 +2455,20 @@
 
                         // Check for payment_url or checkout_url
                         const checkoutUrl = result.payment_url || result.checkout_url || (result.data && result.data.payment_url);
+
+                        // Tracking: gift_purchase
+                        if (window.FPFront && window.FPFront.tracking) {
+                            var giftQty = data.quantity || 1;
+                            var giftValueRaw = (result && result.value != null) ? parseFloat(result.value) : (result && result.data && result.data.total != null) ? parseFloat(result.data.total) : (giftConfig && giftConfig.priceFrom != null) ? parseFloat(giftConfig.priceFrom) * giftQty : 0;
+                            var giftValue = (typeof giftValueRaw === 'number' && !isNaN(giftValueRaw)) ? giftValueRaw : 0;
+                            window.FPFront.tracking.giftPurchase({
+                                experience_id: data.experience_id,
+                                experience_name: (giftConfig && giftConfig.experienceTitle) || '',
+                                quantity: giftQty,
+                                value: giftValue,
+                                currency: (typeof fpExpConfig !== 'undefined' && fpExpConfig.currency) || 'EUR'
+                            });
+                        }
 
                         if (checkoutUrl) {
                             // Redirect to checkout
@@ -1498,6 +2510,9 @@
                 });
             }
         })();
+
+        // 8) Gestione "Leggi di più" - ORA GESTITO IN STANDALONE all'inizio del file
+        // (Codice rimosso per evitare duplicati - vedi riga ~7)
     });
     
 })();

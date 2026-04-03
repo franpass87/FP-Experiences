@@ -2,6 +2,16 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.6.5] - 2026-04-03
+
+### Added
+
+- **`tools/sync-source-to-dist-build.ps1`** + **`npm run sync:dist`**: copia da junction verso `dist/fp-experiences` e `build/fp-experiences` i file che divergono più spesso (`assets/css/front.css`, `assets/js/front.js` incluso mirror in `assets/js/dist/`, `templates/front/experience.php`, `fp-experiences.php`, `src/Localization/AutoTranslator.php`, tutti i `languages/*.po` e `fp-experiences.pot`). Lo ZIP di release resta generato da `.github/scripts/build-zip.sh` (rsync dalla root, esclude `dist`/`build`).
+
+### Changed
+
+- **i18n**: aggiornati `fp-experiences-en.po`, `fp-experiences-en_US.po`, `fp-experiences-de.po`, `fp-experiences-de_DE.po` con due `msgid` distinti per la nota modale regalo (esperienza ricorrente vs evento a data singola), allineati a `esc_html__()` nel template.
+
 ## [1.6.4] - 2026-04-03
 
 ### Changed

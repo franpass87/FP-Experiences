@@ -542,8 +542,11 @@ msgstr "Persönliche Nachricht (optional)"
 msgid "Extra prepagati"
 msgstr "Vorausbezahlte Extras"
 
-msgid "Potrai verificare il totale e completare il pagamento al checkout. Il destinatario riceverà il voucher la mattina programmata o immediatamente dopo il pagamento se non è stata selezionata una data."
-msgstr "Sie können den Gesamtbetrag überprüfen und die Zahlung an der Kasse abschließen. Der Empfänger erhält den Gutschein am geplanten Morgen oder sofort nach der Zahlung, wenn kein Datum ausgewählt wurde."
+msgid "Potrai verificare il totale e completare il pagamento al checkout. Il destinatario riceverà il voucher la mattina programmata o immediatamente dopo il pagamento se non è stata selezionata una data. La data dell'esperienza verrà scelta dal destinatario in fase di riscatto del voucher."
+msgstr "Sie können den Gesamtbetrag prüfen und die Zahlung an der Kasse abschließen. Der Empfänger erhält den Gutschein am Morgen des vorgesehenen Versandtermins oder unmittelbar nach der Zahlung, wenn kein Datum ausgewählt wurde. Das Datum des Erlebnisses wählt der Empfänger bei der Einlösung des Gutscheins."
+
+msgid "Potrai verificare il totale e completare il pagamento al checkout. Il destinatario riceverà il voucher via email la mattina della data di consegna che eventualmente imposti sopra (campo opzionale), oppure subito dopo il pagamento se lo lasci vuoto. Questo evento ha data e orario già definiti: al riscatto il destinatario confermerà i dati per utilizzare il voucher, senza scegliere un'altra data."
+msgstr "Sie können den Gesamtbetrag prüfen und die Zahlung an der Kasse abschließen. Der Empfänger erhält den Gutschein per E-Mail am Morgen des von Ihnen oben festgelegten Zustellungsdatums (optional) oder unmittelbar nach der Zahlung, wenn Sie das Feld leer lassen. Bei dieser Veranstaltung sind Datum und Uhrzeit bereits festgelegt: Bei der Einlösung bestätigt der Empfänger seine Daten zur Nutzung des Gutscheins, ohne ein anderes Datum zu wählen."
 
 msgid "Procedi al pagamento"
 msgstr "Zur Zahlung"

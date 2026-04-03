@@ -542,8 +542,11 @@ msgstr "Personal message (optional)"
 msgid "Extra prepagati"
 msgstr "Prepaid extras"
 
-msgid "Potrai verificare il totale e completare il pagamento al checkout. Il destinatario riceverà il voucher la mattina programmata o immediatamente dopo il pagamento se non è stata selezionata una data."
-msgstr "You can verify the total and complete payment at checkout. The recipient will receive the voucher on the scheduled morning or immediately after payment if no date was selected."
+msgid "Potrai verificare il totale e completare il pagamento al checkout. Il destinatario riceverà il voucher la mattina programmata o immediatamente dopo il pagamento se non è stata selezionata una data. La data dell'esperienza verrà scelta dal destinatario in fase di riscatto del voucher."
+msgstr "You can review the total and complete payment at checkout. The recipient will receive the voucher on the scheduled morning or immediately after payment if no date was selected. The experience date will be chosen by the recipient when redeeming the voucher."
+
+msgid "Potrai verificare il totale e completare il pagamento al checkout. Il destinatario riceverà il voucher via email la mattina della data di consegna che eventualmente imposti sopra (campo opzionale), oppure subito dopo il pagamento se lo lasci vuoto. Questo evento ha data e orario già definiti: al riscatto il destinatario confermerà i dati per utilizzare il voucher, senza scegliere un'altra data."
+msgstr "You can review the total and complete payment at checkout. The recipient will receive the voucher by email on the morning of the delivery date you set above (optional), or immediately after payment if you leave it blank. This event's date and time are already fixed: when redeeming, the recipient will confirm their details to use the voucher without choosing a different date."
 
 msgid "Procedi al pagamento"
 msgstr "Proceed to payment"
@@ -633,6 +636,9 @@ msgstr "November"
 msgid "Dicembre"
 msgstr "December"
 
+msgid "Caricamento..."
+msgstr "Loading..."
+
 # Booking widget strings
 msgid "Tipo biglietto"
 msgstr "Ticket type"
@@ -643,8 +649,68 @@ msgstr "Duration"
 msgid "Seleziona almeno 1 biglietto"
 msgstr "Select at least 1 ticket"
 
+msgid "Seleziona data e orario"
+msgstr "Select date and time"
+
 msgid "Adulto"
 msgstr "Adult"
+
+# Missing booking form strings
+msgid "Scegli una data"
+msgstr "Choose a date"
+
+msgid "Seleziona i biglietti"
+msgstr "Select tickets"
+
+msgid "Seleziona i biglietti per vedere il riepilogo"
+msgstr "Select tickets to see the summary"
+
+msgid "Seleziona una data per vedere le fasce orarie"
+msgstr "Select a date to view time slots"
+
+msgid "Riepilogo"
+msgstr "Summary"
+
+msgid "Prezzo"
+msgstr "Price"
+
+msgid "Quantità"
+msgstr "Quantity"
+
+msgid "minuti"
+msgstr "minutes"
+
+msgid "45 minuti"
+msgstr "45 minutes"
+
+msgid "Riduci"
+msgstr "Decrease"
+
+msgid "Aumenta"
+msgstr "Increase"
+
+msgid "Totale"
+msgstr "Total"
+
+# Ticket quantity buttons (with placeholder)
+msgid "Riduci %s"
+msgstr "Decrease %s"
+
+msgid "Aumenta %s"
+msgstr "Increase %s"
+
+msgid "Quantità %s"
+msgstr "Quantity %s"
+
+# Duration
+msgid "%d minuti"
+msgstr "%d minutes"
+
+msgid "%dh %02dm"
+msgstr "%dh %02dm"
+
+msgid "Procedi al pagamento"
+msgstr "Proceed to payment"
 
 # Frontend - Experience Page
 msgid "Overview"
@@ -974,6 +1040,27 @@ msgstr "We received your experience request"
 
 msgid "Thank you for your request. Our team will get back to you shortly."
 msgstr "Thank you for your request. Our team will get back to you shortly."
+
+msgid "Your experience request has been approved"
+msgstr "Your experience request has been approved"
+
+msgid "Update on your experience request"
+msgstr "Update on your experience request"
+
+msgid "Payment required for your experience booking"
+msgstr "Payment required for your experience booking"
+
+msgid "Thank you for your request. Our team will review it and get back to you shortly."
+msgstr "Thank you for your request. Our team will review it and get back to you shortly."
+
+msgid "Great news! Your experience request has been approved. We look forward to welcoming you."
+msgstr "Great news! Your experience request has been approved. We look forward to welcoming you."
+
+msgid "We regret to inform you that we are unable to accommodate your experience request at this time."
+msgstr "We regret to inform you that we are unable to accommodate your experience request at this time."
+
+msgid "Your experience request has been approved. Please complete your payment using the link below."
+msgstr "Your experience request has been approved. Please complete your payment using the link below."
 
 # Permission Errors
 msgid "You do not have permission to manage FP Experiences bookings."
@@ -1561,3 +1648,104 @@ msgid "%dh"
 msgid_plural "%dh"
 msgstr[0] "%dh"
 msgstr[1] "%dh"
+
+# Frontend list/archive texts
+msgid "Leggi di più"
+msgstr "Read more"
+
+msgid "Mostra meno"
+msgstr "Show less"
+
+msgid "Dettagli"
+msgstr "Details"
+
+msgid "Da %s"
+msgstr "From %s"
+
+msgid "a persona"
+msgstr "per person"
+
+msgid "Prenota"
+msgstr "Book now"
+
+msgid "Esperienza"
+msgstr "Experience"
+
+msgid "Durata"
+msgstr "Duration"
+
+msgid "Lingue"
+msgstr "Languages"
+
+# Trust badges / Cognitive bias
+msgid "Prenotazione sicura"
+msgstr "Secure booking"
+
+msgid "Transazioni protette"
+msgstr "Protected transactions"
+
+msgid "Pagamenti crittografati e protezione antifrode per ogni transazione."
+msgstr "Encrypted payments and fraud protection for every transaction."
+
+msgid "Checkout protetto"
+msgstr "Secure checkout"
+
+msgid "Paghi come preferisci"
+msgstr "Pay your way"
+
+msgid "Carte e wallet digitali approvati con conferma in tempo reale."
+msgstr "Approved credit cards and digital wallets with real-time confirmation."
+
+msgid "Cancellazione flessibile"
+msgstr "Flexible cancellation"
+
+msgid "Piani che cambiano? Nessun problema"
+msgstr "Plans change? No problem"
+
+msgid "Puoi modificare o annullare entro i termini indicati senza penali."
+msgstr "Modify or cancel within the indicated terms at no charge."
+
+msgid "Conferma immediata"
+msgstr "Instant confirmation"
+
+msgid "Ricevi tutto in pochi secondi"
+msgstr "Get everything in seconds"
+
+msgid "Ricevi subito biglietti e dettagli via e-mail e nell'area riservata."
+msgstr "Receive tickets and details instantly via email and in your account."
+
+msgid "Miglior prezzo garantito"
+msgstr "Best price guaranteed"
+
+msgid "Zero sorprese sul prezzo"
+msgstr "No price surprises"
+
+msgid "Se trovi un prezzo più basso ti rimborsiamo la differenza."
+msgstr "If you find a lower price, we'll refund the difference."
+
+msgid "Esperienza verificata"
+msgstr "Verified experience"
+
+msgid "Partner selezionati"
+msgstr "Selected partners"
+
+msgid "Operatori certificati e recensioni verificate da viaggiatori reali."
+msgstr "Certified operators and verified reviews from real travelers."
+
+msgid "Supporto dedicato"
+msgstr "Dedicated support"
+
+msgid "Siamo con te in ogni fase"
+msgstr "We're with you every step"
+
+msgid "Assistenza multicanale prima, durante e dopo l'esperienza."
+msgstr "Multi-channel assistance before, during and after your experience."
+
+msgid "Perfetta come regalo"
+msgstr "Perfect as a gift"
+
+msgid "Biglietto regalo digitale"
+msgstr "Digital gift voucher"
+
+msgid "Voucher personalizzabili con messaggi e consegna immediata."
+msgstr "Customizable vouchers with messages and instant delivery."

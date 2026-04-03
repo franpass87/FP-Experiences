@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
+# ZIP = rsync dalla root del repo (sorgente reale). Le cartelle dist/ e build/ committate
+# possono essere allineate in locale con: npm run sync:dist  oppure  tools/sync-source-to-dist-build.ps1
 
 SLUG="fp-experiences"
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
