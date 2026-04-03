@@ -47,6 +47,25 @@ $is_single_event_mode = 'single_event' === $event_mode;
 $event_date_label = isset($event_meta['date_label']) ? (string) $event_meta['date_label'] : '';
 $event_is_sold_out = ! empty($event_meta['is_sold_out']);
 
+$special_requests_defaults = [
+    'mode' => 'default',
+    'step_title' => '',
+    'notes_label' => '',
+    'help_text' => '',
+];
+$special_requests_config = isset($special_requests_config) && is_array($special_requests_config)
+    ? array_merge($special_requests_defaults, $special_requests_config)
+    : $special_requests_defaults;
+$sr_mode_effective = $is_single_event_mode ? (string) ($special_requests_config['mode'] ?? 'default') : 'default';
+if (! in_array($sr_mode_effective, ['default', 'notes_only', 'hidden'], true)) {
+    $sr_mode_effective = 'default';
+}
+$special_requests_step_hidden = $is_single_event_mode && 'hidden' === $sr_mode_effective;
+$special_requests_notes_only = $is_single_event_mode && 'notes_only' === $sr_mode_effective;
+$sr_step_title_custom = trim((string) ($special_requests_config['step_title'] ?? ''));
+$sr_notes_label_custom = trim((string) ($special_requests_config['notes_label'] ?? ''));
+$sr_help_custom = trim((string) ($special_requests_config['help_text'] ?? ''));
+
 $slots = is_array($slots) ? $slots : [];
 $tickets = is_array($tickets) ? $tickets : [];
 $addons = is_array($addons) ? $addons : [];
@@ -592,23 +611,32 @@ $dataset = [
                     </div>
                 </li>
             <?php endif; ?>
-            <?php 
-            // Calcola il numero dello step per le richieste speciali
+            <?php
+            // Calcola il numero dello step per le richieste speciali (e riepilogo se lo step è nascosto)
             $special_requests_step_num = 3;
-            if (!empty($addons)) {
+            if (! empty($addons)) {
                 $special_requests_step_num++;
             }
             if ($has_multiple_languages) {
                 $special_requests_step_num++;
             }
+            $summary_step_num = $special_requests_step_hidden ? $special_requests_step_num : ($special_requests_step_num + 1);
+            $sr_step_title_display = '' !== $sr_step_title_custom
+                ? $sr_step_title_custom
+                : __('Richieste speciali', 'fp-experiences');
+            $sr_notes_label_display = '' !== $sr_notes_label_custom
+                ? $sr_notes_label_custom
+                : __('Altre richieste o note', 'fp-experiences');
             ?>
+            <?php if (! $special_requests_step_hidden) : ?>
             <li class="fp-exp-step fp-exp-step--special-requests" data-fp-step="special-requests">
                 <header>
                     <span class="fp-exp-step__number"><?php echo esc_html((string) $special_requests_step_num); ?></span>
-                    <h3 class="fp-exp-step__title"><?php echo esc_html__('Richieste speciali', 'fp-experiences'); ?></h3>
+                    <h3 class="fp-exp-step__title"><?php echo esc_html($sr_step_title_display); ?></h3>
                 </header>
                 <div class="fp-exp-step__content">
                     <div class="fp-exp-field">
+                        <?php if (! $special_requests_notes_only) : ?>
                         <div class="fp-exp-special-requests__options">
                             <div class="fp-exp-special-requests__group">
                                 <p class="fp-exp-special-requests__group-title" style="padding-bottom: 0 !important; font-weight: bold !important; margin-bottom: 0.35rem !important;"><?php echo esc_html__('Richieste alimentari', 'fp-experiences'); ?></p>
@@ -710,10 +738,11 @@ $dataset = [
                                 </div>
                             </div>
                         </div>
-                        
+                        <?php endif; ?>
+
                         <div class="fp-exp-field" style="margin-top: 1.5rem;">
                             <label class="fp-exp-label" for="fp-exp-special-requests-<?php echo esc_attr($scope_class); ?>">
-                                <?php echo esc_html__('Altre richieste o note', 'fp-experiences'); ?>
+                                <?php echo esc_html($sr_notes_label_display); ?>
                             </label>
                             <textarea 
                                 id="fp-exp-special-requests-<?php echo esc_attr($scope_class); ?>" 
@@ -724,19 +753,31 @@ $dataset = [
                                 data-fp-special-requests
                             ></textarea>
                         </div>
-                        
+
                         <p class="fp-exp-field__description">
-                            <?php echo esc_html__('Indica eventuali richieste o esigenze particolari che dovremmo conoscere per organizzare al meglio la tua esperienza.', 'fp-experiences'); ?>
+                            <?php
+                            if ('' !== $sr_help_custom) {
+                                echo esc_html($sr_help_custom);
+                            } elseif ($is_single_event_mode) {
+                                echo esc_html__(
+                                    'Data e orario dell’evento sono già fissi. Usa questo spazio solo per segnalare esigenze utili allo staff (es. allergie, accessibilità, note per il giorno dell’evento).',
+                                    'fp-experiences'
+                                );
+                            } else {
+                                echo esc_html__(
+                                    'Indica eventuali richieste o esigenze particolari che dovremmo conoscere per organizzare al meglio la tua esperienza.',
+                                    'fp-experiences'
+                                );
+                            }
+                            ?>
                         </p>
                     </div>
                 </div>
             </li>
+            <?php endif; ?>
             <li class="fp-exp-step fp-exp-step--summary" data-fp-step="summary">
                 <header>
-                    <span class="fp-exp-step__number"><?php 
-                        $step_num = $special_requests_step_num + 1;
-                        echo esc_html((string) $step_num); 
-                    ?></span>
+                    <span class="fp-exp-step__number"><?php echo esc_html((string) $summary_step_num); ?></span>
                     <h3 class="fp-exp-step__title"><?php echo esc_html__('Riepilogo', 'fp-experiences'); ?></h3>
                 </header>
                 <div class="fp-exp-step__content">

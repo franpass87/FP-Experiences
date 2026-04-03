@@ -42,6 +42,7 @@ use function max;
 use function ksort;
 use function sanitize_key;
 use function sanitize_text_field;
+use function sanitize_textarea_field;
 use function substr;
 use function uksort;
 use function wp_create_nonce;
@@ -265,6 +266,38 @@ final class WidgetShortcode extends BaseShortcode
             }
         }
 
+        $special_requests_config = [
+            'mode' => 'default',
+            'step_title' => '',
+            'notes_label' => '',
+            'help_text' => '',
+        ];
+        if ($is_event) {
+            $sr_mode_raw = $repo !== null
+                ? $repo->getMeta($experience_id, '_fp_single_event_special_requests_mode', 'default')
+                : get_post_meta($experience_id, '_fp_single_event_special_requests_mode', true);
+            $sr_mode = is_string($sr_mode_raw) ? $sr_mode_raw : 'default';
+            if (! in_array($sr_mode, ['default', 'notes_only', 'hidden'], true)) {
+                $sr_mode = 'default';
+            }
+            $special_requests_config['mode'] = $sr_mode;
+            $special_requests_config['step_title'] = sanitize_text_field(
+                (string) ($repo !== null
+                    ? $repo->getMeta($experience_id, '_fp_single_event_special_requests_title', '')
+                    : get_post_meta($experience_id, '_fp_single_event_special_requests_title', true))
+            );
+            $special_requests_config['notes_label'] = sanitize_text_field(
+                (string) ($repo !== null
+                    ? $repo->getMeta($experience_id, '_fp_single_event_special_requests_notes_label', '')
+                    : get_post_meta($experience_id, '_fp_single_event_special_requests_notes_label', true))
+            );
+            $special_requests_config['help_text'] = sanitize_textarea_field(
+                (string) ($repo !== null
+                    ? $repo->getMeta($experience_id, '_fp_single_event_special_requests_help', '')
+                    : get_post_meta($experience_id, '_fp_single_event_special_requests_help', true))
+            );
+        }
+
         // Try to use repository if available
         $repo = $this->getExperienceRepository();
         $cognitive_bias_meta = [];
@@ -342,6 +375,7 @@ final class WidgetShortcode extends BaseShortcode
             'overview' => [
                 'cognitive_biases' => $cognitive_bias_badges,
             ],
+            'special_requests_config' => $special_requests_config,
         ];
 
         $missing_meta = [];

@@ -18,6 +18,7 @@ use function esc_url;
 use function get_terms;
 use function sanitize_key;
 use function sanitize_text_field;
+use function sanitize_textarea_field;
 use function wp_get_post_terms;
 use function wp_attachment_is_image;
 
@@ -43,6 +44,13 @@ final class DetailsMetaBoxHandler extends BaseMetaBoxHandler
         $is_event = !empty($data['is_event']);
         $event_datetime = $data['event_datetime'] ?? '';
         $event_datetime_input = $this->format_event_datetime_for_input((string) $event_datetime);
+        $single_event_sr_mode = isset($data['single_event_special_requests_mode']) ? (string) $data['single_event_special_requests_mode'] : 'default';
+        if (! in_array($single_event_sr_mode, ['default', 'notes_only', 'hidden'], true)) {
+            $single_event_sr_mode = 'default';
+        }
+        $single_event_sr_title = isset($data['single_event_special_requests_title']) ? (string) $data['single_event_special_requests_title'] : '';
+        $single_event_sr_notes_label = isset($data['single_event_special_requests_notes_label']) ? (string) $data['single_event_special_requests_notes_label'] : '';
+        $single_event_sr_help = isset($data['single_event_special_requests_help']) ? (string) $data['single_event_special_requests_help'] : '';
         $hero_image = $data['hero_image'] ?? ['id' => 0, 'url' => '', 'width' => 0, 'height' => 0];
         $gallery = $data['gallery'] ?? ['items' => [], 'ids' => []];
         $language_details = $data['languages'] ?? [];
@@ -123,6 +131,27 @@ final class DetailsMetaBoxHandler extends BaseMetaBoxHandler
                             aria-describedby="fp-exp-event-help"
                         />
                         <p class="fp-exp-field__description" id="fp-exp-event-help"><?php esc_html_e('Seleziona data e ora di partenza dell’evento.', 'fp-experiences'); ?></p>
+
+                        <div class="fp-exp-field" style="margin-top:1rem;padding-top:1rem;border-top:1px solid rgba(0,0,0,.08);">
+                            <label class="fp-exp-field__label" for="fp-exp-single-event-sr-mode">
+                                <?php esc_html_e('Richieste speciali nel widget (solo evento a data fissa)', 'fp-experiences'); ?>
+                            </label>
+                            <select id="fp-exp-single-event-sr-mode" name="fp_exp_details[single_event_special_requests_mode]">
+                                <option value="default" <?php selected($single_event_sr_mode, 'default', true); ?>><?php esc_html_e('Standard — checkbox e note', 'fp-experiences'); ?></option>
+                                <option value="notes_only" <?php selected($single_event_sr_mode, 'notes_only', true); ?>><?php esc_html_e('Solo campo note libere', 'fp-experiences'); ?></option>
+                                <option value="hidden" <?php selected($single_event_sr_mode, 'hidden', true); ?>><?php esc_html_e('Nascondi lo step', 'fp-experiences'); ?></option>
+                            </select>
+                            <p class="fp-exp-field__description"><?php esc_html_e('Controlla il terzo step del widget di prenotazione quando questa esperienza è un evento con data/ora fissa.', 'fp-experiences'); ?></p>
+
+                            <label class="fp-exp-field__label" for="fp-exp-single-event-sr-title"><?php esc_html_e('Titolo step personalizzato (opzionale)', 'fp-experiences'); ?></label>
+                            <input type="text" class="regular-text" id="fp-exp-single-event-sr-title" name="fp_exp_details[single_event_special_requests_title]" value="<?php echo esc_attr($single_event_sr_title); ?>" placeholder="<?php echo esc_attr__('Richieste speciali', 'fp-experiences'); ?>" />
+
+                            <label class="fp-exp-field__label" for="fp-exp-single-event-sr-notes-label"><?php esc_html_e('Etichetta note (opzionale)', 'fp-experiences'); ?></label>
+                            <input type="text" class="regular-text" id="fp-exp-single-event-sr-notes-label" name="fp_exp_details[single_event_special_requests_notes_label]" value="<?php echo esc_attr($single_event_sr_notes_label); ?>" placeholder="<?php echo esc_attr__('Altre richieste o note', 'fp-experiences'); ?>" />
+
+                            <label class="fp-exp-field__label" for="fp-exp-single-event-sr-help"><?php esc_html_e('Testo di aiuto sotto le note (opzionale)', 'fp-experiences'); ?></label>
+                            <textarea id="fp-exp-single-event-sr-help" name="fp_exp_details[single_event_special_requests_help]" rows="2" class="large-text"><?php echo esc_textarea($single_event_sr_help); ?></textarea>
+                        </div>
                     </div>
                     <div>
                         <span class="fp-exp-field__label">
@@ -1027,6 +1056,28 @@ final class DetailsMetaBoxHandler extends BaseMetaBoxHandler
             $this->update_or_delete_meta($post_id, 'event_datetime', null);
         }
 
+        if ($is_event) {
+            $sr_mode = sanitize_key((string) ($raw['single_event_special_requests_mode'] ?? 'default'));
+            if (! in_array($sr_mode, ['default', 'notes_only', 'hidden'], true)) {
+                $sr_mode = 'default';
+            }
+            $this->update_or_delete_meta($post_id, 'single_event_special_requests_mode', $sr_mode);
+
+            $sr_title = $this->sanitize_text($raw['single_event_special_requests_title'] ?? '');
+            $this->update_or_delete_meta($post_id, 'single_event_special_requests_title', $sr_title !== '' ? $sr_title : null);
+
+            $sr_notes_label = $this->sanitize_text($raw['single_event_special_requests_notes_label'] ?? '');
+            $this->update_or_delete_meta($post_id, 'single_event_special_requests_notes_label', $sr_notes_label !== '' ? $sr_notes_label : null);
+
+            $sr_help = $this->sanitize_textarea($raw['single_event_special_requests_help'] ?? '');
+            $this->update_or_delete_meta($post_id, 'single_event_special_requests_help', $sr_help !== '' ? $sr_help : null);
+        } else {
+            $this->update_or_delete_meta($post_id, 'single_event_special_requests_mode', null);
+            $this->update_or_delete_meta($post_id, 'single_event_special_requests_title', null);
+            $this->update_or_delete_meta($post_id, 'single_event_special_requests_notes_label', null);
+            $this->update_or_delete_meta($post_id, 'single_event_special_requests_help', null);
+        }
+
         // Hero image
         $hero_image_id = isset($raw['hero_image_id']) ? absint((string) $raw['hero_image_id']) : 0;
         if ($hero_image_id > 0 && wp_attachment_is_image($hero_image_id)) {
@@ -1247,12 +1298,23 @@ final class DetailsMetaBoxHandler extends BaseMetaBoxHandler
         // Get event fields (evento a data singola)
         $is_event = (bool) $this->get_meta_value($post_id, 'is_event', false);
         $event_datetime = (string) $this->get_meta_value($post_id, 'event_datetime', '');
+        $single_event_sr_mode = (string) $this->get_meta_value($post_id, 'single_event_special_requests_mode', 'default');
+        if (! in_array($single_event_sr_mode, ['default', 'notes_only', 'hidden'], true)) {
+            $single_event_sr_mode = 'default';
+        }
+        $single_event_sr_title = sanitize_text_field((string) $this->get_meta_value($post_id, 'single_event_special_requests_title', ''));
+        $single_event_sr_notes_label = sanitize_text_field((string) $this->get_meta_value($post_id, 'single_event_special_requests_notes_label', ''));
+        $single_event_sr_help = sanitize_textarea_field((string) $this->get_meta_value($post_id, 'single_event_special_requests_help', ''));
 
         return [
             'short_desc' => $short_desc,
             'duration_minutes' => $duration_minutes,
             'is_event' => $is_event,
             'event_datetime' => $event_datetime,
+            'single_event_special_requests_mode' => $single_event_sr_mode,
+            'single_event_special_requests_title' => $single_event_sr_title,
+            'single_event_special_requests_notes_label' => $single_event_sr_notes_label,
+            'single_event_special_requests_help' => $single_event_sr_help,
             'hero_image' => $hero_image,
             'gallery' => $gallery,
             'gallery_video_url' => $gallery_video_url,

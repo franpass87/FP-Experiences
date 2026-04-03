@@ -2,6 +2,16 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.5.50] - 2026-04-03
+
+### Added
+
+- **Editor esperienza → Dettagli** (solo con «Evento a data fissa»): controlli sullo step **Richieste speciali** nel widget — modalità standard, solo note libere o step nascosto; titolo step, etichetta note e testo di aiuto opzionali (`_fp_single_event_special_requests_*`).
+
+### Changed
+
+- **Widget**: per eventi a data singola, testo di aiuto predefinito sotto le richieste speciali riformulato (data/ora già fissi; usare lo spazio per allergie, accessibilità, note per il giorno). Esperienze ricorrenti restano con il copy originale; il campo «Testo di aiuto» in Dettagli resta prioritaria se compilato.
+
 ## [1.5.49] - 2026-04-03
 
 ### Added
