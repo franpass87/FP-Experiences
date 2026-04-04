@@ -2,6 +2,12 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.6.24] - 2026-04-03
+
+### Changed
+
+- **Pagina esperienza**: la sezione «Informazioni utili» è stata spostata subito dopo «Perché prenotare con noi» e prima della galleria e di «Regala questo evento».
+
 ## [1.6.23] - 2026-04-03
 
 ### Changed
