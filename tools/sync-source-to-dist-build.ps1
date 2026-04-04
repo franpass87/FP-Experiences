@@ -83,6 +83,3 @@ if (Test-Path -LiteralPath $langSrc) {
 }
 
 Write-Host "`nCompletato. Rigenera i .mo con: wp i18n make-mo languages (o msgfmt) se usi solo file compilati."
-genera i .mo con: wp i18n make-mo languages (o msgfmt) se usi solo file compilati."
-
-genera i .mo con: wp i18n make-mo languages (o msgfmt) se usi solo file compilati."
