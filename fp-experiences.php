@@ -42,7 +42,7 @@ if (! defined('FP_EXP_PLUGIN_URL')) {
 }
 
 if (! defined('FP_EXP_VERSION')) {
-    define('FP_EXP_VERSION', '1.6.25');
+    define('FP_EXP_VERSION', '1.6.26');
 }
 
 // Force OPcache invalidation on version update
