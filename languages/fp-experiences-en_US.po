@@ -1781,3 +1781,30 @@ msgstr[1] "days"
 
 msgid "Informazioni utili"
 msgstr "Useful information"
+
+msgid "Disponibilità"
+msgstr "Availability"
+
+msgid "posti"
+msgstr "spots"
+
+msgid "ancora prenotabili per questa data."
+msgstr "still bookable for this date."
+
+msgid "Prenotazioni online"
+msgstr "Online booking"
+
+msgid "Ultime ore"
+msgstr "Final hours"
+
+msgid "Chiuderanno il %1$s alle %2$s."
+msgstr "Closes on %1$s at %2$s."
+
+msgid "Tempo per prenotare"
+msgstr "Time left to book"
+
+msgid "Chiusura prenotazioni: %s."
+msgstr "Booking closes: %s."
+
+msgid "Prenotazione online possibile fino al %s."
+msgstr "Online booking available until %s."

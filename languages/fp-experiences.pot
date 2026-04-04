@@ -3559,3 +3559,39 @@ msgstr[1] ""
 #: src/Elementor/WidgetExperiencePage.php
 msgid "Informazioni utili"
 msgstr ""
+
+#: src/Shortcodes/ExperienceShortcode.php
+msgid "Disponibilità"
+msgstr ""
+
+#: src/Shortcodes/ExperienceShortcode.php
+msgid "posti"
+msgstr ""
+
+#: src/Shortcodes/ExperienceShortcode.php
+msgid "ancora prenotabili per questa data."
+msgstr ""
+
+#: src/Shortcodes/ExperienceShortcode.php
+msgid "Prenotazioni online"
+msgstr ""
+
+#: src/Shortcodes/ExperienceShortcode.php
+msgid "Ultime ore"
+msgstr ""
+
+#: src/Shortcodes/ExperienceShortcode.php
+msgid "Chiuderanno il %1$s alle %2$s."
+msgstr ""
+
+#: src/Shortcodes/ExperienceShortcode.php
+msgid "Tempo per prenotare"
+msgstr ""
+
+#: src/Shortcodes/ExperienceShortcode.php
+msgid "Chiusura prenotazioni: %s."
+msgstr ""
+
+#: src/Shortcodes/ExperienceShortcode.php
+msgid "Prenotazione online possibile fino al %s."
+msgstr ""

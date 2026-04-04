@@ -2,6 +2,12 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.6.23] - 2026-04-03
+
+### Changed
+
+- **Informazioni utili (frontend)**: layout a card con etichetta (kicker), valore in evidenza (numero/giorni/posti) e riga di dettaglio; testo completo resta in `aria-label` per accessibilità. Retrocompatibile con `fp_exp_participation_info_nudges` che passa solo `text` + `type`.
+
 ## [1.6.22] - 2026-04-03
 
 ### Changed

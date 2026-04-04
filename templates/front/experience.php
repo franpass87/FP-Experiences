@@ -25,7 +25,7 @@
  * @var string $children_rules
  * @var string $event_mode
  * @var array<string, mixed> $event_meta Chiavi: is_event, datetime, date_label, ticket_sales_closed, ticket_sales_closed_message, is_past, is_sold_out
- * @var array<int, array{type: string, text: string}> $participation_info_nudges
+ * @var array<int, array<string, mixed>> $participation_info_nudges Chiavi tipiche: type, text, kicker, emphasis, unit, detail, emphasis_approx
  */
 
 if (! defined('ABSPATH')) {
@@ -848,15 +848,41 @@ $sticky_price_display = '' !== $price_from_display ? $format_currency($price_fro
                                 if (! is_array($nudge)) {
                                     continue;
                                 }
-                                $nudge_text = isset($nudge['text']) ? (string) $nudge['text'] : '';
-                                if ('' === trim($nudge_text)) {
+                                $nudge_text = isset($nudge['text']) ? trim((string) $nudge['text']) : '';
+                                $nudge_kicker = isset($nudge['kicker']) ? trim((string) $nudge['kicker']) : '';
+                                if ('' === $nudge_text && '' === $nudge_kicker) {
                                     continue;
                                 }
                                 $nudge_type = isset($nudge['type']) ? sanitize_key((string) $nudge['type']) : 'note';
+                                $nudge_emphasis = isset($nudge['emphasis']) ? trim((string) $nudge['emphasis']) : '';
+                                $nudge_unit = isset($nudge['unit']) ? trim((string) $nudge['unit']) : '';
+                                $nudge_detail = isset($nudge['detail']) ? trim((string) $nudge['detail']) : '';
+                                $nudge_approx = ! empty($nudge['emphasis_approx']);
+                                $use_card = '' !== $nudge_kicker;
                                 ?>
-                                <li class="fp-exp-participation-info__item fp-exp-participation-info__item--<?php echo esc_attr($nudge_type); ?>" role="listitem">
-                                    <span class="fp-exp-participation-info__bullet" aria-hidden="true"></span>
-                                    <span class="fp-exp-participation-info__text"><?php echo esc_html($nudge_text); ?></span>
+                                <li class="fp-exp-participation-info__item fp-exp-participation-info__item--<?php echo esc_attr($nudge_type); ?> <?php echo $use_card ? 'fp-exp-participation-info__item--card' : 'fp-exp-participation-info__item--plain'; ?>" role="listitem">
+                                    <?php if ($use_card) : ?>
+                                        <div class="fp-exp-participation-info__card"<?php echo '' !== $nudge_text ? ' role="group" aria-label="' . esc_attr($nudge_text) . '"' : ''; ?>>
+                                            <span class="fp-exp-participation-info__kicker"><?php echo esc_html($nudge_kicker); ?></span>
+                                            <?php if ('' !== $nudge_emphasis) : ?>
+                                                <div class="fp-exp-participation-info__focus">
+                                                    <?php if ($nudge_approx) : ?>
+                                                        <span class="fp-exp-participation-info__approx" aria-hidden="true">~</span>
+                                                    <?php endif; ?>
+                                                    <span class="fp-exp-participation-info__value"><?php echo esc_html($nudge_emphasis); ?></span>
+                                                    <?php if ('' !== $nudge_unit) : ?>
+                                                        <span class="fp-exp-participation-info__unit"><?php echo esc_html($nudge_unit); ?></span>
+                                                    <?php endif; ?>
+                                                </div>
+                                            <?php endif; ?>
+                                            <?php if ('' !== $nudge_detail) : ?>
+                                                <p class="fp-exp-participation-info__detail"><?php echo esc_html($nudge_detail); ?></p>
+                                            <?php endif; ?>
+                                        </div>
+                                    <?php elseif ('' !== $nudge_text) : ?>
+                                        <span class="fp-exp-participation-info__bullet" aria-hidden="true"></span>
+                                        <span class="fp-exp-participation-info__text"><?php echo esc_html($nudge_text); ?></span>
+                                    <?php endif; ?>
                                 </li>
                             <?php endforeach; ?>
                         </ul>

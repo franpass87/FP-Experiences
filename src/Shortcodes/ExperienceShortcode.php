@@ -517,7 +517,7 @@ final class ExperienceShortcode extends BaseShortcode
      *
      * @param array<int, array<string, mixed>> $slots_snapshot Output di {@see WidgetShortcode::booking_slots_snapshot_for_experience()}.
      *
-     * @return array<int, array{type: string, text: string}>
+     * @return array<int, array<string, mixed>> Voci con `text` (accessibilità) e opzionalmente `kicker`, `emphasis`, `unit`, `detail`, `emphasis_approx`.
      */
     private function build_participation_info_nudges(
         int $experience_id,
@@ -559,6 +559,11 @@ final class ExperienceShortcode extends BaseShortcode
                     __('Al momento risultano ancora circa %d posti disponibili.', 'fp-experiences'),
                     $min_remaining
                 ),
+                'kicker' => __('Disponibilità', 'fp-experiences'),
+                'emphasis' => (string) $min_remaining,
+                'emphasis_approx' => true,
+                'unit' => __('posti', 'fp-experiences'),
+                'detail' => __('ancora prenotabili per questa data.', 'fp-experiences'),
             ];
         }
 
@@ -569,11 +574,14 @@ final class ExperienceShortcode extends BaseShortcode
                 $now = new \DateTimeImmutable('now', $tz);
                 if ($now < $end) {
                     $end_ts = $end->getTimestamp();
+                    $tz_wp = wp_timezone();
                     $date_time_label = wp_date(
                         get_option('date_format', 'd/m/Y') . ' H:i',
                         $end_ts,
-                        wp_timezone()
+                        $tz_wp
                     );
+                    $date_part = wp_date((string) get_option('date_format', 'd/m/Y'), $end_ts, $tz_wp);
+                    $time_part = wp_date('H:i', $end_ts, $tz_wp);
                     $diff_seconds = $end_ts - $now->getTimestamp();
                     $max_countdown_days = (int) apply_filters('fp_exp_participation_deadline_countdown_max_days', 14, $experience_id);
 
@@ -584,6 +592,16 @@ final class ExperienceShortcode extends BaseShortcode
                                 /* translators: %s: date and time until online booking stays open */
                                 __('Puoi prenotare sul sito fino al %s.', 'fp-experiences'),
                                 $date_time_label
+                            ),
+                            'kicker' => __('Prenotazioni online', 'fp-experiences'),
+                            'emphasis' => __('Ultime ore', 'fp-experiences'),
+                            'emphasis_approx' => false,
+                            'unit' => '',
+                            'detail' => sprintf(
+                                /* translators: 1: date, 2: time (H:i) */
+                                __('Chiuderanno il %1$s alle %2$s.', 'fp-experiences'),
+                                $date_part,
+                                $time_part
                             ),
                         ];
                     } else {
@@ -600,6 +618,15 @@ final class ExperienceShortcode extends BaseShortcode
                                     $days,
                                     _n('giorno', 'giorni', $days, 'fp-experiences')
                                 ),
+                                'kicker' => __('Tempo per prenotare', 'fp-experiences'),
+                                'emphasis' => (string) $days,
+                                'emphasis_approx' => false,
+                                'unit' => _n('giorno', 'giorni', $days, 'fp-experiences'),
+                                'detail' => sprintf(
+                                    /* translators: %s: date and time when booking closes */
+                                    __('Chiusura prenotazioni: %s.', 'fp-experiences'),
+                                    $date_time_label
+                                ),
                             ];
                         } else {
                             $nudges[] = [
@@ -607,6 +634,15 @@ final class ExperienceShortcode extends BaseShortcode
                                 'text' => sprintf(
                                     /* translators: %s: date and time until online booking stays open */
                                     __('Puoi prenotare sul sito fino al %s.', 'fp-experiences'),
+                                    $date_time_label
+                                ),
+                                'kicker' => __('Prenotazioni online', 'fp-experiences'),
+                                'emphasis' => '',
+                                'emphasis_approx' => false,
+                                'unit' => '',
+                                'detail' => sprintf(
+                                    /* translators: %s: date and time when booking closes */
+                                    __('Prenotazione online possibile fino al %s.', 'fp-experiences'),
                                     $date_time_label
                                 ),
                             ];
@@ -619,7 +655,7 @@ final class ExperienceShortcode extends BaseShortcode
         /**
          * Filtra i messaggi della sezione Informazioni utili.
          *
-         * @param array<int, array{type: string, text: string}> $nudges
+         * @param array<int, array<string, mixed>> $nudges
          * @param array<int, array<string, mixed>>              $slots_snapshot
          */
         return apply_filters('fp_exp_participation_info_nudges', $nudges, $experience_id, $slots_snapshot);

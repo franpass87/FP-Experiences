@@ -1781,3 +1781,30 @@ msgstr[1] "Tage"
 
 msgid "Informazioni utili"
 msgstr "Nützliche Informationen"
+
+msgid "Disponibilità"
+msgstr "Verfügbarkeit"
+
+msgid "posti"
+msgstr "Plätze"
+
+msgid "ancora prenotabili per questa data."
+msgstr "für diesen Termin noch buchbar."
+
+msgid "Prenotazioni online"
+msgstr "Online-Buchung"
+
+msgid "Ultime ore"
+msgstr "Letzte Stunden"
+
+msgid "Chiuderanno il %1$s alle %2$s."
+msgstr "Ende am %1$s um %2$s."
+
+msgid "Tempo per prenotare"
+msgstr "Zeit zum Buchen"
+
+msgid "Chiusura prenotazioni: %s."
+msgstr "Buchungsschluss: %s."
+
+msgid "Prenotazione online possibile fino al %s."
+msgstr "Online-Buchung möglich bis %s."
