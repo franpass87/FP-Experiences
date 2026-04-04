@@ -2,6 +2,12 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.6.28] - 2026-04-03
+
+### Fixed
+
+- **Frontend — icone sezioni**: allineamento verticale (e orizzontale) del glifo Font Awesome nel riquadro colorato (`.fp-exp-section__icon`): lo span interno ora riempie il box in flex e `line-height: 0` sul contenitore è stato rimosso per evitare shift del `::before`.
+
 ## [1.6.27] - 2026-04-03
 
 ### Fixed
