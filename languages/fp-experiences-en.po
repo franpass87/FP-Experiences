@@ -1755,3 +1755,12 @@ msgstr "Digital gift voucher"
 
 msgid "Voucher personalizzabili con messaggi e consegna immediata."
 msgstr "Customizable vouchers with messages and instant delivery."
+
+msgid "Evento concluso"
+msgstr "Event ended"
+
+msgid "Evento al completo"
+msgstr "Fully booked"
+
+msgid "Evento al completo."
+msgstr "Fully booked."

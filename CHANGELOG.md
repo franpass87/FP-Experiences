@@ -2,6 +2,12 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.6.20] - 2026-04-03
+
+### Changed
+
+- **i18n**: aggiunte al catalogo (`fp-experiences.pot`) le stringhe hero «Evento concluso», «Evento al completo» e la nota widget «Evento al completo.»; traduzioni aggiornate per `en`, `en_US`, `de`, `de_DE`.
+
 ## [1.6.19] - 2026-04-03
 
 ### Added

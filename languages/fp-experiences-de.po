@@ -1755,3 +1755,12 @@ msgstr "Digitaler Geschenkgutschein"
 
 msgid "Voucher personalizzabili con messaggi e consegna immediata."
 msgstr "Personalisierbare Gutscheine mit Nachrichten und sofortiger Lieferung."
+
+msgid "Evento concluso"
+msgstr "Event beendet"
+
+msgid "Evento al completo"
+msgstr "Ausgebucht"
+
+msgid "Evento al completo."
+msgstr "Ausgebucht."

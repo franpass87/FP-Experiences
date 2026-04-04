@@ -3524,3 +3524,15 @@ msgstr ""
 #: templates/front/widget.php:298
 msgid "Proceed to checkout"
 msgstr ""
+
+#: templates/front/experience.php:411
+msgid "Evento concluso"
+msgstr ""
+
+#: templates/front/experience.php:418
+msgid "Evento al completo"
+msgstr ""
+
+#: templates/front/widget.php:338
+msgid "Evento al completo."
+msgstr ""
