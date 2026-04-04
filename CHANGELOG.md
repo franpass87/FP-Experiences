@@ -2,17 +2,59 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
-## [1.6.26] - 2026-04-04
+## [1.6.26] - 2026-04-03
 
-### Fixed
-- **GA4 / Tracking Layer**: righe `items` con **prezzo unitario** (totale riga WooCommerce ÷ quantità), non il totale riga come `price`.
-- Con **FP Marketing Tracking Layer** attivo, `woocommerce_thankyou` **non** emette più un secondo `purchase` server-side (evita doppia conversione con `experience_paid`); senza layer resta il `purchase` con meta `_fp_exp_thankyou_purchase_tracked` anti-refresh.
+### Changed
+
+- **Pagina esperienza**: «Informazioni utili» è subito **prima** di «Regala questo evento/esperienza» (dopo overview e galleria se presenti), così non resta la prima sezione del main sotto l’hero quando manca l’overview.
+
+## [1.6.25] - 2026-04-03
+
+### Changed
+
+- **Pagina esperienza**: icona sezione «Perché prenotare con noi» (Font Awesome `fa-handshake`) distinta da «Informazioni utili» (`fa-circle-info`).
+
+## [1.6.24] - 2026-04-03
+
+### Changed
+
+- **Pagina esperienza**: la sezione «Informazioni utili» è stata spostata subito dopo «Perché prenotare con noi» e prima della galleria e di «Regala questo evento».
+
+## [1.6.23] - 2026-04-03
+
+### Changed
+
+- **Informazioni utili (frontend)**: layout a card con etichetta (kicker), valore in evidenza (numero/giorni/posti) e riga di dettaglio; testo completo resta in `aria-label` per accessibilità. Retrocompatibile con `fp_exp_participation_info_nudges` che passa solo `text` + `type`.
+
+## [1.6.22] - 2026-04-03
+
+### Changed
+
+- **Informazioni utili**: copy più morbido (posti disponibili, prenotazione sul sito “fino al …”, “hai ancora X giorni a disposizione”). Countdown giorni mostrato solo se entro soglia **14** giorni; filtro `fp_exp_participation_deadline_countdown_max_days` (`0` = mai countdown; negativo = sempre).
+
+## [1.6.21] - 2026-04-03
+
+### Added
+
+- **Pagina esperienza — sezione «Informazioni utili»** (`participation_info`): sopra «Perché questo evento è speciale», messaggi da dati reali se le prenotazioni sono aperte — posti residui (soglia default 10, filtro `fp_exp_participation_scarcity_threshold`) e chiusura vendite online per evento a data singola da `_fp_event_ticket_sales_end`. Filtro `fp_exp_participation_info_nudges`. Helper `Helpers::single_event_ticket_sales_end_datetime()`. Widget Elementor Experience Page: opzione sezione e default shortcode aggiornato.
+
+## [1.6.20] - 2026-04-03
+
+### Changed
+
+- **i18n**: aggiunte al catalogo (`fp-experiences.pot`) le stringhe hero «Evento concluso», «Evento al completo» e la nota widget «Evento al completo.»; traduzioni aggiornate per `en`, `en_US`, `de`, `de_DE`.
+
+## [1.6.19] - 2026-04-03
+
+### Added
+
+- **Pagina esperienza (hero, evento a data singola)**: pill accanto alla data con «Evento concluso» se l’orario di inizio è passato e «Evento al completo» se i posti risultano esauriti (stessa logica del widget: slot con capienza > 0 e `remaining` a zero). Stili allineati alla pill data.
 
 ## [1.6.18] - 2026-04-04
 
 ### Fixed
 
-- Registrata di nuovo l’integrazione **GA4** (`woocommerce_thankyou` → `fp_tracking_event` `purchase` per righe `fp_experience_item`) nel boot del container, assente dopo la migrazione al kernel.
+- **Widget evento a data singola — «Evento al completo.»**: il messaggio non viene più mostrato se non ci sono slot nel contesto SSR (falso positivo) né quando `capacity_total` dello slot è 0 (nessun tetto capienza: coerente con `Slots::check_capacity`). Aggiunto `capacity_total` agli slot del widget; `schema.org` availability per slot senza tetto trattata come `InStock` se non esaurita per cap esplicito.
 
 ## [1.6.17] - 2026-04-03
 

@@ -6,7 +6,7 @@ Requires at least: 6.0
 Tested up to: 6.4
 Requires PHP: 8.0
 Stable tag: 1.6.26
-Last updated: 2026-04-04
+Last updated: 2026-03-22
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -46,7 +46,7 @@ FP Experiences brings GetYourGuide-style booking flows to WooCommerce without to
 * `[fp_exp_meeting_points id="123"]` – Outputs the primary meeting point and optional alternatives for an experience, with map links built client-side.
 * `[fp_exp_page id="123" sections="hero,highlights,inclusions,meeting,extras,faq,reviews" sticky_widget="1" container="boxed" max_width="1200" gutter="24" sidebar="right"]` – Full experience detail page with hero gallery, highlights, inclusions/exclusions, meeting point block, FAQ accordion, reviews, and sticky availability widget. Supports theming overrides (`preset`, `mode`, color variables, `radius`, `shadow`, `font`) plus layout controls: `container` (`boxed` or `full`), `max_width`/`gutter` (pixels) and `sidebar` (`right`, `left`, `none`).
 
-The `sections` attribute accepts a comma-separated list of sections to render (hero, highlights, inclusions, meeting, extras, faq, reviews). Meeting point data automatically reuses the Meeting Points module when enabled; otherwise the section is hidden. Set `sticky_widget="0"` to disable the mobile CTA bar.
+The `sections` attribute accepts a comma-separated list of sections to render (hero, overview, gallery, participation_info, highlights, inclusions, meeting, extras, faq, reviews). `participation_info` shows “Informazioni utili” (remaining capacity + single-event booking deadline) when data is available. Meeting point data automatically reuses the Meeting Points module when enabled; otherwise the section is hidden. Set `sticky_widget="0"` to disable the mobile CTA bar.
 
 == Elementor Widgets ==
 
@@ -125,8 +125,32 @@ FP Experiences stores reservation details inside custom tables linked to WooComm
 
 == Changelog ==
 
-= 1.6.26 - 2026-04-04 =
-* **Fixed**: GA4 / FP Marketing Tracking Layer — `items.price` come prezzo unitario (totale riga ÷ qty); con layer attivo niente secondo `purchase` da `woocommerce_thankyou` per ordini esperienza; senza layer meta anti-refresh `_fp_exp_thankyou_purchase_tracked`.
+= 1.6.26 - 2026-04-03 =
+* **Changed**: «Informazioni utili» prima del blocco regalo (dopo overview/galleria), non subito sotto l’hero.
+
+= 1.6.25 - 2026-04-03 =
+* **Changed**: Icona «Perché prenotare con noi» (handshake) diversa da «Informazioni utili» (info).
+
+= 1.6.24 - 2026-04-03 =
+* **Changed**: Ordine sezioni — «Informazioni utili» dopo «Perché prenotare con noi», prima di galleria e regalo.
+
+= 1.6.23 - 2026-04-03 =
+* **Changed**: «Informazioni utili» — card visive (kicker + numero + dettaglio) al posto del solo paragrafo.
+
+= 1.6.22 - 2026-04-03 =
+* **Changed**: «Informazioni utili» — testi più morbidi; countdown giorni solo entro 14 giorni (filtro `fp_exp_participation_deadline_countdown_max_days`).
+
+= 1.6.21 - 2026-04-03 =
+* **Added**: Sezione «Informazioni utili» sulla pagina esperienza (sopra highlights): posti disponibili e chiusura prenotazioni evento singolo; attributo `sections` → `participation_info`; filtri `fp_exp_participation_info_nudges`, `fp_exp_participation_scarcity_threshold`.
+
+= 1.6.20 - 2026-04-03 =
+* **Changed**: Catalogo traduzioni — stringhe hero/widget evento (concluso / al completo) in .pot e .po en/de.
+
+= 1.6.19 - 2026-04-03 =
+* **Added**: Hero pagina esperienza (evento singolo) — pill «Evento concluso» / «Evento al completo» come la data, con logica allineata al widget.
+
+= 1.6.18 - 2026-04-04 =
+* **Fixed**: Widget evento — «Evento al completo» solo con slot con capienza > 0 tutti esauriti; niente messaggio se lista slot vuota; capienza slot 0 = non mostrare completo.
 
 = 1.6.17 - 2026-04-03 =
 * **Changed**: Badge di fiducia — icone Font Awesome 6 (stesso stile dei badge esperienza); overview widget — stili FA sulle chip.
