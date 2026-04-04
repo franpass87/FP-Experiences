@@ -2918,19 +2918,21 @@ p.fp-exp-special-requests__group-title,
     .fp-exp-section.fp-exp-highlights { order: 2; }
     .fp-exp-section.fp-exp-overview { order: 3; }
     .fp-exp-section.fp-exp-gallery { order: 4; }
-    .fp-exp-section.fp-exp-gift { order: 5; }
+    /* Senza order esplicito la partecipazione resta 0 e finisce sopra a tutte (subito sotto l'hero) */
+    .fp-exp-section.fp-exp-participation-info { order: 5; }
+    .fp-exp-section.fp-exp-gift { order: 6; }
     
     /* Widget dopo gift */
     .fp-exp-page__aside {
-        order: 6;
+        order: 7;
     }
     
     /* Altre sezioni dopo widget */
-    .fp-exp-section.fp-exp-inclusions { order: 7; }
-    .fp-exp-section.fp-exp-meeting { order: 8; }
-    .fp-exp-section.fp-exp-essentials { order: 9; }
-    .fp-exp-section[data-fp-section="faq"] { order: 10; }
-    .fp-exp-section[data-fp-section="reviews"] { order: 11; }
+    .fp-exp-section.fp-exp-inclusions { order: 8; }
+    .fp-exp-section.fp-exp-meeting { order: 9; }
+    .fp-exp-section.fp-exp-essentials { order: 10; }
+    .fp-exp-section[data-fp-section="faq"] { order: 11; }
+    .fp-exp-section[data-fp-section="reviews"] { order: 12; }
 }
 
 .fp-layout {
@@ -5382,12 +5384,13 @@ body:has(.fp-listing) .aio-contact-trigger.aio-contact-show-dot-status.aio-conta
     .fp-exp-section.fp-exp-highlights { order: 1; }
     .fp-exp-section.fp-exp-overview { order: 2; }
     .fp-exp-section.fp-exp-gallery { order: 3; }
-    .fp-exp-section.fp-exp-gift { order: 4; }
-    .fp-exp-section.fp-exp-inclusions { order: 5; }
-    .fp-exp-section.fp-exp-meeting { order: 6; }
-    .fp-exp-section.fp-exp-essentials { order: 7; }
-    .fp-exp-section[data-fp-section="faq"] { order: 8; }
-    .fp-exp-section[data-fp-section="reviews"] { order: 9; }
+    .fp-exp-section.fp-exp-participation-info { order: 4; }
+    .fp-exp-section.fp-exp-gift { order: 5; }
+    .fp-exp-section.fp-exp-inclusions { order: 6; }
+    .fp-exp-section.fp-exp-meeting { order: 7; }
+    .fp-exp-section.fp-exp-essentials { order: 8; }
+    .fp-exp-section[data-fp-section="faq"] { order: 9; }
+    .fp-exp-section[data-fp-section="reviews"] { order: 10; }
 
     .fp-aside {
         grid-column: 2;

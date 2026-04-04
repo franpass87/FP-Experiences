@@ -2,6 +2,12 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.6.27] - 2026-04-03
+
+### Fixed
+
+- **Pagina esperienza — «Informazioni utili»**: su layout flex (desktop e tablet) la sezione non aveva `order` CSS mentre le altre sì, quindi restava `order: 0` e appariva per prima nel contenuto (subito sotto l’hero). Aggiunto `order` tra galleria e blocco regalo, allineato al markup del template.
+
 ## [1.6.26] - 2026-04-03
 
 ### Changed
