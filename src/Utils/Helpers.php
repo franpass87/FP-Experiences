@@ -1817,6 +1817,70 @@ final class Helpers
     }
 
     /**
+     * True se l’esperienza è evento a data singola e l’orario di inizio è nel passato (timezone del sito).
+     */
+    public static function single_event_is_past(int $experience_id): bool
+    {
+        if ($experience_id <= 0) {
+            return false;
+        }
+
+        if (! (bool) get_post_meta($experience_id, '_fp_is_event', true)) {
+            return false;
+        }
+
+        $tz = wp_timezone();
+        $start = self::parse_fp_experience_datetime_meta(
+            (string) get_post_meta($experience_id, '_fp_event_datetime', true),
+            $tz
+        );
+
+        if ($start === null) {
+            return false;
+        }
+
+        $now = new DateTimeImmutable('now', $tz);
+
+        return $now >= $start;
+    }
+
+    /**
+     * Coerente col widget: almeno uno slot con tetto capienza > 0 e tutti con posti esauriti.
+     *
+     * @param array<int, array<string, mixed>> $slots
+     */
+    public static function slots_indicate_single_event_fully_booked(array $slots): bool
+    {
+        if ($slots === []) {
+            return false;
+        }
+
+        $fully = true;
+
+        foreach ($slots as $slot) {
+            if (! is_array($slot)) {
+                continue;
+            }
+
+            $cap_total = isset($slot['capacity_total']) ? (int) $slot['capacity_total'] : 0;
+
+            if ($cap_total <= 0) {
+                $fully = false;
+                break;
+            }
+
+            $remaining = isset($slot['remaining']) ? (int) $slot['remaining'] : 0;
+
+            if ($remaining > 0) {
+                $fully = false;
+                break;
+            }
+        }
+
+        return $fully;
+    }
+
+    /**
      * Blocco vendite per esperienza impostata come evento a data singola: dopo l’orario di fine vendite (se impostato)
      * o da quando inizia l’evento.
      *

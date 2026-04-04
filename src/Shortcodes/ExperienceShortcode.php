@@ -418,6 +418,14 @@ final class ExperienceShortcode extends BaseShortcode
         $event_ticket_sales_closed = $ticket_sales_err instanceof WP_Error;
         $event_ticket_sales_closed_message = $event_ticket_sales_closed ? $ticket_sales_err->get_error_message() : '';
 
+        $hero_event_is_past = $is_event && Helpers::single_event_is_past($experience_id);
+        $hero_event_is_sold_out = false;
+
+        if ($is_event && ! $event_ticket_sales_closed && ! $hero_event_is_past) {
+            $hero_slots = WidgetShortcode::booking_slots_snapshot_for_experience($experience_id, $tickets);
+            $hero_event_is_sold_out = Helpers::slots_indicate_single_event_fully_booked($hero_slots);
+        }
+
         $price_from = $this->calculate_price_from_meta($experience_id);
         $price_from_display = null !== $price_from && $price_from > 0 ? number_format_i18n($price_from, 0) : '';
 
@@ -464,6 +472,8 @@ final class ExperienceShortcode extends BaseShortcode
                 'date_label' => $event_date_label,
                 'ticket_sales_closed' => $event_ticket_sales_closed,
                 'ticket_sales_closed_message' => $event_ticket_sales_closed_message,
+                'is_past' => $hero_event_is_past,
+                'is_sold_out' => $hero_event_is_sold_out,
             ],
             'gift' => [
                 'enabled' => Helpers::gift_enabled_for_experience($experience_id),

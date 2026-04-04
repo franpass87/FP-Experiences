@@ -2,6 +2,12 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.6.19] - 2026-04-03
+
+### Added
+
+- **Pagina esperienza (hero, evento a data singola)**: pill accanto alla data con «Evento concluso» se l’orario di inizio è passato e «Evento al completo» se i posti risultano esauriti (stessa logica del widget: slot con capienza > 0 e `remaining` a zero). Stili allineati alla pill data.
+
 ## [1.6.18] - 2026-04-04
 
 ### Fixed

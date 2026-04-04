@@ -86,6 +86,28 @@ final class WidgetShortcode extends BaseShortcode
     ];
 
     /**
+     * Slot di prenotazione come nel widget (prima dello svuotamento per vendite chiuse).
+     *
+     * @param array<int, array<string, mixed>> $prepared_tickets Ticket types preparati come nel widget (stesso formato di get_context).
+     * @return array<int, array<string, mixed>>
+     */
+    public static function booking_slots_snapshot_for_experience(int $experience_id, array $prepared_tickets): array
+    {
+        if ($experience_id <= 0) {
+            return [];
+        }
+
+        $instance = new self();
+        $slots = $instance->get_upcoming_slots($experience_id, $prepared_tickets, 60);
+
+        if ($slots === []) {
+            $slots = $instance->generate_virtual_slots($experience_id, $prepared_tickets, 6, 300);
+        }
+
+        return $slots;
+    }
+
+    /**
      * @param array<string, mixed> $attributes
      *
      * @return array<string, mixed>|WP_Error

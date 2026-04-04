@@ -23,6 +23,8 @@
  * @var string $scope_class
  * @var array<string, mixed> $overview
  * @var string $children_rules
+ * @var string $event_mode
+ * @var array<string, mixed> $event_meta Chiavi: is_event, datetime, date_label, ticket_sales_closed, ticket_sales_closed_message, is_past, is_sold_out
  */
 
 if (! defined('ABSPATH')) {
@@ -297,6 +299,10 @@ $event_mode = isset($event_mode) ? (string) $event_mode : 'recurring';
 $event_meta = isset($event_meta) && is_array($event_meta) ? $event_meta : [];
 $is_single_event_mode = 'single_event' === $event_mode;
 $event_date_label = isset($event_meta['date_label']) ? (string) $event_meta['date_label'] : '';
+$event_hero_is_past = ! empty($event_meta['is_past']);
+$event_hero_is_sold_out = ! empty($event_meta['is_sold_out']);
+$event_hero_show_badges = $is_single_event_mode
+    && ('' !== $event_date_label || $event_hero_is_past || $event_hero_is_sold_out);
 $cta_label = $is_single_event_mode
     ? esc_html__('Prenota il tuo posto', 'fp-experiences')
     : esc_html__('Controlla disponibilità', 'fp-experiences');
@@ -392,8 +398,28 @@ $sticky_price_display = '' !== $price_from_display ? $format_currency($price_fro
                         <div class="fp-exp-hero__content">
                             <header class="fp-exp-hero__header">
                                 <h1 class="fp-exp-hero__title"><?php echo esc_html($experience['title']); ?></h1>
-                                <?php if ($is_single_event_mode && '' !== $event_date_label) : ?>
-                                    <p class="fp-exp-hero__event-date"><?php echo esc_html($event_date_label); ?></p>
+                                <?php if ($event_hero_show_badges) : ?>
+                                    <ul class="fp-exp-hero__event-badges" role="list">
+                                        <?php if ('' !== $event_date_label) : ?>
+                                            <li class="fp-exp-hero__event-badges__item">
+                                                <span class="fp-exp-hero__event-date"><?php echo esc_html($event_date_label); ?></span>
+                                            </li>
+                                        <?php endif; ?>
+                                        <?php if ($event_hero_is_past) : ?>
+                                            <li class="fp-exp-hero__event-badges__item">
+                                                <span class="fp-exp-hero__event-status fp-exp-hero__event-status--past" role="status">
+                                                    <?php esc_html_e('Evento concluso', 'fp-experiences'); ?>
+                                                </span>
+                                            </li>
+                                        <?php endif; ?>
+                                        <?php if ($event_hero_is_sold_out) : ?>
+                                            <li class="fp-exp-hero__event-badges__item">
+                                                <span class="fp-exp-hero__event-status fp-exp-hero__event-status--sold-out" role="status">
+                                                    <?php esc_html_e('Evento al completo', 'fp-experiences'); ?>
+                                                </span>
+                                            </li>
+                                        <?php endif; ?>
+                                    </ul>
                                 <?php endif; ?>
                                 <?php if ('' !== $hero_summary) : ?>
                                     <p class="fp-exp-hero__summary"><?php echo esc_html($hero_summary); ?></p>
