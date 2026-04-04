@@ -2,6 +2,12 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.6.25] - 2026-04-03
+
+### Changed
+
+- **Pagina esperienza**: icona sezione «Perché prenotare con noi» (Font Awesome `fa-handshake`) distinta da «Informazioni utili» (`fa-circle-info`).
+
 ## [1.6.24] - 2026-04-03
 
 ### Changed

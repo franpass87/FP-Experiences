@@ -233,7 +233,7 @@ $overview_term_icon = static function (string $term) use ($fontawesome_icon): st
 $get_section_icon = static function (string $section) use ($overview_term_icon, $fontawesome_icon): string {
     switch ($section) {
         case 'overview':
-            return $fontawesome_icon('fa-circle-info');
+            return $fontawesome_icon('fa-handshake');
         case 'gallery':
             return $fontawesome_icon('fa-images');
         case 'gift':
