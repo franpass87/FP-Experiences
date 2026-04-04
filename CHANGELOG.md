@@ -2,6 +2,12 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.6.18] - 2026-04-04
+
+### Fixed
+
+- **Widget evento a data singola — «Evento al completo.»**: il messaggio non viene più mostrato se non ci sono slot nel contesto SSR (falso positivo) né quando `capacity_total` dello slot è 0 (nessun tetto capienza: coerente con `Slots::check_capacity`). Aggiunto `capacity_total` agli slot del widget; `schema.org` availability per slot senza tetto trattata come `InStock` se non esaurita per cap esplicito.
+
 ## [1.6.17] - 2026-04-03
 
 ### Changed

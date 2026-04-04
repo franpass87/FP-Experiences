@@ -261,12 +261,20 @@ final class WidgetShortcode extends BaseShortcode
             }
         }
         $event_mode = $is_event ? 'single_event' : 'recurring';
+        // «Evento al completo» solo se esiste almeno uno slot con tetto capienza > 0 e tutti hanno posti esauriti.
+        // Senza slot nel payload non affermiamo esaurito (evita falsi positivi da sync/calendario).
+        // capacity_total = 0 nel DB = nessun tetto slot (check_capacity non limita): non è «completo».
         $event_is_sold_out = false;
-        if ($is_event && ! $event_ticket_sales_closed) {
+        if ($is_event && ! $event_ticket_sales_closed && $slots !== []) {
             $event_is_sold_out = true;
             foreach ($slots as $slot) {
                 if (! is_array($slot)) {
                     continue;
+                }
+                $cap_total = isset($slot['capacity_total']) ? (int) $slot['capacity_total'] : 0;
+                if ($cap_total <= 0) {
+                    $event_is_sold_out = false;
+                    break;
                 }
                 $remaining = isset($slot['remaining']) ? (int) $slot['remaining'] : 0;
                 if ($remaining > 0) {
@@ -468,6 +476,8 @@ final class WidgetShortcode extends BaseShortcode
             }
 
             $remaining = isset($row['capacity_remaining']) ? (int) $row['capacity_remaining'] : 0;
+            $capacity_total = isset($row['capacity_total']) ? (int) $row['capacity_total'] : 0;
+            $availability = ($capacity_total <= 0 || $remaining > 0) ? 'https://schema.org/InStock' : 'https://schema.org/SoldOut';
 
             $mapped[] = [
                 // Nessun ID persistito per slot virtuali
@@ -476,8 +486,9 @@ final class WidgetShortcode extends BaseShortcode
                 'time' => $start->setTimezone($timezone)->format('H:i'),
                 'start_iso' => $start->setTimezone($timezone)->format(DateTimeInterface::ATOM),
                 'end_iso' => $end->setTimezone($timezone)->format(DateTimeInterface::ATOM),
+                'capacity_total' => $capacity_total,
                 'remaining' => $remaining,
-                'availability' => $remaining > 0 ? 'https://schema.org/InStock' : 'https://schema.org/SoldOut',
+                'availability' => $availability,
                 'currency' => $currency,
                 'price_from' => $price_from,
             ];
@@ -662,8 +673,10 @@ final class WidgetShortcode extends BaseShortcode
 
             $slot_id = (int) $row['id'];
             $snapshot = $snapshots[$slot_id] ?? ['total' => 0, 'per_type' => []];
-            $remaining = max(0, (int) $row['capacity_total'] - $snapshot['total']);
+            $capacity_total = (int) $row['capacity_total'];
+            $remaining = max(0, $capacity_total - $snapshot['total']);
             $price_from = $this->determine_price($row['price_rules'] ?? null, $tickets);
+            $availability = ($capacity_total <= 0 || $remaining > 0) ? 'https://schema.org/InStock' : 'https://schema.org/SoldOut';
 
             $slots[] = [
                 'id' => $slot_id,
@@ -671,8 +684,9 @@ final class WidgetShortcode extends BaseShortcode
                 'time' => $start->setTimezone($timezone)->format('H:i'),
                 'start_iso' => $start->setTimezone($timezone)->format(DateTimeInterface::ATOM),
                 'end_iso' => $end->setTimezone($timezone)->format(DateTimeInterface::ATOM),
+                'capacity_total' => $capacity_total,
                 'remaining' => $remaining,
-                'availability' => $remaining > 0 ? 'https://schema.org/InStock' : 'https://schema.org/SoldOut',
+                'availability' => $availability,
                 'currency' => $currency,
                 'price_from' => $price_from,
             ];
