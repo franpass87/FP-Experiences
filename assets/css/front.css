@@ -4733,14 +4733,25 @@ body.fp-modal-open {
     line-height: 1;
 }
 
-/* Lo span Font Awesome deve occupare tutto il riquadro così il glyph (::before) si centra nel flex */
-.fp-exp-section__icon > span {
-    display: flex;
-    align-items: center;
-    justify-content: center;
+/*
+ * Font Awesome disegna il glyph nel ::before con metriche del font (spesso “alto” nel box em).
+ * Flex sullo span non basta: centriamo il pseudo-elemento nel riquadro con translate.
+ */
+.fp-exp-section__icon > span[class*="fa-"] {
+    position: relative;
+    display: block;
     width: 100%;
     height: 100%;
     margin: 0;
+    font-size: 1.35rem;
+    line-height: 1;
+}
+
+.fp-exp-section__icon > span[class*="fa-"]::before {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
     line-height: 1;
 }
 
@@ -4754,12 +4765,7 @@ body.fp-modal-open {
 .fp-exp-section__icon .fa-solid,
 .fp-exp-section__icon .fa-regular,
 .fp-exp-section__icon .fa-light {
-    font-size: 1.35rem;
-    line-height: 1;
-}
-
-.fp-exp-section__icon [class*="fa-"]::before {
-    line-height: 1;
+    font-size: inherit;
 }
 
 .fp-exp-section__title {
