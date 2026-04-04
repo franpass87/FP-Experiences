@@ -230,31 +230,8 @@ $overview_term_icon = static function (string $term) use ($fontawesome_icon): st
     }
 };
 
-$get_section_icon = static function (string $section) use ($overview_term_icon, $fontawesome_icon): string {
-    switch ($section) {
-        case 'overview':
-            return $fontawesome_icon('fa-handshake');
-        case 'gallery':
-            return $fontawesome_icon('fa-images');
-        case 'gift':
-            return $fontawesome_icon('fa-gift');
-        case 'participation_info':
-            return $fontawesome_icon('fa-circle-info');
-        case 'highlights':
-            return $fontawesome_icon('fa-star');
-        case 'inclusions':
-            return $fontawesome_icon('fa-clipboard-list');
-        case 'meeting':
-            return $fontawesome_icon('fa-map-pin');
-        case 'extras':
-            return $fontawesome_icon('fa-heart');
-        case 'faq':
-            return $fontawesome_icon('fa-circle-question');
-        case 'reviews':
-            return $fontawesome_icon('fa-comments');
-        default:
-            return $fontawesome_icon('fa-circle-question');
-    }
+$get_section_icon = static function (string $section): string {
+    return \FP_Exp\Utils\Helpers::experience_page_section_icon_html($section);
 };
 
 $overview_meeting = isset($overview['meeting']) && is_array($overview['meeting']) ? $overview['meeting'] : [];

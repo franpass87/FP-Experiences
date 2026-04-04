@@ -4733,13 +4733,20 @@ body.fp-modal-open {
     line-height: 1;
 }
 
-/*
- * Font Awesome disegna il glyph nel ::before con metriche del font (spesso “alto” nel box em).
- * Flex sullo span non basta: centriamo il pseudo-elemento nel riquadro con translate.
- */
+/* Icone intestazione sezione: SVG inline (viewBox FA 6) — si scala e centra nel flex senza metriche font */
+.fp-exp-section__icon .fp-exp-section-icon-svg {
+    width: 1.35rem;
+    height: 1.35rem;
+    display: block;
+    flex-shrink: 0;
+}
+
+/* Fallback se un filtro restituisce ancora span Font Awesome */
 .fp-exp-section__icon > span[class*="fa-"] {
     position: relative;
-    display: block;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     width: 100%;
     height: 100%;
     margin: 0;
@@ -4755,17 +4762,11 @@ body.fp-modal-open {
     line-height: 1;
 }
 
-.fp-exp-section__icon svg {
+.fp-exp-section__icon svg:not(.fp-exp-section-icon-svg) {
     width: 1.35rem;
     height: 1.35rem;
     display: block;
     flex-shrink: 0;
-}
-
-.fp-exp-section__icon .fa-solid,
-.fp-exp-section__icon .fa-regular,
-.fp-exp-section__icon .fa-light {
-    font-size: inherit;
 }
 
 .fp-exp-section__title {

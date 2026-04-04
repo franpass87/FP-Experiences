@@ -2,6 +2,12 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.6.30] - 2026-04-03
+
+### Changed
+
+- **Pagina esperienza — icone intestazione sezioni**: sostituiti i glifi Font Awesome (font) con **SVG inline** (path ufficiali Font Awesome 6 Free Solid) così l’icona è disegnata nel `viewBox` e si centra in modo stabile nel quadrato colorato. Filtro `fp_exp_experience_page_section_icon_html` per markup personalizzato per sezione.
+
 ## [1.6.29] - 2026-04-03
 
 ### Fixed
