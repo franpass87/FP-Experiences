@@ -205,6 +205,32 @@ final class Assets
         $rtb_settings = get_option('fp_exp_rtb', []);
         $rtb_enabled = isset($rtb_settings['enabled']) && $rtb_settings['enabled'] === 'yes';
         
+        $sticky_bar_footer_selectors = apply_filters(
+            'fp_exp_sticky_bar_footer_selectors',
+            [
+                '#footer-outer',
+                'footer#footer',
+                '#footer',
+                'footer.site-footer',
+                'footer',
+                '.site-footer',
+            ]
+        );
+        $sticky_bar_footer_selectors = is_array($sticky_bar_footer_selectors)
+            ? array_values(array_filter(array_map('strval', $sticky_bar_footer_selectors)))
+            : [];
+        if ([] === $sticky_bar_footer_selectors) {
+            $sticky_bar_footer_selectors = ['footer'];
+        }
+
+        $sticky_bar_footer_gap = (int) apply_filters('fp_exp_sticky_bar_footer_gap_px', 16);
+        if ($sticky_bar_footer_gap < 0) {
+            $sticky_bar_footer_gap = 0;
+        }
+        if ($sticky_bar_footer_gap > 120) {
+            $sticky_bar_footer_gap = 120;
+        }
+
         wp_localize_script(
             'fp-exp-front',
             'fpExpConfig',
@@ -231,6 +257,8 @@ final class Assets
                 ],
                 'i18n' => $this->get_i18n_strings(),
                 'debug' => defined('WP_DEBUG') && WP_DEBUG,
+                'stickyBarFooterSelectors' => $sticky_bar_footer_selectors,
+                'stickyBarFooterGapPx' => $sticky_bar_footer_gap,
             ]
         );
     }

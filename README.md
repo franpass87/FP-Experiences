@@ -2,7 +2,7 @@
 
 Plugin WordPress per booking di esperienze turistiche stile GetYourGuide. Shortcode/Elementor, carrello e checkout isolati, email transazionali, tracking marketing centralizzato.
 
-[![Version](https://img.shields.io/badge/version-1.6.30-blue.svg)](https://github.com/franpass87/FP-Experiences)
+[![Version](https://img.shields.io/badge/version-1.6.31-blue.svg)](https://github.com/franpass87/FP-Experiences)
 [![License](https://img.shields.io/badge/license-GPLv2%2B-blue.svg)](https://www.gnu.org/licenses/gpl-2.0.html)
 
 ---
@@ -117,6 +117,8 @@ Il servizio `Mailer` centralizzato supporta:
 | `fp_exp_email_branding` | filter | Branding email (logo, colori) |
 | `fp_exp_price_from` | filter | Prezzo "a partire da" nel widget |
 | `fp_exp_special_requests_checkbox_items` | filter | Elenco voci checkbox step «Richieste speciali» nel widget (`$items`, `$experience_id`) |
+| `fp_exp_sticky_bar_footer_selectors` | filter | Array di selettori CSS per trovare il blocco footer e sollevare la barra «Prenota il tuo posto» quando è visibile (default: `#footer-outer`, `footer#footer`, …). |
+| `fp_exp_sticky_bar_footer_gap_px` | filter | Pixel di distanza tra barra CTA e bordo superiore del footer quando si solleva (default `16`, max `120`). |
 | `fp_exp_experience_page_section_icon_html` | filter | Markup icona intestazione sezione su `[fp_exp_page]` (`null` default, `$section` = chiave sezione). Restituire HTML non vuoto per sostituire lo SVG. |
 | `fp_exp_participation_info_nudges` | filter | Messaggi sezione «Informazioni utili» (`$nudges`, `$experience_id`, `$slots_snapshot`). Ogni voce può avere `text` + `type` (layout elenco) oppure anche `kicker`, `emphasis`, `unit`, `detail`, `emphasis_approx` (layout card) |
 | `fp_exp_participation_scarcity_threshold` | filter | Soglia massima posti residui per mostrare il messaggio scarsità (default `10`, `$experience_id`) |

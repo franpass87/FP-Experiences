@@ -2,6 +2,12 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.6.31] - 2026-04-03
+
+### Fixed
+
+- **Barra mobile «Prenota il tuo posto»**: quando il footer entra in viewport, la barra viene sollevata tramite `--fp-exp-sticky-bar-bottom-offset` (scroll/resize/`ResizeObserver`) così non copre copyright e contenuti del footer. Selettori footer e gap (px) configurabili con `fp_exp_sticky_bar_footer_selectors` e `fp_exp_sticky_bar_footer_gap_px`.
+
 ## [1.6.30] - 2026-04-03
 
 ### Changed

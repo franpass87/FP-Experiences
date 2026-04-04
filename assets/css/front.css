@@ -5205,7 +5205,8 @@ body.fp-modal-open {
     /* Gutter = safe-area + var ereditata da .fp-exp-page (--fp-exp-sticky-gutter-x) */
     left: calc(env(safe-area-inset-left, 0px) + var(--fp-exp-sticky-gutter-x));
     right: calc(env(safe-area-inset-right, 0px) + var(--fp-exp-sticky-gutter-x));
-    bottom: 0;
+    /* Sollevamento da JS quando il footer entra in viewport (vedi initStickyBarFooterClearance in front.js) */
+    bottom: var(--fp-exp-sticky-bar-bottom-offset, 0px);
     padding: 0.75rem clamp(0.5rem, 2.5vw, 1rem);
     background: rgba(255, 255, 255, 0.95);
     box-shadow: 0 -12px 30px rgba(0, 0, 0, 0.12);

@@ -647,6 +647,84 @@
         })();
 
         /**
+         * Barra CTA: quando il footer è visibile, solleva la barra (CSS --fp-exp-sticky-bar-bottom-offset)
+         * così non copre copyright e link utili.
+         */
+        (function initStickyBarFooterClearance() {
+            const stickyBar = document.querySelector('[data-fp-sticky-bar]');
+            if (!stickyBar) {
+                return;
+            }
+
+            const defaultSelectors = [
+                '#footer-outer',
+                'footer#footer',
+                '#footer',
+                'footer.site-footer',
+                'footer',
+                '.site-footer',
+            ];
+            const selectors = (window.fpExpConfig && Array.isArray(window.fpExpConfig.stickyBarFooterSelectors) && window.fpExpConfig.stickyBarFooterSelectors.length)
+                ? window.fpExpConfig.stickyBarFooterSelectors
+                : defaultSelectors;
+            const gapPx = (window.fpExpConfig && typeof window.fpExpConfig.stickyBarFooterGapPx === 'number' && window.fpExpConfig.stickyBarFooterGapPx >= 0)
+                ? window.fpExpConfig.stickyBarFooterGapPx
+                : 16;
+
+            const findFooter = () => {
+                for (let i = 0; i < selectors.length; i += 1) {
+                    try {
+                        const el = document.querySelector(selectors[i]);
+                        if (el && el instanceof HTMLElement) {
+                            const r = el.getBoundingClientRect();
+                            if (r.height > 0 && r.width > 0) {
+                                return el;
+                            }
+                        }
+                    } catch (e) {
+                        /* selettore non valido */
+                    }
+                }
+                return null;
+            };
+
+            let rafScheduled = false;
+            const apply = () => {
+                rafScheduled = false;
+                const footer = findFooter();
+                if (!footer) {
+                    stickyBar.style.setProperty('--fp-exp-sticky-bar-bottom-offset', '0px');
+                    return;
+                }
+                const rect = footer.getBoundingClientRect();
+                const vh = window.innerHeight;
+                if (rect.top < vh) {
+                    const lift = vh - rect.top + gapPx;
+                    stickyBar.style.setProperty('--fp-exp-sticky-bar-bottom-offset', `${Math.max(0, Math.round(lift))}px`);
+                } else {
+                    stickyBar.style.setProperty('--fp-exp-sticky-bar-bottom-offset', '0px');
+                }
+            };
+
+            const scheduleApply = () => {
+                if (rafScheduled) {
+                    return;
+                }
+                rafScheduled = true;
+                window.requestAnimationFrame(apply);
+            };
+
+            window.addEventListener('scroll', scheduleApply, { passive: true });
+            window.addEventListener('resize', scheduleApply);
+            window.addEventListener('orientationchange', scheduleApply);
+            if (typeof ResizeObserver !== 'undefined') {
+                const ro = new ResizeObserver(scheduleApply);
+                ro.observe(document.documentElement);
+            }
+            scheduleApply();
+        })();
+
+        /**
          * Modale regalo: stesso stacking della barra sticky — su body sta sopra header/footer/CTA tema.
          * Eseguito prima del gate sul widget così il portale avviene anche con sidebar disattivata.
          */
