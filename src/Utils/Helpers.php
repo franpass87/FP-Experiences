@@ -1845,6 +1845,27 @@ final class Helpers
     }
 
     /**
+     * Data/ora di fine vendite biglietti per evento a data singola, se meta valorizzata e parsabile.
+     */
+    public static function single_event_ticket_sales_end_datetime(int $experience_id): ?DateTimeImmutable
+    {
+        if ($experience_id <= 0) {
+            return null;
+        }
+
+        if (! (bool) get_post_meta($experience_id, '_fp_is_event', true)) {
+            return null;
+        }
+
+        $raw = trim(str_replace('T', ' ', (string) get_post_meta($experience_id, '_fp_event_ticket_sales_end', true)));
+        if ($raw === '') {
+            return null;
+        }
+
+        return self::parse_fp_experience_datetime_meta($raw, wp_timezone());
+    }
+
+    /**
      * Coerente col widget: almeno uno slot con tetto capienza > 0 e tutti con posti esauriti.
      *
      * @param array<int, array<string, mixed>> $slots

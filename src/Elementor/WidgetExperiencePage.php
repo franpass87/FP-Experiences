@@ -68,9 +68,10 @@ final class WidgetExperiencePage extends Widget_Base
                 'label' => esc_html__('Sections', 'fp-experiences'),
                 'type' => Controls_Manager::SELECT2,
                 'multiple' => true,
-                'default' => ['hero', 'highlights', 'inclusions', 'meeting', 'extras', 'faq', 'reviews'],
+                'default' => ['hero', 'participation_info', 'highlights', 'inclusions', 'meeting', 'extras', 'faq', 'reviews'],
                 'options' => [
                     'hero' => esc_html__('Hero', 'fp-experiences'),
+                    'participation_info' => esc_html__('Informazioni utili', 'fp-experiences'),
                     'highlights' => esc_html__('Highlights', 'fp-experiences'),
                     'inclusions' => esc_html__('Inclusions/Exclusions', 'fp-experiences'),
                     'meeting' => esc_html__('Meeting point', 'fp-experiences'),
@@ -170,7 +171,7 @@ final class WidgetExperiencePage extends Widget_Base
 
         $atts = [
             'id' => (string) ($settings['experience_id'] ?? ''),
-            'sections' => $sections ?: 'hero,highlights,inclusions,meeting,extras,faq,reviews',
+            'sections' => $sections ?: 'hero,participation_info,highlights,inclusions,meeting,extras,faq,reviews',
             'sticky_widget' => ('yes' === ($settings['sticky_widget'] ?? 'yes')) ? '1' : '0',
             'container' => (string) ($settings['container'] ?? ''),
             'max_width' => (string) ($settings['max_width'] ?? ''),

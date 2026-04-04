@@ -3536,3 +3536,26 @@ msgstr ""
 #: templates/front/widget.php:338
 msgid "Evento al completo."
 msgstr ""
+
+#: src/Shortcodes/ExperienceShortcode.php
+msgid "Restano circa %d posti disponibili."
+msgstr ""
+
+#: src/Shortcodes/ExperienceShortcode.php
+msgid "Le prenotazioni online chiuderanno il %s."
+msgstr ""
+
+#: src/Shortcodes/ExperienceShortcode.php
+msgid "Le prenotazioni online chiuderanno il %1$s (mancano %2$d %3$s)."
+msgstr ""
+
+#: src/Shortcodes/ExperienceShortcode.php
+msgid "giorno"
+msgid_plural "giorni"
+msgstr[0] ""
+msgstr[1] ""
+
+#: templates/front/experience.php
+#: src/Elementor/WidgetExperiencePage.php
+msgid "Informazioni utili"
+msgstr ""

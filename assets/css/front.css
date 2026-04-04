@@ -4788,6 +4788,48 @@ body.fp-modal-open {
     line-height: 1.5;
 }
 
+/* Informazioni utili (posti residui, chiusura prenotazioni) — sopra highlights, tono distinto dal widget */
+.fp-exp-participation-info__body {
+    margin: 0;
+}
+
+.fp-exp-participation-info__list {
+    list-style: none;
+    margin: 0;
+    padding: clamp(1rem, 2.5vw, 1.35rem) clamp(1.1rem, 2.8vw, 1.5rem);
+    display: grid;
+    gap: 0.75rem;
+    border-radius: clamp(0.95rem, 2vw, 1.2rem);
+    background: color-mix(in srgb, var(--fp-color-primary) 8%, #fff);
+    border: 1px solid color-mix(in srgb, var(--fp-color-primary) 18%, transparent);
+    box-shadow: 0 1px 0 rgba(15, 23, 42, 0.04);
+}
+
+.fp-exp-participation-info__item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.65rem;
+    margin: 0;
+    padding: 0;
+    line-height: 1.55;
+    font-size: clamp(0.98rem, 0.35vw + 0.92rem, 1.08rem);
+    color: var(--fp-color-text, #0f172a);
+}
+
+.fp-exp-participation-info__bullet {
+    flex-shrink: 0;
+    width: 0.45rem;
+    height: 0.45rem;
+    margin-top: 0.55em;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--fp-color-primary) 55%, #64748b);
+}
+
+.fp-exp-participation-info__text {
+    flex: 1;
+    min-width: 0;
+}
+
 .fp-exp-highlights__list {
     display: grid;
     gap: clamp(1rem, 2.5vw, 1.5rem);

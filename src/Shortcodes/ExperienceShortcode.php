@@ -66,6 +66,7 @@ final class ExperienceShortcode extends BaseShortcode
         'hero',
         'overview',
         'gallery',
+        'participation_info',
         'highlights',
         'inclusions',
         'meeting',
@@ -421,10 +422,25 @@ final class ExperienceShortcode extends BaseShortcode
         $hero_event_is_past = $is_event && Helpers::single_event_is_past($experience_id);
         $hero_event_is_sold_out = false;
 
-        if ($is_event && ! $event_ticket_sales_closed && ! $hero_event_is_past) {
-            $hero_slots = WidgetShortcode::booking_slots_snapshot_for_experience($experience_id, $tickets);
-            $hero_event_is_sold_out = Helpers::slots_indicate_single_event_fully_booked($hero_slots);
+        $needs_booking_snapshot =
+            (! empty($enabled_sections['participation_info']) && ! ($ticket_sales_err instanceof WP_Error))
+            || ($is_event && ! $event_ticket_sales_closed && ! $hero_event_is_past);
+
+        $booking_slots_snapshot = [];
+        if ($needs_booking_snapshot) {
+            $booking_slots_snapshot = WidgetShortcode::booking_slots_snapshot_for_experience($experience_id, $tickets);
         }
+
+        if ($is_event && ! $event_ticket_sales_closed && ! $hero_event_is_past) {
+            $hero_event_is_sold_out = Helpers::slots_indicate_single_event_fully_booked($booking_slots_snapshot);
+        }
+
+        $participation_info_nudges = $this->build_participation_info_nudges(
+            $experience_id,
+            $is_event,
+            $ticket_sales_err,
+            $booking_slots_snapshot
+        );
 
         $price_from = $this->calculate_price_from_meta($experience_id);
         $price_from_display = null !== $price_from && $price_from > 0 ? number_format_i18n($price_from, 0) : '';
@@ -489,7 +505,106 @@ final class ExperienceShortcode extends BaseShortcode
             ],
             'overview' => $overview,
             'overview_has_content' => $overview_has_content,
+            'participation_info_nudges' => $participation_info_nudges,
         ];
+    }
+
+    /**
+     * Messaggi “Informazioni utili” (scadenza prenotazioni evento singolo, posti residui da slot reali).
+     *
+     * @param array<int, array<string, mixed>> $slots_snapshot Output di {@see WidgetShortcode::booking_slots_snapshot_for_experience()}.
+     *
+     * @return array<int, array{type: string, text: string}>
+     */
+    private function build_participation_info_nudges(
+        int $experience_id,
+        bool $is_event,
+        ?WP_Error $ticket_sales_err,
+        array $slots_snapshot
+    ): array {
+        $nudges = [];
+
+        if ($ticket_sales_err instanceof WP_Error) {
+            return apply_filters('fp_exp_participation_info_nudges', $nudges, $experience_id, $slots_snapshot);
+        }
+
+        $threshold = (int) apply_filters('fp_exp_participation_scarcity_threshold', 10, $experience_id);
+        $threshold = max(1, $threshold);
+
+        $min_remaining = null;
+        foreach ($slots_snapshot as $slot) {
+            if (! is_array($slot)) {
+                continue;
+            }
+
+            $cap_total = isset($slot['capacity_total']) ? (int) $slot['capacity_total'] : 0;
+            if ($cap_total <= 0) {
+                continue;
+            }
+
+            $remaining = isset($slot['remaining']) ? (int) $slot['remaining'] : 0;
+            if ($min_remaining === null || $remaining < $min_remaining) {
+                $min_remaining = $remaining;
+            }
+        }
+
+        if ($min_remaining !== null && $min_remaining > 0 && $min_remaining <= $threshold) {
+            $nudges[] = [
+                'type' => 'scarcity',
+                'text' => sprintf(
+                    /* translators: %d: approximate remaining bookable places */
+                    __('Restano circa %d posti disponibili.', 'fp-experiences'),
+                    $min_remaining
+                ),
+            ];
+        }
+
+        if ($is_event) {
+            $end = Helpers::single_event_ticket_sales_end_datetime($experience_id);
+            if ($end instanceof \DateTimeImmutable) {
+                $tz = wp_timezone();
+                $now = new \DateTimeImmutable('now', $tz);
+                if ($now < $end) {
+                    $end_ts = $end->getTimestamp();
+                    $date_time_label = wp_date(
+                        get_option('date_format', 'd/m/Y') . ' H:i',
+                        $end_ts,
+                        wp_timezone()
+                    );
+                    $diff_seconds = $end_ts - $now->getTimestamp();
+                    if ($diff_seconds < \DAY_IN_SECONDS) {
+                        $nudges[] = [
+                            'type' => 'deadline',
+                            'text' => sprintf(
+                                /* translators: %s: date and time when online booking closes */
+                                __('Le prenotazioni online chiuderanno il %s.', 'fp-experiences'),
+                                $date_time_label
+                            ),
+                        ];
+                    } else {
+                        $days = (int) max(1, (int) floor($diff_seconds / \DAY_IN_SECONDS));
+                        $nudges[] = [
+                            'type' => 'deadline',
+                            'text' => sprintf(
+                                /* translators: 1: date/time of booking closure, 2: number of days, 3: "giorno" or "giorni" */
+                                __('Le prenotazioni online chiuderanno il %1$s (mancano %2$d %3$s).', 'fp-experiences'),
+                                $date_time_label,
+                                $days,
+                                _n('giorno', 'giorni', $days, 'fp-experiences')
+                            ),
+                        ];
+                    }
+                }
+            }
+        }
+
+        /**
+         * Filtra i messaggi della sezione Informazioni utili.
+         *
+         * @param array<int, array{type: string, text: string}> $nudges
+         * @param array<int, array<string, mixed>>              $slots_snapshot
+         */
+        return apply_filters('fp_exp_participation_info_nudges', $nudges, $experience_id, $slots_snapshot);
     }
 
     /**

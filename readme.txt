@@ -5,7 +5,7 @@ Tags: experiences, booking, wooocommerce, shortcodes, calendar
 Requires at least: 6.0
 Tested up to: 6.4
 Requires PHP: 8.0
-Stable tag: 1.6.20
+Stable tag: 1.6.21
 Last updated: 2026-03-22
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -46,7 +46,7 @@ FP Experiences brings GetYourGuide-style booking flows to WooCommerce without to
 * `[fp_exp_meeting_points id="123"]` – Outputs the primary meeting point and optional alternatives for an experience, with map links built client-side.
 * `[fp_exp_page id="123" sections="hero,highlights,inclusions,meeting,extras,faq,reviews" sticky_widget="1" container="boxed" max_width="1200" gutter="24" sidebar="right"]` – Full experience detail page with hero gallery, highlights, inclusions/exclusions, meeting point block, FAQ accordion, reviews, and sticky availability widget. Supports theming overrides (`preset`, `mode`, color variables, `radius`, `shadow`, `font`) plus layout controls: `container` (`boxed` or `full`), `max_width`/`gutter` (pixels) and `sidebar` (`right`, `left`, `none`).
 
-The `sections` attribute accepts a comma-separated list of sections to render (hero, highlights, inclusions, meeting, extras, faq, reviews). Meeting point data automatically reuses the Meeting Points module when enabled; otherwise the section is hidden. Set `sticky_widget="0"` to disable the mobile CTA bar.
+The `sections` attribute accepts a comma-separated list of sections to render (hero, overview, gallery, participation_info, highlights, inclusions, meeting, extras, faq, reviews). `participation_info` shows “Informazioni utili” (remaining capacity + single-event booking deadline) when data is available. Meeting point data automatically reuses the Meeting Points module when enabled; otherwise the section is hidden. Set `sticky_widget="0"` to disable the mobile CTA bar.
 
 == Elementor Widgets ==
 
@@ -124,6 +124,9 @@ If Brevo credentials are provided, confirmations, reminders, and cancellations u
 FP Experiences stores reservation details inside custom tables linked to WooCommerce orders. Marketing consent is recorded per order (`_fp_exp_consent_marketing`) and forwarded to Brevo only when enabled. UTM parameters are captured in the `fp_exp_utm` cookie, copied to reservation/order meta, and never displayed publicly. Site owners can export or erase booking data through WooCommerce personal data tools; deleting an order removes the associated reservation payload. API credentials (Brevo, Google Calendar) are kept in WordPress options and can be revoked at any time from the Settings screen.
 
 == Changelog ==
+
+= 1.6.21 - 2026-04-03 =
+* **Added**: Sezione «Informazioni utili» sulla pagina esperienza (sopra highlights): posti disponibili e chiusura prenotazioni evento singolo; attributo `sections` → `participation_info`; filtri `fp_exp_participation_info_nudges`, `fp_exp_participation_scarcity_threshold`.
 
 = 1.6.20 - 2026-04-03 =
 * **Changed**: Catalogo traduzioni — stringhe hero/widget evento (concluso / al completo) in .pot e .po en/de.

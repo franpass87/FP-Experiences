@@ -25,6 +25,7 @@
  * @var string $children_rules
  * @var string $event_mode
  * @var array<string, mixed> $event_meta Chiavi: is_event, datetime, date_label, ticket_sales_closed, ticket_sales_closed_message, is_past, is_sold_out
+ * @var array<int, array{type: string, text: string}> $participation_info_nudges
  */
 
 if (! defined('ABSPATH')) {
@@ -86,6 +87,7 @@ if ($layout_gutter > 0) {
 $layout_style_attr = empty($layout_style) ? '' : implode(';', $layout_style);
 
 $sections = isset($sections) && is_array($sections) ? $sections : [];
+$participation_info_nudges = isset($participation_info_nudges) && is_array($participation_info_nudges) ? $participation_info_nudges : [];
 $has_highlights = ! empty($highlights);
 $has_inclusions = ! empty($inclusions) || ! empty($exclusions);
 $has_meeting = isset($meeting_points['primary']) && is_array($meeting_points['primary']);
@@ -236,6 +238,8 @@ $get_section_icon = static function (string $section) use ($overview_term_icon, 
             return $fontawesome_icon('fa-images');
         case 'gift':
             return $fontawesome_icon('fa-gift');
+        case 'participation_info':
+            return $fontawesome_icon('fa-circle-info');
         case 'highlights':
             return $fontawesome_icon('fa-star');
         case 'inclusions':
@@ -827,6 +831,37 @@ $sticky_price_display = '' !== $price_from_display ? $format_currency($price_fro
                         </div>
                     </div>
                 </div>
+            <?php endif; ?>
+
+            <?php if (! empty($sections['participation_info']) && ! empty($participation_info_nudges)) : ?>
+                <section class="fp-exp-section fp-exp-participation-info" id="fp-exp-section-participation-info" data-fp-section="participation_info" aria-label="<?php esc_attr_e('Informazioni utili', 'fp-experiences'); ?>">
+                    <header class="fp-exp-section__header fp-exp-participation-info__header">
+                        <div class="fp-exp-section__heading">
+                            <span class="fp-exp-section__icon" aria-hidden="true"><?php echo $get_section_icon('participation_info'); ?></span>
+                            <h2 class="fp-exp-section__title"><?php esc_html_e('Informazioni utili', 'fp-experiences'); ?></h2>
+                        </div>
+                    </header>
+                    <div class="fp-exp-section__body fp-exp-participation-info__body">
+                        <ul class="fp-exp-participation-info__list" role="list">
+                            <?php foreach ($participation_info_nudges as $nudge) : ?>
+                                <?php
+                                if (! is_array($nudge)) {
+                                    continue;
+                                }
+                                $nudge_text = isset($nudge['text']) ? (string) $nudge['text'] : '';
+                                if ('' === trim($nudge_text)) {
+                                    continue;
+                                }
+                                $nudge_type = isset($nudge['type']) ? sanitize_key((string) $nudge['type']) : 'note';
+                                ?>
+                                <li class="fp-exp-participation-info__item fp-exp-participation-info__item--<?php echo esc_attr($nudge_type); ?>" role="listitem">
+                                    <span class="fp-exp-participation-info__bullet" aria-hidden="true"></span>
+                                    <span class="fp-exp-participation-info__text"><?php echo esc_html($nudge_text); ?></span>
+                                </li>
+                            <?php endforeach; ?>
+                        </ul>
+                    </div>
+                </section>
             <?php endif; ?>
 
             <?php if (! empty($sections['highlights']) && $has_highlights) : ?>
