@@ -94,6 +94,9 @@ final class IntegrationServiceProvider extends AbstractServiceProvider
         
         // Register Performance integration (no dependencies)
         $container->singleton(PerformanceIntegration::class, PerformanceIntegration::class);
+
+        // GA4 bridge: `woocommerce_thankyou` → `fp_tracking_event` purchase (righe fp_experience_item)
+        $container->singleton(GA4::class, GA4::class);
     }
 
     /**
@@ -129,14 +132,15 @@ final class IntegrationServiceProvider extends AbstractServiceProvider
             }
         }
         
-        // Register hooks for legacy integrations (HookableInterface)
-        // Note: GA4, GoogleAds, MetaPixel, Clarity removed — tracking handled by FP-Marketing-Tracking-Layer
+        // Register hooks for legacy integrations (HookableInterface).
+        // Snippet GTM/GA4: FP-Marketing-Tracking-Layer. GA4 qui = solo bus purchase su thank you WooCommerce.
         $legacyIntegrations = [
             GoogleCalendar::class,
             ExperienceProduct::class,
             WooCommerceProduct::class,
             WooCommerceCheckout::class,
             PerformanceIntegration::class,
+            GA4::class,
         ];
         
         foreach ($legacyIntegrations as $integrationClass) {
@@ -176,6 +180,7 @@ final class IntegrationServiceProvider extends AbstractServiceProvider
             WooCommerceProduct::class,
             WooCommerceCheckout::class,
             PerformanceIntegration::class,
+            GA4::class,
         ];
     }
 }

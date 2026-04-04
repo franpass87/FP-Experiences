@@ -2,23 +2,11 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
-## [1.6.20] - 2026-04-03
-
-### Changed
-
-- **i18n**: aggiunte al catalogo (`fp-experiences.pot`) le stringhe hero «Evento concluso», «Evento al completo» e la nota widget «Evento al completo.»; traduzioni aggiornate per `en`, `en_US`, `de`, `de_DE`.
-
-## [1.6.19] - 2026-04-03
-
-### Added
-
-- **Pagina esperienza (hero, evento a data singola)**: pill accanto alla data con «Evento concluso» se l’orario di inizio è passato e «Evento al completo» se i posti risultano esauriti (stessa logica del widget: slot con capienza > 0 e `remaining` a zero). Stili allineati alla pill data.
-
 ## [1.6.18] - 2026-04-04
 
 ### Fixed
 
-- **Widget evento a data singola — «Evento al completo.»**: il messaggio non viene più mostrato se non ci sono slot nel contesto SSR (falso positivo) né quando `capacity_total` dello slot è 0 (nessun tetto capienza: coerente con `Slots::check_capacity`). Aggiunto `capacity_total` agli slot del widget; `schema.org` availability per slot senza tetto trattata come `InStock` se non esaurita per cap esplicito.
+- Registrata di nuovo l’integrazione **GA4** (`woocommerce_thankyou` → `fp_tracking_event` `purchase` per righe `fp_experience_item`) nel boot del container, assente dopo la migrazione al kernel.
 
 ## [1.6.17] - 2026-04-03
 
