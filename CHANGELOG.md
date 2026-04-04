@@ -2,6 +2,12 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.6.22] - 2026-04-03
+
+### Changed
+
+- **Informazioni utili**: copy più morbido (posti disponibili, prenotazione sul sito “fino al …”, “hai ancora X giorni a disposizione”). Countdown giorni mostrato solo se entro soglia **14** giorni; filtro `fp_exp_participation_deadline_countdown_max_days` (`0` = mai countdown; negativo = sempre).
+
 ## [1.6.21] - 2026-04-03
 
 ### Added

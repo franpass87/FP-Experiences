@@ -1765,14 +1765,14 @@ msgstr "Fully booked"
 msgid "Evento al completo."
 msgstr "Fully booked."
 
-msgid "Restano circa %d posti disponibili."
-msgstr "About %d spots remain available."
+msgid "Al momento risultano ancora circa %d posti disponibili."
+msgstr "There are still about %d spots available at the moment."
 
-msgid "Le prenotazioni online chiuderanno il %s."
-msgstr "Online booking will close on %s."
+msgid "Puoi prenotare sul sito fino al %s."
+msgstr "You can book on the website until %s."
 
-msgid "Le prenotazioni online chiuderanno il %1$s (mancano %2$d %3$s)."
-msgstr "Online booking will close on %1$s (%2$d %3$s remaining)."
+msgid "Puoi prenotare sul sito fino al %1$s (hai ancora %2$d %3$s a disposizione)."
+msgstr "You can book on the website until %1$s (you still have %2$d %3$s left)."
 
 msgid "giorno"
 msgid_plural "giorni"

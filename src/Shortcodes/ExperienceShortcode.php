@@ -512,6 +512,9 @@ final class ExperienceShortcode extends BaseShortcode
     /**
      * Messaggi “Informazioni utili” (scadenza prenotazioni evento singolo, posti residui da slot reali).
      *
+     * Filtri correlati: `fp_exp_participation_scarcity_threshold`, `fp_exp_participation_deadline_countdown_max_days`
+     * (soglia oltre la quale non si mostra il conteggio giorni; `0` = solo data/ora; valore negativo = countdown sempre).
+     *
      * @param array<int, array<string, mixed>> $slots_snapshot Output di {@see WidgetShortcode::booking_slots_snapshot_for_experience()}.
      *
      * @return array<int, array{type: string, text: string}>
@@ -553,7 +556,7 @@ final class ExperienceShortcode extends BaseShortcode
                 'type' => 'scarcity',
                 'text' => sprintf(
                     /* translators: %d: approximate remaining bookable places */
-                    __('Restano circa %d posti disponibili.', 'fp-experiences'),
+                    __('Al momento risultano ancora circa %d posti disponibili.', 'fp-experiences'),
                     $min_remaining
                 ),
             ];
@@ -572,27 +575,42 @@ final class ExperienceShortcode extends BaseShortcode
                         wp_timezone()
                     );
                     $diff_seconds = $end_ts - $now->getTimestamp();
+                    $max_countdown_days = (int) apply_filters('fp_exp_participation_deadline_countdown_max_days', 14, $experience_id);
+
                     if ($diff_seconds < \DAY_IN_SECONDS) {
                         $nudges[] = [
                             'type' => 'deadline',
                             'text' => sprintf(
-                                /* translators: %s: date and time when online booking closes */
-                                __('Le prenotazioni online chiuderanno il %s.', 'fp-experiences'),
+                                /* translators: %s: date and time until online booking stays open */
+                                __('Puoi prenotare sul sito fino al %s.', 'fp-experiences'),
                                 $date_time_label
                             ),
                         ];
                     } else {
                         $days = (int) max(1, (int) floor($diff_seconds / \DAY_IN_SECONDS));
-                        $nudges[] = [
-                            'type' => 'deadline',
-                            'text' => sprintf(
-                                /* translators: 1: date/time of booking closure, 2: number of days, 3: "giorno" or "giorni" */
-                                __('Le prenotazioni online chiuderanno il %1$s (mancano %2$d %3$s).', 'fp-experiences'),
-                                $date_time_label,
-                                $days,
-                                _n('giorno', 'giorni', $days, 'fp-experiences')
-                            ),
-                        ];
+                        $show_countdown = $max_countdown_days < 0 || $days <= $max_countdown_days;
+
+                        if ($show_countdown && $max_countdown_days !== 0) {
+                            $nudges[] = [
+                                'type' => 'deadline',
+                                'text' => sprintf(
+                                    /* translators: 1: date/time booking closes, 2: number of days, 3: "giorno" or "giorni" */
+                                    __('Puoi prenotare sul sito fino al %1$s (hai ancora %2$d %3$s a disposizione).', 'fp-experiences'),
+                                    $date_time_label,
+                                    $days,
+                                    _n('giorno', 'giorni', $days, 'fp-experiences')
+                                ),
+                            ];
+                        } else {
+                            $nudges[] = [
+                                'type' => 'deadline',
+                                'text' => sprintf(
+                                    /* translators: %s: date and time until online booking stays open */
+                                    __('Puoi prenotare sul sito fino al %s.', 'fp-experiences'),
+                                    $date_time_label
+                                ),
+                            ];
+                        }
                     }
                 }
             }

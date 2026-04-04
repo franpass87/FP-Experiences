@@ -1765,14 +1765,14 @@ msgstr "Ausgebucht"
 msgid "Evento al completo."
 msgstr "Ausgebucht."
 
-msgid "Restano circa %d posti disponibili."
-msgstr "Es sind noch etwa %d Plätze verfügbar."
+msgid "Al momento risultano ancora circa %d posti disponibili."
+msgstr "Derzeit sind noch etwa %d Plätze verfügbar."
 
-msgid "Le prenotazioni online chiuderanno il %s."
-msgstr "Die Online-Buchung endet am %s."
+msgid "Puoi prenotare sul sito fino al %s."
+msgstr "Sie können auf der Website bis %s buchen."
 
-msgid "Le prenotazioni online chiuderanno il %1$s (mancano %2$d %3$s)."
-msgstr "Die Online-Buchung endet am %1$s (noch %2$d %3$s)."
+msgid "Puoi prenotare sul sito fino al %1$s (hai ancora %2$d %3$s a disposizione)."
+msgstr "Sie können auf der Website bis %1$s buchen (noch %2$d %3$s)."
 
 msgid "giorno"
 msgid_plural "giorni"
