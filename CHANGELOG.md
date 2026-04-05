@@ -2,6 +2,12 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.6.46] - 2026-04-05
+
+### Fixed
+
+- **Importer**: errore fatale PHP all’avvio per `use function wp_kses_post` dichiarato due volte in `ImporterPage.php` (impossibile caricare il file).
+
 ## [1.6.45] - 2026-04-05
 
 ### Changed

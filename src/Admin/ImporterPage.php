@@ -286,6 +286,16 @@ final class ImporterPage implements HookableInterface
         echo '<li><strong>lead_time_hours</strong>: ' . esc_html__('Ore di preavviso minimo per prenotare (es: 24)', 'fp-experiences') . '</li>';
         echo '</ul>';
 
+        echo '<h4>' . esc_html__('Campi opzionali avanzati:', 'fp-experiences') . '</h4>';
+        echo '<ul class="fp-exp-guide-list">';
+        echo '<li><strong>rules_children</strong>: ' . esc_html__('Regole / policy bambini (testo)', 'fp-experiences') . '</li>';
+        echo '<li><strong>party_default</strong> / <strong>party_max</strong>: ' . esc_html__('Quantità predefinita e massima nel widget (interi, 0 = non impostato)', 'fp-experiences') . '</li>';
+        echo '<li><strong>tax_class</strong>: ' . esc_html__('Slug classe IVA WooCommerce (es. standard), se usi Aliquote diverse', 'fp-experiences') . '</li>';
+        echo '<li><strong>categories</strong>: ' . esc_html__('Categorie esperienza (fp_exp_category), separate da |', 'fp-experiences') . '</li>';
+        echo '<li><strong>difficulty</strong> / <strong>age_restriction</strong> / <strong>location</strong>: ' . esc_html__('Un solo nome di termine per tassonomia (fp_exp_difficulty, fp_exp_age_restriction, fp_exp_location)', 'fp-experiences') . '</li>';
+        echo '<li><strong>faq</strong>: ' . esc_html__('FAQ concatenate: «Domanda|||Risposta» separate da ### (HTML consentito nella risposta)', 'fp-experiences') . '</li>';
+        echo '</ul>';
+
         echo '<div class="fp-exp-guide-tip" style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 12px; margin-top: 15px;">';
         echo '<strong>💡 ' . esc_html__('Suggerimento:', 'fp-experiences') . '</strong> ';
         echo esc_html__('Per campi multipli come highlights, inclusions, exclusions, themes, languages, recurrence_times e recurrence_days, usa il separatore pipe ( | ) senza spazi prima o dopo.', 'fp-experiences');
@@ -382,7 +392,16 @@ final class ImporterPage implements HookableInterface
             'recurrence_end_date',
             'buffer_before',
             'buffer_after',
-            'lead_time_hours'
+            'lead_time_hours',
+            'rules_children',
+            'party_default',
+            'party_max',
+            'tax_class',
+            'categories',
+            'difficulty',
+            'age_restriction',
+            'location',
+            'faq',
         ];
 
         $example_row = [
@@ -414,7 +433,16 @@ final class ImporterPage implements HookableInterface
             '2025-12-31',
             '15',
             '15',
-            '24'
+            '24',
+            'Bambini sotto i 6 anni gratis se accompagnati.',
+            '2',
+            '10',
+            '',
+            'Tour in città|Weekend',
+            'Facile',
+            'Tutte le età',
+            'Centro storico',
+            'Cosa succede se piove?|||Il tour si svolge comunque con ombrelli.###Serve prenotare?|||Sì, online.',
         ];
 
         $rows = [$columns, $example_row];
@@ -470,6 +498,11 @@ final class ImporterPage implements HookableInterface
             }
 
             $row_data = array_combine($headers, $data);
+            if ($row_data === false) {
+                $header_count = count($headers);
+                $padded = array_pad(array_slice($data, 0, $header_count), $header_count, '');
+                $row_data = array_combine($headers, $padded);
+            }
             if ($row_data === false) {
                 $errors[] = sprintf(__('Riga %d: formato non valido', 'fp-experiences'), $row_number);
                 $skipped++;
@@ -602,6 +635,7 @@ final class ImporterPage implements HookableInterface
             'what_to_bring' => '_fp_what_to_bring',
             'notes' => '_fp_notes',
             'policy_cancel' => '_fp_policy_cancel',
+            'rules_children' => '_fp_rules_children',
         ];
 
         foreach ($meta_map as $csv_key => $meta_key) {
@@ -613,11 +647,31 @@ final class ImporterPage implements HookableInterface
                     $value = (int) $value;
                 } elseif ($meta_key === '_fp_base_price') {
                     $value = (float) $value;
+                } elseif ($meta_key === '_fp_policy_cancel') {
+                    $value = wp_kses_post((string) $value);
                 } else {
-                    $value = sanitize_textarea_field($value);
+                    $value = sanitize_textarea_field((string) $value);
                 }
 
                 update_post_meta($post_id, $meta_key, $value);
+            }
+        }
+
+        if (isset($data['tax_class']) && trim((string) $data['tax_class']) !== '') {
+            update_post_meta($post_id, '_fp_tax_class', sanitize_key((string) $data['tax_class']));
+        }
+
+        if (isset($data['party_default'])) {
+            $party_default = absint((string) $data['party_default']);
+            if ($party_default > 0) {
+                update_post_meta($post_id, '_fp_party_default', $party_default);
+            }
+        }
+
+        if (isset($data['party_max'])) {
+            $party_max = absint((string) $data['party_max']);
+            if ($party_max > 0) {
+                update_post_meta($post_id, '_fp_party_max', $party_max);
             }
         }
 
@@ -642,6 +696,8 @@ final class ImporterPage implements HookableInterface
             $languages = array_filter($languages);
             update_post_meta($post_id, '_fp_languages', array_values($languages));
         }
+
+        $this->import_faq_from_csv($post_id, $data);
 
         // Recurrence configuration
         $this->update_recurrence_meta($post_id, $data);
@@ -868,15 +924,60 @@ final class ImporterPage implements HookableInterface
 
         update_post_meta($post_id, '_fp_ticket_types', [$ticket]);
 
+        $tax_class = sanitize_key((string) get_post_meta($post_id, '_fp_tax_class', true));
+
         $pricing = [
             'tickets' => [$ticket],
             'group' => [],
             'addons' => [],
-            'tax_class' => '',
+            'tax_class' => $tax_class,
             'base_price' => (string) $base,
         ];
 
         update_post_meta($post_id, '_fp_exp_pricing', $pricing);
+    }
+
+    /**
+     * FAQ da colonna CSV: coppie «domanda|||risposta» separate da ###.
+     *
+     * @param array<string, string> $data
+     */
+    private function import_faq_from_csv(int $post_id, array $data): void
+    {
+        if (empty($data['faq'])) {
+            return;
+        }
+
+        $raw = trim((string) $data['faq']);
+        if ($raw === '') {
+            return;
+        }
+
+        $chunks = array_map('trim', explode('###', $raw));
+        $faqs = [];
+
+        foreach ($chunks as $chunk) {
+            if ($chunk === '') {
+                continue;
+            }
+
+            $parts = explode('|||', $chunk, 2);
+            $question = sanitize_text_field($parts[0] ?? '');
+            $answer = isset($parts[1]) ? wp_kses_post($parts[1]) : '';
+
+            if ($question === '' && $answer === '') {
+                continue;
+            }
+
+            $faqs[] = [
+                'question' => $question,
+                'answer' => $answer,
+            ];
+        }
+
+        if ($faqs !== []) {
+            update_post_meta($post_id, '_fp_faq', $faqs);
+        }
     }
 
     /**
@@ -944,12 +1045,8 @@ final class ImporterPage implements HookableInterface
     }
 
     /**
-     * Set experience taxonomies from CSV data.
+     * Tassonomie da CSV (nomi termine; creazione se assenti dove applicabile).
      *
-     * @param int                   $post_id Post ID.
-     * @param array<string, string> $data    CSV row data.
-     */
-    /**
      * @param array<string, string> $data
      */
     private function set_experience_taxonomies(int $post_id, array $data): void
@@ -962,6 +1059,30 @@ final class ImporterPage implements HookableInterface
         if (! empty($data['languages'])) {
             $names = array_filter(array_map('trim', explode('|', (string) $data['languages'])));
             $this->assign_terms_by_names($post_id, 'fp_exp_language', $names);
+        }
+
+        if (! empty($data['categories'])) {
+            $names = array_filter(array_map('trim', explode('|', (string) $data['categories'])));
+            $this->assign_terms_by_names($post_id, 'fp_exp_category', $names);
+        }
+
+        foreach (
+            [
+                'difficulty' => 'fp_exp_difficulty',
+                'age_restriction' => 'fp_exp_age_restriction',
+                'location' => 'fp_exp_location',
+            ] as $csv_key => $taxonomy
+        ) {
+            if (empty($data[$csv_key])) {
+                continue;
+            }
+
+            $name = trim((string) $data[$csv_key]);
+            if ($name === '') {
+                continue;
+            }
+
+            $this->assign_terms_by_names($post_id, $taxonomy, [$name]);
         }
     }
 }
