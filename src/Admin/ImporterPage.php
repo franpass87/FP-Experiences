@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace FP_Exp\Admin;
 
+use FP_Exp\Booking\Recurrence;
+use FP_Exp\Booking\Slots;
 use FP_Exp\Core\Hook\HookableInterface;
 use FP_Exp\Utils\Helpers;
 use WP_Error;
 
+use function __;
 use function absint;
 use function add_action;
 use function add_settings_error;
@@ -19,22 +22,27 @@ use function esc_html;
 use function esc_html__;
 use function esc_url;
 use function get_current_screen;
+use function get_post_meta;
+use function get_term_by;
 use function get_settings_errors;
 use function get_transient;
 use function header;
 use function is_wp_error;
 use function preg_match;
 use function sanitize_key;
+use function sanitize_title;
 use function sanitize_text_field;
 use function sanitize_textarea_field;
 use function set_transient;
+use function taxonomy_exists;
 use function settings_errors;
 use function wp_die;
 use function wp_insert_post;
+use function wp_insert_term;
 use function wp_kses_post;
 use function wp_nonce_url;
 use function wp_redirect;
-use function wp_set_object_terms;
+use function wp_set_post_terms;
 use function update_post_meta;
 
 /**
@@ -151,38 +159,6 @@ final class ImporterPage implements HookableInterface
             return;
         }
 
-        $admin_css = Helpers::resolve_asset_rel([
-            'assets/css/dist/fp-experiences-admin.min.css',
-            'assets/css/admin.css',
-        ]);
-        wp_enqueue_style(
-            'fp-exp-admin',
-            FP_EXP_PLUGIN_URL . $admin_css,
-            Helpers::admin_style_dependencies(),
-            Helpers::asset_version($admin_css)
-        );
-
-        $admin_js = Helpers::resolve_asset_rel([
-            'assets/js/dist/fp-experiences-admin.min.js',
-            'assets/js/admin.js',
-        ]);
-        wp_enqueue_script(
-            'fp-exp-admin',
-            FP_EXP_PLUGIN_URL . $admin_js,
-            ['jquery'],
-            Helpers::asset_version($admin_js),
-            true
-        );
-
-        // Config base per fpExpAdmin
-        wp_localize_script('fp-exp-admin', 'fpExpAdmin', [
-            'restUrl' => rest_url('fp-exp/v1/'),
-            'restNonce' => wp_create_nonce('wp_rest'),
-            'ajaxUrl' => admin_url('admin-ajax.php'),
-            'pluginUrl' => FP_EXP_PLUGIN_URL,
-            'strings' => [],
-        ]);
-
         wp_enqueue_script(
             'fp-exp-importer',
             FP_EXP_PLUGIN_URL . 'assets/js/importer.js',
@@ -281,7 +257,7 @@ final class ImporterPage implements HookableInterface
         echo '<li><strong>excerpt</strong>: ' . esc_html__('Breve estratto', 'fp-experiences') . '</li>';
         echo '<li><strong>short_desc</strong>: ' . esc_html__('Descrizione breve per overview', 'fp-experiences') . '</li>';
         echo '<li><strong>duration_minutes</strong>: ' . esc_html__('Durata in minuti', 'fp-experiences') . '</li>';
-        echo '<li><strong>base_price</strong>: ' . esc_html__('Prezzo base (es: 49.99)', 'fp-experiences') . '</li>';
+        echo '<li><strong>base_price</strong>: ' . esc_html__('Prezzo base (es: 49.99). Se non ci sono ancora biglietti, viene creato un biglietto «standard» per widget e checkout.', 'fp-experiences') . '</li>';
         echo '<li><strong>min_party</strong>: ' . esc_html__('Numero minimo di partecipanti', 'fp-experiences') . '</li>';
         echo '<li><strong>capacity_slot</strong>: ' . esc_html__('Capacità massima per slot', 'fp-experiences') . '</li>';
         echo '<li><strong>age_min</strong>: ' . esc_html__('Età minima', 'fp-experiences') . '</li>';
@@ -293,9 +269,9 @@ final class ImporterPage implements HookableInterface
         echo '<li><strong>what_to_bring</strong>: ' . esc_html__('Cosa portare', 'fp-experiences') . '</li>';
         echo '<li><strong>notes</strong>: ' . esc_html__('Note importanti', 'fp-experiences') . '</li>';
         echo '<li><strong>policy_cancel</strong>: ' . esc_html__('Politica di cancellazione', 'fp-experiences') . '</li>';
-        echo '<li><strong>themes</strong>: ' . esc_html__('Temi dell\'esperienza, separati da pipe |', 'fp-experiences') . '</li>';
-        echo '<li><strong>languages</strong>: ' . esc_html__('Lingue disponibili, separate da pipe | (es: Italiano|English|Français)', 'fp-experiences') . '</li>';
-        echo '<li><strong>family_friendly</strong>: ' . esc_html__('Adatto alle famiglie (yes/no)', 'fp-experiences') . '</li>';
+        echo '<li><strong>themes</strong>: ' . esc_html__('Temi (tag esperienza fp_exp_tag), separati da pipe |; i termini mancanti vengono creati.', 'fp-experiences') . '</li>';
+        echo '<li><strong>languages</strong>: ' . esc_html__('Lingue (tassonomia fp_exp_language + meta legacy), separate da pipe |', 'fp-experiences') . '</li>';
+        echo '<li><strong>family_friendly</strong>: ' . esc_html__('Adatto alle famiglie: yes/no/1/0 — imposta il badge «family-friendly» se supportato.', 'fp-experiences') . '</li>';
         echo '</ul>';
 
         echo '<h4>' . esc_html__('Campi Calendario e Slot:', 'fp-experiences') . '</h4>';
@@ -597,8 +573,11 @@ final class ImporterPage implements HookableInterface
         // Update meta fields
         $this->update_experience_meta($post_id, $data);
 
-        // Set taxonomies
+        // Set taxonomies (tag, lingue, ecc.)
         $this->set_experience_taxonomies($post_id, $data);
+
+        // Slot persistiti in DB (come salvataggio tab Calendario)
+        $this->maybe_generate_slots_after_import($post_id);
 
         return $post_id;
     }
@@ -669,6 +648,9 @@ final class ImporterPage implements HookableInterface
 
         // Availability configuration (buffer, lead time, capacity)
         $this->update_availability_meta($post_id, $data);
+
+        $this->ensure_default_ticket_pricing($post_id, $data);
+        $this->apply_family_friendly_badge($post_id, $data);
     }
 
     /**
@@ -681,24 +663,19 @@ final class ImporterPage implements HookableInterface
     {
         $recurrence = [];
 
-        // Frequency
         if (! empty($data['recurrence_frequency'])) {
-            $frequency = sanitize_key($data['recurrence_frequency']);
+            $frequency = sanitize_key((string) $data['recurrence_frequency']);
             $valid_frequencies = ['daily', 'weekly', 'custom'];
-            if (in_array($frequency, $valid_frequencies, true)) {
-                $recurrence['frequency'] = $frequency;
-            } else {
-                $recurrence['frequency'] = 'weekly';
-            }
+            $recurrence['frequency'] = in_array($frequency, $valid_frequencies, true) ? $frequency : 'weekly';
         }
 
-        // Times (time_slots format)
         if (! empty($data['recurrence_times'])) {
-            $times = array_map('trim', explode('|', $data['recurrence_times']));
-            $times = array_filter($times, function($time) {
-                return preg_match('/^\d{1,2}:\d{2}(:\d{2})?$/', $time);
-            });
-            
+            $times = array_map('trim', explode('|', (string) $data['recurrence_times']));
+            $times = array_filter(
+                $times,
+                static fn ($time): bool => is_string($time) && 1 === preg_match('/^\d{1,2}:\d{2}(:\d{2})?$/', $time)
+            );
+
             if (! empty($times)) {
                 $recurrence['time_slots'] = [];
                 foreach ($times as $time) {
@@ -707,42 +684,59 @@ final class ImporterPage implements HookableInterface
             }
         }
 
-        // Days (for weekly frequency)
         if (! empty($data['recurrence_days'])) {
-            $days = array_map(function($day) {
-                return strtolower(trim($day));
-            }, explode('|', $data['recurrence_days']));
-            
+            $days = array_map(
+                static fn ($day): string => strtolower(trim((string) $day)),
+                explode('|', (string) $data['recurrence_days'])
+            );
+
             $valid_days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
-            $days = array_filter($days, function($day) use ($valid_days) {
-                return in_array($day, $valid_days, true);
-            });
-            
+            $days = array_filter($days, static fn ($day): bool => in_array($day, $valid_days, true));
+
             if (! empty($days)) {
                 $recurrence['days'] = array_values($days);
             }
         }
 
-        // Start date
+        $start_keep = '';
         if (! empty($data['recurrence_start_date'])) {
-            $start_date = sanitize_text_field($data['recurrence_start_date']);
-            if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $start_date)) {
+            $start_date = sanitize_text_field((string) $data['recurrence_start_date']);
+            if (1 === preg_match('/^\d{4}-\d{2}-\d{2}$/', $start_date)) {
+                $start_keep = $start_date;
                 $recurrence['start_date'] = $start_date;
             }
         }
 
-        // End date
+        $end_keep = '';
         if (! empty($data['recurrence_end_date'])) {
-            $end_date = sanitize_text_field($data['recurrence_end_date']);
-            if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $end_date)) {
+            $end_date = sanitize_text_field((string) $data['recurrence_end_date']);
+            if (1 === preg_match('/^\d{4}-\d{2}-\d{2}$/', $end_date)) {
+                $end_keep = $end_date;
                 $recurrence['end_date'] = $end_date;
             }
         }
 
-        // Save recurrence only if we have meaningful data
-        if (! empty($recurrence)) {
-            update_post_meta($post_id, '_fp_exp_recurrence', $recurrence);
+        if (! empty($data['duration_minutes']) && ! empty($recurrence['time_slots'])) {
+            $dm = absint((string) $data['duration_minutes']);
+            if ($dm > 0) {
+                $recurrence['duration'] = $dm;
+            }
         }
+
+        if (empty($recurrence)) {
+            return;
+        }
+
+        $recurrence = Recurrence::sanitize($recurrence);
+
+        if ($start_keep !== '') {
+            $recurrence['start_date'] = $start_keep;
+        }
+        if ($end_keep !== '') {
+            $recurrence['end_date'] = $end_keep;
+        }
+
+        update_post_meta($post_id, '_fp_exp_recurrence', $recurrence);
     }
 
     /**
@@ -774,28 +768,179 @@ final class ImporterPage implements HookableInterface
         // Merge: defaults < existing < CSV data
         $availability = array_merge($defaults, $availability);
 
+        if (! empty($data['recurrence_frequency'])) {
+            $availability['frequency'] = sanitize_key((string) $data['recurrence_frequency']);
+        }
+
         // Update from CSV data - use isset() not empty() to allow 0 values
         if (isset($data['capacity_slot'])) {
-            $availability['slot_capacity'] = absint($data['capacity_slot']);
+            $availability['slot_capacity'] = absint((string) $data['capacity_slot']);
         }
 
         if (isset($data['buffer_before'])) {
-            $availability['buffer_before_minutes'] = absint($data['buffer_before']);
+            $availability['buffer_before_minutes'] = absint((string) $data['buffer_before']);
         }
 
         if (isset($data['buffer_after'])) {
-            $availability['buffer_after_minutes'] = absint($data['buffer_after']);
+            $availability['buffer_after_minutes'] = absint((string) $data['buffer_after']);
         }
 
         if (isset($data['lead_time_hours'])) {
-            $lead_time = absint($data['lead_time_hours']);
+            $lead_time = absint((string) $data['lead_time_hours']);
             $availability['lead_time_hours'] = $lead_time;
-            // Also save as separate meta for backward compatibility
             update_post_meta($post_id, '_fp_lead_time_hours', $lead_time);
         }
 
-        // Always save availability with complete structure
         update_post_meta($post_id, '_fp_exp_availability', $availability);
+
+        // Meta piatte lette dal tab Calendario (allineamento a CalendarMetaBoxHandler)
+        update_post_meta($post_id, '_fp_slot_capacity', (int) $availability['slot_capacity']);
+        update_post_meta($post_id, '_fp_buffer_before_minutes', (int) $availability['buffer_before_minutes']);
+        update_post_meta($post_id, '_fp_buffer_after_minutes', (int) $availability['buffer_after_minutes']);
+    }
+
+    /**
+     * Dopo l'import, genera slot nel DB se la ricorrenza è utilizzabile (stessa logica del salvataggio calendario).
+     */
+    private function maybe_generate_slots_after_import(int $post_id): void
+    {
+        if ((bool) get_post_meta($post_id, '_fp_is_event', true)) {
+            return;
+        }
+
+        $recurrence = get_post_meta($post_id, '_fp_exp_recurrence', true);
+        if (! is_array($recurrence) || ! Recurrence::is_actionable($recurrence)) {
+            return;
+        }
+
+        $availability = get_post_meta($post_id, '_fp_exp_availability', true);
+        $slot_capacity = is_array($availability) ? absint((string) ($availability['slot_capacity'] ?? 0)) : 0;
+        $buffer_before = is_array($availability) ? absint((string) ($availability['buffer_before_minutes'] ?? 0)) : 0;
+        $buffer_after = is_array($availability) ? absint((string) ($availability['buffer_after_minutes'] ?? 0)) : 0;
+
+        $rules = Recurrence::build_rules($recurrence, [
+            'slot_capacity' => $slot_capacity,
+            'buffer_before_minutes' => $buffer_before,
+            'buffer_after_minutes' => $buffer_after,
+        ]);
+
+        if ($rules === []) {
+            return;
+        }
+
+        $options = [
+            'default_duration' => isset($recurrence['duration']) ? absint((string) $recurrence['duration']) : 60,
+            'default_capacity' => $slot_capacity,
+            'buffer_before' => $buffer_before,
+            'buffer_after' => $buffer_after,
+            'replace_existing' => true,
+        ];
+
+        Slots::generate_recurring_slots($post_id, $rules, [], $options);
+    }
+
+    /**
+     * Se c'è prezzo base ma nessun biglietto, crea un ticket standard (widget e checkout richiedono _fp_ticket_types).
+     *
+     * @param array<string, string> $data
+     */
+    private function ensure_default_ticket_pricing(int $post_id, array $data): void
+    {
+        $existing = get_post_meta($post_id, '_fp_ticket_types', true);
+        if (is_array($existing) && $existing !== []) {
+            return;
+        }
+
+        $base = isset($data['base_price']) ? (float) $data['base_price'] : 0.0;
+        if ($base <= 0) {
+            return;
+        }
+
+        $label = __('Biglietto standard', 'fp-experiences');
+        $ticket = [
+            'slug' => 'standard',
+            'label' => $label,
+            'price' => $base,
+            'capacity' => 0,
+            'min' => 0,
+            'max' => 0,
+        ];
+
+        update_post_meta($post_id, '_fp_ticket_types', [$ticket]);
+
+        $pricing = [
+            'tickets' => [$ticket],
+            'group' => [],
+            'addons' => [],
+            'tax_class' => '',
+            'base_price' => (string) $base,
+        ];
+
+        update_post_meta($post_id, '_fp_exp_pricing', $pricing);
+    }
+
+    /**
+     * @param array<string, string> $data
+     */
+    private function apply_family_friendly_badge(int $post_id, array $data): void
+    {
+        if (empty($data['family_friendly'])) {
+            return;
+        }
+
+        $v = strtolower(trim((string) $data['family_friendly']));
+        if (! in_array($v, ['yes', '1', 'true', 'si', 'sì'], true)) {
+            return;
+        }
+
+        $badges = get_post_meta($post_id, '_fp_experience_badges', true);
+        if (! is_array($badges)) {
+            $badges = [];
+        }
+
+        if (in_array('family-friendly', $badges, true)) {
+            return;
+        }
+
+        $badges[] = 'family-friendly';
+        update_post_meta($post_id, '_fp_experience_badges', array_values(array_unique($badges)));
+    }
+
+    /**
+     * Assegna termini per nome (crea il termine se assente).
+     *
+     * @param list<string> $names
+     */
+    private function assign_terms_by_names(int $post_id, string $taxonomy, array $names): void
+    {
+        if (! taxonomy_exists($taxonomy)) {
+            return;
+        }
+
+        $term_ids = [];
+        foreach ($names as $name) {
+            $name = trim((string) $name);
+            if ($name === '') {
+                continue;
+            }
+
+            $term = get_term_by('name', $name, $taxonomy);
+            if ($term !== false && ! is_wp_error($term)) {
+                $term_ids[] = (int) $term->term_id;
+                continue;
+            }
+
+            $inserted = wp_insert_term($name, $taxonomy, ['slug' => sanitize_title($name)]);
+            if (! is_wp_error($inserted) && isset($inserted['term_id'])) {
+                $term_ids[] = (int) $inserted['term_id'];
+            }
+        }
+
+        $term_ids = array_values(array_unique(array_filter($term_ids, static fn (int $id): bool => $id > 0)));
+
+        if ($term_ids !== []) {
+            wp_set_post_terms($post_id, $term_ids, $taxonomy, false);
+        }
     }
 
     /**
@@ -804,7 +949,19 @@ final class ImporterPage implements HookableInterface
      * @param int                   $post_id Post ID.
      * @param array<string, string> $data    CSV row data.
      */
+    /**
+     * @param array<string, string> $data
+     */
     private function set_experience_taxonomies(int $post_id, array $data): void
     {
+        if (! empty($data['themes'])) {
+            $names = array_filter(array_map('trim', explode('|', (string) $data['themes'])));
+            $this->assign_terms_by_names($post_id, 'fp_exp_tag', $names);
+        }
+
+        if (! empty($data['languages'])) {
+            $names = array_filter(array_map('trim', explode('|', (string) $data['languages'])));
+            $this->assign_terms_by_names($post_id, 'fp_exp_language', $names);
+        }
     }
 }

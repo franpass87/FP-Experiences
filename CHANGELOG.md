@@ -2,6 +2,16 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.6.45] - 2026-04-05
+
+### Changed
+
+- **Importer CSV esperienze**: allineamento al modello dati attuale — `Recurrence::sanitize()` su `_fp_exp_recurrence` (con conservazione `start_date`/`end_date`); `_fp_exp_availability` con `frequency`; sincronizzazione meta piatte `_fp_slot_capacity`, `_fp_buffer_*` per il tab Calendario; generazione slot in DB dopo import se la ricorrenza è actionable (`Slots::generate_recurring_slots`, come salvataggio calendario).
+
+### Fixed
+
+- **Importer**: `set_experience_taxonomies` era vuoto — ora `themes` → `fp_exp_tag` e `languages` → `fp_exp_language` (creazione termini se assenti). `family_friendly` imposta il badge `family-friendly` in `_fp_experience_badges`. Con `base_price` e senza biglietti esistenti viene creato un biglietto standard (`_fp_ticket_types` + `_fp_exp_pricing`) per widget/checkout.
+
 ## [1.6.44] - 2026-04-05
 
 ### Fixed
