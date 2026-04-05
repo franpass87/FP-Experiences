@@ -81,7 +81,7 @@ final class PolicyMetaBoxHandler extends BaseMetaBoxHandler
                 'policy-faq'
             );
             ?>
-                <div class="fp-exp-repeater" data-repeater="faq" data-repeater-next-index="<?php echo esc_attr((string) count($faqs)); ?>">
+                <div class="fp-exp-repeater" data-repeater="faq" data-repeater-next-index="<?php echo esc_attr((string) count($faqs)); ?>" data-fp-exp-faq-repeater="1">
                     <div class="fp-exp-repeater__items">
                         <?php foreach ($faqs as $index => $item) : ?>
                             <?php $this->render_faq_row((string) $index, $item); ?>
@@ -94,6 +94,65 @@ final class PolicyMetaBoxHandler extends BaseMetaBoxHandler
                         <button type="button" class="button button-secondary" data-repeater-add><?php esc_html_e('Aggiungi FAQ', 'fp-experiences'); ?></button>
                     </p>
                 </div>
+                <script>
+                (function () {
+                    function initFaqRepeaterFallback() {
+                        var repeater = document.querySelector('[data-fp-exp-faq-repeater="1"]');
+                        if (!repeater || repeater.getAttribute('data-fp-faq-fallback-init') === '1') {
+                            return;
+                        }
+
+                        var items = repeater.querySelector('.fp-exp-repeater__items');
+                        var template = repeater.querySelector('template[data-repeater-template]');
+                        var addButton = repeater.querySelector('[data-repeater-add]');
+                        if (!items || !template || !addButton) {
+                            return;
+                        }
+
+                        repeater.setAttribute('data-fp-faq-fallback-init', '1');
+
+                        function bindRemove(scope) {
+                            scope.querySelectorAll('[data-repeater-remove]').forEach(function (removeButton) {
+                                removeButton.addEventListener('click', function () {
+                                    var row = removeButton.closest('[data-repeater-item]');
+                                    if (row) {
+                                        row.remove();
+                                    }
+                                });
+                            });
+                        }
+
+                        addButton.addEventListener('click', function () {
+                            var nextIndex = items.querySelectorAll('[data-repeater-item]').length;
+                            var html = template.innerHTML.replace(/__INDEX__/g, String(nextIndex));
+                            html = html.replace(/__INDEX_PLUS_1__/g, String(nextIndex + 1));
+
+                            var wrapper = document.createElement('div');
+                            wrapper.innerHTML = html.trim();
+                            var row = wrapper.firstElementChild;
+                            if (!row) {
+                                return;
+                            }
+
+                            items.appendChild(row);
+                            bindRemove(row);
+
+                            var focusable = row.querySelector('input, textarea');
+                            if (focusable) {
+                                focusable.focus();
+                            }
+                        });
+
+                        bindRemove(items);
+                    }
+
+                    if (document.readyState === 'loading') {
+                        document.addEventListener('DOMContentLoaded', initFaqRepeaterFallback);
+                    } else {
+                        initFaqRepeaterFallback();
+                    }
+                })();
+                </script>
             <?php $this->render_metabox_section_close(); ?>
         </section>
         <?php
@@ -228,7 +287,7 @@ final class PolicyMetaBoxHandler extends BaseMetaBoxHandler
         <div class="fp-exp-repeater__item" data-repeater-item <?php echo $is_template ? 'data-template="faq"' : ''; ?>>
             <div class="fp-exp-repeater__item-header">
                 <span class="fp-exp-repeater__item-number"><?php echo esc_html($is_template ? '__INDEX_PLUS_1__' : ((int) $index + 1)); ?></span>
-                <button type="button" class="fp-exp-repeater__item-remove" aria-label="<?php esc_attr_e('Rimuovi FAQ', 'fp-experiences'); ?>">
+                <button type="button" class="fp-exp-repeater__item-remove" data-repeater-remove aria-label="<?php esc_attr_e('Rimuovi FAQ', 'fp-experiences'); ?>">
                     <span class="dashicons dashicons-trash"></span>
                 </button>
             </div>

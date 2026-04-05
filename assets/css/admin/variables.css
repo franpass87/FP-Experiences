@@ -1,5 +1,8 @@
 /**
  * Admin CSS Variables and Base Styles
+ *
+ * Design system FP (gradienti, stati, card): token `--fpdms-*` in `dms-core.css`.
+ * Qui restano alias storici `--fp-exp-*` per metabox/layout; preferire `--fpdms-*` nei nuovi blocchi.
  */
 :root {
     --fp-exp-admin-spacing: 16px;

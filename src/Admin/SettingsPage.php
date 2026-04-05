@@ -16,6 +16,7 @@ use FP_Exp\Gift\Email\Templates\VoucherEmailTemplate;
 use FP_Exp\Integrations\Brevo;
 use FP_Exp\Services\Options\OptionsInterface;
 use FP_Exp\Utils\Helpers;
+use FP_Exp\Utils\LanguageHelper;
 use FP_Exp\Utils\Logger;
 use FP_Exp\Utils\Theme;
 
@@ -67,7 +68,6 @@ use function update_option;
 use function wp_generate_password;
 use function get_current_screen;
 use function wp_enqueue_script;
-use function wp_enqueue_style;
 use function wp_localize_script;
 use function wp_strip_all_tags;
 use function wp_nonce_url;
@@ -266,30 +266,6 @@ final class SettingsPage implements HookableInterface
             return;
         }
 
-        // Carica sempre gli stili admin per tutte le pagine settings
-        $admin_css = Helpers::resolve_asset_rel([
-            'assets/css/dist/fp-experiences-admin.min.css',
-            'assets/css/admin.css',
-        ]);
-        wp_enqueue_style(
-            'fp-exp-admin',
-            FP_EXP_PLUGIN_URL . $admin_css,
-            Helpers::admin_style_dependencies(),
-            Helpers::asset_version($admin_css)
-        );
-
-        $admin_js = Helpers::resolve_asset_rel([
-            'assets/js/dist/fp-experiences-admin.min.js',
-            'assets/js/admin.js',
-        ]);
-        wp_enqueue_script(
-            'fp-exp-admin',
-            FP_EXP_PLUGIN_URL . $admin_js,
-            ['jquery'], // Usa solo jQuery, non servono wp-api-fetch o wp-i18n
-            Helpers::asset_version($admin_js),
-            true
-        );
-
         // Toast notifications system
         wp_enqueue_script(
             'fp-exp-toast',
@@ -318,45 +294,7 @@ final class SettingsPage implements HookableInterface
 
     public function enqueue_tools_assets(): void
     {
-        $admin_css = Helpers::resolve_asset_rel([
-            'assets/css/dist/fp-experiences-admin.min.css',
-            'assets/css/admin.css',
-        ]);
-
-        wp_enqueue_style(
-            'fp-exp-admin',
-            FP_EXP_PLUGIN_URL . $admin_css,
-            Helpers::admin_style_dependencies(),
-            Helpers::asset_version($admin_css)
-        );
-
-        $admin_js = Helpers::resolve_asset_rel([
-            'assets/js/dist/fp-experiences-admin.min.js',
-            'assets/js/admin.js',
-        ]);
-        
-        if (defined('WP_DEBUG') && WP_DEBUG) {
-            error_log('[FP-EXP-SETTINGS] JS file: ' . $admin_js);
-        }
-        
-        wp_enqueue_script(
-            'fp-exp-admin',
-            FP_EXP_PLUGIN_URL . $admin_js,
-            ['jquery'], // Usa solo jQuery, non servono wp-api-fetch o wp-i18n
-            Helpers::asset_version($admin_js),
-            true
-        );
-
-        // Config base per fpExpAdmin (richiesto da admin.js)
-        wp_localize_script('fp-exp-admin', 'fpExpAdmin', [
-            'restUrl' => rest_url('fp-exp/v1/'),
-            'restNonce' => wp_create_nonce('wp_rest'),
-            'ajaxUrl' => admin_url('admin-ajax.php'),
-            'pluginUrl' => FP_EXP_PLUGIN_URL,
-            'strings' => [],
-        ]);
-
-        // Config specifico per tools
+        // Config specifico per tools (handle base `fp-exp-admin` gia' caricato da AdminMenu).
         wp_localize_script('fp-exp-admin', 'fpExpTools', [
             'nonce' => wp_create_nonce('wp_rest'),
             'actions' => $this->get_tool_actions_localised(),
@@ -1896,6 +1834,7 @@ final class SettingsPage implements HookableInterface
         if (! $logs) {
             echo '<p>' . esc_html__('Nessun evento registrato nei log.', 'fp-experiences') . '</p>';
         } else {
+            echo '<div class="fp-exp-settings__embedded-table">';
             echo '<table class="widefat striped">';
             echo '<thead><tr>';
             echo '<th>' . esc_html__('Data', 'fp-experiences') . '</th>';
@@ -1913,6 +1852,7 @@ final class SettingsPage implements HookableInterface
                 echo '</tr>';
             }
             echo '</tbody></table>';
+            echo '</div>';
         }
 
         $logs_url = esc_url(admin_url('admin.php?page=fp_exp_logs'));
@@ -3768,7 +3708,11 @@ final class SettingsPage implements HookableInterface
                 $checked = in_array($option_value, $active, true);
                 echo '<label class="fp-exp-settings__checkbox">';
                 echo '<input type="checkbox" name="fp_exp_listing[' . esc_attr($key) . '][]" value="' . esc_attr((string) $option_value) . '" ' . checked($checked, true, false) . ' /> ';
-                echo '<span>' . esc_html($label) . '</span>';
+                if ('filters' === $key && 'language' === (string) $option_value) {
+                    echo $this->render_language_filter_label((string) $label);
+                } else {
+                    echo '<span>' . esc_html($label) . '</span>';
+                }
                 echo '</label>';
             }
             echo '</div>';
@@ -3898,6 +3842,27 @@ final class SettingsPage implements HookableInterface
         if (! empty($field['description'])) {
             echo '<p class="description">' . esc_html($field['description']) . '</p>';
         }
+    }
+
+    /**
+     * Render listing language filter label with FP flag pattern.
+     *
+     * @param string $label Localized option label.
+     * @return string Safe HTML markup.
+     */
+    private function render_language_filter_label(string $label): string
+    {
+        $sprite_url = LanguageHelper::get_sprite_url();
+        $it_flag = esc_url($sprite_url . '#fp-exp-flag-it');
+        $en_flag = esc_url($sprite_url . '#fp-exp-flag-en');
+
+        return '<span class="fp-exp-settings__checkbox-content fp-exp-settings__checkbox-content--language">'
+            . '<span class="fp-exp-settings__checkbox-flags" aria-hidden="true">'
+            . '<svg viewBox="0 0 24 16" focusable="false"><use href="' . $it_flag . '"></use></svg>'
+            . '<svg viewBox="0 0 24 16" focusable="false"><use href="' . $en_flag . '"></use></svg>'
+            . '</span>'
+            . '<span class="fp-exp-settings__checkbox-label">' . esc_html($label) . '</span>'
+            . '</span>';
     }
 
     private function render_experience_badge_custom_row(string $index, array $badge, bool $is_template = false): void

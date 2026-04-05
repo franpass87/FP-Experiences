@@ -10,9 +10,12 @@ use FP_Exp\Admin\ExperienceMetaBoxes\Traits\MetaBoxHelpers;
 use function absint;
 use function esc_attr;
 use function esc_html;
+use function esc_url;
 use function function_exists;
+use function is_array;
 use function sanitize_key;
 use function sanitize_text_field;
+use function wp_get_attachment_image_src;
 
 /**
  * Handler for Pricing tab in Experience Meta Box.
@@ -22,7 +25,7 @@ use function sanitize_text_field;
  * NOTE: This is a complex handler due to legacy support and multiple pricing structures.
  * The handler manages both new and legacy pricing formats for backward compatibility.
  * 
- * @version 1.2.15
+ * @version 1.2.16
  */
 final class PricingMetaBoxHandler extends BaseMetaBoxHandler
 {
@@ -71,53 +74,64 @@ final class PricingMetaBoxHandler extends BaseMetaBoxHandler
                 'pricing-main'
             );
             ?>
-                <div class="fp-exp-field">
-                    <label class="fp-exp-field__label" for="fp-exp-base-price">
-                        <?php 
-                        printf(
-                            esc_html__('Prezzo base (%s)', 'fp-experiences'),
-                            esc_html($this->get_currency_symbol())
-                        ); 
-                        ?>
-                    </label>
-                    <input
-                        type="number"
-                        id="fp-exp-base-price"
-                        name="fp_exp_pricing[base_price]"
-                        value="<?php echo esc_attr($base_price); ?>"
-                        min="0"
-                        step="0.01"
-                        class="small-text"
-                    />
-                    <p class="fp-exp-field__description">
-                        <?php esc_html_e('Prezzo base per persona. Se vuoto, verrà usato il prezzo del primo biglietto.', 'fp-experiences'); ?>
-                    </p>
-                </div>
+                <div class="fp-exp-pricing-general-grid">
+                    <div class="fp-exp-pricing-general-grid__item">
+                        <label class="fp-exp-field__label" for="fp-exp-base-price">
+                            <?php 
+                            printf(
+                                esc_html__('Prezzo base (%s)', 'fp-experiences'),
+                                esc_html($this->get_currency_symbol())
+                            ); 
+                            ?>
+                        </label>
+                        <input
+                            type="number"
+                            id="fp-exp-base-price"
+                            name="fp_exp_pricing[base_price]"
+                            value="<?php echo esc_attr($base_price); ?>"
+                            min="0"
+                            step="0.01"
+                            class="small-text"
+                        />
+                        <p class="fp-exp-field__description">
+                            <?php esc_html_e('Prezzo base per persona. Se vuoto, verrà usato il prezzo del primo biglietto.', 'fp-experiences'); ?>
+                        </p>
+                    </div>
 
-                <div class="fp-exp-field">
-                    <label class="fp-exp-field__label" for="fp-exp-tax-class">
-                        <?php esc_html_e('Classe fiscale', 'fp-experiences'); ?>
-                    </label>
-                    <select id="fp-exp-tax-class" name="fp_exp_pricing[tax_class]">
-                        <option value=""><?php esc_html_e('Standard', 'fp-experiences'); ?></option>
-                        <?php
-                        if (class_exists('\WC_Tax')) {
-                            $tax_classes = \WC_Tax::get_tax_classes();
-                            foreach ($tax_classes as $class) {
-                                $class_slug = sanitize_title($class);
-                                ?>
-                                <option value="<?php echo esc_attr($class_slug); ?>" <?php selected($tax_class, $class_slug, true); ?>>
-                                    <?php echo esc_html($class); ?>
-                                </option>
-                                <?php
+                    <div class="fp-exp-pricing-general-grid__item">
+                        <label class="fp-exp-field__label" for="fp-exp-tax-class">
+                            <?php esc_html_e('Classe fiscale', 'fp-experiences'); ?>
+                        </label>
+                        <select id="fp-exp-tax-class" name="fp_exp_pricing[tax_class]">
+                            <option value=""><?php esc_html_e('Standard', 'fp-experiences'); ?></option>
+                            <?php
+                            if (class_exists('\WC_Tax')) {
+                                $tax_classes = \WC_Tax::get_tax_classes();
+                                foreach ($tax_classes as $class) {
+                                    $class_slug = sanitize_title($class);
+                                    ?>
+                                    <option value="<?php echo esc_attr($class_slug); ?>" <?php selected($tax_class, $class_slug, true); ?>>
+                                        <?php echo esc_html($class); ?>
+                                    </option>
+                                    <?php
+                                }
                             }
-                        }
-                        ?>
-                    </select>
+                            ?>
+                        </select>
+                    </div>
                 </div>
 
                 <?php $this->render_tickets_section($tickets); ?>
                 <?php $this->render_group_pricing_section($group); ?>
+            <?php $this->render_metabox_section_close(); ?>
+
+            <?php
+            $this->render_metabox_section_open(
+                esc_html__('Addon', 'fp-experiences'),
+                'dashicons-admin-tools',
+                'pricing-addons'
+            );
+            ?>
                 <?php $this->render_addons_section($addons); ?>
             <?php $this->render_metabox_section_close(); ?>
         </section>
@@ -130,7 +144,7 @@ final class PricingMetaBoxHandler extends BaseMetaBoxHandler
     private function render_tickets_section(array $tickets): void
     {
         ?>
-        <div class="fp-exp-field">
+        <div class="fp-exp-pricing-block">
             <h3 class="fp-exp-field__subtitle"><?php esc_html_e('Biglietti', 'fp-experiences'); ?></h3>
             <p class="fp-exp-field__description">
                 <?php esc_html_e('Definisci i tipi di biglietto disponibili per questa esperienza.', 'fp-experiences'); ?>
@@ -302,10 +316,10 @@ final class PricingMetaBoxHandler extends BaseMetaBoxHandler
         $group_price = $group['price'] ?? '';
         $group_capacity = $group['capacity'] ?? 0;
         ?>
-        <div class="fp-exp-field">
+        <div class="fp-exp-pricing-block">
             <h3 class="fp-exp-field__subtitle"><?php esc_html_e('Prezzo Gruppo', 'fp-experiences'); ?></h3>
-            <div class="fp-exp-field fp-exp-field--columns">
-                <div>
+            <div class="fp-exp-pricing-group-grid">
+                <div class="fp-exp-pricing-group-grid__item">
                     <label class="fp-exp-field__label" for="fp-exp-group-price">
                         <?php 
                         printf(
@@ -325,7 +339,7 @@ final class PricingMetaBoxHandler extends BaseMetaBoxHandler
                     />
                 </div>
 
-                <div>
+                <div class="fp-exp-pricing-group-grid__item">
                     <label class="fp-exp-field__label" for="fp-exp-group-capacity">
                         <?php esc_html_e('Capacità gruppo', 'fp-experiences'); ?>
                     </label>
@@ -350,12 +364,11 @@ final class PricingMetaBoxHandler extends BaseMetaBoxHandler
     private function render_addons_section(array $addons): void
     {
         ?>
-        <div class="fp-exp-field">
-            <h3 class="fp-exp-field__subtitle"><?php esc_html_e('Addon', 'fp-experiences'); ?></h3>
+        <div class="fp-exp-pricing-block">
             <p class="fp-exp-field__description">
                 <?php esc_html_e('Aggiungi servizi opzionali che possono essere selezionati durante la prenotazione.', 'fp-experiences'); ?>
             </p>
-            <div class="fp-exp-repeater" data-repeater="addons">
+            <div class="fp-exp-repeater" data-repeater="addons" data-fp-exp-addon-repeater="1">
                 <div class="fp-exp-repeater__items">
                     <?php foreach ($addons as $index => $addon) : ?>
                         <?php $this->render_addon_row((string) $index, $addon); ?>
@@ -367,6 +380,7 @@ final class PricingMetaBoxHandler extends BaseMetaBoxHandler
                         'price' => '',
                         'type' => 'person',
                         'slug' => '',
+                        'image_id' => 0,
                     ], true); ?>
                 </template>
                 <p class="fp-exp-repeater__actions">
@@ -376,6 +390,60 @@ final class PricingMetaBoxHandler extends BaseMetaBoxHandler
                 </p>
             </div>
         </div>
+        <script>
+        (function () {
+            function initAddonRepeaterFallback() {
+                var repeater = document.querySelector('[data-fp-exp-addon-repeater="1"]');
+                if (!repeater || repeater.getAttribute('data-fp-addon-fallback-init') === '1') {
+                    return;
+                }
+
+                var items = repeater.querySelector('.fp-exp-repeater__items');
+                var template = repeater.querySelector('template[data-repeater-template]');
+                var addButton = repeater.querySelector('[data-repeater-add]');
+                if (!items || !template || !addButton) {
+                    return;
+                }
+
+                repeater.setAttribute('data-fp-addon-fallback-init', '1');
+
+                addButton.addEventListener('click', function () {
+                    var nextIndex = items.querySelectorAll('[data-repeater-item]').length;
+                    var html = template.innerHTML.replace(/__INDEX__/g, String(nextIndex));
+                    var wrapper = document.createElement('div');
+                    wrapper.innerHTML = html.trim();
+                    var row = wrapper.firstElementChild;
+                    if (!row) {
+                        return;
+                    }
+
+                    items.appendChild(row);
+                    if (typeof window.fpExpInitMediaControls === 'function') {
+                        window.fpExpInitMediaControls(row);
+                    }
+                    var focusable = row.querySelector('input, select, textarea');
+                    if (focusable) {
+                        focusable.focus();
+                    }
+
+                    row.querySelectorAll('[data-repeater-remove]').forEach(function (removeButton) {
+                        removeButton.addEventListener('click', function () {
+                            var targetRow = removeButton.closest('[data-repeater-item]');
+                            if (targetRow) {
+                                targetRow.remove();
+                            }
+                        });
+                    });
+                });
+            }
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', initAddonRepeaterFallback);
+            } else {
+                initAddonRepeaterFallback();
+            }
+        })();
+        </script>
         <?php
     }
 
@@ -388,6 +456,18 @@ final class PricingMetaBoxHandler extends BaseMetaBoxHandler
         $name = $addon['name'] ?? '';
         $price = $addon['price'] ?? '';
         $type = $addon['type'] ?? 'person';
+        $image_id = isset($addon['image_id']) ? absint((string) $addon['image_id']) : 0;
+        $image_url = '';
+        $image_width = 0;
+        $image_height = 0;
+        if ($image_id > 0) {
+            $src = wp_get_attachment_image_src($image_id, 'medium');
+            if (is_array($src) && ! empty($src[0])) {
+                $image_url = (string) $src[0];
+                $image_width = absint((string) $src[1]);
+                $image_height = absint((string) $src[2]);
+            }
+        }
         ?>
         <div class="fp-exp-repeater__item" data-repeater-item>
             <div class="fp-exp-repeater__item-header">
@@ -448,6 +528,62 @@ final class PricingMetaBoxHandler extends BaseMetaBoxHandler
                             </option>
                         </select>
                     </div>
+                </div>
+
+                <div class="fp-exp-field">
+                    <span class="fp-exp-field__label" id="fp-exp-addon-image-label-<?php echo esc_attr($index); ?>">
+                        <?php esc_html_e('Immagine (opzionale)', 'fp-experiences'); ?>
+                    </span>
+                    <div class="fp-exp-cover-media fp-exp-cover-media--addon" data-fp-media-control>
+                        <input
+                            type="hidden"
+                            id="fp-exp-addon-image-<?php echo esc_attr($index); ?>"
+                            name="<?php echo esc_attr($field_name . '[' . $index . '][image_id]'); ?>"
+                            value="<?php echo esc_attr((string) $image_id); ?>"
+                            data-fp-media-input
+                        />
+                        <div class="fp-exp-cover-media__preview" data-fp-media-preview>
+                            <div class="fp-exp-cover-media__placeholder" data-fp-media-placeholder <?php echo '' !== $image_url ? 'hidden' : ''; ?>>
+                                <svg viewBox="0 0 48 32" aria-hidden="true" focusable="false">
+                                    <rect x="1" y="1" width="46" height="30" rx="4" ry="4" fill="none" stroke="currentColor" stroke-width="2" />
+                                    <path d="M16 12a4 4 0 1 1 4 4 4 4 0 0 1-4-4Zm-6 14 8-10 6 7 4-5 8 8Z" fill="currentColor" />
+                                </svg>
+                                <span class="screen-reader-text"><?php esc_html_e('Nessuna immagine selezionata', 'fp-experiences'); ?></span>
+                            </div>
+                            <?php if ('' !== $image_url) : ?>
+                                <img
+                                    src="<?php echo esc_url($image_url); ?>"
+                                    alt=""
+                                    <?php if ($image_width > 0) : ?>width="<?php echo esc_attr((string) $image_width); ?>"<?php endif; ?>
+                                    <?php if ($image_height > 0) : ?>height="<?php echo esc_attr((string) $image_height); ?>"<?php endif; ?>
+                                    loading="lazy"
+                                    data-fp-media-image
+                                />
+                            <?php endif; ?>
+                        </div>
+                        <div class="fp-exp-cover-media__actions">
+                            <button
+                                type="button"
+                                class="button button-secondary"
+                                data-fp-media-choose
+                                data-label-select="<?php echo esc_attr__('Seleziona immagine', 'fp-experiences'); ?>"
+                                data-label-change="<?php echo esc_attr__('Modifica immagine', 'fp-experiences'); ?>"
+                                aria-labelledby="fp-exp-addon-image-label-<?php echo esc_attr($index); ?>"
+                            >
+                                <?php echo '' !== $image_url ? esc_html__('Modifica immagine', 'fp-experiences') : esc_html__('Seleziona immagine', 'fp-experiences'); ?>
+                            </button>
+                            <button
+                                type="button"
+                                class="button-link"
+                                data-fp-media-remove
+                                <?php echo '' !== $image_url ? '' : ' hidden'; ?>
+                                aria-labelledby="fp-exp-addon-image-label-<?php echo esc_attr($index); ?>"
+                            >
+                                <?php esc_html_e('Rimuovi immagine', 'fp-experiences'); ?>
+                            </button>
+                        </div>
+                    </div>
+                    <p class="fp-exp-field__description"><?php esc_html_e('Mostrata nel widget di prenotazione accanto al nome dell’extra.', 'fp-experiences'); ?></p>
                 </div>
             </div>
         </div>
@@ -541,11 +677,14 @@ final class PricingMetaBoxHandler extends BaseMetaBoxHandler
                     $type = 'person';
                 }
 
+                $addon_image_id = isset($addon['image_id']) ? absint((string) $addon['image_id']) : 0;
+
                 $addons[] = [
                     'name' => $name,
                     'price' => $price,
                     'type' => $type,
                     'slug' => $slug,
+                    'image_id' => $addon_image_id,
                 ];
             }
         }

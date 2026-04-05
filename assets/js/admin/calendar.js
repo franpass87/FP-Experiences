@@ -4,16 +4,6 @@
 (function () {
     'use strict';
 
-    function initCalendarApp() {
-        const calendarContainer = document.querySelector('[data-fp-calendar-app]');
-        if (!calendarContainer) return;
-
-        // Inizializza calendario se necessario
-        if (window.fpExpCalendar) {
-            window.fpExpCalendar.init(calendarContainer);
-        }
-    }
-
     function initRecurrence(root) {
         const recurrenceElements = root.querySelectorAll('[data-fp-recurrence]');
         if (!recurrenceElements.length) return;
@@ -104,9 +94,8 @@
         summary.textContent = `Recurrence type: ${type}`;
     }
 
-    // Esporta funzioni
+    // initCalendarApp è in calendar-admin-app.js (bundle min). Qui solo ricorrenza meta box.
     window.fpExpAdmin = window.fpExpAdmin || {};
-    window.fpExpAdmin.initCalendarApp = initCalendarApp;
     window.fpExpAdmin.initRecurrence = initRecurrence;
 
 })();

@@ -1208,7 +1208,7 @@ final class ExperienceShortcode extends BaseShortcode
                 continue;
             }
 
-            $slug = sanitize_key($addon['slug'] ?? ($addon['label'] ?? ''));
+            $slug = sanitize_key($addon['slug'] ?? ($addon['label'] ?? $addon['name'] ?? ''));
             if ('' === $slug) {
                 continue;
             }
@@ -1223,7 +1223,7 @@ final class ExperienceShortcode extends BaseShortcode
 
             $addons[] = [
                 'slug' => $slug,
-                'label' => sanitize_text_field((string) ($addon['label'] ?? '')),
+                'label' => sanitize_text_field((string) ($addon['label'] ?? $addon['name'] ?? '')),
                 'description' => sanitize_text_field((string) ($addon['description'] ?? '')),
                 'price' => isset($addon['price']) ? (float) $addon['price'] : 0.0,
                 'image' => [

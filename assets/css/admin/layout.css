@@ -3,10 +3,10 @@
  */
 .fp-exp-admin {
     position: relative;
-    border: 1px solid var(--fp-exp-admin-border);
-    border-radius: var(--fp-exp-admin-radius);
-    background: #ffffff;
-    box-shadow: var(--fp-exp-admin-card-shadow);
+    border: 1px solid var(--fpdms-border, var(--fp-exp-admin-border));
+    border-radius: var(--fpdms-radius-lg, var(--fp-exp-admin-radius));
+    background: var(--fpdms-bg-white, #ffffff);
+    box-shadow: var(--fpdms-shadow-md, var(--fp-exp-admin-card-shadow));
     font-family: inherit;
 }
 
@@ -75,9 +75,10 @@
 }
 
 .fp-exp-dashboard__card {
-    background: #fff;
-    border: 1px solid var(--fp-exp-admin-border);
-    border-radius: var(--fp-exp-admin-radius);
+    background: var(--fpdms-bg-white, #fff);
+    border: 1px solid var(--fpdms-border, var(--fp-exp-admin-border));
+    border-radius: var(--fpdms-radius-lg, var(--fp-exp-admin-radius));
+    box-shadow: var(--fpdms-shadow-md, var(--fp-exp-admin-card-shadow));
     padding: 16px;
 }
 
@@ -108,9 +109,10 @@
 }
 
 .fp-exp-dashboard__section {
-    background: #fff;
-    border: 1px solid var(--fp-exp-admin-border);
-    border-radius: var(--fp-exp-admin-radius);
+    background: var(--fpdms-bg-white, #fff);
+    border: 1px solid var(--fpdms-border, var(--fp-exp-admin-border));
+    border-radius: var(--fpdms-radius-lg, var(--fp-exp-admin-radius));
+    box-shadow: var(--fpdms-shadow-md, var(--fp-exp-admin-card-shadow));
     padding: 20px;
 }
 

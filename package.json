@@ -4,9 +4,9 @@
   "description": "FP Experiences WordPress Plugin - Build System",
   "main": "build-optimize.js",
   "scripts": {
-    "build": "node build-optimize.js",
-    "build:watch": "node build-optimize.js --watch",
-    "build:prod": "node build-optimize.js --production",
+    "build": "node dist/fp-experiences/build-optimize.js",
+    "build:watch": "node dist/fp-experiences/build-optimize.js --watch",
+    "build:prod": "node dist/fp-experiences/build-optimize.js --production",
     "clean": "rimraf assets/js/dist assets/css/dist",
     "sync:dist": "powershell -ExecutionPolicy Bypass -File tools/sync-source-to-dist-build.ps1",
     "sync": "npm run sync:dist",

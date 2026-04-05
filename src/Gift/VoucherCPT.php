@@ -13,6 +13,7 @@ use function add_action;
 use function add_filter;
 use function add_query_arg;
 use function admin_url;
+use function __;
 use function date_i18n;
 use function esc_attr;
 use function esc_html;
@@ -52,6 +53,148 @@ final class VoucherCPT implements HookableInterface
         add_filter('post_row_actions', [$this, 'filter_row_actions'], 10, 2);
         add_action('admin_post_fp_exp_gift_update_status', [$this, 'handle_admin_action']);
         add_action('admin_notices', [$this, 'maybe_render_notice']);
+        add_action('current_screen', [$this, 'bootstrap_gift_voucher_list_ui']);
+    }
+
+    /**
+     * Abilita il layout FP (banner + card) sulla lista voucher (`edit.php` core non espone filtri sul `.wrap`).
+     *
+     * @param \WP_Screen|null $screen Schermata corrente.
+     */
+    public function bootstrap_gift_voucher_list_ui($screen): void
+    {
+        if (! $screen instanceof \WP_Screen || 'edit-' . self::POST_TYPE !== $screen->id) {
+            return;
+        }
+
+        add_action('admin_print_footer_scripts', [$this, 'print_gift_voucher_list_layout_script'], 50);
+    }
+
+    /**
+     * Stampa script che aggiunge classi al `.wrap`, banner gradiente DMS e card attorno a viste + tabella.
+     * Gli stili sono nel bundle `fp-experiences-admin.min.css` (`gift-voucher-list.css`), non enqueue separato.
+     */
+    public function print_gift_voucher_list_layout_script(): void
+    {
+        $i18n = [
+            'breadcrumbLabel' => __('Percorso di navigazione', 'fp-experiences'),
+            'breadcrumbRoot' => __('FP Experiences', 'fp-experiences'),
+            'breadcrumbSep' => "\u{203a}",
+            'breadcrumbCurrent' => __('Gift vouchers', 'fp-experiences'),
+            'srTitle' => __('Gift Vouchers', 'fp-experiences'),
+            'pageTitle' => __('Gift vouchers', 'fp-experiences'),
+            'pageDescription' => __('Gestisci i voucher emessi: destinatario, stato, validità e ordine WooCommerce collegato.', 'fp-experiences'),
+            'cardTitle' => __('Elenco voucher', 'fp-experiences'),
+            'dashboardUrl' => admin_url('admin.php?page=fp_exp_dashboard'),
+            'version' => defined('FP_EXP_VERSION') ? FP_EXP_VERSION : '0',
+        ];
+        ?>
+<script>
+(function () {
+    var i18n = <?php echo wp_json_encode($i18n, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE); ?>;
+    var wrap = document.querySelector('#wpbody-content > .wrap');
+    if (!wrap || wrap.getAttribute('data-fp-exp-gift-layout') === '1') {
+        return;
+    }
+    wrap.setAttribute('data-fp-exp-gift-layout', '1');
+    wrap.classList.add('fp-exp-admin-page', 'fp-exp-gift-voucher-list');
+
+    var sr = document.createElement('h1');
+    sr.className = 'screen-reader-text';
+    sr.textContent = i18n.srTitle;
+
+    var header = document.createElement('div');
+    header.className = 'fpexp-page-header';
+
+    var nav = document.createElement('nav');
+    nav.className = 'fp-exp-admin__breadcrumb';
+    nav.setAttribute('aria-label', i18n.breadcrumbLabel);
+    var aDash = document.createElement('a');
+    aDash.href = i18n.dashboardUrl;
+    aDash.textContent = i18n.breadcrumbRoot;
+    nav.appendChild(aDash);
+    nav.appendChild(document.createTextNode(' '));
+    var sep = document.createElement('span');
+    sep.setAttribute('aria-hidden', 'true');
+    sep.textContent = i18n.breadcrumbSep + ' ';
+    nav.appendChild(sep);
+    var cur = document.createElement('span');
+    cur.textContent = i18n.breadcrumbCurrent;
+    nav.appendChild(cur);
+    header.appendChild(nav);
+
+    var content = document.createElement('div');
+    content.className = 'fpexp-page-header-content';
+    var h2 = document.createElement('h2');
+    h2.className = 'fpexp-page-header-title';
+    h2.setAttribute('aria-hidden', 'true');
+    var icon = document.createElement('span');
+    icon.className = 'dashicons dashicons-tickets-alt';
+    icon.setAttribute('aria-hidden', 'true');
+    h2.appendChild(icon);
+    h2.appendChild(document.createTextNode(' ' + i18n.pageTitle));
+    content.appendChild(h2);
+    var desc = document.createElement('p');
+    desc.className = 'fpexp-page-header-desc';
+    desc.textContent = i18n.pageDescription;
+    content.appendChild(desc);
+    header.appendChild(content);
+
+    var right = document.createElement('div');
+    right.className = 'fp-exp-gift-voucher-list__header-right';
+    var actions = document.createElement('div');
+    actions.className = 'fp-exp-gift-voucher-list__actions';
+    var addBtn = wrap.querySelector('a.page-title-action');
+    if (addBtn) {
+        actions.appendChild(addBtn);
+    }
+    right.appendChild(actions);
+    var badge = document.createElement('span');
+    badge.className = 'fpexp-page-header-badge';
+    badge.textContent = 'v' + String(i18n.version);
+    right.appendChild(badge);
+    header.appendChild(right);
+
+    var legacyH1 = wrap.querySelector('h1.wp-heading-inline');
+    if (legacyH1) {
+        legacyH1.classList.add('fp-exp-gift-voucher-list__legacy-title');
+    }
+    var legacyHr = wrap.querySelector('hr.wp-header-end');
+    if (legacyHr) {
+        legacyHr.classList.add('fp-exp-gift-voucher-list__legacy-hr');
+    }
+
+    wrap.insertBefore(header, wrap.firstChild);
+    wrap.insertBefore(sr, header);
+
+    var subsub = wrap.querySelector('ul.subsubsub');
+    var form = wrap.querySelector('form#posts-filter');
+    if (subsub && form && !wrap.querySelector('.fp-exp-gift-voucher-list__table-card')) {
+        var card = document.createElement('div');
+        card.className = 'fp-exp-dms-card fp-exp-gift-voucher-list__table-card';
+        var cardHead = document.createElement('div');
+        cardHead.className = 'fp-exp-dms-card-header';
+        var cardHeadLeft = document.createElement('div');
+        cardHeadLeft.className = 'fp-exp-dms-card-header-left';
+        var cardIcon = document.createElement('span');
+        cardIcon.className = 'dashicons dashicons-list-view';
+        cardIcon.setAttribute('aria-hidden', 'true');
+        cardHeadLeft.appendChild(cardIcon);
+        var cardH = document.createElement('h2');
+        cardH.textContent = i18n.cardTitle;
+        cardHeadLeft.appendChild(cardH);
+        cardHead.appendChild(cardHeadLeft);
+        var cardBody = document.createElement('div');
+        cardBody.className = 'fp-exp-dms-card-body';
+        subsub.parentNode.insertBefore(card, subsub);
+        card.appendChild(cardHead);
+        card.appendChild(cardBody);
+        cardBody.appendChild(subsub);
+        cardBody.appendChild(form);
+    }
+})();
+</script>
+        <?php
     }
 
     public function register_post_type(): void
@@ -148,7 +291,7 @@ final class VoucherCPT implements HookableInterface
                 break;
             case 'status':
                 $status = sanitize_key((string) get_post_meta($post_id, '_fp_exp_gift_status', true));
-                echo esc_html($this->format_status_label($status));
+                echo $this->render_status_badge($status);
                 break;
             case 'valid_until':
                 $valid_until = (int) get_post_meta($post_id, '_fp_exp_gift_valid_until', true);
@@ -329,15 +472,36 @@ final class VoucherCPT implements HookableInterface
         update_post_meta($voucher_id, '_fp_exp_gift_logs', $logs);
     }
 
-    private function format_status_label(string $status): string
+    /**
+     * Etichetta tradotta per lo stato voucher (testo puro).
+     */
+    private function get_status_label(string $status): string
     {
         return match ($status) {
-            'pending' => esc_html__('Pending payment', 'fp-experiences'),
-            'active' => esc_html__('Active', 'fp-experiences'),
-            'redeemed' => esc_html__('Redeemed', 'fp-experiences'),
-            'expired' => esc_html__('Expired', 'fp-experiences'),
-            'cancelled' => esc_html__('Cancelled', 'fp-experiences'),
-            default => esc_html__('Unknown', 'fp-experiences'),
+            'pending' => __('Pending payment', 'fp-experiences'),
+            'active' => __('Active', 'fp-experiences'),
+            'redeemed' => __('Redeemed', 'fp-experiences'),
+            'expired' => __('Expired', 'fp-experiences'),
+            'cancelled' => __('Cancelled', 'fp-experiences'),
+            default => __('Unknown', 'fp-experiences'),
         };
+    }
+
+    /**
+     * Badge design system per la colonna stato in lista.
+     */
+    private function render_status_badge(string $status): string
+    {
+        $label = $this->get_status_label($status);
+        $modifier = match ($status) {
+            'active' => 'fp-exp-dms-badge-success',
+            'redeemed' => 'fp-exp-dms-badge-info',
+            'expired' => 'fp-exp-dms-badge-warning',
+            'cancelled' => 'fp-exp-dms-badge-danger',
+            'pending' => 'fp-exp-dms-badge-warning',
+            default => 'fp-exp-dms-badge-neutral',
+        };
+
+        return '<span class="fp-exp-dms-badge ' . esc_attr($modifier) . '">' . esc_html($label) . '</span>';
     }
 }

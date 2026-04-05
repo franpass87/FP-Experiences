@@ -75,8 +75,8 @@ final class CalendarMetaBoxHandler extends BaseMetaBoxHandler
                     'calendar-general'
                 );
                 ?>
-                    <div class="fp-exp-field fp-exp-field--columns">
-                        <div>
+                    <div class="fp-exp-calendar-general-grid">
+                        <div class="fp-exp-calendar-general-grid__item">
                             <label class="fp-exp-field__label" for="fp-exp-slot-capacity">
                                 <?php esc_html_e('Capacità per slot', 'fp-experiences'); ?>
                             </label>
@@ -94,7 +94,7 @@ final class CalendarMetaBoxHandler extends BaseMetaBoxHandler
                             </p>
                         </div>
 
-                        <div>
+                        <div class="fp-exp-calendar-general-grid__item">
                             <label class="fp-exp-field__label" for="fp-exp-lead-time">
                                 <?php esc_html_e('Tempo di prenotazione anticipata (ore)', 'fp-experiences'); ?>
                             </label>
@@ -111,10 +111,8 @@ final class CalendarMetaBoxHandler extends BaseMetaBoxHandler
                                 <?php esc_html_e('Tempo minimo prima della partenza per permettere una prenotazione.', 'fp-experiences'); ?>
                             </p>
                         </div>
-                    </div>
 
-                    <div class="fp-exp-field fp-exp-field--columns">
-                        <div>
+                        <div class="fp-exp-calendar-general-grid__item">
                             <label class="fp-exp-field__label" for="fp-exp-buffer-before">
                                 <?php esc_html_e('Buffer prima (minuti)', 'fp-experiences'); ?>
                             </label>
@@ -132,7 +130,7 @@ final class CalendarMetaBoxHandler extends BaseMetaBoxHandler
                             </p>
                         </div>
 
-                        <div>
+                        <div class="fp-exp-calendar-general-grid__item">
                             <label class="fp-exp-field__label" for="fp-exp-buffer-after">
                                 <?php esc_html_e('Buffer dopo (minuti)', 'fp-experiences'); ?>
                             </label>
@@ -198,9 +196,9 @@ final class CalendarMetaBoxHandler extends BaseMetaBoxHandler
                 <label class="fp-exp-field__label">
                     <?php esc_html_e('Giorni della settimana', 'fp-experiences'); ?>
                 </label>
-                <div class="fp-exp-checkbox-grid">
+                <div class="fp-exp-checkbox-grid fp-exp-checkbox-grid--weekdays">
                     <?php foreach ($this->get_week_days() as $day_key => $day_label) : ?>
-                        <label>
+                        <label class="fp-exp-weekday-option">
                             <input
                                 type="checkbox"
                                 name="fp_exp_availability[recurrence][days][]"

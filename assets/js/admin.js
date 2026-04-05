@@ -962,12 +962,12 @@
                 ? status.dataset.maxMessage
                 : getString('trustBadgesMax');
 
-            const checkboxes = Array.from(grid.querySelectorAll('input[type="checkbox"]'));
-            if (!checkboxes.length) {
+            const initialCheckboxes = Array.from(grid.querySelectorAll('input[type="checkbox"]'));
+            if (!initialCheckboxes.length) {
                 return;
             }
 
-            const items = checkboxes
+            const items = initialCheckboxes
                 .map((checkbox) => checkbox.closest('.fp-exp-checkbox-grid__item'))
                 .filter((item) => item instanceof HTMLElement);
 
@@ -998,6 +998,7 @@
             }
 
             function updateState() {
+                const checkboxes = Array.from(grid.querySelectorAll('input[type="checkbox"]'));
                 const selected = checkboxes.filter((checkbox) => checkbox.checked);
                 const count = selected.length;
                 const reached = count >= max;
@@ -1014,6 +1015,7 @@
                     const label = checkbox.closest('label');
                     if (label) {
                         label.classList.toggle('is-disabled', shouldDisable);
+                        label.classList.toggle('is-selected', checkbox.checked);
                     }
                 });
 
@@ -1049,8 +1051,23 @@
                 }
             }
 
-            checkboxes.forEach((checkbox) => {
+            initialCheckboxes.forEach((checkbox) => {
                 checkbox.addEventListener('change', updateState);
+            });
+
+            // Delegate fallback: some admin contexts toggle checkbox state through label interactions.
+            grid.addEventListener('click', (event) => {
+                const target = event.target;
+                if (!(target instanceof Element)) {
+                    return;
+                }
+
+                const label = target.closest('.fp-exp-checkbox-grid__item');
+                if (!label) {
+                    return;
+                }
+
+                window.requestAnimationFrame(updateState);
             });
 
             if (searchInput instanceof HTMLInputElement) {
@@ -2318,49 +2335,39 @@
             url.searchParams.set('experience', String(selectedExperience));
 
             try {
+                const response = await window.fetch(url.toString(), {
+                    credentials: 'same-origin',
+                    headers: {
+                        'X-WP-Nonce': calendarConfig.nonce || '',
+                        Accept: 'application/json',
+                    },
+                });
+
                 let payload;
-                const requestHeaders = {
-                    'X-WP-Nonce': calendarConfig.nonce || '',
-                };
+                if (!response.ok) {
+                    const errorBody = await response.json().catch(() => ({}));
+                    let message = errorBody && errorBody.message ? String(errorBody.message) : response.statusText;
 
-				if (window.wp && window.wp.apiFetch) {
-                    payload = await window.wp.apiFetch({
-                        url: url.toString(),
-                        method: 'GET',
-                        headers: requestHeaders,
-                    });
-                } else {
-                    const response = await window.fetch(url.toString(), {
-                        credentials: 'same-origin',
-                        headers: requestHeaders,
-                    });
-
-                    if (!response.ok) {
-                        const errorBody = await response.json().catch(() => ({}));
-                        let message = errorBody && errorBody.message ? String(errorBody.message) : response.statusText;
-                        
-                        // Messaggi di errore specifici per codice HTTP
-                        if (!message || message === 'Request failed') {
-                            if (response.status === 401 || response.status === 403) {
-                                message = calendarConfig.i18n && calendarConfig.i18n.accessDenied
-                                    ? calendarConfig.i18n.accessDenied
-                                    : 'Accesso negato. Ricarica la pagina e riprova.';
-                            } else if (response.status === 404) {
-                                message = calendarConfig.i18n && calendarConfig.i18n.notFound
-                                    ? calendarConfig.i18n.notFound
-                                    : 'Risorsa non trovata.';
-                            } else if (response.status >= 500) {
-                                message = calendarConfig.i18n && calendarConfig.i18n.serverError
-                                    ? calendarConfig.i18n.serverError
-                                    : 'Errore del server. Riprova tra qualche minuto.';
-                            }
+                    if (!message || message === 'Request failed') {
+                        if (response.status === 401 || response.status === 403) {
+                            message = calendarConfig.i18n && calendarConfig.i18n.accessDenied
+                                ? calendarConfig.i18n.accessDenied
+                                : 'Accesso negato. Ricarica la pagina e riprova.';
+                        } else if (response.status === 404) {
+                            message = calendarConfig.i18n && calendarConfig.i18n.notFound
+                                ? calendarConfig.i18n.notFound
+                                : 'Risorsa non trovata.';
+                        } else if (response.status >= 500) {
+                            message = calendarConfig.i18n && calendarConfig.i18n.serverError
+                                ? calendarConfig.i18n.serverError
+                                : 'Errore del server. Riprova tra qualche minuto.';
                         }
-                        
-                        throw new Error(message || 'Request failed');
                     }
 
-                    payload = await response.json().catch(() => ({}));
+                    throw new Error(message || 'Request failed');
                 }
+
+                payload = await response.json().catch(() => ({}));
 
 				const slots = payload && Array.isArray(payload.slots) ? payload.slots : [];
                 const filtered = applyClientFilter(slots);
@@ -2589,4 +2596,7 @@
                 });
         });
     }
+
+    /** Esposto per fallback inline (es. repeater addon) dopo append dinamico. */
+    window.fpExpInitMediaControls = initMediaControls;
 })();

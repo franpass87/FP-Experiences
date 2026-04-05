@@ -9,35 +9,36 @@
     flex-wrap: wrap;
     gap: 4px;
     padding: 12px 16px;
-    background: #ffffff;
-    border-bottom: 1px solid var(--fp-exp-admin-border);
+    background: var(--fpdms-bg-white, #ffffff);
+    border-bottom: 1px solid var(--fpdms-border, var(--fp-exp-admin-border));
 }
 
 .fp-exp-tab {
     background: transparent;
     border: 1px solid transparent;
-    border-radius: 6px;
+    border-radius: var(--fpdms-radius-md, 8px);
     padding: 8px 16px;
     font-size: 14px;
     font-weight: 500;
-    color: var(--fp-exp-color-muted);
+    color: var(--fpdms-text-light, var(--fp-exp-color-muted));
     cursor: pointer;
-    transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
+    transition: var(--fpdms-transition, color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease);
 }
 
 .fp-exp-tab:hover {
-    color: var(--fp-exp-color-text);
-    background: #f3f4f6;
+    color: var(--fpdms-text, var(--fp-exp-color-text));
+    background: var(--fpdms-bg-light, #f3f4f6);
 }
 
 .fp-exp-tab[aria-selected="true"] {
-    color: var(--fp-exp-color-primary);
-    background: #eff6ff;
-    border-color: #dbeafe;
+    color: var(--fpdms-primary, var(--fp-exp-color-primary));
+    background: var(--fpdms-info-bg, #eff6ff);
+    border-color: var(--fpdms-info-bg, #dbeafe);
+    font-weight: 600;
 }
 
 .fp-exp-tab:focus-visible {
-    outline: 2px solid var(--fp-exp-color-primary);
+    outline: 2px solid var(--fpdms-primary, var(--fp-exp-color-primary));
     outline-offset: 2px;
 }
 
@@ -45,7 +46,7 @@
     display: grid;
     gap: 24px;
     padding: 24px;
-    background: #fff;
+    background: var(--fpdms-bg-white, #fff);
 }
 
 .fp-exp-tab-panel[hidden] {

@@ -280,6 +280,7 @@ final class Pricing
             'allow_multiple' => $allow_multiple,
             'max' => absint($addon['max'] ?? 0),
             'description' => ! empty($addon['description']) ? sanitize_text_field((string) $addon['description']) : '',
+            'image_id' => absint($addon['image_id'] ?? 0),
         ];
     }
 

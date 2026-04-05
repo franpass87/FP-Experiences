@@ -24,29 +24,30 @@
 
 .fp-exp-settings .nav-tab {
     border: 1px solid transparent;
-    border-radius: 6px;
+    border-radius: var(--fpdms-radius-md, 8px);
     padding: 8px 16px;
     font-size: 14px;
     font-weight: 500;
     background: transparent;
-    color: var(--fp-exp-color-muted);
-    transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
+    color: var(--fpdms-text-light, var(--fp-exp-color-muted));
+    transition: var(--fpdms-transition, color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease);
 }
 
 .fp-exp-settings .nav-tab:hover {
-    color: var(--fp-exp-color-text);
-    background: #f3f4f6;
+    color: var(--fpdms-text, var(--fp-exp-color-text));
+    background: var(--fpdms-bg-light, #f3f4f6);
 }
 
 .fp-exp-settings .nav-tab:focus-visible {
-    outline: 2px solid var(--fp-exp-color-primary);
+    outline: 2px solid var(--fpdms-primary, var(--fp-exp-color-primary));
     outline-offset: 2px;
 }
 
 .fp-exp-settings .nav-tab.nav-tab-active {
-    color: var(--fp-exp-color-primary);
-    background: #eff6ff;
-    border-color: #dbeafe;
+    color: var(--fpdms-primary, var(--fp-exp-color-primary));
+    background: var(--fpdms-info-bg, #eff6ff);
+    border-color: var(--fpdms-info-bg, #dbeafe);
+    font-weight: 600;
 }
 
 .fp-exp-settings__form {
@@ -58,10 +59,11 @@
     margin: 0;
     width: 100%;
     border-spacing: 0;
-    background: #ffffff;
-    border-radius: var(--fp-exp-admin-radius);
+    background: var(--fpdms-bg-white, #ffffff);
+    border-radius: var(--fpdms-radius-lg, var(--fp-exp-admin-radius));
     padding: 24px;
-    border: 1px solid var(--fp-exp-admin-border);
+    border: 1px solid var(--fpdms-border, var(--fp-exp-admin-border));
+    box-shadow: var(--fpdms-shadow-md, none);
 }
 
 .fp-exp-settings__form .form-table tbody {
@@ -109,6 +111,41 @@
     color: var(--fp-exp-color-muted, #5f5f5f);
 }
 
+/* Fix ergonomia campi settings: evita clipping testo/valori in input/select */
+.fp-exp-settings__form .form-table td input[type="text"],
+.fp-exp-settings__form .form-table td input[type="email"],
+.fp-exp-settings__form .form-table td input[type="url"],
+.fp-exp-settings__form .form-table td input[type="password"],
+.fp-exp-settings__form .form-table td input[type="number"],
+.fp-exp-settings__form .form-table td input[type="date"],
+.fp-exp-settings__form .form-table td input[type="time"],
+.fp-exp-settings__form .form-table td select,
+.fp-exp-settings__form .form-table td textarea {
+    box-sizing: border-box;
+    max-width: 100%;
+    min-height: 38px;
+    height: auto;
+    line-height: 1.35;
+    padding: 7px 10px;
+}
+
+/* I campi numerici small-text erano troppo stretti (es. 1200 -> troncato). */
+.fp-exp-settings__form .form-table td .small-text,
+.fp-exp-settings__panel .small-text {
+    width: 110px !important;
+    min-width: 110px;
+}
+
+/* Dropdown più leggibili nelle impostazioni. */
+.fp-exp-settings__form .form-table td select {
+    width: min(100%, 520px);
+}
+
+/* Test fields con larghezza coerente senza uscire dalla griglia. */
+.fp-exp-settings__form .form-table td .regular-text {
+    width: min(100%, 520px);
+}
+
 .fp-exp-settings__form p.submit {
     margin: 0;
 }
@@ -126,6 +163,48 @@
     padding-left: 18px;
 }
 
+.fp-exp-settings__checkbox-group {
+    display: grid;
+    gap: 8px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.fp-exp-settings__checkbox {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    padding: 8px 10px;
+    border: 1px solid var(--fp-exp-admin-border);
+    border-radius: 8px;
+    background: #fff;
+}
+
+.fp-exp-settings__checkbox-content {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.fp-exp-settings__checkbox-content--language {
+    font-weight: 600;
+}
+
+.fp-exp-settings__checkbox-flags {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.fp-exp-settings__checkbox-flags svg {
+    width: 18px;
+    height: 12px;
+    border: 1px solid rgba(15, 23, 42, 0.12);
+    border-radius: 3px;
+    overflow: hidden;
+    background: #fff;
+}
+
 .fp-exp-settings__links {
     display: flex;
     gap: 12px;
@@ -138,6 +217,23 @@
     width: 120px;
     height: 34px;
     padding: 0;
+}
+
+/* Tabella widefat dentro card impostazioni (es. anteprima log) */
+.fp-exp-settings__embedded-table {
+    overflow-x: auto;
+    margin: 12px 0 16px;
+    border: 1px solid var(--fpdms-border, var(--fp-exp-admin-border));
+    border-radius: var(--fpdms-radius-md, 8px);
+    background: var(--fpdms-bg-white, #fff);
+    box-shadow: var(--fpdms-shadow-md, none);
+}
+
+.fp-exp-settings__embedded-table table.widefat {
+    margin: 0;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
 }
 
 @media (max-width: 960px) {
@@ -166,5 +262,9 @@
     .fp-exp-settings__form .form-table tr {
         grid-template-columns: 1fr;
         padding: 16px 0;
+    }
+
+    .fp-exp-settings__checkbox-group {
+        grid-template-columns: 1fr;
     }
 }

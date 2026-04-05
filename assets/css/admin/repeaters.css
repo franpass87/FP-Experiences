@@ -18,9 +18,10 @@
     align-items: flex-start;
     gap: 12px;
     padding: 16px;
-    border: 1px solid var(--fp-exp-admin-border);
-    border-radius: var(--fp-exp-admin-radius);
-    background: #ffffff;
+    border: 1px solid var(--fpdms-border, var(--fp-exp-admin-border));
+    border-radius: var(--fpdms-radius-md, var(--fp-exp-admin-radius));
+    background: var(--fpdms-bg-white, #ffffff);
+    box-shadow: var(--fpdms-shadow-md, none);
 }
 
 .fp-exp-repeater-row[draggable="true"] {

@@ -2,6 +2,18 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.6.47] - 2026-04-05
+
+### Changed
+
+- **Admin (design system FP)**: token CSS condivisi (`variables.css`), layout/tabs/repeaters/settings; pagine admin (menu, calendario, email, help, lingua, impostazioni, strumenti) e metabox Calendario/Policy/Pricing allineati al pattern card/griglia DMS.
+- **Build**: aggiornamento `package.json`, bundle `assets/js/dist/*` e `dist/fp-experiences/build-config.js`.
+- **Frontend/core**: aggiustamenti in `Pricing.php`, `VoucherCPT.php`, shortcode esperienza/widget.
+
+### Added
+
+- **Docs/tools**: `MODULAR-ARCHITECTURE.md`; script diagnostici in `tools/` (`diagnose-admin-pipeline.php`, `dump-post-new-html.php`) per analisi pipeline admin in sviluppo.
+
 ## [1.6.46] - 2026-04-05
 
 ### Fixed

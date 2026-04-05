@@ -621,6 +621,38 @@ final class AdminMenu implements HookableInterface
             || 0 === strpos($screen_id, 'fp-exp-dashboard_page_')
             || ('post' === $screen_base && in_array($screen_post_type, $fp_shell_post_types, true));
 
+        // Fallback robusto quando lo screen id cambia (menu sotto parent / compat varie).
+        if (! $is_managed && isset($_GET['page'])) {
+            $page = sanitize_key((string) wp_unslash($_GET['page']));
+            $fp_exp_pages = [
+                'fp_exp_dashboard',
+                'fp_exp_settings',
+                'fp_exp_calendar',
+                'fp_exp_requests',
+                'fp_exp_checkin',
+                'fp_exp_orders',
+                'fp_exp_logs',
+                'fp_exp_tools',
+                'fp_exp_emails',
+                'fp_exp_importer',
+                'fp_exp_help',
+                'fp_exp_create_page',
+                'fp-exp-meeting-points-import',
+            ];
+            $is_managed = in_array($page, $fp_exp_pages, true);
+        }
+
+        if (! $is_managed && isset($_GET['post_type'])) {
+            $post_type = sanitize_key((string) wp_unslash($_GET['post_type']));
+            $fp_exp_post_types = [
+                'fp_experience',
+                'fp_meeting_point',
+                'fp_exp_gift_voucher',
+                'fp_exp_language',
+            ];
+            $is_managed = in_array($post_type, $fp_exp_post_types, true);
+        }
+
         if ($is_managed && false === strpos($classes, 'fp-exp-admin-shell')) {
             $classes .= ' fp-exp-admin-shell';
         }
