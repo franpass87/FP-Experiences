@@ -13,7 +13,7 @@
 
 .fp-exp-admin-page .fpexp-page-header {
     background: var(--fpdms-gradient-primary);
-    border-radius: var(--radius-xl);
+    border-radius: var(--fpdms-radius-xl);
     padding: 1.5rem 2rem;
     margin-bottom: 1.5rem;
     display: flex;
@@ -75,7 +75,7 @@
 .fpexp-page-header-badge {
     background: rgba(255, 255, 255, 0.25);
     padding: 0.25rem 0.75rem;
-    border-radius: var(--radius-pill);
+    border-radius: var(--fpdms-radius-pill);
     font-size: 0.8rem;
     font-weight: 600;
     color: #fff;

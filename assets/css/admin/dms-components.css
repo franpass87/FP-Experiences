@@ -4,15 +4,15 @@
 
 .fp-exp-dms-card {
     background: var(--fpdms-bg-white);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-md);
+    border-radius: var(--fpdms-radius-lg);
+    box-shadow: var(--fpdms-shadow-md);
     margin-bottom: 1.5rem;
     overflow: hidden;
 }
 
 .fp-exp-dms-card:hover {
-    box-shadow: var(--shadow-lg);
-    transition: var(--transition);
+    box-shadow: var(--fpdms-shadow-lg);
+    transition: var(--fpdms-transition);
 }
 
 .fp-exp-dms-card-header {
@@ -58,7 +58,7 @@
 .fp-exp-dms-badge {
     display: inline-block;
     padding: 0.2rem 0.6rem;
-    border-radius: var(--radius-pill);
+    border-radius: var(--fpdms-radius-pill);
     font-size: 11px;
     font-weight: 600;
     text-transform: uppercase;

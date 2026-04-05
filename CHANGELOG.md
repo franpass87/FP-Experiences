@@ -2,6 +2,12 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.6.30] - 2026-04-05
+
+### Fixed
+
+- **Admin CSS**: le variabili custom generiche su `:root` (`--shadow-md`, `--radius-*`, `--transition`) sono state rinominate in `--fpdms-*` per **non sovrascrivere** omonime di WordPress / editor su schermate dove è caricato `fp-exp-admin`; aggiornati `admin.css` e i fogli modulari.
+
 ## [1.6.29] - 2026-04-05
 
 ### Changed
