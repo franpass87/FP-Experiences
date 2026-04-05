@@ -2,6 +2,39 @@
  * Admin CSS Variables and Base Styles
  */
 :root {
+    /* FP Digital Marketing Suite — token condivisi (design system FP admin) */
+    --fpdms-primary: #667eea;
+    --fpdms-primary-dark: #764ba2;
+    --fpdms-gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --fpdms-secondary: #11998e;
+    --fpdms-gradient-secondary: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+    --fpdms-success: #10b981;
+    --fpdms-success-bg: #d1fae5;
+    --fpdms-success-text: #065f46;
+    --fpdms-warning: #f59e0b;
+    --fpdms-warning-bg: #fef3c7;
+    --fpdms-warning-text: #92400e;
+    --fpdms-danger: #ef4444;
+    --fpdms-danger-bg: #fee2e2;
+    --fpdms-danger-text: #991b1b;
+    --fpdms-info: #3b82f6;
+    --fpdms-info-bg: #dbeafe;
+    --fpdms-info-text: #1e40af;
+    --fpdms-text: #1f2937;
+    --fpdms-text-light: #4b5563;
+    --fpdms-text-muted: #9ca3af;
+    --fpdms-border: #e5e7eb;
+    --fpdms-border-light: #f3f4f6;
+    --fpdms-bg-white: #ffffff;
+    --fpdms-bg-light: #f9fafb;
+    --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.08);
+    --shadow-lg: 0 8px 30px rgba(0, 0, 0, 0.12);
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --radius-xl: 16px;
+    --radius-pill: 999px;
+    --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+
     --fp-exp-admin-spacing: 16px;
     --fp-exp-admin-radius: 8px;
     --fp-exp-admin-card-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);

@@ -2,89 +2,30 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
-## [1.6.31] - 2026-04-03
+## [1.6.29] - 2026-04-05
+
+### Changed
+
+- **Admin — Gift voucher**: lista CPT `fp_exp_gift_voucher` con banner gradiente FP (breadcrumb, `h1` screen-reader, titolo `h2`, badge versione, pulsante «Aggiungi» nel banner), card DMS attorno a filtri e tabella; colonna **Stato** con badge colorati (`fp-exp-dms-badge-*`).
+- **CSS admin modulare**: token DMS in `variables.css`, nuovi fogli `dms-components.css`, `page-header-dms.css`, `gift-voucher-list.css` inclusi in `main.css` (build `fp-experiences-admin.min.css`); `admin.css` li importa per il fallback non minificato.
+
+## [1.6.27] - 2026-04-04
 
 ### Fixed
 
-- **Barra mobile «Prenota il tuo posto»**: quando il footer entra in viewport, la barra viene sollevata tramite `--fp-exp-sticky-bar-bottom-offset` (scroll/resize/`ResizeObserver`) così non copre copyright e contenuti del footer. Selettori footer e gap (px) configurabili con `fp_exp_sticky_bar_footer_selectors` e `fp_exp_sticky_bar_footer_gap_px`.
+- **Tools**: `tools/sync-source-to-dist-build.ps1` — rimossa riga duplicata/corrotta a fine script (output `Write-Host`).
 
-## [1.6.30] - 2026-04-03
-
-### Changed
-
-- **Pagina esperienza — icone intestazione sezioni**: sostituiti i glifi Font Awesome (font) con **SVG inline** (path ufficiali Font Awesome 6 Free Solid) così l’icona è disegnata nel `viewBox` e si centra in modo stabile nel quadrato colorato. Filtro `fp_exp_experience_page_section_icon_html` per markup personalizzato per sezione.
-
-## [1.6.29] - 2026-04-03
+## [1.6.26] - 2026-04-04
 
 ### Fixed
-
-- **Frontend — icone sezioni Font Awesome**: il glifo nel `::before` usa metriche tipografiche che lo lasciavano visivamente alto nel quadrato (es. `circle-info`). Il `::before` è ora centrato con `position: absolute` + `translate(-50%, -50%)` rispetto allo span che riempie `.fp-exp-section__icon`.
-
-## [1.6.28] - 2026-04-03
-
-### Fixed
-
-- **Frontend — icone sezioni**: allineamento verticale (e orizzontale) del glifo Font Awesome nel riquadro colorato (`.fp-exp-section__icon`): lo span interno ora riempie il box in flex e `line-height: 0` sul contenitore è stato rimosso per evitare shift del `::before`.
-
-## [1.6.27] - 2026-04-03
-
-### Fixed
-
-- **Pagina esperienza — «Informazioni utili»**: su layout flex (desktop e tablet) la sezione non aveva `order` CSS mentre le altre sì, quindi restava `order: 0` e appariva per prima nel contenuto (subito sotto l’hero). Aggiunto `order` tra galleria e blocco regalo, allineato al markup del template.
-
-## [1.6.26] - 2026-04-03
-
-### Changed
-
-- **Pagina esperienza**: «Informazioni utili» è subito **prima** di «Regala questo evento/esperienza» (dopo overview e galleria se presenti), così non resta la prima sezione del main sotto l’hero quando manca l’overview.
-
-## [1.6.25] - 2026-04-03
-
-### Changed
-
-- **Pagina esperienza**: icona sezione «Perché prenotare con noi» (Font Awesome `fa-handshake`) distinta da «Informazioni utili» (`fa-circle-info`).
-
-## [1.6.24] - 2026-04-03
-
-### Changed
-
-- **Pagina esperienza**: la sezione «Informazioni utili» è stata spostata subito dopo «Perché prenotare con noi» e prima della galleria e di «Regala questo evento».
-
-## [1.6.23] - 2026-04-03
-
-### Changed
-
-- **Informazioni utili (frontend)**: layout a card con etichetta (kicker), valore in evidenza (numero/giorni/posti) e riga di dettaglio; testo completo resta in `aria-label` per accessibilità. Retrocompatibile con `fp_exp_participation_info_nudges` che passa solo `text` + `type`.
-
-## [1.6.22] - 2026-04-03
-
-### Changed
-
-- **Informazioni utili**: copy più morbido (posti disponibili, prenotazione sul sito “fino al …”, “hai ancora X giorni a disposizione”). Countdown giorni mostrato solo se entro soglia **14** giorni; filtro `fp_exp_participation_deadline_countdown_max_days` (`0` = mai countdown; negativo = sempre).
-
-## [1.6.21] - 2026-04-03
-
-### Added
-
-- **Pagina esperienza — sezione «Informazioni utili»** (`participation_info`): sopra «Perché questo evento è speciale», messaggi da dati reali se le prenotazioni sono aperte — posti residui (soglia default 10, filtro `fp_exp_participation_scarcity_threshold`) e chiusura vendite online per evento a data singola da `_fp_event_ticket_sales_end`. Filtro `fp_exp_participation_info_nudges`. Helper `Helpers::single_event_ticket_sales_end_datetime()`. Widget Elementor Experience Page: opzione sezione e default shortcode aggiornato.
-
-## [1.6.20] - 2026-04-03
-
-### Changed
-
-- **i18n**: aggiunte al catalogo (`fp-experiences.pot`) le stringhe hero «Evento concluso», «Evento al completo» e la nota widget «Evento al completo.»; traduzioni aggiornate per `en`, `en_US`, `de`, `de_DE`.
-
-## [1.6.19] - 2026-04-03
-
-### Added
-
-- **Pagina esperienza (hero, evento a data singola)**: pill accanto alla data con «Evento concluso» se l’orario di inizio è passato e «Evento al completo» se i posti risultano esauriti (stessa logica del widget: slot con capienza > 0 e `remaining` a zero). Stili allineati alla pill data.
+- **GA4 / Tracking Layer**: righe `items` con **prezzo unitario** (totale riga WooCommerce ÷ quantità), non il totale riga come `price`.
+- Con **FP Marketing Tracking Layer** attivo, `woocommerce_thankyou` **non** emette più un secondo `purchase` server-side (evita doppia conversione con `experience_paid`); senza layer resta il `purchase` con meta `_fp_exp_thankyou_purchase_tracked` anti-refresh.
 
 ## [1.6.18] - 2026-04-04
 
 ### Fixed
 
-- **Widget evento a data singola — «Evento al completo.»**: il messaggio non viene più mostrato se non ci sono slot nel contesto SSR (falso positivo) né quando `capacity_total` dello slot è 0 (nessun tetto capienza: coerente con `Slots::check_capacity`). Aggiunto `capacity_total` agli slot del widget; `schema.org` availability per slot senza tetto trattata come `InStock` se non esaurita per cap esplicito.
+- Registrata di nuovo l’integrazione **GA4** (`woocommerce_thankyou` → `fp_tracking_event` `purchase` per righe `fp_experience_item`) nel boot del container, assente dopo la migrazione al kernel.
 
 ## [1.6.17] - 2026-04-03
 

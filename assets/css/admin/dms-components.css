@@ -1,0 +1,90 @@
+/**
+ * Componenti design system DMS (card, badge) — usati in più schermate admin FP Exp.
+ */
+
+.fp-exp-dms-card {
+    background: var(--fpdms-bg-white);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+    margin-bottom: 1.5rem;
+    overflow: hidden;
+}
+
+.fp-exp-dms-card:hover {
+    box-shadow: var(--shadow-lg);
+    transition: var(--transition);
+}
+
+.fp-exp-dms-card-header {
+    background: var(--fpdms-bg-light);
+    border-bottom: 2px solid var(--fpdms-border-light);
+    padding: 1rem 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.fp-exp-dms-card-header-left {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.fp-exp-dms-card-header .dashicons {
+    color: var(--fpdms-primary);
+}
+
+.fp-exp-dms-card-header h2,
+.fp-exp-dms-card-header h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--fpdms-text);
+}
+
+.fp-exp-dms-card-body {
+    padding: 1.5rem;
+}
+
+.fp-exp-dms-card-body .description {
+    margin-bottom: 1rem;
+    color: var(--fpdms-text-light);
+}
+
+.fp-exp-dms-card-body .description:last-child {
+    margin-bottom: 0;
+}
+
+.fp-exp-dms-badge {
+    display: inline-block;
+    padding: 0.2rem 0.6rem;
+    border-radius: var(--radius-pill);
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.fp-exp-dms-badge-success {
+    background: var(--fpdms-success-bg);
+    color: var(--fpdms-success-text);
+}
+
+.fp-exp-dms-badge-danger {
+    background: var(--fpdms-danger-bg);
+    color: var(--fpdms-danger-text);
+}
+
+.fp-exp-dms-badge-warning {
+    background: var(--fpdms-warning-bg);
+    color: var(--fpdms-warning-text);
+}
+
+.fp-exp-dms-badge-neutral {
+    background: var(--fpdms-border-light);
+    color: var(--fpdms-text-muted);
+}
+
+.fp-exp-dms-badge-info {
+    background: var(--fpdms-info-bg);
+    color: var(--fpdms-info-text);
+}
