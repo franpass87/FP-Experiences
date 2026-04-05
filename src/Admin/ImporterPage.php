@@ -151,37 +151,7 @@ final class ImporterPage implements HookableInterface
             return;
         }
 
-        $admin_css = Helpers::resolve_asset_rel([
-            'assets/css/dist/fp-experiences-admin.min.css',
-            'assets/css/admin.css',
-        ]);
-        wp_enqueue_style(
-            'fp-exp-admin',
-            FP_EXP_PLUGIN_URL . $admin_css,
-            Helpers::admin_style_dependencies(),
-            Helpers::asset_version($admin_css)
-        );
-
-        $admin_js = Helpers::resolve_asset_rel([
-            'assets/js/dist/fp-experiences-admin.min.js',
-            'assets/js/admin.js',
-        ]);
-        wp_enqueue_script(
-            'fp-exp-admin',
-            FP_EXP_PLUGIN_URL . $admin_js,
-            ['jquery'],
-            Helpers::asset_version($admin_js),
-            true
-        );
-
-        // Config base per fpExpAdmin
-        wp_localize_script('fp-exp-admin', 'fpExpAdmin', [
-            'restUrl' => rest_url('fp-exp/v1/'),
-            'restNonce' => wp_create_nonce('wp_rest'),
-            'ajaxUrl' => admin_url('admin-ajax.php'),
-            'pluginUrl' => FP_EXP_PLUGIN_URL,
-            'strings' => [],
-        ]);
+        // Asset admin base gestiti da AdminMenu.
 
         wp_enqueue_script(
             'fp-exp-importer',

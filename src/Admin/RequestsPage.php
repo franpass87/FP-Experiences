@@ -23,7 +23,6 @@ use function esc_attr;
 use function esc_html;
 use function esc_html__;
 use function esc_url;
-use function get_current_screen;
 use function get_option;
 use function get_settings_errors;
 use function get_transient;
@@ -37,7 +36,6 @@ use function sprintf;
 use function selected;
 use function submit_button;
 use function wp_date;
-use function wp_enqueue_style;
 use function wp_nonce_field;
 use function wp_safe_redirect;
 use function wp_unslash;
@@ -57,33 +55,7 @@ final class RequestsPage implements HookableInterface
     public function register_hooks(): void
     {
         add_action('admin_init', [$this, 'maybe_handle_action']);
-        add_action('admin_enqueue_scripts', [$this, 'enqueue_assets']);
-    }
-
-    public function enqueue_assets(): void
-    {
-        $screen = get_current_screen();
-        // Verifica anche il hook e il page parameter per maggiore sicurezza
-        $is_requests_page = $screen && (
-            'fp-exp-dashboard_page_fp_exp_requests' === $screen->id ||
-            (isset($_GET['page']) && $_GET['page'] === 'fp_exp_requests')
-        );
-        
-        if (! $is_requests_page) {
-            return;
-        }
-
-        $admin_css = Helpers::resolve_asset_rel([
-            'assets/css/dist/fp-experiences-admin.min.css',
-            'assets/css/admin.css',
-        ]);
-        wp_enqueue_style(
-            'fp-exp-admin',
-            FP_EXP_PLUGIN_URL . $admin_css,
-            Helpers::admin_style_dependencies(),
-            Helpers::asset_version($admin_css)
-        );
-        wp_enqueue_style('dashicons');
+        // Asset admin base gestiti da AdminMenu.
     }
 
     public function maybe_handle_action(): void

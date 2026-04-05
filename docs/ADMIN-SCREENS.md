@@ -20,6 +20,8 @@ Chiavi modulo `js.admin`: `core`, `tabs`, `mediaControls`, `galleryControls`, `t
 
 **Operazioni / calendario slot**: `calendar-admin-app.js` usa **`fetch`** per `GET` su `fp-exp/v1/calendar/slots` (non `wp.apiFetch` con URL assoluti, che in alcuni contesti non completa la richiesta). Dati globali: `window.fpExpCalendar` (solo `wp_localize_script` da `CalendarAdmin`, priorità 20 dopo `AdminMenu`).
 
+**Bootstrap shared admin**: enqueue base CSS/JS + `window.fpExpAdmin` centralizzati in `AdminMenu`; le pagine admin aggiungono solo config specifiche (`fpExpCalendar`, `fpExpTools`, metabox data) per evitare override o duplicazioni tra schermate.
+
 ## Pagine custom (menu FP Experiences)
 
 | Voce menu | Slug / screen | Classe wrap | Banner | Note |

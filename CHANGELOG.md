@@ -2,6 +2,18 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.6.38] - 2026-04-05
+
+### Changed
+
+- **Admin UI foundation**: pipeline asset admin unificata con `AdminMenu::enqueue_shared_assets` come unico punto per enqueue base (`fp-exp-admin`) e localizzazione globale `fpExpAdmin` sulle schermate gestite.
+- **Pagine admin custom**: rimossi enqueue CSS/JS duplicati da `EmailsPage`, `LogsPage`, `RequestsPage`, `CheckinPage`, `HelpPage`, `ImporterPage`; `ToolsPage` usa solo `fpExpTools` localizzato da `SettingsPage` e il modulo JS condiviso (`assets/js/admin/tools.js`) senza script inline legacy.
+- **CPT/editor**: `ExperienceMetaBoxes` ora unisce la config JS con `wp_add_inline_script` (merge non distruttivo di `strings`/`rest`) evitando overwrite di `fpExpAdmin`; `edit-fp_exp_language` incluso nel bootstrap shared di `AdminMenu`.
+
+### Fixed
+
+- **Stabilità inter-pagina admin**: eliminati conflitti da doppie registrazioni hook/enqueue che potevano lasciare alcune schermate in stato parziale/incompleto dopo la navigazione nel menu FP Experiences.
+
 ## [1.6.37] - 2026-04-05
 
 ### Fixed

@@ -552,75 +552,52 @@ final class ExperienceMetaBoxes implements HookableInterface
         }
         wp_enqueue_style('fp-exp-fontawesome');
 
-        $admin_css = Helpers::resolve_asset_rel([
-            'assets/css/dist/fp-experiences-admin.min.css',
-            'assets/css/admin.css',
-        ]);
-        wp_enqueue_style(
-            'fp-exp-admin',
-            FP_EXP_PLUGIN_URL . $admin_css,
-            array_merge(Helpers::admin_style_dependencies(), ['fp-exp-fontawesome']),
-            Helpers::asset_version($admin_css)
-        );
-
-        $admin_js = Helpers::resolve_asset_rel([
-            'assets/js/dist/fp-experiences-admin.min.js',
-            'assets/js/admin.js',
-        ]);
-        wp_enqueue_script(
-            'fp-exp-admin',
-            FP_EXP_PLUGIN_URL . $admin_js,
-            ['jquery'],
-            Helpers::asset_version($admin_js),
-            true
-        );
-
-        // Config base per fpExpAdmin
-        wp_localize_script('fp-exp-admin', 'fpExpAdmin', [
-            'restUrl' => rest_url('fp-exp/v1/'),
-            'restNonce' => wp_create_nonce('wp_rest'),
-            'ajaxUrl' => admin_url('admin-ajax.php'),
-            'pluginUrl' => FP_EXP_PLUGIN_URL,
-            'strings' => [],
-        ]);
-
         $post_id = isset($_GET['post']) ? absint((string) $_GET['post']) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+        $meta_box_config = [
+            'strings' => [
+                'tablistLabel' => esc_html__('Sezioni esperienza', 'fp-experiences'),
+                'removeRow' => esc_html__('Rimuovi elemento', 'fp-experiences'),
+                'ticketWarning' => esc_html__('Aggiungi almeno un tipo di biglietto con un prezzo valido.', 'fp-experiences'),
+                'invalidPrice' => esc_html__('Il prezzo non può essere negativo.', 'fp-experiences'),
+                'invalidQuantity' => esc_html__('La quantità non può essere negativa.', 'fp-experiences'),
+                'selectImage' => esc_html__('Seleziona immagine', 'fp-experiences'),
+                'changeImage' => esc_html__('Modifica immagine', 'fp-experiences'),
+                'removeImage' => esc_html__('Rimuovi immagine', 'fp-experiences'),
+                'recurrenceMissingTimes' => esc_html__('Aggiungi almeno un orario alla ricorrenza prima di procedere.', 'fp-experiences'),
+                'recurrenceMissingDays' => esc_html__('Seleziona almeno un giorno della settimana per la ricorrenza.', 'fp-experiences'),
+                'recurrencePreviewError' => esc_html__('Impossibile calcolare la ricorrenza: verifica date e orari.', 'fp-experiences'),
+                'recurrencePreviewEmpty' => esc_html__('Nessuno slot futuro trovato per la regola indicata.', 'fp-experiences'),
+                'recurrenceGenerateSuccess' => esc_html__('Slot rigenerati: %d creati/aggiornati.', 'fp-experiences'),
+                'recurrenceGenerateError' => esc_html__('Errore durante la rigenerazione degli slot. Riprova più tardi.', 'fp-experiences'),
+                'recurrencePostMissing' => esc_html__('Salva l\'esperienza prima di generare gli slot.', 'fp-experiences'),
+                'recurrenceTimeLabel' => esc_html__('Orario ricorrenza', 'fp-experiences'),
+                'recurrenceRemoveTime' => esc_html__('Rimuovi orario', 'fp-experiences'),
+                'recurrenceLoading' => esc_html__('Generazione in corso…', 'fp-experiences'),
+                'recurrenceOpenEndedSuffix' => esc_html__('La ricorrenza resta attiva finché non imposti una data di fine.', 'fp-experiences'),
+                'trustBadgesStatus' => esc_html__('Badge selezionati: %1$s su %2$s', 'fp-experiences'),
+                'trustBadgesMax' => esc_html__('Hai raggiunto il numero massimo di badge selezionabili.', 'fp-experiences'),
+            ],
+            'rest' => [
+                'nonce' => wp_create_nonce('wp_rest'),
+                'preview' => rest_url('fp-exp/v1/calendar/recurrence/preview'),
+                'generate' => rest_url('fp-exp/v1/calendar/recurrence/generate'),
+            ],
+            'experienceId' => $post_id,
+        ];
 
-        wp_localize_script(
-            'fp-exp-admin',
-            'fpExpAdmin',
-            [
-                'strings' => [
-                    'tablistLabel' => esc_html__('Sezioni esperienza', 'fp-experiences'),
-                    'removeRow' => esc_html__('Rimuovi elemento', 'fp-experiences'),
-                    'ticketWarning' => esc_html__('Aggiungi almeno un tipo di biglietto con un prezzo valido.', 'fp-experiences'),
-                    'invalidPrice' => esc_html__('Il prezzo non può essere negativo.', 'fp-experiences'),
-                    'invalidQuantity' => esc_html__('La quantità non può essere negativa.', 'fp-experiences'),
-                    'selectImage' => esc_html__('Seleziona immagine', 'fp-experiences'),
-                    'changeImage' => esc_html__('Modifica immagine', 'fp-experiences'),
-                    'removeImage' => esc_html__('Rimuovi immagine', 'fp-experiences'),
-                    'recurrenceMissingTimes' => esc_html__('Aggiungi almeno un orario alla ricorrenza prima di procedere.', 'fp-experiences'),
-                    'recurrenceMissingDays' => esc_html__('Seleziona almeno un giorno della settimana per la ricorrenza.', 'fp-experiences'),
-                    'recurrencePreviewError' => esc_html__('Impossibile calcolare la ricorrenza: verifica date e orari.', 'fp-experiences'),
-                    'recurrencePreviewEmpty' => esc_html__('Nessuno slot futuro trovato per la regola indicata.', 'fp-experiences'),
-                    'recurrenceGenerateSuccess' => esc_html__('Slot rigenerati: %d creati/aggiornati.', 'fp-experiences'),
-                    'recurrenceGenerateError' => esc_html__('Errore durante la rigenerazione degli slot. Riprova più tardi.', 'fp-experiences'),
-                    'recurrencePostMissing' => esc_html__('Salva l\'esperienza prima di generare gli slot.', 'fp-experiences'),
-                    'recurrenceTimeLabel' => esc_html__('Orario ricorrenza', 'fp-experiences'),
-                    'recurrenceRemoveTime' => esc_html__('Rimuovi orario', 'fp-experiences'),
-                    'recurrenceLoading' => esc_html__('Generazione in corso…', 'fp-experiences'),
-                    'recurrenceOpenEndedSuffix' => esc_html__('La ricorrenza resta attiva finché non imposti una data di fine.', 'fp-experiences'),
-                    'trustBadgesStatus' => esc_html__('Badge selezionati: %1$s su %2$s', 'fp-experiences'),
-                    'trustBadgesMax' => esc_html__('Hai raggiunto il numero massimo di badge selezionabili.', 'fp-experiences'),
-                ],
-                'rest' => [
-                    'nonce' => wp_create_nonce('wp_rest'),
-                    'preview' => rest_url('fp-exp/v1/calendar/recurrence/preview'),
-                    'generate' => rest_url('fp-exp/v1/calendar/recurrence/generate'),
-                ],
-                'experienceId' => $post_id,
-            ]
-        );
+        $meta_config_json = wp_json_encode($meta_box_config);
+        if (false !== $meta_config_json) {
+            wp_add_inline_script(
+                'fp-exp-admin',
+                'window.fpExpAdmin = window.fpExpAdmin || {};' .
+                'window.fpExpMetaBoxConfig = ' . $meta_config_json . ';' .
+                'window.fpExpAdmin.strings = Object.assign({}, window.fpExpAdmin.strings || {}, window.fpExpMetaBoxConfig.strings || {});' .
+                'window.fpExpAdmin.rest = Object.assign({}, window.fpExpAdmin.rest || {}, window.fpExpMetaBoxConfig.rest || {});' .
+                'window.fpExpAdmin.experienceId = window.fpExpMetaBoxConfig.experienceId || 0;' .
+                'try { delete window.fpExpMetaBoxConfig; } catch (e) {}',
+                'before'
+            );
+        }
 
         // Fix: Rimuovi la classe hide-if-js e riordina la metabox sopra SEO Performance
         wp_add_inline_script(

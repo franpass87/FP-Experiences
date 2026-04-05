@@ -266,31 +266,8 @@ final class SettingsPage implements HookableInterface
             return;
         }
 
-        // Carica sempre gli stili admin per tutte le pagine settings
-        $admin_css = Helpers::resolve_asset_rel([
-            'assets/css/dist/fp-experiences-admin.min.css',
-            'assets/css/admin.css',
-        ]);
-        wp_enqueue_style(
-            'fp-exp-admin',
-            FP_EXP_PLUGIN_URL . $admin_css,
-            Helpers::admin_style_dependencies(),
-            Helpers::asset_version($admin_css)
-        );
-
-        $admin_js = Helpers::resolve_asset_rel([
-            'assets/js/dist/fp-experiences-admin.min.js',
-            'assets/js/admin.js',
-        ]);
-        wp_enqueue_script(
-            'fp-exp-admin',
-            FP_EXP_PLUGIN_URL . $admin_js,
-            ['jquery'], // Usa solo jQuery, non servono wp-api-fetch o wp-i18n
-            Helpers::asset_version($admin_js),
-            true
-        );
-
-        // Toast notifications system
+        // Asset admin base (fp-exp-admin CSS/JS + fpExpAdmin) gestiti da AdminMenu.
+        // Qui carichiamo solo dipendenze pagina-specifiche.
         wp_enqueue_script(
             'fp-exp-toast',
             FP_EXP_PLUGIN_URL . 'assets/js/admin/toast.js',
@@ -302,61 +279,15 @@ final class SettingsPage implements HookableInterface
         $tabs = $this->get_tabs();
         $active_tab = $this->get_active_tab($tabs);
 
-        // Carica assets specifici per tools
+        // Config specifica per pannello Tools (tab interna impostazioni).
         if ('tools' === $active_tab) {
-            wp_localize_script('fp-exp-admin', 'fpExpTools', [
-                'nonce' => wp_create_nonce('wp_rest'),
-                'actions' => $this->get_tool_actions_localised(),
-                'i18n' => [
-                    'running' => esc_html__('Running action…', 'fp-experiences'),
-                    'success' => esc_html__('Action completed successfully.', 'fp-experiences'),
-                    'error' => esc_html__('Action failed. Check the logs for details.', 'fp-experiences'),
-                ],
-            ]);
+            $this->enqueue_tools_assets();
         }
     }
 
     public function enqueue_tools_assets(): void
     {
-        $admin_css = Helpers::resolve_asset_rel([
-            'assets/css/dist/fp-experiences-admin.min.css',
-            'assets/css/admin.css',
-        ]);
-
-        wp_enqueue_style(
-            'fp-exp-admin',
-            FP_EXP_PLUGIN_URL . $admin_css,
-            Helpers::admin_style_dependencies(),
-            Helpers::asset_version($admin_css)
-        );
-
-        $admin_js = Helpers::resolve_asset_rel([
-            'assets/js/dist/fp-experiences-admin.min.js',
-            'assets/js/admin.js',
-        ]);
-        
-        if (defined('WP_DEBUG') && WP_DEBUG) {
-            error_log('[FP-EXP-SETTINGS] JS file: ' . $admin_js);
-        }
-        
-        wp_enqueue_script(
-            'fp-exp-admin',
-            FP_EXP_PLUGIN_URL . $admin_js,
-            ['jquery'], // Usa solo jQuery, non servono wp-api-fetch o wp-i18n
-            Helpers::asset_version($admin_js),
-            true
-        );
-
-        // Config base per fpExpAdmin (richiesto da admin.js)
-        wp_localize_script('fp-exp-admin', 'fpExpAdmin', [
-            'restUrl' => rest_url('fp-exp/v1/'),
-            'restNonce' => wp_create_nonce('wp_rest'),
-            'ajaxUrl' => admin_url('admin-ajax.php'),
-            'pluginUrl' => FP_EXP_PLUGIN_URL,
-            'strings' => [],
-        ]);
-
-        // Config specifico per tools
+        // Asset admin base già enqueued da AdminMenu.
         wp_localize_script('fp-exp-admin', 'fpExpTools', [
             'nonce' => wp_create_nonce('wp_rest'),
             'actions' => $this->get_tool_actions_localised(),
@@ -3988,11 +3919,6 @@ final class SettingsPage implements HookableInterface
         }
         
         $field_id = 'fp_exp_rtb_' . implode('_', $path);
-        
-        // Debug logging
-        if (defined('WP_DEBUG') && WP_DEBUG) {
-            error_log('[FP-Exp render_rtb_field] key=' . $key . ', field_name=' . $field_name . ', value=' . print_r($value, true));
-        }
         
         // Render based on type
         switch ($type) {

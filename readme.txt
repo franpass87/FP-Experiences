@@ -125,6 +125,11 @@ FP Experiences stores reservation details inside custom tables linked to WooComm
 
 == Changelog ==
 
+= 1.6.38 - 2026-04-05 =
+* **Changed**: Pipeline admin unificata: enqueue CSS/JS base e `fpExpAdmin` centralizzati in `AdminMenu` per tutte le schermate FP gestite.
+* **Changed**: Rimossi enqueue duplicati da pagine admin (Email, Log, Richieste, Check-in, Guida, Importer) e script inline legacy in Tools; ora usa configurazione `fpExpTools` + modulo `tools.js`.
+* **Changed**: CPT/tassonomie admin allineate al bootstrap shared (`edit-fp_exp_language` incluso) con merge non distruttivo della config metabox esperienza.
+
 = 1.6.37 - 2026-04-05 =
 * **Fixed**: Vista Calendario in Operazioni — fetch REST con `fetch` nativo (no `apiFetch` che poteva restare in pending); enqueue calendar senza duplicare script admin rispetto al menu.
 

@@ -5,12 +5,10 @@ declare(strict_types=1);
 namespace FP_Exp\Admin;
 
 use FP_Exp\Core\Hook\HookableInterface;
-use FP_Exp\Utils\Helpers;
 use FP_Exp\Utils\LanguageHelper;
 use WP_Screen;
 use WP_Term;
 
-use function add_action;
 use function add_filter;
 use function esc_attr;
 use function esc_html;
@@ -19,14 +17,13 @@ use function function_exists;
 use function get_current_screen;
 use function is_admin;
 use function sprintf;
-use function wp_enqueue_style;
 
 final class LanguageAdmin implements HookableInterface
 {
     public function register_hooks(): void
     {
         add_filter('term_name', [$this, 'decorate_term_name'], 10, 2);
-        add_action('admin_enqueue_scripts', [$this, 'enqueue_assets']);
+        // Asset admin base gestiti da AdminMenu.
     }
 
     /**
@@ -66,26 +63,6 @@ final class LanguageAdmin implements HookableInterface
             esc_attr($sprite),
             esc_html($code),
             esc_html($label)
-        );
-    }
-
-    public function enqueue_assets(): void
-    {
-        $screen = function_exists('get_current_screen') ? get_current_screen() : null;
-
-        if (! $screen instanceof WP_Screen || 'edit-fp_exp_language' !== $screen->id) {
-            return;
-        }
-
-        $admin_css = Helpers::resolve_asset_rel([
-            'assets/css/dist/fp-experiences-admin.min.css',
-            'assets/css/admin.css',
-        ]);
-        wp_enqueue_style(
-            'fp-exp-admin',
-            FP_EXP_PLUGIN_URL . $admin_css,
-            Helpers::admin_style_dependencies(),
-            Helpers::asset_version($admin_css)
         );
     }
 }

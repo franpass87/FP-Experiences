@@ -74,11 +74,6 @@ final class AdminMenu implements HookableInterface
         $this->help_page = $help_page;
         $this->importer_page = $importer_page;
         $this->page_creator = $page_creator;
-        
-        // Registra gli hook per HelpPage
-        if (method_exists($this->help_page, 'register_hooks')) {
-            $this->help_page->register_hooks();
-        }
     }
 
     public function register_hooks(): void
@@ -499,6 +494,7 @@ final class AdminMenu implements HookableInterface
             'toplevel_page_fp_exp_dashboard',
             'edit-fp_experience',
             'fp_experience',
+            'edit-fp_exp_language',
             'edit-fp_meeting_point',
             'fp_meeting_point',
             'edit-fp_exp_gift_voucher',

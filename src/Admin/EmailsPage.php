@@ -19,17 +19,12 @@ use function esc_attr;
 use function esc_html;
 use function esc_html__;
 use function esc_url;
-use function get_current_screen;
 use function get_locale;
-use function rest_url;
 use function settings_errors;
 use function settings_fields;
 use function do_settings_sections;
 use function submit_button;
-use function wp_create_nonce;
 use function wp_die;
-use function wp_enqueue_script;
-use function wp_enqueue_style;
 use function wp_send_json_error;
 use function wp_send_json_success;
 
@@ -44,54 +39,7 @@ final class EmailsPage implements HookableInterface
 
     public function register_hooks(): void
     {
-        add_action('admin_enqueue_scripts', [$this, 'enqueue_assets']);
         add_action('wp_ajax_fp_exp_test_email', [$this, 'handle_test_email']);
-    }
-
-    public function enqueue_assets(): void
-    {
-        $screen = get_current_screen();
-        // Verifica anche il hook e il page parameter per maggiore sicurezza
-        $is_emails_page = $screen && (
-            'fp-exp-dashboard_page_fp_exp_emails' === $screen->id ||
-            (isset($_GET['page']) && $_GET['page'] === 'fp_exp_emails')
-        );
-        
-        if (! $is_emails_page) {
-            return;
-        }
-
-        $admin_css = Helpers::resolve_asset_rel([
-            'assets/css/dist/fp-experiences-admin.min.css',
-            'assets/css/admin.css',
-        ]);
-        wp_enqueue_style(
-            'fp-exp-admin',
-            FP_EXP_PLUGIN_URL . $admin_css,
-            Helpers::admin_style_dependencies(),
-            Helpers::asset_version($admin_css)
-        );
-
-        $admin_js = Helpers::resolve_asset_rel([
-            'assets/js/dist/fp-experiences-admin.min.js',
-            'assets/js/admin.js',
-        ]);
-        wp_enqueue_script(
-            'fp-exp-admin',
-            FP_EXP_PLUGIN_URL . $admin_js,
-            ['jquery'],
-            Helpers::asset_version($admin_js),
-            true
-        );
-
-        // Config base per fpExpAdmin
-        wp_localize_script('fp-exp-admin', 'fpExpAdmin', [
-            'restUrl' => rest_url('fp-exp/v1/'),
-            'restNonce' => wp_create_nonce('wp_rest'),
-            'ajaxUrl' => admin_url('admin-ajax.php'),
-            'pluginUrl' => FP_EXP_PLUGIN_URL,
-            'strings' => [],
-        ]);
     }
 
     public function render_page(): void
