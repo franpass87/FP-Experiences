@@ -2,6 +2,16 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.6.36] - 2026-04-05
+
+### Fixed
+
+- **Admin — cache asset**: `AssetHelper::getVersion()` appende il `filemtime` del file CSS/JS oltre a `FP_EXP_VERSION`, così dopo `npm run build` (o deploy) il browser non può servire un `.min.css` / `.min.js` obsoleto tramite risposta `304 Not Modified` sulla stessa `?ver=`.
+
+### Added
+
+- Filtro `fp_exp_asset_version` per override della stringa di versione asset.
+
 ## [1.6.35] - 2026-04-05
 
 ### Changed

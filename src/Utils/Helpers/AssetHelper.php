@@ -33,6 +33,10 @@ final class AssetHelper
     /**
      * Get asset version for cache busting.
      *
+     * Usa `FP_EXP_VERSION` più il `filemtime` del file quando il file esiste, così ogni rebuild
+     * di bundle in `assets/css/dist` e `assets/js/dist` invalida la cache del browser anche se la versione del plugin
+     * non è stata ancora bumpata (evita 304 «silenziosi» su CSS/JS admin).
+     *
      * @param string $relative_path Relative path from plugin root
      *
      * @return string Version string
@@ -45,19 +49,23 @@ final class AssetHelper
             return self::$asset_version_cache[$relative_path];
         }
 
-        // In production, usa sempre la versione del plugin per garantire cache busting
-        // ad ogni release, indipendentemente dai timestamp dei file
-        if (defined('FP_EXP_VERSION') && FP_EXP_VERSION !== '') {
-            $version = FP_EXP_VERSION;
-        } else {
-            // Fallback: usa timestamp del file se disponibile
-            $full_path = FP_EXP_PLUGIN_DIR . $relative_path;
-            if (is_readable($full_path)) {
-                $version = (string) filemtime($full_path);
-            } else {
-                $version = '1.0.0';
+        $full_path = FP_EXP_PLUGIN_DIR . $relative_path;
+
+        $base = (defined('FP_EXP_VERSION') && FP_EXP_VERSION !== '')
+            ? (string) FP_EXP_VERSION
+            : '1.0.0';
+
+        $version = $base;
+        if (is_readable($full_path)) {
+            $mtime = filemtime($full_path);
+            if (false !== $mtime) {
+                $version = $base . '-' . $mtime;
             }
         }
+
+        /** @var string $filtered */
+        $filtered = apply_filters('fp_exp_asset_version', $version, $relative_path);
+        $version = is_string($filtered) && $filtered !== '' ? $filtered : $version;
 
         self::$asset_version_cache[$relative_path] = $version;
 
