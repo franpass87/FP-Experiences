@@ -308,6 +308,32 @@ html.fp-exp-dark .fp-exp-experience-metabox .fp-exp-sr-widget__group-title {
     color: var(--fp-exp-color-muted, #9ca3af);
 }
 
+html.fp-exp-dark .fp-exp-experience-metabox .fp-exp-content-trust__block {
+    background: rgba(24, 26, 31, 0.85);
+    border-color: rgba(230, 232, 235, 0.12);
+    box-shadow: none;
+}
+
+html.fp-exp-dark .fp-exp-experience-metabox .fp-exp-checkbox-grid__item--taxonomy-term {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(230, 232, 235, 0.12);
+}
+
+html.fp-exp-dark .fp-exp-experience-metabox .fp-exp-checkbox-grid__item--taxonomy-term:hover {
+    background: rgba(255, 255, 255, 0.07);
+    border-color: rgba(230, 232, 235, 0.2);
+}
+
+html.fp-exp-dark .fp-exp-experience-metabox .fp-exp-checkbox-grid__item--taxonomy-term:focus-within {
+    border-color: #a5b4fc;
+    box-shadow: none;
+}
+
+html.fp-exp-dark .fp-exp-experience-metabox .fp-exp-checkbox-grid__item--taxonomy-term:has(input:checked) {
+    border-color: rgba(165, 180, 252, 0.55);
+    background: rgba(102, 126, 234, 0.18);
+}
+
 /* --- Metabox sidebar: ordine di visualizzazione --- */
 #fp-exp-display-order.postbox {
     border: 1px solid var(--fpdms-border);

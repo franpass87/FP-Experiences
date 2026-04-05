@@ -426,9 +426,11 @@ final class DetailsMetaBoxHandler extends BaseMetaBoxHandler
                 'details-content'
             );
             ?>
-                <?php $this->render_experience_badges_field($data, $post_id); ?>
-                <?php $this->render_taxonomy_fields($data, $post_id); ?>
-                <?php $this->render_trust_badges_field($data); ?>
+                <div class="fp-exp-content-trust">
+                    <?php $this->render_experience_badges_field($data, $post_id); ?>
+                    <?php $this->render_taxonomy_fields($data, $post_id); ?>
+                    <?php $this->render_trust_badges_field($data); ?>
+                </div>
             <?php $this->render_metabox_section_close(); ?>
 
             <?php
@@ -654,60 +656,73 @@ final class DetailsMetaBoxHandler extends BaseMetaBoxHandler
         $age_restrictions = $data['age_restrictions'] ?? [];
         $location = $data['location'] ?? [];
 
-        // Categories
-        if (!empty($categories['choices'])) {
+        $has_selects = ! empty($difficulty['choices'])
+            || ! empty($age_restrictions['choices'])
+            || ! empty($location['choices']);
+
+        ?>
+        <div class="fp-exp-content-trust__block fp-exp-content-trust__block--taxonomy">
+            <h4 class="fp-exp-field__subtitle"><?php esc_html_e('Categorie e classificazione', 'fp-experiences'); ?></h4>
+            <p class="fp-exp-dms-hint fp-exp-content-trust__block-intro">
+                <?php esc_html_e('Categorie e tag consentono più selezioni; difficoltà, restrizioni di età e località usano un solo valore a scelta.', 'fp-experiences'); ?>
+            </p>
+        <?php
+        if (! empty($categories['choices'])) {
             $this->render_taxonomy_checkboxes(
                 'categories',
                 'fp_exp_details[categories]',
-                'Categorie',
+                __('Categorie', 'fp-experiences'),
                 $categories['choices'],
                 $categories['selected'] ?? []
             );
         }
 
-        // Tags
-        if (!empty($tags['choices'])) {
+        if (! empty($tags['choices'])) {
             $this->render_taxonomy_checkboxes(
                 'tags',
                 'fp_exp_details[tags]',
-                'Tag',
+                __('Tag', 'fp-experiences'),
                 $tags['choices'],
                 $tags['selected'] ?? []
             );
         }
 
-        // Difficulty
-        if (!empty($difficulty['choices'])) {
+        if ($has_selects) {
+            echo '<div class="fp-exp-dms-fields-grid fp-exp-content-trust__selects">';
+        }
+        if (! empty($difficulty['choices'])) {
             $this->render_taxonomy_select(
                 'difficulty',
                 'fp_exp_details[difficulty]',
-                'Difficoltà',
+                __('Difficoltà', 'fp-experiences'),
                 $difficulty['choices'],
-                $difficulty['selected'] ?? 0
+                (int) ($difficulty['selected'] ?? 0)
             );
         }
-
-        // Age Restrictions
-        if (!empty($age_restrictions['choices'])) {
+        if (! empty($age_restrictions['choices'])) {
             $this->render_taxonomy_select(
                 'age_restrictions',
                 'fp_exp_details[age_restrictions]',
-                'Restrizioni età',
+                __('Restrizioni età', 'fp-experiences'),
                 $age_restrictions['choices'],
-                $age_restrictions['selected'] ?? 0
+                (int) ($age_restrictions['selected'] ?? 0)
             );
         }
-
-        // Location
-        if (!empty($location['choices'])) {
+        if (! empty($location['choices'])) {
             $this->render_taxonomy_select(
                 'location',
                 'fp_exp_details[location]',
-                'Località',
+                __('Località', 'fp-experiences'),
                 $location['choices'],
-                $location['selected'] ?? 0
+                (int) ($location['selected'] ?? 0)
             );
         }
+        if ($has_selects) {
+            echo '</div>';
+        }
+        ?>
+        </div>
+        <?php
     }
 
     /**
@@ -716,11 +731,11 @@ final class DetailsMetaBoxHandler extends BaseMetaBoxHandler
     private function render_taxonomy_checkboxes(string $id, string $name, string $label, array $choices, array $selected): void
     {
         ?>
-        <div class="fp-exp-field">
+        <div class="fp-exp-field fp-exp-field--taxonomy-multi">
             <span class="fp-exp-field__label"><?php echo esc_html($label); ?></span>
-            <div class="fp-exp-checkbox-grid">
+            <div class="fp-exp-checkbox-grid fp-exp-checkbox-grid--taxonomy-terms" role="group" aria-label="<?php echo esc_attr($label); ?>">
                 <?php foreach ($choices as $choice) :
-                    if (!is_array($choice)) {
+                    if (! is_array($choice)) {
                         continue;
                     }
 
@@ -731,14 +746,19 @@ final class DetailsMetaBoxHandler extends BaseMetaBoxHandler
                         continue;
                     }
                     ?>
-                    <label>
+                    <label class="fp-exp-checkbox-grid__item fp-exp-checkbox-grid__item--taxonomy-term">
                         <input
                             type="checkbox"
                             name="<?php echo esc_attr($name); ?>[]"
                             value="<?php echo esc_attr((string) $term_id); ?>"
                             <?php checked(in_array($term_id, $selected, true)); ?>
                         />
-                        <span><?php echo esc_html($term_label); ?></span>
+                        <span class="fp-exp-checkbox-grid__content">
+                            <span class="fp-exp-checkbox-grid__icon fp-exp-checkbox-grid__icon--empty" aria-hidden="true"></span>
+                            <span class="fp-exp-checkbox-grid__body">
+                                <span class="fp-exp-checkbox-grid__title"><?php echo esc_html($term_label); ?></span>
+                            </span>
+                        </span>
                     </label>
                 <?php endforeach; ?>
             </div>
@@ -854,7 +874,9 @@ final class DetailsMetaBoxHandler extends BaseMetaBoxHandler
         }
         $next_custom_index = count($custom_rows);
         ?>
-        <div class="fp-exp-field fp-exp-field--taxonomies" id="fp-exp-experience-badges">
+        <div class="fp-exp-content-trust__block" id="fp-exp-experience-badges">
+            <h4 class="fp-exp-field__subtitle"><?php esc_html_e('Caratteristiche e badge', 'fp-experiences'); ?></h4>
+            <div class="fp-exp-field fp-exp-field--taxonomies">
             <div class="fp-exp-field">
                 <span class="fp-exp-field__label">
                     <?php esc_html_e('Caratteristiche predefinite', 'fp-experiences'); ?>
@@ -1004,6 +1026,7 @@ final class DetailsMetaBoxHandler extends BaseMetaBoxHandler
                         </div>
                     </template>
                 </div>
+            </div>
             </div>
         </div>
         <?php
@@ -1229,11 +1252,12 @@ final class DetailsMetaBoxHandler extends BaseMetaBoxHandler
         $search_input_id = 'fp-exp-bias-search';
         $grid_id = 'fp-exp-bias-grid';
         ?>
-        <div class="fp-exp-field">
-            <span class="fp-exp-field__label">
+        <div class="fp-exp-content-trust__block fp-exp-content-trust__block--trust">
+            <h4 class="fp-exp-field__subtitle">
                 <?php esc_html_e('Badge di fiducia', 'fp-experiences'); ?>
                 <?php $this->render_tooltip('fp-exp-bias-help', esc_html__('Evidenzia le leve persuasive che caratterizzano l\'esperienza; vengono mostrate nella panoramica.', 'fp-experiences')); ?>
-            </span>
+            </h4>
+            <div class="fp-exp-field fp-exp-field--trust-badges">
             <div class="fp-exp-checkbox-grid__search">
                 <label class="screen-reader-text" for="<?php echo esc_attr($search_input_id); ?>">
                     <?php esc_html_e('Filtra badge di fiducia', 'fp-experiences'); ?>
@@ -1343,6 +1367,7 @@ final class DetailsMetaBoxHandler extends BaseMetaBoxHandler
                 ?>
             </p>
             <p class="fp-exp-field__description" id="fp-exp-bias-help"><?php esc_html_e('Scegli fino a tre badge di fiducia per creare aspettative chiare nella sezione panoramica.', 'fp-experiences'); ?></p>
+            </div>
         </div>
         <script>
         (function () {
@@ -1412,10 +1437,8 @@ final class DetailsMetaBoxHandler extends BaseMetaBoxHandler
     private function render_taxonomy_select(string $id, string $name, string $label, array $choices, int $selected): void
     {
         ?>
-        <div class="fp-exp-field">
-            <label class="fp-exp-field__label" for="fp-exp-<?php echo esc_attr($id); ?>">
-                <?php echo esc_html($label); ?>
-            </label>
+        <div class="fp-exp-dms-field fp-exp-content-trust__select-field">
+            <label for="fp-exp-<?php echo esc_attr($id); ?>"><?php echo esc_html($label); ?></label>
             <select id="fp-exp-<?php echo esc_attr($id); ?>" name="<?php echo esc_attr($name); ?>">
                 <option value="0"><?php esc_html_e('-- Nessuno --', 'fp-experiences'); ?></option>
                 <?php foreach ($choices as $choice) :

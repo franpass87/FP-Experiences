@@ -332,6 +332,86 @@
     margin-bottom: 0;
 }
 
+/* Contenuto, categorie e fiducia — sotto-blocchi design system FP / DMS */
+.fp-exp-experience-metabox .fp-exp-content-trust {
+    display: grid;
+    gap: 1.25rem;
+}
+
+.fp-exp-experience-metabox .fp-exp-content-trust__block {
+    margin: 0;
+    padding: 1.15rem 1.35rem;
+    border: 1px solid var(--fpdms-border);
+    border-radius: var(--fpdms-radius-lg);
+    background: var(--fpdms-bg-white);
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+}
+
+.fp-exp-experience-metabox .fp-exp-content-trust__block .fp-exp-field__subtitle {
+    margin: 0 0 0.85rem;
+}
+
+.fp-exp-experience-metabox .fp-exp-content-trust__block-intro {
+    margin: 0 0 1rem;
+    max-width: 52rem;
+    line-height: 1.45;
+}
+
+.fp-exp-experience-metabox .fp-exp-content-trust__block .fp-exp-field--taxonomies {
+    margin-bottom: 0;
+}
+
+.fp-exp-experience-metabox .fp-exp-content-trust__block .fp-exp-field--taxonomy-multi {
+    margin-bottom: 1rem;
+}
+
+.fp-exp-experience-metabox .fp-exp-content-trust__selects {
+    margin-top: 0.75rem;
+}
+
+.fp-exp-experience-metabox .fp-exp-content-trust__block--trust .fp-exp-field--trust-badges {
+    margin-bottom: 0;
+}
+
+/* Griglia termini tassonomia: card compatte come Richieste speciali */
+.fp-exp-experience-metabox .fp-exp-checkbox-grid--taxonomy-terms {
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 10px;
+    margin-top: 6px;
+}
+
+.fp-exp-experience-metabox .fp-exp-checkbox-grid__item--taxonomy-term {
+    border-color: var(--fpdms-border);
+    border-radius: var(--fpdms-radius-md);
+    background: var(--fpdms-bg-light);
+    transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.fp-exp-experience-metabox .fp-exp-checkbox-grid__item--taxonomy-term:hover {
+    border-color: #cbd5e1;
+    background: var(--fpdms-bg-white);
+    box-shadow: var(--fpdms-shadow-md);
+}
+
+.fp-exp-experience-metabox .fp-exp-checkbox-grid__item--taxonomy-term:focus-within {
+    border-color: var(--fpdms-primary);
+    outline: none;
+    box-shadow: none;
+}
+
+.fp-exp-experience-metabox .fp-exp-checkbox-grid__item--taxonomy-term:has(input:checked) {
+    border-color: rgba(102, 126, 234, 0.5);
+    background: rgba(102, 126, 234, 0.08);
+}
+
+.fp-exp-experience-metabox .fp-exp-checkbox-grid__item--taxonomy-term input[type='checkbox'] {
+    accent-color: var(--fpdms-primary);
+}
+
+.fp-exp-experience-metabox .fp-exp-checkbox-grid__icon--empty {
+    visibility: hidden;
+}
+
 /* Languages as dedicated row with flag checkboxes */
 .fp-exp-experience-metabox .fp-exp-field--languages-row {
     display: grid;

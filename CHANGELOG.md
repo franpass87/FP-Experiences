@@ -2,6 +2,16 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.6.43] - 2026-04-05
+
+### Changed
+
+- **Editor esperienza → Dettagli → Contenuto, categorie e fiducia**: struttura a sotto-blocchi tipo card DMS (`fp-exp-content-trust`, `fp-exp-content-trust__block`), sottotitoli `h4`, hint introduttivo, griglia termini tassonomia e campi select allineati a `fp-exp-dms-fields-grid` / `fp-exp-dms-field`; stili in `metabox-details.css` e dark in `metabox-shell.css`.
+
+### Fixed
+
+- **i18n tassonomie (Dettagli)**: etichette categorie/tag/select passate con `__()` invece di `esc_html__()` prima di `esc_html()` nel markup (niente doppio escape delle entità).
+
 ## [1.6.42] - 2026-04-05
 
 ### Fixed
