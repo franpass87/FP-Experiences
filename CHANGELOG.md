@@ -2,6 +2,13 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.6.52] - 2026-04-05
+
+### Fixed
+
+- **Admin metabox Media**: `fp-exp-admin` ora dipende da **`media-upload`** così `wp.media` è disponibile prima dello script; aggiunto **`initMediaControlsDeferred`** (poll breve + `load`) per evitare bottoni hero/galleria non collegati alla modale.
+- **Galleria immagini**: con galleria vuota il pulsante «Rimuovi tutte» è **`hidden` + `disabled`**; JS aggiorna `disabled`/`aria-disabled` con lo stato; CSS di sicurezza se `hidden` veniva ignorato.
+
 ## [1.6.51] - 2026-04-05
 
 ### Changed

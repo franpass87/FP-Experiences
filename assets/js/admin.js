@@ -323,6 +323,12 @@
                 }
                 addButton.textContent = hasItems ? labels.addMore : labels.add;
                 clearButton.hidden = !hasItems;
+                clearButton.disabled = !hasItems;
+                if (hasItems) {
+                    clearButton.removeAttribute('aria-disabled');
+                } else {
+                    clearButton.setAttribute('aria-disabled', 'true');
+                }
                 clearButton.textContent = labels.clear;
             }
 
@@ -516,6 +522,47 @@
                 frame.open();
             });
         });
+    }
+
+    /**
+     * Assicura che wp.media sia caricato prima di legare hero/galleria (la modale media non va se lo script parte prima).
+     *
+     * @param {ParentNode|null} root
+     */
+    function initMediaControlsDeferred(root) {
+        if (!root) {
+            return;
+        }
+
+        function tryBind() {
+            if (!window.wp || !window.wp.media) {
+                return false;
+            }
+            initMediaControls(root);
+            initGalleryControls(root);
+            return true;
+        }
+
+        if (tryBind()) {
+            return;
+        }
+
+        let n = 0;
+        const max = 80;
+        const id = window.setInterval(() => {
+            n += 1;
+            if (tryBind() || n >= max) {
+                window.clearInterval(id);
+            }
+        }, 100);
+
+        window.addEventListener(
+            'load',
+            () => {
+                tryBind();
+            },
+            { once: true }
+        );
     }
 
     function initTaxonomyEditors(root) {
@@ -2537,8 +2584,7 @@
         if (root) {
             initTabs(root);
             initRepeaters(root);
-            initMediaControls(root);
-            initGalleryControls(root);
+            initMediaControlsDeferred(root);
             initTaxonomyEditors(root);
             initRecurrence(root);
             initFormValidation(root);

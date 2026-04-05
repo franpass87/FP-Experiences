@@ -564,7 +564,7 @@ final class AdminMenu implements HookableInterface
         wp_enqueue_script(
             'fp-exp-admin',
             FP_EXP_PLUGIN_URL . $admin_js,
-            ['jquery'],
+            ['jquery', 'media-upload'],
             Helpers::asset_version($admin_js),
             true
         );

@@ -636,7 +636,7 @@ final class DetailsMetaBoxHandler extends BaseMetaBoxHandler
                         class="button"
                         data-fp-gallery-clear
                         data-label-clear="<?php echo esc_attr__('Rimuovi tutte le immagini', 'fp-experiences'); ?>"
-                        <?php echo empty($gallery_items) ? ' hidden' : ''; ?>
+                        <?php echo empty($gallery_items) ? ' hidden disabled aria-disabled="true"' : ''; ?>
                     >
                         <?php esc_html_e('Rimuovi tutte le immagini', 'fp-experiences'); ?>
                     </button>

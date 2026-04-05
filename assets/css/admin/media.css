@@ -171,3 +171,8 @@
     font-size: 12px;
     color: var(--fpdms-text-muted, var(--fp-exp-color-muted, #6b7280));
 }
+
+/* Galleria vuota: nascondi «Rimuovi tutte» anche se qualche foglio forza display sui .button */
+.fp-exp-experience-metabox .fp-exp-gallery-control__actions [data-fp-gallery-clear][hidden] {
+    display: none !important;
+}
