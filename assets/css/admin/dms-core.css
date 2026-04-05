@@ -252,8 +252,24 @@
     max-width: 100%;
 }
 
-/* Solo campi testuali / select: mai checkbox o radio (altrimenti l’anello DMS si applica a ogni input[type=checkbox] discendente). */
-.fp-exp-dms-field input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]):not([type="submit"]):not([type="button"]):focus,
+/**
+ * Focus DMS: solo tipi “campo” espliciti (whitelist).
+ * `input:focus` generico o `:not([type=checkbox])` può ancora colpire checkbox in browser/DOM particolari.
+ */
+.fp-exp-dms-field input:not([type]):focus,
+.fp-exp-dms-field input[type="text"]:focus,
+.fp-exp-dms-field input[type="search"]:focus,
+.fp-exp-dms-field input[type="url"]:focus,
+.fp-exp-dms-field input[type="tel"]:focus,
+.fp-exp-dms-field input[type="email"]:focus,
+.fp-exp-dms-field input[type="number"]:focus,
+.fp-exp-dms-field input[type="password"]:focus,
+.fp-exp-dms-field input[type="date"]:focus,
+.fp-exp-dms-field input[type="time"]:focus,
+.fp-exp-dms-field input[type="datetime-local"]:focus,
+.fp-exp-dms-field input[type="month"]:focus,
+.fp-exp-dms-field input[type="week"]:focus,
+.fp-exp-dms-field input[type="color"]:focus,
 .fp-exp-dms-field select:focus {
     border-color: var(--fpdms-primary);
     outline: none;

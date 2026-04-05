@@ -2,6 +2,14 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.6.42] - 2026-04-05
+
+### Fixed
+
+- **Admin checkbox/radio**: con `body.fp-exp-admin-shell` (es. modifica esperienza) forzato `box-shadow: none !important` su focus/active per checkbox e radio nativi (esclusi toggle `.fp-exp-toggle__input`), così nessun “alone” ereditato da regole su `input:focus` di altri fogli o plugin.
+- **DMS `.fp-exp-dms-field`**: focus con **whitelist** di `input[type=…]` invece di `:not(checkbox)`, più robusto.
+- **Richieste speciali**: card in focus solo con bordo colorato, senza alone sulla card; outline nativo ripristinato sulla checkbox (niente `outline: none` forzato).
+
 ## [1.6.41] - 2026-04-05
 
 ### Fixed

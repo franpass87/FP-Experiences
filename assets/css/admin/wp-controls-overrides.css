@@ -181,6 +181,25 @@ body.fp-exp-admin-shell .wrap input[type="radio"] {
     accent-color: #2271b1;
 }
 
+/**
+ * Checkbox/radio nativi: niente box-shadow da regole input:focus (DMS, temi, altri plugin).
+ * L’alone colorato non deve “avvolgere” il controllo su tutta la pagina admin sotto shell FP.
+ */
+.fp-exp-admin-page input[type="checkbox"]:not(.fp-exp-toggle__input):focus,
+.fp-exp-admin-page input[type="checkbox"]:not(.fp-exp-toggle__input):focus-visible,
+.fp-exp-admin-page input[type="checkbox"]:not(.fp-exp-toggle__input):active,
+.fp-exp-admin-page input[type="radio"]:focus,
+.fp-exp-admin-page input[type="radio"]:focus-visible,
+.fp-exp-admin-page input[type="radio"]:active,
+body.fp-exp-admin-shell .wrap input[type="checkbox"]:not(.fp-exp-toggle__input):focus,
+body.fp-exp-admin-shell .wrap input[type="checkbox"]:not(.fp-exp-toggle__input):focus-visible,
+body.fp-exp-admin-shell .wrap input[type="checkbox"]:not(.fp-exp-toggle__input):active,
+body.fp-exp-admin-shell .wrap input[type="radio"]:focus,
+body.fp-exp-admin-shell .wrap input[type="radio"]:focus-visible,
+body.fp-exp-admin-shell .wrap input[type="radio"]:active {
+    box-shadow: none !important;
+}
+
 /* Non alterare mai i toggle custom renderizzati dal form factory. */
 .fp-exp-admin-page .fp-exp-toggle__input,
 .fp-exp-admin-page .fp-exp-settings__toggle .fp-exp-toggle__input,

@@ -292,7 +292,7 @@ html.fp-exp-dark .fp-exp-experience-metabox .fp-exp-sr-widget__checkbox-grid > .
 
 html.fp-exp-dark .fp-exp-experience-metabox .fp-exp-sr-widget__checkbox-grid > .fp-exp-sr-widget__checkbox-card:focus-within {
     border-color: #a5b4fc;
-    box-shadow: 0 0 0 2px rgba(165, 180, 252, 0.45);
+    box-shadow: none;
 }
 
 html.fp-exp-dark .fp-exp-experience-metabox .fp-exp-sr-widget__checkbox-grid > .fp-exp-sr-widget__checkbox-card:has(input:checked) {
