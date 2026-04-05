@@ -316,8 +316,87 @@ body.fp-exp-admin-shell #screen-meta-links {
     gap: 24px;
 }
 
-@import url('./admin/page-header-dms.css');
-@import url('./admin/gift-voucher-list.css');
+/*
+ * Page header — allineato a FP Mail SMTP (stesso markup delle altre pagine FP Exp).
+ */
+.wrap.fp-exp-admin-page > .notice,
+.wrap.fp-exp-admin-page > div.updated,
+.wrap.fp-exp-admin-page > div.error {
+    float: none;
+    clear: both;
+    box-sizing: border-box;
+    max-width: 100%;
+}
+
+.fp-exp-admin-page .fpexp-page-header {
+    background: var(--fpdms-gradient-primary);
+    border-radius: var(--fpdms-radius-xl);
+    padding: 1.5rem 2rem;
+    margin-bottom: 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: #fff;
+    flex-wrap: wrap;
+}
+
+.fpexp-page-header .fp-exp-admin__breadcrumb,
+.fpexp-page-header .fp-exp-dashboard__breadcrumb {
+    width: 100%;
+    flex-basis: 100%;
+    margin-bottom: 0.75rem;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.85);
+}
+
+.fpexp-page-header .fp-exp-admin__breadcrumb a,
+.fpexp-page-header .fp-exp-dashboard__breadcrumb a {
+    color: rgba(255, 255, 255, 0.95);
+}
+
+.fpexp-page-header .fp-exp-admin__breadcrumb a:hover,
+.fpexp-page-header .fp-exp-dashboard__breadcrumb a:hover {
+    color: #fff;
+}
+
+.fpexp-page-header-content {
+    flex: 1;
+    min-width: 200px;
+}
+
+.fpexp-page-header .fpexp-page-header-title,
+.fpexp-page-header .fp-exp-admin__title {
+    margin: 0 0 0.25rem 0;
+    color: #fff !important;
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.fpexp-page-header .fpexp-page-header-title .dashicons {
+    font-size: 1.5rem;
+    width: 1.5rem;
+    height: 1.5rem;
+    margin-right: 0.5rem;
+    vertical-align: middle;
+}
+
+.fpexp-page-header p,
+.fpexp-page-header .fpexp-page-header-desc,
+.fpexp-page-header .fp-exp-admin__intro {
+    margin: 0;
+    opacity: 0.95;
+    font-size: 0.95rem;
+    color: #fff !important;
+}
+
+.fpexp-page-header-badge {
+    background: rgba(255, 255, 255, 0.25);
+    padding: 0.25rem 0.75rem;
+    border-radius: var(--fpdms-radius-pill);
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #fff;
+}
 
 /* Legacy header (se usato fuori dal banner) */
 .fp-exp-admin__header {

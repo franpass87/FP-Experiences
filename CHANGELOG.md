@@ -2,6 +2,13 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.6.31] - 2026-04-05
+
+### Changed
+
+- **Admin CSS**: il bundle `main.css` torna al modello delle altre pagine FP (`variables` + `dms-core` + `page-header-dms`); **nessun** foglio specifico gift voucher nel min globale.
+- **Gift voucher**: stili lista CPT solo in `gift-voucher-cpt-list.css`, enqueued **solo** su `edit-fp_exp_gift_voucher` (dopo `fp-exp-admin`), così il resto dell’admin non eredita regole della schermata voucher.
+
 ## [1.6.30] - 2026-04-05
 
 ### Fixed

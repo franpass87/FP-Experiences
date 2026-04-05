@@ -27,6 +27,7 @@ use function get_post_modified_time;
 use function get_post_time;
 use function get_the_title;
 use function in_array;
+use function is_readable;
 use function is_array;
 use function sanitize_key;
 use function sanitize_text_field;
@@ -37,9 +38,12 @@ use function wp_die;
 use function wp_get_current_user;
 use function wp_safe_redirect;
 use function wp_verify_nonce;
+use function wp_enqueue_style;
 use function register_post_type;
 
 use const DAY_IN_SECONDS;
+use const FP_EXP_PLUGIN_DIR;
+use const FP_EXP_PLUGIN_URL;
 
 final class VoucherCPT implements HookableInterface
 {
@@ -67,7 +71,27 @@ final class VoucherCPT implements HookableInterface
             return;
         }
 
+        add_action('admin_enqueue_scripts', [$this, 'enqueue_gift_voucher_list_styles'], 20);
         add_action('admin_print_footer_scripts', [$this, 'print_gift_voucher_list_layout_script'], 50);
+    }
+
+    /**
+     * Enqueue del CSS dedicato alla lista CPT (dipende da `fp-exp-admin`, non dal min globale).
+     */
+    public function enqueue_gift_voucher_list_styles(): void
+    {
+        $relative = 'assets/css/admin/gift-voucher-cpt-list.css';
+        $path = FP_EXP_PLUGIN_DIR . $relative;
+        if (! is_readable($path)) {
+            return;
+        }
+
+        wp_enqueue_style(
+            'fp-exp-gift-voucher-cpt-list',
+            FP_EXP_PLUGIN_URL . $relative,
+            ['fp-exp-admin'],
+            Helpers::asset_version($relative)
+        );
     }
 
     /**

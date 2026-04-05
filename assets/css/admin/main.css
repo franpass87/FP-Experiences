@@ -5,10 +5,10 @@
 /* Core variables and base styles */
 @import url('./variables.css');
 
-/* DMS card / badge (token in variables.css) */
-@import url('./dms-components.css');
+/* Token DMS + card/badge (stesso stack delle altre pagine FP Exp) */
+@import url('./dms-core.css');
 
-/* Banner gradiente pagine `.fp-exp-admin-page` */
+/* Banner gradiente `.fp-exp-admin-page` (Dashboard, Impostazioni, ecc.) */
 @import url('./page-header-dms.css');
 
 /* Layout components */
@@ -37,9 +37,6 @@
 
 /* Button and action components */
 @import url('./buttons.css');
-
-/* Gift voucher CPT list (banner + card) */
-@import url('./gift-voucher-list.css');
 
 /* Responsive adjustments */
 @media (max-width: 960px) {
