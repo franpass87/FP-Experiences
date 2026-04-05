@@ -2,6 +2,12 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.6.49] - 2026-04-05
+
+### Fixed
+
+- **Metabox Dettagli**: «Badge personalizzati» non è più affiancato alla griglia «Caratteristiche predefinite» (il wrapper usava per errore `fp-exp-field--taxonomies`, griglia multi-colonna di `forms.css`). Ora le due aree sono in **colonna a tutta larghezza**.
+
 ## [1.6.48] - 2026-04-05
 
 ### Changed

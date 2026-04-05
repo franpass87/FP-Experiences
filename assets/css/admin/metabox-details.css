@@ -438,7 +438,11 @@
     line-height: 1.45;
 }
 
-.fp-exp-experience-metabox .fp-exp-content-trust__block .fp-exp-field--taxonomies {
+/* Badge block: stack verticale (no grid auto-fit come .fp-exp-field--taxonomies in forms.css) */
+.fp-exp-experience-metabox #fp-exp-experience-badges .fp-exp-experience-badges__sections {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
     margin-bottom: 0;
 }
 

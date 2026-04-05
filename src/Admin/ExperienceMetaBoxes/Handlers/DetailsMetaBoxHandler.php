@@ -876,7 +876,7 @@ final class DetailsMetaBoxHandler extends BaseMetaBoxHandler
         ?>
         <div class="fp-exp-content-trust__block" id="fp-exp-experience-badges">
             <h4 class="screen-reader-text"><?php esc_html_e('Caratteristiche e badge', 'fp-experiences'); ?></h4>
-            <div class="fp-exp-field fp-exp-field--taxonomies">
+            <div class="fp-exp-experience-badges__sections">
             <div class="fp-exp-field">
                 <span class="fp-exp-field__label">
                     <?php esc_html_e('Caratteristiche predefinite', 'fp-experiences'); ?>
