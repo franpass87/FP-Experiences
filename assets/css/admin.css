@@ -24,13 +24,13 @@
     --fpdms-border-light: #f3f4f6;
     --fpdms-bg-white: #ffffff;
     --fpdms-bg-light: #f9fafb;
-    --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.08);
-    --shadow-lg: 0 8px 30px rgba(0, 0, 0, 0.12);
-    --radius-md: 8px;
-    --radius-lg: 12px;
-    --radius-xl: 16px;
-    --radius-pill: 999px;
-    --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    --fpdms-shadow-md: 0 4px 20px rgba(0, 0, 0, 0.08);
+    --fpdms-shadow-lg: 0 8px 30px rgba(0, 0, 0, 0.12);
+    --fpdms-radius-md: 8px;
+    --fpdms-radius-lg: 12px;
+    --fpdms-radius-xl: 16px;
+    --fpdms-radius-pill: 999px;
+    --fpdms-transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 
     /* Legacy / specifiche plugin (compatibilità nel resto del foglio) */
     --fp-exp-admin-spacing: 16px;
@@ -49,15 +49,15 @@
    ============================================ */
 .fp-exp-dms-card {
     background: var(--fpdms-bg-white);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-md);
+    border-radius: var(--fpdms-radius-lg);
+    box-shadow: var(--fpdms-shadow-md);
     margin-bottom: 1.5rem;
     overflow: hidden;
 }
 
 .fp-exp-dms-card:hover {
-    box-shadow: var(--shadow-lg);
-    transition: var(--transition);
+    box-shadow: var(--fpdms-shadow-lg);
+    transition: var(--fpdms-transition);
 }
 
 .fp-exp-dms-card-header {
@@ -103,7 +103,7 @@
 .fp-exp-dms-badge {
     display: inline-block;
     padding: 0.2rem 0.6rem;
-    border-radius: var(--radius-pill);
+    border-radius: var(--fpdms-radius-pill);
     font-size: 11px;
     font-weight: 600;
     text-transform: uppercase;
@@ -157,7 +157,7 @@
 .fp-exp-dms-field input[type="password"],
 .fp-exp-dms-field select {
     border: 2px solid var(--fpdms-border);
-    border-radius: var(--radius-md);
+    border-radius: var(--fpdms-radius-md);
     padding: 0.5rem 0.75rem;
     max-width: 100%;
 }
@@ -334,7 +334,7 @@ body.fp-exp-admin-shell #screen-meta-links {
 /* Copia .fpmail-admin-page .fpmail-page-header + flex-wrap solo per riga breadcrumb */
 .fp-exp-admin-page .fpexp-page-header {
     background: var(--fpdms-gradient-primary);
-    border-radius: var(--radius-xl);
+    border-radius: var(--fpdms-radius-xl);
     padding: 1.5rem 2rem;
     margin-bottom: 1.5rem;
     display: flex;
@@ -399,7 +399,7 @@ body.fp-exp-admin-shell #screen-meta-links {
 .fpexp-page-header-badge {
     background: rgba(255, 255, 255, 0.25);
     padding: 0.25rem 0.75rem;
-    border-radius: var(--radius-pill);
+    border-radius: var(--fpdms-radius-pill);
     font-size: 0.8rem;
     font-weight: 600;
 }
@@ -1114,7 +1114,7 @@ body.fp-exp-admin-shell #screen-meta-links {
     background: linear-gradient(160deg, rgba(102, 126, 234, 0.06) 0%, var(--fpdms-bg-white) 28%, var(--fpdms-bg-white) 100%);
     color: var(--fpdms-text);
     padding: 10px 12px;
-    border-radius: var(--radius-md);
+    border-radius: var(--fpdms-radius-md);
     font-size: 12px;
     line-height: 1.55;
     font-weight: 500;
@@ -1124,7 +1124,7 @@ body.fp-exp-admin-shell #screen-meta-links {
     white-space: normal;
     word-wrap: break-word;
     border: 2px solid rgba(102, 126, 234, 0.28);
-    box-shadow: var(--shadow-md), 0 0 0 1px rgba(102, 126, 234, 0.06);
+    box-shadow: var(--fpdms-shadow-md), 0 0 0 1px rgba(102, 126, 234, 0.06);
     /* Posizionamento: il content è ora DENTRO il tooltip, quindi si posiziona relativamente ad esso */
     top: calc(100% + 8px);
     left: 50%;
@@ -1580,9 +1580,9 @@ html.fp-exp-dark .fp-exp-tooltip__content {
 .fp-exp-repeater__actions .button {
     font-weight: 600;
     padding: 10px 20px;
-    border-radius: var(--radius-md);
+    border-radius: var(--fpdms-radius-md);
     border: 2px solid var(--fpdms-border);
-    transition: var(--transition);
+    transition: var(--fpdms-transition);
 }
 
 .fp-exp-repeater__hint {
@@ -1610,7 +1610,7 @@ html.fp-exp-dark .fp-exp-tooltip__content {
     max-width: 420px;
     padding: 10px 12px;
     border: 2px solid var(--fpdms-border);
-    border-radius: var(--radius-md);
+    border-radius: var(--fpdms-radius-md);
     font-size: 14px;
     line-height: 1.45;
     background-color: var(--fpdms-bg-white);
@@ -1638,7 +1638,7 @@ html.fp-exp-dark .fp-exp-tooltip__content {
     gap: 10px;
     padding: 12px;
     border: 2px solid var(--fpdms-border);
-    border-radius: var(--radius-md);
+    border-radius: var(--fpdms-radius-md);
     background-color: var(--fpdms-bg-white);
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
@@ -1681,7 +1681,7 @@ label.fp-exp-checkbox-grid__item {
     padding: 14px;
     box-sizing: border-box;
     border: 2px solid var(--fpdms-border);
-    border-radius: var(--radius-md);
+    border-radius: var(--fpdms-radius-md);
     background: var(--fpdms-bg-white);
     cursor: pointer;
     transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
@@ -1727,7 +1727,7 @@ label.fp-exp-checkbox-grid__item:focus-within {
     display: inline-flex;
     width: 32px;
     height: 32px;
-    border-radius: var(--radius-md);
+    border-radius: var(--fpdms-radius-md);
     align-items: center;
     justify-content: center;
     background: rgba(102, 126, 234, 0.12);
@@ -1760,7 +1760,7 @@ label.fp-exp-checkbox-grid__item:focus-within {
     display: inline-flex;
     width: 32px;
     height: 32px;
-    border-radius: var(--radius-md);
+    border-radius: var(--fpdms-radius-md);
     align-items: center;
     justify-content: center;
     background: rgba(102, 126, 234, 0.12);
@@ -1826,7 +1826,7 @@ label.fp-exp-checkbox-grid__item:focus-within {
 
 .fp-exp-checkbox-grid.is-max {
     outline: 2px solid rgba(102, 126, 234, 0.35);
-    border-radius: var(--radius-lg);
+    border-radius: var(--fpdms-radius-lg);
     padding: 6px;
 }
 
@@ -1969,7 +1969,7 @@ label.fp-exp-checkbox-grid__item:focus-within {
     margin-top: 12px;
     padding: 8px 10px;
     border: 1px solid var(--fpdms-border-light);
-    border-radius: var(--radius-lg);
+    border-radius: var(--fpdms-radius-lg);
     background: var(--fpdms-bg-light);
     display: flex;
     flex-wrap: wrap;
@@ -1983,7 +1983,7 @@ label.fp-exp-checkbox-grid__item:focus-within {
     gap: 8px;
     position: relative;
     border: 1px solid transparent;
-    border-radius: var(--radius-md);
+    border-radius: var(--fpdms-radius-md);
     padding: 10px 14px 14px 14px;
     font-size: 14px;
     font-weight: 600;
@@ -2142,7 +2142,7 @@ label.fp-exp-checkbox-grid__item:focus-within {
     gap: 6px;
     background: var(--fpdms-gradient-primary);
     border: none;
-    border-radius: var(--radius-md);
+    border-radius: var(--fpdms-radius-md);
     padding: 8px 16px;
     min-height: 36px;
     font-weight: 600;
@@ -2163,7 +2163,7 @@ body.fp-exp-admin-shell .tablenav .actions .button-primary {
     gap: 6px;
     background: var(--fpdms-gradient-primary);
     border: none;
-    border-radius: var(--radius-md);
+    border-radius: var(--fpdms-radius-md);
     padding: 6px 14px;
     min-height: 32px;
     font-weight: 600;
@@ -2223,13 +2223,13 @@ body.fp-exp-admin-shell .wrap .button:not(.button-primary),
 body.fp-exp-admin-shell .wrap .button-secondary,
 body.fp-exp-admin-shell .wrap .page-title-action.button-secondary {
     border: 2px solid var(--fpdms-border);
-    border-radius: var(--radius-md);
+    border-radius: var(--fpdms-radius-md);
     background: var(--fpdms-bg-white);
     padding: 6px 14px;
     font-weight: 600;
     color: var(--fpdms-text);
     text-shadow: none;
-    transition: var(--transition);
+    transition: var(--fpdms-transition);
 }
 
 body.fp-exp-admin-shell .wrap .button:not(.button-primary):hover,
@@ -2252,7 +2252,7 @@ body.fp-exp-admin-shell .wrap .button.delete,
     border: 2px solid var(--fpdms-danger);
     color: var(--fpdms-danger-text);
     font-weight: 600;
-    border-radius: var(--radius-md);
+    border-radius: var(--fpdms-radius-md);
     box-shadow: none;
 }
 
@@ -2270,7 +2270,7 @@ body.fp-exp-admin-shell .wrap .button-small,
     min-height: 28px;
     padding: 4px 10px;
     font-size: 12px;
-    border-radius: var(--radius-md);
+    border-radius: var(--fpdms-radius-md);
 }
 
 body.fp-exp-admin-shell .wrap .button-large,
@@ -2278,7 +2278,7 @@ body.fp-exp-admin-shell .wrap .button-large,
     min-height: 40px;
     padding: 10px 20px;
     font-size: 14px;
-    border-radius: var(--radius-md);
+    border-radius: var(--fpdms-radius-md);
 }
 
 body.fp-exp-admin-shell .wrap .button-primary.button-large,
@@ -2747,7 +2747,7 @@ html.fp-exp-dark body.fp-exp-admin-shell .wrap .notice {
 .fp-exp-requests__action .button-secondary {
     background: var(--fpdms-bg-white);
     border: 2px solid var(--fpdms-border);
-    border-radius: var(--radius-md);
+    border-radius: var(--fpdms-radius-md);
     padding: 8px 16px;
     font-weight: 600;
     color: var(--fpdms-text);
@@ -3003,7 +3003,7 @@ html.fp-exp-dark .fp-exp-requests__td-actions--past .fp-exp-requests__past-note 
 .fp-exp-settings__form--layout-fp .fp-exp-settings__section-body textarea,
 .fp-exp-settings__form--layout-fp .fp-exp-settings__section-body select {
     border: 2px solid var(--fpdms-border);
-    border-radius: var(--radius-md);
+    border-radius: var(--fpdms-radius-md);
     padding: 0.5rem 0.75rem;
     font-size: 14px;
     line-height: 1.45;
@@ -3063,7 +3063,7 @@ html.fp-exp-dark .fp-exp-requests__td-actions--past .fp-exp-requests__past-note 
     box-shadow: 0 2px 8px rgba(102, 126, 234, 0.35);
     padding: 0.5rem 1.25rem;
     font-weight: 600;
-    border-radius: var(--radius-md);
+    border-radius: var(--fpdms-radius-md);
 }
 
 .fp-exp-settings__form--layout-fp .fp-exp-settings__form-actions .button-primary.fp-exp-btn-primary:hover,
@@ -3277,7 +3277,7 @@ html.fp-exp-dark .fp-exp-requests__td-actions--past .fp-exp-requests__past-note 
 .fp-exp-field textarea {
     max-width: 100%;
     border: 2px solid var(--fpdms-border, #e5e7eb);
-    border-radius: var(--radius-md, 8px);
+    border-radius: var(--fpdms-radius-md, 8px);
     padding: 0.5rem 0.75rem;
     font-size: 14px;
     box-sizing: border-box;
@@ -3325,12 +3325,12 @@ html.fp-exp-dark .fp-exp-requests__td-actions--past .fp-exp-requests__past-note 
     font-size: 14px;
     font-weight: 600;
     line-height: 1.4;
-    border-radius: var(--radius-md, 8px);
+    border-radius: var(--fpdms-radius-md, 8px);
     border: 1px solid var(--fpdms-border, #e5e7eb);
     background: var(--fpdms-bg-white, #ffffff);
     color: var(--fpdms-text, #1f2937);
     cursor: pointer;
-    transition: var(--transition, all 0.25s cubic-bezier(0.4, 0, 0.2, 1));
+    transition: var(--fpdms-transition, all 0.25s cubic-bezier(0.4, 0, 0.2, 1));
     text-decoration: none;
     box-sizing: border-box;
 }
@@ -3413,7 +3413,7 @@ html.fp-exp-dark .fp-exp-requests__td-actions--past .fp-exp-requests__past-note 
 .fp-exp-calendar-kpi {
     background: var(--fpdms-bg-light);
     border: 1px solid var(--fpdms-border-light);
-    border-radius: var(--radius-md);
+    border-radius: var(--fpdms-radius-md);
     padding: 0.75rem 1rem;
 }
 
@@ -3471,7 +3471,7 @@ html.fp-exp-dark .fp-exp-requests__td-actions--past .fp-exp-requests__past-note 
     max-width: 100%;
     box-sizing: border-box;
     border: 2px solid var(--fpdms-border);
-    border-radius: var(--radius-md);
+    border-radius: var(--fpdms-radius-md);
     padding: 0.4rem 0.5rem;
     min-height: 36px;
 }
@@ -4214,7 +4214,7 @@ label.fp-exp-settings__toggle input:checked + .fp-exp-toggle__switch::after {
     color: #fff;
     font-size: 11px;
     font-weight: 600;
-    border-radius: var(--radius-pill);
+    border-radius: var(--fpdms-radius-pill);
     line-height: 1;
 }
 
@@ -4789,7 +4789,7 @@ label.fp-exp-settings__toggle input:checked + .fp-exp-toggle__switch::after {
 .fp-exp-admin[data-fp-exp-admin] .fp-exp-operator-nav.nav-tab-wrapper {
     background: var(--fpdms-bg-light) !important;
     border: 1px solid var(--fpdms-border-light) !important;
-    border-radius: var(--radius-lg) !important;
+    border-radius: var(--fpdms-radius-lg) !important;
     padding: 8px 10px !important;
     margin: 0 -24px 1.25rem -24px !important;
     gap: 6px !important;
@@ -4816,10 +4816,10 @@ label.fp-exp-settings__toggle input:checked + .fp-exp-toggle__switch::after {
 }
 
 .fp-exp-experience-metabox.fp-exp-admin[data-fp-exp-admin] {
-    border-radius: var(--radius-lg) !important;
+    border-radius: var(--fpdms-radius-lg) !important;
     /* visible: overflow:hidden tagliava in alto header/icona delle card sezione sotto le tab */
     overflow: visible;
-    box-shadow: var(--shadow-md) !important;
+    box-shadow: var(--fpdms-shadow-md) !important;
 }
 
 .fp-exp-experience-metabox .fp-exp-metabox-sticky-head {
@@ -4854,7 +4854,7 @@ label.fp-exp-settings__toggle input:checked + .fp-exp-toggle__switch::after {
     font-size: 13px !important;
     font-weight: 600 !important;
     padding: 9px 14px !important;
-    border-radius: var(--radius-md) !important;
+    border-radius: var(--fpdms-radius-md) !important;
     color: var(--fpdms-text-light) !important;
     background: transparent !important;
     border: 1px solid transparent !important;
@@ -4966,7 +4966,7 @@ label.fp-exp-settings__toggle input:checked + .fp-exp-toggle__switch::after {
 .fp-exp-experience-metabox .fp-exp-metabox-section__body select,
 .fp-exp-experience-metabox .fp-exp-metabox-section__body textarea {
     border: 2px solid var(--fpdms-border) !important;
-    border-radius: var(--radius-md) !important;
+    border-radius: var(--fpdms-radius-md) !important;
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
@@ -4993,7 +4993,7 @@ label.fp-exp-settings__toggle input:checked + .fp-exp-toggle__switch::after {
     padding: 12px 14px 14px 16px;
     background: var(--fpdms-bg-white);
     border: 1px solid var(--fpdms-border);
-    border-radius: var(--radius-lg);
+    border-radius: var(--fpdms-radius-lg);
     border-left: 4px solid var(--fpdms-secondary);
     box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
 }
@@ -5015,7 +5015,7 @@ label.fp-exp-settings__toggle input:checked + .fp-exp-toggle__switch::after {
     gap: 4px !important;
     background: var(--fpdms-bg-light) !important;
     border: 1px solid var(--fpdms-border-light) !important;
-    border-radius: var(--radius-md) !important;
+    border-radius: var(--fpdms-radius-md) !important;
     display: inline-flex !important;
     flex-wrap: wrap !important;
     align-items: center !important;
@@ -5030,7 +5030,7 @@ label.fp-exp-settings__toggle input:checked + .fp-exp-toggle__switch::after {
     font-size: 13px !important;
     font-weight: 500 !important;
     line-height: 1.3 !important;
-    border-radius: var(--radius-md) !important;
+    border-radius: var(--fpdms-radius-md) !important;
     border: 1px solid transparent !important;
     border-bottom: 1px solid transparent !important;
     background: transparent !important;
@@ -5068,7 +5068,7 @@ label.fp-exp-settings__toggle input:checked + .fp-exp-toggle__switch::after {
     padding: 10px 14px 14px 14px !important;
     font-size: 14px !important;
     font-weight: 600 !important;
-    border-radius: var(--radius-md) !important;
+    border-radius: var(--fpdms-radius-md) !important;
     margin-bottom: 0 !important;
     line-height: 1.25 !important;
     border: 1px solid transparent !important;
@@ -5601,4 +5601,69 @@ body.fp-exp-emails-body .wrap,
     background: #fef2f2;
     border: 1px solid #fecaca;
     color: #991b1b;
+}
+
+/* --- Gift voucher CPT list (parità con assets/css/admin/gift-voucher-list.css nel bundle modulare) --- */
+body.fp-exp-admin-shell.edit-fp_exp_gift_voucher #wpbody-content > .wrap {
+    margin-top: 12px;
+}
+
+.fp-exp-gift-voucher-list h1.fp-exp-gift-voucher-list__legacy-title,
+.fp-exp-gift-voucher-list hr.fp-exp-gift-voucher-list__legacy-hr {
+    display: none !important;
+}
+
+.fp-exp-gift-voucher-list .fpexp-page-header .fpexp-page-header-title,
+.fp-exp-gift-voucher-list .fpexp-page-header .fpexp-page-header-desc {
+    color: #fff !important;
+}
+
+.fp-exp-gift-voucher-list .fp-exp-gift-voucher-list__header-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.75rem;
+    flex-shrink: 0;
+}
+
+.fp-exp-gift-voucher-list .fp-exp-gift-voucher-list__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    justify-content: flex-end;
+}
+
+.fp-exp-gift-voucher-list .fpexp-page-header .page-title-action {
+    margin: 0;
+    position: static;
+    top: auto;
+    background: rgba(255, 255, 255, 0.22);
+    border: 1px solid rgba(255, 255, 255, 0.55);
+    color: #fff !important;
+    box-shadow: none;
+}
+
+.fp-exp-gift-voucher-list .fpexp-page-header .page-title-action:hover,
+.fp-exp-gift-voucher-list .fpexp-page-header .page-title-action:focus-visible {
+    background: rgba(255, 255, 255, 0.35);
+    border-color: #fff;
+    color: #fff !important;
+}
+
+.fp-exp-gift-voucher-list .fp-exp-gift-voucher-list__table-card {
+    margin-bottom: 1.5rem;
+}
+
+.fp-exp-gift-voucher-list .fp-exp-gift-voucher-list__table-card .subsubsub {
+    margin: 0 0 1rem 0;
+}
+
+.fp-exp-gift-voucher-list .fp-exp-gift-voucher-list__table-card .tablenav.top {
+    margin-top: 0;
+    margin-bottom: 0.75rem;
+}
+
+.fp-exp-gift-voucher-list .fp-exp-gift-voucher-list__table-card .tablenav.bottom {
+    margin-top: 1rem;
+    margin-bottom: 0;
 }

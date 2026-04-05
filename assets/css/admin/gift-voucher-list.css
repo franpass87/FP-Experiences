@@ -1,0 +1,68 @@
+/**
+ * Estensione design system: lista CPT gift voucher (`edit.php` + script VoucherCPT).
+ * Stesso bundle `fp-experiences-admin.min.css` delle altre schermate FP.
+ */
+
+body.fp-exp-admin-shell.edit-fp_exp_gift_voucher #wpbody-content > .wrap {
+    margin-top: 12px;
+}
+
+.fp-exp-gift-voucher-list h1.fp-exp-gift-voucher-list__legacy-title,
+.fp-exp-gift-voucher-list hr.fp-exp-gift-voucher-list__legacy-hr {
+    display: none !important;
+}
+
+.fp-exp-gift-voucher-list .fpexp-page-header .fpexp-page-header-title,
+.fp-exp-gift-voucher-list .fpexp-page-header .fpexp-page-header-desc {
+    color: #fff !important;
+}
+
+.fp-exp-gift-voucher-list .fp-exp-gift-voucher-list__header-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.75rem;
+    flex-shrink: 0;
+}
+
+.fp-exp-gift-voucher-list .fp-exp-gift-voucher-list__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    justify-content: flex-end;
+}
+
+.fp-exp-gift-voucher-list .fpexp-page-header .page-title-action {
+    margin: 0;
+    position: static;
+    top: auto;
+    background: rgba(255, 255, 255, 0.22);
+    border: 1px solid rgba(255, 255, 255, 0.55);
+    color: #fff !important;
+    box-shadow: none;
+}
+
+.fp-exp-gift-voucher-list .fpexp-page-header .page-title-action:hover,
+.fp-exp-gift-voucher-list .fpexp-page-header .page-title-action:focus-visible {
+    background: rgba(255, 255, 255, 0.35);
+    border-color: #fff;
+    color: #fff !important;
+}
+
+.fp-exp-gift-voucher-list .fp-exp-gift-voucher-list__table-card {
+    margin-bottom: 1.5rem;
+}
+
+.fp-exp-gift-voucher-list .fp-exp-gift-voucher-list__table-card .subsubsub {
+    margin: 0 0 1rem 0;
+}
+
+.fp-exp-gift-voucher-list .fp-exp-gift-voucher-list__table-card .tablenav.top {
+    margin-top: 0;
+    margin-bottom: 0.75rem;
+}
+
+.fp-exp-gift-voucher-list .fp-exp-gift-voucher-list__table-card .tablenav.bottom {
+    margin-top: 1rem;
+    margin-bottom: 0;
+}

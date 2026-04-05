@@ -2,6 +2,13 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.6.33] - 2026-04-05
+
+### Changed
+
+- **Gift voucher (admin)**: layout banner + card sulla lista CPT integrato nel bundle **`fp-experiences-admin.min.css`** (`gift-voucher-list.css` in `main.css`); niente `wp_enqueue_style` dedicato in `VoucherCPT`.
+- **CSS admin**: ripristinati i moduli **`dms-core.css`** e **`page-header-dms.css`** richiesti da `main.css`; in **`admin.css`** (fallback) le variabili ombra/raggio/transizione usano solo **`--fpdms-*`** (allineamento al min modulare).
+
 ## [1.6.32] - 2026-04-05
 
 ### Fixed
