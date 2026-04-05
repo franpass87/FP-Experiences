@@ -2,6 +2,17 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.6.36] - 2026-04-05
+
+### Added
+
+- **Admin UI (piano unificazione)**: modulo `assets/css/admin/cpt-list-shell.css` — `margin-top` coerente sulle liste CPT **Esperienze** e **Meeting point** (`body.fp-exp-admin-shell.edit-fp_experience` / `edit-fp_meeting_point`), allineato alla lista gift voucher.
+
+### Changed
+
+- **Docs**: `docs/ADMIN-SCREENS.md` — sezione Fase 0 (bundle CSS/JS, pagina “gold” Impostazioni), riga Onboarding nell’inventario menu.
+- **Admin CSS fallback**: `admin.css` importa `admin/gift-voucher-list.css` e `admin/cpt-list-shell.css` in testa; rimosso blocco duplicato gift voucher in coda (single source nei moduli).
+
 ## [1.6.35] - 2026-04-05
 
 ### Fixed

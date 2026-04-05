@@ -44,6 +44,9 @@
 /* Lista CPT gift voucher (stesso markup banner/card delle altre pagine FP) */
 @import url('./gift-voucher-list.css');
 
+/* Liste CPT esperienze / meeting point (margini allineati al voucher) */
+@import url('./cpt-list-shell.css');
+
 /* Responsive adjustments */
 @media (max-width: 960px) {
     .fp-exp-admin__body {

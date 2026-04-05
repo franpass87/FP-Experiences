@@ -2,6 +2,22 @@
 
 Riferimento per revisione UI (design system FP: `fpexp-page-header`, `fp-exp-admin` + `data-fp-exp-admin`, token `--fpdms-*`, body `fp-exp-admin-shell`).
 
+## Pagina UI di riferimento (“gold”)
+
+**Impostazioni** (`admin.php?page=fp_exp_settings`): banner DMS completo, tab `fp-exp-tabs`, form estesi — benchmark per token, spaziature e notice sopra il contenuto (`.wrap.fp-exp-admin-page` + `h1.screen-reader-text`).
+
+## Fase 0 — Bundle admin
+
+### CSS (`assets/css/admin/main.css` → `fp-experiences-admin.min.css`)
+
+Ordine `@import`: `variables.css` → `dms-core.css` → `page-header-dms.css` → `layout.css` → `tabs.css` → `forms.css` → `media.css` → `taxonomy.css` → `repeaters.css` → `calendar.css` → `calendar-operations.css` → `settings.css` → `buttons.css` → `gift-voucher-list.css` → `cpt-list-shell.css` → media query responsive in coda.
+
+**Fallback monolite** `assets/css/admin.css`: stesse regole modulari via `@import` in testa (`admin/calendar-operations.css`, `admin/gift-voucher-list.css`, `admin/cpt-list-shell.css`) + resto legacy; evitare duplicati inline dei moduli già importati.
+
+### JS (`dist/fp-experiences/build-config.js` → `fp-experiences-admin.min.js`)
+
+Chiavi modulo `js.admin`: `core`, `tabs`, `mediaControls`, `galleryControls`, `taxonomyEditors`, `repeaters`, `formValidation`, `calendar`, `calendarAdminApp`, `tools`, `main`.
+
 ## Pagine custom (menu FP Experiences)
 
 | Voce menu | Slug / screen | Classe wrap | Banner | Note |
@@ -18,6 +34,7 @@ Riferimento per revisione UI (design system FP: `fpexp-page-header`, `fp-exp-adm
 | Check-in | `fp_exp_checkin` | `fp-exp-checkin` | sì | QR + operatori + **`fp-exp-operator-nav`** |
 | Importer | `fp_exp_importer` | `fp-exp-importer-page` | sì | CSV |
 | Crea pagina esperienza | `fp_exp_create_page` | `fp-exp-page-creator` | sì | Form semplice |
+| Onboarding | `fp_exp_onboarding` (screen `fp-exp-dashboard_page_fp_exp_onboarding`) | `fp-exp-onboarding` | sì | Voce rimossa dal sottomenu; accesso via URL diretto o link interni |
 | Ordini | `fp_exp_orders` | — | — | **Redirect** a `edit.php?post_type=shop_order` filtrato |
 
 ## Schermate WordPress (CPT / tassonomie)
