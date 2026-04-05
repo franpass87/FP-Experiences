@@ -576,6 +576,17 @@
     gap: 10px;
 }
 
+/**
+ * `.fp-exp-field` è `display:flex; flex-wrap:wrap` (forms.css). Un repeater figlio diretto non ha flex-grow:
+ * resta largo quanto il contenuto (es. tab Calendario → slot orari ~1 colonna stretta).
+ */
+.fp-exp-experience-metabox .fp-exp-field > .fp-exp-repeater {
+    flex: 1 1 100%;
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+}
+
 /* Meeting point: select allineati a campi DMS */
 .fp-exp-experience-metabox .fp-exp-meeting-point-fields {
     display: grid;

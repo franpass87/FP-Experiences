@@ -2,6 +2,12 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.6.44] - 2026-04-05
+
+### Fixed
+
+- **Metabox Calendario — slot orari**: il repeater era figlio diretto di `.fp-exp-field` (flex row da `forms.css`) senza occupare tutta la riga, quindi la card appariva stretta (~una colonna). Aggiunta regola `.fp-exp-field > .fp-exp-repeater` con `flex: 1 1 100%` e `width: 100%` nello scope metabox.
+
 ## [1.6.43] - 2026-04-05
 
 ### Changed
