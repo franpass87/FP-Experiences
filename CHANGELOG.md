@@ -2,12 +2,26 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.6.38] - 2026-04-05
+
+### Changed
+
+- **Metabox admin (design system)**: `media.css` usa token `--fpdms-*` per cover/galleria (bordi, sfondi, azioni thumb, testi muted).
+- **Tab Calendario**: griglia disponibilità generale e opzioni giorni settimana (`fp-exp-weekday-option`) con bordi/raggi/shadow DMS e hover leggero.
+- **Tab Policy/FAQ**: layout repeater allineato a pricing/calendario tramite `.fp-exp-repeater__item-body` (stesso gap di `__item-content`).
+- **Tab Meeting point**: wrapper `.fp-exp-meeting-point-fields` + stile select (singolo/multi) coerente con campi DMS.
+- **Metabox**: bottoni `.button-primary` / secondari nella shell esperienza con gradiente e bordi token FP.
+
 ## [1.6.37] - 2026-04-05
 
 ### Changed
 
 - **Editor esperienza (metabox)**: nuovo modulo `metabox-shell.css` — intestazione postbox `Impostazioni esperienza` con gradiente DMS, area contenuti su fondo chiaro, tab interne a pill con stato attivo in gradiente; alert WPML «Sincronizza meta» senza stili inline; metabox sidebar **Ordine di visualizzazione** con stesso guscio e classi `fp-exp-dms-field` / `fp-exp-dms-hint`.
 - Filtri `postbox_classes_fp_experience_fp-exp-experience-admin` e `postbox_classes_fp_experience_fp-exp-display-order` per classi `fp-exp-experience-postbox` / `fp-exp-side-metabox`.
+
+### Fixed
+
+- **Repository CSS**: inclusi in Git i fogli referenziati da `assets/css/admin/main.css` ma assenti dal tree (`dms-core`, `page-header-dms`, `metabox-details`, `calendar-operations`, `settings-toggle`, `settings-status-badges`, `gift-voucher-list`, `cpt-list-shell`, `wp-controls-overrides`), così `npm run build` resta ripetibile dopo clone.
 
 ## [1.6.36] - 2026-04-05
 

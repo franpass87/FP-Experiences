@@ -49,6 +49,7 @@ final class MeetingPointMetaBoxHandler extends BaseMetaBoxHandler
                 'meeting-point'
             );
             ?>
+                <div class="fp-exp-meeting-point-fields">
                 <div class="fp-exp-field">
                     <label class="fp-exp-field__label" for="fp-exp-meeting-primary">
                         <?php esc_html_e('Meeting Point Principale', 'fp-experiences'); ?>
@@ -98,6 +99,7 @@ final class MeetingPointMetaBoxHandler extends BaseMetaBoxHandler
                     <p class="fp-exp-field__description" id="fp-exp-meeting-alt-help">
                         <?php esc_html_e('Usa CTRL/CMD + clic per selezionare più voci.', 'fp-experiences'); ?>
                     </p>
+                </div>
                 </div>
             <?php $this->render_metabox_section_close(); ?>
         </section>

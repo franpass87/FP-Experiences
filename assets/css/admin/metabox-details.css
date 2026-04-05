@@ -365,6 +365,81 @@
     gap: 10px;
 }
 
+/* Policy FAQ repeater usa `__item-body` invece di `__item-content` — stesso layout */
+.fp-exp-experience-metabox .fp-exp-repeater__item-body {
+    display: grid;
+    gap: 10px;
+}
+
+/* Meeting point: select allineati a campi DMS */
+.fp-exp-experience-metabox .fp-exp-meeting-point-fields {
+    display: grid;
+    gap: 4px;
+}
+
+.fp-exp-experience-metabox .fp-exp-meeting-point-fields select {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: min(100%, 520px);
+    min-height: 40px;
+    padding: 8px 10px;
+    border: 2px solid var(--fpdms-border, #e5e7eb);
+    border-radius: var(--fpdms-radius-md, 8px);
+    background: var(--fpdms-bg-white, #fff);
+    color: var(--fpdms-text, #1f2937);
+    line-height: 1.35;
+}
+
+.fp-exp-experience-metabox .fp-exp-meeting-point-fields select:focus {
+    border-color: var(--fpdms-primary, #667eea);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+}
+
+.fp-exp-experience-metabox .fp-exp-meeting-point-fields select[multiple] {
+    min-height: 140px;
+    padding: 8px;
+}
+
+/* Bottoni repeater / media nella metabox — primario DMS (gradiente) */
+.fp-exp-experience-metabox .button.button-primary {
+    background: var(--fpdms-gradient-primary, linear-gradient(135deg, #667eea 0%, #764ba2 100%));
+    border: none;
+    color: #fff !important;
+    text-shadow: none;
+    border-radius: var(--fpdms-radius-md, 8px);
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.22);
+}
+
+.fp-exp-experience-metabox .button.button-primary:hover,
+.fp-exp-experience-metabox .button.button-primary:focus {
+    filter: brightness(1.05);
+    color: #fff !important;
+}
+
+.fp-exp-experience-metabox .button.button-secondary,
+.fp-exp-experience-metabox .button:not(.button-primary):not(.button-link):not(.button-link-delete) {
+    border-radius: var(--fpdms-radius-md, 8px);
+    border: 1px solid var(--fpdms-border, #e5e7eb);
+    background: var(--fpdms-bg-white, #fff);
+    color: var(--fpdms-text, #1f2937);
+    font-weight: 500;
+    text-shadow: none;
+    transition: var(--fpdms-transition, border-color 0.15s ease, background-color 0.15s ease);
+}
+
+.fp-exp-experience-metabox .button.button-secondary:hover,
+.fp-exp-experience-metabox .button:not(.button-primary):not(.button-link):not(.button-link-delete):hover {
+    border-color: var(--fpdms-primary, #667eea);
+    background: var(--fpdms-bg-light, #f9fafb);
+}
+
+.fp-exp-experience-metabox .button-link,
+.fp-exp-experience-metabox .button-link-delete {
+    border-radius: var(--fpdms-radius-md, 6px);
+}
+
 /* Pricing tab alignment */
 .fp-exp-experience-metabox .fp-exp-pricing-general-grid {
     display: grid;
