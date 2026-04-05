@@ -2,6 +2,13 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.6.48] - 2026-04-05
+
+### Changed
+
+- **Metabox Dettagli → Contenuto, categorie e fiducia**: griglia «Caratteristiche predefinite» ripristinata come card a **3 colonne** (2 sotto ~1100px, 1 su mobile), icona **centrata** su tile viola chiaro, titolo e descrizione centrati; stati hover/focus/checked allineati al DMS. Titolo intermedio «Caratteristiche e badge» reso **solo per screen reader** così in evidenza resta l’etichetta «Caratteristiche predefinite» come nel layout di riferimento.
+- **Dark admin**: stili per le card caratteristiche predefinite in tema scuro.
+
 ## [1.6.47] - 2026-04-05
 
 ### Changed

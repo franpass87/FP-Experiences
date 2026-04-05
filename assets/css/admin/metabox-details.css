@@ -77,6 +77,87 @@
     line-height: 1.35;
 }
 
+/* Caratteristiche predefinite: griglia 3 colonne, card con icona centrata su tile viola (dopo stili base griglia) */
+.fp-exp-experience-metabox .fp-exp-checkbox-grid--experience-badges {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    margin-top: 10px;
+}
+
+.fp-exp-experience-metabox .fp-exp-checkbox-grid__item--experience-badge {
+    padding: 1rem 0.85rem 0.9rem;
+    border-color: var(--fpdms-border, var(--fp-exp-admin-border));
+    border-radius: var(--fpdms-radius-md, 10px);
+}
+
+.fp-exp-experience-metabox .fp-exp-checkbox-grid__item--experience-badge > input[type="checkbox"] {
+    top: 10px;
+    left: 10px;
+    z-index: 1;
+    accent-color: var(--fpdms-primary, #667eea);
+}
+
+.fp-exp-experience-metabox .fp-exp-checkbox-grid__item--experience-badge .fp-exp-checkbox-grid__content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.65rem;
+    padding-left: 0;
+    width: 100%;
+}
+
+.fp-exp-experience-metabox .fp-exp-checkbox-grid__item--experience-badge .fp-exp-checkbox-grid__icon {
+    width: 3.35rem;
+    height: 3.35rem;
+    min-width: 3.35rem;
+    min-height: 3.35rem;
+    margin-top: 0.15rem;
+    border-radius: var(--fpdms-radius-md, 10px);
+    background: rgba(102, 126, 234, 0.16);
+    color: var(--fpdms-primary, #667eea);
+    box-sizing: border-box;
+}
+
+.fp-exp-experience-metabox .fp-exp-checkbox-grid__item--experience-badge .fp-exp-checkbox-grid__icon svg {
+    width: 1.55rem;
+    height: 1.55rem;
+}
+
+.fp-exp-experience-metabox .fp-exp-checkbox-grid__item--experience-badge .fp-exp-checkbox-grid__body {
+    align-items: center;
+    text-align: center;
+    gap: 0.3rem;
+}
+
+.fp-exp-experience-metabox .fp-exp-checkbox-grid__item--experience-badge:hover {
+    border-color: #cbd5e1;
+    background: var(--fpdms-bg-light, #f8fafc);
+    box-shadow: var(--fpdms-shadow-md, 0 1px 3px rgba(15, 23, 42, 0.06));
+}
+
+.fp-exp-experience-metabox .fp-exp-checkbox-grid__item--experience-badge:focus-within {
+    border-color: var(--fpdms-primary, #667eea);
+    outline: none;
+    box-shadow: 0 0 0 1px rgba(102, 126, 234, 0.35);
+}
+
+.fp-exp-experience-metabox .fp-exp-checkbox-grid__item--experience-badge:has(input:checked) {
+    border-color: rgba(102, 126, 234, 0.5);
+    background: rgba(102, 126, 234, 0.08);
+}
+
+@media (max-width: 1100px) {
+    .fp-exp-experience-metabox .fp-exp-checkbox-grid--experience-badges {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 782px) {
+    .fp-exp-experience-metabox .fp-exp-checkbox-grid--experience-badges {
+        grid-template-columns: 1fr;
+    }
+}
+
 .fp-exp-experience-metabox .fp-exp-checkbox-grid__search {
     margin: 8px 0 10px;
 }

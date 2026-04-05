@@ -875,7 +875,7 @@ final class DetailsMetaBoxHandler extends BaseMetaBoxHandler
         $next_custom_index = count($custom_rows);
         ?>
         <div class="fp-exp-content-trust__block" id="fp-exp-experience-badges">
-            <h4 class="fp-exp-field__subtitle"><?php esc_html_e('Caratteristiche e badge', 'fp-experiences'); ?></h4>
+            <h4 class="screen-reader-text"><?php esc_html_e('Caratteristiche e badge', 'fp-experiences'); ?></h4>
             <div class="fp-exp-field fp-exp-field--taxonomies">
             <div class="fp-exp-field">
                 <span class="fp-exp-field__label">
