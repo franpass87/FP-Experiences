@@ -9,7 +9,6 @@ use FP_Exp\Core\Hook\HookableInterface;
 use FP_Exp\Utils\Helpers;
 use FP_Exp\Utils\Logger;
 
-use function add_action;
 use function add_query_arg;
 use function admin_url;
 use function check_admin_referer;
@@ -19,13 +18,11 @@ use function esc_html;
 use function esc_html__;
 use function esc_url;
 use function get_bloginfo;
-use function get_current_screen;
 use function nocache_headers;
 use function sanitize_key;
 use function sanitize_text_field;
 use function submit_button;
 use function wp_die;
-use function wp_enqueue_style;
 use function wp_json_encode;
 use function wp_nonce_field;
 use function wp_unslash;
@@ -36,33 +33,7 @@ final class LogsPage implements HookableInterface
 
     public function register_hooks(): void
     {
-        // Intentionally left blank; menu registered via AdminMenu.
-        add_action('admin_enqueue_scripts', [$this, 'enqueue_assets']);
-    }
-
-    public function enqueue_assets(): void
-    {
-        $screen = get_current_screen();
-        // Verifica anche il hook e il page parameter per maggiore sicurezza
-        $is_logs_page = $screen && (
-            'fp-exp-dashboard_page_fp_exp_logs' === $screen->id ||
-            (isset($_GET['page']) && $_GET['page'] === 'fp_exp_logs')
-        );
-        
-        if (! $is_logs_page) {
-            return;
-        }
-
-        $admin_css = Helpers::resolve_asset_rel([
-            'assets/css/dist/fp-experiences-admin.min.css',
-            'assets/css/admin.css',
-        ]);
-        wp_enqueue_style(
-            'fp-exp-admin',
-            FP_EXP_PLUGIN_URL . $admin_css,
-            Helpers::admin_style_dependencies(),
-            Helpers::asset_version($admin_css)
-        );
+        // Asset admin base gestiti da AdminMenu.
     }
 
     public function render_page(): void
@@ -102,7 +73,7 @@ final class LogsPage implements HookableInterface
             'search' => $search_filter,
         ]);
 
-        echo '<div class="wrap fp-exp-admin-page">';
+        echo '<div class="wrap fp-exp-logs fp-exp-admin-page">';
         echo '<h1 class="screen-reader-text">' . esc_html__('FP Experiences Logs', 'fp-experiences') . '</h1>';
         echo '<div class="fp-exp-admin" data-fp-exp-admin>';
         echo '<div class="fp-exp-admin__body">';
@@ -124,13 +95,18 @@ final class LogsPage implements HookableInterface
             echo $notice_html; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
         }
 
+        echo '<div class="fp-exp-dms-card fp-exp-logs__toolbar">';
+        echo '<div class="fp-exp-dms-card-body fp-exp-logs__toolbar-body">';
         $this->render_filters($channel_filter, $search_filter);
-
-        echo '<form method="post">';
+        echo '<div class="fp-exp-logs__toolbar-actions">';
+        echo '<form method="post" class="fp-exp-logs__clear-form">';
         wp_nonce_field('fp_exp_clear_logs', 'fp_exp_clear_logs_nonce');
         echo '<input type="hidden" name="fp_exp_clear_logs" value="1" />';
         submit_button(esc_html__('Cancella log', 'fp-experiences'), 'delete');
         echo '</form>';
+        echo '</div>';
+        echo '</div>';
+        echo '</div>';
 
         if (! $logs) {
             self::render_empty_state(
@@ -139,6 +115,7 @@ final class LogsPage implements HookableInterface
                 esc_html__('I log di sistema appariranno qui quando verranno registrati eventi importanti o errori.', 'fp-experiences')
             );
         } else {
+            echo '<div class="fp-exp-table-shell">';
             echo '<table class="widefat striped">';
             echo '<thead><tr>';
             echo '<th>' . esc_html__('Data/Ora', 'fp-experiences') . '</th>';
@@ -153,20 +130,28 @@ final class LogsPage implements HookableInterface
                 echo '<td>' . esc_html((string) ($entry['timestamp'] ?? '')) . '</td>';
                 echo '<td>' . esc_html((string) ($entry['channel'] ?? '')) . '</td>';
                 echo '<td>' . esc_html((string) ($entry['message'] ?? '')) . '</td>';
-                echo '<td><pre style="white-space:pre-wrap;max-width:480px;">' . esc_html((string) $context) . '</pre></td>';
+                echo '<td><pre class="fp-exp-logs__context-pre">' . esc_html((string) $context) . '</pre></td>';
                 echo '</tr>';
             }
 
             echo '</tbody></table>';
+            echo '</div>';
         }
 
         $diagnostics = $this->collect_diagnostics();
-        echo '<h2>' . esc_html__('Diagnostics', 'fp-experiences') . '</h2>';
+        echo '<div class="fp-exp-dms-card fp-exp-logs__diagnostics">';
+        echo '<div class="fp-exp-dms-card-header"><div class="fp-exp-dms-card-header-left">';
+        echo '<span class="dashicons dashicons-admin-tools" aria-hidden="true"></span>';
+        echo '<h2>' . esc_html__('Diagnostica ambiente', 'fp-experiences') . '</h2>';
+        echo '</div></div>';
+        echo '<div class="fp-exp-dms-card-body fp-exp-table-shell fp-exp-logs__diagnostics-table">';
         echo '<table class="widefat striped">';
         foreach ($diagnostics as $label => $value) {
             echo '<tr><th scope="row">' . esc_html($label) . '</th><td>' . esc_html($value) . '</td></tr>';
         }
         echo '</table>';
+        echo '</div>';
+        echo '</div>';
 
         echo '</div>';
         echo '</div>';

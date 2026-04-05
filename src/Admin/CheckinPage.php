@@ -19,10 +19,11 @@ use function add_action;
 use function add_query_arg;
 use function admin_url;
 use function check_admin_referer;
+use function __;
 use function esc_attr;
 use function esc_html;
 use function esc_html__;
-use function get_current_screen;
+use function esc_textarea;
 use function get_option;
 use function get_transient;
 use function is_array;
@@ -33,7 +34,6 @@ use function sanitize_key;
 use function set_transient;
 use function delete_transient;
 use function wp_date;
-use function wp_enqueue_style;
 use function wp_nonce_field;
 use function wp_safe_redirect;
 use function wp_unslash;
@@ -52,32 +52,6 @@ final class CheckinPage implements HookableInterface
     public function register_hooks(): void
     {
         add_action('admin_init', [$this, 'maybe_handle_action']);
-        add_action('admin_enqueue_scripts', [$this, 'enqueue_assets']);
-    }
-
-    public function enqueue_assets(): void
-    {
-        $screen = get_current_screen();
-        // Verifica anche il hook e il page parameter per maggiore sicurezza
-        $is_checkin_page = $screen && (
-            'fp-exp-dashboard_page_fp_exp_checkin' === $screen->id ||
-            (isset($_GET['page']) && $_GET['page'] === 'fp_exp_checkin')
-        );
-        
-        if (! $is_checkin_page) {
-            return;
-        }
-
-        $admin_css = Helpers::resolve_asset_rel([
-            'assets/css/dist/fp-experiences-admin.min.css',
-            'assets/css/admin.css',
-        ]);
-        wp_enqueue_style(
-            'fp-exp-admin',
-            FP_EXP_PLUGIN_URL . $admin_css,
-            Helpers::admin_style_dependencies(),
-            Helpers::asset_version($admin_css)
-        );
     }
 
     public function maybe_handle_action(): void
@@ -282,6 +256,7 @@ final class CheckinPage implements HookableInterface
             return;
         }
 
+        echo '<div class="fp-exp-table-shell">';
         echo '<table class="widefat striped fp-exp-checkin__table">';
         echo '<thead><tr>';
         echo '<th>' . esc_html__('Esperienza', 'fp-experiences') . '</th>';
@@ -319,6 +294,7 @@ final class CheckinPage implements HookableInterface
         echo '</div>';
         echo '</div>';
         echo '</div>';
+        echo '</div>';
     }
 
     /**
@@ -326,13 +302,13 @@ final class CheckinPage implements HookableInterface
      */
     private function render_qr_scan_panel(?array $preview): void
     {
-        echo '<section class="fp-exp-checkin__scanner" style="margin:16px 0 24px;padding:16px;border:1px solid #dcdcde;background:#fff;border-radius:8px;">';
-        echo '<h3 style="margin:0 0 8px;">' . esc_html__('Check-in evento via QR', 'fp-experiences') . '</h3>';
-        echo '<p style="margin:0 0 12px;color:#50575e;">' . esc_html__('Scansiona il QR oppure incolla il codice di backup ricevuto dal cliente.', 'fp-experiences') . '</p>';
-        echo '<form method="post" action="" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">';
+        echo '<section class="fp-exp-checkin__scanner">';
+        echo '<h3 class="fp-exp-checkin__scanner-title">' . esc_html__('Check-in evento via QR', 'fp-experiences') . '</h3>';
+        echo '<p class="fp-exp-checkin__scanner-desc">' . esc_html__('Scansiona il QR oppure incolla il codice di backup ricevuto dal cliente.', 'fp-experiences') . '</p>';
+        echo '<form method="post" action="" class="fp-exp-checkin__scanner-form">';
         wp_nonce_field('fp_exp_checkin_scan', 'fp_exp_checkin_scan_nonce');
         echo '<input type="hidden" name="fp_exp_checkin_action" value="scan_event_qr" />';
-        echo '<input type="text" name="checkin_token" class="regular-text" style="min-width:320px;" placeholder="' . esc_attr__('Incolla qui il token QR', 'fp-experiences') . '" required />';
+        echo '<input type="text" name="checkin_token" class="regular-text fp-exp-checkin__token-input" placeholder="' . esc_attr__('Incolla qui il token QR', 'fp-experiences') . '" required />';
         echo '<button type="submit" class="button button-primary">' . esc_html__('Riconosci prenotazione', 'fp-experiences') . '</button>';
         echo '</form>';
 
@@ -346,11 +322,11 @@ final class CheckinPage implements HookableInterface
             ? wp_date(get_option('date_format', 'Y-m-d') . ' ' . get_option('time_format', 'H:i'), $timestamp)
             : esc_html__('Data non disponibile', 'fp-experiences');
 
-        echo '<div style="margin-top:14px;padding:12px;border:1px solid #c3c4c7;border-radius:6px;background:#f6f7f7;">';
-        echo '<p style="margin:0 0 6px;"><strong>' . esc_html__('Esperienza', 'fp-experiences') . ':</strong> ' . esc_html((string) ($preview['experience'] ?? '')) . '</p>';
-        echo '<p style="margin:0 0 6px;"><strong>' . esc_html__('Orario', 'fp-experiences') . ':</strong> ' . esc_html($time_label) . '</p>';
-        echo '<p style="margin:0 0 6px;"><strong>' . esc_html__('Ospiti riconosciuti', 'fp-experiences') . ':</strong> ' . esc_html(number_format_i18n((int) ($preview['guests'] ?? 0))) . '</p>';
-        echo '<p style="margin:0 0 10px;"><strong>' . esc_html__('Stato', 'fp-experiences') . ':</strong> ' . esc_html($this->format_status((string) ($preview['status'] ?? ''))) . '</p>';
+        echo '<div class="fp-exp-checkin__preview-box">';
+        echo '<p class="fp-exp-checkin__preview-line"><strong>' . esc_html__('Esperienza', 'fp-experiences') . ':</strong> ' . esc_html((string) ($preview['experience'] ?? '')) . '</p>';
+        echo '<p class="fp-exp-checkin__preview-line"><strong>' . esc_html__('Orario', 'fp-experiences') . ':</strong> ' . esc_html($time_label) . '</p>';
+        echo '<p class="fp-exp-checkin__preview-line"><strong>' . esc_html__('Ospiti riconosciuti', 'fp-experiences') . ':</strong> ' . esc_html(number_format_i18n((int) ($preview['guests'] ?? 0))) . '</p>';
+        echo '<p class="fp-exp-checkin__preview-line"><strong>' . esc_html__('Stato', 'fp-experiences') . ':</strong> ' . esc_html($this->format_status((string) ($preview['status'] ?? ''))) . '</p>';
 
         if (Reservations::STATUS_CHECKED_IN === (string) ($preview['status'] ?? '')) {
             echo '<span class="fp-exp-checkin__badge">' . esc_html__('Check-in gia effettuato', 'fp-experiences') . '</span>';
@@ -374,16 +350,16 @@ final class CheckinPage implements HookableInterface
         $auth = new OperatorAuthService();
         $operators = $auth->get_operators();
 
-        echo '<section class="fp-exp-checkin__mobile-operators" style="margin:0 0 16px;padding:16px;border:1px solid #dcdcde;background:#fff;border-radius:8px;">';
-        echo '<h3 style="margin:0 0 8px;">' . esc_html__('Operatori mobile scanner', 'fp-experiences') . '</h3>';
-        echo '<p style="margin:0 0 12px;color:#50575e;">' . esc_html__('Crea credenziali dedicate per accesso scanner da cellulare. Usa shortcode [fp_exp_mobile_scanner] in una pagina pubblica.', 'fp-experiences') . '</p>';
-        echo '<div style="margin:0 0 12px;padding:12px;border:1px solid #dbeafe;background:#eff6ff;border-radius:8px;">';
-        echo '<p style="margin:0 0 8px;"><strong>' . esc_html__('Procedura consigliata (chiara e sicura)', 'fp-experiences') . '</strong></p>';
-        echo '<ol style="margin:0;padding-left:18px;">';
-        echo '<li style="margin:0 0 6px;">' . esc_html__('Crea/aggiorna la pagina scanner con shortcode protetto, ad esempio: [fp_exp_mobile_scanner access_key="CHIAVE_FORTE"].', 'fp-experiences') . '</li>';
-        echo '<li style="margin:0 0 6px;">' . esc_html__('Aggiungi qui sotto un operatore (username + password dedicata).', 'fp-experiences') . '</li>';
-        echo '<li style="margin:0 0 6px;">' . esc_html__('Invia all’operatore il link completo con la chiave (?k=...), e comunica password in canale separato.', 'fp-experiences') . '</li>';
-        echo '<li style="margin:0;">' . esc_html__('In caso di blocco tentativi usa “Reset lockout”.', 'fp-experiences') . '</li>';
+        echo '<section class="fp-exp-checkin__mobile-operators">';
+        echo '<h3 class="fp-exp-checkin__mobile-operators-title">' . esc_html__('Operatori mobile scanner', 'fp-experiences') . '</h3>';
+        echo '<p class="fp-exp-checkin__mobile-operators-desc">' . esc_html__('Crea credenziali dedicate per accesso scanner da cellulare. Usa shortcode [fp_exp_mobile_scanner] in una pagina pubblica.', 'fp-experiences') . '</p>';
+        echo '<div class="fp-exp-checkin__callout">';
+        echo '<p class="fp-exp-checkin__callout-title"><strong>' . esc_html__('Procedura consigliata (chiara e sicura)', 'fp-experiences') . '</strong></p>';
+        echo '<ol class="fp-exp-checkin__callout-ol">';
+        echo '<li class="fp-exp-checkin__callout-li">' . esc_html__('Crea/aggiorna la pagina scanner con shortcode protetto, ad esempio: [fp_exp_mobile_scanner access_key="CHIAVE_FORTE"].', 'fp-experiences') . '</li>';
+        echo '<li class="fp-exp-checkin__callout-li">' . esc_html__('Aggiungi qui sotto un operatore (username + password dedicata).', 'fp-experiences') . '</li>';
+        echo '<li class="fp-exp-checkin__callout-li">' . esc_html__('Invia all’operatore il link completo con la chiave (?k=...), e comunica password in canale separato.', 'fp-experiences') . '</li>';
+        echo '<li class="fp-exp-checkin__callout-li">' . esc_html__('In caso di blocco tentativi usa “Reset lockout”.', 'fp-experiences') . '</li>';
         echo '</ol>';
         echo '</div>';
 
@@ -396,11 +372,11 @@ final class CheckinPage implements HookableInterface
             . "- Accedi con username/password\n"
             . "- Premi \"Apri fotocamera\" per leggere il QR\n"
             . "- Se non funziona la camera, incolla il token e premi \"Riconosci prenotazione\"\n";
-        echo '<p style="margin:0 0 6px;"><strong>' . esc_html__('Template pronto da inviare all’operatore', 'fp-experiences') . '</strong></p>';
-        echo '<textarea id="fp-exp-mobile-template" readonly style="width:100%;min-height:165px;margin:0 0 8px;">' . esc_textarea($delivery_template) . '</textarea>';
-        echo '<div style="margin:0 0 12px;">';
+        echo '<p class="fp-exp-checkin__template-label"><strong>' . esc_html__('Template pronto da inviare all’operatore', 'fp-experiences') . '</strong></p>';
+        echo '<textarea id="fp-exp-mobile-template" class="fp-exp-checkin__template-textarea" readonly>' . esc_textarea($delivery_template) . '</textarea>';
+        echo '<div class="fp-exp-checkin__template-actions">';
         echo '<button type="button" id="fp-exp-copy-template" class="button button-secondary">' . esc_html__('Copia template', 'fp-experiences') . '</button>';
-        echo '<span id="fp-exp-copy-template-feedback" style="margin-left:8px;color:#065f46;font-weight:600;display:none;">' . esc_html__('Copiato!', 'fp-experiences') . '</span>';
+        echo '<span id="fp-exp-copy-template-feedback" class="fp-exp-checkin__copy-feedback">' . esc_html__('Copiato!', 'fp-experiences') . '</span>';
         echo '</div>';
         echo '<script>';
         echo '(function(){';
@@ -409,14 +385,13 @@ final class CheckinPage implements HookableInterface
         echo 'var feedback=document.getElementById("fp-exp-copy-template-feedback");';
         echo 'if(!btn||!area){return;}';
         echo 'btn.addEventListener("click",function(){';
+        echo 'var showFeedback=function(){if(feedback){feedback.classList.add("is-visible");setTimeout(function(){feedback.classList.remove("is-visible");},1500);}};';
         echo 'try{';
         echo 'if(navigator.clipboard&&navigator.clipboard.writeText){';
-        echo 'navigator.clipboard.writeText(area.value).then(function(){';
-        echo 'if(feedback){feedback.style.display="inline";setTimeout(function(){feedback.style.display="none";},1500);}';
-        echo '});';
+        echo 'navigator.clipboard.writeText(area.value).then(showFeedback);';
         echo '}else{';
         echo 'area.focus();area.select();document.execCommand("copy");';
-        echo 'if(feedback){feedback.style.display="inline";setTimeout(function(){feedback.style.display="none";},1500);}';
+        echo 'showFeedback();';
         echo '}';
         echo '}catch(e){}';
         echo '});';
@@ -437,27 +412,28 @@ final class CheckinPage implements HookableInterface
             ],
             admin_url('admin.php')
         );
-        echo '<p style="margin:0 0 12px;">';
-        echo '<a class="button button-secondary" style="margin-right:6px;" href="' . esc_url($security_logs_url) . '">' . esc_html__('Audit sicurezza', 'fp-experiences') . '</a>';
+        echo '<p class="fp-exp-checkin__audit-buttons">';
+        echo '<a class="button button-secondary" href="' . esc_url($security_logs_url) . '">' . esc_html__('Audit sicurezza', 'fp-experiences') . '</a>';
         echo '<a class="button button-secondary" href="' . esc_url($checkin_logs_url) . '">' . esc_html__('Audit check-in', 'fp-experiences') . '</a>';
         echo '</p>';
 
-        echo '<form method="post" action="" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px;align-items:end;">';
+        echo '<form method="post" action="" class="fp-exp-checkin__operator-grid">';
         wp_nonce_field('fp_exp_create_mobile_operator', 'fp_exp_create_mobile_operator_nonce');
         echo '<input type="hidden" name="fp_exp_checkin_action" value="create_mobile_operator" />';
-        echo '<p style="margin:0;"><label><strong>' . esc_html__('Username', 'fp-experiences') . '</strong><br /><input type="text" name="mobile_operator_username" required style="width:100%;" /></label></p>';
-        echo '<p style="margin:0;"><label><strong>' . esc_html__('Nome visualizzato', 'fp-experiences') . '</strong><br /><input type="text" name="mobile_operator_display_name" style="width:100%;" /></label></p>';
-        echo '<p style="margin:0;"><label><strong>' . esc_html__('Password', 'fp-experiences') . '</strong><br /><input type="password" name="mobile_operator_password" required style="width:100%;" /></label></p>';
-        echo '<p style="margin:0;"><button type="submit" class="button button-primary">' . esc_html__('Aggiungi operatore', 'fp-experiences') . '</button></p>';
+        echo '<p><label><strong>' . esc_html__('Username', 'fp-experiences') . '</strong><br /><input type="text" name="mobile_operator_username" required /></label></p>';
+        echo '<p><label><strong>' . esc_html__('Nome visualizzato', 'fp-experiences') . '</strong><br /><input type="text" name="mobile_operator_display_name" /></label></p>';
+        echo '<p><label><strong>' . esc_html__('Password', 'fp-experiences') . '</strong><br /><input type="password" name="mobile_operator_password" required /></label></p>';
+        echo '<p><button type="submit" class="button button-primary">' . esc_html__('Aggiungi operatore', 'fp-experiences') . '</button></p>';
         echo '</form>';
 
         if (! $operators) {
-            echo '<p style="margin:12px 0 0;">' . esc_html__('Nessun operatore mobile configurato.', 'fp-experiences') . '</p>';
+            echo '<p class="fp-exp-checkin__operators-empty">' . esc_html__('Nessun operatore mobile configurato.', 'fp-experiences') . '</p>';
             echo '</section>';
             return;
         }
 
-        echo '<table class="widefat striped" style="margin-top:12px;"><thead><tr>';
+        echo '<div class="fp-exp-table-shell fp-exp-checkin__operators-table-wrap">';
+        echo '<table class="widefat striped"><thead><tr>';
         echo '<th>' . esc_html__('Username', 'fp-experiences') . '</th>';
         echo '<th>' . esc_html__('Nome', 'fp-experiences') . '</th>';
         echo '<th>' . esc_html__('Lockout', 'fp-experiences') . '</th>';
@@ -473,24 +449,24 @@ final class CheckinPage implements HookableInterface
             echo '<td>';
             if ($is_locked) {
                 $remaining_minutes = (int) max(1, ceil(($lockout_until - time()) / 60));
-                echo '<span style="display:inline-block;padding:2px 8px;border-radius:999px;background:#fef2f2;color:#991b1b;border:1px solid #fecaca;font-size:12px;font-weight:600;">';
-                echo esc_html(sprintf(__('Attivo (%d min)', 'fp-experiences'), $remaining_minutes));
+                echo '<span class="fp-exp-checkin__pill fp-exp-checkin__pill--locked">';
+                echo esc_html(sprintf(/* translators: %d: lockout minutes remaining */ __('Attivo (%d min)', 'fp-experiences'), $remaining_minutes));
                 echo '</span>';
             } else {
-                echo '<span style="display:inline-block;padding:2px 8px;border-radius:999px;background:#ecfdf5;color:#065f46;border:1px solid #a7f3d0;font-size:12px;font-weight:600;">';
+                echo '<span class="fp-exp-checkin__pill fp-exp-checkin__pill--ok">';
                 echo esc_html__('Non attivo', 'fp-experiences');
                 echo '</span>';
             }
             echo '</td>';
             echo '<td>';
-            echo '<form method="post" action="" style="display:inline-block;margin-right:6px;">';
+            echo '<form method="post" action="" class="fp-exp-checkin__inline-form fp-exp-checkin__inline-form--spaced">';
             wp_nonce_field('fp_exp_reset_mobile_operator_lockout_' . $operator_id, 'fp_exp_reset_mobile_operator_lockout_nonce');
             echo '<input type="hidden" name="fp_exp_checkin_action" value="reset_mobile_operator_lockout" />';
             echo '<input type="hidden" name="mobile_operator_id" value="' . esc_attr((string) $operator_id) . '" />';
             echo '<button type="submit" class="button button-secondary">' . esc_html__('Reset lockout', 'fp-experiences') . '</button>';
             echo '</form>';
 
-            echo '<form method="post" action="" style="display:inline;">';
+            echo '<form method="post" action="" class="fp-exp-checkin__inline-form">';
             wp_nonce_field('fp_exp_delete_mobile_operator_' . $operator_id, 'fp_exp_delete_mobile_operator_nonce');
             echo '<input type="hidden" name="fp_exp_checkin_action" value="delete_mobile_operator" />';
             echo '<input type="hidden" name="mobile_operator_id" value="' . esc_attr((string) $operator_id) . '" />';
@@ -500,6 +476,7 @@ final class CheckinPage implements HookableInterface
             echo '</tr>';
         }
         echo '</tbody></table>';
+        echo '</div>';
         echo '</section>';
     }
 

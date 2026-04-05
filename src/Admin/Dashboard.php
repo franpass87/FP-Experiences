@@ -120,6 +120,7 @@ final class Dashboard
         echo '<h2 id="fp-exp-dashboard-agenda">' . esc_html__('Agenda operativa', 'fp-experiences') . '</h2>';
         self::render_agenda_filters($agenda_date_from, $agenda_date_to, $agenda_experience_id);
         if ($metrics['operational_agenda']) {
+            echo '<div class="fp-exp-table-shell">';
             echo '<table class="widefat striped fp-exp-dashboard__table">';
             echo '<thead><tr>';
             echo '<th>' . esc_html__('Giorno', 'fp-experiences') . '</th>';
@@ -143,6 +144,7 @@ final class Dashboard
                 echo '</tr>';
             }
             echo '</tbody></table>';
+            echo '</div>';
         } else {
             self::render_empty_state(
                 'calendar-alt',
@@ -161,6 +163,7 @@ final class Dashboard
         echo '<section class="fp-exp-dashboard__section" aria-labelledby="fp-exp-dashboard-orders">';
         echo '<h2 id="fp-exp-dashboard-orders">' . esc_html__('Ultimi ordini esperienza', 'fp-experiences') . '</h2>';
         if ($metrics['orders']) {
+            echo '<div class="fp-exp-table-shell">';
             echo '<table class="widefat striped fp-exp-dashboard__table">';
             echo '<thead><tr>';
             echo '<th>' . esc_html__('# Ordine', 'fp-experiences') . '</th>';
@@ -177,6 +180,7 @@ final class Dashboard
                 echo '</tr>';
             }
             echo '</tbody></table>';
+            echo '</div>';
         } else {
             self::render_empty_state(
                 'tickets-alt',

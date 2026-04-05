@@ -23,8 +23,8 @@ use function esc_attr;
 use function esc_html;
 use function esc_html__;
 use function esc_url;
-use function get_current_screen;
 use function get_option;
+use function get_current_screen;
 use function get_settings_errors;
 use function get_transient;
 use function number_format_i18n;
@@ -63,26 +63,16 @@ final class RequestsPage implements HookableInterface
     public function enqueue_assets(): void
     {
         $screen = get_current_screen();
-        // Verifica anche il hook e il page parameter per maggiore sicurezza
         $is_requests_page = $screen && (
             'fp-exp-dashboard_page_fp_exp_requests' === $screen->id ||
             (isset($_GET['page']) && $_GET['page'] === 'fp_exp_requests')
         );
-        
+
         if (! $is_requests_page) {
             return;
         }
 
-        $admin_css = Helpers::resolve_asset_rel([
-            'assets/css/dist/fp-experiences-admin.min.css',
-            'assets/css/admin.css',
-        ]);
-        wp_enqueue_style(
-            'fp-exp-admin',
-            FP_EXP_PLUGIN_URL . $admin_css,
-            Helpers::admin_style_dependencies(),
-            Helpers::asset_version($admin_css)
-        );
+        // Il CSS base resta centralizzato in AdminMenu; qui serve solo Dashicons.
         wp_enqueue_style('dashicons');
     }
 
@@ -264,6 +254,8 @@ final class RequestsPage implements HookableInterface
         echo '</div>';
         $this->render_operator_navigation();
 
+        echo '<div class="fp-exp-dms-card fp-exp-requests__filters-card">';
+        echo '<div class="fp-exp-dms-card-body">';
         echo '<form method="get" class="fp-exp-requests__filters">';
         echo '<input type="hidden" name="page" value="fp_exp_requests" />';
         echo '<label for="fp-exp-requests-status">' . esc_html__('Filtra per stato', 'fp-experiences') . '</label> ';
@@ -276,6 +268,8 @@ final class RequestsPage implements HookableInterface
         echo '</select> ';
         submit_button(esc_html__('Filtra', 'fp-experiences'), 'secondary', '', false);
         echo '</form>';
+        echo '</div>';
+        echo '</div>';
 
         if (! $requests) {
             self::render_empty_state(
@@ -286,7 +280,7 @@ final class RequestsPage implements HookableInterface
                 esc_html__('Configura Request to Book', 'fp-experiences')
             );
         } else {
-            echo '<form method="post" id="fp-exp-requests-bulk-form">';
+            echo '<form method="post" id="fp-exp-requests-bulk-form" class="fp-exp-requests__bulk-form">';
             wp_nonce_field('fp_exp_rtb_bulk', 'fp_exp_rtb_bulk_nonce');
             echo '<p class="fp-exp-requests__bulk">';
             echo '<label for="fp-exp-rtb-bulk-action">' . esc_html__('Azioni di gruppo', 'fp-experiences') . '</label> ';
@@ -299,6 +293,7 @@ final class RequestsPage implements HookableInterface
             echo '<input type="text" id="fp-exp-rtb-bulk-reason" name="reason" class="regular-text" placeholder="' . esc_attr__('Opzionale', 'fp-experiences') . '" /> ';
             echo '<button type="submit" class="button">' . esc_html__('Applica', 'fp-experiences') . '</button>';
             echo '</p>';
+            echo '<div class="fp-exp-table-shell">';
             echo '<table class="widefat fixed striped fp-exp-requests__table">';
             echo '<thead><tr>';
             echo '<th class="check-column"><span class="screen-reader-text">' . esc_html__('Seleziona', 'fp-experiences') . '</span></th>';
@@ -504,6 +499,7 @@ final class RequestsPage implements HookableInterface
             }
             echo '</tbody>';
             echo '</table>';
+            echo '</div>';
             echo '</form>';
         }
 

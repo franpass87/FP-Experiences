@@ -4,6 +4,8 @@
 
 /* Core variables and base styles */
 @import url('./variables.css');
+@import url('./dms-core.css');
+@import url('./page-header-dms.css');
 
 /* Layout components */
 @import url('./layout.css');
@@ -19,18 +21,28 @@
 
 /* Taxonomy editor components */
 @import url('./taxonomy.css');
+@import url('./metabox-details.css');
 
 /* Repeater components */
 @import url('./repeaters.css');
 
 /* Calendar components */
 @import url('./calendar.css');
+@import url('./calendar-operations.css');
 
 /* Settings components */
 @import url('./settings.css');
+@import url('./settings-toggle.css');
+@import url('./settings-status-badges.css');
+
+/* Liste / log / richieste / check-in */
+@import url('./listing-pages.css');
 
 /* Button and action components */
 @import url('./buttons.css');
+@import url('./gift-voucher-list.css');
+@import url('./cpt-list-shell.css');
+@import url('./wp-controls-overrides.css');
 
 /* Responsive adjustments */
 @media (max-width: 960px) {

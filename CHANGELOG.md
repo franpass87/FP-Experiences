@@ -2,6 +2,39 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.6.35] - 2026-04-05
+
+### Changed
+
+- **Admin — liste e pagine operative**: nuovo modulo `listing-pages.css` (import da `main.css`) con `.fp-exp-table-shell` per tabelle `widefat`; Dashboard (agenda + ordini), Log (tabella principale), Richieste RTB (dopo filtri in card), Check-in (tabella prenotazioni + operatori mobile) usano il contenitore con bordo/raggio/token DMS.
+- **Log**: filtri CSV + pulsante «Cancella log» in card `.fp-exp-logs__toolbar`; contesto log in `<pre class="fp-exp-logs__context-pre">`; sezione **Diagnostica ambiente** in card DMS con header e tabella incapsulata.
+- **Richieste RTB**: form filtro stato in `.fp-exp-dms-card` (`.fp-exp-requests__filters-card`).
+- **Check-in**: rimossi stili inline da pannello QR, operatori mobile, badge lockout e form; feedback «Copiato!» via classe `.is-visible`; script copia template aggiornato di conseguenza.
+
+## [1.6.34] - 2026-04-05
+
+### Changed
+
+- **Admin — design system FP**: banner `.fpexp-page-header` unificato (niente `box-shadow` sul gradiente, metriche come da `fp-admin-ui-design-system`); `margin-top` su `.wrap.fp-exp-admin-page` in shell; card dashboard, contenitore `.fp-exp-admin`, tab metabox/impostazioni, calendario admin, repeater e blocchi prezzi metabox usano token `--fpdms-*` con fallback `--fp-exp-*`.
+- **Impostazioni**: anteprima log in scheda con tabella `widefat` incapsulata in `.fp-exp-settings__embedded-table`.
+- **Docs**: inventario schermate admin in `docs/admin-ui-inventory.md`.
+
+## [1.6.33] - 2026-04-05
+
+### Fixed
+
+- **Admin metabox Calendario**: il pulsante «Aggiungi slot orario» non faceva nulla perché il bundle `fp-experiences-admin.min.js` usava `repeaters.js` con selettori `data-fp-repeater*` non presenti nel markup (`data-repeater`, `template[data-repeater-template]`, ecc.). `repeaters.js` è stato allineato alla logica dei repeater del metabox (time slot, biglietti, badge impostazioni). I repeater addon/FAQ restano su fallback inline per evitare doppi listener.
+
+## [1.6.32] - 2026-04-05
+
+### Added
+
+- **Prezzi — Addon**: immagine opzionale per ogni extra (libreria media), salvata come `image_id` in `_fp_addons` e `_fp_exp_pricing`; il widget mostra la miniatura quando presente. `Pricing::get_addons()` espone `image_id`. Esposto `window.fpExpInitMediaControls` per inizializzare i controlli media sulle nuove righe repeater (fallback inline).
+
+### Fixed
+
+- **Widget / shortcode**: `prepare_addons` usa il campo `name` come fallback per `label` e per lo `slug` quando i meta arrivano dal metabox Prezzi.
+
 ## [1.6.31] - 2026-04-03
 
 ### Fixed

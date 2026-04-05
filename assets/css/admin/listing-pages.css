@@ -1,0 +1,289 @@
+/**
+ * Liste admin: tabelle dati, toolbar filtri, pannelli Check-in / Log / Richieste.
+ *
+ * @package FP_Exp
+ */
+
+/* Contenitore tabella widefat (scroll orizzontale, bordo DS) */
+.fp-exp-table-shell {
+    overflow-x: auto;
+    margin: 16px 0 0;
+    border: 1px solid var(--fpdms-border, var(--fp-exp-admin-border));
+    border-radius: var(--fpdms-radius-md, 8px);
+    background: var(--fpdms-bg-white, #fff);
+    box-shadow: var(--fpdms-shadow-md, none);
+}
+
+.fp-exp-table-shell > table.widefat {
+    margin: 0;
+    border: 0;
+    box-shadow: none;
+}
+
+.fp-exp-dashboard__section > .fp-exp-table-shell:first-of-type {
+    margin-top: 12px;
+}
+
+/* Log: toolbar filtri + azione cancella */
+.fp-exp-logs__toolbar {
+    margin-bottom: 8px;
+}
+
+.fp-exp-logs__toolbar-body {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    align-items: flex-end;
+    justify-content: space-between;
+}
+
+.fp-exp-log-filter {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    flex: 1 1 280px;
+    margin: 0;
+}
+
+.fp-exp-log-filter select,
+.fp-exp-log-filter input[type="search"] {
+    max-width: 100%;
+}
+
+.fp-exp-logs__toolbar-actions {
+    flex: 0 0 auto;
+}
+
+.fp-exp-logs__clear-form {
+    margin: 0;
+}
+
+.fp-exp-logs__context-pre {
+    margin: 0;
+    white-space: pre-wrap;
+    max-width: 480px;
+    font-size: 12px;
+    line-height: 1.45;
+    color: var(--fpdms-text-light, #64748b);
+}
+
+.fp-exp-logs__diagnostics {
+    margin-top: 24px;
+}
+
+.fp-exp-logs__diagnostics .fp-exp-dms-card-header h2 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.fp-exp-logs__diagnostics-table {
+    margin-top: 0;
+}
+
+/* Richieste RTB */
+.fp-exp-requests__filters-card {
+    margin-bottom: 16px;
+}
+
+.fp-exp-requests__filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    margin: 0;
+}
+
+.fp-exp-requests__bulk-form .fp-exp-requests__bulk {
+    margin: 0 0 12px;
+}
+
+/* Check-in: QR e operatori mobile */
+.fp-exp-checkin__scanner {
+    margin: 16px 0 24px;
+    padding: 16px;
+    background: var(--fpdms-bg-white, #fff);
+    border: 1px solid var(--fpdms-border, #dcdcde);
+    border-radius: var(--fpdms-radius-md, 8px);
+    box-shadow: var(--fpdms-shadow-md, none);
+}
+
+.fp-exp-checkin__scanner-title {
+    margin: 0 0 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--fpdms-text, #1e293b);
+}
+
+.fp-exp-checkin__scanner-desc {
+    margin: 0 0 12px;
+    color: var(--fpdms-text-light, #50575e);
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.fp-exp-checkin__scanner-form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    margin: 0;
+}
+
+.fp-exp-checkin__token-input {
+    min-width: min(100%, 320px);
+    flex: 1 1 240px;
+}
+
+.fp-exp-checkin__preview-box {
+    margin-top: 14px;
+    padding: 12px;
+    border: 1px solid var(--fpdms-border, #c3c4c7);
+    border-radius: var(--fpdms-radius-sm, 6px);
+    background: var(--fpdms-bg-light, #f6f7f7);
+}
+
+.fp-exp-checkin__preview-line {
+    margin: 0 0 6px;
+}
+
+.fp-exp-checkin__preview-line:last-of-type {
+    margin-bottom: 10px;
+}
+
+.fp-exp-checkin__mobile-operators {
+    margin: 0 0 16px;
+    padding: 16px;
+    background: var(--fpdms-bg-white, #fff);
+    border: 1px solid var(--fpdms-border, #dcdcde);
+    border-radius: var(--fpdms-radius-md, 8px);
+    box-shadow: var(--fpdms-shadow-md, none);
+}
+
+.fp-exp-checkin__mobile-operators-title {
+    margin: 0 0 8px;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.fp-exp-checkin__mobile-operators-desc {
+    margin: 0 0 12px;
+    color: var(--fpdms-text-light, #50575e);
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.fp-exp-checkin__callout {
+    margin: 0 0 12px;
+    padding: 12px;
+    border: 1px solid var(--fpdms-info-border, #dbeafe);
+    border-radius: var(--fpdms-radius-md, 8px);
+    background: var(--fpdms-info-bg, #eff6ff);
+}
+
+.fp-exp-checkin__callout-title {
+    margin: 0 0 8px;
+}
+
+.fp-exp-checkin__callout-ol {
+    margin: 0;
+    padding-left: 18px;
+}
+
+.fp-exp-checkin__callout-li {
+    margin: 0 0 6px;
+}
+
+.fp-exp-checkin__callout-li:last-child {
+    margin-bottom: 0;
+}
+
+.fp-exp-checkin__template-label {
+    margin: 0 0 6px;
+}
+
+.fp-exp-checkin__template-textarea {
+    width: 100%;
+    min-height: 165px;
+    margin: 0 0 8px;
+    box-sizing: border-box;
+}
+
+.fp-exp-checkin__template-actions {
+    margin: 0 0 12px;
+}
+
+.fp-exp-checkin__copy-feedback {
+    margin-left: 8px;
+    color: var(--fpdms-success, #065f46);
+    font-weight: 600;
+    display: none;
+}
+
+.fp-exp-checkin__copy-feedback.is-visible {
+    display: inline;
+}
+
+.fp-exp-checkin__audit-buttons {
+    margin: 0 0 12px;
+}
+
+.fp-exp-checkin__audit-buttons .button {
+    margin-right: 6px;
+}
+
+.fp-exp-checkin__operator-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 8px;
+    align-items: end;
+    margin: 0;
+}
+
+.fp-exp-checkin__operator-grid label {
+    margin: 0;
+}
+
+.fp-exp-checkin__operator-grid input[type="text"],
+.fp-exp-checkin__operator-grid input[type="password"] {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.fp-exp-checkin__operators-empty {
+    margin: 12px 0 0;
+}
+
+.fp-exp-checkin__inline-form {
+    display: inline;
+}
+
+.fp-exp-checkin__inline-form--spaced {
+    display: inline-block;
+    margin-right: 6px;
+}
+
+.fp-exp-checkin__pill {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.fp-exp-checkin__pill--locked {
+    background: #fef2f2;
+    color: #991b1b;
+    border: 1px solid #fecaca;
+}
+
+.fp-exp-checkin__pill--ok {
+    background: #ecfdf5;
+    color: #065f46;
+    border: 1px solid #a7f3d0;
+}
+
+.fp-exp-checkin__operators-table-wrap {
+    margin-top: 12px;
+}
