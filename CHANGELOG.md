@@ -2,6 +2,12 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.6.32] - 2026-04-05
+
+### Fixed
+
+- **Ripristino**: lista admin **Gift voucher** (`fp_exp_gift_voucher`), `VoucherCPT.php`, `admin.css`, `main.css`, `variables.css` e `fp-experiences-admin.min.css` riallineati allo stato **pre–layout custom** (come `5b5c3d7`); rimossi fogli e script aggiunti per banner/card/badge su quella schermata.
+
 ## [1.6.31] - 2026-04-05
 
 ### Changed

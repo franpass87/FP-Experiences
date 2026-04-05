@@ -5,12 +5,6 @@
 /* Core variables and base styles */
 @import url('./variables.css');
 
-/* Token DMS + card/badge (stesso stack delle altre pagine FP Exp) */
-@import url('./dms-core.css');
-
-/* Banner gradiente `.fp-exp-admin-page` (Dashboard, Impostazioni, ecc.) */
-@import url('./page-header-dms.css');
-
 /* Layout components */
 @import url('./layout.css');
 
