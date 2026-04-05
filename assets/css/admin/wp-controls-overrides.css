@@ -95,41 +95,84 @@ body.fp-exp-admin-shell .wrap textarea:focus {
     box-shadow: 0 0 0 1px var(--fp-exp-color-primary);
 }
 
-/* Mantieni sempre visibili i controlli nativi checkbox/radio di WordPress */
+/**
+ * Checkbox: stile custom (una sola spunta via SVG).
+ * Su Chromium/Edge + Windows i controlli nativi (anche senza accent-color) possono ancora
+ * sovrapporre due layer (ghosting). I radio restano nativi.
+ */
 .fp-exp-admin-page input[type="checkbox"]:not(.fp-exp-toggle__input),
+body.fp-exp-admin-shell .wrap input[type="checkbox"]:not(.fp-exp-toggle__input) {
+    appearance: none;
+    -webkit-appearance: none;
+    box-sizing: border-box;
+    width: 18px;
+    height: 18px;
+    min-width: 18px;
+    min-height: 18px;
+    margin: 0;
+    padding: 0;
+    flex-shrink: 0;
+    vertical-align: middle;
+    border: 2px solid #94a3b8;
+    border-radius: 4px;
+    background-color: #fff;
+    background-image: none;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 12px 12px;
+    cursor: pointer;
+}
+
+.fp-exp-admin-page input[type="checkbox"]:not(.fp-exp-toggle__input):checked,
+body.fp-exp-admin-shell .wrap input[type="checkbox"]:not(.fp-exp-toggle__input):checked {
+    background-color: var(--fp-exp-color-primary, #2563eb);
+    border-color: var(--fp-exp-color-primary, #2563eb);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath fill='none' stroke='%23ffffff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' d='M2.2 6.2 4.8 8.8 9.8 2.8'/%3E%3C/svg%3E");
+}
+
+.fp-exp-admin-page input[type="checkbox"]:not(.fp-exp-toggle__input):indeterminate,
+body.fp-exp-admin-shell .wrap input[type="checkbox"]:not(.fp-exp-toggle__input):indeterminate {
+    background-color: var(--fp-exp-color-primary, #2563eb);
+    border-color: var(--fp-exp-color-primary, #2563eb);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Crect x='2' y='5.25' width='8' height='1.5' rx='0.4' fill='%23ffffff'/%3E%3C/svg%3E");
+}
+
+.fp-exp-admin-page input[type="checkbox"]:not(.fp-exp-toggle__input):disabled,
+body.fp-exp-admin-shell .wrap input[type="checkbox"]:not(.fp-exp-toggle__input):disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
 .fp-exp-admin-page input[type="radio"],
-body.fp-exp-admin-shell .wrap input[type="checkbox"]:not(.fp-exp-toggle__input),
 body.fp-exp-admin-shell .wrap input[type="radio"] {
     appearance: auto;
-    -webkit-appearance: auto;
     min-height: 0;
     width: auto;
     height: auto;
     padding: 0;
-    border-radius: 2px;
-    /*
-     * Evitare accent-color qui: su Chromium/Edge (spec. Windows) la combinazione con
-     * controlli nativi può produrre una doppia spunta / ghosting sulla checkbox.
-     */
 }
 
 /**
- * Checkbox/radio nativi: niente box-shadow da regole input:focus (DMS, temi, altri plugin).
- * L’alone colorato non deve “avvolgere” il controllo su tutta la pagina admin sotto shell FP.
+ * Checkbox/radio: niente box-shadow da regole input:focus (DMS, temi, altri plugin).
  */
 .fp-exp-admin-page input[type="checkbox"]:not(.fp-exp-toggle__input):focus,
-.fp-exp-admin-page input[type="checkbox"]:not(.fp-exp-toggle__input):focus-visible,
 .fp-exp-admin-page input[type="checkbox"]:not(.fp-exp-toggle__input):active,
 .fp-exp-admin-page input[type="radio"]:focus,
 .fp-exp-admin-page input[type="radio"]:focus-visible,
 .fp-exp-admin-page input[type="radio"]:active,
 body.fp-exp-admin-shell .wrap input[type="checkbox"]:not(.fp-exp-toggle__input):focus,
-body.fp-exp-admin-shell .wrap input[type="checkbox"]:not(.fp-exp-toggle__input):focus-visible,
 body.fp-exp-admin-shell .wrap input[type="checkbox"]:not(.fp-exp-toggle__input):active,
 body.fp-exp-admin-shell .wrap input[type="radio"]:focus,
 body.fp-exp-admin-shell .wrap input[type="radio"]:focus-visible,
 body.fp-exp-admin-shell .wrap input[type="radio"]:active {
     box-shadow: none !important;
+}
+
+.fp-exp-admin-page input[type="checkbox"]:not(.fp-exp-toggle__input):focus-visible,
+body.fp-exp-admin-shell .wrap input[type="checkbox"]:not(.fp-exp-toggle__input):focus-visible {
+    box-shadow: none !important;
+    outline: 2px solid var(--fp-exp-color-primary, #2563eb);
+    outline-offset: 2px;
 }
 
 /* Non alterare mai i toggle custom renderizzati dal form factory. */

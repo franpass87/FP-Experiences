@@ -2,6 +2,12 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.6.54] - 2026-04-05
+
+### Fixed
+
+- **Admin — checkbox**: sotto shell FP le checkbox native (escl. toggle) usano ora **`appearance: none`** con **spunta/indeterminate via SVG** (`wp-controls-overrides.css`). Anche senza `accent-color`, Chromium su Windows poteva ancora sovrapporre due layer sul controllo nativo; un solo background-image elimina il ghosting. Stato **:indeterminate** (es. selezione bulk) e **:focus-visible** con outline dedicato.
+
 ## [1.6.53] - 2026-04-05
 
 ### Fixed
