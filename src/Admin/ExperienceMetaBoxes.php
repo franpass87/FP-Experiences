@@ -48,6 +48,9 @@ use function wp_create_nonce;
 use function wp_enqueue_media;
 use function wp_enqueue_script;
 use function wp_enqueue_style;
+use function wp_json_encode;
+use function wp_register_script;
+use function wp_add_inline_script;
 use function wp_is_post_autosave;
 use function wp_is_post_revision;
 use function wp_nonce_field;
@@ -56,6 +59,16 @@ use function wp_verify_nonce;
 
 final class ExperienceMetaBoxes implements HookableInterface
 {
+    /**
+     * ID HTML della meta box esperienza (primo argomento di add_meta_box).
+     */
+    private const EXPERIENCE_METABOX_HTML_ID = 'fp-exp-experience-admin';
+
+    /**
+     * Chiave pannello editor a blocchi: core/preferences inactivePanels usa il prefisso meta-box- + id meta box.
+     */
+    private const BLOCK_EDITOR_METABOX_PANEL_KEY = 'meta-box-fp-exp-experience-admin';
+
     private CalendarMetaBoxHandler $calendar_handler;
     private DetailsMetaBoxHandler $details_handler;
     private PolicyMetaBoxHandler $policy_handler;
@@ -504,10 +517,50 @@ final class ExperienceMetaBoxes implements HookableInterface
         add_action('add_meta_boxes_fp_experience', [$this, 'add_meta_box']);
         add_action('add_meta_boxes', [$this, 'remove_default_meta_boxes'], 99);
         add_action('save_post_fp_experience', [$this, 'save_meta_boxes'], 20, 3);
+        add_action('enqueue_block_editor_assets', [$this, 'enqueue_block_editor_metabox_visibility_fix']);
         add_action('admin_enqueue_scripts', [$this, 'enqueue_assets']);
         add_action('admin_notices', [$this, 'maybe_show_pricing_notice']);
         // AJAX action for syncing meta from original translation
         add_action('wp_ajax_fp_exp_sync_meta_from_original', [$this, 'ajax_sync_meta_from_original']);
+    }
+
+    /**
+     * Gutenberg: la meta box viene nascosta (classe is-hidden) se il pannello è in core/preferences → inactivePanels.
+     * Rimuove quella voce e toglie is-hidden così i campi restano sempre utilizzabili.
+     */
+    public function enqueue_block_editor_metabox_visibility_fix(): void
+    {
+        if (! function_exists('get_current_screen')) {
+            return;
+        }
+
+        $screen = get_current_screen();
+        if (! $screen || 'fp_experience' !== ($screen->post_type ?? '')) {
+            return;
+        }
+
+        $handle = 'fp-exp-block-editor-metabox-visibility';
+        wp_register_script(
+            $handle,
+            false,
+            ['wp-data', 'wp-dom-ready'],
+            \defined('FP_EXP_VERSION') ? FP_EXP_VERSION : '1',
+            true
+        );
+        wp_enqueue_script($handle);
+
+        $panel_json = wp_json_encode(
+            self::BLOCK_EDITOR_METABOX_PANEL_KEY,
+            JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT
+        );
+        $metabox_id_json = wp_json_encode(
+            self::EXPERIENCE_METABOX_HTML_ID,
+            JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT
+        );
+
+        $script = '(function(){function stripInactive(panelId){try{var s=wp.data.select("core/preferences");var d=wp.data.dispatch("core/preferences");if(!s||!d||typeof s.get!=="function"||typeof d.set!=="function"){return false;}var inactive=s.get("core","inactivePanels");if(!Array.isArray(inactive)||inactive.indexOf(panelId)<0){return true;}d.set("core","inactivePanels",inactive.filter(function(id){return id!==panelId;}));return true;}catch(e){return true;}}function unhideBox(boxId){var el=document.getElementById(boxId);if(el){el.classList.remove("is-hidden");}}wp.domReady(function(){var panelId=' . $panel_json . ';var boxId=' . $metabox_id_json . ';var tries=0;var t=setInterval(function(){tries++;if(stripInactive(panelId)||tries>120){unhideBox(boxId);clearInterval(t);}},50);});})();';
+
+        wp_add_inline_script($handle, $script, 'after');
     }
 
     public function remove_default_meta_boxes(): void
@@ -519,7 +572,7 @@ final class ExperienceMetaBoxes implements HookableInterface
     public function add_meta_box(): void
     {
         add_meta_box(
-            'fp-exp-experience-admin',
+            self::EXPERIENCE_METABOX_HTML_ID,
             esc_html__('Impostazioni esperienza', 'fp-experiences'),
             [$this, 'render_meta_box'],
             'fp_experience',
@@ -604,11 +657,14 @@ final class ExperienceMetaBoxes implements HookableInterface
             'fp-exp-admin',
             'jQuery(document).ready(function($) {
                 function fixMetabox() {
-                    var metabox = $("#fp-exp-experience-admin");
+                    var metabox = $("#' . self::EXPERIENCE_METABOX_HTML_ID . '");
                     if (metabox.length) {
                         // Rimuovi la classe hide-if-js se presente
                         if (metabox.hasClass("hide-if-js")) {
                             metabox.removeClass("hide-if-js").show();
+                        }
+                        if (metabox.hasClass("is-hidden")) {
+                            metabox.removeClass("is-hidden");
                         }
                         
                         // Sposta la metabox sopra SEO Performance

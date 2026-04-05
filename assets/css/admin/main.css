@@ -38,6 +38,12 @@
 /* Settings components */
 @import url('./settings.css');
 
+/* Toggle custom usati dal renderer Settings */
+@import url('./settings-toggle.css');
+
+/* Badge/stati integrazioni e contatori tab in impostazioni */
+@import url('./settings-status-badges.css');
+
 /* Button and action components */
 @import url('./buttons.css');
 
@@ -46,6 +52,9 @@
 
 /* Liste CPT esperienze / meeting point (margini allineati al voucher) */
 @import url('./cpt-list-shell.css');
+
+/* Uniforma controlli WP legacy (button/input/nav-tab/form-table) nelle schermate FP */
+@import url('./wp-controls-overrides.css');
 
 /* Responsive adjustments */
 @media (max-width: 960px) {

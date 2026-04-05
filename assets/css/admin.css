@@ -1,6 +1,9 @@
 @import url('admin/calendar-operations.css');
 @import url('admin/gift-voucher-list.css');
 @import url('admin/cpt-list-shell.css');
+@import url('admin/settings-toggle.css');
+@import url('admin/settings-status-badges.css');
+@import url('admin/wp-controls-overrides.css');
 
 :root {
     /* FP Digital Marketing Suite — token admin condivisi (fp-admin-ui-design-system.mdc) */
@@ -2505,10 +2508,6 @@ html.fp-exp-dark .fp-exp-settings .nav-tab.nav-tab-active {
     box-shadow: none;
 }
 
-html.fp-exp-dark .nav-tab-active .fp-exp-tab-badge {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-}
-
 html.fp-exp-dark .fp-exp-fieldset {
     background: linear-gradient(135deg, #1a1e24 0%, rgba(18, 21, 25, 0.94) 100%);
     box-shadow: 0 16px 34px rgba(0, 0, 0, 0.5);
@@ -3883,159 +3882,6 @@ html.fp-exp-dark .fp-exp-requests__td-actions--past .fp-exp-requests__past-note 
     color: white;
 }
 
-/* Toggle Switch Moderno */
-.fp-exp-toggle,
-.fp-exp-settings__toggle {
-    display: inline-flex;
-    align-items: center;
-    gap: 12px;
-    cursor: pointer;
-    position: relative;
-}
-
-/* Hide checkbox inputs in toggle switches - use display:none since label[for] handles clicks */
-.fp-exp-toggle input[type="checkbox"],
-.fp-exp-settings__toggle input[type="checkbox"],
-input.fp-exp-toggle__input,
-.fp-exp-toggle__input,
-label.fp-exp-settings__toggle input[type="checkbox"],
-label.fp-exp-toggle input[type="checkbox"] {
-    display: none !important;
-}
-
-/* Ensure hidden inputs are never visible */
-input[type="hidden"][name*="fp_exp_"] {
-    display: none !important;
-    visibility: hidden !important;
-    position: absolute !important;
-    left: -9999px !important;
-}
-
-.fp-exp-toggle__switch {
-    position: relative;
-    display: inline-block;
-    width: 44px;
-    height: 24px;
-    background: #cbd5e1;
-    border-radius: 24px;
-    transition: background 0.3s ease;
-    flex-shrink: 0;
-}
-
-.fp-exp-toggle__switch::after {
-    content: '';
-    position: absolute;
-    top: 2px;
-    left: 2px;
-    width: 20px;
-    height: 20px;
-    background: white;
-    border-radius: 50%;
-    transition: transform 0.3s ease;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-}
-
-/* Toggle checked states - need both class variants */
-.fp-exp-toggle input[type="checkbox"]:checked + .fp-exp-toggle__switch,
-.fp-exp-settings__toggle input[type="checkbox"]:checked + .fp-exp-toggle__switch,
-label.fp-exp-toggle input:checked + .fp-exp-toggle__switch,
-label.fp-exp-settings__toggle input:checked + .fp-exp-toggle__switch {
-    background: #2563eb !important;
-}
-
-.fp-exp-toggle input[type="checkbox"]:checked + .fp-exp-toggle__switch::after,
-.fp-exp-settings__toggle input[type="checkbox"]:checked + .fp-exp-toggle__switch::after,
-label.fp-exp-toggle input:checked + .fp-exp-toggle__switch::after,
-label.fp-exp-settings__toggle input:checked + .fp-exp-toggle__switch::after {
-    transform: translateX(20px) !important;
-}
-
-.fp-exp-toggle input[type="checkbox"]:focus + .fp-exp-toggle__switch,
-.fp-exp-settings__toggle input[type="checkbox"]:focus + .fp-exp-toggle__switch {
-    outline: 2px solid #2563eb;
-    outline-offset: 2px;
-}
-
-.fp-exp-toggle__label {
-    font-size: 14px;
-    color: #374151;
-    font-weight: 500;
-}
-
-/* Stati visivi per integrazioni */
-.fp-exp-integration-status {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 4px 12px;
-    border-radius: 12px;
-    font-size: 12px;
-    font-weight: 500;
-    line-height: 1.4;
-    margin-right: 8px;
-    vertical-align: middle;
-}
-
-.fp-exp-integration-status::before {
-    content: '';
-    display: inline-block;
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-}
-
-.fp-exp-integration-status--active {
-    background: #dcfce7;
-    color: #166534;
-}
-
-.fp-exp-integration-status--active::before {
-    background: #22c55e;
-    box-shadow: 0 0 4px #22c55e;
-}
-
-.fp-exp-integration-status--inactive {
-    background: #fee2e2;
-    color: #991b1b;
-}
-
-.fp-exp-integration-status--inactive::before {
-    background: #ef4444;
-}
-
-.fp-exp-integration-status--warning {
-    background: #fef3c7;
-    color: #92400e;
-}
-
-.fp-exp-integration-status--warning::before {
-    background: #f59e0b;
-}
-
-/* Badge contatori */
-.fp-exp-tab-badge {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 20px;
-    height: 20px;
-    padding: 0 6px;
-    background: var(--fpdms-primary);
-    color: #fff;
-    font-size: 11px;
-    font-weight: 600;
-    border-radius: var(--fpdms-radius-pill);
-    line-height: 1;
-}
-
-.nav-tab .fp-exp-tab-badge {
-    margin-left: 4px;
-}
-
-.nav-tab-active .fp-exp-tab-badge {
-    background: var(--fpdms-primary-dark);
-}
-
 /* Form fields migliorati */
 .fp-exp-settings__form:not(.fp-exp-settings__form--layout-fp) .form-table th {
     font-weight: 600;
@@ -5020,30 +4866,6 @@ label.fp-exp-settings__toggle input:checked + .fp-exp-toggle__switch::after {
         0 2px 4px rgba(0, 0, 0, 0.05) !important;
     transform: translateY(-1px);
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
-}
-
-/* Toggle switches con animazione più fluida */
-.fp-exp-toggle__switch,
-.fp-exp-settings__toggle .fp-exp-toggle__switch {
-    box-shadow: 
-        inset 0 2px 4px rgba(0, 0, 0, 0.1),
-        0 1px 2px rgba(0, 0, 0, 0.05);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.fp-exp-toggle__switch::after,
-.fp-exp-settings__toggle .fp-exp-toggle__switch::after {
-    box-shadow: 
-        0 2px 4px rgba(0, 0, 0, 0.2),
-        0 1px 2px rgba(0, 0, 0, 0.1);
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.fp-exp-toggle input[type="checkbox"]:checked + .fp-exp-toggle__switch,
-.fp-exp-settings__toggle input[type="checkbox"]:checked + .fp-exp-toggle__switch {
-    box-shadow: 
-        inset 0 2px 4px rgba(37, 99, 235, 0.2),
-        0 0 0 2px rgba(37, 99, 235, 0.1);
 }
 
 /* Description con icona e stile migliorato */

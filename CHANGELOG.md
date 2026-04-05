@@ -2,6 +2,19 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.6.39] - 2026-04-05
+
+### Changed
+
+- **Settings admin CSS**: estratti i toggle custom in modulo dedicato `assets/css/admin/settings-toggle.css`, importato sia in `main.css` (bundle min) sia in `admin.css` fallback per parita degli stili.
+- **Refactor moduli admin**: estratti badge/stati integrazioni in `assets/css/admin/settings-status-badges.css`, rimuovendo blocchi duplicati dal monolite legacy.
+
+### Fixed
+
+- **Regressione toggle impostazioni**: i controlli switch (`fp-exp-settings__toggle` / `fp-exp-toggle__switch`) tornano visibili e operativi anche con assets minificati.
+- **Guard-rail override globali**: `wp-controls-overrides.css` esclude esplicitamente `fp-exp-toggle__input` per evitare interferenze con renderer `toggle`/`nested_toggle`.
+- **Editor a blocchi (esperienza)**: se «Impostazioni esperienza» era disattivata nelle preferenze Gutenberg (`inactivePanels`), la meta box riceveva `is-hidden` e i campi sembravano assenti. Script su `enqueue_block_editor_assets` che ripristina il pannello `meta-box-fp-exp-experience-admin` e rimuove `is-hidden`; allineato anche il fix jQuery su `fp-exp-admin`.
+
 ## [1.6.38] - 2026-04-05
 
 ### Changed

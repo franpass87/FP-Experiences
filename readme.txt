@@ -5,7 +5,7 @@ Tags: experiences, booking, wooocommerce, shortcodes, calendar
 Requires at least: 6.0
 Tested up to: 6.4
 Requires PHP: 8.0
-Stable tag: 1.6.37
+Stable tag: 1.6.39
 Last updated: 2026-04-05
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -124,6 +124,12 @@ If Brevo credentials are provided, confirmations, reminders, and cancellations u
 FP Experiences stores reservation details inside custom tables linked to WooCommerce orders. Marketing consent is recorded per order (`_fp_exp_consent_marketing`) and forwarded to Brevo only when enabled. UTM parameters are captured in the `fp_exp_utm` cookie, copied to reservation/order meta, and never displayed publicly. Site owners can export or erase booking data through WooCommerce personal data tools; deleting an order removes the associated reservation payload. API credentials (Brevo, Google Calendar) are kept in WordPress options and can be revoked at any time from the Settings screen.
 
 == Changelog ==
+
+= 1.6.39 - 2026-04-05 =
+* **Fixed**: Ripristinati i toggle in Impostazioni (`fp-exp-settings__toggle`) anche con CSS minificato grazie al nuovo modulo `settings-toggle.css` incluso nel bundle admin.
+* **Fixed**: Gli override globali dei controlli WordPress non interferiscono piu con i renderer toggle/nested toggle (`fp-exp-toggle__input` escluso esplicitamente).
+* **Fixed**: Editor a blocchi — la meta box «Impostazioni esperienza» non resta piu nascosta (`is-hidden`) se era stata disattivata tra i pannelli delle preferenze Gutenberg.
+* **Changed**: Migrazione ordinata di badge/stati integrazioni in `settings-status-badges.css` con parita tra bundle min e fallback `admin.css`.
 
 = 1.6.38 - 2026-04-05 =
 * **Changed**: Pipeline admin unificata: enqueue CSS/JS base e `fpExpAdmin` centralizzati in `AdminMenu` per tutte le schermate FP gestite.
