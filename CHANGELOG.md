@@ -2,6 +2,12 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.6.55] - 2026-04-05
+
+### Fixed
+
+- **Admin — checkbox**: **WordPress core** (`wp-admin/css/forms.css`) aggiunge `input[type="checkbox"]:checked::before` con SVG Dashicon blu, che si sovrappone alla spunta disegnata via `background-image` nel plugin. In `wp-controls-overrides.css` il **`::before` è disattivato** per le checkbox sotto shell FP; inoltre **`box-shadow: none`** per togliere l’ombra interna core (`inset`) che poteva sembrare un alone grigio.
+
 ## [1.6.54] - 2026-04-05
 
 ### Fixed

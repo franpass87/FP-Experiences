@@ -104,6 +104,7 @@ body.fp-exp-admin-shell .wrap textarea:focus {
 body.fp-exp-admin-shell .wrap input[type="checkbox"]:not(.fp-exp-toggle__input) {
     appearance: none;
     -webkit-appearance: none;
+    -moz-appearance: none;
     box-sizing: border-box;
     width: 18px;
     height: 18px;
@@ -121,6 +122,28 @@ body.fp-exp-admin-shell .wrap input[type="checkbox"]:not(.fp-exp-toggle__input) 
     background-position: center;
     background-size: 12px 12px;
     cursor: pointer;
+    /* WP forms.css: inset shadow — altrimenti alone grigio attorno al quadrato blu */
+    box-shadow: none;
+    transition: border-color 0.05s ease-in-out, background-color 0.05s ease-in-out;
+}
+
+/**
+ * WordPress core (`wp-admin/css/forms.css`) applica :checked::before con SVG Dashicon blu.
+ * Con la nostra spunta su background-image si crea doppio disegno / alone grigio-blu.
+ */
+.fp-exp-admin-page input[type="checkbox"]:not(.fp-exp-toggle__input)::before,
+body.fp-exp-admin-shell .wrap input[type="checkbox"]:not(.fp-exp-toggle__input)::before,
+.fp-exp-admin-page input[type="checkbox"]:not(.fp-exp-toggle__input):checked::before,
+body.fp-exp-admin-shell .wrap input[type="checkbox"]:not(.fp-exp-toggle__input):checked::before {
+    content: none !important;
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    float: none !important;
+    background: none !important;
+    box-shadow: none !important;
 }
 
 .fp-exp-admin-page input[type="checkbox"]:not(.fp-exp-toggle__input):checked,
