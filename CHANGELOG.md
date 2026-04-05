@@ -2,6 +2,13 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.6.37] - 2026-04-05
+
+### Fixed
+
+- **Operazioni / vista Calendario**: caricamento slot bloccato o instabile quando veniva usato `wp.apiFetch` con URL REST assoluti; ora la richiesta usa sempre `fetch` con `Accept: application/json` e nonce `X-WP-Nonce` (stesso trattamento in `admin.js` fallback).
+- **Enqueue admin**: `CalendarAdmin::enqueue_assets` esegue a priorità **20** e localizza solo `fpExpCalendar`, evitando enqueue duplicati di CSS/JS e doppia `wp_localize_script` su `fpExpAdmin` rispetto ad `AdminMenu`.
+
 ## [1.6.36] - 2026-04-05
 
 ### Added

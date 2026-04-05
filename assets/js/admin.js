@@ -2318,49 +2318,39 @@
             url.searchParams.set('experience', String(selectedExperience));
 
             try {
+                const response = await window.fetch(url.toString(), {
+                    credentials: 'same-origin',
+                    headers: {
+                        'X-WP-Nonce': calendarConfig.nonce || '',
+                        Accept: 'application/json',
+                    },
+                });
+
                 let payload;
-                const requestHeaders = {
-                    'X-WP-Nonce': calendarConfig.nonce || '',
-                };
+                if (!response.ok) {
+                    const errorBody = await response.json().catch(() => ({}));
+                    let message = errorBody && errorBody.message ? String(errorBody.message) : response.statusText;
 
-				if (window.wp && window.wp.apiFetch) {
-                    payload = await window.wp.apiFetch({
-                        url: url.toString(),
-                        method: 'GET',
-                        headers: requestHeaders,
-                    });
-                } else {
-                    const response = await window.fetch(url.toString(), {
-                        credentials: 'same-origin',
-                        headers: requestHeaders,
-                    });
-
-                    if (!response.ok) {
-                        const errorBody = await response.json().catch(() => ({}));
-                        let message = errorBody && errorBody.message ? String(errorBody.message) : response.statusText;
-                        
-                        // Messaggi di errore specifici per codice HTTP
-                        if (!message || message === 'Request failed') {
-                            if (response.status === 401 || response.status === 403) {
-                                message = calendarConfig.i18n && calendarConfig.i18n.accessDenied
-                                    ? calendarConfig.i18n.accessDenied
-                                    : 'Accesso negato. Ricarica la pagina e riprova.';
-                            } else if (response.status === 404) {
-                                message = calendarConfig.i18n && calendarConfig.i18n.notFound
-                                    ? calendarConfig.i18n.notFound
-                                    : 'Risorsa non trovata.';
-                            } else if (response.status >= 500) {
-                                message = calendarConfig.i18n && calendarConfig.i18n.serverError
-                                    ? calendarConfig.i18n.serverError
-                                    : 'Errore del server. Riprova tra qualche minuto.';
-                            }
+                    if (!message || message === 'Request failed') {
+                        if (response.status === 401 || response.status === 403) {
+                            message = calendarConfig.i18n && calendarConfig.i18n.accessDenied
+                                ? calendarConfig.i18n.accessDenied
+                                : 'Accesso negato. Ricarica la pagina e riprova.';
+                        } else if (response.status === 404) {
+                            message = calendarConfig.i18n && calendarConfig.i18n.notFound
+                                ? calendarConfig.i18n.notFound
+                                : 'Risorsa non trovata.';
+                        } else if (response.status >= 500) {
+                            message = calendarConfig.i18n && calendarConfig.i18n.serverError
+                                ? calendarConfig.i18n.serverError
+                                : 'Errore del server. Riprova tra qualche minuto.';
                         }
-                        
-                        throw new Error(message || 'Request failed');
                     }
 
-                    payload = await response.json().catch(() => ({}));
+                    throw new Error(message || 'Request failed');
                 }
+
+                payload = await response.json().catch(() => ({}));
 
 				const slots = payload && Array.isArray(payload.slots) ? payload.slots : [];
                 const filtered = applyClientFilter(slots);

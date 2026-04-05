@@ -5,7 +5,7 @@ Tags: experiences, booking, wooocommerce, shortcodes, calendar
 Requires at least: 6.0
 Tested up to: 6.4
 Requires PHP: 8.0
-Stable tag: 1.6.36
+Stable tag: 1.6.37
 Last updated: 2026-04-05
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -124,6 +124,9 @@ If Brevo credentials are provided, confirmations, reminders, and cancellations u
 FP Experiences stores reservation details inside custom tables linked to WooCommerce orders. Marketing consent is recorded per order (`_fp_exp_consent_marketing`) and forwarded to Brevo only when enabled. UTM parameters are captured in the `fp_exp_utm` cookie, copied to reservation/order meta, and never displayed publicly. Site owners can export or erase booking data through WooCommerce personal data tools; deleting an order removes the associated reservation payload. API credentials (Brevo, Google Calendar) are kept in WordPress options and can be revoked at any time from the Settings screen.
 
 == Changelog ==
+
+= 1.6.37 - 2026-04-05 =
+* **Fixed**: Vista Calendario in Operazioni — fetch REST con `fetch` nativo (no `apiFetch` che poteva restare in pending); enqueue calendar senza duplicare script admin rispetto al menu.
 
 = 1.6.36 - 2026-04-05 =
 * **Added**: Liste CPT Esperienze e Meeting point — margini coerenti con gift voucher (`cpt-list-shell.css` nel bundle admin).

@@ -47,8 +47,6 @@ use function strtotime;
 use function wp_create_nonce;
 use function wp_die;
 use function wp_date;
-use function wp_enqueue_script;
-use function wp_enqueue_style;
 use function wp_json_encode;
 use function wp_localize_script;
 use function wp_nonce_field;
@@ -69,9 +67,19 @@ final class CalendarAdmin implements HookableInterface
 
     public function register_hooks(): void
     {
-        add_action('admin_enqueue_scripts', [$this, 'enqueue_assets']);
+        /**
+         * Priorità 20: dopo `AdminMenu::enqueue_shared_assets` (10) così lo handle
+         * `fp-exp-admin` esiste già; qui si aggiunge solo `fpExpCalendar` (no doppi enqueue).
+         */
+        add_action('admin_enqueue_scripts', [$this, 'enqueue_assets'], 20);
     }
 
+    /**
+     * Localizza `fpExpCalendar` per la pagina Operazioni (vista calendario).
+     * CSS/JS admin sono gestiti da `AdminMenu`; evitare enqueue duplicati.
+     *
+     * @param string $hook Hook corrente `admin_enqueue_scripts`.
+     */
     public function enqueue_assets(string $hook): void
     {
         $screen = get_current_screen();
@@ -85,38 +93,6 @@ final class CalendarAdmin implements HookableInterface
         if (! $is_calendar_page) {
             return;
         }
-
-        $admin_css = Helpers::resolve_asset_rel([
-            'assets/css/dist/fp-experiences-admin.min.css',
-            'assets/css/admin.css',
-        ]);
-        wp_enqueue_style(
-            'fp-exp-admin',
-            FP_EXP_PLUGIN_URL . $admin_css,
-            Helpers::admin_style_dependencies(),
-            Helpers::asset_version($admin_css)
-        );
-
-        $admin_js = Helpers::resolve_asset_rel([
-            'assets/js/dist/fp-experiences-admin.min.js',
-            'assets/js/admin.js',
-        ]);
-        wp_enqueue_script(
-            'fp-exp-admin',
-            FP_EXP_PLUGIN_URL . $admin_js,
-            ['jquery'],
-            Helpers::asset_version($admin_js),
-            true
-        );
-
-        // Config base per fpExpAdmin
-        wp_localize_script('fp-exp-admin', 'fpExpAdmin', [
-            'restUrl' => rest_url('fp-exp/v1/'),
-            'restNonce' => wp_create_nonce('wp_rest'),
-            'ajaxUrl' => admin_url('admin-ajax.php'),
-            'pluginUrl' => FP_EXP_PLUGIN_URL,
-            'strings' => [],
-        ]);
 
         // Prepara elenco esperienze per filtro calendario
         $experiences = get_posts([
