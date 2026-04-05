@@ -1,0 +1,207 @@
+/**
+ * Scoped normalization for WordPress native controls in FP admin screens.
+ * Guard-railed to avoid collisions with custom toggle renderer.
+ */
+
+.fp-exp-admin-page .nav-tab-wrapper .nav-tab,
+body.fp-exp-admin-shell .wrap .nav-tab-wrapper .nav-tab {
+    border: 1px solid var(--fp-exp-admin-border);
+    border-bottom-color: var(--fp-exp-admin-border);
+    border-radius: 8px 8px 0 0;
+    background: #fff;
+    color: var(--fp-exp-color-text);
+    font-weight: 600;
+    margin-left: 0;
+    margin-right: 6px;
+}
+
+.fp-exp-admin-page .form-table,
+body.fp-exp-admin-shell .wrap .form-table {
+    border: 1px solid var(--fp-exp-admin-border);
+    border-radius: var(--fp-exp-admin-radius);
+    background: #fff;
+}
+
+.fp-exp-admin-page input[type="text"],
+.fp-exp-admin-page input[type="number"],
+.fp-exp-admin-page input[type="email"],
+.fp-exp-admin-page input[type="url"],
+.fp-exp-admin-page input[type="password"],
+.fp-exp-admin-page input[type="date"],
+.fp-exp-admin-page input[type="time"],
+.fp-exp-admin-page select,
+.fp-exp-admin-page textarea,
+body.fp-exp-admin-shell .wrap input[type="text"],
+body.fp-exp-admin-shell .wrap input[type="number"],
+body.fp-exp-admin-shell .wrap input[type="email"],
+body.fp-exp-admin-shell .wrap input[type="url"],
+body.fp-exp-admin-shell .wrap input[type="password"],
+body.fp-exp-admin-shell .wrap input[type="date"],
+body.fp-exp-admin-shell .wrap input[type="time"],
+body.fp-exp-admin-shell .wrap select,
+body.fp-exp-admin-shell .wrap textarea {
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    min-height: 36px;
+    padding: 6px 10px;
+}
+
+.fp-exp-admin-page input[type="checkbox"]:not(.fp-exp-toggle__input),
+.fp-exp-admin-page input[type="radio"],
+body.fp-exp-admin-shell .wrap input[type="checkbox"]:not(.fp-exp-toggle__input),
+body.fp-exp-admin-shell .wrap input[type="radio"] {
+    appearance: auto;
+    -webkit-appearance: auto;
+    width: auto;
+    height: auto;
+    min-height: 0;
+    padding: 0;
+}
+
+.fp-exp-admin-page .fp-exp-toggle__input,
+.fp-exp-admin-page .fp-exp-settings__toggle .fp-exp-toggle__input,
+body.fp-exp-admin-shell .wrap .fp-exp-toggle__input,
+body.fp-exp-admin-shell .wrap .fp-exp-settings__toggle .fp-exp-toggle__input {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 1px;
+    height: 1px;
+    min-height: 1px;
+    padding: 0;
+}
+/**
+ * Uniforma controlli WordPress legacy nelle schermate admin FP.
+ * Scope stretto: solo pagine con shell FP (`.fp-exp-admin-page` o `body.fp-exp-admin-shell`).
+ */
+
+.fp-exp-admin-page .nav-tab-wrapper .nav-tab,
+body.fp-exp-admin-shell .wrap .nav-tab-wrapper .nav-tab {
+    border: 1px solid var(--fp-exp-admin-border);
+    border-bottom-color: var(--fp-exp-admin-border);
+    border-radius: 8px 8px 0 0;
+    background: #fff;
+    color: var(--fp-exp-color-text);
+    font-weight: 600;
+    margin-left: 0;
+    margin-right: 6px;
+}
+
+.fp-exp-admin-page .nav-tab-wrapper .nav-tab:hover,
+body.fp-exp-admin-shell .wrap .nav-tab-wrapper .nav-tab:hover {
+    background: #f8fafc;
+    color: var(--fp-exp-color-primary);
+}
+
+.fp-exp-admin-page .nav-tab-wrapper .nav-tab-active,
+body.fp-exp-admin-shell .wrap .nav-tab-wrapper .nav-tab-active {
+    background: #eff6ff;
+    border-color: #dbeafe;
+    color: var(--fp-exp-color-primary);
+}
+
+.fp-exp-admin-page .form-table,
+body.fp-exp-admin-shell .wrap .form-table {
+    border: 1px solid var(--fp-exp-admin-border);
+    border-radius: var(--fp-exp-admin-radius);
+    background: #fff;
+}
+
+.fp-exp-admin-page .form-table th,
+.fp-exp-admin-page .form-table td,
+body.fp-exp-admin-shell .wrap .form-table th,
+body.fp-exp-admin-shell .wrap .form-table td {
+    padding: 14px 16px;
+}
+
+.fp-exp-admin-page .form-table th,
+body.fp-exp-admin-shell .wrap .form-table th {
+    background: #f8fafc;
+    font-weight: 600;
+}
+
+.fp-exp-admin-page input[type="text"],
+.fp-exp-admin-page input[type="number"],
+.fp-exp-admin-page input[type="email"],
+.fp-exp-admin-page input[type="url"],
+.fp-exp-admin-page input[type="password"],
+.fp-exp-admin-page input[type="date"],
+.fp-exp-admin-page input[type="time"],
+.fp-exp-admin-page select,
+.fp-exp-admin-page textarea,
+body.fp-exp-admin-shell .wrap input[type="text"],
+body.fp-exp-admin-shell .wrap input[type="number"],
+body.fp-exp-admin-shell .wrap input[type="email"],
+body.fp-exp-admin-shell .wrap input[type="url"],
+body.fp-exp-admin-shell .wrap input[type="password"],
+body.fp-exp-admin-shell .wrap input[type="date"],
+body.fp-exp-admin-shell .wrap input[type="time"],
+body.fp-exp-admin-shell .wrap select,
+body.fp-exp-admin-shell .wrap textarea {
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    min-height: 36px;
+    padding: 6px 10px;
+}
+
+.fp-exp-admin-page input[type="text"]:focus,
+.fp-exp-admin-page input[type="number"]:focus,
+.fp-exp-admin-page input[type="email"]:focus,
+.fp-exp-admin-page input[type="url"]:focus,
+.fp-exp-admin-page input[type="password"]:focus,
+.fp-exp-admin-page input[type="date"]:focus,
+.fp-exp-admin-page input[type="time"]:focus,
+.fp-exp-admin-page select:focus,
+.fp-exp-admin-page textarea:focus,
+body.fp-exp-admin-shell .wrap input[type="text"]:focus,
+body.fp-exp-admin-shell .wrap input[type="number"]:focus,
+body.fp-exp-admin-shell .wrap input[type="email"]:focus,
+body.fp-exp-admin-shell .wrap input[type="url"]:focus,
+body.fp-exp-admin-shell .wrap input[type="password"]:focus,
+body.fp-exp-admin-shell .wrap input[type="date"]:focus,
+body.fp-exp-admin-shell .wrap input[type="time"]:focus,
+body.fp-exp-admin-shell .wrap select:focus,
+body.fp-exp-admin-shell .wrap textarea:focus {
+    border-color: var(--fp-exp-color-primary);
+    box-shadow: 0 0 0 1px var(--fp-exp-color-primary);
+}
+
+/* Mantieni sempre visibili i controlli nativi checkbox/radio di WordPress */
+.fp-exp-admin-page input[type="checkbox"]:not(.fp-exp-toggle__input),
+.fp-exp-admin-page input[type="radio"],
+body.fp-exp-admin-shell .wrap input[type="checkbox"]:not(.fp-exp-toggle__input),
+body.fp-exp-admin-shell .wrap input[type="radio"] {
+    appearance: auto;
+    -webkit-appearance: auto;
+    min-height: 0;
+    width: auto;
+    height: auto;
+    padding: 0;
+    border-radius: 2px;
+    /* Evita "riempimento viola" derivato da scheme/admin CSS esterni */
+    accent-color: #2271b1;
+}
+
+/* Non alterare mai i toggle custom renderizzati dal form factory. */
+.fp-exp-admin-page .fp-exp-toggle__input,
+.fp-exp-admin-page .fp-exp-settings__toggle .fp-exp-toggle__input,
+body.fp-exp-admin-shell .wrap .fp-exp-toggle__input,
+body.fp-exp-admin-shell .wrap .fp-exp-settings__toggle .fp-exp-toggle__input {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 1px;
+    height: 1px;
+    min-height: 1px;
+    padding: 0;
+}
+
+/* Evita di forzare i link-azione stile WordPress che non sono button classici */
+.fp-exp-admin-page .button-link,
+.fp-exp-admin-page .button-link-delete,
+body.fp-exp-admin-shell .wrap .button-link,
+body.fp-exp-admin-shell .wrap .button-link-delete {
+    border: 0;
+    background: transparent;
+    border-radius: 0;
+    min-height: auto;
+    padding: 0;
+}

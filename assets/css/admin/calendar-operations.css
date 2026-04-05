@@ -1,0 +1,406 @@
+/**
+ * Calendar/operations admin page specifics.
+ */
+
+.fp-exp-calendar-admin .fp-exp-calendar-view-tabs.nav-tab-wrapper,
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-operator-nav.nav-tab-wrapper {
+    border: 1px solid var(--fp-exp-admin-border);
+    border-radius: var(--fp-exp-admin-radius);
+    background: #fff;
+    padding: 8px;
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.fp-exp-calendar-admin .fp-exp-calendar-view-tabs .nav-tab,
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-operator-nav .nav-tab {
+    margin: 0;
+}
+
+.fp-exp-calendar-manual-form__submit {
+    margin: 0 0 1rem 0;
+}
+
+.fp-exp-calendar-manual-form__submit .fp-exp-btn {
+    min-height: 40px;
+}
+/**
+ * Operazioni FP Experiences (Calendario admin): navigazione operatore, sottoviste,
+ * tab fp-exp-tabs (Impostazioni/Email), panoramica operatore, form manuale.
+ *
+ * Queste regole stavano solo in assets/css/admin.css; il build del min legge solo main.css
+ * e i suoi @import — senza questo file la pagina Operazioni e le tab risultano rotte.
+ */
+
+/* --------------------------------------------------------------------------
+   Tema scuro — barre nav-tab DMS + sottoviste calendario
+   -------------------------------------------------------------------------- */
+html.fp-exp-dark .fp-exp-settings .nav-tab-wrapper,
+html.fp-exp-dark .fp-exp-admin[data-fp-exp-admin] .fp-exp-tabs.nav-tab-wrapper,
+html.fp-exp-dark .fp-exp-admin[data-fp-exp-admin] .fp-exp-operator-nav.nav-tab-wrapper {
+    background: rgba(255, 255, 255, 0.04) !important;
+    border-color: rgba(230, 232, 235, 0.1) !important;
+}
+
+html.fp-exp-dark .fp-exp-admin[data-fp-exp-admin] .fp-exp-tabs .nav-tab,
+html.fp-exp-dark .fp-exp-admin[data-fp-exp-admin] .fp-exp-operator-nav .nav-tab {
+    color: var(--fp-exp-color-muted) !important;
+}
+
+html.fp-exp-dark .fp-exp-admin[data-fp-exp-admin] .fp-exp-tabs .nav-tab:hover,
+html.fp-exp-dark .fp-exp-admin[data-fp-exp-admin] .fp-exp-operator-nav .nav-tab:hover {
+    background: rgba(102, 126, 234, 0.14) !important;
+    color: var(--fp-exp-color-text) !important;
+}
+
+html.fp-exp-dark .fp-exp-admin[data-fp-exp-admin] .fp-exp-tabs .nav-tab.nav-tab-active,
+html.fp-exp-dark .fp-exp-admin[data-fp-exp-admin] .fp-exp-operator-nav .nav-tab.nav-tab-active {
+    background: rgba(102, 126, 234, 0.22) !important;
+    border-color: rgba(102, 126, 234, 0.4) !important;
+    color: #e9ecfe !important;
+}
+
+html.fp-exp-dark .fp-exp-admin[data-fp-exp-admin] .fp-exp-tabs .nav-tab.nav-tab-active .dashicons,
+html.fp-exp-dark .fp-exp-admin[data-fp-exp-admin] .fp-exp-operator-nav .nav-tab.nav-tab-active .dashicons {
+    color: #c4b5fd !important;
+}
+
+html.fp-exp-dark .fp-exp-calendar-admin .fp-exp-calendar-view-chooser {
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(230, 232, 235, 0.12);
+    border-left-color: #38ef7d;
+    box-shadow: none;
+}
+
+html.fp-exp-dark .fp-exp-calendar-admin .fp-exp-calendar-view-chooser__label {
+    color: var(--fp-exp-color-muted);
+}
+
+html.fp-exp-dark .fp-exp-calendar-admin .fp-exp-calendar-view-tabs.nav-tab-wrapper {
+    background: rgba(0, 0, 0, 0.2) !important;
+    border-color: rgba(230, 232, 235, 0.1) !important;
+}
+
+html.fp-exp-dark .fp-exp-calendar-admin .fp-exp-calendar-view-tabs .nav-tab {
+    color: var(--fp-exp-color-muted) !important;
+}
+
+html.fp-exp-dark .fp-exp-calendar-admin .fp-exp-calendar-view-tabs .nav-tab:hover {
+    background: rgba(56, 239, 125, 0.12) !important;
+    color: var(--fp-exp-color-text) !important;
+}
+
+html.fp-exp-dark .fp-exp-calendar-admin .fp-exp-calendar-view-tabs .nav-tab.nav-tab-active {
+    background: rgba(255, 255, 255, 0.08) !important;
+    border-color: rgba(56, 239, 125, 0.35) !important;
+    color: #e9ecfe !important;
+    box-shadow: none !important;
+}
+
+/* Form prenotazione manuale (tab Manuale) */
+.fp-exp-calendar-manual-form__submit {
+    margin: 0 0 1rem 0;
+}
+
+.fp-exp-calendar-manual-form__submit .fp-exp-btn {
+    min-height: 40px;
+}
+
+.fp-exp-calendar-manual-form__ticket-row {
+    margin: 0.35rem 0 0 0;
+}
+
+.fp-exp-calendar-manual-form__ticket-row:first-of-type {
+    margin-top: 0;
+}
+
+.fp-exp-calendar-manual-form__ticket-label {
+    display: inline-block;
+    min-width: 8rem;
+    margin-right: 0.5rem;
+}
+
+/* Panoramica operatore, KPI, pannello calendario */
+.fp-exp-operator-overview {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.fp-exp-calendar-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1rem;
+    margin: 0.5rem 0 1.25rem;
+}
+
+.fp-exp-calendar-kpi {
+    background: var(--fpdms-bg-light);
+    border: 1px solid var(--fpdms-border-light);
+    border-radius: var(--fpdms-radius-md);
+    padding: 0.75rem 1rem;
+}
+
+.fp-exp-calendar-kpi__label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--fpdms-text-muted);
+    margin-bottom: 6px;
+}
+
+.fp-exp-calendar-kpi__value {
+    font-size: 1.625rem;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--fpdms-text);
+}
+
+.fp-exp-operator-overview__quick-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.fp-exp-operator-overview__filters {
+    margin: 0 0 1rem;
+    padding: 0;
+    border: none;
+    background: transparent;
+}
+
+.fp-exp-operator-overview__filters-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 0.75rem 1rem;
+    align-items: end;
+}
+
+.fp-exp-operator-overview__filter-field {
+    display: block;
+    margin: 0;
+}
+
+.fp-exp-operator-overview__filter-label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--fpdms-text-muted);
+    margin-bottom: 6px;
+}
+
+.fp-exp-operator-overview__filters select,
+.fp-exp-operator-overview__filters input[type="date"] {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    border: 2px solid var(--fpdms-border);
+    border-radius: var(--fpdms-radius-md);
+    padding: 0.4rem 0.5rem;
+    min-height: 36px;
+}
+
+.fp-exp-operator-overview__filters-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.fp-exp-operator-overview__table-wrap {
+    margin-top: 0.5rem;
+    overflow-x: auto;
+}
+
+.fp-exp-calendar__panel {
+    margin-bottom: 0;
+}
+
+.fp-exp-calendar__panel-body > .fp-exp-calendar {
+    margin-top: 0;
+}
+
+.fp-exp-calendar-manual__summary {
+    margin-top: 1.25rem;
+    margin-bottom: 0;
+}
+
+.fp-exp-calendar-manual__panel .fp-exp-fields-grid {
+    margin-bottom: 0;
+}
+
+/* Tab Impostazioni / Email + navigazione operatore — design system DMS */
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-tabs.nav-tab-wrapper,
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-operator-nav.nav-tab-wrapper {
+    background: var(--fpdms-bg-light) !important;
+    border: 1px solid var(--fpdms-border-light) !important;
+    border-radius: var(--fpdms-radius-lg) !important;
+    padding: 8px 10px !important;
+    margin: 0 -24px 1.25rem -24px !important;
+    gap: 6px !important;
+    display: flex !important;
+    flex-wrap: wrap !important;
+    align-items: center !important;
+    box-shadow: none !important;
+}
+
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-operator-nav.nav-tab-wrapper {
+    margin: 0 0 1.25rem 0 !important;
+}
+
+/*
+ * Calendario admin — sottoviste (Panoramica / Calendario / Manuale): stile secondario rispetto
+ * a .fp-exp-operator-nav (sezione vs contenuto della sezione «Calendario & prenotazioni»).
+ */
+.fp-exp-calendar-admin .fp-exp-calendar-view-chooser {
+    margin: 0 0 1.25rem 0;
+    padding: 12px 14px 14px 16px;
+    background: var(--fpdms-bg-white);
+    border: 1px solid var(--fpdms-border);
+    border-radius: var(--fpdms-radius-lg);
+    border-left: 4px solid var(--fpdms-secondary);
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+}
+
+.fp-exp-calendar-admin .fp-exp-calendar-view-chooser__label {
+    margin: 0 0 10px 0;
+    max-width: 52rem;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--fpdms-text-light);
+    line-height: 1.35;
+}
+
+.fp-exp-calendar-admin .fp-exp-calendar-view-tabs.nav-tab-wrapper {
+    margin: 0 !important;
+    padding: 4px !important;
+    gap: 4px !important;
+    background: var(--fpdms-bg-light) !important;
+    border: 1px solid var(--fpdms-border-light) !important;
+    border-radius: var(--fpdms-radius-md) !important;
+    display: inline-flex !important;
+    flex-wrap: wrap !important;
+    align-items: center !important;
+    max-width: 100%;
+    box-shadow: none !important;
+}
+
+.fp-exp-calendar-admin .fp-exp-calendar-view-tabs .nav-tab {
+    float: none !important;
+    margin: 0 !important;
+    padding: 8px 12px !important;
+    font-size: 13px !important;
+    font-weight: 500 !important;
+    line-height: 1.3 !important;
+    border-radius: var(--fpdms-radius-md) !important;
+    border: 1px solid transparent !important;
+    border-bottom: 1px solid transparent !important;
+    background: transparent !important;
+    color: var(--fpdms-text-light) !important;
+    box-shadow: none !important;
+}
+
+.fp-exp-calendar-admin .fp-exp-calendar-view-tabs .nav-tab:hover {
+    background: rgba(17, 153, 142, 0.1) !important;
+    color: var(--fpdms-text) !important;
+}
+
+.fp-exp-calendar-admin .fp-exp-calendar-view-tabs .nav-tab.nav-tab-active {
+    background: var(--fpdms-bg-white) !important;
+    border-color: var(--fpdms-border) !important;
+    border-bottom: 1px solid var(--fpdms-border) !important;
+    color: #0f172a !important;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08) !important;
+}
+
+.fp-exp-calendar-admin .fp-exp-calendar-view-tabs .nav-tab::before,
+.fp-exp-calendar-admin .fp-exp-calendar-view-tabs .nav-tab::after {
+    display: none !important;
+}
+
+/* Reset core .nav-tab (float, margini WP) + chip DMS; barra attiva via ::after */
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-tabs .nav-tab,
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-operator-nav .nav-tab {
+    float: none !important;
+    margin-left: 0 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    position: relative !important;
+    padding: 10px 14px 14px 14px !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    border-radius: var(--fpdms-radius-md) !important;
+    margin-bottom: 0 !important;
+    line-height: 1.25 !important;
+    border: 1px solid transparent !important;
+    border-bottom: 1px solid transparent !important;
+    background: transparent !important;
+    color: var(--fpdms-text-muted) !important;
+    box-shadow: none !important;
+    transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease !important;
+}
+
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-tabs .nav-tab:hover,
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-operator-nav .nav-tab:hover {
+    background: rgba(102, 126, 234, 0.08) !important;
+    color: var(--fpdms-text) !important;
+}
+
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-tabs .nav-tab.nav-tab-active,
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-operator-nav .nav-tab.nav-tab-active {
+    background: rgba(102, 126, 234, 0.12) !important;
+    border-color: rgba(102, 126, 234, 0.28) !important;
+    border-bottom: 1px solid transparent !important;
+    margin-bottom: 0 !important;
+    color: var(--fpdms-primary-dark) !important;
+    box-shadow: 0 1px 2px rgba(102, 126, 234, 0.12) !important;
+}
+
+/* Indicatore attivo: barra gradiente DMS sotto la scheda (senza doppia linea WP) */
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-tabs .nav-tab::before,
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-operator-nav .nav-tab::before {
+    display: none;
+}
+
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-tabs .nav-tab::after,
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-operator-nav .nav-tab::after {
+    content: '';
+    position: absolute;
+    left: 10px;
+    right: 10px;
+    bottom: 4px;
+    height: 3px;
+    border-radius: 2px;
+    background: transparent;
+    transition: background 0.2s ease, opacity 0.2s ease;
+    opacity: 0;
+}
+
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-tabs .nav-tab.nav-tab-active::after,
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-operator-nav .nav-tab.nav-tab-active::after {
+    background: var(--fpdms-gradient-primary);
+    opacity: 1;
+}
+
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-tabs .nav-tab .dashicons,
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-operator-nav .nav-tab .dashicons {
+    color: inherit;
+    opacity: 0.85;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-tabs .nav-tab:hover .dashicons,
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-tabs .nav-tab.nav-tab-active .dashicons,
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-operator-nav .nav-tab:hover .dashicons,
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-operator-nav .nav-tab.nav-tab-active .dashicons {
+    opacity: 1;
+}
+
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-tabs .nav-tab.nav-tab-active .dashicons,
+.fp-exp-admin[data-fp-exp-admin] .fp-exp-operator-nav .nav-tab.nav-tab-active .dashicons {
+    color: var(--fpdms-primary);
+}

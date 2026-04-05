@@ -22,6 +22,7 @@
 /* Taxonomy editor components */
 @import url('./taxonomy.css');
 @import url('./metabox-details.css');
+@import url('./metabox-shell.css');
 
 /* Repeater components */
 @import url('./repeaters.css');

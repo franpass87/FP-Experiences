@@ -2,6 +2,13 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.6.37] - 2026-04-05
+
+### Changed
+
+- **Editor esperienza (metabox)**: nuovo modulo `metabox-shell.css` — intestazione postbox `Impostazioni esperienza` con gradiente DMS, area contenuti su fondo chiaro, tab interne a pill con stato attivo in gradiente; alert WPML «Sincronizza meta» senza stili inline; metabox sidebar **Ordine di visualizzazione** con stesso guscio e classi `fp-exp-dms-field` / `fp-exp-dms-hint`.
+- Filtri `postbox_classes_fp_experience_fp-exp-experience-admin` e `postbox_classes_fp_experience_fp-exp-display-order` per classi `fp-exp-experience-postbox` / `fp-exp-side-metabox`.
+
 ## [1.6.36] - 2026-04-05
 
 ### Fixed

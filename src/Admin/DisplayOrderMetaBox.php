@@ -8,6 +8,7 @@ use FP_Exp\Core\Hook\HookableInterface;
 use WP_Post;
 
 use function add_action;
+use function add_filter;
 use function add_meta_box;
 use function absint;
 use function current_user_can;
@@ -35,6 +36,19 @@ final class DisplayOrderMetaBox implements HookableInterface
     {
         add_action('add_meta_boxes_fp_experience', [$this, 'add_meta_box']);
         add_action('save_post_fp_experience', [$this, 'save_meta_box'], 10, 3);
+        add_filter('postbox_classes_fp_experience_fp-exp-display-order', [$this, 'filter_display_order_postbox_classes']);
+    }
+
+    /**
+     * Classi postbox per styling FP (metabox-shell.css).
+     *
+     * @param array<int, string> $classes Classi esistenti.
+     * @return array<int, string>
+     */
+    public function filter_display_order_postbox_classes(array $classes): array
+    {
+        $classes[] = 'fp-exp-side-metabox';
+        return $classes;
     }
 
     /**
@@ -61,7 +75,7 @@ final class DisplayOrderMetaBox implements HookableInterface
 
         $menu_order = absint($post->menu_order);
         ?>
-        <div class="fp-exp-display-order-field">
+        <div class="fp-exp-display-order-field fp-exp-dms-field">
             <p>
                 <label for="fp_exp_menu_order">
                     <?php echo esc_html__('Numero ordine:', 'fp-experiences'); ?>
@@ -78,7 +92,7 @@ final class DisplayOrderMetaBox implements HookableInterface
                     class="widefat"
                 />
             </p>
-            <p class="description">
+            <p class="description fp-exp-dms-hint">
                 <?php echo esc_html__('Imposta un numero per ordinare le esperienze nelle liste. I numeri più bassi vengono visualizzati per primi.', 'fp-experiences'); ?>
             </p>
         </div>

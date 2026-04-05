@@ -1,0 +1,17 @@
+/**
+ * Shell spacing consistency for FP CPT list tables.
+ */
+
+body.fp-exp-admin-shell.edit-fp_experience #wpbody-content > .wrap,
+body.fp-exp-admin-shell.edit-fp_meeting_point #wpbody-content > .wrap {
+    margin-top: 0;
+}
+/**
+ * Liste CPT core (esperienze, meeting point): margini coerenti con gift voucher
+ * quando `body.fp-exp-admin-shell` è attivo (nessun banner JS su queste schermate).
+ */
+
+body.fp-exp-admin-shell.edit-fp_experience #wpbody-content > .wrap,
+body.fp-exp-admin-shell.edit-fp_meeting_point #wpbody-content > .wrap {
+    margin-top: 12px;
+}

@@ -1,0 +1,319 @@
+/**
+ * Guscio metabox "Impostazioni esperienza" (post editor) — allineamento FP Admin UI / token DMS.
+ */
+
+@keyframes fp-exp-metabox-spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* --- Postbox WordPress (#fp-exp-experience-admin) --- */
+#fp-exp-experience-admin.postbox {
+    border: 1px solid var(--fpdms-border);
+    border-radius: var(--fpdms-radius-lg);
+    box-shadow: var(--fpdms-shadow-md);
+    overflow: hidden;
+    background: var(--fpdms-bg-white);
+}
+
+#fp-exp-experience-admin.postbox .postbox-header {
+    background: var(--fpdms-gradient-primary);
+    border-bottom: none;
+    padding: 0.75rem 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+}
+
+#fp-exp-experience-admin.postbox .postbox-header .hndle,
+#fp-exp-experience-admin.postbox .postbox-header h2.hndle {
+    padding: 0;
+    margin: 0;
+    border: none;
+    box-shadow: none;
+    background: transparent;
+    color: #fff !important;
+    font-size: 1.05rem;
+    font-weight: 600;
+    line-height: 1.35;
+    flex: 1;
+}
+
+#fp-exp-experience-admin.postbox .postbox-header .handle-actions .button-link,
+#fp-exp-experience-admin.postbox .postbox-header .handle-actions .handlediv {
+    color: #fff;
+}
+
+#fp-exp-experience-admin.postbox .postbox-header .handle-actions .toggle-indicator::before {
+    color: #fff;
+}
+
+#fp-exp-experience-admin.postbox .postbox-header .handle-order-higher,
+#fp-exp-experience-admin.postbox .postbox-header .handle-order-lower {
+    color: #fff;
+}
+
+#fp-exp-experience-admin.postbox .inside {
+    margin: 0 !important;
+    padding: 0;
+    background: var(--fpdms-bg-light);
+    border-top: 1px solid var(--fpdms-border-light);
+}
+
+/* --- Alert sincronizzazione WPML (markup in ExperienceMetaBoxes) --- */
+.fp-exp-metabox-alert {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 0 0 16px;
+    padding: 14px 16px;
+    border-radius: var(--fpdms-radius-md);
+    border: 1px solid var(--fpdms-border);
+    background: var(--fpdms-bg-white);
+    box-shadow: var(--fpdms-shadow-md);
+}
+
+.fp-exp-metabox-alert--warning {
+    border-color: rgba(245, 158, 11, 0.45);
+    background: var(--fpdms-warning-bg);
+}
+
+.fp-exp-metabox-alert__icon.dashicons {
+    flex: 0 0 auto;
+    width: 22px;
+    height: 22px;
+    font-size: 22px;
+    line-height: 22px;
+    color: var(--fpdms-warning);
+}
+
+.fp-exp-metabox-alert__body {
+    flex: 1;
+    min-width: 0;
+}
+
+.fp-exp-metabox-alert__title {
+    display: block;
+    margin: 0 0 4px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--fpdms-warning-text);
+}
+
+.fp-exp-metabox-alert__text {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.45;
+    color: var(--fpdms-text-light);
+}
+
+.fp-exp-metabox-alert__action.button.button-primary {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.25);
+}
+
+.fp-exp-metabox-alert__btn-icon.dashicons {
+    margin: 0;
+    width: 18px;
+    height: 18px;
+    font-size: 18px;
+    line-height: 18px;
+}
+
+.fp-exp-metabox-alert__icon--spinning {
+    animation: fp-exp-metabox-spin 1s linear infinite;
+}
+
+@media (max-width: 782px) {
+    .fp-exp-metabox-alert {
+        flex-wrap: wrap;
+    }
+
+    .fp-exp-metabox-alert__action.button {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+/* --- Tab strip interna (sticky sotto admin bar) --- */
+.fp-exp-experience-metabox .fp-exp-metabox-sticky-head {
+    position: sticky;
+    top: 32px;
+    z-index: 30;
+    background: var(--fpdms-bg-light);
+    border-bottom: 1px solid var(--fpdms-border);
+}
+
+.fp-exp-experience-metabox .fp-exp-metabox-tablist__label {
+    margin: 0;
+    padding: 12px 16px 4px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--fpdms-text-muted);
+}
+
+.fp-exp-experience-metabox .fp-exp-tabs {
+    position: sticky;
+    top: 32px;
+    z-index: 20;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 8px 12px 14px;
+    background: transparent;
+    border-bottom: none;
+}
+
+.fp-exp-experience-metabox .fp-exp-tab {
+    border-radius: var(--fpdms-radius-pill);
+    border: 1px solid transparent;
+    font-weight: 500;
+}
+
+.fp-exp-experience-metabox .fp-exp-tab:hover {
+    background: var(--fpdms-bg-white);
+    border-color: var(--fpdms-border);
+    color: var(--fpdms-text);
+}
+
+.fp-exp-experience-metabox .fp-exp-tab[aria-selected='true'] {
+    color: #fff !important;
+    font-weight: 600;
+    background: var(--fpdms-gradient-primary);
+    border-color: transparent;
+    box-shadow: 0 2px 10px rgba(102, 126, 234, 0.35);
+}
+
+.fp-exp-experience-metabox .fp-exp-tab-panels {
+    padding: 20px 20px 24px;
+    gap: 20px;
+    background: var(--fpdms-bg-light);
+}
+
+/* --- Dark admin (coerente con tabs.css / calendar-operations) --- */
+html.fp-exp-dark #fp-exp-experience-admin.postbox {
+    border-color: rgba(230, 232, 235, 0.12);
+    background: #15181d;
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
+}
+
+html.fp-exp-dark #fp-exp-experience-admin.postbox .inside {
+    background: #15181d;
+    border-top-color: rgba(230, 232, 235, 0.08);
+}
+
+html.fp-exp-dark .fp-exp-experience-metabox .fp-exp-metabox-sticky-head {
+    background: linear-gradient(180deg, rgba(24, 26, 31, 0.95) 0%, rgba(20, 22, 26, 0.95) 100%);
+    border-bottom-color: rgba(230, 232, 235, 0.08);
+}
+
+html.fp-exp-dark .fp-exp-experience-metabox .fp-exp-metabox-tablist__label {
+    color: var(--fp-exp-color-muted);
+}
+
+html.fp-exp-dark .fp-exp-experience-metabox .fp-exp-tab {
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--fp-exp-color-muted);
+}
+
+html.fp-exp-dark .fp-exp-experience-metabox .fp-exp-tab:hover {
+    color: var(--fp-exp-color-text);
+    border-color: rgba(139, 30, 63, 0.35);
+}
+
+html.fp-exp-dark .fp-exp-experience-metabox .fp-exp-tab[aria-selected='true'] {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.12) 0%, rgba(139, 30, 63, 0.45) 100%);
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.5);
+}
+
+html.fp-exp-dark .fp-exp-experience-metabox .fp-exp-tab-panels {
+    background: #15181d;
+}
+
+html.fp-exp-dark .fp-exp-metabox-alert {
+    background: rgba(24, 26, 31, 0.92);
+    border-color: rgba(245, 158, 11, 0.35);
+}
+
+html.fp-exp-dark .fp-exp-metabox-alert__text {
+    color: var(--fp-exp-color-muted);
+}
+
+/* --- Metabox sidebar: ordine di visualizzazione --- */
+#fp-exp-display-order.postbox {
+    border: 1px solid var(--fpdms-border);
+    border-radius: var(--fpdms-radius-lg);
+    box-shadow: var(--fpdms-shadow-md);
+    overflow: hidden;
+    background: var(--fpdms-bg-white);
+}
+
+#fp-exp-display-order.postbox .postbox-header {
+    background: var(--fpdms-gradient-primary);
+    border-bottom: none;
+    padding: 0.65rem 0.85rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.35rem;
+}
+
+#fp-exp-display-order.postbox .postbox-header .hndle,
+#fp-exp-display-order.postbox .postbox-header h2.hndle {
+    padding: 0;
+    margin: 0;
+    border: none;
+    box-shadow: none;
+    background: transparent;
+    color: #fff !important;
+    font-size: 0.95rem;
+    font-weight: 600;
+    line-height: 1.3;
+    flex: 1;
+}
+
+#fp-exp-display-order.postbox .postbox-header .handle-actions .button-link,
+#fp-exp-display-order.postbox .postbox-header .handle-actions .handlediv {
+    color: #fff;
+}
+
+#fp-exp-display-order.postbox .postbox-header .handle-actions .toggle-indicator::before {
+    color: #fff;
+}
+
+#fp-exp-display-order.postbox .inside {
+    margin: 0 !important;
+    padding: 14px;
+    background: var(--fpdms-bg-light);
+    border-top: 1px solid var(--fpdms-border-light);
+}
+
+#fp-exp-display-order.postbox .fp-exp-display-order-field label {
+    font-weight: 600;
+    color: var(--fpdms-text);
+}
+
+html.fp-exp-dark #fp-exp-display-order.postbox {
+    border-color: rgba(230, 232, 235, 0.12);
+    background: #15181d;
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
+}
+
+html.fp-exp-dark #fp-exp-display-order.postbox .inside {
+    background: #15181d;
+    border-top-color: rgba(230, 232, 235, 0.08);
+}
+
+html.fp-exp-dark #fp-exp-display-order.postbox .fp-exp-display-order-field label {
+    color: var(--fp-exp-color-text);
+}

@@ -19,7 +19,11 @@ use WP_Post;
 
 use function absint;
 use function add_action;
+use function add_filter;
 use function add_meta_box;
+use function array_diff;
+use function array_filter;
+use function array_map;
 use function array_merge;
 use function current_user_can;
 use function delete_transient;
@@ -43,6 +47,7 @@ use function rest_url;
 use function sanitize_text_field;
 use function set_post_thumbnail;
 use function sprintf;
+use function trim;
 use function update_post_meta;
 use function wp_create_nonce;
 use function wp_enqueue_media;
@@ -348,12 +353,12 @@ final class ExperienceMetaBoxes implements HookableInterface
         // Get original post title for reference
         $original_title = get_the_title($original_id);
         ?>
-        <div class="fp-exp-sync-notice" style="background: #fff3cd; border: 1px solid #ffc107; border-radius: 4px; padding: 12px 16px; margin-bottom: 16px; display: flex; align-items: center; gap: 12px;">
-            <span class="dashicons dashicons-warning" style="color: #856404; font-size: 20px;"></span>
-            <div style="flex: 1;">
-                <strong style="color: #856404;"><?php esc_html_e('Meta dati non sincronizzati', 'fp-experiences'); ?></strong>
-                <p style="margin: 4px 0 0; color: #856404; font-size: 13px;">
-                    <?php 
+        <div class="fp-exp-metabox-alert fp-exp-metabox-alert--warning" role="alert">
+            <span class="fp-exp-metabox-alert__icon dashicons dashicons-warning" aria-hidden="true"></span>
+            <div class="fp-exp-metabox-alert__body">
+                <strong class="fp-exp-metabox-alert__title"><?php esc_html_e('Meta dati non sincronizzati', 'fp-experiences'); ?></strong>
+                <p class="fp-exp-metabox-alert__text">
+                    <?php
                     printf(
                         /* translators: %s: Original post title */
                         esc_html__('Questa traduzione non ha i meta dati copiati dall\'originale "%s". Clicca per sincronizzare.', 'fp-experiences'),
@@ -362,8 +367,8 @@ final class ExperienceMetaBoxes implements HookableInterface
                     ?>
                 </p>
             </div>
-            <button type="button" class="button button-primary" id="fp-exp-sync-meta-btn" data-post-id="<?php echo esc_attr($post_id); ?>" data-original-id="<?php echo esc_attr($original_id); ?>" data-nonce="<?php echo esc_attr(wp_create_nonce('fp_exp_sync_meta')); ?>">
-                <span class="dashicons dashicons-update" style="margin-right: 4px;"></span>
+            <button type="button" class="button button-primary fp-exp-metabox-alert__action" id="fp-exp-sync-meta-btn" data-post-id="<?php echo esc_attr((string) $post_id); ?>" data-original-id="<?php echo esc_attr((string) $original_id); ?>" data-nonce="<?php echo esc_attr(wp_create_nonce('fp_exp_sync_meta')); ?>">
+                <span class="dashicons dashicons-update fp-exp-metabox-alert__btn-icon" aria-hidden="true"></span>
                 <?php esc_html_e('Sincronizza meta', 'fp-experiences'); ?>
             </button>
         </div>
@@ -373,9 +378,9 @@ final class ExperienceMetaBoxes implements HookableInterface
                 e.preventDefault();
                 var $btn = $(this);
                 var originalText = $btn.html();
-                
-                $btn.prop('disabled', true).html('<span class="dashicons dashicons-update" style="animation: rotation 1s infinite linear; margin-right: 4px;"></span> <?php echo esc_js(__('Sincronizzazione...', 'fp-experiences')); ?>');
-                
+
+                $btn.prop('disabled', true).html('<span class="dashicons dashicons-update fp-exp-metabox-alert__btn-icon fp-exp-metabox-alert__icon--spinning" aria-hidden="true"></span> <?php echo esc_js(__('Sincronizzazione...', 'fp-experiences')); ?>');
+
                 $.ajax({
                     url: ajaxurl,
                     type: 'POST',
@@ -387,7 +392,6 @@ final class ExperienceMetaBoxes implements HookableInterface
                     },
                     success: function(response) {
                         if (response.success) {
-                            // Reload page to show updated meta
                             location.reload();
                         } else {
                             alert(response.data || '<?php echo esc_js(__('Errore durante la sincronizzazione', 'fp-experiences')); ?>');
@@ -402,12 +406,6 @@ final class ExperienceMetaBoxes implements HookableInterface
             });
         });
         </script>
-        <style>
-        @keyframes rotation {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
-        </style>
         <?php
     }
 
@@ -506,8 +504,22 @@ final class ExperienceMetaBoxes implements HookableInterface
         add_action('save_post_fp_experience', [$this, 'save_meta_boxes'], 20, 3);
         add_action('admin_enqueue_scripts', [$this, 'enqueue_assets']);
         add_action('admin_notices', [$this, 'maybe_show_pricing_notice']);
+        add_filter('get_user_option_meta-box-order_fp_experience', [$this, 'enforce_metabox_order']);
+        add_filter('postbox_classes_fp_experience_fp-exp-experience-admin', [$this, 'filter_experience_metabox_postbox_classes']);
         // AJAX action for syncing meta from original translation
         add_action('wp_ajax_fp_exp_sync_meta_from_original', [$this, 'ajax_sync_meta_from_original']);
+    }
+
+    /**
+     * Aggiunge classi al postbox WordPress per styling FP (design system metabox).
+     *
+     * @param array<int, string> $classes Classi esistenti.
+     * @return array<int, string>
+     */
+    public function filter_experience_metabox_postbox_classes(array $classes): array
+    {
+        $classes[] = 'fp-exp-experience-postbox';
+        return $classes;
     }
 
     public function remove_default_meta_boxes(): void
@@ -526,6 +538,27 @@ final class ExperienceMetaBoxes implements HookableInterface
             'normal',
             'high' // Priorità alta - il riordino viene gestito via JavaScript
         );
+    }
+
+    /**
+     * Force FP Experiences metabox as first in normal column order.
+     *
+     * @param mixed $order Current user metabox order.
+     * @return mixed Updated order with `fp-exp-experience-admin` first in normal.
+     */
+    public function enforce_metabox_order(mixed $order): mixed
+    {
+        if (! is_array($order)) {
+            $order = [];
+        }
+
+        $normal = isset($order['normal']) ? (string) $order['normal'] : '';
+        $ids = array_filter(array_map('trim', explode(',', $normal)));
+        $ids = array_values(array_diff($ids, ['fp-exp-experience-admin']));
+        array_unshift($ids, 'fp-exp-experience-admin');
+        $order['normal'] = implode(',', $ids);
+
+        return $order;
     }
 
 
@@ -552,99 +585,104 @@ final class ExperienceMetaBoxes implements HookableInterface
         }
         wp_enqueue_style('fp-exp-fontawesome');
 
-        $admin_css = Helpers::resolve_asset_rel([
-            'assets/css/dist/fp-experiences-admin.min.css',
-            'assets/css/admin.css',
-        ]);
-        wp_enqueue_style(
-            'fp-exp-admin',
-            FP_EXP_PLUGIN_URL . $admin_css,
-            array_merge(Helpers::admin_style_dependencies(), ['fp-exp-fontawesome']),
-            Helpers::asset_version($admin_css)
-        );
-
-        $admin_js = Helpers::resolve_asset_rel([
-            'assets/js/dist/fp-experiences-admin.min.js',
-            'assets/js/admin.js',
-        ]);
-        wp_enqueue_script(
-            'fp-exp-admin',
-            FP_EXP_PLUGIN_URL . $admin_js,
-            ['jquery'],
-            Helpers::asset_version($admin_js),
-            true
-        );
-
-        // Config base per fpExpAdmin
-        wp_localize_script('fp-exp-admin', 'fpExpAdmin', [
-            'restUrl' => rest_url('fp-exp/v1/'),
-            'restNonce' => wp_create_nonce('wp_rest'),
-            'ajaxUrl' => admin_url('admin-ajax.php'),
-            'pluginUrl' => FP_EXP_PLUGIN_URL,
-            'strings' => [],
-        ]);
-
         $post_id = isset($_GET['post']) ? absint((string) $_GET['post']) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+        $meta_box_config = [
+            'strings' => [
+                'tablistLabel' => esc_html__('Sezioni esperienza', 'fp-experiences'),
+                'removeRow' => esc_html__('Rimuovi elemento', 'fp-experiences'),
+                'ticketWarning' => esc_html__('Aggiungi almeno un tipo di biglietto con un prezzo valido.', 'fp-experiences'),
+                'invalidPrice' => esc_html__('Il prezzo non può essere negativo.', 'fp-experiences'),
+                'invalidQuantity' => esc_html__('La quantità non può essere negativa.', 'fp-experiences'),
+                'selectImage' => esc_html__('Seleziona immagine', 'fp-experiences'),
+                'changeImage' => esc_html__('Modifica immagine', 'fp-experiences'),
+                'removeImage' => esc_html__('Rimuovi immagine', 'fp-experiences'),
+                'recurrenceMissingTimes' => esc_html__('Aggiungi almeno un orario alla ricorrenza prima di procedere.', 'fp-experiences'),
+                'recurrenceMissingDays' => esc_html__('Seleziona almeno un giorno della settimana per la ricorrenza.', 'fp-experiences'),
+                'recurrencePreviewError' => esc_html__('Impossibile calcolare la ricorrenza: verifica date e orari.', 'fp-experiences'),
+                'recurrencePreviewEmpty' => esc_html__('Nessuno slot futuro trovato per la regola indicata.', 'fp-experiences'),
+                'recurrenceGenerateSuccess' => esc_html__('Slot rigenerati: %d creati/aggiornati.', 'fp-experiences'),
+                'recurrenceGenerateError' => esc_html__('Errore durante la rigenerazione degli slot. Riprova più tardi.', 'fp-experiences'),
+                'recurrencePostMissing' => esc_html__('Salva l\'esperienza prima di generare gli slot.', 'fp-experiences'),
+                'recurrenceTimeLabel' => esc_html__('Orario ricorrenza', 'fp-experiences'),
+                'recurrenceRemoveTime' => esc_html__('Rimuovi orario', 'fp-experiences'),
+                'recurrenceLoading' => esc_html__('Generazione in corso…', 'fp-experiences'),
+                'recurrenceOpenEndedSuffix' => esc_html__('La ricorrenza resta attiva finché non imposti una data di fine.', 'fp-experiences'),
+                'trustBadgesStatus' => esc_html__('Badge selezionati: %1$s su %2$s', 'fp-experiences'),
+                'trustBadgesMax' => esc_html__('Hai raggiunto il numero massimo di badge selezionabili.', 'fp-experiences'),
+            ],
+            'rest' => [
+                'nonce' => wp_create_nonce('wp_rest'),
+                'preview' => rest_url('fp-exp/v1/calendar/recurrence/preview'),
+                'generate' => rest_url('fp-exp/v1/calendar/recurrence/generate'),
+            ],
+            'experienceId' => $post_id,
+        ];
 
-        wp_localize_script(
-            'fp-exp-admin',
-            'fpExpAdmin',
-            [
-                'strings' => [
-                    'tablistLabel' => esc_html__('Sezioni esperienza', 'fp-experiences'),
-                    'removeRow' => esc_html__('Rimuovi elemento', 'fp-experiences'),
-                    'ticketWarning' => esc_html__('Aggiungi almeno un tipo di biglietto con un prezzo valido.', 'fp-experiences'),
-                    'invalidPrice' => esc_html__('Il prezzo non può essere negativo.', 'fp-experiences'),
-                    'invalidQuantity' => esc_html__('La quantità non può essere negativa.', 'fp-experiences'),
-                    'selectImage' => esc_html__('Seleziona immagine', 'fp-experiences'),
-                    'changeImage' => esc_html__('Modifica immagine', 'fp-experiences'),
-                    'removeImage' => esc_html__('Rimuovi immagine', 'fp-experiences'),
-                    'recurrenceMissingTimes' => esc_html__('Aggiungi almeno un orario alla ricorrenza prima di procedere.', 'fp-experiences'),
-                    'recurrenceMissingDays' => esc_html__('Seleziona almeno un giorno della settimana per la ricorrenza.', 'fp-experiences'),
-                    'recurrencePreviewError' => esc_html__('Impossibile calcolare la ricorrenza: verifica date e orari.', 'fp-experiences'),
-                    'recurrencePreviewEmpty' => esc_html__('Nessuno slot futuro trovato per la regola indicata.', 'fp-experiences'),
-                    'recurrenceGenerateSuccess' => esc_html__('Slot rigenerati: %d creati/aggiornati.', 'fp-experiences'),
-                    'recurrenceGenerateError' => esc_html__('Errore durante la rigenerazione degli slot. Riprova più tardi.', 'fp-experiences'),
-                    'recurrencePostMissing' => esc_html__('Salva l\'esperienza prima di generare gli slot.', 'fp-experiences'),
-                    'recurrenceTimeLabel' => esc_html__('Orario ricorrenza', 'fp-experiences'),
-                    'recurrenceRemoveTime' => esc_html__('Rimuovi orario', 'fp-experiences'),
-                    'recurrenceLoading' => esc_html__('Generazione in corso…', 'fp-experiences'),
-                    'recurrenceOpenEndedSuffix' => esc_html__('La ricorrenza resta attiva finché non imposti una data di fine.', 'fp-experiences'),
-                    'trustBadgesStatus' => esc_html__('Badge selezionati: %1$s su %2$s', 'fp-experiences'),
-                    'trustBadgesMax' => esc_html__('Hai raggiunto il numero massimo di badge selezionabili.', 'fp-experiences'),
-                ],
-                'rest' => [
-                    'nonce' => wp_create_nonce('wp_rest'),
-                    'preview' => rest_url('fp-exp/v1/calendar/recurrence/preview'),
-                    'generate' => rest_url('fp-exp/v1/calendar/recurrence/generate'),
-                ],
-                'experienceId' => $post_id,
-            ]
-        );
+        $meta_config_json = wp_json_encode($meta_box_config);
+        if (false !== $meta_config_json) {
+            wp_add_inline_script(
+                'fp-exp-admin',
+                'window.fpExpAdmin = window.fpExpAdmin || {};' .
+                'window.fpExpMetaBoxConfig = ' . $meta_config_json . ';' .
+                'window.fpExpAdmin.strings = Object.assign({}, window.fpExpAdmin.strings || {}, window.fpExpMetaBoxConfig.strings || {});' .
+                'window.fpExpAdmin.rest = Object.assign({}, window.fpExpAdmin.rest || {}, window.fpExpMetaBoxConfig.rest || {});' .
+                'window.fpExpAdmin.experienceId = window.fpExpMetaBoxConfig.experienceId || 0;' .
+                'try { delete window.fpExpMetaBoxConfig; } catch (e) {}',
+                'before'
+            );
+        }
 
-        // Fix: Rimuovi la classe hide-if-js e riordina la metabox sopra SEO Performance
+        // Fix: ripristina visibilita metabox (anche in Gutenberg) e riordina sopra SEO Performance
         wp_add_inline_script(
             'fp-exp-admin',
             'jQuery(document).ready(function($) {
+                var editorPanelSlug = "meta-box-fp-exp-experience-admin";
+
+                function restoreGutenbergPanelState() {
+                    if (!window.wp || !wp.data || !wp.data.select || !wp.data.dispatch) {
+                        return;
+                    }
+
+                    var selectEditPost = wp.data.select("core/edit-post");
+                    var dispatchEditPost = wp.data.dispatch("core/edit-post");
+                    if (!selectEditPost || !dispatchEditPost) {
+                        return;
+                    }
+
+                    try {
+                        if (
+                            typeof selectEditPost.isEditorPanelEnabled === "function" &&
+                            typeof dispatchEditPost.toggleEditorPanelEnabled === "function" &&
+                            !selectEditPost.isEditorPanelEnabled(editorPanelSlug)
+                        ) {
+                            dispatchEditPost.toggleEditorPanelEnabled(editorPanelSlug);
+                        }
+
+                        if (
+                            typeof selectEditPost.isEditorPanelOpened === "function" &&
+                            typeof dispatchEditPost.toggleEditorPanelOpened === "function" &&
+                            !selectEditPost.isEditorPanelOpened(editorPanelSlug)
+                        ) {
+                            dispatchEditPost.toggleEditorPanelOpened(editorPanelSlug);
+                        }
+                    } catch (e) {}
+                }
+
                 function fixMetabox() {
+                    restoreGutenbergPanelState();
+
                     var metabox = $("#fp-exp-experience-admin");
                     if (metabox.length) {
-                        // Rimuovi la classe hide-if-js se presente
-                        if (metabox.hasClass("hide-if-js")) {
-                            metabox.removeClass("hide-if-js").show();
+                        // Rimuovi classi che possono nascondere il box nell editor classico/Gutenberg
+                        if (metabox.hasClass("hide-if-js") || metabox.hasClass("is-hidden")) {
+                            metabox.removeClass("hide-if-js is-hidden").show();
                         }
                         
-                        // Sposta la metabox sopra SEO Performance
-                        var seoMetabox = $("#fp-seo-performance-metabox");
-                        if (seoMetabox.length && metabox.length) {
-                            // Verifica che non sia già nella posizione corretta
-                            var metaboxParent = metabox.parent();
-                            var seoParent = seoMetabox.parent();
-                            if (metaboxParent.is(seoParent) && metabox.next().is(seoMetabox)) {
-                                // Già nella posizione corretta
-                                return;
-                            }
-                            seoMetabox.before(metabox);
+                        // Forza sempre la metabox FP in cima alla colonna normale
+                        // (robusto anche se cambiano ID/classi dei metabox SEO).
+                        var sortableContainer = metabox.closest("#normal-sortables, .meta-box-sortables");
+                        if (sortableContainer.length && !metabox.is(":first-child")) {
+                            sortableContainer.prepend(metabox);
                         }
                     } else {
                         // Se la metabox non esiste ancora, riprova dopo un breve delay
@@ -654,7 +692,9 @@ final class ExperienceMetaBoxes implements HookableInterface
                 
                 // Esegui immediatamente e anche dopo un breve delay per sicurezza
                 fixMetabox();
+                setTimeout(fixMetabox, 150);
                 setTimeout(fixMetabox, 500);
+                setTimeout(fixMetabox, 1200);
                 
                 // Inizializza i tooltip con data-tooltip
                 function initTooltips() {
