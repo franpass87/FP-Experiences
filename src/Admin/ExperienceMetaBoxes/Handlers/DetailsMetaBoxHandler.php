@@ -11,6 +11,7 @@ use FP_Exp\Utils\Helpers;
 use FP_Exp\Utils\SpecialRequestsOptions;
 
 use function absint;
+use function admin_url;
 use function checked;
 use function selected;
 use function esc_attr;
@@ -19,6 +20,7 @@ use function esc_textarea;
 use function esc_url;
 use function get_terms;
 use function is_wp_error;
+use function taxonomy_exists;
 use function sanitize_key;
 use function sanitize_text_field;
 use function sanitize_textarea_field;
@@ -660,12 +662,22 @@ final class DetailsMetaBoxHandler extends BaseMetaBoxHandler
             || ! empty($age_restrictions['choices'])
             || ! empty($location['choices']);
 
+        $has_category_fields = ! empty($categories['choices']) || ! empty($tags['choices']);
+        $has_any_classification = $has_category_fields || $has_selects;
+
         ?>
         <div class="fp-exp-content-trust__block fp-exp-content-trust__block--taxonomy">
-            <h4 class="fp-exp-field__subtitle"><?php esc_html_e('Categorie e classificazione', 'fp-experiences'); ?></h4>
+            <h4 class="fp-exp-field__subtitle"><?php esc_html_e('Categorie, tag e attributi', 'fp-experiences'); ?></h4>
+            <?php if ($has_any_classification) : ?>
             <p class="fp-exp-dms-hint fp-exp-content-trust__block-intro">
                 <?php esc_html_e('Categorie e tag consentono più selezioni; difficoltà, restrizioni di età e località usano un solo valore a scelta.', 'fp-experiences'); ?>
             </p>
+            <?php else : ?>
+            <p class="fp-exp-dms-hint fp-exp-content-trust__block-intro">
+                <?php esc_html_e('Qui classifichi l’esperienza per elenchi, filtri e blocchi in pagina. Le opzioni compaiono quando esistono termini nelle tassonomie collegate (categorie, tag, difficoltà, ecc.).', 'fp-experiences'); ?>
+            </p>
+            <?php $this->render_taxonomy_classification_empty_state(); ?>
+            <?php endif; ?>
         <?php
         if (! empty($categories['choices'])) {
             $this->render_taxonomy_checkboxes(
@@ -721,6 +733,50 @@ final class DetailsMetaBoxHandler extends BaseMetaBoxHandler
             echo '</div>';
         }
         ?>
+        </div>
+        <?php
+    }
+
+    /**
+     * Messaggio e link quando non ci sono termini da mostrare nel blocco classificazione.
+     */
+    private function render_taxonomy_classification_empty_state(): void
+    {
+        $taxonomy_labels = [
+            'fp_exp_category' => __('Categorie esperienza', 'fp-experiences'),
+            'fp_exp_tag' => __('Tag esperienza', 'fp-experiences'),
+            'fp_exp_difficulty' => __('Difficoltà', 'fp-experiences'),
+            'fp_exp_age_restriction' => __('Restrizioni di età', 'fp-experiences'),
+            'fp_exp_location' => __('Località', 'fp-experiences'),
+        ];
+        $registered = [];
+        foreach ($taxonomy_labels as $tax => $label) {
+            if (taxonomy_exists($tax)) {
+                $registered[ $tax ] = $label;
+            }
+        }
+        ?>
+        <div class="fp-exp-content-trust__taxonomy-empty" role="status">
+            <p class="fp-exp-content-trust__taxonomy-empty-title"><?php esc_html_e('Nessun termine da selezionare', 'fp-experiences'); ?></p>
+            <p class="fp-exp-content-trust__taxonomy-empty-desc">
+                <?php esc_html_e('Non è un errore: semplicemente non ci sono ancora voci nelle tassonomie collegate. Dopo aver creato almeno un termine, le caselle o i menu a tendina appariranno qui.', 'fp-experiences'); ?>
+            </p>
+            <?php if ($registered !== []) : ?>
+                <p class="fp-exp-content-trust__taxonomy-empty-cta"><?php esc_html_e('Gestisci i termini da:', 'fp-experiences'); ?></p>
+                <ul class="fp-exp-content-trust__taxonomy-empty-links">
+                    <?php foreach ($registered as $tax => $label) : ?>
+                        <li>
+                            <a href="<?php echo esc_url(admin_url('edit-tags.php?taxonomy=' . rawurlencode($tax) . '&post_type=fp_experience')); ?>">
+                                <?php echo esc_html($label); ?>
+                            </a>
+                        </li>
+                    <?php endforeach; ?>
+                </ul>
+            <?php else : ?>
+                <p class="fp-exp-content-trust__taxonomy-empty-note">
+                    <?php esc_html_e('Le tassonomie di classificazione non risultano registrate in WordPress. Verifica che FP Experiences sia aggiornato e che il tipo di contenuto «Esperienza» sia attivo.', 'fp-experiences'); ?>
+                </p>
+            <?php endif; ?>
         </div>
         <?php
     }

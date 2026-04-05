@@ -461,6 +461,49 @@
     margin-top: 0.75rem;
 }
 
+.fp-exp-experience-metabox .fp-exp-content-trust__taxonomy-empty {
+    margin-top: 0.35rem;
+    padding: 0.85rem 1rem;
+    border-radius: var(--fpdms-radius-md, 8px);
+    border: 1px dashed var(--fpdms-border, #e5e7eb);
+    background: var(--fpdms-bg-light, #f9fafb);
+}
+
+.fp-exp-experience-metabox .fp-exp-content-trust__taxonomy-empty-title {
+    margin: 0 0 0.4rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--fpdms-text, #1f2937);
+}
+
+.fp-exp-experience-metabox .fp-exp-content-trust__taxonomy-empty-desc,
+.fp-exp-experience-metabox .fp-exp-content-trust__taxonomy-empty-note {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.45;
+    color: var(--fpdms-text-light, #4b5563);
+}
+
+.fp-exp-experience-metabox .fp-exp-content-trust__taxonomy-empty-cta {
+    margin: 0.65rem 0 0.25rem;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--fpdms-text, #1f2937);
+}
+
+.fp-exp-experience-metabox .fp-exp-content-trust__taxonomy-empty-links {
+    margin: 0;
+    padding-left: 1.15rem;
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--fpdms-text-light, #4b5563);
+}
+
+.fp-exp-experience-metabox .fp-exp-content-trust__taxonomy-empty-links a {
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
 .fp-exp-experience-metabox .fp-exp-content-trust__block--trust .fp-exp-field--trust-badges {
     margin-bottom: 0;
 }

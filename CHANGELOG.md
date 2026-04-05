@@ -2,6 +2,12 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.6.51] - 2026-04-05
+
+### Changed
+
+- **Metabox Dettagli → Categorie, tag e attributi**: titolo più esplicito; se non ci sono termini in tassonomia (nessun campo da mostrare), testo introduttivo dedicato e **empty state** con spiegazione + link alle schermate «termini» WordPress per ogni tassonomia registrata; messaggio alternativo se le tassonomie non risultano registrate.
+
 ## [1.6.50] - 2026-04-05
 
 ### Changed

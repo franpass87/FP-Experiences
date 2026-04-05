@@ -314,6 +314,22 @@ html.fp-exp-dark .fp-exp-experience-metabox .fp-exp-content-trust__block {
     box-shadow: none;
 }
 
+html.fp-exp-dark .fp-exp-experience-metabox .fp-exp-content-trust__taxonomy-empty {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(230, 232, 235, 0.2);
+}
+
+html.fp-exp-dark .fp-exp-experience-metabox .fp-exp-content-trust__taxonomy-empty-title,
+html.fp-exp-dark .fp-exp-experience-metabox .fp-exp-content-trust__taxonomy-empty-cta {
+    color: var(--fp-exp-color-text, #e5e7eb);
+}
+
+html.fp-exp-dark .fp-exp-experience-metabox .fp-exp-content-trust__taxonomy-empty-desc,
+html.fp-exp-dark .fp-exp-experience-metabox .fp-exp-content-trust__taxonomy-empty-note,
+html.fp-exp-dark .fp-exp-experience-metabox .fp-exp-content-trust__taxonomy-empty-links {
+    color: var(--fp-exp-color-muted, #9ca3af);
+}
+
 html.fp-exp-dark .fp-exp-experience-metabox .fp-exp-checkbox-grid__item--taxonomy-term {
     background: rgba(255, 255, 255, 0.04);
     border-color: rgba(230, 232, 235, 0.12);
