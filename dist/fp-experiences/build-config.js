@@ -16,6 +16,8 @@ const buildConfig = {
             repeaters: 'assets/js/admin/repeaters.js',
             formValidation: 'assets/js/admin/form-validation.js',
             calendar: 'assets/js/admin/calendar.js',
+            /** Logica #fp-exp-calendar-app (prima solo in admin.js, assente dal .min) */
+            calendarAdminApp: 'assets/js/admin/calendar-admin-app.js',
             tools: 'assets/js/admin/tools.js',
             main: 'assets/js/admin/main.js'
         },

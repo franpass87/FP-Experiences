@@ -2,6 +2,13 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.6.35] - 2026-04-05
+
+### Fixed
+
+- **Admin calendario (Operazioni)**: il bundle `fp-experiences-admin.min.js` registrava `initCalendarApp` solo come stub (`[data-fp-calendar-app]`, inesistente); la logica reale stava solo in `admin.js` (fallback). Aggiunto `calendar-admin-app.js` al build e rimosso lo stub da `calendar.js`, così il calendario carica dati e la UI (toolbar, griglia, lista).
+- **CSS calendario admin**: stili per select esperienza/filtro disponibilità, lista giorni, badge griglia e stato drag-over in `calendar.css` (bundle min).
+
 ## [1.6.34] - 2026-04-05
 
 ### Fixed
