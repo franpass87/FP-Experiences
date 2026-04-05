@@ -280,7 +280,8 @@
     border-radius: var(--fpdms-radius-md);
     background: var(--fpdms-bg-light);
     cursor: pointer;
-    transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
+    /* Non animare box-shadow: evita “pulsazioni” e conflitti con il focus */
+    transition: border-color 0.15s ease, background-color 0.15s ease;
 }
 
 .fp-exp-experience-metabox .fp-exp-sr-widget__checkbox-card:hover {
@@ -289,9 +290,16 @@
     box-shadow: var(--fpdms-shadow-md);
 }
 
+/* Focus: un solo anello (sulla card), niente doppio outline checkbox + contenitore */
 .fp-exp-experience-metabox .fp-exp-sr-widget__checkbox-card:focus-within {
-    outline: 2px solid var(--fpdms-primary);
-    outline-offset: 2px;
+    border-color: var(--fpdms-primary);
+    box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.35);
+    outline: none;
+}
+
+.fp-exp-experience-metabox .fp-exp-sr-widget__checkbox-card:has(input:checked) {
+    border-color: rgba(102, 126, 234, 0.5);
+    background: rgba(102, 126, 234, 0.08);
 }
 
 .fp-exp-experience-metabox .fp-exp-sr-widget__checkbox-card input[type="checkbox"] {
@@ -299,6 +307,16 @@
     top: 12px;
     left: 12px;
     margin: 0;
+    z-index: 1;
+    accent-color: var(--fpdms-primary);
+    outline: none;
+    box-shadow: none;
+}
+
+.fp-exp-experience-metabox .fp-exp-sr-widget__checkbox-card input[type="checkbox"]:focus,
+.fp-exp-experience-metabox .fp-exp-sr-widget__checkbox-card input[type="checkbox"]:focus-visible {
+    outline: none;
+    box-shadow: none;
 }
 
 .fp-exp-experience-metabox .fp-exp-sr-widget__checkbox-card-text {

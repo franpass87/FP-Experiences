@@ -2,6 +2,12 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.6.40] - 2026-04-05
+
+### Fixed
+
+- **Admin — Richieste speciali**: card checkbox senza doppio anello di focus (outline nativo + contenitore); transizione solo su bordo/sfondo; focus unico via `box-shadow` sulla card; `accent-color` DMS; stato selezionato evidenziato sulla card (`:has(:checked)`).
+
 ## [1.6.39] - 2026-04-05
 
 ### Changed
