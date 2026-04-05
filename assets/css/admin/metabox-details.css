@@ -187,24 +187,138 @@
     margin-top: 1.25rem;
 }
 
-/* Special requests configuration blocks */
-.fp-exp-experience-metabox .fp-exp-field--sr-config {
-    margin-top: 1.25rem;
-    padding-top: 1.25rem;
-    border-top: 1px solid rgba(15, 23, 42, 0.1);
+/* Widget — Richieste speciali (Dettagli): sotto-blocchi design system FP / DMS */
+.fp-exp-experience-metabox .fp-exp-sr-widget {
+    display: grid;
+    gap: 1.25rem;
 }
 
-.fp-exp-experience-metabox .fp-exp-field--sr-group {
-    margin-top: 0.75rem;
+.fp-exp-experience-metabox .fp-exp-sr-widget__block {
+    margin: 0;
+    padding: 1.15rem 1.35rem;
+    border: 1px solid var(--fpdms-border);
+    border-radius: var(--fpdms-radius-lg);
+    background: var(--fpdms-bg-white);
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
 }
 
-.fp-exp-experience-metabox .fp-exp-field--sr-custom {
-    margin-top: 1rem;
+.fp-exp-experience-metabox .fp-exp-sr-widget__block .fp-exp-field__subtitle {
+    margin: 0 0 0.85rem;
 }
 
-.fp-exp-experience-metabox .fp-exp-field--sr-custom-row {
-    margin-bottom: 0.5rem;
-    align-items: end;
+.fp-exp-experience-metabox .fp-exp-sr-widget__grid {
+    margin-bottom: 0;
+}
+
+.fp-exp-experience-metabox .fp-exp-sr-widget__grid .fp-exp-sr-widget__field--full {
+    grid-column: 1 / -1;
+}
+
+.fp-exp-experience-metabox .fp-exp-sr-widget__grid .fp-exp-dms-field textarea.large-text {
+    width: 100%;
+    max-width: 100%;
+    min-height: 88px;
+    box-sizing: border-box;
+    border: 2px solid var(--fpdms-border);
+    border-radius: var(--fpdms-radius-md);
+    padding: 0.5rem 0.75rem;
+    line-height: 1.45;
+}
+
+.fp-exp-experience-metabox .fp-exp-sr-widget__grid .fp-exp-dms-field textarea.large-text:focus {
+    border-color: var(--fpdms-primary);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+}
+
+.fp-exp-experience-metabox .fp-exp-sr-widget__note {
+    margin: 1rem 0 0;
+}
+
+.fp-exp-experience-metabox .fp-exp-sr-widget__intro {
+    margin: 0 0 1rem;
+    max-width: 52rem;
+    line-height: 1.45;
+}
+
+.fp-exp-experience-metabox .fp-exp-sr-widget__preset-group {
+    margin-top: 1.1rem;
+    padding-top: 1.1rem;
+    border-top: 1px solid var(--fpdms-border-light);
+}
+
+.fp-exp-experience-metabox .fp-exp-sr-widget__preset-group:first-of-type {
+    margin-top: 0.35rem;
+    padding-top: 0;
+    border-top: none;
+}
+
+.fp-exp-experience-metabox .fp-exp-sr-widget__group-title {
+    display: block;
+    margin: 0 0 0.65rem;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--fpdms-text-light);
+}
+
+.fp-exp-experience-metabox .fp-exp-sr-widget__checkbox-grid {
+    display: grid;
+    gap: 10px;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+}
+
+.fp-exp-experience-metabox .fp-exp-sr-widget__checkbox-card {
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin: 0;
+    padding: 10px 12px 10px 38px;
+    border: 1px solid var(--fpdms-border);
+    border-radius: var(--fpdms-radius-md);
+    background: var(--fpdms-bg-light);
+    cursor: pointer;
+    transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.fp-exp-experience-metabox .fp-exp-sr-widget__checkbox-card:hover {
+    border-color: #cbd5e1;
+    background: var(--fpdms-bg-white);
+    box-shadow: var(--fpdms-shadow-md);
+}
+
+.fp-exp-experience-metabox .fp-exp-sr-widget__checkbox-card:focus-within {
+    outline: 2px solid var(--fpdms-primary);
+    outline-offset: 2px;
+}
+
+.fp-exp-experience-metabox .fp-exp-sr-widget__checkbox-card input[type="checkbox"] {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    margin: 0;
+}
+
+.fp-exp-experience-metabox .fp-exp-sr-widget__checkbox-card-text {
+    font-size: 13px;
+    line-height: 1.4;
+    font-weight: 500;
+    color: var(--fpdms-text);
+}
+
+.fp-exp-experience-metabox .fp-exp-sr-widget__preset-group--custom .fp-exp-dms-hint {
+    margin: 0 0 0.75rem;
+    max-width: 48rem;
+}
+
+.fp-exp-experience-metabox .fp-exp-sr-widget__custom-row {
+    margin-bottom: 0.65rem;
+}
+
+.fp-exp-experience-metabox .fp-exp-sr-widget__custom-row:last-child {
+    margin-bottom: 0;
 }
 
 /* Languages as dedicated row with flag checkboxes */

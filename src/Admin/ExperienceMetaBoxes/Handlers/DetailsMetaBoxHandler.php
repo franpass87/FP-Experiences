@@ -18,6 +18,7 @@ use function esc_html;
 use function esc_textarea;
 use function esc_url;
 use function get_terms;
+use function is_wp_error;
 use function sanitize_key;
 use function sanitize_text_field;
 use function sanitize_textarea_field;
@@ -84,7 +85,7 @@ final class DetailsMetaBoxHandler extends BaseMetaBoxHandler
         $language_details = $data['languages'] ?? [];
         $language_choices = $language_details['choices'] ?? [];
         $language_selected = $language_details['selected'] ?? [];
-        $language_badges = $data['language_badges'] ?? [];
+        $language_quick_options = $this->get_language_quick_options();
         ?>
         <section
             id="<?php echo esc_attr($panel_id); ?>"
@@ -172,178 +173,236 @@ final class DetailsMetaBoxHandler extends BaseMetaBoxHandler
                         />
                         <p class="fp-exp-field__description" id="fp-exp-event-ticket-sales-end-help"><?php esc_html_e('Dopo questa data/ora le vendite si chiudono automaticamente; restano chiuse anche dopo l’inizio dell’evento. Vuoto = vendite possibili fino all’inizio dell’evento.', 'fp-experiences'); ?></p>
                     </div>
-                    <div>
-                        <span class="fp-exp-field__label">
-                            <?php esc_html_e('Lingue disponibili', 'fp-experiences'); ?>
-                            <?php $this->render_tooltip('fp-exp-language-badge-help', esc_html__("Seleziona le lingue parlate durante l'esperienza: verranno mostrate nei badge pubblici e nel widget di prenotazione.", 'fp-experiences')); ?>
-                        </span>
-                        <?php if (!empty($language_choices)) : ?>
-                            <div class="fp-exp-checkbox-grid" aria-describedby="fp-exp-language-badge-help">
-                                <?php foreach ($language_choices as $choice) :
-                                    if (!is_array($choice)) {
-                                        continue;
-                                    }
+                </div>
 
-                                    $term_id = isset($choice['id']) ? (int) $choice['id'] : 0;
-                                    $label = isset($choice['label']) ? (string) $choice['label'] : '';
+                <div class="fp-exp-field fp-exp-field--languages-row">
+                    <span class="fp-exp-field__label">
+                        <?php esc_html_e('Lingue disponibili', 'fp-experiences'); ?>
+                        <?php $this->render_tooltip('fp-exp-language-badge-help', esc_html__("Seleziona le lingue parlate durante l'esperienza: verranno mostrate nei badge pubblici e nel widget di prenotazione.", 'fp-experiences')); ?>
+                    </span>
+                    <?php if (!empty($language_choices)) : ?>
+                        <div class="fp-exp-language-choices" aria-describedby="fp-exp-language-badge-help">
+                            <?php foreach ($language_choices as $choice) :
+                                if (!is_array($choice)) {
+                                    continue;
+                                }
 
-                                    if ($term_id <= 0 || '' === $label) {
-                                        continue;
-                                    }
-                                    ?>
-                                    <label>
-                                        <input
-                                            type="checkbox"
-                                            name="fp_exp_details[languages][]"
-                                            value="<?php echo esc_attr((string) $term_id); ?>"
-                                            <?php checked(in_array($term_id, $language_selected, true)); ?>
-                                        />
-                                        <span><?php echo esc_html($label); ?></span>
-                                    </label>
-                                <?php endforeach; ?>
-                            </div>
-                        <?php else : ?>
-                            <p class="fp-exp-field__description fp-exp-field__description--muted"><?php esc_html_e('Non hai ancora creato lingue. Aggiungi nuove voci qui sotto per iniziare.', 'fp-experiences'); ?></p>
-                        <?php endif; ?>
-                        <div class="fp-exp-taxonomy-manual">
-                            <label class="fp-exp-taxonomy-manual__label" for="fp-exp-languages-manual"><?php esc_html_e('Aggiungi nuove lingue', 'fp-experiences'); ?></label>
-                            <input
-                                type="text"
-                                id="fp-exp-languages-manual"
-                                name="fp_exp_details[languages_manual]"
-                                class="regular-text"
-                                placeholder="<?php echo esc_attr__('Es. Italiano, English, Deutsch', 'fp-experiences'); ?>"
-                                autocomplete="off"
-                            />
-                            <p class="fp-exp-field__description"><?php esc_html_e('Separa le voci con una virgola: verranno create come termini e selezionate automaticamente.', 'fp-experiences'); ?></p>
-                        </div>
-                        <?php if (!empty($language_badges)) : ?>
-                            <ul class="fp-exp-language-preview" role="list" aria-describedby="fp-exp-language-badge-help">
-                                <?php foreach ($language_badges as $language) :
-                                    if (!is_array($language)) {
-                                        continue;
-                                    }
+                                $term_id = isset($choice['id']) ? (int) $choice['id'] : 0;
+                                $label = isset($choice['label']) ? (string) $choice['label'] : '';
+                                $code = isset($choice['code']) ? (string) $choice['code'] : '';
+                                $sprite_id = isset($choice['sprite']) ? (string) $choice['sprite'] : '';
 
-                                    $sprite_id = isset($language['sprite']) ? (string) $language['sprite'] : '';
-                                    $code = isset($language['code']) ? (string) $language['code'] : '';
-                                    $aria_label = isset($language['aria_label']) ? (string) $language['aria_label'] : $code;
-                                    $label = isset($language['label']) ? (string) $language['label'] : $code;
-
-                                    if ('' === $code) {
-                                        continue;
-                                    }
-                                    ?>
-                                    <li class="fp-exp-language-preview__item">
-                                        <?php if ($sprite_id) : ?>
-                                            <span class="fp-exp-language-preview__flag" role="img" aria-label="<?php echo esc_attr($aria_label); ?>">
-                                                <svg viewBox="0 0 24 16" aria-hidden="true" focusable="false">
+                                if ($term_id <= 0 || '' === $label) {
+                                    continue;
+                                }
+                                ?>
+                                <label class="fp-exp-language-option">
+                                    <input
+                                        type="checkbox"
+                                        name="fp_exp_details[languages][]"
+                                        value="<?php echo esc_attr((string) $term_id); ?>"
+                                        <?php checked(in_array($term_id, $language_selected, true)); ?>
+                                    />
+                                    <span class="fp-exp-language-option__content">
+                                        <?php if ('' !== $sprite_id) : ?>
+                                            <span class="fp-exp-language-option__flag" aria-hidden="true">
+                                                <svg viewBox="0 0 24 16" focusable="false">
                                                     <use href="<?php echo esc_url(LanguageHelper::get_sprite_url() . '#' . $sprite_id); ?>"></use>
                                                 </svg>
                                             </span>
+                                        <?php else : ?>
+                                            <span class="fp-exp-language-option__flag fp-exp-language-option__flag--fallback" aria-hidden="true">
+                                                <?php echo esc_html($code !== '' ? $code : '--'); ?>
+                                            </span>
                                         <?php endif; ?>
-                                        <span class="fp-exp-language-preview__code" aria-hidden="true"><?php echo esc_html($code); ?></span>
-                                        <span class="screen-reader-text"><?php echo esc_html($label); ?></span>
-                                    </li>
-                                <?php endforeach; ?>
-                            </ul>
-                        <?php else : ?>
-                            <p class="fp-exp-field__description fp-exp-field__description--muted"><?php esc_html_e('Nessuna lingua selezionata al momento.', 'fp-experiences'); ?></p>
-                        <?php endif; ?>
-                        <p class="fp-exp-field__description" id="fp-exp-language-badge-help"><?php esc_html_e('Le lingue selezionate vengono mostrate nei badge pubblici, nel widget e nei filtri.', 'fp-experiences'); ?></p>
-                    </div>
-                </div>
-
-                <div class="fp-exp-field" style="margin-top:1.25rem;padding-top:1.25rem;border-top:1px solid rgba(0,0,0,.08);">
-                    <span class="fp-exp-field__label">
-                        <?php esc_html_e('Widget — step «Richieste speciali»', 'fp-experiences'); ?>
-                    </span>
-                    <label class="fp-exp-field__label" for="fp-exp-widget-sr-mode">
-                        <?php esc_html_e('Comportamento', 'fp-experiences'); ?>
-                    </label>
-                    <select id="fp-exp-widget-sr-mode" name="fp_exp_details[single_event_special_requests_mode]">
-                        <option value="default" <?php selected($single_event_sr_mode, 'default', true); ?>><?php esc_html_e('Standard — checkbox e note', 'fp-experiences'); ?></option>
-                        <option value="notes_only" <?php selected($single_event_sr_mode, 'notes_only', true); ?>><?php esc_html_e('Solo campo note libere', 'fp-experiences'); ?></option>
-                        <option value="hidden" <?php selected($single_event_sr_mode, 'hidden', true); ?>><?php esc_html_e('Nascondi lo step', 'fp-experiences'); ?></option>
-                    </select>
-                    <p class="fp-exp-field__description"><?php esc_html_e('Vale per il widget di prenotazione su questa esperienza (eventi a data fissa e ricorrenti). Se nascondi lo step, il riepilogo riprende la numerazione corretta.', 'fp-experiences'); ?></p>
-
-                    <label class="fp-exp-field__label" for="fp-exp-widget-sr-title"><?php esc_html_e('Titolo step personalizzato (opzionale)', 'fp-experiences'); ?></label>
-                    <input type="text" class="regular-text" id="fp-exp-widget-sr-title" name="fp_exp_details[single_event_special_requests_title]" value="<?php echo esc_attr($single_event_sr_title); ?>" placeholder="<?php echo esc_attr__('Richieste speciali', 'fp-experiences'); ?>" />
-
-                    <label class="fp-exp-field__label" for="fp-exp-widget-sr-notes-label"><?php esc_html_e('Etichetta note (opzionale)', 'fp-experiences'); ?></label>
-                    <input type="text" class="regular-text" id="fp-exp-widget-sr-notes-label" name="fp_exp_details[single_event_special_requests_notes_label]" value="<?php echo esc_attr($single_event_sr_notes_label); ?>" placeholder="<?php echo esc_attr__('Altre richieste o note', 'fp-experiences'); ?>" />
-
-                    <label class="fp-exp-field__label" for="fp-exp-widget-sr-help"><?php esc_html_e('Testo di aiuto sotto le note (opzionale)', 'fp-experiences'); ?></label>
-                    <textarea id="fp-exp-widget-sr-help" name="fp_exp_details[single_event_special_requests_help]" rows="2" class="large-text"><?php echo esc_textarea($single_event_sr_help); ?></textarea>
-
-                    <input type="hidden" name="fp_exp_details[special_requests_items_touched]" value="1" />
-
-                    <p class="fp-exp-field__label" style="margin-top:1.25rem;">
-                        <?php esc_html_e('Checkbox nello step (solo se comportamento «Standard»)', 'fp-experiences'); ?>
-                    </p>
-                    <p class="fp-exp-field__description"><?php esc_html_e('Se non salvi nulla qui, restano tutte le opzioni predefinite. Deseleziona le checkbox che non servono e aggiungi righe personalizzate (etichetta obbligatoria; slug opzionale, generato automaticamente se vuoto).', 'fp-experiences'); ?></p>
-
-                    <?php foreach ($sr_groups as $sr_gkey => $sr_pids) : ?>
-                        <?php if (empty($sr_pids)) {
-                            continue;
-                        } ?>
-                        <div class="fp-exp-field" style="margin-top:0.75rem;">
-                            <span class="fp-exp-field__label"><?php echo esc_html(SpecialRequestsOptions::group_title($sr_gkey)); ?></span>
-                            <?php foreach ($sr_pids as $sr_pid) :
-                                $sr_plabel = $sr_preset_catalog[$sr_pid]['label'] ?? $sr_pid;
-                                ?>
-                                <label class="fp-exp-field__checkbox" style="display:block;margin:0.35rem 0;">
-                                    <input
-                                        type="checkbox"
-                                        name="fp_exp_details[special_requests_enabled_presets][]"
-                                        value="<?php echo esc_attr($sr_pid); ?>"
-                                        <?php checked(in_array($sr_pid, $sr_enabled_presets, true)); ?>
-                                    />
-                                    <span><?php echo esc_html($sr_plabel); ?></span>
+                                        <span class="fp-exp-language-option__label"><?php echo esc_html($label); ?></span>
+                                    </span>
                                 </label>
                             <?php endforeach; ?>
                         </div>
-                    <?php endforeach; ?>
+                    <?php else : ?>
+                        <p class="fp-exp-field__description fp-exp-field__description--muted"><?php esc_html_e('Non hai ancora creato lingue personalizzate: puoi iniziare dalle opzioni rapide qui sotto oppure aggiungerle manualmente.', 'fp-experiences'); ?></p>
+                        <div class="fp-exp-language-choices fp-exp-language-choices--quick" aria-describedby="fp-exp-language-badge-help">
+                            <?php foreach ($language_quick_options as $quick_option) :
+                                if (!is_array($quick_option)) {
+                                    continue;
+                                }
+                                $quick_code = isset($quick_option['code']) ? sanitize_key((string) $quick_option['code']) : '';
+                                $quick_label = isset($quick_option['label']) ? (string) $quick_option['label'] : '';
+                                if ('' === $quick_code || '' === $quick_label) {
+                                    continue;
+                                }
+                                $quick_sprite = LanguageHelper::get_sprite_id_for_code($quick_code);
+                                ?>
+                                <label class="fp-exp-language-option">
+                                    <input
+                                        type="checkbox"
+                                        name="fp_exp_details[languages_quick][]"
+                                        value="<?php echo esc_attr($quick_code . '|' . $quick_label); ?>"
+                                    />
+                                    <span class="fp-exp-language-option__content">
+                                        <span class="fp-exp-language-option__flag" aria-hidden="true">
+                                            <svg viewBox="0 0 24 16" focusable="false">
+                                                <use href="<?php echo esc_url(LanguageHelper::get_sprite_url() . '#' . $quick_sprite); ?>"></use>
+                                            </svg>
+                                        </span>
+                                        <span class="fp-exp-language-option__label"><?php echo esc_html($quick_label); ?></span>
+                                    </span>
+                                </label>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php endif; ?>
+                    <div class="fp-exp-taxonomy-manual">
+                        <label class="fp-exp-taxonomy-manual__label" for="fp-exp-languages-manual"><?php esc_html_e('Aggiungi nuove lingue', 'fp-experiences'); ?></label>
+                        <input
+                            type="text"
+                            id="fp-exp-languages-manual"
+                            name="fp_exp_details[languages_manual]"
+                            class="regular-text"
+                            placeholder="<?php echo esc_attr__('Es. Italiano, English, Deutsch', 'fp-experiences'); ?>"
+                            autocomplete="off"
+                        />
+                        <p class="fp-exp-field__description"><?php esc_html_e('Separa le voci con una virgola: verranno create come termini e selezionate automaticamente.', 'fp-experiences'); ?></p>
+                    </div>
+                    <p class="fp-exp-field__description" id="fp-exp-language-badge-help"><?php esc_html_e('Le lingue selezionate vengono mostrate nei badge pubblici, nel widget e nei filtri.', 'fp-experiences'); ?></p>
+                </div>
 
-                    <div class="fp-exp-field" style="margin-top:1rem;">
-                        <span class="fp-exp-field__label"><?php echo esc_html(SpecialRequestsOptions::group_title('custom')); ?></span>
-                        <p class="fp-exp-field__description"><?php esc_html_e('Slug tecnico (opzionale): solo lettere, numeri e trattini; usato nel dato inviato al carrello. Se vuoto, viene derivato dall’etichetta.', 'fp-experiences'); ?></p>
-                        <?php
-                        $sr_cr_index = 0;
-                        foreach ($sr_custom_rows as $sr_cr) :
-                            if (! is_array($sr_cr)) {
+            <?php $this->render_metabox_section_close(); ?>
+
+            <?php
+            $this->render_metabox_section_open(
+                esc_html__('Widget — Richieste speciali', 'fp-experiences'),
+                'dashicons-editor-ul',
+                'details-widget-special-requests'
+            );
+            ?>
+                <div class="fp-exp-sr-widget">
+                    <div class="fp-exp-sr-widget__block">
+                        <h4 class="fp-exp-field__subtitle"><?php esc_html_e('Comportamento dello step', 'fp-experiences'); ?></h4>
+                        <div class="fp-exp-dms-fields-grid fp-exp-sr-widget__grid">
+                            <div class="fp-exp-dms-field">
+                                <label for="fp-exp-widget-sr-mode"><?php esc_html_e('Modalità nel widget', 'fp-experiences'); ?></label>
+                                <select id="fp-exp-widget-sr-mode" name="fp_exp_details[single_event_special_requests_mode]">
+                                    <option value="default" <?php selected($single_event_sr_mode, 'default', true); ?>><?php esc_html_e('Standard — checkbox e note', 'fp-experiences'); ?></option>
+                                    <option value="notes_only" <?php selected($single_event_sr_mode, 'notes_only', true); ?>><?php esc_html_e('Solo campo note libere', 'fp-experiences'); ?></option>
+                                    <option value="hidden" <?php selected($single_event_sr_mode, 'hidden', true); ?>><?php esc_html_e('Nascondi lo step', 'fp-experiences'); ?></option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="fp-exp-metabox-alert fp-exp-metabox-alert--info fp-exp-sr-widget__note" role="note">
+                            <span class="dashicons dashicons-info-outline fp-exp-metabox-alert__icon" aria-hidden="true"></span>
+                            <div class="fp-exp-metabox-alert__body">
+                                <p class="fp-exp-metabox-alert__text">
+                                    <?php esc_html_e('Le opzioni valgono per il widget di prenotazione di questa esperienza (eventi a data fissa e ricorrenti). Se nascondi lo step, il riepilogo aggiorna automaticamente la numerazione.', 'fp-experiences'); ?>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="fp-exp-sr-widget__block">
+                        <h4 class="fp-exp-field__subtitle"><?php esc_html_e('Testi nel widget', 'fp-experiences'); ?></h4>
+                        <div class="fp-exp-dms-fields-grid fp-exp-sr-widget__grid">
+                            <div class="fp-exp-dms-field">
+                                <label for="fp-exp-widget-sr-title"><?php esc_html_e('Titolo dello step (opzionale)', 'fp-experiences'); ?></label>
+                                <input
+                                    type="text"
+                                    class="regular-text"
+                                    id="fp-exp-widget-sr-title"
+                                    name="fp_exp_details[single_event_special_requests_title]"
+                                    value="<?php echo esc_attr($single_event_sr_title); ?>"
+                                    placeholder="<?php echo esc_attr__('Richieste speciali', 'fp-experiences'); ?>"
+                                />
+                            </div>
+                            <div class="fp-exp-dms-field">
+                                <label for="fp-exp-widget-sr-notes-label"><?php esc_html_e('Etichetta campo note (opzionale)', 'fp-experiences'); ?></label>
+                                <input
+                                    type="text"
+                                    class="regular-text"
+                                    id="fp-exp-widget-sr-notes-label"
+                                    name="fp_exp_details[single_event_special_requests_notes_label]"
+                                    value="<?php echo esc_attr($single_event_sr_notes_label); ?>"
+                                    placeholder="<?php echo esc_attr__('Altre richieste o note', 'fp-experiences'); ?>"
+                                />
+                            </div>
+                            <div class="fp-exp-dms-field fp-exp-sr-widget__field--full">
+                                <label for="fp-exp-widget-sr-help"><?php esc_html_e('Testo di aiuto sotto le note (opzionale)', 'fp-experiences'); ?></label>
+                                <textarea id="fp-exp-widget-sr-help" name="fp_exp_details[single_event_special_requests_help]" rows="3" class="large-text"><?php echo esc_textarea($single_event_sr_help); ?></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <input type="hidden" name="fp_exp_details[special_requests_items_touched]" value="1" />
+
+                    <div class="fp-exp-sr-widget__block fp-exp-sr-widget__block--presets">
+                        <h4 class="fp-exp-field__subtitle"><?php esc_html_e('Opzioni in checkbox (solo modalità «Standard»)', 'fp-experiences'); ?></h4>
+                        <p class="fp-exp-dms-hint fp-exp-sr-widget__intro">
+                            <?php esc_html_e('Se non modifichi nulla, restano tutte le voci predefinite. Deseleziona ciò che non serve e aggiungi righe personalizzate (etichetta obbligatoria; slug opzionale, generato dall’etichetta se vuoto).', 'fp-experiences'); ?>
+                        </p>
+
+                        <?php foreach ($sr_groups as $sr_gkey => $sr_pids) : ?>
+                            <?php if (empty($sr_pids)) {
                                 continue;
-                            }
-                            $sr_cr_label = isset($sr_cr['label']) ? (string) $sr_cr['label'] : '';
-                            $sr_cr_slug = isset($sr_cr['slug']) ? (string) $sr_cr['slug'] : '';
-                            ?>
-                            <div class="fp-exp-field fp-exp-field--columns" style="margin-bottom:0.5rem;align-items:flex-end;">
-                                <div>
-                                    <label class="fp-exp-field__label" for="fp-exp-sr-custom-label-<?php echo esc_attr((string) $sr_cr_index); ?>"><?php esc_html_e('Etichetta', 'fp-experiences'); ?></label>
-                                    <input
-                                        type="text"
-                                        class="regular-text"
-                                        id="fp-exp-sr-custom-label-<?php echo esc_attr((string) $sr_cr_index); ?>"
-                                        name="fp_exp_details[special_requests_custom_rows][<?php echo esc_attr((string) $sr_cr_index); ?>][label]"
-                                        value="<?php echo esc_attr($sr_cr_label); ?>"
-                                    />
-                                </div>
-                                <div>
-                                    <label class="fp-exp-field__label" for="fp-exp-sr-custom-slug-<?php echo esc_attr((string) $sr_cr_index); ?>"><?php esc_html_e('Slug (opz.)', 'fp-experiences'); ?></label>
-                                    <input
-                                        type="text"
-                                        class="regular-text"
-                                        id="fp-exp-sr-custom-slug-<?php echo esc_attr((string) $sr_cr_index); ?>"
-                                        name="fp_exp_details[special_requests_custom_rows][<?php echo esc_attr((string) $sr_cr_index); ?>][slug]"
-                                        value="<?php echo esc_attr($sr_cr_slug); ?>"
-                                        placeholder="<?php echo esc_attr__('auto', 'fp-experiences'); ?>"
-                                    />
+                            } ?>
+                            <div class="fp-exp-sr-widget__preset-group" role="group" aria-label="<?php echo esc_attr(SpecialRequestsOptions::group_title($sr_gkey)); ?>">
+                                <span class="fp-exp-sr-widget__group-title"><?php echo esc_html(SpecialRequestsOptions::group_title($sr_gkey)); ?></span>
+                                <div class="fp-exp-sr-widget__checkbox-grid">
+                                    <?php foreach ($sr_pids as $sr_pid) :
+                                        $sr_plabel = $sr_preset_catalog[$sr_pid]['label'] ?? $sr_pid;
+                                        ?>
+                                        <label class="fp-exp-sr-widget__checkbox-card">
+                                            <input
+                                                type="checkbox"
+                                                name="fp_exp_details[special_requests_enabled_presets][]"
+                                                value="<?php echo esc_attr($sr_pid); ?>"
+                                                <?php checked(in_array($sr_pid, $sr_enabled_presets, true)); ?>
+                                            />
+                                            <span class="fp-exp-sr-widget__checkbox-card-text"><?php echo esc_html($sr_plabel); ?></span>
+                                        </label>
+                                    <?php endforeach; ?>
                                 </div>
                             </div>
+                        <?php endforeach; ?>
+
+                        <div class="fp-exp-sr-widget__preset-group fp-exp-sr-widget__preset-group--custom">
+                            <span class="fp-exp-sr-widget__group-title"><?php echo esc_html(SpecialRequestsOptions::group_title('custom')); ?></span>
+                            <p class="fp-exp-dms-hint"><?php esc_html_e('Slug tecnico (opzionale): solo lettere, numeri e trattini; usato nel dato inviato al carrello.', 'fp-experiences'); ?></p>
                             <?php
-                            ++$sr_cr_index;
-                        endforeach;
-                        ?>
+                            $sr_cr_index = 0;
+                            foreach ($sr_custom_rows as $sr_cr) :
+                                if (! is_array($sr_cr)) {
+                                    continue;
+                                }
+                                $sr_cr_label = isset($sr_cr['label']) ? (string) $sr_cr['label'] : '';
+                                $sr_cr_slug = isset($sr_cr['slug']) ? (string) $sr_cr['slug'] : '';
+                                ?>
+                                <div class="fp-exp-sr-widget__custom-row fp-exp-dms-fields-grid fp-exp-sr-widget__grid">
+                                    <div class="fp-exp-dms-field">
+                                        <label for="fp-exp-sr-custom-label-<?php echo esc_attr((string) $sr_cr_index); ?>"><?php esc_html_e('Etichetta', 'fp-experiences'); ?></label>
+                                        <input
+                                            type="text"
+                                            class="regular-text"
+                                            id="fp-exp-sr-custom-label-<?php echo esc_attr((string) $sr_cr_index); ?>"
+                                            name="fp_exp_details[special_requests_custom_rows][<?php echo esc_attr((string) $sr_cr_index); ?>][label]"
+                                            value="<?php echo esc_attr($sr_cr_label); ?>"
+                                        />
+                                    </div>
+                                    <div class="fp-exp-dms-field">
+                                        <label for="fp-exp-sr-custom-slug-<?php echo esc_attr((string) $sr_cr_index); ?>"><?php esc_html_e('Slug (opz.)', 'fp-experiences'); ?></label>
+                                        <input
+                                            type="text"
+                                            class="regular-text"
+                                            id="fp-exp-sr-custom-slug-<?php echo esc_attr((string) $sr_cr_index); ?>"
+                                            name="fp_exp_details[special_requests_custom_rows][<?php echo esc_attr((string) $sr_cr_index); ?>][slug]"
+                                            value="<?php echo esc_attr($sr_cr_slug); ?>"
+                                            placeholder="<?php echo esc_attr__('auto', 'fp-experiences'); ?>"
+                                        />
+                                    </div>
+                                </div>
+                                <?php
+                                ++$sr_cr_index;
+                            endforeach;
+                            ?>
+                        </div>
                     </div>
                 </div>
             <?php $this->render_metabox_section_close(); ?>
@@ -851,7 +910,7 @@ final class DetailsMetaBoxHandler extends BaseMetaBoxHandler
                 <?php endif; ?>
             </div>
 
-            <div class="fp-exp-field" style="margin-top:1.25rem;padding-top:1.25rem;border-top:1px solid rgba(0,0,0,.08);">
+            <div class="fp-exp-field fp-exp-field--experience-badges-custom-divider">
                 <span class="fp-exp-field__label">
                     <?php esc_html_e('Badge personalizzati', 'fp-experiences'); ?>
                     <?php $this->render_tooltip(
@@ -912,7 +971,7 @@ final class DetailsMetaBoxHandler extends BaseMetaBoxHandler
                         endforeach;
                         ?>
                     </div>
-                    <p style="margin:0.65rem 0 0;">
+                    <p class="fp-exp-taxonomy-editor__actions">
                         <button type="button" class="button" data-fp-exp-badge-add>
                             <?php esc_html_e('Aggiungi badge', 'fp-experiences'); ?>
                         </button>
@@ -1192,7 +1251,7 @@ final class DetailsMetaBoxHandler extends BaseMetaBoxHandler
             </div>
             <div
                 id="<?php echo esc_attr($grid_id); ?>"
-                class="fp-exp-checkbox-grid"
+                class="fp-exp-checkbox-grid fp-exp-checkbox-grid--trust-badges"
                 aria-describedby="fp-exp-bias-status fp-exp-bias-help"
                 data-fp-cognitive-bias
                 data-max="<?php echo esc_attr((string) $max_biases); ?>"
@@ -1285,6 +1344,65 @@ final class DetailsMetaBoxHandler extends BaseMetaBoxHandler
             </p>
             <p class="fp-exp-field__description" id="fp-exp-bias-help"><?php esc_html_e('Scegli fino a tre badge di fiducia per creare aspettative chiare nella sezione panoramica.', 'fp-experiences'); ?></p>
         </div>
+        <script>
+        (function () {
+            function initFpExpTrustBadgeCounter() {
+                var grid = document.getElementById('<?php echo esc_js($grid_id); ?>');
+                var status = document.getElementById('fp-exp-bias-status');
+                if (!grid || !status) {
+                    return;
+                }
+
+                var max = parseInt(grid.getAttribute('data-max') || '0', 10);
+                if (!max || max < 1) {
+                    return;
+                }
+
+                var template = status.getAttribute('data-template') || 'Badge selezionati: %1$s su %2$s';
+                var maxMessage = status.getAttribute('data-max-message') || '';
+
+                function render() {
+                    var checkboxes = grid.querySelectorAll('input[type="checkbox"]');
+                    var count = 0;
+
+                    checkboxes.forEach(function (checkbox) {
+                        if (checkbox.checked) {
+                            count += 1;
+                        }
+                        var item = checkbox.closest('label');
+                        if (item) {
+                            item.classList.toggle('is-selected', checkbox.checked);
+                        }
+                    });
+
+                    var message = template.replace('%1$s', String(count)).replace('%2$s', String(max));
+                    if (count >= max && maxMessage) {
+                        message += ' ' + maxMessage;
+                    }
+                    status.textContent = message;
+                }
+
+                grid.addEventListener('change', function (event) {
+                    var target = event.target;
+                    if (target && target.matches && target.matches('input[type="checkbox"]')) {
+                        render();
+                    }
+                });
+
+                grid.addEventListener('click', function () {
+                    window.setTimeout(render, 0);
+                });
+
+                render();
+            }
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', initFpExpTrustBadgeCounter);
+            } else {
+                initFpExpTrustBadgeCounter();
+            }
+        })();
+        </script>
         <?php
     }
 
@@ -1474,6 +1592,46 @@ final class DetailsMetaBoxHandler extends BaseMetaBoxHandler
             wp_set_post_terms($post_id, [], 'fp_exp_language', false);
         }
 
+        // Handle quick language presets (create terms from pre-defined checkboxes)
+        $languages_quick = isset($raw['languages_quick']) && is_array($raw['languages_quick'])
+            ? $raw['languages_quick']
+            : [];
+        $quick_term_ids = [];
+        foreach ($languages_quick as $quick_value) {
+            $quick_value = sanitize_text_field((string) $quick_value);
+            if ('' === $quick_value) {
+                continue;
+            }
+
+            $parts = array_map('trim', explode('|', $quick_value, 2));
+            $quick_code = isset($parts[0]) ? sanitize_key((string) $parts[0]) : '';
+            $quick_label = isset($parts[1]) ? sanitize_text_field((string) $parts[1]) : '';
+
+            if ('' === $quick_code || '' === $quick_label) {
+                continue;
+            }
+
+            $term = wp_insert_term($quick_label, 'fp_exp_language', ['slug' => $quick_code]);
+            if (is_wp_error($term)) {
+                if ('term_exists' === $term->get_error_code()) {
+                    $existing_id = $term->get_error_data('term_exists');
+                    if (is_numeric($existing_id)) {
+                        $quick_term_ids[] = (int) $existing_id;
+                    }
+                }
+                continue;
+            }
+
+            if (isset($term['term_id'])) {
+                $quick_term_ids[] = (int) $term['term_id'];
+            }
+        }
+
+        if (!empty($quick_term_ids)) {
+            $languages = array_values(array_unique(array_merge($languages, $quick_term_ids)));
+            wp_set_post_terms($post_id, $languages, 'fp_exp_language', false);
+        }
+
         // Handle languages_manual (create terms from comma-separated list)
         $languages_manual = sanitize_text_field($raw['languages_manual'] ?? '');
         if ($languages_manual !== '') {
@@ -1552,7 +1710,7 @@ final class DetailsMetaBoxHandler extends BaseMetaBoxHandler
 
         // Get languages
         $language_selected = $this->get_assigned_terms($post_id, 'fp_exp_language');
-        $language_choices = $this->get_taxonomy_choices('fp_exp_language');
+        $language_choices = $this->get_language_choices_for_editor();
         $language_badges = $this->get_language_badges($language_selected);
 
         // Get taxonomies
@@ -1885,6 +2043,55 @@ final class DetailsMetaBoxHandler extends BaseMetaBoxHandler
         return [
             'items' => $items,
             'ids' => $ids,
+        ];
+    }
+
+    /**
+     * Get language choices enriched with flag sprite metadata.
+     *
+     * @return array<int, array{id: int, label: string, code: string, sprite: string}>
+     */
+    private function get_language_choices_for_editor(): array
+    {
+        $terms = get_terms([
+            'taxonomy' => 'fp_exp_language',
+            'hide_empty' => false,
+            'orderby' => 'name',
+            'order' => 'ASC',
+        ]);
+
+        if (is_wp_error($terms) || !is_array($terms)) {
+            return [];
+        }
+
+        $choices = [];
+        foreach ($terms as $term) {
+            $code = sanitize_key((string) $term->slug);
+            $choices[] = [
+                'id' => (int) $term->term_id,
+                'label' => (string) $term->name,
+                'code' => strtoupper($code),
+                'sprite' => LanguageHelper::get_sprite_id_for_code($code),
+            ];
+        }
+
+        return $choices;
+    }
+
+    /**
+     * Default quick options shown when no language terms exist yet.
+     *
+     * @return array<int, array{code: string, label: string}>
+     */
+    private function get_language_quick_options(): array
+    {
+        return [
+            ['code' => 'it', 'label' => 'Italiano'],
+            ['code' => 'en', 'label' => 'English'],
+            ['code' => 'fr', 'label' => 'Français'],
+            ['code' => 'de', 'label' => 'Deutsch'],
+            ['code' => 'es', 'label' => 'Español'],
+            ['code' => 'pt', 'label' => 'Português'],
         ];
     }
 

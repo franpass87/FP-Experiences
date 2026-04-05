@@ -2,6 +2,12 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.6.39] - 2026-04-05
+
+### Changed
+
+- **Editor esperienza → Dettagli → Widget — Richieste speciali**: sezione riorganizzata sul design system FP (sotto-blocchi `fp-exp-sr-widget__block`, griglia `fp-exp-dms-fields-grid`, note informativa `fp-exp-metabox-alert--info`, checkbox preset come card in griglia responsive). Variante dark admin per blocchi e alert info.
+
 ## [1.6.38] - 2026-04-05
 
 ### Changed
