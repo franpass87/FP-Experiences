@@ -2,6 +2,13 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.6.41] - 2026-04-05
+
+### Fixed
+
+- **Admin CSS (DMS)**: il focus su `.fp-exp-dms-field` usava il selettore `input:focus`, quindi l’anello viola (`box-shadow`) veniva applicato anche alle **checkbox** (e in generale a ogni `input`) discendente di un campo DMS — tipico con griglie che avvolgono più controlli. Ora il focus DMS esclude checkbox, radio, hidden e pulsanti.
+- **Richieste speciali**: stili delle card checkbox limitati a `.fp-exp-sr-widget__checkbox-grid > .fp-exp-sr-widget__checkbox-card` (stesso scope in dark mode).
+
 ## [1.6.40] - 2026-04-05
 
 ### Fixed

@@ -269,7 +269,7 @@
     grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
 }
 
-.fp-exp-experience-metabox .fp-exp-sr-widget__checkbox-card {
+.fp-exp-experience-metabox .fp-exp-sr-widget__checkbox-grid > .fp-exp-sr-widget__checkbox-card {
     position: relative;
     display: flex;
     align-items: flex-start;
@@ -284,25 +284,26 @@
     transition: border-color 0.15s ease, background-color 0.15s ease;
 }
 
-.fp-exp-experience-metabox .fp-exp-sr-widget__checkbox-card:hover {
+/* Scope stretto: solo le card nel grid «Richieste speciali», mai altre checkbox della schermata */
+.fp-exp-experience-metabox .fp-exp-sr-widget__checkbox-grid > .fp-exp-sr-widget__checkbox-card:hover {
     border-color: #cbd5e1;
     background: var(--fpdms-bg-white);
     box-shadow: var(--fpdms-shadow-md);
 }
 
 /* Focus: un solo anello (sulla card), niente doppio outline checkbox + contenitore */
-.fp-exp-experience-metabox .fp-exp-sr-widget__checkbox-card:focus-within {
+.fp-exp-experience-metabox .fp-exp-sr-widget__checkbox-grid > .fp-exp-sr-widget__checkbox-card:focus-within {
     border-color: var(--fpdms-primary);
     box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.35);
     outline: none;
 }
 
-.fp-exp-experience-metabox .fp-exp-sr-widget__checkbox-card:has(input:checked) {
+.fp-exp-experience-metabox .fp-exp-sr-widget__checkbox-grid > .fp-exp-sr-widget__checkbox-card:has(input:checked) {
     border-color: rgba(102, 126, 234, 0.5);
     background: rgba(102, 126, 234, 0.08);
 }
 
-.fp-exp-experience-metabox .fp-exp-sr-widget__checkbox-card input[type="checkbox"] {
+.fp-exp-experience-metabox .fp-exp-sr-widget__checkbox-grid > .fp-exp-sr-widget__checkbox-card input[type="checkbox"] {
     position: absolute;
     top: 12px;
     left: 12px;
@@ -313,8 +314,8 @@
     box-shadow: none;
 }
 
-.fp-exp-experience-metabox .fp-exp-sr-widget__checkbox-card input[type="checkbox"]:focus,
-.fp-exp-experience-metabox .fp-exp-sr-widget__checkbox-card input[type="checkbox"]:focus-visible {
+.fp-exp-experience-metabox .fp-exp-sr-widget__checkbox-grid > .fp-exp-sr-widget__checkbox-card input[type="checkbox"]:focus,
+.fp-exp-experience-metabox .fp-exp-sr-widget__checkbox-grid > .fp-exp-sr-widget__checkbox-card input[type="checkbox"]:focus-visible {
     outline: none;
     box-shadow: none;
 }

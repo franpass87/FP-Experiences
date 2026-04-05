@@ -252,7 +252,8 @@
     max-width: 100%;
 }
 
-.fp-exp-dms-field input:focus,
+/* Solo campi testuali / select: mai checkbox o radio (altrimenti l’anello DMS si applica a ogni input[type=checkbox] discendente). */
+.fp-exp-dms-field input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]):not([type="submit"]):not([type="button"]):focus,
 .fp-exp-dms-field select:focus {
     border-color: var(--fpdms-primary);
     outline: none;
