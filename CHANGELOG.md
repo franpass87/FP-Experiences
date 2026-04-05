@@ -2,6 +2,12 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.6.53] - 2026-04-05
+
+### Fixed
+
+- **Admin — checkbox native**: rimosso **`accent-color`** da `wp-controls-overrides.css` e dalle card della metabox Dettagli (`metabox-details.css`). Su Chromium/Edge (in particolare Windows) la combinazione con controlli nativi poteva mostrare una **doppia spunta** (ghosting). Il file `wp-controls-overrides.css` è anche **deduplicato** (una sola copia delle regole).
+
 ## [1.6.52] - 2026-04-05
 
 ### Fixed

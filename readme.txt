@@ -5,7 +5,7 @@ Tags: experiences, booking, wooocommerce, shortcodes, calendar
 Requires at least: 6.0
 Tested up to: 6.4
 Requires PHP: 8.0
-Stable tag: 1.6.52
+Stable tag: 1.6.53
 Last updated: 2026-03-22
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -125,9 +125,13 @@ FP Experiences stores reservation details inside custom tables linked to WooComm
 
 == Changelog ==
 
+= 1.6.53 - 2026-04-05 =
+
+* Admin: rimosso accent-color sulle checkbox native per evitare doppia spunta (ghosting) su Chromium/Edge; deduplicato wp-controls-overrides.css.
+
 = 1.6.52 - 2026-04-05 =
 
-* Fix metabox Media: dipendenza media-upload + init differito wp.media; galleria vuota senza pulsante «Rimuovi tutte» attivo.
+* Admin metabox Media: dipendenza media-upload e init differito per wp.media; galleria vuota con pulsante rimuovi disabilitato.
 
 = 1.6.51 - 2026-04-05 =
 

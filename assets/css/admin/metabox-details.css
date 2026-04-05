@@ -92,7 +92,6 @@
     top: 10px;
     left: 10px;
     z-index: 1;
-    accent-color: var(--fpdms-primary, #667eea);
 }
 
 .fp-exp-experience-metabox .fp-exp-checkbox-grid__item--experience-badge .fp-exp-checkbox-grid__content,
@@ -397,7 +396,6 @@
     left: 12px;
     margin: 0;
     z-index: 1;
-    accent-color: var(--fpdms-primary);
 }
 
 .fp-exp-experience-metabox .fp-exp-sr-widget__checkbox-card-text {
@@ -544,10 +542,6 @@
 .fp-exp-experience-metabox .fp-exp-checkbox-grid__item--taxonomy-term:has(input:checked) {
     border-color: rgba(102, 126, 234, 0.5);
     background: rgba(102, 126, 234, 0.08);
-}
-
-.fp-exp-experience-metabox .fp-exp-checkbox-grid__item--taxonomy-term input[type='checkbox'] {
-    accent-color: var(--fpdms-primary);
 }
 
 .fp-exp-experience-metabox .fp-exp-checkbox-grid__icon--empty {
