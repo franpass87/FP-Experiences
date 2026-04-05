@@ -1252,12 +1252,13 @@ final class DetailsMetaBoxHandler extends BaseMetaBoxHandler
         $search_input_id = 'fp-exp-bias-search';
         $grid_id = 'fp-exp-bias-grid';
         ?>
-        <div class="fp-exp-content-trust__block fp-exp-content-trust__block--trust">
-            <h4 class="fp-exp-field__subtitle">
+        <div class="fp-exp-content-trust__block fp-exp-content-trust__block--trust" id="fp-exp-trust-badges">
+            <h4 class="screen-reader-text"><?php esc_html_e('Badge di fiducia', 'fp-experiences'); ?></h4>
+            <div class="fp-exp-field fp-exp-field--trust-badges">
+            <span class="fp-exp-field__label">
                 <?php esc_html_e('Badge di fiducia', 'fp-experiences'); ?>
                 <?php $this->render_tooltip('fp-exp-bias-help', esc_html__('Evidenzia le leve persuasive che caratterizzano l\'esperienza; vengono mostrate nella panoramica.', 'fp-experiences')); ?>
-            </h4>
-            <div class="fp-exp-field fp-exp-field--trust-badges">
+            </span>
             <div class="fp-exp-checkbox-grid__search">
                 <label class="screen-reader-text" for="<?php echo esc_attr($search_input_id); ?>">
                     <?php esc_html_e('Filtra badge di fiducia', 'fp-experiences'); ?>
@@ -1321,7 +1322,7 @@ final class DetailsMetaBoxHandler extends BaseMetaBoxHandler
                     $search_terms = array_values(array_filter($search_terms));
                     $search_blob = implode(' ', array_unique($search_terms));
                     ?>
-                    <label class="fp-exp-checkbox-grid__item" data-search="<?php echo esc_attr($search_blob); ?>">
+                    <label class="fp-exp-checkbox-grid__item fp-exp-checkbox-grid__item--trust-badge" data-search="<?php echo esc_attr($search_blob); ?>">
                         <input type="checkbox" name="fp_exp_details[cognitive_biases][]" value="<?php echo esc_attr($bias_id); ?>" <?php checked(in_array($bias_id, $selected_biases, true)); ?> />
                         <span class="fp-exp-checkbox-grid__content">
                             <span class="fp-exp-checkbox-grid__icon" aria-hidden="true"><?php echo $icon_svg; ?></span>

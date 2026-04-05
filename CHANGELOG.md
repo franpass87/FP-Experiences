@@ -2,6 +2,13 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.6.50] - 2026-04-05
+
+### Changed
+
+- **Metabox Dettagli → Badge di fiducia**: stesso pattern delle caratteristiche predefinite — griglia **3 colonne** (2 / 1 su breakpoint), card con **icona su tile viola**, titolo e testi **centrati**; titolo di sezione come `h4.screen-reader-text` + etichetta visibile con tooltip; `id="fp-exp-trust-badges"` sul blocco.
+- **Dark admin**: tile e card badge di fiducia allineate alle card caratteristiche.
+
 ## [1.6.49] - 2026-04-05
 
 ### Fixed
