@@ -2,6 +2,12 @@
 
 All notable changes to FP Experiences will be documented in this file.
 
+## [1.6.34] - 2026-04-05
+
+### Fixed
+
+- **Admin CSS (bundle min)**: la pagina **Operazioni FP Experiences** (calendario, navigazione operatore, sottoviste e tab) usava regole presenti solo nel monolite `admin.css` e **non** incluse in `fp-experiences-admin.min.css`. Aggiunto `assets/css/admin/calendar-operations.css` importato da `main.css` e da `admin.css` (prima riga `@import`) così min e fallback restano allineati.
+
 ## [1.6.33] - 2026-04-05
 
 ### Changed

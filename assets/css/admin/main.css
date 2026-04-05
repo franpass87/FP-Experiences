@@ -32,6 +32,9 @@
 /* Calendar components */
 @import url('./calendar.css');
 
+/* Operazioni / nav-tab DMS (prima solo nel monolite admin.css, necessario per il .min) */
+@import url('./calendar-operations.css');
+
 /* Settings components */
 @import url('./settings.css');
 
